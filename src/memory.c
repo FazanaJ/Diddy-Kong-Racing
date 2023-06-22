@@ -32,6 +32,10 @@ extern MemoryPoolSlot gMainMemoryPool;
  * Official Name: mmInit
  */
 void init_main_memory_pool(void) {
+    u32 ramEnd = 0x80400000;
+    if (gUseExpansionMemory) {
+        ramEnd = 0x80800000;
+    }
     gNumberOfMemoryPools = -1;
 #ifdef PUPPYPRINT_DEBUG
     gFreeMem[11] = ramEnd - (s32)(&gMainMemoryPool);
