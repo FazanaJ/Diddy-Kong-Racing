@@ -163,7 +163,7 @@ void find_expansion_pak(void) {
 */
 void main(void) {
     osInitialize();
-    osCreateThread(&gThread1, 1, &thread1_main, 0, &gThread3Stack[(THREAD1_STACK / (sizeof(u64))) - 1], OS_PRIORITY_IDLE);
+    osCreateThread(&gThread1, 1, &thread1_main, 0, &gThread3Stack[THREAD1_STACK / (sizeof(u64))], OS_PRIORITY_IDLE);
     osStartThread(&gThread1);
 }
 
@@ -219,7 +219,7 @@ void thread1_main(UNUSED void *unused) {
         draw_memory_error_screen();
     } else {
 #endif
-        osCreateThread(&gThread3, 3, &thread3_main, 0, &gThread3Stack[(THREAD3_STACK / sizeof(u64)) - 1], 10);
+        osCreateThread(&gThread3, 3, &thread3_main, 0, &gThread3Stack[THREAD3_STACK / sizeof(u64)], 10);
         gThread3Stack[THREAD3_STACK / sizeof(u64)] = 0;
         gThread3Stack[0] = 0;
         osStartThread(&gThread3);

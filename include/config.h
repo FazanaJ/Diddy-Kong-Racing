@@ -24,6 +24,7 @@
 #define OPEN_ALL_DOORS                      // Removes any and all requirements to progress the game.
 //#define DISABLE_AUDIO                       // Disable all ingame audio, and prevent the RSP from working on audio tasks.
 //#define FORCE_4MB_MEMORY                    // Pretend the expansion pak is not installed.
+//#define CRASH_SCREEN_TEST                   // Intentionally crash the game to test the crash screen.
 
 /* -------------------------Memory------------------------ */
 //#define EXPANSION_PAK_REQUIRED              // Enable expansion pak requirement

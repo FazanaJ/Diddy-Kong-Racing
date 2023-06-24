@@ -195,7 +195,7 @@ void init_game(void) {
     gIsLoading = FALSE;
     gLevelDefaultVehicleID = VEHICLE_CAR;
 
-    osCreateScheduler(&gMainSched, &gSchedStack[0x40], OS_SC_PRIORITY, (u8) 0, 1);
+    osCreateScheduler(&gMainSched, &gSchedStack[(THREAD5_STACK / sizeof(u64)) - 1], OS_SC_PRIORITY, (u8) 0, 1);
     init_video(VIDEO_MODE_LOWRES_LPN, &gMainSched);
     init_PI_mesg_queue();
     setup_gfx_mesg_queues(&gMainSched);
@@ -328,6 +328,10 @@ void main_game_loop(void) {
 
         }
     }*/
+
+#ifdef CRASH_SCREEN_TEST
+    *(volatile int *) 0 = 0;
+#endif
 
     sLogicUpdateRate = calculate_updaterate();
 
