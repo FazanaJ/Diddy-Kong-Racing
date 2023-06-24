@@ -72,7 +72,7 @@ void init_video(s32 videoModeIndex, OSSched *sc) {
         }
     }
 // If Enforced 4MB is on, move framebuffers to expansion memory
-#if !defined(EXPANSION_PAK_SUPPORT) && !defined(FORCE_4MB_MEMORY)
+#if EXPANSION_PAK_SUPPORT == 0 && !defined(FORCE_4MB_MEMORY)
     if (gExpansionPak) {
         u16 *fbAddr;
         for (i = 0; i < NUM_FRAMEBUFFERS; i++) {
@@ -193,7 +193,7 @@ void init_framebuffer(s32 index) {
         func_80071538((u8 *) gVideoFramebuffers[index]);
         free_from_memory_pool(gVideoFramebuffers[index]);
     }
-#ifdef EXPANSION_PAK_SUPPORT
+#if EXPANSION_PAK_SUPPORT
     if (gExpansionPak) {
         width = SCREEN_WIDTH_WIDE;
     }

@@ -29,3 +29,4 @@ ctx.c.m2c
 *.exe
 *.bat
 dkr_hot_reload.py
+lastRomPath.txt
