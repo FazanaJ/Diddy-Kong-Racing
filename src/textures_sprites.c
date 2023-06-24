@@ -8,7 +8,7 @@
 #include "math_util.h"
 #include "game.h"
 #include "main.h"
-#include "unknown_0255E0.h"
+#include "tracks.h"
 
 #define TEX_HEADER_COUNT 175
 #define TEX_SPRITE_COUNT 50

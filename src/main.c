@@ -14,9 +14,7 @@
 
 /************ .bss ************/
 
-u64 *gThread1StackPointer; // stack pointer for thread 1
 u64 gThread3Stack[THREAD3_STACK / sizeof(u64)];
-u64 *gThread3StackPointer; // stack pointer for thread 3
 OSThread gThread1; // OSThread for thread 1
 OSThread gThread3; // OSThread for thread 3
 u8 gPlatformSet = FALSE;
@@ -143,7 +141,7 @@ void find_expansion_pak(void) {
     if (osGetMemSize() == 0x800000) {
         gExpansionPak = TRUE;
         puppyprint_log("Expansion Pak Detected");
-#ifndef EXPANSION_PAK_SUPPORT
+#if EXPANSION_PAK_SUPPORT == 0
         gUseExpansionMemory = FALSE;
 #else
         gUseExpansionMemory = TRUE;
@@ -165,7 +163,7 @@ void find_expansion_pak(void) {
 */
 void main(void) {
     osInitialize();
-    osCreateThread(&gThread1, 1, &thread1_main, 0, &gThread1StackPointer, OS_PRIORITY_IDLE);
+    osCreateThread(&gThread1, 1, &thread1_main, 0, &gThread3Stack[(THREAD1_STACK / (sizeof(u64))) - 1], OS_PRIORITY_IDLE);
     osStartThread(&gThread1);
 }
 
@@ -221,7 +219,7 @@ void thread1_main(UNUSED void *unused) {
         draw_memory_error_screen();
     } else {
 #endif
-        osCreateThread(&gThread3, 3, &thread3_main, 0, &gThread3StackPointer, 10);
+        osCreateThread(&gThread3, 3, &thread3_main, 0, &gThread3Stack[(THREAD3_STACK / sizeof(u64)) - 1], 10);
         gThread3Stack[THREAD3_STACK / sizeof(u64)] = 0;
         gThread3Stack[0] = 0;
         osStartThread(&gThread3);

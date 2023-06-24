@@ -27,13 +27,14 @@
 
 /* -------------------------Memory------------------------ */
 //#define EXPANSION_PAK_REQUIRED              // Enable expansion pak requirement
-//#define EXPANSION_PAK_SUPPORT               // Allow the game to use the expansion pak if it's inserted. Disabling this will move Framebuffers to expansion RAM for extra performance.
+#define EXPANSION_PAK_SUPPORT 0               // Allow the game to use the expansion pak if it's inserted. Disabling this will move Framebuffers to expansion RAM for extra performance.
 
 #define NUM_GFX_COMMANDS        {3200, 4000, 5000, 5000} /* How many graphics commands can be ran per frame. Default is 4500, 7000, 11000, 11000 */
 #define NUM_VERTICES            {200, 300, 400, 500} /* How many vertices are allowed per frame. Default is 300, 600, 850, 900 */
 #define NUM_MATRICES            {200, 300, 400, 500} /* How many matrices are allowed per frame. Default is 300, 400, 550, 600 */
 #define NUM_HUD_VERTS           {20, 30, 40, 50} /* How many triangles the HUD can use per frame. Default is 20, 30, 40, 50 */
 
+#define THREAD1_STACK           0x100       // This uses gThread3stack, so don't worry about this using more RAM.
 #define THREAD2_STACK           0x400
 #define THREAD3_STACK           0x2000
 #define THREAD4_STACK           0x1000
@@ -55,7 +56,7 @@
 /* --------------------------Usb-------------------------- */
 // Optional USB stuff
 //#define ENABLE_USB                          // Allows for USB detection for flashcarts. Automatically set if PUPPYPRINT_DEBUG is defined.
-#define SHOW_USB_INFO                       // Renders USB information on HUD.
+//#define SHOW_USB_INFO                       // Renders USB information on HUD.
 #define USB_HOT_RELOAD                      // Allows for quick reloading of game code.
 
 
@@ -77,7 +78,7 @@
 #endif
 
 #ifdef EXPANSION_PAK_REQUIRED
-#define EXPANSION_PAK_SUPPORT
+#define EXPANSION_PAK_SUPPORT 1
 #endif
 
 #ifdef OPEN_ALL_DOORS

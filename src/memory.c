@@ -32,15 +32,18 @@ extern MemoryPoolSlot gMainMemoryPool;
  * Official Name: mmInit
  */
 void init_main_memory_pool(void) {
-    u32 ramEnd = 0x80400000;
-    if (gUseExpansionMemory) {
-        ramEnd = 0x80800000;
-    }
+    s32 ramEnd;
+
     gNumberOfMemoryPools = -1;
+    if (gUseExpansionMemory) {
+        ramEnd = EXPANSION_RAM_END;
+    } else {
+        ramEnd = RAM_END;
+    }
 #ifdef PUPPYPRINT_DEBUG
     gFreeMem[11] = ramEnd - (s32)(&gMainMemoryPool);
 #endif
-    new_memory_pool(&gMainMemoryPool, RAM_END - (s32)(&gMainMemoryPool), MAIN_POOL_SLOT_COUNT);
+    new_memory_pool(&gMainMemoryPool, ramEnd - (s32)(&gMainMemoryPool), MAIN_POOL_SLOT_COUNT);
     set_free_queue_state(2);
     gFreeQueueCount = 0;
 }
