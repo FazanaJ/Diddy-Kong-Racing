@@ -799,7 +799,7 @@ s16 D_800E06D4[8] = {
 };
 
 ButtonTextElement gTwoPlayerRacerCountMenu = {
-    SCREEN_WIDTH_HALF - 80, 140, 160, 64, 4, 4, SCREEN_FIT_X(80), SCREEN_FIT_Y(20), SCREEN_FIT_X(58), SCREEN_FIT_Y(40), SCREEN_FIT_X(80), SCREEN_FIT_Y(40), SCREEN_FIT_X(102), SCREEN_FIT_Y(40)
+    SCREEN_WIDTH_HALF - 80, 140, 160, 64, 4, 4, {SCREEN_FIT_X(80), SCREEN_FIT_Y(20), SCREEN_FIT_X(58), SCREEN_FIT_Y(40), SCREEN_FIT_X(80), SCREEN_FIT_Y(40), SCREEN_FIT_X(102), SCREEN_FIT_Y(40)}
 };
 
 ButtonElement D_800E0700 = {
@@ -8765,8 +8765,7 @@ void render_track_selection_viewport_border(ObjectModel *objMdl) {
             numTris = objMdl->batches[i + 1].facesOffset - triOffset;
             verts = &objMdl->vertices[vertOffset];
             tris = &objMdl->triangles[triOffset];
-            //!@bug Never true, since textureIndex is unsigned. This should've been either `== (u8)-1` or `== 0xFF`.
-            if (objMdl->batches[i].textureIndex == -1) { 
+            if (objMdl->batches[i].textureIndex == 255) { 
                 tex = NULL;
                 texEnabled = FALSE;
                 texOffset = 0;

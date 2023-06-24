@@ -4064,7 +4064,6 @@ void update_car_velocity_ground(Object *obj, Object_Racer *racer, s32 updateRate
     s32 rawStick;
     s32 velocityS;
     s32 temp;
-    u16 temp2;
 
     velSquare = racer->velocity * racer->velocity;
     racer->unk84 = 0.0f;

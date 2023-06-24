@@ -145,6 +145,7 @@ DKR_OSTask gRdpTaskA = {
         sizeof(gGfxTaskYieldData), // yield_data_size
     },
     &gGameMesgQueue, // mesgQueue
+    NULL, // mesg
 };
 
 DKR_OSTask gRdpTaskB = {
@@ -172,6 +173,7 @@ DKR_OSTask gRdpTaskB = {
         sizeof(gGfxTaskYieldData), // yield_data_size
     },
     &gGameMesgQueue, // mesgQueue
+    NULL, // mesg
 };
 
 DKR_OSTask *gRdpCurTask = &gRdpTaskA;
@@ -207,7 +209,7 @@ s32 setup_ostask_xbus(Gfx* dlBegin, Gfx* dlEnd, UNUSED s32 recvMesg) {
  * Sends a message to the scheduler to start processing an RSP task once set up.
  * Goes unused, and is broken.
  */
-void setup_ostask_fifo(Gfx* dlBegin, Gfx* dlEnd, s32 recvMesg) {
+void setup_ostask_fifo(Gfx* dlBegin, Gfx* dlEnd, UNUSED s32 recvMesg) {
     DKR_OSTask *dkrtask;
     u32 taskStart = 0x80680000;
     u32 taskEnd = 0x806E0000;
@@ -368,7 +370,7 @@ void init_rsp(Gfx **dList) {
 /**
  * Initialise the mesg queues for the gfx tasks, that interface with the scheduler.
  */
-void setup_gfx_mesg_queues(OSSched *sc) {
+void setup_gfx_mesg_queues(void) {
     osCreateMesgQueue(&D_80125EA0, &D_80125EB8, 1);
     osCreateMesgQueue(&D_80125EC0, D_80125EF0, 8);
 }

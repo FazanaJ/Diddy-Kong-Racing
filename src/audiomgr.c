@@ -284,7 +284,6 @@ static u32 __amHandleFrameMsg(AudioInfo *info, AudioInfo *lastInfo) {
     Acmd *cmdp;
     int samplesLeft = 0;
     OSScTask *t;
-    u32 ret;
 
     
     __clearAudioDMA(); /* call once a frame, before doing alAudioFrame */

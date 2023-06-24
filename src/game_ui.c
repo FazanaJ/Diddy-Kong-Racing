@@ -124,8 +124,8 @@ u16 D_800E2684[118] = {
 
 //!@bug Not every attribute is initialised, but since bss is initialised as 0, nothing happens.
 unk800E2770 D_800E2770[2] = {
-    { 0, 0xFD, 0, 0, 0, 0, 0 },
-    { 0, 0xFF, 0, 0, 0, 0, 0 },
+    { 0, 0xFD, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0 },
 };
 
 u8 gShowCourseDirections = TRUE;
@@ -1046,7 +1046,7 @@ GLOBAL_ASM("asm/non_matchings/game_ui/func_800A4C44.s")
 void render_lap_count(Object_Racer *racer, s32 updateRate) {
     if (racer->raceFinished == FALSE && (gHUDNumPlayers <= ONE_PLAYER || racer->lap <= 0 || racer->lap_times[racer->lap] >= 180) 
             && (gHUDNumPlayers <= ONE_PLAYER || D_800E2794[gHUDNumPlayers][racer->playerIndex] == 3)) {
-        if (gHudLevelHeader->laps == (0, racer->countLap + 1) && gHUDNumPlayers < THREE_PLAYERS) {
+        if (gHudLevelHeader->laps == racer->countLap + 1 && gHUDNumPlayers < THREE_PLAYERS) {
             D_80126CDC->unk21A += updateRate;
             if (D_80126CDC->unk21A > 6) {
                 D_80126CDC->unk218++;
@@ -1105,7 +1105,7 @@ void render_lap_count(Object_Racer *racer, s32 updateRate) {
                     }
                     break;
                 }
-            } else if (gHudLevelHeader->laps == (0, racer->lap + 1) && racer->lap != 0) {
+            } else if (gHudLevelHeader->laps == racer->lap + 1 && racer->lap != 0) {
                 D_80126CDC->unk3DA = 3;
                 D_80126CDC->unk3DB = -1;
                 D_80126CDC->unk3DD = 0;
@@ -1156,7 +1156,7 @@ void render_lap_count(Object_Racer *racer, s32 updateRate) {
                         D_80126CDC->unk3DB = -1;
                         play_sound_global(SOUND_WHOOSH1, NULL);
                     }
-                    if (D_80126CDC->unk3CC == ((0, D_80126CDC))->unk3DC && D_80126CDC->unk3EC == ((0, D_80126CDC))->unk3FC && D_80126CDC->unk3DD == 0) {
+                    if (D_80126CDC->unk3CC == (D_80126CDC)->unk3DC && D_80126CDC->unk3EC == (D_80126CDC)->unk3FC && D_80126CDC->unk3DD == 0) {
                         if (gHUDVoiceSoundMask == NULL) {
                             play_sound_global(SOUND_VOICE_TT_LAP2, &gHUDVoiceSoundMask);
                         }
@@ -1189,7 +1189,7 @@ void render_lap_count(Object_Racer *racer, s32 updateRate) {
                         D_80126CDC->unk3DB = 1;
                         play_sound_global(SOUND_WHOOSH1, NULL);
                     }
-                    if (D_80126CDC->unk3CC == ((0, D_80126CDC))->unk3DC && D_80126CDC->unk3AC == ((0, D_80126CDC))->unk3BC && D_80126CDC->unk3DD == 0) {
+                    if (D_80126CDC->unk3CC == (D_80126CDC)->unk3DC && D_80126CDC->unk3AC == (D_80126CDC)->unk3BC && D_80126CDC->unk3DD == 0) {
                         if (gHUDVoiceSoundMask == NULL) {
                             play_sound_global(SOUND_VOICE_TT_FINAL_LAP, &gHUDVoiceSoundMask);
                         }

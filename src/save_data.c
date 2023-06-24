@@ -1582,7 +1582,7 @@ void init_controller_paks(void) {
     //and it will be 1 if there's something attached.
     osPfsIsPlug(sControllerMesgQueue, &pakPattern);
 
-    for (controllerIndex = 0, controllerBit = 1, maxControllers = MAXCONTROLLERS; (0, controllerIndex) != maxControllers; controllerIndex++, controllerBit <<= 1) {
+    for (controllerIndex = 0, controllerBit = 1, maxControllers = MAXCONTROLLERS; controllerIndex != maxControllers; controllerIndex++, controllerBit <<= 1) {
         D_801241B8[controllerIndex].unk2 = 0;
         D_801241B8[controllerIndex].unk4 = -1;
         D_801241B8[controllerIndex].unk0 = -1;

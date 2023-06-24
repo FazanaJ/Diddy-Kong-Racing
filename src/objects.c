@@ -812,7 +812,7 @@ void objFreeAssets(Object *obj, s32 count, s32 objType) {
 void light_setup_light_sources(Object *obj) {
     s32 i;
     for(i = 0; i < obj->segment.header->unk5A; i++) {
-        obj->unk70[i] = add_object_light(obj, &obj->segment.header->unk24[i]);
+        obj->unk70[i] = (u32) add_object_light(obj, &obj->segment.header->unk24[i]);
     }
 }
 
@@ -1419,12 +1419,7 @@ void render_3d_billboard(Object *obj) {
     }
 
     if (obj->behaviorId == BHV_BOMB_EXPLOSION) {
-        //!@bug Never true, because the type is u8.
-        if (obj->segment.object.opacity > 255) {
-            obj->segment.object.opacity = obj->properties.bombExplosion.unk4 & 0xFF;
-        } else {
-            obj->segment.object.opacity = (obj->segment.object.opacity * (obj->properties.bombExplosion.unk4 & 0xFF)) >> 8;
-        }
+        obj->segment.object.opacity = (obj->segment.object.opacity * (obj->properties.bombExplosion.unk4 & 0xFF)) >> 8;
     }
     
     alpha = obj->segment.object.opacity;
@@ -1514,7 +1509,7 @@ void render_3d_model(Object *obj) {
     s32 hasEnvCol;
     s32 flags;
     s32 meshBatch;
-    s32 cicFailed;
+    UNUSED s32 cicFailed;
     f32 vtxX;
     f32 vtxY;
     f32 vtxZ;
@@ -3975,7 +3970,6 @@ void reset_time_dialation(void) {
 void update_time_dialation(s32 updateRate) {
     s32 i;
     s32 k;
-    s32 numRacers;
     f32 tickCount = ((f32) updateRate) * 0.005f;
 
     /*if (get_buttons_pressed_from_player(0) & L_TRIG) {

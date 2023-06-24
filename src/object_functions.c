@@ -1950,7 +1950,7 @@ void obj_loop_teleport(Object *obj, UNUSED s32 updateRate) {
 void obj_init_exit(Object *obj, LevelObjectEntry_Exit *entry) {
     f32 radius;
     Object_Exit *exit;
-    Settings* settings;
+    UNUSED Settings* settings;
 
     radius = entry->radius & 0xFF;
     if (radius < 5.0f) {
@@ -2001,7 +2001,6 @@ void obj_loop_exit(Object *obj, UNUSED s32 updateRate) {
     f32 dist;
     f32 diffY;
     Object_Exit *exit;
-    s32 enableWarp;
     Object** racerObjects;
     s32 i;
     f32 rotDiff;
@@ -3077,8 +3076,8 @@ void obj_init_ttdoor(Object *obj, LevelObjectEntry_TTDoor *entry) {
 void obj_loop_ttdoor(Object *obj, s32 updateRate) {
     Settings *settings;
     Object_TTDoor *ttDoor;
-    Object *racerObj;
-    Object_Racer *racer;
+    UNUSED Object *racerObj;
+    UNUSED Object_Racer *racer;
     s16 angle;
     s32 openDoor;
 

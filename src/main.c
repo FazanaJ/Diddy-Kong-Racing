@@ -179,7 +179,7 @@ void draw_memory_error_screen(void) {
     func_8007AC70(); // Should be very similar to func_8005F850
     func_800B5E88();
     osCreateScheduler(&gMainSched, 0, /*priority*/ 13, (u8) 0, 1);
-    init_video(VIDEO_MODE_LOWRES_LPN, &gMainSched);
+    init_video(VIDEO_MODE_LOWRES_LPN);
 
     dlist = gDisplayLists[0];
 	change_vi(&gGlobalVI, SCREEN_WIDTH, SCREEN_HEIGHT);

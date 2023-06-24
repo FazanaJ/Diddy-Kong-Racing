@@ -367,7 +367,7 @@ void func_800BFE98(s32 arg0) {
 
     for(i = 0; i < 32; i++) {
         if (D_800E3194[i] != 0) {
-            D_800E3190[i].unk1A += ((0, D_800E3190[i].unk1C * arg0)) >> 4;
+            D_800E3190[i].unk1A += (D_800E3190[i].unk1C * arg0) >> 4;
         }
     }
 }

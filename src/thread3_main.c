@@ -182,7 +182,6 @@ void init_config(void) {
  * Official Name: mainInitGame
  */
 void init_game(void) {
-    s32 i;
 
     init_main_memory_pool();
     rzipInit(); // Initialise gzip decompression related things
@@ -195,10 +194,10 @@ void init_game(void) {
     gIsLoading = FALSE;
     gLevelDefaultVehicleID = VEHICLE_CAR;
 
-    osCreateScheduler(&gMainSched, &gSchedStack[(THREAD5_STACK / sizeof(u64)) - 1], OS_SC_PRIORITY, (u8) 0, 1);
-    init_video(VIDEO_MODE_LOWRES_LPN, &gMainSched);
+    osCreateScheduler(&gMainSched, &gSchedStack[THREAD5_STACK / sizeof(u64)], OS_SC_PRIORITY, (u8) 0, 1);
+    init_video(VIDEO_MODE_LOWRES_LPN);
     init_PI_mesg_queue();
-    setup_gfx_mesg_queues(&gMainSched);
+    setup_gfx_mesg_queues();
     audio_init(&gMainSched);
     func_80008040(); // Should be very similar to allocate_object_model_pools
     sControllerStatus = init_controllers();
@@ -295,7 +294,6 @@ s32 calculate_updaterate(void) {
  */
 void main_game_loop(void) {
     s32 framebufferSize;
-    s32 tempLogicUpdateRate, tempLogicUpdateRateMax;
 #ifdef PUPPYPRINT_DEBUG
     profiler_reset_values();
     profiler_snapshot(THREAD4_START);

@@ -36,8 +36,8 @@ s32 D_8011D644;
  * Allocate memory for object model ID's and animation tables.
 */
 void allocate_object_model_pools(void) {
-    s32 i;
-    s32 checksum;
+    UNUSED s32 i;
+    UNUSED s32 checksum;
 
     D_8011D624 = (unk8011D624 *) allocate_from_main_pool_safe(0x230, COLOUR_TAG_GREEN);
     D_8011D628 = allocate_from_main_pool_safe(0x190, COLOUR_TAG_GREEN);

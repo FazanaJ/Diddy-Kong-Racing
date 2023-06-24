@@ -63,7 +63,7 @@ void set_background_prim_colour(u8 arg0, u8 arg1, u8 arg2);
 void set_background_fill_colour(s32 red, s32 green, s32 blue);
 void init_rdp_and_framebuffer(Gfx **dlist);
 void init_rsp(Gfx **dlist);
-void setup_gfx_mesg_queues(OSSched *sc);
+void setup_gfx_mesg_queues(void);
 void func_80078170(TextureHeader *arg0, TextureHeader *arg1, u32 arg2);
 s32 setup_ostask_xbus(Gfx* dlBegin, Gfx* dlEnd, s32 recvMesg);
 void setup_ostask_fifo(Gfx* dlBegin, Gfx* dlEnd, s32 recvMesg);

@@ -109,12 +109,12 @@ unk800DC950 *add_object_light(Object *arg0, ObjectHeader24 *arg1) {
         temp_a2->unk42 = 0;
         if (arg1->unk6 != 0xFFFF) {
             miscAsset = (MiscAssetObjectHeader24 *) get_misc_asset(arg1->unk6);
-            temp_a2->unk44 = miscAsset;
+            temp_a2->unk44 = (SubMiscAssetObjectHeader24 *) miscAsset;
             temp_a2->unk48 = miscAsset->unk0;
             temp_a2->unk4A = 0;
             temp_a2->unk4C = 0;
             temp_a2->unk4E = 0;
-            temp_a2->unk44 = &miscAsset->unk14;
+            temp_a2->unk44 = (SubMiscAssetObjectHeader24 *) &miscAsset->unk14;
             for (i = 0; i < temp_a2->unk48 ; i++) { \
                 temp_a2->unk4E += temp_a2->unk44[i].unk4; //Must be on one line!
             }

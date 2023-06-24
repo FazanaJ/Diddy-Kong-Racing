@@ -53,7 +53,7 @@ s32 gBootTimer = 8;
  * Framebuffers are allocated at runtime.
  * Official Name: viInit
  */
-void init_video(s32 videoModeIndex, OSSched *sc) {
+void init_video(s32 videoModeIndex) {
     s32 i;
     gVideoRefreshRate = REFRESH_60HZ;
     gVideoAspectRatio = ASPECT_RATIO_NTSC;
@@ -76,7 +76,7 @@ void init_video(s32 videoModeIndex, OSSched *sc) {
     if (gExpansionPak) {
         u16 *fbAddr;
         for (i = 0; i < NUM_FRAMEBUFFERS; i++) {
-            gVideoFramebuffers[i] = 0x80500000 + (i * 0x100000);
+            gVideoFramebuffers[i] = (u16 *) (0x80500000 + (i * 0x100000));
             fbAddr = gVideoFramebuffers[i];
             // Write this as part of framebuffer emulation detection.
             fbAddr[100] = 0xBEEF;
