@@ -21,9 +21,10 @@ enum PlatformFlags {
     CF_2 =      (1 << 5), // Counter factor 2 is enabled.
     FBE =       (1 << 6), // Framebuffer emulation is enabled.
     DBE =       (1 << 7), // Depthbuffer emulation is enabled.
+    PJ64 =      (1 << 8), // Sound the alarms, defcon1, PJ64 has been detected behind enemy lines.
 };
 
-extern u8 gPlatform;
+extern u16 gPlatform;
 
 enum DebugPages {
     PAGE_MINIMAL,

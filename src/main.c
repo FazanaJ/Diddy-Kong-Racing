@@ -18,7 +18,7 @@ u64 gThread3Stack[THREAD3_STACK / sizeof(u64)];
 OSThread gThread1; // OSThread for thread 1
 OSThread gThread3; // OSThread for thread 3
 u8 gPlatformSet = FALSE;
-u8 gPlatform = 0;
+u16 gPlatform = 0;
 
 /******************************/
 
@@ -63,6 +63,10 @@ void get_platform(void) {
         gPlatform |= CF_2;
     }
 
+    if (*((volatile u64*)0xb4000008u) == 0x00080008000C000Cull && !(gPlatform & ARES)) {
+        gPlatform |= PJ64;
+    }
+
     // Virtual console has a unique way of rounding floats. This function will single it out.
     if (round_double_to_float(0.9999999999999999) != 1.0f) {
         gPlatform |= EMULATOR;
@@ -76,6 +80,8 @@ void get_platform(void) {
             puppyprint_log("Virtual Console detected.");
         } else if (gPlatform & ARES) {
             puppyprint_log("AresN64/Simple64 Emulator detected.");
+        } else if (gPlatform & PJ64) {
+            puppyprint_log("Project 64 detected.");
         } else {
             puppyprint_log("N64 Emulator detected.");
         }
