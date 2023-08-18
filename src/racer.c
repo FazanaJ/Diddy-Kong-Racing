@@ -255,7 +255,7 @@ void func_80042D20(Object *obj, Object_Racer *racer, s32 updateRate) {
     sp6E = racer->unk1CA;
     miscAsset1 = (s8 *) get_misc_asset(MISC_ASSET_UNK01);
     miscAsset2 = (s8 *) get_misc_asset(MISC_ASSET_UNK02);
-    header = get_current_level_header();
+    header = gCurrentLevelHeader;
     racerGroup = get_racer_objects_by_position(&numRacers);
     sp54 = func_8006C18C();
     if (racer->unk1C6 > 0) {
@@ -624,7 +624,7 @@ void func_80043ECC(Object *obj, Object_Racer *racer, s32 updateRate) {
 void racer_AI_pathing_inputs(Object *obj, Object_Racer *racer, s32 updateRate) {
     s32 raceType;
 
-    raceType = get_current_level_race_type();
+    raceType = gCurrentLevelHeader->race_type;
 
     switch (raceType) {
         case RACETYPE_CHALLENGE_BATTLE:
@@ -1512,7 +1512,7 @@ void update_camera_hovercraft(f32 updateRate, Object *obj, Object_Racer *racer) 
     sp24 = 0x400;
     tempUpdateRate = (s32) updateRate;
     // Place the camera a bit closer with 2+ players to help visibility.
-    numViewports = get_viewport_count();
+    numViewports = gNumberOfViewports;
     if (numViewports == 1) {
         phi_f14 = 200.0f;
         phi_f18 = 51.0f;
@@ -1558,7 +1558,6 @@ void update_camera_hovercraft(f32 updateRate, Object *obj, Object_Racer *racer) 
         WRAP(tempAngle, -0x8000, 0x8000);
         gCameraObject->trans.x_rotation += (tempAngle * tempUpdateRate) >> 4;
     }
-    get_viewport_count();
     if (racer->velocity < 0.0f) {
         yVel = -(racer->velocity * brakeVar) * 6.0f;
         if (yVel > 65.0f) {
@@ -1792,7 +1791,7 @@ void update_camera_plane(f32 updateRate, Object* obj, Object_Racer* racer) {
     if (temp_f16 > 200.0f) {
         temp_f16 = 200.0f;
     }
-    numViewports = get_viewport_count();
+    numViewports = gNumberOfViewports;
     if (numViewports == 1) {
         baseFloat2 = 180.0f;
         baseFloat1 = 50.0f;
@@ -1992,7 +1991,7 @@ void update_camera_loop(f32 updateRateF, Object *obj, Object_Racer *racer) {
         zoom += ((f32) (gRaceStartTimer - 60) * 4.0f);
     }
     racer->unk196 = 0x8000 - racer->steerVisualRotation;
-    if (get_viewport_count() == 1) {
+    if (gNumberOfViewports == 1) {
         zoom = 160.0f;
     }
     // A little bit of indecisiveness.
@@ -2135,7 +2134,7 @@ void obj_init_racer(Object *obj, LevelObjectEntry_Racer *racer) {
     tempRacer->unk21C = 0;
     if (tempRacer->playerIndex != PLAYER_COMPUTER && !D_8011D582) {
         set_active_camera(player);
-        gCameraObject = (ObjectCamera *) get_active_camera_segment_no_cutscenes();
+        gCameraObject = (ObjectCamera *) &gActiveCameraStack[gActiveCameraID];
         gCameraObject->trans.z_rotation = 0;
         gCameraObject->trans.x_rotation = 0x400;
         gCameraObject->trans.y_rotation = tempRacer->unk196;
@@ -2199,7 +2198,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
     s32 i;
     struct LevelObjectEntryCommon newObject;
 
-    gNumViewports = get_viewport_count() + 1;
+    gNumViewports = gNumberOfViewports + 1;
     gCurrentSurfaceType = SURFACE_DEFAULT;
     gRaceStartTimer = func_8001139C();
     updateRateF = updateRate;
@@ -2256,7 +2255,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
     } else {
         tempRacer->unk201 = 0;
     }
-    header = get_current_level_header();
+    header = gCurrentLevelHeader;
     gCurrentCourseHeight = header->course_height;
     tempRacer->throttleReleased = FALSE;
     if (tempRacer->playerIndex == PLAYER_COMPUTER) {
@@ -2328,7 +2327,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
             }
         }
         set_active_camera(tempRacer->playerIndex);
-        gCameraObject = (ObjectCamera *) get_active_camera_segment_no_cutscenes();
+        gCameraObject = (ObjectCamera *) &gActiveCameraStack[gActiveCameraID];
         tempRacer->miscAnimCounter += updateRate;
         gCurrentPlayerIndex = tempRacer->playerIndex;
         if (tempRacer->raceFinished == TRUE || context == DRAW_MENU) {
@@ -2365,7 +2364,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
         if (!(gCurrentRacerInput & A_BUTTON)) {
             tempRacer->throttleReleased = TRUE;
         }
-        if (check_if_showing_cutscene_camera() || gRaceStartTimer == 100 || tempRacer->unk1F1 || gRacerInputBlocked || tempRacer->approachTarget || tempRacer->bubbleTrapTimer > 0) {
+        if (gCutsceneCameraActive || gRaceStartTimer == 100 || tempRacer->unk1F1 || gRacerInputBlocked || tempRacer->approachTarget || tempRacer->bubbleTrapTimer > 0) {
             gCurrentStickX = 0;
             gCurrentStickY = 0;
             gCurrentRacerInput = 0;
@@ -2417,7 +2416,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
         }
         // Assign a camera to human players.
         if (gCurrentPlayerIndex != PLAYER_COMPUTER) {
-            gCameraObject = (ObjectCamera *) get_active_camera_segment_no_cutscenes();
+            gCameraObject = (ObjectCamera *) &gActiveCameraStack[gActiveCameraID];
         }
         gRacerWaveCount = func_8002B0F4(obj->segment.object.segmentID, obj->segment.trans.x_position, obj->segment.trans.z_position, &gRacerCurrentWave);
         if (gRacerWaveCount) {
@@ -2508,7 +2507,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
                     }
                 }
                 if (tempRacer->playerIndex != PLAYER_COMPUTER && tempRacer->lap + 1 == header->laps
-                    && !D_8011D580 && get_current_level_race_type() == RACETYPE_DEFAULT) {
+                    && !D_8011D580 && gCurrentLevelHeader->race_type == RACETYPE_DEFAULT) {
                     multiply_music_tempo(1.12f);
                     D_8011D580 = 1;
                 }
@@ -3143,7 +3142,7 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
     } else {
         racer->unk1EE = 0;
     }
-    if (get_viewport_count() < THREE_PLAYERS) {
+    if (gNumberOfViewports < THREE_PLAYERS) {
         if ((sp60 && racer->velocity < -2.0f) || sp58 || racer->unk1FB != 0) {
             if (racer->wheel_surfaces[2] < SURFACE_NONE) {
                 obj->unk74 |= gSurfaceFlagTable[racer->wheel_surfaces[2]];
@@ -3925,7 +3924,7 @@ void update_onscreen_AI_racer(Object *obj, Object_Racer *racer, s32 updateRate, 
         update_car_velocity_offground(obj, racer, updateRate, updateRateF);
     }
     apply_vehicle_rotation_offset(racer, updateRate, 0, 0, 0);
-    header = get_current_level_header();
+    header = gCurrentLevelHeader;
     if ((racer->buoyancy != 0.0f && header->unk2) || gCurrentSurfaceType == SURFACE_FROZEN_WATER) {
         if (racer->unk1F0) {
             racer->checkpoint_distance -= 0.3f;
@@ -4127,7 +4126,7 @@ void update_car_velocity_ground(Object *obj, Object_Racer *racer, s32 updateRate
     } else {
         racer->unk1EE = 0;
     }
-    if (get_viewport_count() < 2 && sp38 && racer->velocity < -2.0f) {
+    if (gNumberOfViewports < 2 && sp38 && racer->velocity < -2.0f) {
         if (racer->wheel_surfaces[2] < SURFACE_NONE) {
             obj->unk74 |= 1 << (racer->wheel_surfaces[2] * 2);
         }
@@ -4899,7 +4898,7 @@ void drop_bananas(Object *obj, Object_Racer *racer, s32 number) {
             newObject.objectID = BHV_OVERRIDE_POS;
             i = number;
             do {
-                if (get_current_level_race_type() != RACETYPE_CHALLENGE) {
+                if (gCurrentLevelHeader->race_type != RACETYPE_CHALLENGE) {
                     bananaObj = spawn_object(&newObject, 1);
                     if (bananaObj != NULL) {
                         bananaObj->segment.level_entry = NULL;
@@ -5109,7 +5108,7 @@ void update_camera_car(f32 updateRate, Object *obj, Object_Racer *racer) {
     s32 tempAngle;
     s32 delta = (s32) updateRate;
 
-    numViewports = get_viewport_count();
+    numViewports = gNumberOfViewports;
     if (numViewports == 1) {
         baseDistance = 192.0f;
         baseAngle = 0x200;
@@ -5443,7 +5442,7 @@ void func_80059208(Object *obj, Object_Racer *racer, s32 updateRate) {
     if (temp_v0 == 0) {
         return;
     }
-    if ((func_8006BD88() == 0) && (racer->checkpoint >= temp_v0)) {
+    if ((gMapId == 0) && (racer->checkpoint >= temp_v0)) {
         racer->lap = 0;
         racer->checkpoint = 0;
         racer->courseCheckpoint = 0;
@@ -5690,14 +5689,6 @@ void disable_racer_input(void) {
 }
 
 /**
- * Tells the camera to start rotating to the side for the dialogue camera.
- * Called for every frame the player should experience subtle cinematography.
-*/
-void racer_set_dialogue_camera(void) {
-    gRacerDialogueCamera = TRUE;
-}
-
-/**
  * Antipiracy function that loops over an address of a function a number of times.
  * It compares the number it gets to a generated checksum to determine if the game has been tampered with at all.
 */
@@ -5759,7 +5750,7 @@ void racer_enter_door(Object_Racer* racer, s32 updateRate) {
         }
     }
     if ((racer->transitionTimer < -1 && gCurrentStickX < 10 && gCurrentStickX > -10) || racer->transitionTimer == -1) {
-        if (check_if_showing_cutscene_camera() == 0) {
+        if (gCutsceneCameraActive == 0) {
             transition_begin(&gDoorFadeTransition);
         }
         racer->transitionTimer = 60 - updateRate;
@@ -5799,7 +5790,7 @@ void update_AI_racer(Object *obj, Object_Racer *racer, s32 updateRate, f32 updat
 
     gCurrentPlayerIndex = -1;
     renderContext = get_render_context();
-    levelHeader = get_current_level_header();
+    levelHeader = gCurrentLevelHeader;
     if (racer->unk1F6 > 0) {
         racer->unk1F6 -= updateRate;
     } else {
@@ -6113,7 +6104,7 @@ void func_8005B818(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
     s32 i;
 
     gCurrentRacerMiscAssetPtr = get_misc_asset(MISC_ASSET_UNK21);
-    levelHeader = get_current_level_header();
+    levelHeader = gCurrentLevelHeader;
     sp11C = get_checkpoint_count();
     if (sp11C != 0) {
         racer->unk1C9 = 0;

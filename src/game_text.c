@@ -302,7 +302,7 @@ void func_800C3440(s32 arg0) {
         }
         func_800C2F1C(arg0);
         if (D_8012A789 != 0) {
-            disable_racer_input();
+            gRacerInputBlocked = TRUE;
             if (D_8012A786 != 0) {
                 D_8012A785 -= arg0;
                 while (D_8012A785 < 0) {

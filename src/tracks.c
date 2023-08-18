@@ -195,7 +195,7 @@ void func_800249F0(u32 arg0, u32 arg1, s32 arg2, Vehicle vehicle, u32 arg4, u32 
     s32 i;
     s32 tmp_a2;
 
-    gCurrentLevelHeader2 = get_current_level_header();
+    gCurrentLevelHeader2 = gCurrentLevelHeader;
     D_8011B0F8 = 0;
     D_8011B100 = 0;
     D_8011B104 = 0;
@@ -383,8 +383,8 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
         render_hud(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, get_racer_object_by_port(gSceneCurrentPlayerID), updateRate);
     }
     // Show TT Cam toggle for the fourth viewport when playing 3 player.
-    if (numViewports == 3 && get_current_level_race_type() != RACETYPE_CHALLENGE_EGGS && 
-        get_current_level_race_type() != RACETYPE_CHALLENGE_BATTLE && get_current_level_race_type() != RACETYPE_CHALLENGE_BANANAS) {
+    if (numViewports == 3 && gCurrentLevelHeader->race_type != RACETYPE_CHALLENGE_EGGS && 
+        gCurrentLevelHeader->race_type != RACETYPE_CHALLENGE_BATTLE && gCurrentLevelHeader->race_type != RACETYPE_CHALLENGE_BANANAS) {
         if (get_hud_setting() == 0) {
             if (flip) {
                 gSPSetGeometryMode(gSceneCurrDisplayList++, G_CULL_FRONT);
@@ -392,7 +392,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
             apply_fog(PLAYER_FOUR);
             gDPPipeSync(gSceneCurrDisplayList++);
             set_active_camera(PLAYER_FOUR);
-            disable_cutscene_camera();
+            gCutsceneCameraActive = FALSE;
             func_800278E8(updateRate);
             func_80066CDC(&gSceneCurrDisplayList, &gSceneCurrMatrix);
             func_8002A31C();
@@ -724,7 +724,7 @@ void draw_gradient_background(void) {
     gSPPolygon(gSceneCurrDisplayList++, OS_PHYSICAL_TO_K0(tris), 2, 0);
     y0 = -150;
     y1 = 150;
-    if (get_viewport_count() == TWO_PLAYERS) {
+    if (gNumberOfViewports == TWO_PLAYERS) {
         y0 >>= 1;
         y1 >>= 1;
     }
@@ -816,7 +816,7 @@ void initialise_player_viewport_vars(s32 updateRate) {
     Object_Racer *racer;
 
     gSceneActiveCamera = get_active_camera_segment();
-    viewportID = get_current_viewport();
+    viewportID = gActiveCameraID;
     compute_scene_camera_transform_matrix();
     update_envmap_position((f32) gScenePerspectivePos.x / 65536.0f, (f32) gScenePerspectivePos.y / 65536.0f, (f32) gScenePerspectivePos.z / 65536.0f);
     segmentIndex = gSceneActiveCamera->object.cameraSegmentID;
@@ -828,18 +828,18 @@ void initialise_player_viewport_vars(s32 updateRate) {
     if (D_8011D384 != 0) {
         func_800B8B8C();
         racers = get_racer_objects(&numRacers);
-        if (gSceneActiveCamera->object.unk36 != 7 && numRacers > 0 && !check_if_showing_cutscene_camera()) {
+        if (gSceneActiveCamera->object.unk36 != 7 && numRacers > 0 && !gCutsceneCameraActive) {
             i = -1; 
             do {
                 i++;
                 racer = &racers[i]->unk64->racer;
             } while(i < numRacers - 1 && viewportID != racer->playerIndex);
-            func_800B8C04(racers[i]->segment.trans.x_position, racers[i]->segment.trans.y_position, racers[i]->segment.trans.z_position, get_current_viewport(), updateRate);
+            func_800B8C04(racers[i]->segment.trans.x_position, racers[i]->segment.trans.y_position, racers[i]->segment.trans.z_position, gActiveCameraID, updateRate);
         } else {
-            func_800B8C04((s32) gSceneActiveCamera->trans.x_position, (s32) gSceneActiveCamera->trans.y_position, (s32) gSceneActiveCamera->trans.z_position, get_current_viewport(), updateRate);
+            func_800B8C04((s32) gSceneActiveCamera->trans.x_position, (s32) gSceneActiveCamera->trans.y_position, (s32) gSceneActiveCamera->trans.z_position, gActiveCameraID, updateRate);
         }
     }
-    get_current_level_header()->unk3 = 1;
+    gCurrentLevelHeader->unk3 = 1;
     render_level_geometry_and_objects();
 }
 
@@ -907,7 +907,7 @@ void render_level_geometry_and_objects(void) {
 #endif
     gIsObjectRender = TRUE;
     func_80015348(sp160, objCount - 1);
-    visibleFlags = OBJ_FLAGS_INVIS_PLAYER1 << (get_current_viewport() & 1);
+    visibleFlags = OBJ_FLAGS_INVIS_PLAYER1 << (gActiveCameraID & 1);
 
     for (i = sp160; i < objCount; i++) {
         obj = get_object(i);
@@ -966,7 +966,7 @@ void render_level_geometry_and_objects(void) {
         }
     }
     if (D_8011D384 != 0) {
-        func_800BA8E4(&gSceneCurrDisplayList, &gSceneCurrMatrix, get_current_viewport());
+        func_800BA8E4(&gSceneCurrDisplayList, &gSceneCurrMatrix, gActiveCameraID);
     }
 
     reset_render_settings(&gSceneCurrDisplayList);
@@ -1013,7 +1013,7 @@ skip:
     }
 
     if (D_800DC924 && func_80027568()) {
-        func_8002581C(segmentIds, numberOfSegments, get_current_viewport());
+        func_8002581C(segmentIds, numberOfSegments, gActiveCameraID);
     }
     gAntiAliasing = FALSE;
 #ifdef PUPPYPRINT_DEBUG
@@ -1973,7 +1973,7 @@ void func_8002D8DC(s32 arg0, s32 arg1, s32 updateRate) {
     D_8011D364 = 0;
     D_8011D368 = 0;
     D_8011D36C = 0;
-    numViewports = get_viewport_count();
+    numViewports = gNumberOfViewports;
     objects = objGetObjList(&sp94, &sp90);
     while (sp94 < sp90) {
         obj = objects[sp94];
@@ -2336,9 +2336,9 @@ void obj_loop_fogchanger(Object *obj) {
     fogChanger = (LevelObjectEntry_FogChanger *) obj->segment.level_entry;
     camera = NULL;
     
-    if (check_if_showing_cutscene_camera()) {
+    if (gCutsceneCameraActive) {
         camera = get_cutscene_camera_segment();
-        views = get_viewport_count() + 1;
+        views = gNumberOfViewports + 1;
     } else {
         racers = get_racer_objects(&views);
     }

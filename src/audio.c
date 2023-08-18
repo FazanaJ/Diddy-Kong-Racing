@@ -214,7 +214,7 @@ void adjust_audio_volume(s32 behaviour) {
             set_sound_channel_volume(2, 32767);
             set_sound_channel_volume(4, 32767);
             alCSPSetVol((ALCSPlayer *) gMusicPlayer, (s16) (musicRelativeVolume * musicVolumeSliderPercentage));
-            alCSPSetVol((ALCSPlayer *) gSndFxPlayer, (s16) (get_sfx_volume_slider() * sfxRelativeVolume));
+            alCSPSetVol((ALCSPlayer *) gSndFxPlayer, (s16) (sfxVolumeSlider * sfxRelativeVolume));
             break;
     }
     gAudioVolumeSetting = behaviour;
@@ -458,7 +458,7 @@ void func_80001440(u8 *arg0) {
  * Since it calls musicGetTempo and multiplies it by the result, calling this repeatedly can recursively change the music's speed.
 */
 void multiply_music_tempo(f32 tempo) {
-    musicSetTempo((s32)((f32)(u32)(musicGetTempo() & 0xFF) * tempo));
+    musicSetTempo((s32)((f32)(u32)(sMusicTempo & 0xFF) * tempo));
 }
 
 /**
@@ -470,13 +470,6 @@ void musicSetTempo(s32 tempo) {
         alCSPSetTempo((ALCSPlayer *) gMusicPlayer, (s32)(inv_tempo * 60000000.0f));
         sMusicTempo = tempo;
     }
-}
-
-/**
- * Return the tempo of the current playing background music.
- */
-s16 musicGetTempo(void) {
-    return sMusicTempo;
 }
 
 u8 music_is_playing(void) {
@@ -585,7 +578,7 @@ s32 musicGetVolSliderPercentage(void) {
 
 void sfxSetRelativeVolume(u8 arg0) {
     sfxRelativeVolume = arg0;
-    alCSPSetVol((ALCSPlayer *) gSndFxPlayer, (s16)(get_sfx_volume_slider() * sfxRelativeVolume));
+    alCSPSetVol((ALCSPlayer *) gSndFxPlayer, (s16)(sfxVolumeSlider * sfxRelativeVolume));
 }
 
 void sfxSetPan(ALPan pan) {

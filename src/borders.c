@@ -29,14 +29,14 @@ void render_borders_for_multiplayer(Gfx **dlist) {
     yOffset = height / 128;
     gDPSetCycleType((*dlist)++, G_CYC_FILL);
     gDPSetFillColor((*dlist)++, GPACK_RGBA5551(0, 0, 0, 1) << 16 | GPACK_RGBA5551(0, 0, 0, 1)); // Black fill color
-    switch (get_viewport_count()) {
+    switch (gNumberOfViewports) {
         case VIEWPORTS_COUNT_2_PLAYERS:
             // Draws a solid horizontal black line in the middle of the screen.
             y = (height >> 1) - yOffset;
             gDPFillRectangle((*dlist)++, height * 0, y, width, y + yOffset);
             break;
         case VIEWPORTS_COUNT_3_PLAYERS:
-            levelHeader = get_current_level_header();
+            levelHeader = gCurrentLevelHeader;
             // Draw black square in the bottom-right corner.
             if (get_hud_setting() || (levelHeader->race_type & RACETYPE_CHALLENGE)) {
                 gDPFillRectangle((*dlist)++, width >> 1, height >> 1, width, height);

@@ -317,13 +317,6 @@ s8 check_if_showing_cutscene_camera(void) {
 }
 
 /**
- * Disable the cutscene camera, returning it to the conventional mode.
-*/
-void disable_cutscene_camera(void) {
-    gCutsceneCameraActive = FALSE;
-}
-
-/**
  * Sets the cap for the viewports. Usually reflecting how many there are.
  * If the number passed is within 1-4, then the stack cap is set to
  * how many active viewports there are.
@@ -862,15 +855,6 @@ void func_80067D3C(Gfx **dlist, UNUSED MatrixS **mats) {
 }
 
 /**
- * Sets the Y value of the Y axis in the matrix to the passed value.
- * This is used to vertically scale ortho geometry to look identical across NTSC and PAL systems.
- * Official Name: camOrthoYAspect
- */
-void set_ortho_matrix_height(f32 value) {
-    gOrthoMatrix[1][1] = value;
-}
-
-/**
  * Sets the current matrix to represent an orthogonal view.
  * Used for drawing triangles on screen as HUD.
  * Official Name: camStandardOrtho
@@ -1331,10 +1315,6 @@ ObjectSegment *get_cutscene_camera_segment(void) {
 
 Matrix *func_80069DA4(void) {
     return &D_80120FA0;
-}
-
-MatrixS *func_80069DB0(void) {
-    return &gPerspectiveMatrixS;
 }
 
 Matrix *func_80069DBC(void) {

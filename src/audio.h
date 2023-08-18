@@ -88,7 +88,6 @@ u8 func_80001358(u8 arg0, u8 arg1, s32 arg2);
 void func_80001440(u8 *arg0);
 void multiply_music_tempo(f32 tempo);
 void musicSetTempo(s32 tempo);
-s16 musicGetTempo(void);
 u8 music_is_playing(void);
 void func_80001728(u8 arg0, u8 *arg1, u8 *arg2, u8 *arg3);
 void func_80001784(u8 a0);

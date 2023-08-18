@@ -3,6 +3,8 @@
 
 #include "types.h"
 
+extern s32 gThread30NeedToLoadLevel;
+
 void create_and_start_thread30(void);
 void stop_thread30(void);
 s32 get_thread30_level_id_to_load(void);

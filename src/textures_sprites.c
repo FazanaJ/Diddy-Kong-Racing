@@ -283,22 +283,6 @@ void tex_init_textures(void) {
     D_80126344 = 0;
 }
 
-/**
- * Official Name: texDisableModes
- * Add flags to the block list so they are removed when drawn.
-*/
-void tex_disable_modes(s32 flags) {
-    gBlockedRenderFlags |= flags;
-}
-
-/**
- * Official Name: texEnableModes
- * Remove flags to the block list so they are no longer removed when drawn.
-*/
-void tex_enable_modes(s32 flags) {
-    gBlockedRenderFlags &= ~flags;
-}
-
 #ifdef NON_EQUIVALENT
 // Minor matching issues with loops, but should be functionally the same.
 //Official Name: texLoadTexture

@@ -362,7 +362,7 @@ void render_falling_snow(void) {
         D_80127C04 = 2;
         if (D_800E2908 >= 4) {
             i = 0;
-            mtx = (u32) func_80069DB0();
+            mtx = (u32) &gPerspectiveMatrixS;
             gSPMatrix(gCurrWeatherDisplayList++, OS_PHYSICAL_TO_K0(mtx ^ 0), G_MTX_DKR_INDEX_0);
             gDkrInsertMatrix(gCurrWeatherDisplayList++, G_MTX_DKR_INDEX_0, 0);
             load_and_set_texture_no_offset(&gCurrWeatherDisplayList, D_800E28D8.unk8, RENDER_Z_COMPARE);
@@ -474,7 +474,7 @@ void func_800AD2C4(s32 arg0, s32 arg1, f32 arg2) {
 
 void func_800AD40C(void) {
     s32 a, b;
-    if (gWeatherType != WEATHER_SNOW && get_viewport_count() == VIEWPORTS_COUNT_1_PLAYER) {
+    if (gWeatherType != WEATHER_SNOW && gNumberOfViewports == VIEWPORTS_COUNT_1_PLAYER) {
         a = ((gLightningFrequency * -38) >> 16) + 1018;
         b = ((gLightningFrequency * -20) >> 16) + 1023;
         func_80030664(0, a, b, 0x1CU, 0xFU, 0x24U);
@@ -488,7 +488,7 @@ void func_800AD40C(void) {
 void handle_weather_rain(s32 updateRate) {
     s32 i;
 
-    if ((get_viewport_count() == VIEWPORTS_COUNT_1_PLAYER) && (gWeatherType != WEATHER_SNOW)) {
+    if ((gNumberOfViewports == VIEWPORTS_COUNT_1_PLAYER) && (gWeatherType != WEATHER_SNOW)) {
         if (D_800E2C78 > 0) {
             if (updateRate < D_800E2C78) {
                 D_800E2C78 -= updateRate;

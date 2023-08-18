@@ -51,6 +51,11 @@ enum CutsceneIDs {
     CUTSCENE_ID_UNK_64 = 0x64
 };
 
+extern s32 gMapId;
+extern s32 gIsInRace;
+extern LevelHeader *gCurrentLevelHeader;
+extern s16 gLevelPropertyStackPos;
+
 Vehicle get_map_default_vehicle(s32 mapId);
 s32 get_map_available_vehicles(s32 mapId);
 s8 get_map_race_type(s32 mapId);
@@ -71,8 +76,6 @@ TempStruct5 *func_8006C18C(void);
 s8 func_8006C19C(void);
 void push_level_property_stack(s32 levelId, s32 entranceId, Vehicle vehicleId, s32 cutsceneId);
 void pop_level_property_stack(s32 *levelId, s32 *entranceId, s32 *vehicleId, s32 *cutsceneId);
-void clear_level_property_stack(void);
-s16 get_level_property_stack_pos(void);
 s32 func_8006C300(void);
 
 #endif

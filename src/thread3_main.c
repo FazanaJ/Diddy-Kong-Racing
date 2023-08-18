@@ -423,7 +423,7 @@ void main_game_loop(void) {
     gSkipGfxTask = FALSE;
     clear_free_queue();
     if (!gIsPaused) {
-        disable_cutscene_camera();
+        gCutsceneCameraActive = FALSE;
     }
 #ifdef PUPPYPRINT_DEBUG
     gPuppyPrint.mainTimerPoints[0][PP_PROFILER_CALC] = osGetCount();
@@ -486,7 +486,7 @@ void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     func_80065EA0();
     func_800C3048();
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, gGameCurrentCutscene);
-    func_8009ECF0(get_viewport_count());
+    func_8009ECF0(gNumberOfViewports);
     func_800AE728(8, 0x10, 0x96, 0x64, 0x32, 0);
     func_8001BF20();
     osSetTime(0);
@@ -557,8 +557,8 @@ void ingame_logic_loop(s32 updateRate) {
     if (!gIsPaused) {
         update_time_dialation(updateRate);
         func_80010994(updateRate);
-        if (check_if_showing_cutscene_camera() == 0 || func_8001139C()) {
-            if ((buttonPressedInputs & START_BUTTON) && (get_level_property_stack_pos() == 0) && (D_800DD390 == 0)
+        if (gCutsceneCameraActive == 0 || func_8001139C()) {
+            if ((buttonPressedInputs & START_BUTTON) && (gLevelPropertyStackPos == 0) && (D_800DD390 == 0)
                 && (sRenderContext == DRAW_GAME) && (gPostRaceViewPort == NULL) && (gLevelLoadTimer == 0) && (D_800DD398 == 0)) {
                 buttonPressedInputs = 0;
                 gIsPaused = TRUE;
@@ -599,7 +599,7 @@ void ingame_logic_loop(s32 updateRate) {
                 func_8006D8F0(-1);
                 break;
             case 4:
-                clear_level_property_stack(); 
+                gLevelPropertyStackPos = 0; 
                 D_800DD390 = 0;
                 buttonHeldInputs |= (L_TRIG | R_TRIG);
                 break;
@@ -687,7 +687,7 @@ void ingame_logic_loop(s32 updateRate) {
                 D_800DD390 = 0;
                 func_80001050();
                 func_800C314C();
-                clear_level_property_stack();
+                gLevelPropertyStackPos = 0;
                 buttonHeldInputs |= (L_TRIG | R_TRIG);
                 break;
         }
@@ -744,9 +744,9 @@ void ingame_logic_loop(s32 updateRate) {
         }
     }
     if (sp3C) {
-        if (get_level_property_stack_pos() != 0) {
+        if (gLevelPropertyStackPos != 0) {
             pop_level_property_stack(&gPlayableMapId, &gGameCurrentEntrance, &i, &gGameCurrentCutscene);
-            set_frame_blackout_timer();
+            gDrawFrameTimer = 2;
             if (gPlayableMapId < 0) {
                 if (gPlayableMapId == (s32)SPECIAL_MAP_ID_NO_LEVEL || gPlayableMapId == (s32)SPECIAL_MAP_ID_UNK_NEG10) {
                     if (gPlayableMapId == (s32)SPECIAL_MAP_ID_UNK_NEG10 && is_in_two_player_adventure()) {
@@ -767,14 +767,14 @@ void ingame_logic_loop(s32 updateRate) {
         }
     } else {
         sp3C = func_8006C300();
-        if (get_level_property_stack_pos()) {
+        if (gLevelPropertyStackPos) {
             if (gLevelLoadTimer == 0) {
                 i = func_800214C4();
                 if ((i != 0) || ((buttonPressedInputs & A_BUTTON) && (sp3C != 0))) {
                     if (sp3C != 0) {
                         func_80000B28();
                     }
-                    set_frame_blackout_timer();
+                    gDrawFrameTimer = 2;
                     pop_level_property_stack(&gPlayableMapId, &gGameCurrentEntrance, &i, &gGameCurrentCutscene);
                     if (gPlayableMapId < 0) {
                         if (gPlayableMapId == -1 || gPlayableMapId == -10) {
@@ -984,7 +984,7 @@ void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     func_80065EA0();
     func_800C3048();
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, cutsceneId);
-    func_8009ECF0(get_viewport_count());
+    func_8009ECF0(gNumberOfViewports);
     func_800AE728(4, 4, 0x6E, 0x30, 0x20, 0);
     func_8001BF20();
     osSetTime(0);
@@ -1018,7 +1018,7 @@ void unload_level_menu(void) {
  * In the tracks menu, this only runs if there's a track actively loaded.
 */
 void update_menu_scene(s32 updateRate) {
-    if (get_thread30_level_id_to_load() == 0) {
+    if (gThread30NeedToLoadLevel == 0) {
         update_time_dialation(updateRate);
         func_80010994(updateRate);
         gParticlePtrList_flush();
@@ -1162,7 +1162,7 @@ void load_level_for_menu(s32 levelId, s32 numberOfPlayers, s32 cutsceneId) {
     Vehicle vehicleID = VEHICLE_PLANE;
     if (!gIsLoading) {
         unload_level_menu();
-        if (get_thread30_level_id_to_load() == 0) {
+        if (gThread30NeedToLoadLevel == 0) {
             gCurrDisplayList = gDisplayLists[gSPTaskNum];
             gDPFullSync(gCurrDisplayList++);
             gSPEndDisplayList(gCurrDisplayList++);
@@ -1616,14 +1616,6 @@ void func_8006F398(void) {
         first_racer_data[i] = second_racer_data[i];
         second_racer_data[i] = temp;
     }
-}
-
-/**
- * Sets the timer to delay drawing new frames.
- * When set to 2, the game will copy the previous framebuffer over to the next.
-*/
-void set_frame_blackout_timer(void) {
-    gDrawFrameTimer = 2;
 }
 
 #if SKIP_INTRO == SKIP_TITLE

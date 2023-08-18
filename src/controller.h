@@ -12,7 +12,8 @@
 #define JOYSTICK_DEADZONE 8
 #define JOYSTICK_MAX_RANGE 70
 
-OSMesgQueue *get_si_mesg_queue(void);
+extern OSMesgQueue sSIMesgQueue;
+
 s32 init_controllers(void);
 s32 handle_save_data_and_read_controller(s32 saveDataFlags, s32 updateRate);
 void initialise_player_ids(void);

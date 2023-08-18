@@ -3002,7 +3002,7 @@ void menu_audio_options_init(void) {
     transition_begin(&sMenuTransitionFadeOut);
     func_8007FFEC(2);
     gMusicVolumeSliderValue = musicGetVolSliderPercentage();
-    gSfxVolumeSliderValue = get_sfx_volume_slider();
+    gSfxVolumeSliderValue = sfxVolumeSlider;
     if (gActiveMagicCodes & CHEAT_MUSIC_MENU) { // Check if "JUKEBOX" cheat is active
         gAudioMenuStrings[6].unkC = gMusicTestString;
         gAudioMenuStrings[3].unk2 = 0xD4;
@@ -3367,7 +3367,7 @@ void func_800861C8(unk800861C8 *arg0, s32 *arg1) {
             arg0[*arg1].unk1 = 0;
             arg0[*arg1].unk2 = 0;
             arg0[*arg1].controllerIndex = i;
-            arg0[*arg1].fileSize = get_game_data_file_size();
+            arg0[*arg1].fileSize = 256;
             (*arg1)++;
         }
     }
@@ -3384,18 +3384,18 @@ s32 func_800867D4(void) {
         case 1: //Some other type of game data?
             mark_read_save_file(D_80126A0C[D_80126BD4].controllerIndex);
             func_800861C8(D_80126A04, &D_80126A00);
-            ret = func_800860A8(0, &D_80126A18, D_80126A04, &D_80126A00, get_game_data_file_size(), -1);
+            ret = func_800860A8(0, &D_80126A18, D_80126A04, &D_80126A00, 256, -1);
             break;
         case 2: //Some other type of time data?
-            ret = func_800860A8(0, &D_80126A18, D_80126A04, &D_80126A00, get_time_data_file_size(), -1);
+            ret = func_800860A8(0, &D_80126A18, D_80126A04, &D_80126A00, 512, -1);
             break;
         case 3: //GAMD / Game Data
             func_800861C8(D_80126A04, &D_80126A00);
-            ret = func_800860A8(1, &D_80126A1C, D_80126A04, &D_80126A00, get_game_data_file_size(), D_80126A0C[D_80126BD4].controllerIndex);
+            ret = func_800860A8(1, &D_80126A1C, D_80126A04, &D_80126A00, 256, D_80126A0C[D_80126BD4].controllerIndex);
             break;
         case 4: //TIMD / Time Data
             D_80126A04[D_80126A00++].unk0 = 2;
-            ret = func_800860A8(1, &D_80126A1C, D_80126A04, &D_80126A00, get_time_data_file_size(), D_80126A0C[D_80126BD4].controllerIndex);
+            ret = func_800860A8(1, &D_80126A1C, D_80126A04, &D_80126A00, 512, D_80126A0C[D_80126BD4].controllerIndex);
             break;
         case 5: //GHSS / Ghost Data
             D_80126A04[D_80126A00++].unk0 = 9;
@@ -5863,7 +5863,7 @@ s32 menu_track_select_loop(s32 updateRate) {
 
     settings = get_settings();
     gOptionBlinkTimer = (gOptionBlinkTimer + updateRate) & 0x3F;
-    if (get_thread30_level_id_to_load() == 0 && gMenuDelay != 0) {
+    if (gThread30NeedToLoadLevel == 0 && gMenuDelay != 0) {
         if (gMenuDelay < 0) {
             gMenuDelay -= updateRate;
         } else {
@@ -6126,7 +6126,7 @@ void func_80090918(s32 updateRate) {
         gMenuImageStack[5].unk8 = (f32) (sMenuImageProperties[5].unk8 * (1.0f + ((f32) var_t1 / 20.0f)));
     }
     camEnableUserView(0, 0);
-    if (get_thread30_level_id_to_load() == 0) {
+    if (gThread30NeedToLoadLevel == 0) {
         if (gMenuDelay < 0) {
             sMenuMusicVolume -= updateRate * 4;
         }
@@ -7325,7 +7325,7 @@ void func_80094688(s32 arg0, s32 arg1) {
     LevelHeader *header;
 
     func_80072298(0U);
-    header = get_current_level_header();
+    header = gCurrentLevelHeader;
     D_80126C28 = arg0;
     if (is_in_two_player_adventure()) {
         set_scene_viewport_num(VIEWPORTS_COUNT_1_PLAYER);
@@ -7476,7 +7476,7 @@ void func_80096790(void) {
     s32 temp;
     s8 *temp2;
 
-    temp2 = (s8 *)get_current_level_header();
+    temp2 = (s8 *)gCurrentLevelHeader;
     func_8009C4A8(D_800E0A24);
     temp = *temp2 - 1;
 
@@ -8596,13 +8596,13 @@ s32 get_filtered_cheats(void) {
     if (!gIsInTracksMode || is_time_trial_enabled()) {
         cheats &= CHEATS_ALLOWED_IN_ADVENTURE_AND_TIME_TRIAL;
     }
-    if (!check_if_in_race()) {
+    if (!gIsInRace) {
         cheats &= ~CHEAT_MIRRORED_TRACKS; // Disable mirroring
     }
     if (get_map_race_type(get_settings()->courseId) & 0x40) {
         cheats &= CHEATS_ALLOWED_IN_CHALLENGES;
     }
-    if (gIsInAdventureTwo && check_if_in_race()) {
+    if (gIsInAdventureTwo && gIsInRace) {
         cheats |= CHEAT_MIRRORED_TRACKS; // Enable mirroring
     }
     return cheats;
@@ -8621,7 +8621,7 @@ s32 get_number_of_active_players(void) {
  * as it would otherwise return 1.
  */
 s32 get_active_player_count(void) {
-    unk8006BDB0 *temp = (unk8006BDB0 *)get_current_level_header();
+    unk8006BDB0 *temp = (unk8006BDB0 *)gCurrentLevelHeader;
     if (gIsInTwoPlayerAdventure && !gIsInTracksMode) {
         if (temp->unk4C == 0 || (temp->unk4C & 0x40) != 0) {
             return 2;

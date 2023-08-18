@@ -507,11 +507,7 @@ void func_8000C844(s32 arg0) {
  * it consistent with non PAL timers, running 60Hz.
  */
 s32 normalise_time(s32 timer) {
-    if (osTvType != TV_TYPE_PAL || timer < 0) {
-        return timer;
-    } else {
-        return (timer * 5) / 6;
-    }
+    return timer;
 }
 
 GLOBAL_ASM("asm/non_matchings/objects/func_8000C8F8.s")
@@ -1021,7 +1017,7 @@ void func_80010994(s32 updateRate) {
     for (i = 0; i < gNumRacers; i++) {
         update_player_racer((*gRacers)[i], updateRate);
     }
-    if (get_current_level_race_type() == 0) {
+    if (gCurrentLevelHeader->race_type == 0) {
         for (i = 0; i < gNumRacers; i++) {
             obj64 = gRacersByPosition[i]->unk64;
             racer = &obj64->racer;
@@ -1548,7 +1544,7 @@ void render_3d_model(Object *obj) {
                 if (racerObj != NULL && racerObj->vehicleID < VEHICLE_TRICKY && racerObj->playerIndex == PLAYER_COMPUTER) {
                     flags = FALSE;
                 }
-                if (get_viewport_count() != VIEWPORTS_COUNT_1_PLAYER) {
+                if (gNumberOfViewports != VIEWPORTS_COUNT_1_PLAYER) {
                     flags = FALSE;
                 }
                 obj->unk44 = (Vertex *) obj68->unk4[obj68->unk1F];
@@ -1860,9 +1856,9 @@ void func_80012F94(Object *obj) {
                     }
                     batchNum = 0;
                     bossAsset = (u8 *) get_misc_asset(var_t0); //40 bytes of data u8[8][5]?
-                    bossAsset = &bossAsset[(get_viewport_count() * 10)];
+                    bossAsset = &bossAsset[(gNumberOfViewports * 10)];
                     var_a1 = bossAsset;
-                    if (get_current_viewport() != objRacer->playerIndex) {
+                    if (gActiveCameraID != objRacer->playerIndex) {
                         var_a1 += 5;
                     }
                     var_f0_2 = obj->segment.object.distanceToCamera;
@@ -2542,7 +2538,7 @@ s32 func_8001AE54() {
 GLOBAL_ASM("asm/non_matchings/objects/func_8001AE64.s")
 
 s32 func_8001B288(void) {
-    if (func_800599A8() != func_8006BD88()) {
+    if (func_800599A8() != gMapId) {
         return 0;
     } else {
         if (D_800DC728 != D_8011AE82) {
@@ -2613,8 +2609,8 @@ s32 func_8001B668(s32 arg0) {
     s32 mapId;
 
     mapId = func_800599A8();
-    if ((func_8006BD88() != mapId) || (D_800DC728 != D_8011AE82)) {
-        temp_v0 = func_800599B8(arg0, func_8006BD88(), D_8011AE82, &sp2E, &sp2C);
+    if ((gMapId != mapId) || (D_800DC728 != D_8011AE82)) {
+        temp_v0 = func_800599B8(arg0, gMapId, D_8011AE82, &sp2E, &sp2C);
         if (temp_v0 == 0) {
             D_800DC728 = D_8011AE82;
             D_800DC72C = sp2E;
@@ -2622,7 +2618,7 @@ s32 func_8001B668(s32 arg0) {
         }
         return temp_v0;
     }
-    return func_800599B8(arg0, func_8006BD88(), D_8011AE82, NULL, NULL);
+    return func_800599B8(arg0, gMapId, D_8011AE82, NULL, NULL);
 }
 
 s32 func_8001B738(s32 controllerIndex) {
@@ -3091,7 +3087,7 @@ void func_8001E45C(s32 arg0) {
         D_8011ADAC = 0;
         D_8011AE7E = 1;
         if (get_render_context() == DRAW_MENU) {
-            set_frame_blackout_timer();
+            gDrawFrameTimer = 2;
         }
     }
 }
@@ -3345,7 +3341,7 @@ Object *func_8002342C(f32 x, f32 z) {
 s32 func_80023568(void) {
     if (D_8011AD3C != 0) {
         return D_8011AD24[1] + 1;
-    } else if (get_current_level_race_type() == RACETYPE_BOSS) {
+    } else if (gCurrentLevelHeader->race_type == RACETYPE_BOSS) {
         return D_8011AD24[1] + 1;
     }
     return 0;

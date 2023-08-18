@@ -348,9 +348,9 @@ s32 handle_transitions(s32 updateRate) {
  */
 void render_fade_transition(Gfx **dList, MatrixS **mats, Vertex **verts) {
     if (sTransitionStatus != TRANSITION_NONE) {
-        set_ortho_matrix_height(1.2f);
+        gOrthoMatrix[1][1] = 1.2f;
         set_ortho_matrix_view(dList, mats);
-        set_ortho_matrix_height(1.0f);
+        gOrthoMatrix[1][1] = 1.0f;
         switch (gCurFadeTransition) {
             case FADE_FULLSCREEN:
                 render_fade_fullscreen(dList, mats, verts);

@@ -5,6 +5,5 @@
 #include "libultra_internal.h"
 #include "macros.h"
 
-void assert_stub(UNUSED char *message, UNUSED char *fileName, UNUSED s32 lineNumber);
 
 #endif

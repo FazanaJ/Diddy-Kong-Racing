@@ -105,17 +105,6 @@ Acmd *alEnvmixerPull(void *filter, UNUSED s16 *outp, s32 outCount, s32 sampleOff
         samples    = thisOffset - lastOffset;
         if (samples > outCount)
             break;
-        
-#ifdef _DEBUG
-        assert(samples >= 0);
-        assert(samples <= AL_MAX_RSP_SAMPLES);
-#else
-        // Something must have gone wrong when compiling this file, and the asserts got left in.
-        if (samples >= 0) {} 
-        else { assert_stub("samples >= 0", "env.c", 104); }
-        if (samples <= AL_MAX_RSP_SAMPLES) {} 
-        else { assert_stub("samples <= AL_MAX_RSP_SAMPLES", "env.c", 105); }
-#endif
 
         
         switch (e->ctrlList->type) {
@@ -379,18 +368,6 @@ Acmd* _pullSubFrame(void *filter, s16 *inp, s16 *outp, s32 outCount,
     /* filter must be playing and request non-zero output samples to pull. */
     if (!outCount) //Diff
         return ptr;
-
-    /*
-     * ask all filters upstream from us to build their command
-     * lists.
-     */
-#ifdef _DEBUG
-    assert(source);
-#else
-    // Something must have gone wrong when compiling this file, and the asserts got left in.
-    if (source) {}
-    else { assert_stub("source", "env.c", 373); }
-#endif
     
     ptr = (*source->handler)(source, inp, outCount, sampleOffset, p);
 

@@ -619,7 +619,7 @@ void obj_loop_trophycab(Object *obj, s32 updateRate) {
     s32 bossFlags;
 
     settings = get_settings();
-    header = get_current_level_header();
+    header = gCurrentLevelHeader;
     gfxData = (Object_TrophyCabinet *) obj->unk64;
     if (obj->properties.trophyCabinet.trophy == FALSE) {
         if (header->race_type != RACETYPE_CUTSCENE_2 && header->race_type != RACETYPE_CUTSCENE_1) {
@@ -700,7 +700,7 @@ void obj_loop_trophycab(Object *obj, s32 updateRate) {
                     set_hud_visibility(1);
                 }
             }
-            disable_racer_input();
+            gRacerInputBlocked = TRUE;
         }
         obj->unk5C->unk100 = NULL;
         if (worldBalloons) {
@@ -1164,7 +1164,7 @@ void obj_loop_stopwatchman(Object *obj, s32 updateRate) {
             tt->animFrameF = 0.0f;
         }
     }
-    header = get_current_level_header();
+    header = gCurrentLevelHeader;
     distance = 0.0f;
     obj->segment.x_velocity = 0.0f;
     obj->segment.z_velocity = 0.0f;
@@ -1206,7 +1206,7 @@ void obj_loop_stopwatchman(Object *obj, s32 updateRate) {
         }
     }
     if (obj->properties.npc.action != TT_MODE_ROAM) {
-        disable_racer_input();
+        gRacerInputBlocked = TRUE;
         func_800AB194(3);
     }
     if (obj->properties.npc.action >= TT_MODE_TURN_TOWARDS_PLAYER) {
@@ -1220,7 +1220,7 @@ void obj_loop_stopwatchman(Object *obj, s32 updateRate) {
         obj->segment.object.animationID = 0;
         tt->unkD = 255;
         if (distance < 100.0f) {
-            racer_set_dialogue_camera();
+            gRacerDialogueCamera = TRUE;
         }
         if (distance > 10.0f) {
             angleDiff = (arctan2_f(diffX / distance, diffZ / distance) - (obj->segment.trans.y_rotation & 0xFFFF)) + 0x8000;
@@ -1251,7 +1251,7 @@ void obj_loop_stopwatchman(Object *obj, s32 updateRate) {
         func_8006F388(1);
         break;
     case TT_MODE_TURN_TOWARDS_PLAYER:
-        racer_set_dialogue_camera();
+        gRacerDialogueCamera = TRUE;
         obj->segment.object.animationID = 0;
         tt->animFrameF += 3.0f * updateRateF;
         angleDiff = (racerObj->segment.trans.y_rotation - (obj->segment.trans.y_rotation & 0xFFFF)) + 0x8000;
@@ -1282,7 +1282,7 @@ void obj_loop_stopwatchman(Object *obj, s32 updateRate) {
         obj->segment.z_velocity = diffZ * 0.05f;
         obj->segment.object.animationID = 1;
         tt->animFrameF += 1.0f * updateRateF;
-        racer_set_dialogue_camera();
+        gRacerDialogueCamera = TRUE;
         if (index == 3) {
             obj->properties.npc.action = TT_MODE_DIALOGUE_END;
             if (is_time_trial_enabled()) {
@@ -1300,7 +1300,7 @@ void obj_loop_stopwatchman(Object *obj, s32 updateRate) {
         break;
     case TT_MODE_DIALOGUE_END:
         tt->animFrameF += 1.0f * updateRateF;
-        racer_set_dialogue_camera();
+        gRacerDialogueCamera = TRUE;
         if (obj->properties.npc.timer < 140) {
             obj->properties.npc.timer += 60;
             obj->properties.npc.action = TT_MODE_ROAM;
@@ -1769,7 +1769,7 @@ void obj_loop_animcamera(Object *obj, s32 updateRate) {
     obj->segment.trans.flags |= OBJ_FLAGS_INVISIBLE;
     obj64 = &obj->unk64->anim_camera;
     if (temp_v0 == 0) {
-        if (get_viewport_count() == VIEWPORTS_COUNT_1_PLAYER) {
+        if (gNumberOfViewports == VIEWPORTS_COUNT_1_PLAYER) {
             phi_v1 = func_800210CC(obj64->unk44);
         } else {
             phi_v1 = 1;
@@ -2140,7 +2140,7 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
     updateRateF2 = updateRate;
     updateRateF = updateRateF2;
     taj = (Object_NPC *) obj->unk64;
-    levelHeader = get_current_level_header();
+    levelHeader = gCurrentLevelHeader;
     obj->unk74 = 0;
     if (obj->segment.animFrame == 0 && taj->animFrameF > 1.0f) {
         taj->animFrameF = 0.0f;
@@ -2208,7 +2208,7 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
 
     if (!(obj->properties.npc.action == TAJ_MODE_ROAM || obj->properties.npc.action == TAJ_MODE_RACE || 
           obj->properties.npc.action == TAJ_MODE_TELEPORT_AWAY_BEGIN || obj->properties.npc.action == TAJ_MODE_TELEPORT_AWAY_END)) {
-            disable_racer_input();
+            gRacerInputBlocked = TRUE;
             func_800AB194(3);
     }
 
@@ -2247,7 +2247,7 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
         obj->segment.object.animationID = 0;
         taj->unkD = 0xFF;
         if (distance < 100.0f) {
-            racer_set_dialogue_camera();
+            gRacerDialogueCamera = TRUE;
         }
         if (distance > 10.0f) {
             arctan = (arctan2_f(xPosDiff / distance, zPosDiff / distance) - (obj->segment.trans.y_rotation & 0xFFFF)) + 0x8000;
@@ -2275,7 +2275,7 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
         move_object(obj, obj->segment.x_velocity * updateRateF, obj->segment.y_velocity * updateRateF, obj->segment.z_velocity * updateRateF);
         break;
     case TAJ_MODE_TURN_TOWARDS_PLAYER:
-        racer_set_dialogue_camera();
+        gRacerDialogueCamera = TRUE;
         obj->segment.object.animationID = 0;
         taj->animFrameF += updateRateF * 2.0f;
         arctan = (racerObj->segment.trans.y_rotation - (obj->segment.trans.y_rotation & 0xFFFF)) + 0x8000;
@@ -2320,12 +2320,12 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
             arctan = 16;
         }
         obj->segment.trans.y_rotation = obj->segment.trans.y_rotation + (arctan >> 4);
-        racer_set_dialogue_camera();
+        gRacerDialogueCamera = TRUE;
         break;
     case TAJ_MODE_DIALOGUE:
         obj->segment.object.animationID = 4;
         taj->animFrameF += updateRateF * 1.0f;
-        racer_set_dialogue_camera();
+        gRacerDialogueCamera = TRUE;
         if (dialogueID == 3 || dialogueID == 4) {
             obj->properties.npc.action = (dialogueID == 4) ? TAJ_MODE_END_DIALOGUE_UNUSED : TAJ_MODE_END_DIALOGUE;
             taj->animFrameF = 0.1f;
@@ -2368,7 +2368,7 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
         break;
     case TAJ_MODE_TRANSFORM_BEGIN:
         obj->segment.object.animationID = 5;
-        racer_set_dialogue_camera();
+        gRacerDialogueCamera = TRUE;
         taj->animFrameF += updateRateF * 2.0f;
         if (taj->animFrameF > 25.0f) {
             obj->unk74 = 11;
@@ -2390,7 +2390,7 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
         }
         break;
     case TAJ_MODE_TRANSFORM_END:
-        racer_set_dialogue_camera();
+        gRacerDialogueCamera = TRUE;
         if (racerObj != NULL) {
             if (taj->animFrameF != 0.0f) {
                 taj->animFrameF += 8.0f;
@@ -3213,7 +3213,7 @@ void obj_loop_trigger(Object *obj, UNUSED s32 updateRate) {
     trigger = (Object_Trigger *) obj->unk64;
     settings = get_settings();
     courseFlags = settings->courseFlagsPtr[settings->courseId];
-    curRaceType = get_current_level_race_type();
+    curRaceType = gCurrentLevelHeader->race_type;
     if (triggerEntry->index >= 0) {
         flags = 0x10000 << triggerEntry->index;
         if (obj->interactObj->distance < trigger->radius) {
@@ -3661,7 +3661,7 @@ void obj_loop_banana(Object *obj, s32 updateRate) {
             properties->unk4 = 0;
         }
         if (obj->interactObj->distance < 120) {
-            if (get_current_level_race_type() == RACETYPE_CHALLENGE_BANANAS) {
+            if (gCurrentLevelHeader->race_type == RACETYPE_CHALLENGE_BANANAS) {
                 racerObj = obj->interactObj->obj;
                 if (racerObj != NULL && racerObj->segment.header->behaviorId == BHV_RACER) {
                     racer = (Object_Racer *) racerObj->unk64;
@@ -3675,7 +3675,7 @@ void obj_loop_banana(Object *obj, s32 updateRate) {
             racerObj = obj->interactObj->obj;
             if (racerObj != NULL && racerObj->segment.header->behaviorId == BHV_RACER) { 
                 racer = (Object_Racer *) racerObj->unk64;
-                if ((get_current_level_race_type() != RACETYPE_CHALLENGE_BANANAS) || racer->bananas < 2) {
+                if ((gCurrentLevelHeader->race_type != RACETYPE_CHALLENGE_BANANAS) || racer->bananas < 2) {
                     prevSoundMask = racer->bananaSoundMask;
                     play_sound_at_position(SOUND_SELECT, racerObj->segment.trans.x_position, racerObj->segment.trans.y_position, racerObj->segment.trans.z_position, 4, &racer->bananaSoundMask);
                     if (prevSoundMask) {
@@ -3946,7 +3946,7 @@ void obj_loop_weaponballoon(Object *obj, s32 updateRate) {
                         racer->balloon_level = 0;
                     }
                     // Disallow level 3 ballons in challenge mode
-                    if (get_current_level_race_type() & RACETYPE_CHALLENGE) {
+                    if (gCurrentLevelHeader->race_type & RACETYPE_CHALLENGE) {
                         if (racer->balloon_level > 1) {
                             racer->balloon_level = 1;
                         }
@@ -4603,7 +4603,7 @@ void obj_loop_weather(Object *obj, UNUSED s32 updateRate) {
     s32 last;
     f32 dist;
         
-    currViewport = get_current_viewport();
+    currViewport = gActiveCameraID;
     objects = get_racer_objects(&numberOfObjects);
     cur = -1;
     if (numberOfObjects != 0) {

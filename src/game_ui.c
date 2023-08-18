@@ -313,11 +313,11 @@ void render_hud(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Object *arg3, s
         return;
     }
 
-    D_80126D08 = get_current_viewport();
+    D_80126D08 = gActiveCameraID;
     if (D_8012718A) {
         arg3 = get_racer_object_by_port(1 - D_80126D08);
     }
-    gHudLevelHeader = get_current_level_header();
+    gHudLevelHeader = gCurrentLevelHeader;
     if (arg3 == NULL) {
         if (func_8001E440() == 10) {
             arg3 = get_racer_object_by_port(0);
@@ -392,10 +392,10 @@ void render_hud(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Object *arg3, s
                 gDPPipeSync(gHUDCurrDisplayList++);
                 init_rsp(&gHUDCurrDisplayList);
                 init_rdp_and_framebuffer(&gHUDCurrDisplayList);
-                tex_enable_modes(0xFFFFFFFF);
-                tex_disable_modes(RENDER_Z_COMPARE);
+                gBlockedRenderFlags &= ~0xFFFFFFFF;
+                gBlockedRenderFlags |= RENDER_Z_COMPARE;
                 func_8007BF1C(FALSE);
-                if (check_if_showing_cutscene_camera() == FALSE && D_80126D34 == 0 && racer->racer.playerIndex == PLAYER_ONE) {
+                if (gCutsceneCameraActive == FALSE && D_80126D34 == 0 && racer->racer.playerIndex == PLAYER_ONE) {
                     if (D_80126D35 != 0) {
                         D_80126D28 = sins_f(D_80126D2C) * D_80126D30 * 8.0f;
                         D_80126D2C += updateRate << 0xB;
@@ -436,7 +436,7 @@ void render_hud(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Object *arg3, s
                         func_800A718C(racer);
                         func_80068508(0);
                     } else {
-                        switch (get_current_level_race_type()) {
+                        switch (gCurrentLevelHeader->race_type) {
                             case RACETYPE_DEFAULT:
                             case RACETYPE_HORSESHOE_GULCH:
                                 if (is_taj_challenge() != 0) {
@@ -467,9 +467,9 @@ void render_hud(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Object *arg3, s
                     func_80068508(1);
                     if (is_in_time_trial()) {
                         func_800A6E30(racer, updateRate);
-                    } else if (get_viewport_count() == VIEWPORTS_COUNT_1_PLAYER && racer->racer.unk1AC == 1) {
+                    } else if (gNumberOfViewports == VIEWPORTS_COUNT_1_PLAYER && racer->racer.unk1AC == 1) {
                         if (is_in_two_player_adventure()) {
-                            if (get_current_level_race_type() == RACETYPE_BOSS) {
+                            if (gCurrentLevelHeader->race_type == RACETYPE_BOSS) {
                                 goto showFinish;
                             }
                             goto block_95;
@@ -491,7 +491,7 @@ block_95:
                 *dList = gHUDCurrDisplayList;
                 *mtx = gHUDCurrMatrix;
                 *vertexList = gHUDCurrVertex;
-                tex_enable_modes(0xFFFFFFFF);
+                gBlockedRenderFlags &= ~0xFFFFFFFF;
             }
         }
     }
@@ -673,7 +673,7 @@ void render_hud_race_boss(s32 arg0, Object *obj, s32 updateRate) {
     render_race_time(racer, updateRate);
     render_weapon_hud(obj, updateRate);
 
-    level = get_current_level_header();
+    level = gCurrentLevelHeader;
     if (level->laps > 1) {
         render_lap_count(racer, updateRate);
     }
@@ -704,7 +704,7 @@ void render_hud_hubworld(Object *obj, s32 updateRate) {
     Object_64 *obj64;
     unk80126CDC *temp_a3;
 
-    if (get_viewport_count() == 0) {
+    if (gNumberOfViewports == 0) {
         obj64 = obj->unk64;
         func_80068508(1);
         func_800A718C(obj64);
@@ -737,7 +737,7 @@ void render_speedometer(Object *obj, UNUSED s32 updateRate) {
     s32 opacity;
 
     if (gNumActivePlayers == 1) {
-        if (!check_if_showing_cutscene_camera()) {
+        if (!gCutsceneCameraActive) {
             racer64 = obj->unk64;
             if (racer64->racer.raceFinished == FALSE) {
                 if (racer64->racer.vehicleID == VEHICLE_PLANE) {
@@ -843,7 +843,7 @@ void render_race_start(s32 arg0, s32 updateRate) {
             if (D_80126CDC->unk19A[D_80126D08] >= 60) {
                 if (gRaceStartShowHudStep == 4) {
                     // Mute background music in 3/4 player.
-                    if (get_viewport_count() > TWO_PLAYERS && gSkipCutbacks == FALSE) {
+                    if (gNumberOfViewports > TWO_PLAYERS && gSkipCutbacks == FALSE) {
                         play_music(SEQUENCE_NONE);
                     } else {
                         func_8006BD10(1.0f);
@@ -1595,7 +1595,7 @@ void render_minimap_and_misc_hud(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 u
         }
     }
     
-    gHudLevelHeader = get_current_level_header();
+    gHudLevelHeader = gCurrentLevelHeader;
     objectGroup = get_racer_objects_by_port(&objectCount);
     gHUDCurrDisplayList = *dList;
     gHUDCurrMatrix = *mtx;
@@ -1758,7 +1758,7 @@ void render_minimap_and_misc_hud(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 u
                 sp113 = FALSE;
             }
         }
-        if((gHUDNumPlayers == THREE_PLAYERS && is_postrace_viewport_active()) || check_if_showing_cutscene_camera() || sp113) {
+        if((gHUDNumPlayers == THREE_PLAYERS && is_postrace_viewport_active()) || gCutsceneCameraActive || sp113) {
             goto test;
         } else if(gHudToggleSettings[gHUDNumPlayers] != 1) {
         test:
@@ -1779,9 +1779,9 @@ void render_minimap_and_misc_hud(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 u
                     gMinimapScreenY = (-gMinimapDotOffsetY / 2) - (gScreenHeight - 240);
                     break;
                 case THREE_PLAYERS:
-                    if (get_current_level_race_type() == RACETYPE_CHALLENGE_EGGS || 
-                        get_current_level_race_type() == RACETYPE_CHALLENGE_BATTLE || 
-                        get_current_level_race_type() == RACETYPE_CHALLENGE_BANANAS) {
+                    if (gCurrentLevelHeader->race_type == RACETYPE_CHALLENGE_EGGS || 
+                        gCurrentLevelHeader->race_type == RACETYPE_CHALLENGE_BATTLE || 
+                        gCurrentLevelHeader->race_type == RACETYPE_CHALLENGE_BANANAS) {
                         gMinimapScreenX = (gMinimapDotOffsetX / 2) - 8 + (gScreenWidth - 320);
                         gMinimapScreenY =  (-gMinimapDotOffsetY / 2) - (gScreenHeight - 240);
                     } else {
@@ -1884,8 +1884,8 @@ void render_minimap_and_misc_hud(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 u
                     } else {
                         gDPSetPrimColor(gHUDCurrDisplayList++, 0, 0, gHudMinimapColours[someRacer->characterId].red, gHudMinimapColours[someRacer->characterId].green, gHudMinimapColours[someRacer->characterId].blue, opacity);
                     }
-                    if (!(get_current_level_race_type() & RACETYPE_CHALLENGE) || (!someRacer->raceFinished)) {
-                        if (get_current_level_race_type() == RACETYPE_CHALLENGE_BATTLE) {
+                    if (!(gCurrentLevelHeader->race_type & RACETYPE_CHALLENGE) || (!someRacer->raceFinished)) {
+                        if (gCurrentLevelHeader->race_type == RACETYPE_CHALLENGE_BATTLE) {
                             switch (someRacer->unk212) {
                                 case 0:
                                     D_80126CDC->unk1E8 = 0.8f;

@@ -145,8 +145,8 @@ typedef struct TempTexHeader {
 /* 0x25 */ u8 pad25[3]; // padding
 } TempTexHeader;
 
-void tex_disable_modes(s32 flags);
-void tex_enable_modes(s32 flags);
+extern s32 gBlockedRenderFlags;
+
 s32 get_loaded_2D_textures(void);
 s32 get_loaded_3D_textures(void);
 s32 func_8007AE64(void);

@@ -704,7 +704,7 @@ s32 write_game_data_to_controller_pak(s32 controllerIndex, Settings *arg1) {
     s32 ret;
     s32 fileSize;
 
-    fileSize = get_game_data_file_size(); // 256 bytes
+    fileSize = 256; // 256 bytes
     gameData = allocate_from_main_pool_safe(fileSize, COLOUR_TAG_WHITE);
     *((s32 *)gameData) = GAMD;
     func_800732E8(arg1, gameData + 4);
@@ -769,7 +769,7 @@ s32 write_time_data_to_controller_pak(s32 controllerIndex, Settings *arg1) {
     s32 fileSize;
     char *fileExt;
 
-    fileSize = get_time_data_file_size(); // 512 bytes
+    fileSize = 512; // 512 bytes
     timeData = allocate_from_main_pool_safe(fileSize, COLOUR_TAG_WHITE);
     *((s32 *)timeData) = TIMD;
     func_800738A4(arg1, timeData + 4);
@@ -793,7 +793,7 @@ s32 read_save_file(s32 saveFileNum, Settings *settings) {
     s32 block;
     s32 ret;
 
-    if (osEepromProbe(get_si_mesg_queue()) == 0) {
+    if (osEepromProbe(&sSIMesgQueue) == 0) {
         return -1;
     }
     switch(saveFileNum) {
@@ -813,7 +813,7 @@ s32 read_save_file(s32 saveFileNum, Settings *settings) {
     blocks = 5;
     saveData = allocate_from_main_pool_safe(blocks * sizeof(u64), COLOUR_TAG_WHITE);
     for (block = 0, address = startingAddress; block < blocks; block++, address++) {
-        osEepromRead(get_si_mesg_queue(), address, (u8 *)&saveData[block]);
+        osEepromRead(&sSIMesgQueue, address, (u8 *)&saveData[block]);
     }
     populate_settings_from_save_data(settings, (u8 *) saveData);
     free_from_memory_pool(saveData);
@@ -835,7 +835,7 @@ void erase_save_file(s32 saveFileNum, Settings *settings) {
     s32 address;
     s32 i;
 
-    if (osEepromProbe(get_si_mesg_queue()) != 0) {
+    if (osEepromProbe(&sSIMesgQueue) != 0) {
         get_number_of_levels_and_worlds(&levelCount, &worldCount);
         for (i = 0; i < levelCount; i++) {
             settings->courseFlagsPtr[i] = 0;
@@ -869,7 +869,7 @@ void erase_save_file(s32 saveFileNum, Settings *settings) {
         for (i = 0; i < blockSize * (s32)sizeof(u64); i++) { saveData[i] = 0xFF; } // Must be one line
         if (!is_reset_pressed()) {
             for (i = 0, address = startingAddress; i < blockSize; i++, address++) {
-                osEepromWrite(get_si_mesg_queue(), address, (u8 *)&alloc[i]);
+                osEepromWrite(&sSIMesgQueue, address, (u8 *)&alloc[i]);
             }
         }
         free_from_memory_pool(alloc);
@@ -890,7 +890,7 @@ s32 write_save_data(s32 saveFileNum, Settings *settings) {
     s32 blocks;
     s32 i;
 
-    if (osEepromProbe(get_si_mesg_queue()) == 0) {
+    if (osEepromProbe(&sSIMesgQueue) == 0) {
         return -1;
     }
 
@@ -915,7 +915,7 @@ s32 write_save_data(s32 saveFileNum, Settings *settings) {
 
     if (!is_reset_pressed()) {
         for (i = 0, address = startingAddress; i < blocks; i++, address++) {
-            osEepromWrite(get_si_mesg_queue(), address, (u8 *)&alloc[i]);
+            osEepromWrite(&sSIMesgQueue, address, (u8 *)&alloc[i]);
         }
     }
 
@@ -935,7 +935,7 @@ s32 read_eeprom_data(Settings *settings, u8 flags) {
     u64 *alloc;
     s32 i;
 
-    if (osEepromProbe(get_si_mesg_queue()) == 0) {
+    if (osEepromProbe(&sSIMesgQueue) == 0) {
         return -1;
     }
 
@@ -944,7 +944,7 @@ s32 read_eeprom_data(Settings *settings, u8 flags) {
     if (flags & SAVE_DATA_FLAG_READ_FLAP_TIMES) {
         s32 blocks = 24;
         for (i = 0; i < blocks; i++) {
-            osEepromRead(get_si_mesg_queue(), i + 0x10, (u8 *)&alloc[i]);
+            osEepromRead(&sSIMesgQueue, i + 0x10, (u8 *)&alloc[i]);
         }
         func_80073588(settings, (u8 *) alloc, SAVE_DATA_FLAG_READ_FLAP_TIMES);
     }
@@ -952,7 +952,7 @@ s32 read_eeprom_data(Settings *settings, u8 flags) {
     if (flags & SAVE_DATA_FLAG_READ_COURSE_TIMES) {
         s32 blocks = 24;
         for (i = 0; i < blocks; i++) {
-            osEepromRead(get_si_mesg_queue(), i + 0x28, (u8 *)(&alloc[24] + i));
+            osEepromRead(&sSIMesgQueue, i + 0x28, (u8 *)(&alloc[24] + i));
         }
         func_80073588(settings, (u8 *) alloc, SAVE_DATA_FLAG_READ_COURSE_TIMES);
     }
@@ -973,7 +973,7 @@ s32 write_eeprom_data(Settings *settings, u8 flags) {
     u64 *alloc;
     s32 i;
 
-    if (osEepromProbe(get_si_mesg_queue()) == 0) {
+    if (osEepromProbe(&sSIMesgQueue) == 0) {
         return -1;
     }
 
@@ -986,7 +986,7 @@ s32 write_eeprom_data(Settings *settings, u8 flags) {
         if (1){} //Fake Match
         if (!is_reset_pressed()) {
             for (i = 0; i != size; i++) {
-                osEepromWrite(get_si_mesg_queue(), i + 16, (u8 *)&alloc[i]);
+                osEepromWrite(&sSIMesgQueue, i + 16, (u8 *)&alloc[i]);
             }
         }
     }
@@ -995,7 +995,7 @@ s32 write_eeprom_data(Settings *settings, u8 flags) {
         s32 size = 24;
         if (!is_reset_pressed()) {
             for (i = 0; i != size; i++) {
-                osEepromWrite(get_si_mesg_queue(), i + 40, (u8 *)(&alloc[24] + i));
+                osEepromWrite(&sSIMesgQueue, i + 40, (u8 *)(&alloc[24] + i));
             }
         }
     }
@@ -1028,11 +1028,11 @@ s32 read_eeprom_settings(u64 *eepromSettings) {
     s32 temp;
     s32 sp20;
 
-    if (osEepromProbe(get_si_mesg_queue()) == 0) {
+    if (osEepromProbe(&sSIMesgQueue) == 0) {
         return -1;
     }
 
-    osEepromRead(get_si_mesg_queue(), 0xF, (u8 *) eepromSettings);
+    osEepromRead(&sSIMesgQueue, 0xF, (u8 *) eepromSettings);
     sp20 = calculate_eeprom_settings_checksum(*eepromSettings);
     temp =  *eepromSettings >> 56;
     if (sp20 != temp) {
@@ -1053,14 +1053,14 @@ s32 read_eeprom_settings(u64 *eepromSettings) {
  * Address (0xF * sizeof(u64)) = 0x78 - 0x80 of the actual save data file
  */
 s32 write_eeprom_settings(u64 *eepromSettings) {
-    if (osEepromProbe(get_si_mesg_queue()) == 0) {
+    if (osEepromProbe(&sSIMesgQueue) == 0) {
         return -1;
     }
     *eepromSettings <<= 8;
     *eepromSettings >>= 8;
     *eepromSettings |= (s64)(calculate_eeprom_settings_checksum(*eepromSettings)) << 56;
     if (is_reset_pressed() == 0) {
-        osEepromWrite(get_si_mesg_queue(), 0xF, (u8 *) eepromSettings);
+        osEepromWrite(&sSIMesgQueue, 0xF, (u8 *) eepromSettings);
     }
     return 1;
 }
@@ -1570,7 +1570,7 @@ void init_controller_paks(void) {
     u8 pakPattern;
     s8 maxControllers;
 
-    sControllerMesgQueue = get_si_mesg_queue();
+    sControllerMesgQueue = &sSIMesgQueue;
     sUnkMiscAsset19 = (s16 *)get_misc_asset(ASSET_MISC_19);
     D_801241E6 = D_801241E7 = 0xF;
     D_801241E4 = 1;

@@ -18,14 +18,6 @@ u16 gControllerButtonsReleased[MAXCONTROLLERS];
 u8 sPlayerID[16];
 
 /**
- * Return the serial interface message queue.
- * Official name: joyMessageQ
- */
-OSMesgQueue *get_si_mesg_queue(void) {
-    return &sSIMesgQueue;
-}
-
-/**
  * Initialise the player controllers, and return the status when finished.
  * Official name: joyInit
  */

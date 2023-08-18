@@ -77,6 +77,13 @@ typedef struct unk80068514_arg4 {
     Gfx *unk8[1];
 } unk80068514_arg4;
 
+extern s32 gActiveCameraID;
+extern s32 gNumberOfViewports;
+extern s8 gCutsceneCameraActive;
+extern Matrix gOrthoMatrix;
+extern ObjectSegment gActiveCameraStack[8];
+extern MatrixS gPerspectiveMatrixS;
+
 void func_80066060(s32 arg0, s32 arg1);
 void set_viewport_tv_type(s8 arg0);
 void func_800660C0(void);
@@ -89,7 +96,6 @@ void func_80066230(Gfx **dlist, MatrixS **arg1);
 f32 get_distance_to_active_camera(f32 xPos, f32 yPos, f32 zPos);
 void func_800663DC(s32 xPos, s32 yPos, s32 zPos, s32 arg3, s32 arg4, s32 arg5);
 void write_to_object_render_stack(s32 arg0, f32 xPos, f32 yPos, f32 zPos, s16 arg4, s16 arg5, s16 arg6);
-void disable_cutscene_camera(void);
 s8 check_if_showing_cutscene_camera(void);
 s32 set_active_viewports_and_max(s32 arg0);
 void set_active_camera(s32 arg0);
@@ -101,7 +107,6 @@ void set_viewport_properties(s32 viewPortIndex, s32 x1, s32 x2, s32 y1, s32 y2);
 s32 copy_viewport_background_size_to_coords(s32 viewPortIndex, s32 *x1, s32 *y1, s32 *x2, s32 *y2);
 void copy_viewport_frame_size_to_coords(s32 viewPortIndex, s32 *arg1, s32 *arg2, s32 *arg3, s32 *arg4);
 void copy_framebuffer_size_to_coords(s32 *x1, s32 *y1, s32 *x2, s32 *y2);
-void set_ortho_matrix_height(f32 value);
 void set_ortho_matrix_view(Gfx **dlist, MatrixS **mats);
 void func_8006807C(Gfx **dlist, MatrixS **mats);
 void func_80068158(Gfx **dlist, s32 arg1, s32 arg2, s32 arg3, s32 arg4);
@@ -112,7 +117,6 @@ ObjectSegment *get_active_camera_segment_no_cutscenes(void);
 ObjectSegment *get_active_camera_segment(void);
 ObjectSegment *get_cutscene_camera_segment(void);
 Matrix *func_80069DA4(void);
-MatrixS *func_80069DB0(void);
 Matrix *func_80069DBC(void);
 f32 func_80069DC8(f32 x, f32 y, f32 z);
 void set_camera_shake_by_distance(f32 x, f32 y, f32 z, f32 dist, f32 magnitude);

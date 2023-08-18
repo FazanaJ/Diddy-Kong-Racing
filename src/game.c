@@ -227,14 +227,6 @@ void get_number_of_levels_and_worlds(s32 *outLevelCount, s32 *outWorldCount) {
 }
 
 /**
- * Returns true if the current event is a regular race or a boss race.
- * Returns false if it's a menu, challenge or hubworld.
-*/
-s32 check_if_in_race(void) {
-    return gIsInRace;
-}
-
-/**
  * Loads and sets up the level header, then loads and sets of the level geometry.
  * Sets weather, fog and active cutscenes where applicable.
 */
@@ -284,9 +276,9 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
     D_800DD330 = 0;
     prevLevelID = levelId;
     if (gCurrentLevelHeader->race_type == RACETYPE_DEFAULT) {
-        clear_level_property_stack();
+        gLevelPropertyStackPos = 0;
     }
-    if (get_level_property_stack_pos() == 0) {
+    if (gLevelPropertyStackPos == 0) {
         if (D_800DD32C == 0) {
             if (gCurrentLevelHeader->race_type == RACETYPE_BOSS) {
                 var_s0 = settings->courseFlagsPtr[levelId];
@@ -664,13 +656,6 @@ void pop_level_property_stack(s32 *levelId, s32 *entranceId, s32 *vehicleId, s32
     }
 
     D_800DD32C = 1;
-}
-
-/**
- * Resets the position in the level propert stack, effectively clearing it.
-*/
-void clear_level_property_stack(void) {
-    gLevelPropertyStackPos = 0;
 }
 
 /**

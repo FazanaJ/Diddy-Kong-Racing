@@ -145,6 +145,9 @@ typedef struct Unknown80046524 {
     s8 unk3A;
 } Unknown80046524;
 
+extern s8 gRacerInputBlocked;
+extern s8 gRacerDialogueCamera;
+
 void alloc_ghost_pool(void);
 void free_ghost_pool(void);
 s32 roll_percent_chance(s32 chance);
@@ -176,7 +179,6 @@ void free_tt_ghost_data(void);
 s32 func_80059B7C(s32 controllerIndex, s32 mapId, s16 arg2, s16 arg3, s16 arg4);
 s16 func_80059E20(void);
 void disable_racer_input(void);
-void racer_set_dialogue_camera(void);
 void compare_balloon_checksums(void);
 void antipiracy_modify_surface_traction_table(void);
 s32 turn_head_towards_object(Object *obj, Object_Racer *racer, Object *targetObj, f32 distance);

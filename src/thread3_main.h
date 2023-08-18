@@ -59,6 +59,8 @@ extern s32 gSaveDataFlags;
 #define SAVE_DATA_FLAG_READ_SAVE_FILE_NUMBER(flags) ((flags >> 8) & SAVE_DATA_FLAG_INDEX_VALUE)
 #define SAVE_DATA_FLAG_WRITE_SAVE_FILE_NUMBER(flags) ((flags >> 10) & SAVE_DATA_FLAG_INDEX_VALUE)
 
+extern s8 gDrawFrameTimer;
+
 void thread3_main(UNUSED void *unused);
 void init_game(void);
 void main_game_loop(void);
@@ -109,7 +111,6 @@ void begin_lighthouse_rocket_cutscene(void);
 void begin_level_teleport(s32 arg0);
 void func_8006F388(u8 arg0);
 void func_8006F398(void);
-void set_frame_blackout_timer(void);
 void pre_intro_loop(void);
 s32 is_controller_missing(void);
 s32 check_imem_validity(void);

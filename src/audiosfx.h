@@ -109,6 +109,8 @@ typedef struct audioMgrConfig_s{
     u16  unk10; // Heap Size?
 } audioMgrConfig;
 
+extern s32 sfxVolumeSlider;
+
 extern void *alHeapDBAlloc(u8 *file, s32 line, ALHeap *hp, s32 num, s32 size); //lib/src/al
 extern void alEvtqNew(ALEventQueue *evtq, ALEventListItem *items, s32 itemCount); //lib/src/unknown_0C9C90.c
 extern ALMicroTime alEvtqNextEvent(ALEventQueue *evtq, ALEvent *evt); //lib/src/unknown_0C9C90.c
