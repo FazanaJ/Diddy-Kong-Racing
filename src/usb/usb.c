@@ -228,15 +228,15 @@ extern s32 osPiRawWriteIo(u32 devAddr, u32 data);
 
 static void usb_findcart(void);
 
-static void usb_64drive_write(int datatype, const s8* data, int size);
+static void usb_64drive_write(int datatype, s8* data, int size);
 static u32  usb_64drive_poll(void);
 static void usb_64drive_read(void);
 
-static void usb_everdrive_write(int datatype, const s8* data, int size);
+static void usb_everdrive_write(int datatype, s8* data, int size);
 static u32  usb_everdrive_poll(void);
 static void usb_everdrive_read(void);
 
-static void usb_sc64_write(int datatype, const s8* data, int size);
+static void usb_sc64_write(int datatype, s8* data, int size);
 static u32  usb_sc64_poll(void);
 static void usb_sc64_read(void);
 
@@ -246,14 +246,14 @@ static void usb_sc64_read(void);
 *********************************/
 
 // Function pointers
-void (*funcPointer_write)(int datatype, const s8* data, int size);
+void (*funcPointer_write)(int datatype, s8* data, int size);
 u32  (*funcPointer_poll)();
 void (*funcPointer_read)();
 
 // USB globals
 static s8 usb_cart = CART_NONE;
 static u8 usb_buffer_align[BUFFER_SIZE+16]; // IDO doesn't support GCC's __attribute__((aligned(x))), so this is a workaround
-static u8* usb_buffer;
+static s8* usb_buffer;
 static char usb_didtimeout = FALSE;
 static int usb_datatype = 0;
 static int usb_datasize = 0;
@@ -452,7 +452,7 @@ static char usb_timeout_check(u32 start_ticks, u32 duration)
 char usb_initialize(void)
 {
     // Initialize the debug related globals
-    usb_buffer = (u8*)OS_DCACHE_ROUNDUP_ADDR(usb_buffer_align);
+    usb_buffer = (s8 *) OS_DCACHE_ROUNDUP_ADDR(usb_buffer_align);
     memset(usb_buffer, 0, BUFFER_SIZE);
         
     #ifndef LIBDRAGON
@@ -588,7 +588,7 @@ char usb_getcart(void)
     @param The size of the data being sent
 ==============================*/
 
-void usb_write(int datatype, const s8* data, int size)
+void usb_write(int datatype, const u8* data, int size)
 {
     // If no debug cart exists, stop
     if (usb_cart == CART_NONE)
@@ -599,7 +599,7 @@ void usb_write(int datatype, const s8* data, int size)
         return;
     
     // Call the correct write function
-    funcPointer_write(datatype, data, size);
+    funcPointer_write(datatype, (s8 *) data, size);
 }
 
 
@@ -641,7 +641,7 @@ u32 usb_poll(void)
     @param The number of bytes to read
 ==============================*/
 
-void usb_read(s8* buffer, int nbytes)
+void usb_read(u8* buffer, int nbytes)
 {
     int read = 0;
     int left = nbytes;
@@ -675,7 +675,7 @@ void usb_read(s8* buffer, int nbytes)
         }
         
         // Copy from the USB buffer to the supplied buffer
-        memcpy(buffer+read, usb_buffer+copystart, block);
+        memcpy((s8 *) buffer+read, usb_buffer+copystart, block);
         
         // Increment/decrement all our counters
         read += block;
@@ -943,7 +943,7 @@ static u32 usb_64drive_cui_read(u32 offset)
     @param The size of the data being sent
 ==============================*/
 
-static void usb_64drive_write(int datatype, const s8* data, int size)
+static void usb_64drive_write(int datatype, s8* data, int size)
 {
     s32 left = size;
     u32 pi_address = D64_BASE + DEBUG_ADDRESS;
@@ -1109,7 +1109,7 @@ static void usb_everdrive_readusb(s8* buffer, int size)
 
         // Read from the internal buffer and store it in our buffer
         usb_dma_read(buffer, ED_REG_USBDAT + addr, block);
-        buffer = (char*)buffer + block;
+        buffer = (s8*)buffer + block;
         size -= block;
     }
 }
@@ -1124,7 +1124,7 @@ static void usb_everdrive_readusb(s8* buffer, int size)
     @param The size of the data being sent
 ==============================*/
 
-static void usb_everdrive_write(int datatype, const s8* data, int size)
+static void usb_everdrive_write(int datatype, s8* data, int size)
 {
     char wrotecmp = 0;
     char cmp[] = {'C', 'M', 'P', 'H'};
@@ -1159,7 +1159,7 @@ static void usb_everdrive_write(int datatype, const s8* data, int size)
         {
             left = 4;
             offset = block+offset;
-            data = cmp;
+            data = (s8 *) cmp;
             wrotecmp = 1;
             read = 0;
             continue;
@@ -1213,7 +1213,7 @@ static u32 usb_everdrive_poll(void)
         return 0;
     
     // Read the first 8 bytes that are being received and check if they're valid
-    usb_everdrive_readusb(buff, 8);
+    usb_everdrive_readusb((s8 *) buff, 8);
     if (buff[0] != 'D' || buff[1] != 'M' || buff[2] != 'A' || buff[3] != '@')
         return 0;
         
@@ -1245,7 +1245,7 @@ static u32 usb_everdrive_poll(void)
     // Read the CMP Signal
     if (usb_everdrive_usbbusy())
         return 0;
-    usb_everdrive_readusb(buff, 4);
+    usb_everdrive_readusb((s8 *) buff, 4);
     if (buff[0] != 'C' || buff[1] != 'M' || buff[2] != 'P' || buff[3] != 'H')
     {
         // Something went wrong with the data
@@ -1354,7 +1354,7 @@ static u32 usb_sc64_set_writable(u32 enable)
     @param The size of the data being sent
 ==============================*/
 
-static void usb_sc64_write(int datatype, const s8* data, int size)
+static void usb_sc64_write(int datatype, s8* data, int size)
 {
     u32 left = size;
     u32 pi_address = SC64_BASE + DEBUG_ADDRESS;

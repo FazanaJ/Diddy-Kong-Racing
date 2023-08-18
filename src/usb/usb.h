@@ -73,7 +73,7 @@
         @param The size of the data being sent
     ==============================*/
     
-    extern void usb_write(int datatype, const s8* data, int size);
+    extern void usb_write(int datatype, const u8* data, int size);
     
     
     /*==============================
@@ -93,7 +93,7 @@
         @param The number of bytes to read
     ==============================*/
     
-    extern void usb_read(s8* buffer, int size);
+    extern void usb_read(u8* buffer, int size);
     
     
     /*==============================

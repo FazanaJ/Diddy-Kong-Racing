@@ -64,13 +64,12 @@ void tick_usb_thread(void) {
     osSendMesg(&gThreadUsbMesgQueue, (OSMesg *) OS_MESG_TYPE_LOOPBACK, OS_MESG_NOBLOCK);
 }
 
-void dkr_usb_poll(void) {
-    int result;
-    
+void dkr_usb_poll(void) {    
     RETURN_IF_USB_NOT_VALID();
     RETURN_IF_CART_NOT_VALID();
     while(usb_poll()) {
-        int header, dataType, numBytesToRead;
+        int header, numBytesToRead;
+        UNUSED int dataType;
         header = usb_poll();
         dataType = USBHEADER_GETTYPE(header);
         numBytesToRead = USBHEADER_GETSIZE(header);
@@ -79,7 +78,7 @@ void dkr_usb_poll(void) {
             usb_skip(numBytesToRead);
             continue;
         }
-        usb_read(textBuffer, numBytesToRead);
+        usb_read((u8 *) textBuffer, numBytesToRead);
     }
     usb_purge(); // Not sure if this is needed?
 }
@@ -103,7 +102,7 @@ void check_hot_reload(void) {
         usb_set_debug_address(0);
         
         // Send message to PC that it should send the 1MB of ROM.
-        usb_write(DATATYPE_TEXT, "SEND_HOTRELOAD\n", 16);
+        usb_write(DATATYPE_TEXT, (u8 *) "SEND_HOTRELOAD\n", 16);
         
         numBytesReadHR = 0;
         isHotReloading = 1;
@@ -126,7 +125,7 @@ void check_hot_reload(void) {
         // Finished sending over 1MB of data.
         if((numBytesReadHR > 0) && (USBHEADER_GETSIZE(usb_poll()) < 1)) {
             usb_restore_debug_address(); // Move the debug address back to the end of ROM.
-            usb_write(DATATYPE_TEXT, "HOTRELOAD_DONE\n", 16); // Tell the computer that we are done.
+            usb_write(DATATYPE_TEXT, (u8 *) "HOTRELOAD_DONE\n", 16); // Tell the computer that we are done.
             reset(); // Reset the game.
         }
     }
@@ -152,10 +151,7 @@ void threadusb_loop(UNUSED void *arg) {
 }
 
 // Called from main thread.
-void render_usb_info(void) {
-    s32 i;
-    s32 readData;
-    
+void render_usb_info(void) {    
     set_render_printf_background_colour(0, 0, 0, 128);
     render_printf("Does USB work? %d\n", usbState);
     RETURN_IF_USB_NOT_VALID();

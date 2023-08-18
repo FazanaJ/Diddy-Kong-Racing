@@ -48,8 +48,8 @@ void reset_start() {
     while (IO_READ(PI_STATUS_REG) & (PI_STATUS_DMA_BUSY | PI_STATUS_ERROR)){}
     
     // Invalidate all cache
-    (*osInvalICacheCopy)(0x80000400, 0x4000);
-    (*osInvalDCacheCopy)(0x80000400, 0x2000);
+    (*osInvalICacheCopy)((size_t *) 0x80000400, 0x4000);
+    (*osInvalDCacheCopy)((size_t *) 0x80000400, 0x2000);
     
     // Jump to the game's entrypoint.
     entrypoint();
@@ -84,19 +84,19 @@ void reset(void) {
     // Disable interrupts.
     reboot_disable_interrupts();
     
-    resetFuncSize = (s32)((u8*)&reset_start_end - (u8*)&reset_start);
-    resetFunc = (u8*)RAM_END - resetFuncSize;
+    resetFuncSize = (s32) ((u8 *) &reset_start_end - (u8 *) &reset_start);
+    resetFunc = (void *) ((u8 *) RAM_END - resetFuncSize);
     
     // Need to copy the invalidate cache functions to the end of RAM too.
-    osInvalICacheCopy = (u8*)resetFunc - SIZEOF_osInvalICache;
-    osInvalDCacheCopy = (u8*)osInvalICacheCopy - SIZEOF_osInvalDCache;
+    osInvalICacheCopy = (void *) ((u8 *) resetFunc - SIZEOF_osInvalICache);
+    osInvalDCacheCopy = (void *) ((u8 *) osInvalICacheCopy - SIZEOF_osInvalDCache);
     
     memcpy(resetFunc, reset_start, resetFuncSize);
     memcpy(osInvalICacheCopy, osInvalICache, SIZEOF_osInvalICache);
     memcpy(osInvalDCacheCopy, osInvalDCache, SIZEOF_osInvalDCache);
     
     // Invalidate all of ICache and writeback all the dcache back into RDRAM.
-    osInvalICache(0x80000400, 0x4000);
+    osInvalICache((void *) 0x80000400, 0x4000);
     osWritebackDCacheAll();
 
     (*resetFunc)(); // This executes the actual reset code at the end of ram.
