@@ -200,7 +200,7 @@ void update_smokey(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
             } else {
                 obj->segment.object.animationID = ANIM_SMOKEY_FLY;
             }
-        } else if (-0.1 < racer->velocity && racer->velocity < 0.1f) {
+        } else if (-0.1f < racer->velocity && racer->velocity < 0.1f) {
             if (obj->segment.object.animationID == ANIM_SMOKEY_WALK) {
                 obj->segment.object.animationID = ANIM_SMOKEY_RUN;
                 racer->animationSpeed = (objModel->animations[obj->segment.object.animationID].unk4 * 16) - 17;

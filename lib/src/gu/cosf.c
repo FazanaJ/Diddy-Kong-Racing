@@ -34,17 +34,17 @@ f32 cosf(f32 x) {
 		}
 
 		dx = xabs;
-		dn = dx * rpi_cosf.d + 0.5f;
+		dn = dx * rpi_cosf.d + 0.5;
 
 		if (0 <= dn) {
-			n = dn + 0.5f;
+			n = dn + 0.5;
 		} else {
-			n = dn - 0.5f;
+			n = dn - 0.5;
 		}
 
 		dn = n;
-		dx -= (dn - 0.5f) * pihi_cosf.d;
-		dx -= (dn - 0.5f) * pilo_cosf.d;
+		dx -= (dn - 0.5) * pihi_cosf.d;
+		dx -= (dn - 0.5) * pilo_cosf.d;
 		xsq = dx * dx;
 
 		poly = (((((P_cosf[4].d * xsq) + P_cosf[3].d) * xsq) + P_cosf[2].d) * xsq) + P_cosf[1].d;

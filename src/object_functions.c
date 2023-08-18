@@ -251,7 +251,7 @@ void obj_loop_fireball_octoweapon(Object *obj, s32 updateRate) {
         if (diff > 10.0f) {
             diff = 10.0f;
         }
-        if (diff < -10.0) {
+        if (diff < -10.0f) {
             diff = -10.0f;
         }
         obj->segment.x_velocity += (diff - obj->segment.x_velocity) * 0.125f * updateRateF;
@@ -259,7 +259,7 @@ void obj_loop_fireball_octoweapon(Object *obj, s32 updateRate) {
         if (diff > 10.0f) {
             diff = 10.0f;
         }
-        if (diff < -10.0) {
+        if (diff < -10.0f) {
             diff = -10.0f;
         }
         obj->segment.y_velocity += (diff - obj->segment.y_velocity) * 0.125f * updateRateF;

@@ -203,7 +203,7 @@ s32 alFxParamHdl(void *filter, s32 paramID, void *param)
  * where
  *      120,000/ln(2) = 173123.40...
  */
-#define CONVERT 173123.404906676
+#define CONVERT 173123.404906676f
 #define LENGTH  (f->delay[s].output - f->delay[s].input)
 
         case CHORUSDEPTH_PARAM:

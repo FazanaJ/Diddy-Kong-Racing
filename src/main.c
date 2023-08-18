@@ -456,7 +456,7 @@ void puppyprint_render_minimal(void) {
     set_text_colour(255, 255, 255, 255, 255);
     set_text_background_colour(0, 0, 0, 0);
     set_kerning(FALSE);
-    puppyprintf(textBytes,  "FPS: %2.2f", gFPS);
+    puppyprintf(textBytes,  "FPS: %2.2f", (f64) gFPS);
     draw_text(&gCurrDisplayList, TEXT_OFFSET, 10, textBytes, ALIGN_TOP_LEFT);
     puppyprintf(textBytes,  "CPU: %dus", gPuppyPrint.cpuTime[PERF_TOTAL]);
     draw_text(&gCurrDisplayList, TEXT_OFFSET, 20, textBytes, ALIGN_TOP_LEFT);

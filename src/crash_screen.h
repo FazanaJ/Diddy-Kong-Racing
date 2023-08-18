@@ -224,7 +224,7 @@ void crash_screen_print_float_reg(s32 x, s32 y, s32 regNum, void *addr) {
     bits = *(u32 *) addr;
     exponent = ((bits & 0x7f800000U) >> 0x17) - 0x7f;
     if ((exponent >= -0x7e && exponent <= 0x7f) || bits == 0) {
-        crash_screen_print(x, y, "F%02d:%.3e", regNum, *(f32 *) addr);
+        crash_screen_print(x, y, "F%02d:%.3e", regNum, (f64) *(f32 *) addr);
     } else {
         crash_screen_print(x, y, "F%02d:---------", regNum);
     }

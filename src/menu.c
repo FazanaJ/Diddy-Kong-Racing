@@ -10025,7 +10025,7 @@ void record_fps(void) {
     frameDiff = osGetTime() - benchLastTime;
     gRaceStartTimer = 0;
 
-    puppyprintf(textBytes, "FPS: %2.2f", gFPS);
+    puppyprintf(textBytes, "FPS: %2.2f", (f64) gFPS);
     
     draw_text(&sMenuCurrDisplayList, 32, 32, textBytes, ALIGN_TOP_LEFT);
 

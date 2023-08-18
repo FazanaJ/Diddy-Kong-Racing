@@ -2264,7 +2264,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
         // Print player 1's coordinates to the screen if the debug cheat is enabled.
         if (gRaceStartTimer == 0 && tempRacer->playerIndex == PLAYER_ONE) {
             if (get_filtered_cheats() & CHEAT_PRINT_COORDS) {
-                render_printf(gRacerDebugCoords, obj->segment.trans.x_position, obj->segment.trans.y_position, obj->segment.trans.z_position);
+                render_printf(gRacerDebugCoords, (f64) obj->segment.trans.x_position, (f64) obj->segment.trans.y_position, (f64) obj->segment.trans.z_position);
             }
         }
         set_render_printf_background_colour(0, 0, 0, 128);
@@ -4027,19 +4027,19 @@ void update_onscreen_AI_racer(Object *obj, Object_Racer *racer, s32 updateRate, 
         }
     } else {
         tempVel = racer->velocity - yVel;
-        if (tempVel > 0.5) {
-            racer->velocity -= tempVel - 0.5; //!@Delta
+        if (tempVel > 0.5f) {
+            racer->velocity -= tempVel - 0.5f; //!@Delta
         }
-        if (tempVel < -0.5) {
-            racer->velocity -= tempVel + 0.5; //!@Delta
+        if (tempVel < -0.5f) {
+            racer->velocity -= tempVel + 0.5f; //!@Delta
         }
         tempVel = racer->lateral_velocity - hVel;
         if (tempVel && tempVel) {}
-        if (tempVel > 0.5) {
-            racer->lateral_velocity -= tempVel - 0.5; //!@Delta
+        if (tempVel > 0.5f) {
+            racer->lateral_velocity -= tempVel - 0.5f; //!@Delta
         }
-        if (tempVel < -0.5) {
-            racer->lateral_velocity -= tempVel + 0.5; //!@Delta
+        if (tempVel < -0.5f) {
+            racer->lateral_velocity -= tempVel + 0.5f; //!@Delta
         }
     }
 }
@@ -4149,7 +4149,7 @@ void update_car_velocity_ground(Object *obj, Object_Racer *racer, s32 updateRate
     if (racer->boostTimer > 0) {
         if (gRaceStartTimer == 0) {
             racer->throttle = 1.0f;
-            if (vel != 0.0) {
+            if (vel != 0.0f) {
                 vel = 2.0f;
             }
             racer->boostTimer -= updateRate;

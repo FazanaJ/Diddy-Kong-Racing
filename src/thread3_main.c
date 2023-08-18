@@ -493,7 +493,7 @@ void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     sPrevTime = 0;
     set_free_queue_state(2);
     func_80072298(1);
-    puppyprint_log("Level [%s] loaded in %2.3fs.", get_level_name(levelId), OS_CYCLES_TO_USEC(osGetCount() - profiler_get_timer()) / 1000000.0f);
+    puppyprint_log("Level [%s] loaded in %2.3fs.", get_level_name(levelId), (f64) (OS_CYCLES_TO_USEC(osGetCount() - profiler_get_timer()) / 1000000.0f));
 }
 
 /**
@@ -991,7 +991,7 @@ void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     sPrevTime = 0;
     set_free_queue_state(2);
     if (gBootTimer == 0) {
-        puppyprint_log("Level (%s) (Menu) loaded in %2.3fs.", get_level_name(levelId), OS_CYCLES_TO_USEC(osGetCount() - profiler_get_timer()) / 1000000.0f);
+        puppyprint_log("Level (%s) (Menu) loaded in %2.3fs.", get_level_name(levelId), (f64) (OS_CYCLES_TO_USEC(osGetCount() - profiler_get_timer()) / 1000000.0f));
     }
 }
 

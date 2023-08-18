@@ -135,7 +135,7 @@ void update_wizpig(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
     gfxData = *obj->unk68;
     objModel = gfxData->objModel;
     diffX = (objModel->animations[obj->segment.object.animationID].unk4 * 0x10) - 0x11;
-    animVelocity = (racer->velocity * updateRateF) * 0.45;
+    animVelocity = (racer->velocity * updateRateF) * 0.45f;
     if (animVelocity <= 0.0f) {
         if (animVelocity > -2.0f) {
             animVelocity = -2.0f;
@@ -206,7 +206,7 @@ void update_wizpig(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
                 obj->segment.object.animationID = ANIM_WIZPIG_FLY;
             }
         } else {
-            if (-0.1 < racer->velocity && racer->velocity < 0.1f) {
+            if (-0.1f < racer->velocity && racer->velocity < 0.1f) {
                 if (obj->segment.object.animationID == ANIM_WIZPIG_RUN) {
                     obj->segment.object.animationID = ANIM_WIZPIG_WALK;
                     racer->animationSpeed = (objModel->animations[obj->segment.object.animationID].unk4 * 16) - 17;

@@ -12,7 +12,7 @@ void guPerspectiveF(Matrix mf, u16 *perspNorm, float fovy, float aspect, float n
 
     guMtxIdentF(mf);
 
-    fovy *= 3.1415926 / 180.0f;
+    fovy *= 3.1415926f / 180.0f;
     cot = cosf (fovy/2) / sinf (fovy/2);
 
     mf[0][0] = cot / aspect;

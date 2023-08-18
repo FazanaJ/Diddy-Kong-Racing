@@ -1354,7 +1354,7 @@ void func_8002A31C(void) {
         x = ((oz2 - oz3) * oy1) + (oy2 * (oz3 - oz1)) + (oy3 * (oz1 - oz2));
         y = ((ox2 - ox3) * oz1) + (oz2 * (ox3 - ox1)) + (oz3 * (ox1 - ox2));
         z = ((oy2 - oy3) * ox1) + (ox2 * (oy3 - oy1)) + (ox3 * (oy1 - oy2));
-        inverseMagnitude = (1.0 / sqrtf((x * x) + (y * y) + (z * z)));
+        inverseMagnitude = (1.0f / sqrtf((x * x) + (y * y) + (z * z)));
         if (inverseMagnitude > 0.0f) {
             x *= inverseMagnitude;
             y *= inverseMagnitude;
