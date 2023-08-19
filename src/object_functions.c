@@ -657,7 +657,7 @@ void obj_loop_trophycab(Object *obj, s32 updateRate) {
                     if (worldBalloons) {
                         obj->properties.trophyCabinet.action = 1;
                         play_sound_global(SOUND_VOICE_TT_TROPHY_RACE, NULL);
-                        func_800A3870();
+                        D_80126CDC->unk4C4 = 0x6490;
                     } else {
                         func_800C31EC(4);
                         gfxData->unk4 = 180;

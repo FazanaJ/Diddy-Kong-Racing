@@ -385,7 +385,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
     // Show TT Cam toggle for the fourth viewport when playing 3 player.
     if (numViewports == 3 && gCurrentLevelHeader->race_type != RACETYPE_CHALLENGE_EGGS && 
         gCurrentLevelHeader->race_type != RACETYPE_CHALLENGE_BATTLE && gCurrentLevelHeader->race_type != RACETYPE_CHALLENGE_BANANAS) {
-        if (get_hud_setting() == 0) {
+        if (gHudToggleSettings[gHUDNumPlayers] == 0) {
             if (flip) {
                 gSPSetGeometryMode(gSceneCurrDisplayList++, G_CULL_FRONT);
             }
@@ -884,9 +884,7 @@ void render_level_geometry_and_objects(void) {
         segmentIds[0] = 0;
     }
 
-    for (i = 1; i <= gCurrentLevelModel->numberOfSegments; i++) {
-        objectsVisible[i] = FALSE; // why not a bzero?
-    }
+    bzero(&objectsVisible[1], gCurrentLevelModel->numberOfSegments - 1);
 
     objectsVisible[0] = TRUE;
 

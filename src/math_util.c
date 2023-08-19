@@ -7,6 +7,7 @@
 #include "types.h"
 #include "macros.h"
 #include "structs.h"
+#include "game.h"
 
 extern s32 D_800DD430;
 extern s32 gCurrentRNGSeed; //Official Name: rngSeed
@@ -474,20 +475,13 @@ s32 point_triangle_2d_xz_intersection(s32 x, s32 z, s16 *vec3A, s16 *vec3B, s16 
 GLOBAL_ASM("asm/math_util/point_triangle_2d_xz_intersection.s")
 #endif
 
-#ifdef NON_EQUIVALENT
+#ifdef NON_MATCHING
 void f32_matrix_from_position(Matrix *mtx, f32 x, f32 y, f32 z) {
-    s32 j;
-    s32 i;
-    // Clear matrix
-    for(i = 0; i < 4; i++) {
-        for(j = 0; j < 4; j++) {
-            *mtx[i][j] = 0;
-        }
-    }
-    *mtx[0][0] = 1.0f;
-    *mtx[1][1] = 1.0f;
-    *mtx[2][2] = 1.0f;
-    *mtx[3][3] = 1.0f;
+    register s32 i;
+    register f32 *dest;
+    for (dest = (f32 *) *mtx + 1, i = 0; i < 14; dest++, i++) *dest = 0;
+    for (dest = (f32 *) *mtx, i = 0; i < 4; dest += 5, i++) *dest = 1;
+
     *mtx[3][0] = x;
     *mtx[3][1] = y;
     *mtx[3][2] = z;
@@ -498,41 +492,58 @@ GLOBAL_ASM("asm/math_util/f32_matrix_from_position.s")
 
 GLOBAL_ASM("asm/math_util/f32_matrix_from_scale.s")
 
-#ifdef NON_EQUIVALENT
-s32 atan2s(s32 xDelta, s32 zDelta) {
-    s32 temp;
-    s32 someAngle;
+#ifdef NON_MATCHING
+static u16 atan2_lookup(f32 y, f32 x) {
+    u16 ret;
 
-    if ((xDelta | zDelta) == 0) {
-        return 0;
+    if (x == 0) {
+        ret = gArcTanTable[0];
+    } else {
+        ret = gArcTanTable[(s32)(y / x * 1024 + 0.5f)];
     }
-    if (xDelta >= 0) {
-        if (zDelta >= 0) {
-            someAngle = 0;
+    return ret;
+}
+
+/**
+ * Compute the angle from (0, 0) to (x, y) as a s16. Given that terrain is in
+ * the xz-plane, this is commonly called with (z, x) to get a yaw angle.
+ */
+s32 atan2s(s32 x, s32 y) {
+    u16 ret;
+
+    if (x >= 0) {
+        if (y >= 0) {
+            if (y >= x) {
+                ret = atan2_lookup(x, y);
+            } else {
+                ret = 0x4000 - atan2_lookup(y, x);
+            }
         } else {
-            zDelta = -zDelta;
-            someAngle = 0x4000;
-            temp = xDelta ^ zDelta;
-            zDelta ^= temp;
-            xDelta = temp ^ zDelta;
+            y = -y;
+            if (y < x) {
+                ret = 0x4000 + atan2_lookup(y, x);
+            } else {
+                ret = 0x8000 - atan2_lookup(x, y);
+            }
         }
     } else {
-        xDelta = -xDelta;
-        if (zDelta >= 0) {
-            someAngle = 0xC000;
-            temp = xDelta ^ zDelta;
-            zDelta ^= temp;
-            xDelta = temp ^ zDelta;
+        x = -x;
+        if (y < 0) {
+            y = -y;
+            if (y >= x) {
+                ret = 0x8000 + atan2_lookup(x, y);
+            } else {
+                ret = 0xC000 - atan2_lookup(y, x);
+            }
         } else {
-            zDelta = -zDelta;
-            someAngle = 0x8000;
+            if (y < x) {
+                ret = 0xC000 + atan2_lookup(y, x);
+            } else {
+                ret = -atan2_lookup(x, y);
+            }
         }
     }
-    if ((xDelta - zDelta) >= 0) {
-        return (someAngle + 0x4000) - gArcTanTable[((zDelta << 11) / xDelta) & 0xFFE];
-    } else {
-        return someAngle + gArcTanTable[((xDelta << 11) / zDelta) & 0xFFE];
-    }
+    return ret;
 }
 #else
 GLOBAL_ASM("asm/math_util/atan2s.s")

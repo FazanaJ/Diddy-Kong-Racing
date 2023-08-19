@@ -723,10 +723,6 @@ void render_hud_hubworld(Object *obj, s32 updateRate) {
 GLOBAL_ASM("asm/non_matchings/game_ui/func_800A277C.s")
 GLOBAL_ASM("asm/non_matchings/game_ui/func_800A36CC.s")
 
-void func_800A3870(void) {
-    D_80126CDC->unk4C4 = 0x6490;
-}
-
 /**
  * When enabled, displays speed of the player in the bottom right corner, replacing the minimap.
  * Speed is calculated by normalising racer velocity. then scaling the angle of the needle with that number.
@@ -1503,17 +1499,6 @@ void minimap_init(LevelModel *model) {
     load_sprite_info(model->minimapSpriteIndex, &gMinimapDotOffsetX, &gMinimapDotOffsetY, &sp2C, &sp2C, &sp2C);
     func_8007CA68(model->minimapSpriteIndex, 0, &D_80126D14, &D_80126D18, &sp2C);
     model->minimapSpriteIndex = (s32) func_8007C12C(model->minimapSpriteIndex, 1);
-}
-
-/**
- * Returns the hud settings value for the mumber of active players.
- * For player 1, it's switching between the minimap and speedometre.
- * For 2 players, it's for toggling the minimap
- * For 3 players, it's for toggling between the minimap and a spectator cam in viewport 4.
- * For 4 players, it's for toggling the minimap.
-*/
-s8 get_hud_setting(void) {
-    return gHudToggleSettings[gHUDNumPlayers];
 }
 
 /**
