@@ -215,7 +215,7 @@ Vertex *gObjectCurrVertexList;
 u8 *D_8011AE98[2];
 s32 D_8011AEA0[2];
 s32 D_8011AEA8[2];
-s32 D_8011AEB0[2];
+s32 *D_8011AEB0[2];
 s16 *gAssetsLvlObjTranslationTable;
 s32 gAssetsLvlObjTranslationTableLength;
 s32 D_8011AEC0;
@@ -510,7 +510,80 @@ s32 normalise_time(s32 timer) {
     return timer;
 }
 
+#ifdef NON_MATCHING
+//Really close to matching. Looks like it's just regalloc left, but there's a couple of fakematch stuff in there.
+void func_8000C8F8(s32 arg0, s32 arg1) {
+    s32 assetSize;
+    Settings *settings;
+    s32 i;
+    s32 *asset;
+    s32 var_s0;
+    u32 assetOffset;
+    s32 *assetTable;
+    UNUSED s32 pad;
+    u8 *compressedAsset;
+    s32 temp_t3;
+
+    settings = get_settings();
+    assetOffset = settings->bosses | 0x820; // 0x820 = Wizpig 2 and some unknown 0x800 boss bit
+    gIsSilverCoinRace = ((settings->courseFlagsPtr[settings->courseId] & 4) == 0) && (((1 << settings->worldId) & assetOffset) != 0);
+    
+    if (!(settings->courseFlagsPtr[settings->courseId] & 2)) {
+        gIsSilverCoinRace = 0;
+    }
+    if (is_in_tracks_mode()) {
+        gIsSilverCoinRace = 0;
+    }
+    if (get_current_level_race_type()) {
+        gIsSilverCoinRace = 0;
+    }
+    
+    D_8011AD3E = 0;
+    asset = allocate_from_main_pool_safe(0x3000, COLOUR_TAG_BLUE);
+    D_8011AEB0[arg1] = asset;
+    D_8011AE98[arg1] = (u8 *)(D_8011AEB0[arg1] + 4); //Some structs unk4?
+    D_8011AEA0[arg1] = 0;
+    D_8011AEA8[arg1] = arg0;
+    assetTable = (s32 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_MAPS_TABLE);
+    for (i = 0; assetTable[i] != -1; i++) { }
+    
+    //REGALLOC DIFF START
+    if (arg0 >= (i - 1)) {
+        arg0 = 0;
+    }
+    assetOffset = (&assetTable[arg0])[0];
+    assetSize = (&assetTable[arg0])[1];
+    assetSize -= assetOffset;
+    //REGALLOC DIFF END
+
+    if (assetSize != 0) {
+        compressedAsset = (u8 *) asset;
+        compressedAsset = ((compressedAsset + get_asset_uncompressed_size(ASSET_LEVEL_OBJECT_MAPS, assetOffset)) - (0, assetSize)) + 0x20;
+        load_asset_to_address(ASSET_LEVEL_OBJECT_MAPS, (u32) compressedAsset, assetOffset, assetSize);
+        gzip_inflate(compressedAsset, (u8 *) asset);
+        free_from_memory_pool(assetTable);
+        D_8011AE98[arg1] = (u8 *)(D_8011AEB0[arg1] + 4);
+        D_8011AEA0[arg1] = *asset;
+        D_8011AEC0 = arg1;
+        for (var_s0 = 0; var_s0 < D_8011AEA0[arg1]; var_s0 += temp_t3) {
+            spawn_object(D_8011AE98[arg1], 1);            
+            D_8011AE98[arg1] = &D_8011AE98[arg1][temp_t3 = D_8011AE98[arg1][1] & 0x3F];
+        }
+        D_8011AE98[arg1] = (u8 *)(D_8011AEB0[arg1] + 4);
+        D_8011AE70 = 0;
+        D_8011ADC0 = 1;
+        if (D_8011ADAC == 0) {
+            gParticlePtrList_flush();
+            func_80017E98();
+            func_8001BC54();
+            func_8001E93C();
+        }
+        D_8011ADAC = 1;
+    }
+}
+#else
 GLOBAL_ASM("asm/non_matchings/objects/func_8000C8F8.s")
+#endif
 
 // Reset all values of D_8011AE08 to NULL
 void func_8000CBC0(void) {
@@ -574,11 +647,11 @@ void instShowBearBar(void) {
     D_800DC708 = 0x8000;
 }
 
-s8 func_8000E138() {
+s8 func_8000E138(void) {
     return D_8011AD20;
 }
 
-s8 func_8000E148() {
+s8 func_8000E148(void) {
     return D_800DC71C;
 }
 
@@ -590,7 +663,7 @@ s8 func_8000E158(void) {
     }
 }
 
-s8 func_8000E184() {
+s8 func_8000E184(void) {
     return D_800DC748;
 }
 
@@ -616,7 +689,7 @@ s8 find_non_car_racers(void) {
  * Return true if the silver coin race mode is active.
  * Used to determine whether to spawn silver coins.
  */
-s8 check_if_silver_coin_race() {
+s8 check_if_silver_coin_race(void) {
     return gIsSilverCoinRace;
 }
 
@@ -697,7 +770,7 @@ void set_time_trial_enabled(s32 arg0) {
 /**
  * Returns the value in gTimeTrialEnabled.
  */
-u8 is_time_trial_enabled() {
+u8 is_time_trial_enabled(void) {
     return gTimeTrialEnabled;
 }
 
@@ -708,12 +781,12 @@ u8 is_in_time_trial(void) {
     return gIsTimeTrial;
 }
 
-void func_8000E4E8(s32 index) {
+UNUSED void func_8000E4E8(s32 index) {
     s32 *temp_v0;
     s32 i;
     u8 *temp_a1;
 
-    temp_v0 = (s32 *) D_8011AEB0[index];
+    temp_v0 = D_8011AEB0[index];
     temp_v0[0] = D_8011AEA0[index];
     temp_v0[3] = 0;
     temp_v0[2] = 0;
@@ -728,7 +801,7 @@ void func_8000E4E8(s32 index) {
     }
 }
 
-s32 func_8000E558(Object *arg0){
+UNUSED s32 func_8000E558(Object *arg0) {
     s32 temp_v0;
     s32 new_var, new_var2;
     if (arg0->segment.level_entry == NULL) {
@@ -749,7 +822,25 @@ s32 func_8000E558(Object *arg0){
 
 GLOBAL_ASM("asm/non_matchings/objects/func_8000E5EC.s")
 GLOBAL_ASM("asm/non_matchings/objects/func_8000E79C.s")
-GLOBAL_ASM("asm/non_matchings/objects/func_8000E898.s")
+
+UNUSED u8 *func_8000E898(u8 *arg0, s32 arg1) {
+    s32 temp_t6;
+    s32 i;
+    u8 *temp_v1;
+    u8 *new_var;
+    u8 *new_var2;
+
+    temp_t6 = arg0[1] & 0x3F;
+    new_var = arg0;
+    new_var = &D_8011AE98[arg1][D_8011AEA0[arg1]];
+    new_var2 = arg0;
+    temp_v1 = new_var;
+    D_8011AEA0[arg1] += temp_t6;
+    for (i = 0; i < temp_t6; i++) {
+        temp_v1[i] = new_var2[i];
+    }
+    return temp_v1;
+}
 
 /**
  * Returns the object at the current offset by ID.
@@ -1175,7 +1266,7 @@ void func_80011390(void) {
 
 extern s32 benchState;
 
-s32 func_8001139C() {
+s32 func_8001139C(void) {
 #ifdef PUPPYPRINT_DEBUG
     if (benchState == 1) {
         return 0;
@@ -1189,7 +1280,7 @@ s32 func_8001139C() {
  * There exists another variable in racer.c with exactly the same purpose.
  * This does not get used anywhere else.
  */
-s32 get_race_start_timer() {
+s32 get_race_start_timer(void) {
     return gRaceStartCountdown;
 }
 
@@ -2527,11 +2618,11 @@ void func_8001A8D4(s32 arg0) {
 
 GLOBAL_ASM("asm/non_matchings/objects/func_8001A8F4.s")
 
-s16 func_8001AE44() {
+s16 func_8001AE44(void) {
     return D_8011AD4E;
 }
 
-s32 func_8001AE54() {
+s32 func_8001AE54(void) {
     return D_8011ADC8;
 }
 
@@ -2625,7 +2716,7 @@ s32 func_8001B738(s32 controllerIndex) {
     return func_80059B7C(controllerIndex, func_800599A8(), D_800DC728, D_800DC72C, D_800DC724);
 }
 
-u8 has_ghost_to_save() {
+u8 has_ghost_to_save(void) {
     return gHasGhostToSave;
 }
 
@@ -3073,7 +3164,7 @@ void func_8001E36C(s32 arg0, f32 *arg1, f32 *arg2, f32 *arg3) {
     }
 }
 
-s16 func_8001E440() {
+s16 func_8001E440(void) {
     return D_8011AE7A;
 }
 

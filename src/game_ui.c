@@ -395,7 +395,7 @@ void render_hud(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Object *arg3, s
                 gBlockedRenderFlags &= ~0xFFFFFFFF;
                 gBlockedRenderFlags |= RENDER_Z_COMPARE;
                 func_8007BF1C(FALSE);
-                if (gCutsceneCameraActive == FALSE && D_80126D34 == 0 && racer->racer.playerIndex == PLAYER_ONE) {
+                if (gCutsceneCameraActive == FALSE && D_80126D34 == FALSE && racer->racer.playerIndex == PLAYER_ONE) {
                     if (D_80126D35 != 0) {
                         D_80126D28 = sins_f(D_80126D2C) * D_80126D30 * 8.0f;
                         D_80126D2C += updateRate << 0xB;
@@ -403,7 +403,7 @@ void render_hud(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Object *arg3, s
                             D_80126D2C -= 0x8000;
                             D_80126D30 = D_80126D30 / 2.0f;
                             if (D_80126D30 <= 0.125f) {
-                                D_80126D34 = 1;
+                                D_80126D34 = TRUE;
                                 D_80126D24 = 0;
                             }
                         }
@@ -427,11 +427,11 @@ void render_hud(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Object *arg3, s
                 func_800A7A60(arg3, &gHUDCurrDisplayList);
                 set_ortho_matrix_view(&gHUDCurrDisplayList, &gHUDCurrMatrix);
                 gDPSetEnvColor(gHUDCurrDisplayList++, 255, 255, 255, 0);
-                sp2C = func_8001139C(&gHUDCurrDisplayList) >> 1;
+                sp2C = func_8001139C() >> 1;
                 if (is_in_time_trial()) {
                     func_800A277C(sp2C, arg3, updateRate);
                 } else {
-                    if (func_8001E440(sp2C) == 10) {
+                    if (func_8001E440() == 10) {
                         func_80068508(1);
                         func_800A718C(racer);
                         func_80068508(0);
