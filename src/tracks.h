@@ -139,6 +139,28 @@ typedef struct WaterProperties {
     s8 type;
 } WaterProperties;
 
+typedef struct RenderNodeTrack {
+    Triangle *tri;
+    Vertex *vtx;
+    TextureHeader *material;
+    u32 flags;
+    s16 triCount;
+    s16 vtxCount;
+    s32 texOffset;
+    struct RenderNodeTrack *next;
+    struct RenderNodeTrack *prev;
+} RenderNodeTrack;
+
+typedef struct RenderListTrack {
+    RenderNodeTrack *entryHead;
+    struct RenderListTrack *next;
+} RenderListTrack;
+
+enum RenderListBehaviours {
+    RENDERLIST_NONE,
+    RENDERLIST_BILLBOARD,
+};
+
 enum WaveTypes {
     WATER_CALM = 11,
     WATER_WAVY = 14,
@@ -158,6 +180,10 @@ extern s32 D_800DC920;
 extern s32 D_800DC928;
 
 extern s8 D_800DC92C[24];
+
+extern u32 gGfxPoolEnd;
+extern u32 gSortPrimColour;
+extern u32 gSortEnvColour;
 
 s32 set_scene_viewport_num(s32 arg0);
 void func_800257D0(void);
@@ -197,6 +223,7 @@ void initialise_player_viewport_vars(s32 updateRate);
 s32 get_wave_properties(f32 yPos, f32 *waterHeight, Vec3f *rotation);
 void render_level_segment(s32 segmentId, s32 nonOpaque);
 void render_scene(Gfx** dList, MatrixS** mtx, Vertex** vtx, TriangleList** tris, s32 updateRate);
+void find_material_list_track(RenderNodeTrack *node);
 
 
 void func_80030664(s32 arg0, s16 arg1, s16 arg2, u8 arg3, u8 arg4, u8 arg5);

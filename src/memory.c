@@ -131,6 +131,7 @@ MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag
     pool = &gMemoryPools[poolIndex];
     if ((pool->curNumSlots + 1) == (*pool).maxNumSlots) {
         set_status_register_flags(flags);
+        puppyprint_assert("Out of memory");
         return 0;
     }
     currIndex = -1;
@@ -157,6 +158,8 @@ MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag
         return (MemoryPoolSlot *) (slots + currIndex)->data;
     }
     set_status_register_flags(flags);
+    
+    puppyprint_assert("Out of memory");
     return 0;
 }
 

@@ -24,6 +24,7 @@
 #include "main.h"
 #include "printf.h"
 #include "collision.h"
+#include "controller.h"
 
 // Maximum size for a level model is 522.5 KiB
 #define LEVEL_MODEL_MAX_SIZE 0x80000
@@ -176,6 +177,12 @@ s16 D_8011D4B6;
 s16 D_8011D4B8;
 s16 D_8011D4BA;
 s16 D_8011D4BC;
+RenderNodeTrack *gRenderNodeHead;
+RenderNodeTrack *gRenderNodeTail;
+RenderListTrack *gMateriallistHead;
+RenderListTrack *gMateriallistTail;
+u32 gGfxPoolEnd = 0x807E0000;
+u8 sShowAll = FALSE;
 
 /******************************/
 
@@ -843,6 +850,9 @@ void initialise_player_viewport_vars(s32 updateRate) {
     }
     gCurrentLevelHeader->unk3 = 1;
     render_level_geometry_and_objects();
+    /*if (get_buttons_pressed_from_player(0) & L_JPAD && viewportID == 0) {
+        sShowAll ^= 1;
+    }*/
 }
 
 /**
@@ -851,6 +861,35 @@ void initialise_player_viewport_vars(s32 updateRate) {
 */
 void set_anti_aliasing(s32 setting) {
     gAntiAliasing = setting;
+}
+
+void pop_render_list_track(Gfx **dList) {
+    RenderNodeTrack *renderList = gRenderNodeHead;
+    RenderListTrack *matList;
+    s32 hasTexture;
+    while (renderList) {
+        RenderNodeTrack *oldList = renderList;
+        if (renderList->material) {
+            load_and_set_texture(dList, renderList->material, renderList->flags, renderList->texOffset);
+        }
+        hasTexture = renderList->material != NULL;
+        gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(renderList->vtx), renderList->vtxCount, 0);
+        gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(renderList->tri), renderList->triCount, hasTexture);
+        renderList = renderList->next;
+        //free_from_memory_pool(oldList);
+    }
+    matList = gMateriallistHead;
+    /*while (matList) {
+        RenderListTrack *oldList = matList;
+        matList = matList->next;
+        free_from_memory_pool(oldList);
+    }*/
+    gRenderNodeHead = NULL;
+    gRenderNodeTail = NULL;
+    gMateriallistHead = NULL;
+    gMateriallistTail = NULL;
+    
+    gGfxPoolEnd = 0x807E0000;
 }
 
 /**
@@ -895,6 +934,7 @@ void render_level_geometry_and_objects(void) {
             render_level_segment(segmentIds[i], FALSE); // Render opaque segments
             objectsVisible[segmentIds[i] + 1] = TRUE;
         }
+        pop_render_list_track(&gSceneCurrDisplayList);
     }
 
     if (gCurrentLevelModel->numberOfSegments < 2) {
@@ -964,6 +1004,7 @@ void render_level_geometry_and_objects(void) {
         for (i = numberOfSegments - 1; i >= 0; i--) {
             render_level_segment(segmentIds[i], TRUE); // Render transparent segments
         }
+        pop_render_list_track(&gSceneCurrDisplayList);
     }
     if (D_8011D384 != 0) {
         func_800BA8E4(&gSceneCurrDisplayList, &gSceneCurrMatrix, gActiveCameraID);
@@ -1019,6 +1060,46 @@ skip:
 #ifdef PUPPYPRINT_DEBUG
     gPuppyPrint.mainTimerPoints[1][PP_PARTICLEGFX] = osGetCount();
 #endif
+}
+
+void find_material_list_track(RenderNodeTrack *node) {
+    RenderListTrack *matList;
+    if (gRenderNodeHead == NULL) {
+        gRenderNodeHead = node;
+        gGfxPoolEnd -= sizeof(RenderListTrack);
+        matList = (RenderListTrack *) gGfxPoolEnd;
+        gMateriallistHead = matList;
+    } else {
+        if (node->material) {
+            RenderListTrack *list = gMateriallistHead;
+            while (list) {
+                if (list->entryHead->material == node->material) {
+                    if (list->entryHead == gRenderNodeTail) {
+                        gRenderNodeTail = node;
+                    }
+                    if (list->entryHead->next) {
+                        list->entryHead->next->prev = node;
+                    }
+                    node->next = list->entryHead->next;
+                    node->prev = list->entryHead;
+                    list->entryHead->next = node;
+                    list->entryHead = node;
+                    return;
+                }
+                list = list->next;
+            }
+        }
+        gGfxPoolEnd -= sizeof(RenderListTrack);
+        matList = (RenderListTrack *) gGfxPoolEnd;
+        gMateriallistTail->next = matList;
+        gRenderNodeTail->next = node;
+    }
+    node->next = NULL;
+    matList->entryHead = node;
+    matList->next = NULL;
+    gMateriallistTail = matList;
+    node->prev = gRenderNodeTail;
+    gRenderNodeTail = node;
 }
 
 /**
@@ -1119,13 +1200,28 @@ void render_level_segment(s32 segmentId, s32 nonOpaque) {
             gSPPolygon(gSceneCurrDisplayList++, OS_PHYSICAL_TO_K0(triangles), numberTriangles, TRIN_ENABLE_TEXTURE);
             gDPSetPrimColor(gSceneCurrDisplayList++, 0, 0, 255, 255, 255, 255);
         } else {
-            load_and_set_texture(&gSceneCurrDisplayList, texture, batchFlags, texOffset);
-            batchFlags = TRUE;
-            if (texture == NULL) {
-                batchFlags = FALSE;
+            if (sShowAll) {
+                load_and_set_texture(&gSceneCurrDisplayList, texture, batchFlags, texOffset);
+                batchFlags = TRUE;
+                if (texture == NULL) {
+                    batchFlags = FALSE;
+                }
+                gSPVertexDKR(gSceneCurrDisplayList++, OS_PHYSICAL_TO_K0(vertices), numberVertices, 0);
+                gSPPolygon(gSceneCurrDisplayList++, OS_PHYSICAL_TO_K0(triangles), numberTriangles, batchFlags);
+            } else {
+                RenderNodeTrack *entry;
+                gGfxPoolEnd -= sizeof(RenderNodeTrack);
+                entry = (RenderNodeTrack *) gGfxPoolEnd;
+                //RenderNodeTrack *entry = (RenderNodeTrack *) allocate_from_main_pool(sizeof(RenderNodeTrack), COLOUR_TAG_MAGENTA);
+                entry->material = texture;
+                entry->flags = batchFlags;
+                entry->texOffset = texOffset;
+                entry->tri = (Triangle *) triangles;
+                entry->vtx = (Vertex *) vertices;
+                entry->triCount = numberTriangles;
+                entry->vtxCount = numberVertices;
+                find_material_list_track(entry);
             }
-            gSPVertexDKR(gSceneCurrDisplayList++, OS_PHYSICAL_TO_K0(vertices), numberVertices, 0);
-            gSPPolygon(gSceneCurrDisplayList++, OS_PHYSICAL_TO_K0(triangles), numberTriangles, batchFlags);
         }
     }
 }
