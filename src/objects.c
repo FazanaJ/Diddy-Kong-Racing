@@ -1819,7 +1819,6 @@ void func_80012C3C(Gfx **dlist) {
 
 void func_80012C98(Gfx **dlist) {
     if (D_8011ADA4 < 9) {
-        gSPNoOp((*dlist)++); // Placeholder instruction?
         D_8011AD78[D_8011ADA4] = *dlist;
     }
 }

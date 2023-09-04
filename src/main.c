@@ -311,7 +311,7 @@ void calculate_and_update_fps(void) {
     if (curFrameTimeIndex >= FRAMETIME_COUNT) {
         curFrameTimeIndex = 0;
     }
-    gFPS = (FRAMETIME_COUNT * 1000000.0f) / (s32)OS_CYCLES_TO_USEC(newTime - oldTime);
+    gFPS = (FRAMETIME_COUNT * 1000000.0f) / OS_CYCLES_TO_USEC(newTime - oldTime);
 }
 
 void rdp_profiler_update(u32 *time, u32 time2) {

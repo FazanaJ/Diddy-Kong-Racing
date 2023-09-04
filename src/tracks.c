@@ -850,9 +850,9 @@ void initialise_player_viewport_vars(s32 updateRate) {
     }
     gCurrentLevelHeader->unk3 = 1;
     render_level_geometry_and_objects();
-    /*if (get_buttons_pressed_from_player(0) & L_JPAD && viewportID == 0) {
+    if (get_buttons_pressed_from_player(0) & L_JPAD && viewportID == 0) {
         sShowAll ^= 1;
-    }*/
+    }
 }
 
 /**
