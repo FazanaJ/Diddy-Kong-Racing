@@ -69,6 +69,7 @@ s32 gNumHudTrisPerPlayer[4] = NUM_HUD_VERTS;
 s8 gDrawFrameTimer = 0;
 FadeTransition D_800DD3F4 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_UNK2, FADE_COLOR_BLACK, 20, 0);
 s32 sLogicUpdateRate = LOGIC_5FPS;
+f32 sLogicUpdateRateF = 12.0f;
 FadeTransition D_800DD408 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_WHITE, 30, -1);
 FadeTransition gLevelFadeOutTransition = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_BLACK, 30, -1);
 FadeTransition D_800DD424 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_BLACK, 260, -1);
@@ -242,51 +243,6 @@ s32 sTotalTime = 0;
 u8 gOverrideAA = 0;
 s32 gOverrideTimer = 0;
 
-extern s32 gVideoSkipNextRate;
-
-s32 calculate_updaterate(void) {
-    static u32 prevtime = 0;
-    static s32 remainder = 0;
-    s32 total;
-    s32 rate;
-
-    u32 now = osGetCount();
-
-    if (gVideoSkipNextRate) {
-        rate = LOGIC_60FPS;
-        remainder = 0;
-        gVideoSkipNextRate = FALSE;
-    } else {
-        if (now > prevtime) {
-            total = (u32) (now - prevtime) + remainder;
-        } else {
-            // Counter has reset since last time
-            total = (0xffffffff - prevtime) + 1 + now + remainder;
-        }
-
-        if (total < (OS_CPU_COUNTER / 30)) { // 30-60 fps
-            rate = LOGIC_60FPS;
-        } else if (total < (OS_CPU_COUNTER / 20)) { // 20-30 fps
-            rate = LOGIC_30FPS;
-        } else if (total < (OS_CPU_COUNTER / 15)) {
-            rate = LOGIC_20FPS;
-        } else if (total < (OS_CPU_COUNTER / 12)) {
-            rate = LOGIC_15FPS;
-        } else if (total < (OS_CPU_COUNTER / 10)) {
-            rate = LOGIC_12FPS;
-        } else {
-            rate = LOGIC_10FPS;
-        }
-
-        remainder = total - rate * (OS_CPU_COUNTER / 60);
-    }
-
-    prevtime = now;
-
-    return rate;
-}
-
-
 /**
  * The main gameplay loop.
  * Contains all game logic, audio and graphics processing.
@@ -302,14 +258,22 @@ void main_game_loop(void) {
     tick_usb_thread();
 #endif
 
-    /*if (gVideoSkipNextRate) {
+    if (gVideoSkipNextRate) {
         sLogicUpdateRate = LOGIC_60FPS;
+        sLogicUpdateRateF = 1.0f;
         sTotalTime = 0;
         sPrevTime = 0;
         gVideoSkipNextRate = FALSE;
     } else {
         sDeltaTime = osGetCount() - sPrevTime;
         sPrevTime = osGetCount();
+        sLogicUpdateRateF = (f32) sDeltaTime / 1000000.0f;
+        if (sLogicUpdateRateF <= 0.0001f) {
+            sLogicUpdateRateF = 0.0001f;
+        }
+        if (osTvType == TV_TYPE_PAL) {
+            sLogicUpdateRateF *= 1.2f;
+        }
         sTotalTime += OS_CYCLES_TO_USEC(sDeltaTime);
         sTotalTime -= 16666;
         sLogicUpdateRate = LOGIC_60FPS;
@@ -319,20 +283,18 @@ void main_game_loop(void) {
             if (sLogicUpdateRate == 4) {
                 sTotalTime = 0;
             }
-            if (sLogicUpdateRate > D_801262E4) {
-                sLogicUpdateRate = D_801262E4;
+            if (sLogicUpdateRate > LOGIC_12FPS) {
+                sLogicUpdateRate = LOGIC_12FPS;
             }
 
         }
-    }*/
+    }
 
 #ifdef CRASH_SCREEN_TEST
     *(volatile int *) 0 = 0;
 #endif
 
-    sLogicUpdateRate = calculate_updaterate();
-
-    if (gConfig.antiAliasing == 1) {
+    /*if (gConfig.antiAliasing == 1) {
         gOverrideTimer -= 40000;
         gOverrideTimer += MIN(OS_CYCLES_TO_USEC(sDeltaTime), 66666);
         if (gOverrideTimer <= -125000) {
@@ -349,7 +311,7 @@ void main_game_loop(void) {
                 //set_dither_filter();
             }
         }
-    }
+    }*/
 
     gCurrDisplayList = gDisplayLists[gSPTaskNum];
     gGameCurrMatrix = gMatrixHeap[gSPTaskNum];
