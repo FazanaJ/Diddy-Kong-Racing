@@ -10,7 +10,6 @@
 #include "objects.h"
 #include "controller.h"
 #include "game.h"
-#include "stacks.h"
 #include "particles.h"
 #include "stdarg.h"
 

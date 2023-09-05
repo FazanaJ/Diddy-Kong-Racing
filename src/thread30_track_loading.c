@@ -5,7 +5,6 @@
 #include "macros.h"
 #include "libultra_internal.h"
 #include "game.h"
-#include "stacks.h"
 #include "main.h"
 
 /************ .data ************/

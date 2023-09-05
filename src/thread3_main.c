@@ -15,7 +15,6 @@
 #include "asset_loading.h"
 #include "menu.h"
 #include "video.h"
-#include "set_rsp_segment.h"
 #include "gzip.h"
 #include "printf.h"
 #include "thread0_epc.h"
@@ -357,10 +356,10 @@ void main_game_loop(void) {
     gGameCurrVertexList = gVertexHeap[gSPTaskNum];
     gGameCurrTriList = gTriangleHeap[gSPTaskNum];
 
-    set_rsp_segment(&gCurrDisplayList, 0, 0);
-    set_rsp_segment(&gCurrDisplayList, 1, (s32) gVideoLastFramebuffer);
-    set_rsp_segment(&gCurrDisplayList, 2, (s32) gVideoLastDepthBuffer);
-    set_rsp_segment(&gCurrDisplayList, 4, (s32) gVideoLastFramebuffer - 0x500);
+    gSPSegment(gCurrDisplayList++, 0, 0 + K0BASE);
+    gSPSegment(gCurrDisplayList++, 1, (s32) gVideoLastFramebuffer + K0BASE);
+    gSPSegment(gCurrDisplayList++, 2, (s32) gVideoLastDepthBuffer + K0BASE);
+    gSPSegment(gCurrDisplayList++, 4, (s32) gVideoLastFramebuffer - 0x500 + K0BASE);
     init_rsp(&gCurrDisplayList);
     init_rdp_and_framebuffer(&gCurrDisplayList);
     render_background(&gCurrDisplayList, (Matrix *) &gGameCurrMatrix, TRUE); 

@@ -3,7 +3,6 @@
 
 #include "memory.h"
 #include "video.h"
-#include "stacks.h"
 
 #include "asset_loading.h"
 #include "structs.h"

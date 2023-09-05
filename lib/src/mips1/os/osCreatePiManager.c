@@ -3,7 +3,6 @@
 
 #include "types.h"
 #include "libultra_internal.h"
-#include "stacks.h"
 #include "lib/src/os/piint.h"
 
 extern OSMesgQueue __osPiAccessQueue;

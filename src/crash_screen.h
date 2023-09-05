@@ -8,7 +8,6 @@
 #include "objects.h"
 #include "controller.h"
 #include "game.h"
-#include "stacks.h"
 #include "stdarg.h"
 #include "string.h"
 #include "video.h"
