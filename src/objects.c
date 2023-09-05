@@ -1106,7 +1106,9 @@ void func_80010994(s32 updateRate) {
     gPuppyPrint.mainTimerPoints[0][PP_RACER] = osGetCount();
 #endif
     for (i = 0; i < gNumRacers; i++) {
+        set_crash_object((*gRacers)[i]->behaviorId, CRASH_OBJ_UPDATE);
         update_player_racer((*gRacers)[i], updateRate);
+        set_crash_object(-1, CRASH_OBJ_NONE);
     }
     if (gCurrentLevelHeader->race_type == 0) {
         for (i = 0; i < gNumRacers; i++) {
@@ -3453,6 +3455,7 @@ GLOBAL_ASM("asm/non_matchings/objects/func_800235DC.s")
  * Arg2 is always zero. Effectively unused.
 */
 void run_object_init_func(Object *obj, void *entry, s32 param) {
+    set_crash_object(obj->behaviorId, CRASH_OBJ_UPDATE);
     obj->behaviorId = obj->segment.header->behaviorId;
     switch (obj->behaviorId) {
         case BHV_RACER:
@@ -3676,6 +3679,7 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             obj_init_levelname(obj, (LevelObjectEntry_LevelName *) entry);
             break;
     }
+    set_crash_object(-1, CRASH_OBJ_NONE);
 }
 
 s32 func_80023E30(s32 objectID) {
@@ -3814,6 +3818,7 @@ s32 func_80023E30(s32 objectID) {
  * One big switch statement for whichever object.
 */
 void run_object_loop_func(Object *obj, s32 updateRate) {
+    set_crash_object(obj->behaviorId, CRASH_OBJ_UPDATE);
     switch (obj->behaviorId) {
         case BHV_SCENERY:
             obj_loop_scenery(obj, updateRate);
@@ -4030,6 +4035,7 @@ void run_object_loop_func(Object *obj, s32 updateRate) {
             obj_loop_levelname(obj, updateRate);
             break;
     }
+    set_crash_object(-1, CRASH_OBJ_NONE);
 }
 
 s16 *func_80024594(s32 *arg0, s32 *arg1) {
