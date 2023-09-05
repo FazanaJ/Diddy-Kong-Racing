@@ -12,7 +12,7 @@
 
 #define	OS_CLOCK_RATE		62500000
 #define	OS_CPU_COUNTER		(OS_CLOCK_RATE*3/4)
-#define OS_CYCLES_TO_USEC(c)	(((u32)(c)*(1000000LL/15625))/(OS_CPU_COUNTER/15625))
+#define OS_CYCLES_TO_USEC(c)	(((u32)(c)*(1000000/15625))/(OS_CPU_COUNTER/15625))
 
 extern u8 gAssert;
 extern char gAssertString[64];

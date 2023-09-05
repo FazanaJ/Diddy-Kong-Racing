@@ -291,38 +291,6 @@ void free_slot_containing_address(u8 *address) {
     }
 }
 
-void func_80071314(void) {
-    MemoryPoolSlot *slotPos;
-    MemoryPool *pool;
-    s32 *flags;
-    s32 poolIndex;
-    s32 slotIndex;
-        
-    flags = clear_status_register_flags();
-    poolIndex = gNumberOfMemoryPools;
-    while (poolIndex != (-1)) {
-        pool = &gMemoryPools[poolIndex];
-        slotPos = pool->slots;
-        slotIndex = 0;
-        do {
-            if ((slotPos + slotIndex)->flags == 1) {
-                free_memory_pool_slot(poolIndex, slotIndex);
-            }
-            if ((slotPos + slotIndex)->flags == 4) {
-                if (pool->curNumSlots == 1) {
-                    free_memory_pool_slot(poolIndex, slotIndex);
-                } else {
-                    set_status_register_flags(flags);
-                    return;
-                }
-            }
-            slotIndex = (slotPos + slotIndex)->nextIndex;
-        } while (slotIndex != (-1));
-        poolIndex--;
-    }
-    set_status_register_flags(flags);
-}
-
 void func_80071440(void *dataAddress) {
     gFreeQueue[gFreeQueueCount].dataAddress = dataAddress;
     gFreeQueue[gFreeQueueCount].unk4 = gFreeQueueState;
@@ -485,64 +453,4 @@ u8 *align16(u8 *address) {
         address = (u8 *)(((s32)address - remainder) + 16);
     }
     return address;
-}
-
-s32 func_800718A4(void) {
-    u32 colours[64];
-    u32 colourCounts[64];
-    MemoryPoolSlot *curSlot;
-    s32 temp;
-    s32 i;
-    s32 j;
-    s32 colourIndex;
-    s32 var_a2;
-    u32 curColour;
-    
-    temp = 0;
-    for (j = 0; j < 64; j++) {
-        colours[j] = 0;
-        colourCounts[j] = 0; 
-    }
-    for (i = 0; i < gNumberOfMemoryPools; i++) {
-        curSlot = gMemoryPools[i].slots;
-        do {
-            if (curSlot->flags != 0) {
-                var_a2 = curSlot->colourTag;
-                if (var_a2 != 0) {
-                    curColour = var_a2;
-                    colourIndex = 0;
-                    while (colourIndex < 64 && curColour != colours[colourIndex] && colours[colourIndex] != 0) {
-                        var_a2 = colours[colourIndex];
-                        colourIndex++;
-                    }
-                    if (colourIndex < 64) {
-                        colours[colourIndex] = curColour;
-                        colourCounts[colourIndex]++;
-                    } else {
-                        temp++;
-                    }
-                }
-            }
-            var_a2 = curSlot->nextIndex;
-            if (var_a2 != -1) {
-                curSlot = &gMemoryPools[i].slots[curSlot->nextIndex];
-            }
-        } while (var_a2 != (-1));
-    }
-}
-
-s32 get_memory_colour_tag_count(u32 colourTag) {
-    s32 i, count;
-    MemoryPoolSlot *slot;
-    count = 0;
-    slot = &gMemoryPools[0].slots[0];
-    for (i = 0; i < 1600; i++) {
-        if (slot->flags != 0) {
-            if(colourTag == slot->colourTag) {
-                count++;
-            }
-        }
-        slot++;
-    }
-    return count;
 }
