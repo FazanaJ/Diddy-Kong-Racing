@@ -42,8 +42,6 @@ u8 D_800DC670 = 0;
 
 /************ .bss ************/
 
-#define AUDIO_HEAP_SIZE 0x29D88
-
 // The audio heap is located at the start of the BSS section.
 u8 gBssSectionStart[AUDIO_HEAP_SIZE];
 

@@ -10,7 +10,7 @@
 
 #define MAX_UPDATES             32
 #define MAX_EVENTS              32
-#define AUDIO_HEAP_SIZE         0x29D88
+#define AUDIO_HEAP_SIZE         0x29000
 
 #define MAX_VOICES              22
 #define EXTRA_SAMPLES           96
@@ -37,9 +37,6 @@
                                        /* Increasing this number causes buffers to not  */
                                        /* be deleted as quickly. This results in fewer  */
                                        /* DMA's but you need more buffers.              */
-
-
-#define AUDIO_STACKSIZE         0x1000
 
 #define MAX_SEQ_LENGTH  20000
 

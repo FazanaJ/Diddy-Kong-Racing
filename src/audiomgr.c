@@ -197,7 +197,7 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
     osCreateMesgQueue(&audDMAMessageQ, audDMAMessageBuf, NUM_DMA_MESSAGES);
 
     osCreateThread(&__am.thread, 4, __amMain, 0,
-                    (void *)(audioStack+AUDIO_STACKSIZE/sizeof(u64)), pri);
+                    (void *)(audioStack+THREAD4_STACK/sizeof(u64)), pri);
 }
 
 /**
