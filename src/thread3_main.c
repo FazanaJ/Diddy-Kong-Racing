@@ -225,7 +225,7 @@ void init_game(void) {
     gSPTaskNum = 0;
 
     gSorterHeap = allocate_from_main_pool(0x4000, COLOUR_TAG_ORANGE);
-    gSorterPos = (u32) gSorterHeap + 0x3FFF;
+    gSorterPos = (u32) gSorterHeap + 0x3F00;
 
     gCurrDisplayList = gDisplayLists[gSPTaskNum];
     gDPFullSync(gCurrDisplayList++);
