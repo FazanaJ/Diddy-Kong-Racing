@@ -890,7 +890,7 @@ void pop_render_list_track(Gfx **dList) {
     gMateriallistHead = NULL;
     gMateriallistTail = NULL;
     
-    gSorterPos = (u32) gSorterHeap + 0x3F00;
+    gSorterPos = (u32) gSorterHeap + MATERIAL_SORT_BUFFER - sizeof(RenderNodeTrack);
 }
 
 /**

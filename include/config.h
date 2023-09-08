@@ -41,6 +41,7 @@
 #define THREAD4_STACK           0x1000
 #define THREAD5_STACK           0x200
 #define THREAD30_STACK          0x2000
+#define MATERIAL_SORT_BUFFER    0x4000
 
 /* -----------------------Performance--------------------- */
 // These tweaks can be used to improve performance
