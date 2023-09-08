@@ -192,6 +192,9 @@ LIB_DIRS := lib/
 ASM_DIRS := asm/ asm/boot/ asm/assets/ lib/asm/ lib/asm/non_decompilable
 SRC_DIRS := $(sort $(dir $(wildcard src/* src/**/*))) $(sort $(dir $(wildcard lib/src/* lib/src/**/* lib/src/**/**/*)))
 
+GLOBAL_ASM_C_FILES != grep -rl 'GLOBAL_ASM(' $(SRC_DIRS)
+GLOBAL_ASM_O_FILES = $(foreach file,$(GLOBAL_ASM_C_FILES),$(BUILD_DIR)/$(file:.c=.o))
+
 S_FILES := $(foreach dir,$(ASM_DIRS),$(wildcard $(dir)*.s))
 C_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)*.c))
 
@@ -314,7 +317,17 @@ GCC_SAFE_FILES := \
     $(BUILD_DIR)/src/game.o \
     $(BUILD_DIR)/src/thread0_epc.o \
     $(BUILD_DIR)/lib/src/al/%.o \
-    $(BUILD_DIR)/lib/src/mips1/al/%.o \
+	  $(BUILD_DIR)/lib/src/mips1/al/alAuxBusPull.o \
+    $(BUILD_DIR)/lib/src/mips1/al/alSynSetPan.o \
+    $(BUILD_DIR)/lib/src/mips1/al/alSynAllocFX.o \
+    $(BUILD_DIR)/lib/src/mips1/al/reverb.o \
+    $(BUILD_DIR)/lib/src/mips1/al/alFxNew.o \
+    $(BUILD_DIR)/lib/src/mips1/al/reverb.o \
+    $(BUILD_DIR)/lib/src/mips1/al/seqplayer.o \
+    $(BUILD_DIR)/lib/src/mips1/al/synthesizer.o \
+    $(BUILD_DIR)/lib/src/mips1/al/unknown_0646F0.o \
+    $(BUILD_DIR)/lib/src/mips1/al/unknown_0647A0.o \
+    $(BUILD_DIR)/lib/src/mips1/al/unknown_064690.o \
     $(BUILD_DIR)/lib/src/gu/cosf.o \
     $(BUILD_DIR)/lib/src/gu/guMtxUtil.o \
     $(BUILD_DIR)/lib/src/gu/guPerspectiveF.o \
