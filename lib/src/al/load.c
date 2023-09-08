@@ -435,6 +435,7 @@ alLoadParam(void *filter, s32 paramID, void *param)
         default:
             break;
     }
+    return 0;
 }
 
 static

@@ -192,9 +192,6 @@ LIB_DIRS := lib/
 ASM_DIRS := asm/ asm/boot/ asm/assets/ lib/asm/ lib/asm/non_decompilable
 SRC_DIRS := $(sort $(dir $(wildcard src/* src/**/*))) $(sort $(dir $(wildcard lib/src/* lib/src/**/* lib/src/**/**/*)))
 
-GLOBAL_ASM_C_FILES != grep -rl 'GLOBAL_ASM(' $(SRC_DIRS)
-GLOBAL_ASM_O_FILES = $(foreach file,$(GLOBAL_ASM_C_FILES),$(BUILD_DIR)/$(file:.c=.o))
-
 S_FILES := $(foreach dir,$(ASM_DIRS),$(wildcard $(dir)*.s))
 C_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)*.c))
 
@@ -282,40 +279,13 @@ ALL_ASSETS_BUILT += $(patsubst $(UCODE_IN_DIR)/%.bin,$(UCODE_OUT_DIR)/%.bin,$(UC
 ####################### LIBULTRA #########################
 
 $(BUILD_DIR)/lib/%.o: OPT_FLAGS := -O2 -Xfullwarn
-$(BUILD_DIR)/lib/src/al/%.o: OPT_FLAGS := -O3
 $(BUILD_DIR)/lib/src/os/%.o: OPT_FLAGS := -O2 -Xfullwarn
 $(BUILD_DIR)/lib/src/os/osViMgr.o: OPT_FLAGS := -O2 -Xfullwarn
-$(BUILD_DIR)/lib/src/os/osCreatePiManager.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/lib/src/os/osMotor.o: OPT_FLAGS := -O3
 $(BUILD_DIR)/lib/src/libc/xprintf.o : OPT_FLAGS := -O3
-$(BUILD_DIR)/lib/src/al/env.o: OPT_FLAGS := -O3
 #$(BUILD_DIR)/lib/src/libc/llcvt.o: OPT_FLAGS :=
 #$(BUILD_DIR)/lib/src/libc/llcvt.o: MIPSISET := -mips3 32
 
 ####################### MATH UTIL #########################
-
-$(BUILD_DIR)/src/video.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/borders.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/set_rsp_segment.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/screen_asset.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/thread30.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/asset_loading.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/main.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/font.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/audio.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/memory.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/game_text.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/gzip.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/vehicle_bluey.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/vehicle_bubbler.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/vehicle_smokey.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/vehicle_wizpig.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/vehicle_rocket.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/controller.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/audiomgr.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/game.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/src/thread0_epc.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/lib/src/mips1/sc/sched.o: OPT_FLAGS := -O3
 
 $(BUILD_DIR)/src/waves.o: MIPSISET := -mips1
 
@@ -343,28 +313,8 @@ GCC_SAFE_FILES := \
     $(BUILD_DIR)/src/audiomgr.o \
     $(BUILD_DIR)/src/game.o \
     $(BUILD_DIR)/src/thread0_epc.o \
-    $(BUILD_DIR)/lib/src/mips1/sc/sched.o \
-	$(BUILD_DIR)/lib/src/mips1/al/alAuxBusPull.o \
-    $(BUILD_DIR)/lib/src/mips1/al/alSynSetPan.o \
-    $(BUILD_DIR)/lib/src/mips1/al/alSynAllocFX.o \
-    $(BUILD_DIR)/lib/src/mips1/al/reverb.o \
-    $(BUILD_DIR)/lib/src/mips1/al/alFxNew.o \
-    $(BUILD_DIR)/lib/src/mips1/al/reverb.o \
-    $(BUILD_DIR)/lib/src/mips1/al/seqplayer.o \
-    $(BUILD_DIR)/lib/src/mips1/al/synthesizer.o \
-    $(BUILD_DIR)/lib/src/mips1/al/unknown_0646F0.o \
-    $(BUILD_DIR)/lib/src/mips1/al/unknown_0647A0.o \
-    $(BUILD_DIR)/lib/src/mips1/al/unknown_064690.o \
-    $(BUILD_DIR)/lib/src/al/alBnkNew.o \
-    $(BUILD_DIR)/lib/src/al/alCopy.o \
-    $(BUILD_DIR)/lib/src/al/alCSPGetChlVol.o \
-    $(BUILD_DIR)/lib/src/al/alCSPGetState.o \
-    $(BUILD_DIR)/lib/src/al/alCSPGetTempo.o \
-    $(BUILD_DIR)/lib/src/al/alCSPSetBank.o \
-    $(BUILD_DIR)/lib/src/al/alCSPSetChlPan.o \
-    $(BUILD_DIR)/lib/src/al/alCSPSetChlVol.o \
-    $(BUILD_DIR)/lib/src/al/alCSPSetSeq.o \
-    $(BUILD_DIR)/lib/src/al/alCSPSetTempo.o \
+    $(BUILD_DIR)/lib/src/al/%.o \
+    $(BUILD_DIR)/lib/src/mips1/al/%.o \
     $(BUILD_DIR)/lib/src/gu/cosf.o \
     $(BUILD_DIR)/lib/src/gu/guMtxUtil.o \
     $(BUILD_DIR)/lib/src/gu/guPerspectiveF.o \
@@ -372,6 +322,9 @@ GCC_SAFE_FILES := \
     $(BUILD_DIR)/lib/src/libc/rmonPrintf.o \
     $(BUILD_DIR)/lib/src/libc/string.o \
     $(BUILD_DIR)/lib/src/libc/xprintf.o \
+    $(BUILD_DIR)/lib/src/libc/xprintf.o \
+    $(BUILD_DIR)/lib/src/os/osCreatePiManager.o \
+    $(BUILD_DIR)/lib/src/os/osMotor.o \
 
 $(GCC_SAFE_FILES): CC := $(CROSS)gcc
 
