@@ -545,7 +545,6 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
     s32 var_s0;
     u32 assetOffset;
     s32 *assetTable;
-    UNUSED s32 pad;
     u8 *compressedAsset;
     s32 temp_t3;
 
@@ -806,67 +805,6 @@ u8 is_in_time_trial(void) {
     return gIsTimeTrial;
 }
 
-UNUSED void func_8000E4E8(s32 index) {
-    s32 *temp_v0;
-    s32 i;
-    u8 *temp_a1;
-
-    temp_v0 = D_8011AEB0[index];
-    temp_v0[0] = D_8011AEA0[index];
-    temp_v0[3] = 0;
-    temp_v0[2] = 0;
-    temp_v0[1] = 0;
-    temp_a1 = &D_8011AE98[index][D_8011AEA0[index]]; 
-    
-    // The backslash here is needed to match. And no, a for loop doesn't match.
-    i = 0; \
-    while(i < 16) {
-        temp_a1[i] = 0;
-        i++;
-    }
-}
-
-UNUSED s32 func_8000E558(Object *arg0) {
-    s32 temp_v0;
-    s32 new_var, new_var2;
-    if (arg0->segment.level_entry == NULL) {
-        return TRUE;
-    }
-    temp_v0 = (s32) arg0->segment.level_entry;
-    new_var2 = (s32) D_8011AE98[0];
-    if ((temp_v0 >= new_var2) && (((D_8011AEA0[0] * 8) + new_var2) >= temp_v0)) {
-        return FALSE;
-    }
-    new_var = (s32) D_8011AE98[1];
-    // Why even bother with this check?
-    if (temp_v0 >= new_var && temp_v0 <= ((D_8011AEA0[1] * 8) + new_var)) {
-        return TRUE;
-    }
-    return TRUE;
-}
-
-GLOBAL_ASM("asm/non_matchings/objects/func_8000E5EC.s")
-GLOBAL_ASM("asm/non_matchings/objects/func_8000E79C.s")
-
-UNUSED u8 *func_8000E898(u8 *arg0, s32 arg1) {
-    s32 temp_t6;
-    s32 i;
-    u8 *temp_v1;
-    u8 *new_var;
-    u8 *new_var2;
-
-    temp_t6 = arg0[1] & 0x3F;
-    new_var = arg0;
-    new_var = &D_8011AE98[arg1][D_8011AEA0[arg1]];
-    new_var2 = arg0;
-    temp_v1 = new_var;
-    D_8011AEA0[arg1] += temp_t6;
-    for (i = 0; i < temp_t6; i++) {
-        temp_v1[i] = new_var2[i];
-    }
-    return temp_v1;
-}
-
 /**
  * Returns the object at the current offset by ID.
  * Official name: objGetObject
@@ -1075,14 +1013,6 @@ void gParticlePtrList_addObject(Object *object) {
     func_800245B4(object->unk4A | 0x8000);
     gParticlePtrList[gParticleCount] = object;
     gParticleCount++;
-}
-
-UNUSED s32 func_80010018(void) {
-    return gAssetsLvlObjTranslationTableLength;
-}
-
-UNUSED s32 func_80010028(s32 arg0) {
-    return (gAssetsLvlObjTranslationTable[arg0] < gAssetsObjectHeadersTableLength);
 }
 
 /*
@@ -3142,37 +3072,6 @@ Object *func_8001D214(s32 arg0) {
 
 void func_8001D258(f32 arg0, f32 arg1, s16 arg2, s16 arg3, s16 arg4) {
     func_8001D4B4(&D_8011AF30, arg0, arg1, arg2, arg3, arg4);
-}
-
-UNUSED void func_8001D2A0(Object *obj, f32 arg1, f32 arg2, s16 arg3, s16 arg4, s16 arg5) {
-    if (obj->unk54 != NULL) {
-        obj->unk54->unk28 += arg1;
-        if (obj->unk54->unk28 < 0.0f) {
-            obj->unk54->unk28 = 0.0f;
-        } else if (obj->unk54->unk28 > 1.0f) {
-            obj->unk54->unk28 = 1.0f;
-        }
-        obj->unk54->unk2C += arg2;
-        if (obj->unk54->unk2C < 0.0f) {
-            obj->unk54->unk2C = 0.0f;
-        }
-        if (obj->unk54->unk2C >= 2.0f) {
-            obj->unk54->unk2C = 1.99f;
-        }
-        func_8001D4B4(obj->unk54, obj->unk54->unk28, obj->unk54->unk2C,
-            (obj->unk54->unk22 + arg3),
-            (obj->unk54->unk24 + arg4),
-            (obj->unk54->unk26 + arg5));
-        if (obj->segment.header->unk3D != 0) {
-            obj->unk54->unk4 = obj->segment.header->pad38[2];
-            obj->unk54->unk5 = obj->segment.header->pad38[3];
-            obj->unk54->unk6 = obj->segment.header->pad38[4];
-            obj->unk54->unk7 = obj->segment.header->unk3D;
-            obj->unk54->unk8 = -(obj->unk54->unk1C >> 1);
-            obj->unk54->unkA = -(obj->unk54->unk1E >> 1);
-            obj->unk54->unkC = -(obj->unk54->unk20 >> 1);
-        }
-    }
 }
 
 void func_8001D4B4(Object_54 *arg0, f32 arg1, f32 arg2, s16 arg3, s16 arg4, s16 arg5) {
