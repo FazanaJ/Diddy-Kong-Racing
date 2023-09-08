@@ -161,14 +161,17 @@ void find_expansion_pak(void) {
 
 /******************************/
 
+extern MemoryPoolSlot gMainMemoryPool;
+
 /**
  * Where it all begins.
  * Once the boot procedure is finished in IPL3, this function is run.
  * It kicks things off by initialising thread1, which serves as the top level
  * Official name: boot
 */
-void main(void) {
+void main2(void) {
     osInitialize();
+    bzero(&gMainMemoryPool, RAM_END - (s32)(&gMainMemoryPool));
     osCreateThread(&gThread1, 1, &thread1_main, 0, &gThread3Stack[THREAD1_STACK / (sizeof(u64))], OS_PRIORITY_IDLE);
     osStartThread(&gThread1);
 }

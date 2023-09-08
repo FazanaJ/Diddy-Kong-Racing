@@ -141,7 +141,7 @@ else
 # No binutil packages were found, so we have to download the source & build it.
 ifeq ($(wildcard ./tools/binutils/.*),)
   DUMMY != ./tools/get-binutils.sh >&2 || echo FAIL
-endif 
+endif
   CROSS := ./tools/binutils/mips64-elf-
 endif
 
@@ -164,7 +164,6 @@ INCLUDE_DIRS := include $(BUILD_DIR) $(BUILD_DIR)/include src include/libc .
 
 C_DEFINES := $(foreach d,$(DEFINES),-D$(d))
 DEF_INC_CFLAGS := $(foreach i,$(INCLUDE_DIRS),-I$(i)) $(C_DEFINES)
-
 
 #IDO Warnings to Ignore. These are coding style warnings we don't follow
 IDO_IGNORE_WARNINGS = -woff 838,649,624
@@ -202,10 +201,10 @@ C_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)*.c))
 # Object files
 O_FILES := 	$(foreach file,$(S_FILES),$(BUILD_DIR)/$(file:.s=.o)) \
             $(foreach file,$(C_FILES),$(BUILD_DIR)/$(file:.c=.o))
-			
+
 # Automatic dependency files
 DEP_FILES := $(O_FILES:.o=.d) $(BUILD_DIR)/$(LD_SCRIPT).d
-			
+
 # Check code syntax with host compiler
 CC_CHECK := gcc
 ifeq ($(shell getconf LONG_BIT), 64)
@@ -320,6 +319,105 @@ $(BUILD_DIR)/lib/src/mips1/sc/sched.o: OPT_FLAGS := -O3
 
 $(BUILD_DIR)/src/waves.o: MIPSISET := -mips1
 
+##############################################################
+
+GCC_SAFE_FILES := \
+    $(BUILD_DIR)/src/video.o \
+    $(BUILD_DIR)/src/borders.o \
+    $(BUILD_DIR)/src/set_rsp_segment.o \
+    $(BUILD_DIR)/src/screen_asset.o \
+    $(BUILD_DIR)/src/asset_loading.o \
+    $(BUILD_DIR)/src/main.o \
+    $(BUILD_DIR)/src/font.o \
+    $(BUILD_DIR)/src/audio.o \
+    $(BUILD_DIR)/src/memory.o \
+    $(BUILD_DIR)/src/game_text.o \
+    $(BUILD_DIR)/src/gzip.o \
+    $(BUILD_DIR)/src/vehicle_bluey.o \
+    $(BUILD_DIR)/src/vehicle_bubbler.o \
+    $(BUILD_DIR)/src/vehicle_smokey.o \
+    $(BUILD_DIR)/src/vehicle_wizpig.o \
+    $(BUILD_DIR)/src/vehicle_rocket.o \
+    $(BUILD_DIR)/src/controller.o \
+    $(BUILD_DIR)/src/audiomgr.o \
+    $(BUILD_DIR)/src/game.o \
+    $(BUILD_DIR)/src/thread0_epc.o \
+    $(BUILD_DIR)/lib/src/mips1/sc/sched.o \
+	$(BUILD_DIR)/lib/src/mips1/al/alAuxBusPull.o \
+    $(BUILD_DIR)/lib/src/mips1/al/alSynSetPan.o \
+    $(BUILD_DIR)/lib/src/mips1/al/alSynAllocFX.o \
+    $(BUILD_DIR)/lib/src/mips1/al/reverb.o \
+    $(BUILD_DIR)/lib/src/mips1/al/alFxNew.o \
+    $(BUILD_DIR)/lib/src/mips1/al/reverb.o \
+    $(BUILD_DIR)/lib/src/mips1/al/seqplayer.o \
+    $(BUILD_DIR)/lib/src/mips1/al/synthesizer.o \
+    $(BUILD_DIR)/lib/src/mips1/al/unknown_0646F0.o \
+    $(BUILD_DIR)/lib/src/mips1/al/unknown_0647A0.o \
+    $(BUILD_DIR)/lib/src/mips1/al/unknown_064690.o \
+    $(BUILD_DIR)/lib/src/al/alBnkNew.o \
+    $(BUILD_DIR)/lib/src/al/alCopy.o \
+    $(BUILD_DIR)/lib/src/al/alCSPGetChlVol.o \
+    $(BUILD_DIR)/lib/src/al/alCSPGetState.o \
+    $(BUILD_DIR)/lib/src/al/alCSPGetTempo.o \
+    $(BUILD_DIR)/lib/src/al/alCSPSetBank.o \
+    $(BUILD_DIR)/lib/src/al/alCSPSetChlPan.o \
+    $(BUILD_DIR)/lib/src/al/alCSPSetChlVol.o \
+    $(BUILD_DIR)/lib/src/al/alCSPSetSeq.o \
+    $(BUILD_DIR)/lib/src/al/alCSPSetTempo.o \
+    $(BUILD_DIR)/lib/src/gu/cosf.o \
+    $(BUILD_DIR)/lib/src/gu/guMtxUtil.o \
+    $(BUILD_DIR)/lib/src/gu/guPerspectiveF.o \
+    $(BUILD_DIR)/lib/src/gu/sinf.o \
+    $(BUILD_DIR)/lib/src/libc/rmonPrintf.o \
+    $(BUILD_DIR)/lib/src/libc/string.o \
+    $(BUILD_DIR)/lib/src/libc/xprintf.o \
+
+$(GCC_SAFE_FILES): CC := $(CROSS)gcc
+
+$(GCC_SAFE_FILES): CFLAGS := -c -DNDEBUG -DAVOID_UB -Ofast $(INCLUDE_CFLAGS) $(DEF_INC_CFLAGS) \
+    -EB \
+    -march=vr4300 \
+    -mabi=32 \
+    -mfix4300 \
+	-mdivide-breaks \
+    -mno-check-zero-division \
+    -mno-abicalls \
+    -ffreestanding \
+    -fno-builtin \
+    -fno-common \
+	-ffast-math \
+	-mips3 \
+	-funsafe-math-optimizations \
+	-finline-functions-called-once \
+    -fno-merge-constants \
+    -fno-strict-aliasing \
+    -fno-zero-initialized-in-bss \
+	-fsingle-precision-constant \
+    -funsigned-char \
+    -fwrapv \
+	-falign-functions=32 \
+	-fno-unroll-loops \
+	-fno-peel-loops \
+    -Wall \
+    -Werror \
+    -Wno-address \
+    -Wno-aggressive-loop-optimizations \
+    -Wno-array-bounds \
+    -Wno-int-in-bool-context \
+    -Wno-int-to-pointer-cast \
+    -Wno-maybe-uninitialized \
+    -Wno-misleading-indentation \
+    -Wno-missing-braces \
+    -Wno-multichar \
+    -Wno-pointer-sign \
+    -Wno-pointer-to-int-cast \
+    -Wno-tautological-compare \
+    -Wno-uninitialized \
+    -Wno-unused-but-set-variable \
+    -Wno-unused-value \
+    -Wno-unused-variable \
+    -G 0
+
 ######################## Targets #############################
 
 default: all
@@ -329,24 +427,24 @@ LD_SCRIPT = $(TARGET).ld
 
 all: $(BUILD_DIR)/$(TARGET).z64
 
-reset: 
-ifneq ($(wildcard ./build/.*),) 
+reset:
+ifneq ($(wildcard ./build/.*),)
 	rm -r build
-endif 
-ifneq ($(wildcard ./assets/.*),) 
+endif
+ifneq ($(wildcard ./assets/.*),)
 	rm -r assets
-endif 
-ifneq ($(wildcard ./ucode/.*),) 
+endif
+ifneq ($(wildcard ./ucode/.*),)
 	rm -r ucode
-endif 
-	@echo "Done." 
+endif
+	@echo "Done."
 
-clean: 
-ifneq ($(wildcard ./build/.*),) 
+clean:
+ifneq ($(wildcard ./build/.*),)
 	rm -r build
 	rm -r dkr.ld
-else 
-	@echo "/build/ directory has already been deleted." 
+else
+	@echo "/build/ directory has already been deleted."
 endif
 
 distclean:
@@ -356,21 +454,21 @@ distclean:
 	rm -rf dkr.ld
 	rm -rf tools/ido-static-recomp/{,.[!.],..?}* # Deletes all files, including hidden ones.
 	$(MAKE) -C tools distclean
-    
+
 clean_lib:
 ifneq ($(wildcard $(BUILD_DIR)/lib/.*),)
 	rm -r $(BUILD_DIR)/lib/src/*/*.o
-else 
-	@echo "build lib directory has already been deleted." 
-endif 
+else
+	@echo "build lib directory has already been deleted."
+endif
 
 clean_src: clean_lib
 ifneq ($(wildcard $(BUILD_DIR)/src/.*),)
 	rm -r $(BUILD_DIR)/src/*.o
 	rm -rf dkr.ld
-else 
-	@echo "/build/lib directory has already been deleted." 
-endif 
+else
+	@echo "/build/lib directory has already been deleted."
+endif
 
 # Helps fix an issue with parallel jobs.
 $(ALL_ASSETS_BUILT): | $(BUILD_DIR)
@@ -398,18 +496,18 @@ $(foreach FILE,$(JSON_FILES),$(eval $(call DEFINE_ASSET_TARGET,$(FILE),$(call JS
 $(UCODE_OUT_DIR)/%.bin: $(UCODE_IN_DIR)/%.bin
 	$(call print,Copying:,$<,$@)
 	$(V)$(ASSETS_COPY) $^ $@
-    
+
 ###############################
 
 $(BUILD_DIR)/%.o: %.s | $(ALL_ASSETS_BUILT)
 	$(call print,Assembling:,$<,$@)
 	$(V)$(AS) $(ASFLAGS) -MD $(BUILD_DIR)/$*.d -o $@ $<
-	
+
 $(BUILD_DIR)/%.o: %.c | $(ALL_ASSETS_BUILT)
 	$(call print,Compiling:,$<,$@)
 	@$(CC_CHECK) $(CC_CHECK_CFLAGS) -MMD -MP -MT $@ -MF $(BUILD_DIR)/$*.d $<
 	$(V)$(CC) $(CFLAGS) -o $@ $<
-	
+
 $(BUILD_DIR)/%.o: $(BUILD_DIR)/%.c | $(ALL_ASSETS_BUILT)
 	$(call print,Compiling:,$<,$@)
 	@$(CC_CHECK) $(CC_CHECK_CFLAGS) -MMD -MP -MT $@ -MF $(BUILD_DIR)/$*.d $<
@@ -447,7 +545,7 @@ $(BUILD_DIR)/$(TARGET).hex: $(BUILD_DIR)/$(TARGET).z64
 
 $(BUILD_DIR)/$(TARGET).objdump: $(BUILD_DIR)/$(TARGET).elf
 	$(OBJDUMP) -D $< > $@
-    
+
 $(GLOBAL_ASM_O_FILES): CC := python3 tools/asm_processor/build.py $(CC) -- $(AS) $(ASFLAGS) --
 
 test: $(BUILD_DIR)/$(TARGET).z64

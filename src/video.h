@@ -108,7 +108,7 @@ void memory_copy(u8 *src, u8 *dest, s32 len);
 void set_dither_filter(void);
 
 //Non Matching
-s32 swap_framebuffer_when_ready(void);
+void swap_framebuffer_when_ready(void);
 
 void change_vi(OSViMode *mode, int width, int height);
 

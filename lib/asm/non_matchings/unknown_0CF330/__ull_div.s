@@ -1,4 +1,5 @@
 glabel __ull_div
+glabel __udivdi3
 /* 0CF6C8 800CEAC8 AFA40000 */  sw    $a0, ($sp)
 /* 0CF6CC 800CEACC AFA50004 */  sw    $a1, 4($sp)
 /* 0CF6D0 800CEAD0 AFA60008 */  sw    $a2, 8($sp)

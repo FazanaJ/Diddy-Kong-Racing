@@ -250,7 +250,7 @@ void detect_framebuffer(void) {
  * than an update magnitude of 2. It's only purpose is to be used as a divisor
  * in the unused function, get_video_refresh_speed.
  */
-s32 swap_framebuffer_when_ready(void) {
+void swap_framebuffer_when_ready(void) {
     if (sBlackScreenTimer) {
         sBlackScreenTimer--;
         if (sBlackScreenTimer == 0) {

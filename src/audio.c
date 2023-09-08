@@ -64,7 +64,7 @@ s32 sSoundEffectsPoolCount;
 u32 sSoundEffectsPoolSize;
 u32 sMusicPoolSize;
 s16 sMusicTempo;
-f32 D_80115D34;
+f32 D_80115D34 = 1.0f;
 s32 sMusicDelayTimer;
 s32 sMusicDelayLength;
 u8 D_80115D40;

@@ -96,9 +96,11 @@ OSMesg          audDMAMessageBuf[NUM_DMA_MESSAGES];
 static void __amMain(UNUSED void *arg);
 static s32 __amDMA(s32 addr, s32 len, void *state);
 static ALDMAproc __amDmaNew(AMDMAState **state);
+#ifndef DISABLE_AUDIO
 static u32  __amHandleFrameMsg(AudioInfo *info, AudioInfo *lastInfo);
 static void __amHandleDoneMsg(AudioInfo *info);
 static void __clearAudioDMA(void);
+#endif
 
 /******************************************************************************
  * Audio Manager API
@@ -263,6 +265,7 @@ static void __amMain(UNUSED void *arg) {
     alClose(&__am.g);
 }
 
+#ifndef DISABLE_AUDIO
 /******************************************************************************
  *
  * __amHandleFrameMsg. First, clear the past audio dma's, then calculate 
@@ -349,7 +352,9 @@ static u32 __amHandleFrameMsg(AudioInfo *info, AudioInfo *lastInfo) {
 
     return 0;
 }
+#endif
 
+#ifndef DISABLE_AUDIO
 /******************************************************************************
  *
  * __amHandleDoneMsg. Really just debugging info in this frame. Checks
@@ -366,6 +371,7 @@ static void __amHandleDoneMsg(UNUSED AudioInfo *info) {
         firstTime = 0;
     }
 }
+#endif
 
 /******************************************************************************
  *
@@ -482,6 +488,7 @@ static ALDMAproc __amDmaNew(AMDMAState **state) {
     return __amDMA;
 }
 
+#ifndef DISABLE_AUDIO
 /******************************************************************************
  *
  * __clearAudioDMA.  Routine to move dma buffers back to the unused list.
@@ -534,3 +541,4 @@ static void __clearAudioDMA(void) {
     nextDMA = 0;  /* reset */
     audFrameCt++;
 }
+#endif
