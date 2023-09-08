@@ -181,8 +181,9 @@ RenderNodeTrack *gRenderNodeHead;
 RenderNodeTrack *gRenderNodeTail;
 RenderListTrack *gMateriallistHead;
 RenderListTrack *gMateriallistTail;
-u32 gGfxPoolEnd = 0x807E0000;
 u8 sShowAll = FALSE;
+void *gSorterHeap;
+u32 gSorterPos;
 
 /******************************/
 
@@ -889,7 +890,7 @@ void pop_render_list_track(Gfx **dList) {
     gMateriallistHead = NULL;
     gMateriallistTail = NULL;
     
-    gGfxPoolEnd = 0x807E0000;
+    gSorterPos = (u32) gSorterHeap + 0x3FFF;
 }
 
 /**
@@ -1066,8 +1067,8 @@ void find_material_list_track(RenderNodeTrack *node) {
     RenderListTrack *matList;
     if (gRenderNodeHead == NULL) {
         gRenderNodeHead = node;
-        gGfxPoolEnd -= sizeof(RenderListTrack);
-        matList = (RenderListTrack *) gGfxPoolEnd;
+        gSorterPos -= sizeof(RenderListTrack);
+        matList = (RenderListTrack *) gSorterPos;
         gMateriallistHead = matList;
     } else {
         if (node->material) {
@@ -1089,8 +1090,8 @@ void find_material_list_track(RenderNodeTrack *node) {
                 list = list->next;
             }
         }
-        gGfxPoolEnd -= sizeof(RenderListTrack);
-        matList = (RenderListTrack *) gGfxPoolEnd;
+        gSorterPos -= sizeof(RenderListTrack);
+        matList = (RenderListTrack *) gSorterPos;
         gMateriallistTail->next = matList;
         gRenderNodeTail->next = node;
     }
@@ -1210,8 +1211,8 @@ void render_level_segment(s32 segmentId, s32 nonOpaque) {
                 gSPPolygon(gSceneCurrDisplayList++, OS_PHYSICAL_TO_K0(triangles), numberTriangles, batchFlags);
             } else {
                 RenderNodeTrack *entry;
-                gGfxPoolEnd -= sizeof(RenderNodeTrack);
-                entry = (RenderNodeTrack *) gGfxPoolEnd;
+                gSorterPos -= sizeof(RenderNodeTrack);
+                entry = (RenderNodeTrack *) gSorterPos;
                 //RenderNodeTrack *entry = (RenderNodeTrack *) allocate_from_main_pool(sizeof(RenderNodeTrack), COLOUR_TAG_MAGENTA);
                 entry->material = texture;
                 entry->flags = batchFlags;

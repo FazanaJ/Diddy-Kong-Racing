@@ -181,9 +181,11 @@ extern s32 D_800DC928;
 
 extern s8 D_800DC92C[24];
 
-extern u32 gGfxPoolEnd;
 extern u32 gSortPrimColour;
 extern u32 gSortEnvColour;
+
+extern void *gSorterHeap;
+extern u32 gSorterPos;
 
 s32 set_scene_viewport_num(s32 arg0);
 void func_800257D0(void);
