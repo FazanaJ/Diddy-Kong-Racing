@@ -333,6 +333,7 @@ GCC_SAFE_FILES := \
     $(BUILD_DIR)/src/memory.o \
     $(BUILD_DIR)/src/game_text.o \
     $(BUILD_DIR)/src/gzip.o \
+    $(BUILD_DIR)/src/thread30_track_loading.o \
     $(BUILD_DIR)/src/vehicle_bluey.o \
     $(BUILD_DIR)/src/vehicle_bubbler.o \
     $(BUILD_DIR)/src/vehicle_smokey.o \
