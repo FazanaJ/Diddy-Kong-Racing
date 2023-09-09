@@ -346,25 +346,25 @@ $(GCC_SAFE_FILES): CFLAGS := -c -DNDEBUG -DAVOID_UB -Ofast $(INCLUDE_CFLAGS) $(D
     -march=vr4300 \
     -mabi=32 \
     -mfix4300 \
-	-mdivide-breaks \
+	  -mdivide-breaks \
     -mno-check-zero-division \
     -mno-abicalls \
     -ffreestanding \
     -fno-builtin \
     -fno-common \
-	-ffast-math \
-	-mips3 \
-	-funsafe-math-optimizations \
-	-finline-functions-called-once \
+    -ffast-math \
+    -mips3 \
+    -funsafe-math-optimizations \
+    -finline-functions-called-once \
     -fno-merge-constants \
     -fno-strict-aliasing \
     -fno-zero-initialized-in-bss \
-	-fsingle-precision-constant \
+	  -fsingle-precision-constant \
     -funsigned-char \
     -fwrapv \
-	-falign-functions=32 \
-	-fno-unroll-loops \
-	-fno-peel-loops \
+    -falign-functions=32 \
+    -fno-unroll-loops \
+    -fno-peel-loops \
     -Wall \
     -Werror \
     -Wno-address \
