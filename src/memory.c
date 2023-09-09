@@ -106,9 +106,7 @@ MemoryPoolSlot *new_memory_pool(MemoryPoolSlot *slots, s32 poolSize, s32 numSlot
  * Will cause an exception if the size is 0 or if memory cannot be reserved.
  */
 void *allocate_from_main_pool_safe(s32 size, u32 colourTag) {
-    void *temp_v0;
-    temp_v0 = allocate_from_memory_pool(0, size, colourTag);
-    return temp_v0;
+    return allocate_from_memory_pool(0, size, colourTag);
 }
 
 /**
@@ -131,7 +129,7 @@ MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag
     pool = &gMemoryPools[poolIndex];
     if ((pool->curNumSlots + 1) == (*pool).maxNumSlots) {
         set_status_register_flags(flags);
-        puppyprint_assert("Out of memory");
+        puppyprint_assert("Out of slots");
         return 0;
     }
     currIndex = -1;

@@ -964,6 +964,7 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
     s32 sp34;
     s32 result;
     s32 var_s2;
+    profiler_begin_timer();
 
     result = TRUE;
     if (flags & RENDER_VEHICLE_PART) {
@@ -1056,6 +1057,7 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
     }
     gDkrInsertMatrix((*dlist)++, 0, var_s2 << 6);
     gDkrDisableBillboard((*dlist)++);
+    profiler_add(PP_BILLBOARD, first);
     return result;
 }
 

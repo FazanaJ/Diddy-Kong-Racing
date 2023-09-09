@@ -499,6 +499,7 @@ void load_and_set_texture(Gfx **dlist, TextureHeader *texhead, s32 flags, s32 te
     s32 doPipeSync;
     s32 dlIndex;
     Gfx *dlID;
+    profiler_begin_timer();
 
     forceFlags = gForceFlags;
     doPipeSync = TRUE;
@@ -612,8 +613,8 @@ void load_and_set_texture(Gfx **dlist, TextureHeader *texhead, s32 flags, s32 te
         dlID = dRenderSettingsCommon_ext[dlIndex];
         draw:
         gDkrDmaDisplayList((*dlist)++, OS_PHYSICAL_TO_K0(dlID), numberOfGfxCommands(dRenderSettingsCommon_ext[0]));
-        return;
     }
+    profiler_add(PP_TEXTURES, first);
 }
 
 /**

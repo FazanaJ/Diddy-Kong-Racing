@@ -48,7 +48,11 @@ f32 round_double_to_float(f64 v) {
 
 void get_platform(void) {
     //u32 notiQue;
+    s32 i;
     gPlatform = 0;
+
+    for (i = 0; i < 0x400000; i++) {
+    }
     // Read the RDP timing registers. Emulators read them as zero.
     if ((u32) IO_READ(DPC_PIPEBUSY_REG) | (u32) IO_READ(DPC_TMEM_REG) | (u32) IO_READ(DPC_BUFBUSY_REG)) {
         gPlatform |= CONSOLE;
@@ -514,7 +518,7 @@ void puppyprint_render_overview(void) {
 }
 
 void puppyprint_render_breakdown(void) {
-    char textBytes[24];
+    char textBytes[32];
     s32 y;
     s32 i;
 

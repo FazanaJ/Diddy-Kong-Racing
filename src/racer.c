@@ -4959,6 +4959,7 @@ void update_player_camera(Object *obj, Object_Racer *racer, f32 updateRateF) {
 	f32 dialogueAngle;
     s32 tempUpdateRateF;
 	s32 angle;
+    profiler_begin_timer();
 
     if (gCurrentButtonsPressed & U_CBUTTONS && func_800A0190()) {
         gCameraObject->zoom++;
@@ -5058,6 +5059,7 @@ void update_player_camera(Object *obj, Object_Racer *racer, f32 updateRateF) {
         gCameraObject->unk3A += 5;
         gCameraObject->unk30 = -gCameraObject->unk30 * 0.75f;
     }
+    profiler_add(PP_CAMERA, first);
 }
 
 /**

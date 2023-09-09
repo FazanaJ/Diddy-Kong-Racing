@@ -88,6 +88,7 @@ enum MainTimers {
     {"Audio"},
 
 enum TrackTimers {
+    PP_UNKNOWN,
     PP_COLLISION,
     PP_LIGHT,
     PP_ENVMAP,
@@ -97,19 +98,16 @@ enum TrackTimers {
     PP_TEXT,
     PP_TEXTURES,
     PP_SHADOW,
-    PP_PARTICLES,
     PP_AI,
     PP_WEATHER,
     PP_WAVES,
     PP_DIALOGUE,
-    PP_TRANSITION,
     PP_CAMERA,
     PP_MATRIX,
     PP_BACKGROUND,
-    PP_DECAL,
     PP_BILLBOARD,
     PP_VOID,
-    PP_SEGMENTS,
+    PP_SORTING,
 
     PP_RSP_GFX,
     PP_RSP_AUD,
@@ -142,23 +140,21 @@ enum PPProfilerEvent {
     {"Lighting"}, \
     {"Envmaps"}, \
     {"HUD\t"}, \
-    {"Render"}, \
-    {"DMA"}, \
+    {"DMA\t"}, \
     {"Pad\t"}, \
-    {"Text"}, \
+    {"Text\t"}, \
     {"Textures"}, \
-    {"Particles"}, \
+    {"Shadows"}, \
     {"AI\t"}, \
     {"Weather"}, \
-    {"Water"}, \
+    {"Water\t"}, \
     {"Dialogue"}, \
-    {"Transition"}, \
     {"Camera"}, \
     {"Matrix"}, \
     {"BG\t"}, \
-    {"Decals"}, \
     {"Billboards"}, \
-    {"Void"},
+    {"Void"}, \
+    {"Sorting\t"}
 
 
 #ifdef PUPPYPRINT_DEBUG

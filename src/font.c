@@ -228,9 +228,11 @@ void set_text_background_colour(s32 red, s32 green, s32 blue, s32 alpha) {
  */
 void draw_text(Gfx **displayList, s32 xpos, s32 ypos, char *text, AlignmentFlags alignmentFlags) {
     DialogueBoxBackground *temp = &gDialogueBoxBackground[0];
+    profiler_begin_timer();
     temp->xpos = (xpos == POS_CENTRED) ? temp->width >> 1 : xpos;
     temp->ypos = (ypos == POS_CENTRED) ? temp->height >> 1 : ypos;
     render_text_string(displayList, temp, text, alignmentFlags, 1.0f);
+    profiler_add(PP_TEXT, first);
 }
 
 /**
@@ -757,6 +759,7 @@ void render_dialogue_box(Gfx **dlist, MatrixS **mat, Vertex **verts, s32 dialogu
     s32 x1, x2;
     char text[256];
     s32 y1, y2;
+    profiler_begin_timer();
 
     dialogueBox = &gDialogueBoxBackground[dialogueBoxID];
 
@@ -814,6 +817,7 @@ void render_dialogue_box(Gfx **dlist, MatrixS **mat, Vertex **verts, s32 dialogu
         render_text_string(dlist, dialogueBox, text, 0, 1.0f);
         dialogueTextBox = dialogueTextBox->nextBox;
     }
+    profiler_add(PP_DIALOGUE, first);
 }
 
 /**

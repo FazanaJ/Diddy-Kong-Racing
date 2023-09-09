@@ -3126,6 +3126,7 @@ void calc_dyn_light_and_env_map_for_object(ObjectModel *model, Object *object, s
     s16 environmentMappingEnabled;
     s32 dynamicLightingEnabled;
     s16 i;
+    profiler_begin_timer();
 
     dynamicLightingEnabled = 0;
     environmentMappingEnabled = 0;
@@ -3148,10 +3149,13 @@ void calc_dyn_light_and_env_map_for_object(ObjectModel *model, Object *object, s
             // Dynamic lighting for other objects? (Racers, Rare logo, Wizpig face, etc.)
             calc_dynamic_lighting_for_object_2(object, model, arg2, intensity);
         }
+        profiler_add(PP_LIGHT, first);
     }
+    profiler_reset_timer();
     if (environmentMappingEnabled) {
         // Calculates environment mapping for the object
         calc_env_mapping_for_object(model, object->segment.trans.z_rotation, object->segment.trans.x_rotation, object->segment.trans.y_rotation);
+        profiler_add(PP_ENVMAP, first);
     }
 }
 

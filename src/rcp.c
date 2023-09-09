@@ -9,6 +9,7 @@
 #include "camera.h"
 #include "game.h"
 #include "printf.h"
+#include "main.h"
 //#include "lib/src/unknown_0D24D0.h"
 
 /************ .data ************/
@@ -292,6 +293,7 @@ void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
     s32 x2;
     s32 y2;
     u32 skip = TRUE;
+    profiler_begin_timer();
 
     widthAndHeight = get_video_width_and_height_as_s32();
     w = GET_VIDEO_WIDTH(widthAndHeight);
@@ -347,6 +349,7 @@ void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
     }
     gDPPipeSync((*dList)++);
     set_viewport_scissor(dList);
+    profiler_add(PP_BACKGROUND, first);
 }
 
 /**

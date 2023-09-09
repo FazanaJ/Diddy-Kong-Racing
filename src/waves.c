@@ -383,6 +383,7 @@ void obj_loop_wavepower(Object *obj) {
     f32 diffZ;
     f32 diffX;
     f32 distance;
+    profiler_begin_timer();
 
     if (obj != D_800E3198) {
         racers = get_racer_objects(&numRacers);
@@ -410,4 +411,5 @@ void obj_loop_wavepower(Object *obj) {
             }
         }
     }
+    profiler_add(PP_WAVES, first);
 }

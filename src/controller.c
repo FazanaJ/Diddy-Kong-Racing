@@ -3,6 +3,7 @@
 
 #include "controller.h"
 #include "game.h"
+#include "main.h"
 
 s32 sNoControllerPluggedIn = FALSE; // Looks to be a boolean for whether a controller is plugged in. FALSE if plugged in, and TRUE if not.
 u16 gButtonMask = 0xFFFF; //Used when anti-cheat/anti-tamper has failed in init_level_globals()
@@ -51,6 +52,7 @@ s32 handle_save_data_and_read_controller(s32 saveDataFlags, s32 updateRate) {
     OSMesg unusedMsg;
     Settings *settings;
     s32 i;
+    profiler_begin_timer();
 
     if (osRecvMesg(&sSIMesgQueue, &unusedMsg, OS_MESG_NOBLOCK) == 0) {
         //Back up old controller data
@@ -103,6 +105,7 @@ s32 handle_save_data_and_read_controller(s32 saveDataFlags, s32 updateRate) {
         gControllerButtonsPressed[i]  = ((gControllerCurrData[i].button ^ gControllerPrevData[i].button) & gControllerCurrData[i].button) & gButtonMask;
         gControllerButtonsReleased[i] = ((gControllerCurrData[i].button ^ gControllerPrevData[i].button) & gControllerPrevData[i].button) & gButtonMask;
     }
+    profiler_add(PP_PAD, first);
     return saveDataFlags;
 }
 

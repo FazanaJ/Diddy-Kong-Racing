@@ -289,6 +289,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
     s32 posX;
     s32 posY;
     s32 j;
+    profiler_begin_timer();
 
     gSceneCurrDisplayList = *dList;
     gSceneCurrMatrix = *mtx;
@@ -304,7 +305,9 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
         tempUpdateRate = updateRate;
     }
     if (D_8011D384) {
+        profiler_begin_timer2();
         func_800B9C18(tempUpdateRate);
+        profiler_add(PP_WAVES, first2);
     }
     func_8002D8DC(2, 2, updateRate);
     for (i = 0; i < 7; i++) {
@@ -383,14 +386,18 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
         }
         gDPPipeSync(gSceneCurrDisplayList++);
         initialise_player_viewport_vars(updateRate);
+        profiler_reset_timer();
         set_weather_limits(-1, -512);
         // Show weather effects in single player.
         if (gCurrentLevelHeader2->weatherEnable > 0 && numViewports < 2) {
             process_weather(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, &gSceneCurrTriList, tempUpdateRate);
         }
+        profiler_add(PP_WEATHER, first);
         func_800AD030(get_active_camera_segment());
         func_800ACA20(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, get_active_camera_segment());
+        profiler_reset_timer();
         render_hud(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, get_racer_object_by_port(gSceneCurrentPlayerID), updateRate);
+        profiler_add(PP_HUD, first);
     }
     // Show TT Cam toggle for the fourth viewport when playing 3 player.
     if (numViewports == 3 && gCurrentLevelHeader->race_type != RACETYPE_CHALLENGE_EGGS && 
@@ -708,6 +715,7 @@ void draw_gradient_background(void) {
     Vertex *verts;
     Triangle *tris;
     f32 widescreen = 1.0f;
+    profiler_begin_timer();
 
 #ifndef NATIVE_RES_WIDESCREEN
     switch (gConfig.screenMode) {
@@ -790,6 +798,7 @@ void draw_gradient_background(void) {
     gSceneCurrVertexList = verts;
     tris += 2;
     gSceneCurrTriList = (TriangleList *) tris;
+    profiler_add(PP_BACKGROUND, first);
 }
 
 /**
@@ -797,6 +806,7 @@ void draw_gradient_background(void) {
 */
 void render_skydome(void) {
     ObjectSegment *cam;
+    profiler_begin_timer();
     if (gSkydomeSegment == NULL)
         return;
 
@@ -811,6 +821,7 @@ void render_skydome(void) {
     if (gSceneRenderSkyDome) {
         render_object(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, gSkydomeSegment);
     }
+    profiler_add(PP_BACKGROUND, first);
 }
 
 /**
@@ -836,6 +847,7 @@ void initialise_player_viewport_vars(s32 updateRate) {
         gSceneStartSegment = -1;
     }
     if (D_8011D384 != 0) {
+        profiler_begin_timer();
         func_800B8B8C();
         racers = get_racer_objects(&numRacers);
         if (gSceneActiveCamera->object.unk36 != 7 && numRacers > 0 && !gCutsceneCameraActive) {
@@ -848,6 +860,7 @@ void initialise_player_viewport_vars(s32 updateRate) {
         } else {
             func_800B8C04((s32) gSceneActiveCamera->trans.x_position, (s32) gSceneActiveCamera->trans.y_position, (s32) gSceneActiveCamera->trans.z_position, gActiveCameraID, updateRate);
         }
+        profiler_add(PP_WAVES, first);
     }
     gCurrentLevelHeader->unk3 = 1;
     render_level_geometry_and_objects();
@@ -868,6 +881,7 @@ void pop_render_list_track(Gfx **dList) {
     RenderNodeTrack *renderList = gRenderNodeHead;
     RenderListTrack *matList;
     s32 hasTexture;
+
     while (renderList) {
         RenderNodeTrack *oldList = renderList;
         if (renderList->material) {
@@ -1008,7 +1022,9 @@ void render_level_geometry_and_objects(void) {
         pop_render_list_track(&gSceneCurrDisplayList);
     }
     if (D_8011D384 != 0) {
+        profiler_begin_timer();
         func_800BA8E4(&gSceneCurrDisplayList, &gSceneCurrMatrix, gActiveCameraID);
+        profiler_add(PP_ENVMAP, first);
     }
 
     reset_render_settings(&gSceneCurrDisplayList);
@@ -1065,6 +1081,8 @@ skip:
 
 void find_material_list_track(RenderNodeTrack *node) {
     RenderListTrack *matList;
+    profiler_begin_timer();
+
     if (gRenderNodeHead == NULL) {
         gRenderNodeHead = node;
         gSorterPos -= sizeof(RenderListTrack);
@@ -1085,6 +1103,7 @@ void find_material_list_track(RenderNodeTrack *node) {
                     node->prev = list->entryHead;
                     list->entryHead->next = node;
                     list->entryHead = node;
+                    profiler_add(PP_SORTING, first);
                     return;
                 }
                 list = list->next;
@@ -1101,6 +1120,7 @@ void find_material_list_track(RenderNodeTrack *node) {
     gMateriallistTail = matList;
     node->prev = gRenderNodeTail;
     gRenderNodeTail = node;
+    profiler_add(PP_SORTING, first);
 }
 
 /**
@@ -1966,6 +1986,7 @@ void render_object_shadow(Object *obj, ShadowData *shadow) {
     s32 new_var;
     s32 new_var2;
     s32 someAlpha;
+    profiler_begin_timer();
     
     if (obj->segment.header->unk32 != 0) {
         if (shadow->unk8 != -1 && D_8011B0C4 == 0) {
@@ -2005,6 +2026,7 @@ void render_object_shadow(Object *obj, ShadowData *shadow) {
             }
         }
     }
+    profiler_add(PP_SHADOW, first);
 }
 
 void func_8002D670(Object *obj, ShadowData *shadow) {
@@ -2014,6 +2036,7 @@ void func_8002D670(Object *obj, ShadowData *shadow) {
     Vertex *vtx;
     Triangle *tri;
     s32 flags;
+    profiler_begin_timer();
 
     if (obj->segment.header->unk36 != 0) {
         if ((shadow->unk8 != -1) && (D_8011B0C4 == 0)) {
@@ -2042,6 +2065,7 @@ void func_8002D670(Object *obj, ShadowData *shadow) {
             }
         }
     }
+    profiler_add(PP_SHADOW, first);
 }
 
 void func_8002D8DC(s32 arg0, s32 arg1, s32 updateRate) {

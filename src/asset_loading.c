@@ -126,6 +126,7 @@ s32 get_size_of_asset_section(u32 assetIndex) {
 void dmacopy(u32 romOffset, u32 ramAddress, s32 numBytes) {
     OSMesg dmaMesg;
     s32 numBytesToDMA;
+    profiler_begin_timer();
 
     osInvalDCache((u32 *) ramAddress, numBytes);
     numBytesToDMA = MAX_TRANSFER_SIZE;
@@ -139,4 +140,5 @@ void dmacopy(u32 romOffset, u32 ramAddress, s32 numBytes) {
         romOffset += numBytesToDMA;
         ramAddress += numBytesToDMA;
     }
+    profiler_add(PP_DMA, first);
 }

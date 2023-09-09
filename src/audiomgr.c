@@ -391,6 +391,7 @@ static s32 __amDMA(s32 addr, s32 len, UNUSED void *state) {
     void            *foundBuffer;
     s32             delta, addrEnd, buffEnd;
     AMDMABuffer     *dmaPtr, *lastDmaPtr;
+    profiler_begin_timer();
 
     lastDmaPtr = 0;
     delta = addr & 1;
@@ -408,6 +409,7 @@ static s32 __amDMA(s32 addr, s32 len, UNUSED void *state) {
         else if(addrEnd <= buffEnd) { /* yes, found a buffer with samples */
             dmaPtr->lastFrame = audFrameCt; /* mark it used */
             foundBuffer = dmaPtr->ptr + addr - dmaPtr->startAddr;
+            profiler_add(PP_DMA, first);
             return (int) osVirtualToPhysical(foundBuffer);
         }
         lastDmaPtr = dmaPtr;
@@ -428,6 +430,7 @@ static s32 __amDMA(s32 addr, s32 len, UNUSED void *state) {
      * pointer, it's better than nothing
      */
     if (!dmaPtr) {
+        profiler_add(PP_DMA, first);
 	    return (int) osVirtualToPhysical(lastDmaPtr->ptr) + delta;
     }
 
@@ -460,6 +463,8 @@ static s32 __amDMA(s32 addr, s32 len, UNUSED void *state) {
 
     osPiStartDma(&audDMAIOMesgBuf[nextDMA++], OS_MESG_PRI_HIGH, OS_READ,
                 addr, foundBuffer, DMA_BUFFER_LENGTH, &audDMAMessageQ);
+
+    profiler_add(PP_DMA, first);
 
     return (int) osVirtualToPhysical(foundBuffer) + delta;
 }

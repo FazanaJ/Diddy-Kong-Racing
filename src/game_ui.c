@@ -21,6 +21,7 @@
 #include "printf.h"
 #include "unknown_008C40.h"
 #include "controller.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -1544,6 +1545,7 @@ void render_minimap_and_misc_hud(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 u
     s32 temp_f6;
     s32 temp_s3;
     s32 temp;
+    profiler_begin_timer();
 
     if (gHideHUD && get_race_start_timer() == 0) {
         return;
@@ -1747,12 +1749,14 @@ void render_minimap_and_misc_hud(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 u
             goto test;
         } else if(gHudToggleSettings[gHUDNumPlayers] != 1) {
         test:
+            profiler_add(PP_HUD, first);
             return;
         } else {
             reset_render_settings(&gHUDCurrDisplayList);
             set_ortho_matrix_view(&gHUDCurrDisplayList, &gHUDCurrMatrix);
             lvlMdl = get_current_level_model();
             if (lvlMdl == NULL) {
+                profiler_add(PP_HUD, first);
                 return;
             }
             someObjSeg = get_active_camera_segment();
@@ -1899,6 +1903,7 @@ void render_minimap_and_misc_hud(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 u
             *vtx = gHUDCurrVertex;
         }
     }
+    profiler_add(PP_HUD, first);
 }
 
 void func_800AA3EC(f32 x, f32 z, f32 angleSin, f32 angleCos, f32 modelAspectRatio) {
