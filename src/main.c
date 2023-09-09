@@ -411,16 +411,18 @@ void profiler_reset_values(void) {
     for (i = 0; i < NUM_OBJECT_PRINTS; i++) {
         gPuppyPrint.objTimers[i][PERF_AGGREGATE] -= gPuppyPrint.objTimers[i][perfIteration];
         gPuppyPrint.objTimers[i][perfIteration] = 0;
+        gPuppyPrint.objCounts[i] = 0;
     }
     gPuppyPrint.textureLoads = 0;
     puppyprint_input();
 }
 
 void profiler_add_obj(u32 objID, u32 time) {
-    u32 tempTime = OS_CYCLES_TO_USEC(time);
+    u32 tempTime = OS_CYCLES_TO_USEC(osGetCount() - time);
     if (objID >= NUM_OBJECT_PRINTS) {
         return;
     }
+    gPuppyPrint.objCounts[objID]++;
     gPuppyPrint.objTimers[objID][PERF_AGGREGATE] += tempTime;
     gPuppyPrint.objTimers[objID][perfIteration] += tempTime;
 }
@@ -591,7 +593,7 @@ void puppyprint_render_objects(void) {
         if (gPuppyPrint.objTimers[sObjPrintOrder[i]][PERF_TOTAL] == 0) {
             continue;
         }
-        puppyprintf(textBytes,  "%d \t%dus (%d%%)", sObjPrintOrder[i], gPuppyPrint.objTimers[sObjPrintOrder[i]][PERF_TOTAL], gPuppyPrint.objTimers[sObjPrintOrder[i]][PERF_TOTAL] / 333);
+        puppyprintf(textBytes,  "%02d  (%02d)  %dus (%d%%)", sObjPrintOrder[i], gPuppyPrint.objCounts[sObjPrintOrder[i]], gPuppyPrint.objTimers[sObjPrintOrder[i]][PERF_TOTAL], gPuppyPrint.objTimers[sObjPrintOrder[i]][PERF_TOTAL] / 333);
         draw_text(&gCurrDisplayList, gScreenWidth - 136, y, textBytes, ALIGN_TOP_LEFT);
         y += 10;
         if (y > gScreenHeight - 16) {
@@ -777,6 +779,7 @@ void calculate_obj_print_order(void) {
         sObjPrintOrder[i] = i;
     }
 
+    return;
     // One by one move boundary of unsorted subarray
     for (i = 0; i < NUM_OBJECT_PRINTS; i++) {
 

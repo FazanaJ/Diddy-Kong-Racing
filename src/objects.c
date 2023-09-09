@@ -3863,6 +3863,7 @@ s32 func_80023E30(s32 objectID) {
  * One big switch statement for whichever object.
 */
 void run_object_loop_func(Object *obj, s32 updateRate) {
+    profiler_begin_timer();
     set_crash_object(obj->behaviorId, CRASH_OBJ_UPDATE);
     switch (obj->behaviorId) {
         case BHV_SCENERY:
@@ -4081,6 +4082,7 @@ void run_object_loop_func(Object *obj, s32 updateRate) {
             break;
     }
     set_crash_object(-1, CRASH_OBJ_NONE);
+    profiler_add_obj(obj->behaviorId, first);
 }
 
 s16 *func_80024594(s32 *arg0, s32 *arg1) {

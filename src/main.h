@@ -159,7 +159,7 @@ enum PPProfilerEvent {
 
 #ifdef PUPPYPRINT_DEBUG
 
-#define NUM_OBJECT_PRINTS 250
+#define NUM_OBJECT_PRINTS 128
 #define NUM_PERF_ITERATIONS 32
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS
 #define PERF_TOTAL NUM_PERF_ITERATIONS + 1
@@ -180,6 +180,7 @@ struct PuppyPrint {
     PPTimer gameTime; // Normalised total for game processing time.
     u32 threadTimes[NUM_THREAD_ITERATIONS][NUM_THREAD_TIMERS]; // Timers for individual threads.
     u16 objTimers[NUM_OBJECT_PRINTS][NUM_PERF_ITERATIONS + 2]; // Timers for individual object IDs
+    u8 objCounts[NUM_OBJECT_PRINTS];
     u32 mainTimerPoints[2][PP_MAIN_TIMES_TOTAL]; // Timers for individual threads.
     u16 menuScroll; // Page menu scroll value to offset the text.
     s16 pageScroll; // Generic scroller var for a page. Reset when swapped.
