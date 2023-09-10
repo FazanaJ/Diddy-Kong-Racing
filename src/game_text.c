@@ -70,13 +70,6 @@ void func_800C29F0(void) {
     func_800C56D0(6);
 }
 
-void func_800C2AB4(void) {
-    free_from_memory_pool(D_8012A7C8[0]);
-    D_8012A7B6 = 0;
-    close_dialogue_box(6);
-    assign_dialogue_box_id(6);
-}
-
 void func_800C2AF4(s32 arg0) {
     D_800E3680 = arg0;
 }
@@ -195,19 +188,6 @@ void func_800C3048(void) {
     func_800C29F0();
     D_8012A790 = (get_size_of_asset_section(ASSET_GAME_TEXT_TABLE) >> 2) - 2;
     D_800E3670 = 1;
-}
-
-void func_800C30CC(void) {
-    s32 i;
-    if (D_800E3670) {
-        free_from_memory_pool(gGameTextTable[0]);
-        D_800E3670 = 0;
-        D_8012A789 = 0;
-        for (i = 0; i < 10; i++) {
-            try_close_dialogue_box();
-        };
-        func_800C2AB4();
-    }
 }
 
 void func_800C3140(s32 arg0) {

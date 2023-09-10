@@ -232,6 +232,7 @@ void init_game(void) {
     gSPEndDisplayList(gCurrDisplayList++);
     get_platform();
     init_config();
+    func_800C3048();
 
     osSetTime(0);
 }
@@ -448,7 +449,6 @@ void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     alloc_displaylist_heap(numberOfPlayers);
     set_free_queue_state(0);
     func_80065EA0();
-    func_800C3048();
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, gGameCurrentCutscene);
     func_8009ECF0(gNumberOfViewports);
     func_800AE728(8, 0x10, 0x96, 0x64, 0x32, 0);
@@ -477,7 +477,6 @@ void unload_level_game(void) {
     transition_begin(&D_800DD3F4);
     func_800AE270();
     func_800A003C();
-    func_800C30CC();
     gCurrDisplayList = gDisplayLists[gSPTaskNum];
     gDPFullSync(gCurrDisplayList++);
     gSPEndDisplayList(gCurrDisplayList++);
@@ -946,7 +945,6 @@ void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     profiler_begin_timer();
     set_free_queue_state(0);
     func_80065EA0();
-    func_800C3048();
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, cutsceneId);
     func_8009ECF0(gNumberOfViewports);
     func_800AE728(4, 4, 0x6E, 0x30, 0x20, 0);
@@ -971,7 +969,6 @@ void unload_level_menu(void) {
         transition_begin(&D_800DD3F4);
         func_800AE270();
         func_800A003C();
-        func_800C30CC();
         set_free_queue_state(2);
     }
     gIsLoading = FALSE;

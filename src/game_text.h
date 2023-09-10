@@ -47,7 +47,6 @@ void func_800C2AB4(void);
 void func_800C2AF4(s32 arg0);
 void func_800C2F1C(s32 arg0);
 void func_800C3048(void);
-void func_800C30CC(void);
 void func_800C3140(s32 arg0);
 void func_800C314C(void);
 void func_800C3158(s32 arg0, f32 arg1);
