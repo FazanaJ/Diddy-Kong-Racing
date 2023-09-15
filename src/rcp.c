@@ -375,7 +375,7 @@ void init_rsp(Gfx **dList) {
  */
 void setup_gfx_mesg_queues(void) {
     osCreateMesgQueue(&D_80125EA0, &D_80125EB8, 1);
-    osCreateMesgQueue(&D_80125EC0, D_80125EF0, 8);
+    osCreateMesgQueue(&D_80125EC0, D_80125EF0, ARRAY_COUNT(D_80125EF0));
 }
 
 //Called after finishing a race. Sets values during single player races. Set to zero during trophy races.

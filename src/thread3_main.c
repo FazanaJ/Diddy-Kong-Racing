@@ -184,7 +184,7 @@ void init_config(void) {
 void init_game(void) {
 
     init_main_memory_pool();
-    rzipInit(); // Initialise gzip decompression related things
+    init_rzip(); // Initialise gzip decompression related things
 #ifndef NO_ANTIPIRACY
     sAntiPiracyTriggered = TRUE;
     if (check_imem_validity()) {
@@ -232,7 +232,7 @@ void init_game(void) {
     gSPEndDisplayList(gCurrDisplayList++);
     get_platform();
     init_config();
-    func_800C3048();
+    load_game_text_table();
 
     osSetTime(0);
 }
@@ -450,7 +450,7 @@ void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     set_free_queue_state(0);
     func_80065EA0();
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, gGameCurrentCutscene);
-    func_8009ECF0(gNumberOfViewports);
+    init_hud(gNumberOfViewports);
     func_800AE728(8, 0x10, 0x96, 0x64, 0x32, 0);
     func_8001BF20();
     osSetTime(0);
@@ -596,7 +596,7 @@ void ingame_logic_loop(s32 updateRate) {
                 break;
         }
     }
-    func_800C3440(updateRate);
+    process_onscreen_textbox(updateRate);
     i = func_800C3400();
     if (i != 0) {
         if (i == 2) {
@@ -946,7 +946,7 @@ void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     set_free_queue_state(0);
     func_80065EA0();
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, cutsceneId);
-    func_8009ECF0(gNumberOfViewports);
+    init_hud(gNumberOfViewports);
     func_800AE728(4, 4, 0x6E, 0x30, 0x20, 0);
     func_8001BF20();
     osSetTime(0);
@@ -991,7 +991,7 @@ void update_menu_scene(s32 updateRate) {
 #ifdef PUPPYPRINT_DEBUG
         gPuppyPrint.mainTimerPoints[1][PP_LEVELGFX] = osGetCount();
 #endif
-        func_800C3440(updateRate);
+        process_onscreen_textbox(updateRate);
         init_rdp_and_framebuffer(&gCurrDisplayList);
         //render_borders_for_multiplayer(&gCurrDisplayList);
         //render_second_multiplayer_borders(&gCurrDisplayList);

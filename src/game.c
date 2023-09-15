@@ -344,8 +344,8 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
     gMapId = levelId;
     for (var_s0 = 0; var_s0 < 7; var_s0++) {
         if ((s32) gCurrentLevelHeader->unk74[var_s0] != -1) {
-            gCurrentLevelHeader->unk74[var_s0] = (s8 *) get_misc_asset((s32) gCurrentLevelHeader->unk74[var_s0]);
-            func_8007F1E8((unk8007F1E8 *) gCurrentLevelHeader->unk74[var_s0]);
+            gCurrentLevelHeader->unk74[var_s0] = (LevelHeader_70 *) get_misc_asset((s32) gCurrentLevelHeader->unk74[var_s0]);
+            func_8007F1E8((LevelHeader_70 *) gCurrentLevelHeader->unk74[var_s0]);
         }
     }
 
@@ -370,7 +370,7 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
     }
     set_music_player_voice_limit(gCurrentLevelHeader->voiceLimit);
     func_80000CBC();
-    setup_lights(0x20);
+    setup_lights(32);
     var_s0 = VEHICLE_CAR;
     if (vehicleId >= VEHICLE_CAR && vehicleId < NUMBER_OF_PLAYER_VEHICLES) {
         var_s0 = gCurrentLevelHeader->unk4F[vehicleId];
@@ -381,10 +381,10 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
         settings->worldId = gCurrentLevelHeader->world;
     }
     settings->courseId = levelId;
-    if (var_s0 == 0 && settings->worldId > 0) {
+    if (var_s0 == WORLD_CENTRAL_AREA && settings->worldId > 0) {
         gCurrentDefaultVehicle = get_level_default_vehicle();
     }
-    if (settings->worldId == 0 && var_s0 > 0 && gCurrentDefaultVehicle != -1) {
+    if (settings->worldId == WORLD_CENTRAL_AREA && var_s0 > 0 && gCurrentDefaultVehicle != -1) {
         vehicleId = gCurrentDefaultVehicle;
     }
     func_8006DB20(vehicleId);
@@ -418,7 +418,7 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
         }
     }
 
-    var_s0 = settings->courseFlagsPtr[levelId];
+    var_s0 = settings->courseFlagsPtr[levelId]; // Redundant
     if (numberOfPlayers != ONE_PLAYER && gCurrentLevelHeader->race_type == RACETYPE_DEFAULT) {
         cutsceneId = CUTSCENE_ID_UNK_64;
     }
@@ -480,7 +480,7 @@ void func_8006BD10(f32 arg0) {
     }
 }
 
-s32 func_8006BD88(void) {
+s32 get_current_map_id(void) {
     return gMapId;
 }
 

@@ -18,6 +18,49 @@ enum CourseIndicatorArrows {
     INDICATOR_EXCLAMATION
 };
 
+enum HudElementNames {
+    HUD_ELEMENT_UNK_00,
+    HUD_ELEMENT_UNK_01,
+    HUD_ELEMENT_UNK_02,
+    HUD_ELEMENT_UNK_03,
+    HUD_ELEMENT_UNK_04,
+    HUD_ELEMENT_UNK_05,
+    HUD_ELEMENT_UNK_06,
+    HUD_ELEMENT_UNK_07,
+    HUD_ELEMENT_UNK_08,
+    HUD_ELEMENT_UNK_09,
+    HUD_ELEMENT_UNK_0A,
+    HUD_ELEMENT_UNK_0B,
+    HUD_ELEMENT_UNK_0C,
+    HUD_ELEMENT_UNK_0D,
+    HUD_ELEMENT_UNK_0E,
+    HUD_ELEMENT_UNK_0F,
+    HUD_ELEMENT_UNK_10,
+    HUD_ELEMENT_UNK_11,
+    HUD_ELEMENT_UNK_12,
+    HUD_ELEMENT_UNK_13,
+    HUD_ELEMENT_UNK_14,
+    HUD_ELEMENT_UNK_15,
+    HUD_ELEMENT_UNK_16,
+    HUD_ELEMENT_UNK_17,
+    HUD_ELEMENT_UNK_18,
+    HUD_ELEMENT_UNK_19,
+    HUD_ELEMENT_UNK_1A,
+    HUD_ELEMENT_UNK_1B,
+    HUD_ELEMENT_UNK_1C,
+    HUD_ELEMENT_UNK_1D,
+    HUD_ELEMENT_UNK_1E,
+    HUD_ELEMENT_UNK_1F,
+    HUD_ELEMENT_UNK_20,
+    HUD_ELEMENT_UNK_21,
+    HUD_ELEMENT_UNK_22,
+    HUD_ELEMENT_UNK_23,
+    HUD_ELEMENT_UNK_24,
+    HUD_ELEMENT_UNK_25,
+    HUD_ELEMENT_UNK_26,
+    HUD_ELEMENT_UNK_27
+};
+
 typedef struct {
     s16 unk0;
     s16 unk2;
@@ -28,6 +71,7 @@ typedef struct {
     f32 unkC;
 } IndicatorArrow;
 
+// Size: 0x760
 typedef struct unk80126CDC {
     struct unk80126CDC *unk0;
     u8 unk4[0x2];
@@ -241,6 +285,10 @@ typedef struct unk80126CDC {
     s8 unk67B[0x85];
     struct unk80126CDC *unk700;
     s8 unk704[0x1C];
+    struct unk80126CDC *unk720;
+    s8 unk724[0x1C];
+    struct unk800A497C *unk740;
+    u8 pad744[0x1C];
 } unk80126CDC;
 
 typedef struct unk800E1E64 {
@@ -260,7 +308,7 @@ typedef struct unk800E2770 {
     s8 unk1;
     s8 unk2;
     s8 unk3;
-    s32 unk4;
+    s32 unk4; //soundMask?
     s32 unk8;
     s8 unkC;
     s8 unkD;
@@ -282,6 +330,10 @@ typedef struct ObjectTransform_800A8474 {
     ObjectTransform trans;
     s16 unk18;
 } ObjectTransform_800A8474;
+
+typedef struct HudElements {
+    void *entry[40];
+} HudElements;
 
 extern u8 gGfxTaskYieldData[OS_YIELD_DATA_SIZE];
 extern s8 gHudToggleSettings[4];
@@ -314,6 +366,7 @@ void render_race_finish_position(Object_64 *obj, s32 updateRate);
 void render_speedometer(Object *obj, s32 updateRate);
 void render_lap_count(Object_Racer *racer, s32 updateRate);
 void render_minimap_and_misc_hud(Gfx **dList, MatrixS **mtx, Vertex **vtxList, s32 updateRate);
+void init_hud(s32 viewportCount);
 
 // Non Matching
 void func_800A14F0(Object *, s32);
@@ -321,7 +374,6 @@ void func_800A4C44(Object_Racer *racer, s32 updateRate);
 void func_800A47A0(Object_Racer *obj, s32 updateRate);
 void func_800A718C(Object_64 *obj);
 void func_800AA600(Gfx **dList, MatrixS **mtx, Vertex **vtxList, unk80126CDC **arg3);
-void func_8009ECF0(s32 viewPortCount);
 void func_800A003C(void);
 void func_800A7FBC(s32, s32, s32 minutes, s32 seconds, s32 hundredths, s32); 
 void func_800A1248(s32, Object*, s32);
@@ -331,9 +383,11 @@ void func_800A6254(Object_64* obj, s32 updateRate);
 void func_800A6E30(Object_64* obj, s32 updateRate);
 void func_800A7A60(Object*, Gfx**);
 void func_800A0BD4(s32);
-void func_800A19A4(Object_Racer*, s32 updateRate);
+void func_800A19A4(Object_Racer* racer, s32 updateRate);
 void func_800A1E48(s32, s32);
 void render_treasure_hud(Object_Racer*);
 void func_800AA3EC(f32, f32, f32, f32, f32);
+void func_800A36CC(u8, u8, u8, u8, u8);
+void func_8009F034(void);
 
 #endif

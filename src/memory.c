@@ -10,11 +10,10 @@
 
 /************ .bss ************/
 
-MemoryPool gMemoryPools[4];
+MemoryPool gMemoryPools[4]; // Only two are used.
 
 #ifndef _ALIGN16
 #define _ALIGN16(a) (((u32) (a) & ~0xF) + 0x10)
-//#define _ALIGN16(val) ((val)&0xFFFFFFF0) + 0x10
 #endif
 
 s32 gNumberOfMemoryPools;
@@ -116,6 +115,10 @@ MemoryPoolSlot *allocate_from_main_pool(s32 size, u32 colourTag) {
     return allocate_from_memory_pool(0, size, colourTag);
 }
 
+/**
+ * Search the existing empty slots and try to find one that can meet the size requirement.
+ * Afterwards, write the new allocation data to the slot in question and return the address.
+*/
 MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag) {
     s32 slotSize;
     MemoryPoolSlot *curSlot;
@@ -130,7 +133,7 @@ MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag
     if ((pool->curNumSlots + 1) == (*pool).maxNumSlots) {
         set_status_register_flags(flags);
         puppyprint_assert("Out of slots");
-        return 0;
+        return NULL;
     }
     currIndex = -1;
     if (size & 0xF) {
@@ -143,7 +146,7 @@ MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag
     do {
         curSlot = &slots[nextIndex];
         if (curSlot->flags == 0) {
-            if ((curSlot->size >= size) && (curSlot->size < slotSize)) {
+            if (curSlot->size >= size && curSlot->size < slotSize) {
                 slotSize = curSlot->size;
                 currIndex = nextIndex;
             }
@@ -158,7 +161,7 @@ MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag
     set_status_register_flags(flags);
     
     puppyprint_assert("Out of memory");
-    return 0;
+    return NULL;
 }
 
 /* Official name: mmAllocR */
@@ -206,7 +209,7 @@ void *allocate_at_address_in_main_pool(s32 size, u8 *address, u32 colorTag) {
         }
         set_status_register_flags(flags);
     }
-    return 0;
+    return NULL;
 }
 
 /**
@@ -235,7 +238,7 @@ void free_from_memory_pool(void *data) {
     if (gFreeQueueState == 0) {
         free_slot_containing_address(data);
     } else {
-        func_80071440(data);
+        add_to_free_queue(data);
     }
     set_status_register_flags(flags);
 }
@@ -289,7 +292,10 @@ void free_slot_containing_address(u8 *address) {
     }
 }
 
-void func_80071440(void *dataAddress) {
+/**
+ * Adds the current memory address to the back of the queue, so it can be freed.
+*/
+void add_to_free_queue(void *dataAddress) {
     gFreeQueue[gFreeQueueCount].dataAddress = dataAddress;
     gFreeQueue[gFreeQueueCount].unk4 = gFreeQueueState;
     gFreeQueueCount++;
@@ -306,17 +312,17 @@ s32 func_80071478(u8 *address) {
     slotIndex = 0;
     while (slotIndex != -1) {
         slot = slotIndex + pool->slots; // `slot = &pool->slots[slotIndex];` does not match.
-        if (address == (u8 *)slot->data) {
+        if (address == (u8 *) slot->data) {
             if (slot->flags == 1 || slot->flags == 4) {
                 slot->flags |= 2;
                 set_status_register_flags(flags);
-                return 1;
+                return TRUE;
             }
         }
         slotIndex = slot->nextIndex;
     }
     set_status_register_flags(flags);
-    return 0;
+    return FALSE;
 }
 
 s32 func_80071538(u8 *address) {
@@ -334,13 +340,13 @@ s32 func_80071538(u8 *address) {
             if (slot->flags & 2) {
                 slot->flags ^= 2;
                 set_status_register_flags(flags);
-                return 1;
+                return TRUE;
             }
         }
         slotIndex = slot->nextIndex;
     }
     set_status_register_flags(flags);
-    return 0;
+    return FALSE;
 }
 
 /**
@@ -352,16 +358,20 @@ s32 get_memory_pool_index_containing_address(u8 *address) {
 
     for (i = gNumberOfMemoryPools; i > 0; i--) {
         pool = &gMemoryPools[i];
-        if ((u8 *)pool->slots >= address) {
+        if ((u8 *) pool->slots >= address) {
             continue;
         }
-        if (address < pool->size + (u8 *)pool->slots) {
+        if (address < pool->size + (u8 *) pool->slots) {
             break;
         }
     }
     return i;
 }
 
+/**
+ * Clears the current slot of all information, effectively freeing the allocated memory.
+ * Unused slots before and after will be merged with this slot
+*/
 void free_memory_pool_slot(s32 poolIndex, s32 slotIndex) {
     s32 nextIndex;
     s32 prevIndex;
@@ -406,6 +416,11 @@ void free_memory_pool_slot(s32 poolIndex, s32 slotIndex) {
     }
 }
 
+/**
+ * Initialise and attempts to fit the new memory block in the slot given.
+ * Updates the linked list with any entries before and after then returns the new slot index.
+ * If the region cannot fit, return the old slot instead.
+*/
 s32 allocate_memory_pool_slot(s32 poolIndex, s32 slotIndex, s32 size, s32 slotIsTaken, s32 newSlotIsTaken, u32 colourTag) {
     MemoryPool *pool;
     MemoryPoolSlot *poolSlots;

@@ -25,7 +25,7 @@ u16 D_800E31B8 = 0;
 s8 D_800E31BC = 0;
 VertexList *sTransitionVtx[2] = { NULL, NULL };
 TriangleList *sTransitionTris[2] = { NULL, NULL };
-s32 sTransitionTaskNum[2] = { 0, 0 }; // The second index goes unused. Is it even an array at all?
+s32 sTransitionTaskNum = 0;
 
 Gfx dTransitionFadeSettings[] = {
     gsDPPipeSync(),
@@ -318,7 +318,7 @@ s32 handle_transitions(s32 updateRate) {
             transition_end();
         } else {
             if (sTransitionFadeTimer > 0) {
-                sTransitionTaskNum[0] ^= 1;
+                sTransitionTaskNum ^= 1;
             }
             switch (gCurFadeTransition) {
                 case FADE_FULLSCREEN:
@@ -392,7 +392,7 @@ void transition_end(void) {
         sTransitionTris[1] = NULL;
     }
     sTransitionStatus = TRANSITION_NONE;
-    sTransitionTaskNum[0] = 0;
+    sTransitionTaskNum = 0;
 }
 
 /**
@@ -470,8 +470,8 @@ GLOBAL_ASM("asm/non_matchings/fade_transition/func_800C1130.s")
 void render_fade_barndoor_horizontal(Gfx **dList, UNUSED MatrixS **mats, UNUSED Vertex **verts) {
     reset_render_settings(dList);
     gSPDisplayList((*dList)++, dTransitionShapeSettings);
-    gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(sTransitionVtx[sTransitionTaskNum[0]]), 12, 0);
-    gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(sTransitionTris[sTransitionTaskNum[0]]), 8, TRIN_DISABLE_TEXTURE);
+    gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(sTransitionVtx[sTransitionTaskNum]), 12, 0);
+    gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(sTransitionTris[sTransitionTaskNum]), 8, TRIN_DISABLE_TEXTURE);
     reset_render_settings(dList);
 }
 
@@ -482,8 +482,8 @@ void render_fade_barndoor_horizontal(Gfx **dList, UNUSED MatrixS **mats, UNUSED 
 void render_fade_barndoor_vertical(Gfx **dList, UNUSED MatrixS **mats, UNUSED Vertex **verts) {
     reset_render_settings(dList);
     gSPDisplayList((*dList)++, dTransitionShapeSettings);
-    gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(sTransitionVtx[sTransitionTaskNum[0]]), 12, 0);
-    gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(sTransitionTris[sTransitionTaskNum[0]]), 8, TRIN_DISABLE_TEXTURE);
+    gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(sTransitionVtx[sTransitionTaskNum]), 12, 0);
+    gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(sTransitionTris[sTransitionTaskNum]), 8, TRIN_DISABLE_TEXTURE);
     reset_render_settings(dList);
 }
 
@@ -501,8 +501,8 @@ void render_fade_circle(Gfx **dList, UNUSED MatrixS **mats, UNUSED Vertex **vert
     reset_render_settings(dList);
     gfx = *dList;
 
-    vertsToRender = (Vertex *) sTransitionVtx[sTransitionTaskNum[0]];
-    trisToRender = (Triangle *) sTransitionTris[sTransitionTaskNum[0]];
+    vertsToRender = (Vertex *) sTransitionVtx[sTransitionTaskNum];
+    trisToRender = (Triangle *) sTransitionTris[sTransitionTaskNum];
     gSPDisplayList(gfx++, dTransitionShapeSettings);
 
     for (i = 0; i < 4; i++) {
@@ -523,8 +523,8 @@ void render_fade_waves(Gfx **dlist, UNUSED MatrixS **mats, UNUSED Vertex **verts
     Triangle *t;
     reset_render_settings(dlist);
     gfx = *dlist;
-    v = (Vertex *)sTransitionVtx[sTransitionTaskNum[0]];
-    t = (Triangle *)sTransitionTris[sTransitionTaskNum[0]];
+    v = (Vertex *)sTransitionVtx[sTransitionTaskNum];
+    t = (Triangle *)sTransitionTris[sTransitionTaskNum];
     gSPDisplayList(gfx++, dTransitionShapeSettings);
     /*
     i == 0 -> Left third wave?
@@ -557,8 +557,8 @@ void render_fade_waves(Gfx **dlist, UNUSED MatrixS **mats, UNUSED Vertex **verts
 void render_fade_barndoor_diagonal(Gfx **dList, UNUSED MatrixS **mats, UNUSED Vertex **verts) {
     reset_render_settings(dList);
     gSPDisplayList((*dList)++, dTransitionShapeSettings);
-    gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(sTransitionVtx[sTransitionTaskNum[0]]), 10, 0);
-    gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(sTransitionTris[sTransitionTaskNum[0]]), 6, TRIN_DISABLE_TEXTURE);
+    gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(sTransitionVtx[sTransitionTaskNum]), 10, 0);
+    gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(sTransitionTris[sTransitionTaskNum]), 6, TRIN_DISABLE_TEXTURE);
     reset_render_settings(dList);
 }
 
