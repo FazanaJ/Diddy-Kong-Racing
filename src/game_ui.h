@@ -338,7 +338,7 @@ typedef struct HudElements {
 extern u8 gGfxTaskYieldData[OS_YIELD_DATA_SIZE];
 extern s8 gHudToggleSettings[4];
 extern s32 gHUDNumPlayers;
-extern unk80126CDC *D_80126CDC;
+extern unk80126CDC *gCurrentHud;
 
 u8 func_800A0190(void);
 void func_800A0B74(void);
