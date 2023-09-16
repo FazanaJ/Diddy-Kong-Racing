@@ -323,6 +323,7 @@ void draw_crash_screen(OSThread *thread) {
     } else {
         crash_screen_print(sCrashX + 10, sCrashY + 30, "Assert tripped");
         crash_screen_print(sCrashX + 10, sCrashY + 45, gAssertString);
+        crash_screen_print(sCrashX + 10, sCrashY + 120, "RA:%08XH", (u32) tc->ra);
     }
     osWritebackDCacheAll();
     osViBlack(FALSE);
