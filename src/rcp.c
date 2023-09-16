@@ -187,7 +187,7 @@ DKR_OSTask *gRdpCurTask = &gRdpTaskA;
  * Sends a message to the scheduler to start processing an RSP task once set up.
  * Official Name: rcpFast3d
  */
-s32 setup_ostask_xbus(Gfx* dlBegin, Gfx* dlEnd, UNUSED s32 recvMesg) {
+void setup_ostask_xbus(Gfx* dlBegin, Gfx* dlEnd) {
     DKR_OSTask *dkrtask;
 
     gGfxTaskIsRunning = TRUE;
@@ -201,7 +201,6 @@ s32 setup_ostask_xbus(Gfx* dlBegin, Gfx* dlEnd, UNUSED s32 recvMesg) {
     osWritebackDCacheAll();
     osScSubmitGfxTask(&gMainSched, (void *) dkrtask);
     gRdpCurTask = (DKR_OSTask *) ((u32) gRdpCurTask ^ (u32) &gRdpTaskA ^ (u32) &gRdpTaskB);
-    return 0;
 }
 
 /**
@@ -210,7 +209,7 @@ s32 setup_ostask_xbus(Gfx* dlBegin, Gfx* dlEnd, UNUSED s32 recvMesg) {
  * Sends a message to the scheduler to start processing an RSP task once set up.
  * Goes unused, and is broken.
  */
-void setup_ostask_fifo(Gfx* dlBegin, Gfx* dlEnd, UNUSED s32 recvMesg) {
+void setup_ostask_fifo(Gfx* dlBegin, Gfx* dlEnd) {
     DKR_OSTask *dkrtask;
     u32 taskStart = 0x80680000;
     u32 taskEnd = 0x806E0000;
@@ -219,7 +218,7 @@ void setup_ostask_fifo(Gfx* dlBegin, Gfx* dlEnd, UNUSED s32 recvMesg) {
 
 #if EXPANSION_PAK_SUPPORT || defined(FIFO_4MB)
     if (gGfxSPTaskOutputBuffer == NULL) {
-        gGfxSPTaskOutputBuffer = allocate_from_main_pool_safe(sizeof(u64) * FIFO_BUFFER_SIZE, COLOUR_TAG_WHITE);
+        gGfxSPTaskOutputBuffer = allocate_from_main_pool_safe(FIFO_BUFFER_SIZE, COLOUR_TAG_WHITE);
     }
     taskStart = (u32) gGfxSPTaskOutputBuffer;
     taskEnd = (u32) (gGfxSPTaskOutputBuffer + (FIFO_BUFFER_SIZE));
