@@ -415,42 +415,6 @@ void func_800012E8(void) {
     return;
 }
 
-u8 func_80001358(u8 arg0, u8 arg1, s32 arg2) {
-    u8 val_1f;
-    u8 val_1e;
-    s32 updatedVol;
-
-    //u8 fadeIn_chan = arg0;
-    if (!(arg0 == 100)) {
-        val_1f = arg2 + alCSPGetChlVol((ALCSPlayer *) gMusicPlayer, arg0);
-        if (val_1f > 127) {
-            val_1f = 127;
-        }
-        alCSPSetChlVol((ALCSPlayer *) gMusicPlayer, arg0, val_1f);
-    }
-
-    if (arg1 != 100) {
-
-        updatedVol = alCSPGetChlVol((ALCSPlayer *) gMusicPlayer, arg1);
-        val_1e = (updatedVol > arg2) ? updatedVol - arg2 : 0;
-        alCSPSetChlVol((ALCSPlayer *) gMusicPlayer, arg1, val_1e);
-        return val_1e;
-    } else {
-        return 127 - val_1f;
-    }
-}
-
-void func_80001440(u8 *arg0) {
-    s32 s0 = 0;
-    if (gMusicPlayer->maxChannels > 0) {
-        do {
-            arg0[s0] = alSeqpGetChlFXMix(gMusicPlayer, s0);
-            s0++;
-        } while (s0 < gMusicPlayer->maxChannels);
-    }
-    return;
-}
-
 /**
  * Multiplies the current tempo of the background music.
  * Since it calls musicGetTempo and multiplies it by the result, calling this repeatedly can recursively change the music's speed.
@@ -491,12 +455,6 @@ f32 audio_get_chr_select_anim_frac(void) {
     return D_80115D34 / tmp;
 }
 
-void func_80001728(u8 arg0, u8 *arg1, u8 *arg2, u8 *arg3) {
-    *arg1 = sMusicPool[arg0].unk1;
-    *arg2 = sMusicPool[arg0].unk0;
-    *arg3 = sMusicPool[arg0].unk2;
-}
-
 void func_80001784(u8 a0) {
     if (!func_80001C08()) {
         func_800022BC(D_80115D05 = a0, gSndFxPlayer);
@@ -514,21 +472,6 @@ void func_80001844(void) {
         func_80002570(gMusicPlayer);
     }
     return;
-}
-
-void func_80001878(u8 arg0) {
-    if (arg0 != D_800DC640) {
-        D_800DC640 = arg0;
-        if (arg0) {
-            play_music(D_80115D04);
-        } else {
-            func_80001844();
-        }
-    }
-}
-
-u8 func_800018D0(void) {
-    return D_800DC640;
 }
 
 void func_800018E0(void) {
@@ -667,7 +610,7 @@ void play_sound_spatial(u16 soundID, f32 x, f32 y, f32 z, s32 **soundMask) {
 }
 
 void func_80001F14(u16 soundID, s32 *arg1) {
-    if (soundID <= 0 || ALBankFile_80115D14_GetSoundCount() < soundID) {
+    if (soundID <= 0 || ALBankFile_80115D14->bankArray[0]->instArray[0]->soundCount < soundID) {
         if (arg1) {
             *arg1 = 0;
         }
@@ -685,10 +628,6 @@ void func_80001FB8(u16 soundID, void *soundState, u8 volume) {
     if (soundState) {
         func_800049F8((s32) soundState, 8, new_var);
     }
-}
-
-u16 ALBankFile_80115D14_GetSoundCount(void) {
-    return ALBankFile_80115D14->bankArray[0]->instArray[0]->soundCount;
 }
 
 u8 ALSeqFile_80115CF8_GetSeqCount(void) {
@@ -803,8 +742,4 @@ void func_80002570(ALSeqPlayer *seqp) {
 
 void func_80002608(u8 arg0) {
     func_8006492C(arg0);
-}
-
-u8 func_80002630(void) {
-    return sMusicPool[D_80115D04].unk2;
 }

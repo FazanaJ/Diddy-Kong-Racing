@@ -360,7 +360,6 @@ void func_800BF524(Object *obj) {
 
 
 GLOBAL_ASM("asm/non_matchings/waves/func_800BF634.s")
-GLOBAL_ASM("asm/non_matchings/waves/func_800BF9F8.s")
 
 void func_800BFE98(s32 arg0) {
     s32 i;

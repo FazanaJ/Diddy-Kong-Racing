@@ -624,7 +624,7 @@ void obj_loop_trophycab(Object *obj, s32 updateRate) {
     if (obj->properties.trophyCabinet.trophy == FALSE) {
         if (header->race_type != RACETYPE_CUTSCENE_2 && header->race_type != RACETYPE_CUTSCENE_1) {
             obj->properties.trophyCabinet.trophy = TRUE;
-            if ((settings->trophies >> (((settings->worldId - 1) ^ 0) * 2)) & 3) { // Fakematch
+            if ((settings->trophies >> (((settings->worldId - 1)) * 2)) & 3) { // Fakematch
                 newObject.objectID = 0x80;
                 newObject.x = obj->segment.level_entry->animation.common.x;
                 newObject.y = obj->segment.level_entry->animation.common.y;

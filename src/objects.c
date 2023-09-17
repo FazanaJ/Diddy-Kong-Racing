@@ -584,7 +584,7 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
 
     if (assetSize != 0) {
         compressedAsset = (u8 *) asset;
-        compressedAsset = ((compressedAsset + get_asset_uncompressed_size(ASSET_LEVEL_OBJECT_MAPS, assetOffset)) - (0, assetSize)) + 0x20;
+        compressedAsset = ((compressedAsset + get_asset_uncompressed_size(ASSET_LEVEL_OBJECT_MAPS, assetOffset)) - (assetSize)) + 0x20;
         load_asset_to_address(ASSET_LEVEL_OBJECT_MAPS, (u32) compressedAsset, assetOffset, assetSize);
         gzip_inflate(compressedAsset, (u8 *) asset);
         free_from_memory_pool(assetTable);
@@ -1218,10 +1218,9 @@ s32 func_8000F99C(Object *obj) {
 
     obj60 = obj->unk60;
     obj60->unk0 = obj->segment.header->unk56;
-    obj60->unk0 = obj60->unk0; //Fakematch?
     var_s4 = FALSE;
     for (i = 0; i < obj60->unk0; i++) {
-        obj60->unk4[i] = func_8000FD54(obj->segment.header->vehiclePartIds[i ^ 0]); //i ^ 0 fakematch
+        obj60->unk4[i] = func_8000FD54(obj->segment.header->vehiclePartIds[i]);
         if (obj60->unk4[i] == NULL) {
             var_s4 = TRUE;
         }
@@ -3368,11 +3367,6 @@ void func_8001D1BC(s32 arg0) {
         D_8011AF08[1] = D_8011AF08[0];
         D_8011AF08[0] = arg0;
     }
-}
-
-Object *func_8001D1E4(s32 *arg0) {
-    *arg0 = D_8011AF08[1];
-    return D_8011AF04[0][D_8011AF08[1]];
 }
 
 Object *func_8001D214(s32 arg0) {

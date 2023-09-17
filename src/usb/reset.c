@@ -26,8 +26,6 @@ int __osSiDeviceBusy();
 // defined in reset_util.s
 void reboot_disable_interrupts(void); 
 
-GLOBAL_ASM("src/usb/reset_util.s")
-
 #define SIZEOF_osInvalICache 0x80
 #define SIZEOF_osInvalDCache 0xB0
 

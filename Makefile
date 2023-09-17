@@ -316,6 +316,8 @@ GCC_SAFE_FILES := \
     $(BUILD_DIR)/src/audiomgr.o \
     $(BUILD_DIR)/src/game.o \
     $(BUILD_DIR)/src/thread0_epc.o \
+    $(BUILD_DIR)/src/usb/reset.o \
+    $(BUILD_DIR)/src/usb/usb.o \
     $(BUILD_DIR)/lib/src/al/%.o \
 	  $(BUILD_DIR)/lib/src/mips1/al/alAuxBusPull.o \
     $(BUILD_DIR)/lib/src/mips1/al/alSynSetPan.o \

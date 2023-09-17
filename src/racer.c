@@ -4266,7 +4266,6 @@ void onscreen_ai_racer_physics(Object *obj, Object_Racer *racer, UNUSED s32 upda
     for (i = 0; i < 3; i++) {
         racer->unkD8.f[i] = tempPos.f[i];
     }
-    i = 1; // Fakematch
     racer->wheel_surfaces[0] = surface;
     racer->wheel_surfaces[1] = surface;
     racer->wheel_surfaces[2] = surface;
@@ -4289,7 +4288,6 @@ void onscreen_ai_racer_physics(Object *obj, Object_Racer *racer, UNUSED s32 upda
             obj->segment.trans.x_rotation = xRot;
         }
         if (racer->vehicleID == VEHICLE_LOOPDELOOP) {
-            if (1) // Fakematch
             xRot -= (u16) obj->segment.trans.x_rotation;
             WRAP(xRot, -0x8000, 0x8000);
             obj->segment.trans.x_rotation += xRot >> 2;

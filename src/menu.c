@@ -4893,7 +4893,7 @@ void menu_game_select_init(void) {
 
     for (i = 0; i <= D_801263E0; i++) {
         //Fakematch? What's the (i ^ 0)?
-        D_80126460[((i ^ 0) * 2) + 2].unk14_a.texture = D_80126550[TEXTURE_SURFACE_BUTTON_WOOD];
+        D_80126460[(i* 2) + 2].unk14_a.texture = D_80126550[TEXTURE_SURFACE_BUTTON_WOOD];
     }
 }
 
@@ -4916,7 +4916,7 @@ void func_8008C698(UNUSED s32 updateRate) {
                 filterAlpha = fade;
             }
             //Fakematch? What's the (i ^ 0)?
-            D_80126460[((i ^ 0) * 2) + 3].filterAlpha = filterAlpha;
+            D_80126460[(i * 2) + 3].filterAlpha = filterAlpha;
         }
 
         D_800DF79C = 0;

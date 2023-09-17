@@ -879,11 +879,9 @@ void set_anti_aliasing(s32 setting) {
 
 void pop_render_list_track(Gfx **dList) {
     RenderNodeTrack *renderList = gRenderNodeHead;
-    RenderListTrack *matList;
     s32 hasTexture;
 
     while (renderList) {
-        RenderNodeTrack *oldList = renderList;
         if (renderList->material) {
             load_and_set_texture(dList, renderList->material, renderList->flags, renderList->texOffset);
         }
@@ -891,14 +889,7 @@ void pop_render_list_track(Gfx **dList) {
         gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(renderList->vtx), renderList->vtxCount, 0);
         gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(renderList->tri), renderList->triCount, hasTexture);
         renderList = renderList->next;
-        //free_from_memory_pool(oldList);
     }
-    matList = gMateriallistHead;
-    /*while (matList) {
-        RenderListTrack *oldList = matList;
-        matList = matList->next;
-        free_from_memory_pool(oldList);
-    }*/
     gRenderNodeHead = NULL;
     gRenderNodeTail = NULL;
     gMateriallistHead = NULL;
@@ -2010,7 +2001,7 @@ void render_object_shadow(Object *obj, ShadowData *shadow) {
             while (i < shadow->unkA) {
                 load_and_set_texture_no_offset(&gSceneCurrDisplayList, D_8011D360[i].texture, flags);
                 // I hope we can clean this part up.
-                new_var2 = D_8011D360[i].xOffset; // Fakematch
+                new_var2 = D_8011D360[i].xOffset;
                 new_var = D_8011D360[i].yOffset;
                 temp_a3 = D_8011D360[i+1].xOffset - new_var2;
                 temp_a0 = D_8011D360[i+1].yOffset - new_var;

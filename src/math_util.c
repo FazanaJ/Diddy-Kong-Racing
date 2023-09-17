@@ -29,7 +29,6 @@ GLOBAL_ASM("asm/math_util/clear_status_register_flags.s")
 GLOBAL_ASM("asm/math_util/set_status_register_flags.s")
 /* Official Name: setIntDisFlag */
 GLOBAL_ASM("asm/math_util/set_D_800DD430.s")
-GLOBAL_ASM("asm/math_util/get_D_800DD430.s")
 
 #ifdef NON_EQUIVALENT
 void f32_matrix_to_s32_matrix(Matrix *input, Matrix *output) {
@@ -257,8 +256,6 @@ void object_transform_to_matrix_2(Matrix mtx, ObjectTransform *trans) {
 #else
 GLOBAL_ASM("asm/math_util/object_transform_to_matrix_2.s")
 #endif
-
-GLOBAL_ASM("asm/math_util/func_80070058.s")
 
 #ifdef NON_MATCHING
 void f32_matrix_from_rotation_and_scale(Matrix mtx, s32 angle, f32 arg2, f32 arg3) {
@@ -580,5 +577,4 @@ f32 area_triangle_2d(f32 x0, f32 z0, f32 x1, f32 z1, f32 x2, f32 z2) {
 GLOBAL_ASM("asm/math_util/area_triangle_2d.s")
 #endif
 
-GLOBAL_ASM("asm/math_util/set_breakpoint.s")
 GLOBAL_ASM("asm/math_util/dmacopy_doubleword.s")

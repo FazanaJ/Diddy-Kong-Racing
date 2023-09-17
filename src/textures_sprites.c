@@ -713,7 +713,7 @@ Sprite *func_8007C52C(s32 arg0) {
         return NULL;
     }
     // Fakematch! The shifts here is a hack to skip a register.
-    sprite = gSpriteCache[arg0 << 1 >> 1 << 1 >> 1 << 1 >> 1 << 1 >> 1 << 1 >> 1].sprite;
+    sprite = gSpriteCache[arg0].sprite;
     if ((s32)sprite == -1) {
         return NULL;
     }
