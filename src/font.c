@@ -305,7 +305,6 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
         gDPSetPrimColor((*dList)++, textureLry, 0, 255, 255, 255, box->opacity);
         gDPSetEnvColor((*dList)++, box->textColourR, box->textColourG, box->textColourB, box->textColourA);
         gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(dDialogueBoxDrawModes[0]), 2);
-        gDPPipeSync((*dList)++);
         xpos += box->textOffsetX;
         ypos += box->textOffsetY;
         for (charIndex = 0; (text[charIndex] != '\0') && (box->y2 >= ypos);
@@ -385,7 +384,6 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
             set_viewport_scissor(dList);
         }
         reset_render_settings(dList);
-        gDPPipeSync((*dList)++);
     }
 }
 

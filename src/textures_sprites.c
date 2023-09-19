@@ -455,8 +455,8 @@ void reset_render_settings(Gfx **dlist) {
     gForceFlags = TRUE;
     gBlockedRenderFlags = RENDER_NONE;
     D_80126384 = FALSE;
-    gDPPipeSync((*dlist)++);
     gSPSetGeometryMode((*dlist)++, G_SHADING_SMOOTH | G_SHADE | G_ZBUFFER);
+    gDPPipeSync((*dlist)++);
 }
 
 void func_8007B43C(void) {
@@ -537,9 +537,6 @@ void load_and_set_texture(Gfx **dlist, TextureHeader *texhead, s32 flags, s32 te
     flags &= ~gBlockedRenderFlags;
     flags = (flags & RENDER_VTX_ALPHA) ? flags & ~RENDER_FOG_ACTIVE : flags & ~RENDER_Z_UPDATE;
     if (flags != gCurrentRenderFlags || forceFlags) {
-        if (doPipeSync) {
-            gDPPipeSync((*dlist)++);
-        }
 
         if (((flags & RENDER_VTX_ALPHA) != (gCurrentRenderFlags & RENDER_VTX_ALPHA)) || gForceFlags) {
             if (flags & RENDER_VTX_ALPHA || D_80126384) {
@@ -617,6 +614,9 @@ void load_and_set_texture(Gfx **dlist, TextureHeader *texhead, s32 flags, s32 te
         }
         dlID = dRenderSettingsCommon_ext[dlIndex];
         draw:
+        if (doPipeSync) {
+            gDPPipeSync((*dlist)++);
+        }
         gDkrDmaDisplayList((*dlist)++, OS_PHYSICAL_TO_K0(dlID), numberOfGfxCommands(dRenderSettingsCommon_ext[0]));
     }
     profiler_add(PP_TEXTURES, first);
@@ -645,7 +645,6 @@ void load_blinking_lights_texture(Gfx **dlist, TextureHeader *texture_list, u32 
             G_IM_FMT_RGBA, G_IM_SIZ_16b, 32, 32, 0, 0, 0, 5, 5, 0, 0);
     }
 
-    gDPPipeSync((*dlist)++);
     gCurrentTextureHeader = 0;
     flags &= (RENDER_ANTI_ALIASING | RENDER_Z_COMPARE | RENDER_SEMI_TRANSPARENT | RENDER_FOG_ACTIVE | RENDER_CUTOUT);
     gSPSetGeometryMode((*dlist)++, G_FOG);
@@ -657,6 +656,7 @@ void load_blinking_lights_texture(Gfx **dlist, TextureHeader *texture_list, u32 
     }
     gForceFlags = TRUE;
     gCurrentRenderFlags = RENDER_NONE;
+    gDPTileSync((*dlist)++);
     gDkrDmaDisplayList((*dlist)++, OS_PHYSICAL_TO_K0(dRenderSettingsBlinkingLights[flags]), numberOfGfxCommands(dRenderSettingsBlinkingLights[0]));
 }
 
