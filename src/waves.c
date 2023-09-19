@@ -329,7 +329,7 @@ f32 func_800BEEB4(Object_64 *arg0, s32 updateRate) {
     } else {
         var_t0 <<= arg0->obj800BEEB4_64.unk2;
     }
-    temp = (((f32) var_t0 * 0.0625) + (f32) arg0->obj800BEEB4_64.unk0);
+    temp = (((f32) var_t0 * 0.0625f) + (f32) arg0->obj800BEEB4_64.unk0);
     temp *= D_80129FC8->unk40;
     temp += func_800BEFC4(arg0->obj800BEEB4_64.unkC, arg0->obj800BEEB4_64.unk8, arg0->obj800BEEB4_64.unkA);
     return temp;
