@@ -28,7 +28,7 @@
 // Copied from Thread30
 OSThread gThreadUsb;
 OSMesgQueue gThreadUsbMesgQueue;
-OSMesg gThreadUsbMessage;
+OSMesg gThreadUsbMessage[2];
 u64 gThreadUsbStack[THREADUSB_STACK / sizeof(u64)];
 
 int usbState = -1;
@@ -53,7 +53,7 @@ void init_usb_thread(void) {
 #endif
     
     // Create USB thread.
-    osCreateMesgQueue(&gThreadUsbMesgQueue, &gThreadUsbMessage, 2);
+    osCreateMesgQueue(&gThreadUsbMesgQueue, &gThreadUsbMessage[0], 2);
     osCreateThread(&gThreadUsb, USB_THREAD_ID, &threadusb_loop, NULL, &gThreadUsbStack[THREADUSB_STACK / sizeof(u64)], THREADUSB_PRIORITY);
     osStartThread(&gThreadUsb);
 }

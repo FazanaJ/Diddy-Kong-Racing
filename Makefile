@@ -284,7 +284,6 @@ ALL_ASSETS_BUILT += $(patsubst $(UCODE_IN_DIR)/%.bin,$(UCODE_OUT_DIR)/%.bin,$(UC
 $(BUILD_DIR)/lib/%.o: OPT_FLAGS := -O2 -Xfullwarn
 $(BUILD_DIR)/lib/src/os/%.o: OPT_FLAGS := -O2 -Xfullwarn
 $(BUILD_DIR)/lib/src/os/osViMgr.o: OPT_FLAGS := -O2 -Xfullwarn
-$(BUILD_DIR)/lib/src/libc/xprintf.o : OPT_FLAGS := -O3
 #$(BUILD_DIR)/lib/src/libc/llcvt.o: OPT_FLAGS :=
 #$(BUILD_DIR)/lib/src/libc/llcvt.o: MIPSISET := -mips3 32
 
@@ -318,8 +317,9 @@ GCC_SAFE_FILES := \
     $(BUILD_DIR)/src/thread0_epc.o \
     $(BUILD_DIR)/src/usb/reset.o \
     $(BUILD_DIR)/src/usb/usb.o \
+    $(BUILD_DIR)/src/usb/dkr_usb.o \
     $(BUILD_DIR)/lib/src/al/%.o \
-	  $(BUILD_DIR)/lib/src/mips1/al/alAuxBusPull.o \
+	$(BUILD_DIR)/lib/src/mips1/al/alAuxBusPull.o \
     $(BUILD_DIR)/lib/src/mips1/al/alSynSetPan.o \
     $(BUILD_DIR)/lib/src/mips1/al/alSynAllocFX.o \
     $(BUILD_DIR)/lib/src/mips1/al/reverb.o \
