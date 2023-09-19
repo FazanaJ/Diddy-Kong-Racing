@@ -628,22 +628,28 @@ void load_and_set_texture(Gfx **dlist, TextureHeader *texhead, s32 flags, s32 te
 void load_blinking_lights_texture(Gfx **dlist, TextureHeader *texture_list, u32 flags, s32 texture_index) {
     u16 *mblock;
     u16 *tblock;
+    s32 texW;
+    s32 texH;
+    s32 tileW;
+    s32 tileH;
     if ((texture_index != 0) && (texture_index < (texture_list->numOfTextures * 256))) {
         texture_list = (TextureHeader *) ((s32) texture_list + ((texture_index >> 16) * texture_list->textureSize));
     }
     mblock = (u16*)(texture_list + 1);
     tblock = mblock + 0x400;
     if (texture_list->width == 64) {
-        gDPLoadMultiBlock((*dlist)++, OS_K0_TO_PHYSICAL(mblock), 256, 1,
-            G_IM_FMT_RGBA, G_IM_SIZ_16b, 64, 16, 0, 0, 0, 6, 4, 0, 0);
-        gDPLoadTextureBlock((*dlist)++, OS_K0_TO_PHYSICAL(tblock),
-            G_IM_FMT_RGBA, G_IM_SIZ_16b, 64, 16, 0, 0, 0, 6, 4, 0, 0);
+        texW = 64;
+        texH = 16;
+        tileW = 6;
+        tileH = 4;
     } else {
-        gDPLoadMultiBlock((*dlist)++, OS_K0_TO_PHYSICAL(mblock), 256, 1,
-            G_IM_FMT_RGBA, G_IM_SIZ_16b, 32, 32, 0, 0, 0, 5, 5, 0, 0);
-        gDPLoadTextureBlock((*dlist)++, OS_K0_TO_PHYSICAL(tblock),
-            G_IM_FMT_RGBA, G_IM_SIZ_16b, 32, 32, 0, 0, 0, 5, 5, 0, 0);
+        texW = 32;
+        texH = 32;
+        tileW = 5;
+        tileH = 5;
     }
+    gDPLoadMultiBlock((*dlist)++, OS_K0_TO_PHYSICAL(mblock), 256, 1, G_IM_FMT_RGBA, G_IM_SIZ_16b, texW, texH, 0, 0, 0, tileW, tileH, 0, 0);
+    gDPLoadTextureBlock((*dlist)++, OS_K0_TO_PHYSICAL(tblock), G_IM_FMT_RGBA, G_IM_SIZ_16b, texW, texH, 0, 0, 0, tileW, tileH, 0, 0);
 
     gCurrentTextureHeader = 0;
     flags &= (RENDER_ANTI_ALIASING | RENDER_Z_COMPARE | RENDER_SEMI_TRANSPARENT | RENDER_FOG_ACTIVE | RENDER_CUTOUT);
