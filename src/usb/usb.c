@@ -20,7 +20,6 @@ https://github.com/buu342/N64-UNFLoader
     #include <libdragon.h>
 #endif
 
-extern void *memset(void *s, int c, int n);
 extern s8* memcpy( s8* dest, s8* src, size_t count );
 extern s32 osPiRawWriteIo(u32 devAddr, u32 data);
 
@@ -453,7 +452,7 @@ char usb_initialize(void)
 {
     // Initialize the debug related globals
     usb_buffer = (s8 *) OS_DCACHE_ROUNDUP_ADDR(usb_buffer_align);
-    memset(usb_buffer, 0, BUFFER_SIZE);
+    bzero(usb_buffer, BUFFER_SIZE);
         
     #ifndef LIBDRAGON
         // Create the message queue

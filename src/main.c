@@ -721,7 +721,7 @@ void puppyprint_log(const char *str, ...) {
     char textBytes[255];
     va_list arguments;
 
-    memset(textBytes, 0, sizeof(textBytes));
+    bzero(textBytes, sizeof(textBytes));
     va_start(arguments, str);
     if ((_Printf(write_to_buf, textBytes, str, arguments)) <= 0) {
         va_end(arguments);
