@@ -1475,7 +1475,7 @@ void move_particle_basic(Particle *particle, s32 updateRate) {
 
     particle->segment.trans.x_position += particle->segment.x_velocity * updateRateF;
     particle->segment.trans.y_position += particle->segment.y_velocity * updateRateF;
-    particle->segment.y_velocity = (particle->segment.y_velocity - particle->gravity) * updateRateF;
+    particle->segment.y_velocity -= particle->gravity * updateRateF;
     particle->segment.trans.z_position += particle->segment.z_velocity * updateRateF;
     particle->segment.trans.scale += particle->segment.scaleVel * updateRateF;
     particle->segment.trans.y_rotation += particle->angleVelY * updateRate;
@@ -1496,7 +1496,7 @@ void move_particle_with_velocity(Particle *particle, s32 updateRate) {
     particle->segment.z_velocity = -particle->forwardVel;
     f32_vec3_apply_object_rotation3(&particle->segment.trans, &particle->segment.x_velocity);
     particle->segment.trans.x_position += particle->segment.x_velocity * updateRateF;
-    particle->segment.trans.y_position += (particle->segment.y_velocity - particle->gravity) * updateRateF;
+    particle->segment.trans.y_position += particle->segment.y_velocity - (particle->gravity * updateRateF);
     particle->segment.trans.z_position += particle->segment.z_velocity * updateRateF;
     particle->segment.trans.scale += particle->segment.scaleVel * updateRateF;
     particle->segment.trans.y_rotation += particle->angleVelY * updateRate;
