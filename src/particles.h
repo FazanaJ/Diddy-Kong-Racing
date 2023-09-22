@@ -238,11 +238,11 @@ void func_800AE728(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5); 
 void func_800AF714(Object*, s32); // Non matching
 Particle *func_800B0BAC();
 void func_800B26E0();
-void move_particle_basic_parent(Particle *);
-void move_particle_velocity_parent(Particle *);
-void move_particle_with_velocities(Particle *);
-void move_particle_basic(Particle *);
-void move_particle_with_velocity(Particle *);
+void move_particle_basic_parent(Particle *, s32 updateRate);
+void move_particle_velocity_parent(Particle *, s32 updateRate);
+void move_particle_with_velocities(Particle *, s32 updateRate);
+void move_particle_basic(Particle *, s32 updateRate);
+void move_particle_with_velocity(Particle *, s32 updateRate);
 void func_800B3E64(Object *); // Non Matching
 
 #endif

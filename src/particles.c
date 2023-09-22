@@ -1255,15 +1255,15 @@ void handle_particle_movement(Particle *particle, s32 updateRate) {
         }
         if (tempParticle == NULL || (tempParticle && tempParticle->unk70)) {
             if (particle->segment.particle.movementType == PARTICLE_MOVEMENT_VELOCITIES) {
-                move_particle_with_velocities(particle);
+                move_particle_with_velocities(particle, updateRate);
             } else if (particle->segment.particle.movementType == PARTICLE_MOVEMENT_VELOCITY_PARENT) {
-                move_particle_velocity_parent(particle);
+                move_particle_velocity_parent(particle, updateRate);
             } else if (particle->segment.particle.movementType == PARTICLE_MOVEMENT_BASIC_PARENT) {
-                move_particle_basic_parent(particle);
+                move_particle_basic_parent(particle, updateRate);
             } else if (particle->segment.particle.movementType == PARTICLE_MOVEMENT_VELOCITY) {
-                move_particle_with_velocity(particle);
+                move_particle_with_velocity(particle, updateRate);
             } else {
-                move_particle_basic(particle);
+                move_particle_basic(particle, updateRate);
             }
         }
         boundingBox = get_segment_bounding_box(particle->segment.particle.blockID);
@@ -1388,21 +1388,19 @@ void set_particle_texture_frame(Particle *particle) {
  * Apply translation, rotation and scale based off the velocities of the particle.
  * Applies further translation based on the position of the parent.
 */
-void move_particle_basic_parent(Particle *particle) {
-    s32 i;
+void move_particle_basic_parent(Particle *particle, s32 updateRate) {
     ObjectSegment *parent;
+    f32 updateRateF = updateRate;
 
-    i = gParticleUpdateRate;
-    while (i-- > 0) {
-        particle->baseVelX += particle->segment.x_velocity;
-        particle->baseVelY += particle->segment.y_velocity;
-        particle->segment.y_velocity -= particle->gravity;
-        particle->baseVelZ += particle->segment.z_velocity;
-        particle->segment.trans.y_rotation += particle->angleVelY;
-        particle->segment.trans.x_rotation += particle->angleVelX;
-        particle->segment.trans.z_rotation += particle->angleVelZ;
-        particle->segment.trans.scale += particle->segment.scaleVel;
-    }
+    particle->baseVelX += particle->segment.x_velocity * updateRateF;
+    particle->baseVelY += particle->segment.y_velocity * updateRateF;
+    particle->segment.y_velocity -= particle->gravity * updateRateF;
+    particle->baseVelZ += particle->segment.z_velocity * updateRateF;
+    particle->segment.trans.y_rotation += particle->angleVelY * updateRate;
+    particle->segment.trans.x_rotation += particle->angleVelX * updateRate;
+    particle->segment.trans.z_rotation += particle->angleVelZ * updateRate;
+    particle->segment.trans.scale += particle->segment.scaleVel * updateRateF;
+        
     particle->segment.trans.x_position = particle->baseVelX;
     particle->segment.trans.y_position = particle->baseVelY;
     particle->segment.trans.z_position = particle->baseVelZ;
@@ -1420,17 +1418,14 @@ void move_particle_basic_parent(Particle *particle) {
  * Velocity is set from forward velocity.
  * Applies further translation based on the position of the parent.
 */
-void move_particle_velocity_parent(Particle *particle) {
-    s32 i;
+void move_particle_velocity_parent(Particle *particle, s32 updateRate) {
     ObjectSegment *parent;
+    f32 updateRateF = updateRate;
 
-    i = gParticleUpdateRate;
-    while (i-- > 0) {
-        particle->segment.trans.y_rotation += particle->angleVelY;
-        particle->segment.trans.x_rotation += particle->angleVelX;
-        particle->segment.trans.z_rotation += particle->angleVelZ;
-        particle->segment.trans.scale += particle->segment.scaleVel;
-    }
+    particle->segment.trans.y_rotation += particle->angleVelY * updateRate;
+    particle->segment.trans.x_rotation += particle->angleVelX * updateRate;
+    particle->segment.trans.z_rotation += particle->angleVelZ * updateRate;
+    particle->segment.trans.scale += particle->segment.scaleVel * updateRateF;
     particle->segment.trans.x_position = 0.0f;
     particle->segment.trans.y_position = -particle->forwardVel;
     particle->segment.trans.z_position = 0.0f;
@@ -1450,67 +1445,63 @@ void move_particle_velocity_parent(Particle *particle) {
  * Apply translation, rotation and scale based off the velocities of the particle.
  * Uses base velocity, then applies additional velocity based off the forward moving direction.
 */
-void move_particle_with_velocities(Particle *particle) {
-    s32 i;
+void move_particle_with_velocities(Particle *particle, s32 updateRate) {
     Vec3f vel;
+    f32 updateRateF = updateRate;
 
-    for (i = 0; gParticleUpdateRate > i++;) {
-        particle->segment.trans.x_position += particle->segment.x_velocity;
-        particle->segment.trans.y_position += particle->segment.y_velocity;
-        particle->segment.trans.z_position += particle->segment.z_velocity;
-        particle->segment.trans.scale += particle->segment.scaleVel;
-        particle->segment.trans.y_rotation += particle->angleVelY;
-        particle->segment.trans.x_rotation += particle->angleVelX;
-        particle->segment.trans.z_rotation += particle->angleVelZ;
-        vel.x = 0.0f;
-        vel.y = -particle->forwardVel;
-        vel.z = 0.0f;
-        f32_vec3_apply_object_rotation(&particle->segment.trans, vel.f);
-        particle->segment.x_velocity += vel.x;
-        particle->segment.y_velocity += vel.y;
-        particle->segment.y_velocity -= particle->gravity;
-        particle->segment.z_velocity += vel.z;
-    }
+    particle->segment.trans.x_position += particle->segment.x_velocity * updateRateF;
+    particle->segment.trans.y_position += particle->segment.y_velocity * updateRateF;
+    particle->segment.trans.z_position += particle->segment.z_velocity * updateRateF;
+    particle->segment.trans.scale += particle->segment.scaleVel * updateRateF;
+    particle->segment.trans.y_rotation += particle->angleVelY * updateRate;
+    particle->segment.trans.x_rotation += particle->angleVelX * updateRate;
+    particle->segment.trans.z_rotation += particle->angleVelZ * updateRate;
+    vel.x = 0.0f;
+    vel.y = -particle->forwardVel;
+    vel.z = 0.0f;
+    f32_vec3_apply_object_rotation(&particle->segment.trans, vel.f);
+    particle->segment.x_velocity += vel.x * updateRateF;
+    particle->segment.y_velocity += vel.y * updateRateF;
+    particle->segment.y_velocity -= particle->gravity * updateRateF;
+    particle->segment.z_velocity += vel.z * updateRateF;
 }
 
 /**
  * Apply translation, rotation and scale based off the velocities of the particle.
 */
-void move_particle_basic(Particle *particle) {
+void move_particle_basic(Particle *particle, s32 updateRate) {
     s32 i;
+    f32 updateRateF = updateRate;
 
-    for (i = 0; gParticleUpdateRate > i++;) {
-        particle->segment.trans.x_position += particle->segment.x_velocity;
-        particle->segment.trans.y_position += particle->segment.y_velocity;
-        particle->segment.y_velocity = particle->segment.y_velocity - particle->gravity;
-        particle->segment.trans.z_position += particle->segment.z_velocity;
-        particle->segment.trans.scale += particle->segment.scaleVel;
-        particle->segment.trans.y_rotation += particle->angleVelY;
-        particle->segment.trans.x_rotation += particle->angleVelX;
-        particle->segment.trans.z_rotation += particle->angleVelZ;
-    }
+    particle->segment.trans.x_position += particle->segment.x_velocity * updateRateF;
+    particle->segment.trans.y_position += particle->segment.y_velocity * updateRateF;
+    particle->segment.y_velocity = (particle->segment.y_velocity - particle->gravity) * updateRateF;
+    particle->segment.trans.z_position += particle->segment.z_velocity * updateRateF;
+    particle->segment.trans.scale += particle->segment.scaleVel * updateRateF;
+    particle->segment.trans.y_rotation += particle->angleVelY * updateRate;
+    particle->segment.trans.x_rotation += particle->angleVelX * updateRate;
+    particle->segment.trans.z_rotation += particle->angleVelZ * updateRate;
 }
 
 /**
  * Apply translation, rotation and scale based off the velocities of the particle.
  * Velocity is set from forward velocity.
 */
-void move_particle_with_velocity(Particle *particle) {
+void move_particle_with_velocity(Particle *particle, s32 updateRate) {
     s32 i;
+    f32 updateRateF = updateRate;
 
-    for (i = 0; gParticleUpdateRate > i++;) {
-        particle->segment.x_velocity = 0.0f;
-        particle->segment.y_velocity = 0.0f;
-        particle->segment.z_velocity = -particle->forwardVel;
-        f32_vec3_apply_object_rotation3(&particle->segment.trans, &particle->segment.x_velocity);
-        particle->segment.trans.x_position += particle->segment.x_velocity;
-        particle->segment.trans.y_position += particle->segment.y_velocity - particle->gravity;
-        particle->segment.trans.z_position += particle->segment.z_velocity;
-        particle->segment.trans.scale += particle->segment.scaleVel;
-        particle->segment.trans.y_rotation += particle->angleVelY;
-        particle->segment.trans.x_rotation += particle->angleVelX;
-        particle->segment.trans.z_rotation += particle->angleVelZ;
-    }
+    particle->segment.x_velocity = 0.0f;
+    particle->segment.y_velocity = 0.0f;
+    particle->segment.z_velocity = -particle->forwardVel;
+    f32_vec3_apply_object_rotation3(&particle->segment.trans, &particle->segment.x_velocity);
+    particle->segment.trans.x_position += particle->segment.x_velocity * updateRateF;
+    particle->segment.trans.y_position += (particle->segment.y_velocity - particle->gravity) * updateRateF;
+    particle->segment.trans.z_position += particle->segment.z_velocity * updateRateF;
+    particle->segment.trans.scale += particle->segment.scaleVel * updateRateF;
+    particle->segment.trans.y_rotation += particle->angleVelY * updateRate;
+    particle->segment.trans.x_rotation += particle->angleVelX * updateRate;
+    particle->segment.trans.z_rotation += particle->angleVelZ * updateRate;
 }
 
 /**
