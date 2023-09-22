@@ -143,7 +143,7 @@ s32 gThunderTimer = 0;
 s32 D_800E2C84 = 0;
 Sprite *gRainSplashGfx = 0;
 s32 D_800E2C90 = 0;
-s32 gWeatherSoundMask = 0;
+SoundMask *gWeatherSoundMask = NULL;
 
 
 FadeTransition D_800E2C98 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_UNK1, FADE_COLOR_WHITE, 5, 2);
@@ -453,12 +453,12 @@ void free_rain_memory(void) {
 
     if (gRainSplashGfx != NULL) {
         free_sprite(gRainSplashGfx);
-        gRainSplashGfx = 0;
+        gRainSplashGfx = NULL;
     }
 
-    if (gWeatherSoundMask) {
+    if (gWeatherSoundMask != NULL) {
         func_800096F8(gWeatherSoundMask);
-        gWeatherSoundMask = 0;
+        gWeatherSoundMask = NULL;
     }
 
     gWeatherType = WEATHER_SNOW;
