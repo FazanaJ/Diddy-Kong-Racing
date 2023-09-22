@@ -2230,7 +2230,7 @@ void func_8002DE30(Object *obj) {
                                     &vertices[triangle->verticesArray[3]].x)
                             ) {
                                 foundResult = TRUE;
-                                obj->shading->unk0 += (((1.0f - D_800DC884[batchFlags]) - obj->shading->unk0) * 0.2);
+                                obj->shading->unk0 += (((1.0f - D_800DC884[batchFlags]) - obj->shading->unk0) * 0.2f);
                             }
                         }
                     }
