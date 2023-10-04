@@ -123,10 +123,9 @@ u16 D_800E2684[118] = {
     0xFFFF, 0xFFFF, 0xFFFF, 0xFFFF, 0x0000, 0x0000,
 };
 
-//!@bug Not every attribute is initialised, but since bss is initialised as 0, nothing happens.
 unk800E2770 D_800E2770[2] = {
-    { 0, 0xFD, 0, 0, 0, 0, 0, 0, 0, 0 },
-    { 0, 0xFF, 0, 0, 0, 0, 0, 0, 0, 0 },
+    { 0x00FD, 0, 0, NULL, 0, 0, 0, 0, 0 },
+    { 0x00FF, 0, 0, NULL, 0, 0, 0, 0, 0 },
 };
 
 u8 gShowCourseDirections = TRUE;
@@ -361,7 +360,32 @@ void init_hud(UNUSED s32 viewportCount) {
 }
 
 GLOBAL_ASM("asm/non_matchings/game_ui/func_8009F034.s")
-GLOBAL_ASM("asm/non_matchings/game_ui/func_800A003C.s")
+
+/**
+ * Free's all elements in the hud, and the player hud, and flushes particles
+ */
+void free_hud(void) {
+    s32 i;
+    for (i = 0; i < gAssetHudElementIdsCount; i++) {
+        if (gAssetHudElements->entry[i] != NULL) {
+            if ((gAssetHudElementIds[i] & 0xC000) == 0xC000) {
+                free_texture(gAssetHudElements->entry[i]);
+            } else if (gAssetHudElementIds[i] & 0x8000) {
+                free_sprite((Sprite *) gAssetHudElements->entry[i]);
+            } else if (gAssetHudElementIds[i] & 0x4000) {
+                free_object((Object *) gAssetHudElements->entry[i]);
+            } else {
+                func_8005FF40((ObjectModel **) gAssetHudElements->entry[i]);
+            }
+            gAssetHudElements->entry[i] = 0;
+        }
+    }
+    free_from_memory_pool(*gPlayerHud);
+    free_from_memory_pool(gAssetHudElementIds);
+    gAssetHudElementIdsCount = 0;
+    free_from_memory_pool(gAssetHudElements);
+    gParticlePtrList_flush();
+}
 
 u8 func_800A0190(void) {
     return D_80126D34;
@@ -490,7 +514,7 @@ void render_hud(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Object *arg3, s
                     }
                 }
                 gDPSetPrimColor(gHUDCurrDisplayList++, 0, 0, 255, 255, 255, 255);
-                func_800A7A60(arg3, &gHUDCurrDisplayList);
+                func_800A7A60(arg3);
                 set_ortho_matrix_view(&gHUDCurrDisplayList, &gHUDCurrMatrix);
                 gDPSetEnvColor(gHUDCurrDisplayList++, 255, 255, 255, 0);
                 sp2C = func_8001139C() >> 1;
@@ -574,7 +598,60 @@ void func_800A0B74(void) {
     }
 }
 
-GLOBAL_ASM("asm/non_matchings/game_ui/func_800A0BD4.s")
+void func_800A0BD4(s32 updateRate) {
+    s32 temp;
+    s32 i;
+
+    if (D_80126D74 > 0) {
+        D_80126D74 -= updateRate;
+        if (D_80126D74 <= 0) {
+            D_80126D74 = 0;
+            if (gHUDVoiceSoundMask == 0) {
+                play_sound_global(D_80126D7C, &gHUDVoiceSoundMask);
+            }
+        }
+    }
+    for(i = 0; i < 2; i++) {
+        if (D_800E2770[i].unk2) {
+            if (D_800E2770[i].unk4 == 0) {
+                play_sound_global(D_800E2770[i].unk0, (s32 *) &D_800E2770[i].unk4);
+            }
+            func_80001FB8(D_800E2770[i].unk0, D_800E2770[i].unk4, D_800E2770[i].unk2);
+            if (D_800E2770[i].unk3 > 0) {
+                temp = D_800E2770[i].unk3 * updateRate;
+                if ((127 - temp) >= D_800E2770[i].unk2) {
+                    D_800E2770[i].unk2 += temp;
+                } else {
+                    D_800E2770[i].unk3 = 0;
+                    D_800E2770[i].unk2 = 0x7F;
+                }
+            } else if (D_800E2770[i].unk3 < 0) {
+                temp = D_800E2770[i].unk3 * updateRate;
+                if (-temp < D_800E2770[i].unk2) {
+                    D_800E2770[i].unk2 += temp;
+                } else {
+                    D_800E2770[i].unk3 = 0;
+                    D_800E2770[i].unk2 = 0;
+                }
+            }
+        } else {
+            if (D_800E2770[i].unk4) {
+                func_8000488C(D_800E2770[i].unk4);
+                D_800E2770[i].unk4 = 0;
+            }
+        }
+    }
+    if ((D_80126D70 != 0) && (D_800E2770[0].unk2 == 0)) {
+        D_80126D70 = 0;
+        if (gNumActivePlayers == 1) {
+            set_sound_channel_count(8);
+        } else if (gNumActivePlayers == 2) {
+            set_sound_channel_count(12);
+        } else {
+            set_sound_channel_count(16);
+        }
+    }
+}
 
 void func_800A0DC0(s32 arg0, Object *arg1, s32 updateRate) {
     Object_Racer *racer = &arg1->unk64->racer;
@@ -949,7 +1026,7 @@ void func_800A277C(s32 arg0, Object* playerRacerObj, s32 updateRate) {
             }
             func_80061D30(ttSWBodyObject);
         }
-        func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, (unk80126CDC** ) &gCurrentHud->unk21C[0x124]);
+        func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, (unk80126CDC** ) &gCurrentHud->unk340);
         
         for(i = 0; curRacer->lap >= i && i < 5; i++) { 
             stopwatchTimer += curRacer->lap_times[i];
@@ -963,12 +1040,12 @@ void func_800A277C(s32 arg0, Object* playerRacerObj, s32 updateRate) {
         }
         gCurrentHud->unk444 = ((stopwatchTimer * 0x444) + 0x7FF8);
         if (func_8000E0B0() <= 0) {
-            func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, (unk80126CDC **) &gCurrentHud->unk21C[0x224]);
+            func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, (unk80126CDC **) &gCurrentHud->unk440);
         }
         gCurrentHud->unk444 = ((((stopwatchTimer / 60) + 30) % 60) * 0x444);
         gCurrentHud->unk450 = gCurrentHud->unk350 + 28.0f;
         if (func_8000E0B0() <= 0) {
-            func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, (unk80126CDC **) &gCurrentHud->unk21C[0x224]);
+            func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, (unk80126CDC **) &gCurrentHud->unk440);
         }
         obj68->unk20 = 0;
         func_80068508(1);
@@ -984,8 +1061,8 @@ void func_800A277C(s32 arg0, Object* playerRacerObj, s32 updateRate) {
                 spB8 += 12;
                 gDPSetPrimColor(gHUDCurrDisplayList++, 0, 0, 255, 255, 255, 255);
                 gCurrentHud->unk338 = i + 1;
-                func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, (unk80126CDC **) &gCurrentHud->unk21C[0x104]);
-                func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, (unk80126CDC **) &gCurrentHud->unk21C[0xE4]);
+                func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, (unk80126CDC **) &gCurrentHud->unk320);
+                func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, (unk80126CDC **) &gCurrentHud->unk300);
                 gCurrentHud->unk330 += 12.0f;
                 gCurrentHud->unk310 += 12.0f;
             }
@@ -1107,7 +1184,43 @@ void func_800A277C(s32 arg0, Object* playerRacerObj, s32 updateRate) {
 GLOBAL_ASM("asm/non_matchings/game_ui/func_800A277C.s")
 #endif
 
-GLOBAL_ASM("asm/non_matchings/game_ui/func_800A36CC.s")
+void func_800A36CC(u8 arg0, u8 arg1, u8 arg2, u8 arg3, u8 arg4) {
+    s32 var_a3;
+    s32 i;
+    UNUSED u8 *temp_v0_2;
+    Object_68 **unk68;
+    Object *hud20;
+
+    if (is_in_time_trial()) {
+        hud20 = gAssetHudElements->entry[20];
+        if (hud20 != NULL) {
+            unk68 = (Object_68 **) hud20->unk68[0];
+            var_a3 = unk68[0]->unk28;
+            
+            for (i = 0; i < var_a3; i++) {
+                if (D_80126D66 == unk68[0]->unk38[i].unk0[0]) {
+                    unk68[0]->unk38[i].unk0[0] = arg0;
+                    if (arg0 == 4) {
+                        unk68[0]->unk38[i].unk8 |= (0x800000 | 0x10000);
+                        unk68[0]->unk50 = 1;
+                    } else {
+                        unk68[0]->unk38[i].unk8 &= ~(0x800000 | 0x10000);
+                        unk68[0]->unk50 = 0;
+                    }
+                    var_a3 = unk68[0]->unk28;
+                } else if (D_80126D65 == unk68[0]->unk38[i].unk0[0]) {
+                    unk68[0]->unk38[i].unk0[0] = arg1;
+                    var_a3 = unk68[0]->unk28;
+                }                
+            }
+            D_80126D66 = arg0;
+            D_80126D65 = arg1;
+            gStopwatchFaceID = arg2;
+            D_80126D69 = arg3;
+            D_80126D68 = arg4;
+        }
+    }
+}
 
 /**
  * When enabled, displays speed of the player in the bottom right corner, replacing the minimap.
@@ -1346,7 +1459,35 @@ void render_treasure_hud(Object_Racer *racer) {
     D_80126CD5 = 0;
 }
 
-GLOBAL_ASM("asm/non_matchings/game_ui/func_800A47A0.s")
+void func_800A47A0(Object_Racer *racer, s32 updateRate) {
+    s32 i;
+    s32 prevUnk5D0;
+
+    gCurrentHud->unk5D0 = (s32) gCurrentHud->unk5D0; //Rounds float down to it's int value.
+    prevUnk5D0 = gCurrentHud->unk5D0;
+    for(i = 0; i < 8; i++) {
+        if (i >= racer->silverCoinCount) {
+            D_800E2834 = COLOUR_RGBA32(128, 128, 128, 128);
+        }
+        func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, &gCurrentHud->unk5C0);
+        gCurrentHud->unk5D0 -= gCurrentHud->unk5DC;
+    }
+    if (racer->silverCoinCount == 8) {
+        if (gCurrentHud->unk5DB < 30) {
+            gCurrentHud->unk5DB += updateRate;
+        }
+        if (gCurrentHud->unk5DA == 0) {
+            if (gCurrentHud->unk5DB >= 30) {
+                gCurrentHud->unk5DA = 1;
+                if (gHUDVoiceSoundMask == 0) {
+                    play_sound_global(SOUND_VOICE_TT_GO_FOR_IT, &gHUDVoiceSoundMask);
+                }
+            }
+        }
+    }
+    gCurrentHud->unk5D0 = prevUnk5D0;
+    D_800E2834 = COLOUR_RGBA32(255, 255, 255, 254);
+}
 
 /**
  * Plays the race finish fanfare and displays what position you finished
@@ -1796,7 +1937,31 @@ void render_weapon_hud(Object *obj, s32 updateRate) {
     }
 }
 
-GLOBAL_ASM("asm/non_matchings/game_ui/func_800A7A60.s")
+void func_800A7A60(Object *racerObj) {
+    unk80068514_arg4 *entry;
+    unk80126CDC *temp;
+    Object_Racer *racer;
+    s32 hudElementIndex;
+
+    if(entry){} // Fakematch
+    racer = &racerObj->unk64->racer;
+    if (racer->magnetTargetObj != NULL && get_current_viewport() == racer->playerIndex) {
+        temp = gCurrentHud;
+        temp->unk22C = racer->magnetTargetObj->segment.trans.x_position;
+        temp->unk230 = racer->magnetTargetObj->segment.trans.y_position;
+        temp->unk234 = racer->magnetTargetObj->segment.trans.z_position;
+        hudElementIndex = temp->unk226;
+        entry = gAssetHudElements->entry[hudElementIndex];
+        if (entry == NULL) {
+            return;
+        }
+        gAssetHudElementStaleCounter[hudElementIndex] = 0;
+        temp = (unk80126CDC *) &temp->unk220;
+        func_80066CDC(&gHUDCurrDisplayList, &gHUDCurrMatrix);
+        func_80068408(&gHUDCurrDisplayList, &gHUDCurrMatrix);
+        render_sprite_billboard(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, (Object *) temp, entry, RENDER_Z_UPDATE);
+    }
+}
 
 /**
  * Render the lap time on the top right.
@@ -1958,7 +2123,7 @@ void render_minimap_and_misc_hud(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 u
                 } else if (gAssetHudElementIds[i] & 0x8000) {
                     free_sprite((Sprite *) gAssetHudElements->entry[i]);
                 } else if (gAssetHudElementIds[i] & 0x4000) {
-                    gParticlePtrList_addObject((Object *) gAssetHudElements->entry[i]);
+                    free_object((Object *) gAssetHudElements->entry[i]);
                 } else {
                     func_8005FF40((ObjectModel **) gAssetHudElements->entry[i]);
                 }

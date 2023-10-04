@@ -9,6 +9,15 @@
 #include "camera.h"
 #include "lights.h"
 
+
+#define NEW_OBJECT_ENTRY(entryVar, entryId, entrySize, xPos, yPos, zPos) { \
+    entryVar.x = (xPos);                                                   \
+    entryVar.y = (yPos);                                                   \
+    entryVar.z = (zPos);                                                   \
+    entryVar.size = ((((entryId) >> 1) & 0x80) | (entrySize));             \
+    entryVar.objectID = (s8)(entryId);                                     \
+}
+
 enum ObjectBehaviours {
     BHV_NONE,
     BHV_RACER,
@@ -333,7 +342,7 @@ Object **objGetObjList(s32 *arg0, s32 *cnt);
 s32 getObjectCount(void);
 s32 func_8000E9C0(void);
 void func_8000E9D0(Object *arg0);
-void gParticlePtrList_addObject(Object *);
+void free_object(Object *);
 s32 func_80010018(void);
 s32 func_80010028(s32 arg0);
 void func_80011390(void);
@@ -415,7 +424,7 @@ s32 move_object(Object *obj, f32 xPos, f32 yPos, f32 zPos);
 Object *get_racer_object_by_port(s32 index);
 void render_racer_shield(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *obj);
 void render_racer_magnet(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *obj);
-void update_envmap_position(f32 arg0, f32 arg1, f32 arg2);
+void update_envmap_position(f32 x, f32 y, f32 z);
 s32 func_8000FC6C(Object *obj, WaterEffect *shadow);
 s32 func_8001B2F0(s32 mapId);
 void render_3d_billboard(Object *obj);
@@ -445,6 +454,11 @@ void light_setup_light_sources(Object *obj);
 s32 init_object_interaction_data(Object *arg0, ObjectInteraction *arg1);
 s32 func_8000FAC4(Object *obj, Object_6C *arg1);
 s32 obj_init_property_flags(s32 behaviorId);
+void func_8001B3C4(s32 arg0, s16 *playerId);
+void func_8001EFA4(Object *, Object *);
+Object *func_80016C68(f32 x, f32 y, f32 z, f32 maxDistCheck, s32 dontCheckYAxis);
+void func_8002125C(Object *charSelectObj, LevelObjectEntry_CharacterSelect *entry, Object_CharacterSelect *charSelect, UNUSED s32 index);
+void func_80021104(Object *obj, Object_Animation *animObj, LevelObjectEntry_Animation *entry);
 
 //Non Matching
 void calc_dynamic_lighting_for_object_1(Object *, ObjectModel *, s16, Object *, f32, f32);
@@ -462,7 +476,7 @@ void func_80018CE0(Object* obj, f32 xPos, f32 yPos, f32 zPos, s32 updateRate);  
 s32 func_800185E4(s8, Object* obj, f32 xPos, f32 yPos, f32 zPos, f32* checkpointDistance, u8*); /* extern */
 void func_80011134(Object *, s32);
 Object *func_8002342C(f32 x, f32 z);
-void func_8006017C(s32);
+void func_8006017C(ObjectModel *);
 void func_80012F94(Object *);
 void render_3d_model(Object *);
 void func_800101AC(Object *, s32);

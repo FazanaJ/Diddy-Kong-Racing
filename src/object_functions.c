@@ -295,7 +295,7 @@ void obj_loop_fireball_octoweapon(Object *obj, s32 updateRate) {
                         racer->attackType = ATTACK_EXPLOSION;
                         obj->properties.fireball.timer = 20;
                         func_8003FC44(obj->segment.trans.x_position, obj->segment.trans.y_position, obj->segment.trans.z_position, 44, SOUND_EXPLOSION, 1.0f, 1);
-                        gParticlePtrList_addObject(obj);
+                        free_object(obj);
                     } else if (obj->properties.fireball.timer > 0) {
                         racer->bubbleTrapTimer = 60;
                         obj->properties.fireball.timer = -60;
@@ -312,12 +312,12 @@ void obj_loop_fireball_octoweapon(Object *obj, s32 updateRate) {
         obj->properties.fireball.timer -= updateRate;
         if (obj->properties.fireball.timer < 0) {
             if (obj->unk4A == 298) {
-                gParticlePtrList_addObject(obj);
+                free_object(obj);
                 func_8003FC44(obj->segment.trans.x_position, obj->segment.trans.y_position, obj->segment.trans.z_position, 44, SOUND_EXPLOSION, 1.0f, 1);
             }
             obj->segment.trans.scale -= (obj->segment.trans.scale * 0.05f) * updateRateF;
             if (obj->segment.trans.scale < 0.5f){
-                gParticlePtrList_addObject(obj);
+                free_object(obj);
             }
         }
     } else {
@@ -338,7 +338,7 @@ void obj_loop_fireball_octoweapon(Object *obj, s32 updateRate) {
                 func_8000488C(soundMask);
             }
             play_sound_at_position(SOUND_POP, obj->segment.trans.x_position, obj->segment.trans.y_position, obj->segment.trans.z_position, 4, NULL);
-            gParticlePtrList_addObject(obj);
+            free_object(obj);
         }
     }
 }
@@ -514,7 +514,7 @@ void obj_loop_laserbolt(Object *obj, s32 updateRate) {
         }
     }
     if (delete) {
-        gParticlePtrList_addObject(obj);
+        free_object(obj);
     }
 }
 
@@ -659,7 +659,8 @@ void obj_loop_trophycab(Object *obj, s32 updateRate) {
                         play_sound_global(SOUND_VOICE_TT_TROPHY_RACE, NULL);
                         gCurrentHud->unk4C4 = 0x6490;
                     } else {
-                        func_800C31EC(4);
+                        // Text for "TROPHY RACE" "TO ENTER THE TROPHY RACE, YOU MUST COMPLETE ALL THE TASKS FROM THIS WORLD. KEEP RACING!"
+                        func_800C31EC(ASSET_GAME_TEXT_4);
                         gfxData->unk4 = 180;
                         gfxData->unk0 = 140;
                         set_sndfx_player_voice_limit(16);
@@ -738,7 +739,7 @@ void obj_loop_collectegg(Object *obj, s32 updateRate) {
     updateRateF = updateRate;
     switch (egg->status) {
     case EGG_SPAWNED:
-        func_80036040(obj, (Object_64 *) egg);
+        try_to_collect_egg(obj, egg);
         break;
     case EGG_MOVING:
         obj->segment.trans.flags &= (0xFFFF - OBJ_FLAGS_INVISIBLE);
@@ -765,7 +766,7 @@ void obj_loop_collectegg(Object *obj, s32 updateRate) {
             if (egg->spawnerObj != NULL) {
                 egg->spawnerObj->properties.eggSpawner.egg = NULL;
             }
-            gParticlePtrList_addObject(obj);
+            free_object(obj);
         }
         if (hasCollision && surface == SURFACE_EGG_SPAWN) {
             egg->status = EGG_SPAWNED;
@@ -799,7 +800,7 @@ void obj_loop_collectegg(Object *obj, s32 updateRate) {
             egg->spawnerObj->properties.eggSpawner.egg = NULL;
         }
         if (egg->hatchTimer < 540) {
-            func_80036040(obj, (Object_64 *) egg);
+            try_to_collect_egg(obj, egg);
         }
         if (racerObj != NULL && egg->status != EGG_IN_BASE) {
             racer->eggHudCounter -= 1;
@@ -912,7 +913,7 @@ void obj_init_airzippers_waterzippers(Object *obj, LevelObjectEntry_AirZippers_W
     obj->interactObj->hitboxRadius = 20;
     obj->interactObj->pushForce = 0;
     if (get_filtered_cheats() & CHEAT_TURN_OFF_ZIPPERS) {
-        gParticlePtrList_addObject(obj);
+        free_object(obj);
     }
 }
 
@@ -990,7 +991,7 @@ void obj_init_groundzipper(Object *obj, LevelObjectEntry_GroundZipper *entry) {
     obj->interactObj->unk16 = -0x64;
     obj->interactObj->unk17 = 0x64;
     if (get_filtered_cheats() & CHEAT_TURN_OFF_ZIPPERS) {
-        gParticlePtrList_addObject(obj);
+        free_object(obj);
     }
 }
 
@@ -1119,7 +1120,38 @@ void obj_loop_characterflag(Object *obj, UNUSED s32 updateRate) {
     }
 }
 
-GLOBAL_ASM("asm/non_matchings/object_functions/func_80036040.s")
+void try_to_collect_egg(Object *obj, Object_CollectEgg *egg) {
+    Object_64 *racer;
+    Object *interactedObj;
+    Matrix mat;
+    ObjectTransform transF;
+
+    if (obj->interactObj->distance < 40) {
+        interactedObj = obj->interactObj->obj;
+        if (interactedObj->segment.header->behaviorId == BHV_RACER) {
+            racer = interactedObj->unk64;
+            if (racer->racer.held_obj == NULL) {
+                egg->status = EGG_UNK_01;
+                obj->segment.trans.flags |= OBJ_FLAGS_INVISIBLE;
+                racer->racer.held_obj = obj;
+                transF.y_rotation = -interactedObj->segment.trans.y_rotation;
+                transF.x_rotation = -interactedObj->segment.trans.x_rotation;
+                transF.z_rotation = -interactedObj->segment.trans.z_rotation;
+                transF.scale = 1.0f;
+                transF.x_position = -interactedObj->segment.trans.x_position;
+                transF.y_position = -interactedObj->segment.trans.y_position;
+                transF.z_position = -interactedObj->segment.trans.z_position;
+                object_transform_to_matrix_2(mat, &transF);
+                guMtxXFMF(mat, 
+                     obj->segment.trans.x_position,  obj->segment.trans.y_position,  obj->segment.trans.z_position, 
+                    &obj->segment.trans.x_position, &obj->segment.trans.y_position, &obj->segment.trans.z_position);
+                obj->segment.trans.x_position /= interactedObj->segment.trans.scale;
+                obj->segment.trans.y_position /= interactedObj->segment.trans.scale;
+                obj->segment.trans.z_position /= interactedObj->segment.trans.scale;
+            }
+        }
+    }
+}
 
 /**
  * Hub world T.T init behaviour.
@@ -1587,9 +1619,9 @@ void obj_init_animation(Object *obj, LevelObjectEntry_Animation *entry, s32 arg2
     }
     obj64 = &obj->unk64->animation;
     if (obj->unk64 != 0) {
-        func_8001EFA4(obj, obj64);
+        func_8001EFA4(obj, (Object *) obj64);
         if (entry->order != 0 || obj64->unk4A != entry->objectIdToSpawn) {
-            gParticlePtrList_addObject((Object *) obj64);
+            free_object((Object *) obj64);
             obj->unk64 = NULL;
         }
     }
@@ -1845,7 +1877,7 @@ void obj_loop_smoke(Object *obj, s32 updateRate) {
     obj->segment.trans.y_position += obj->segment.y_velocity * updateRateF;
     obj->segment.trans.z_position += obj->segment.z_velocity * updateRateF;
     if (obj->segment.animFrame > 255) {
-        gParticlePtrList_addObject(obj);
+        free_object(obj);
         obj->segment.animFrame = 255;
     }
 }
@@ -1853,7 +1885,7 @@ void obj_loop_smoke(Object *obj, s32 updateRate) {
 void obj_loop_unknown25(Object *obj, s32 updateRate) {
     obj->segment.animFrame += updateRate * 8;
     if (obj->segment.animFrame > 255) {
-        gParticlePtrList_addObject(obj);
+        free_object(obj);
         obj->segment.animFrame = 255;
     }
 }
@@ -1865,7 +1897,7 @@ void obj_loop_wardensmoke(Object *obj, s32 updateRate) {
     obj->segment.animFrame += updateRate * 4;
     obj->segment.trans.y_position += updateRateF * 0.25f;
     if (obj->segment.animFrame > 255) {
-        gParticlePtrList_addObject(obj);
+        free_object(obj);
         obj->segment.animFrame = 255;
     }
 }
@@ -1900,7 +1932,7 @@ void obj_loop_bombexplosion(Object *obj, s32 updateRate) {
         obj->segment.trans.scale = (((obj->properties.bombExplosion.timer - 20) / 20.0f) * 5.0f) + 10.5f;
         obj->properties.bombExplosion.unk4 = 0x1EF - (obj->properties.bombExplosion.timer * 0xC);
     } else {
-        gParticlePtrList_addObject(obj);
+        free_object(obj);
     }
     
     if (obj->unk74 != 0) {
@@ -1975,15 +2007,15 @@ void obj_init_exit(Object *obj, LevelObjectEntry_Exit *entry) {
     settings = get_settings();
     // Disable the warp if it's for the first boss encounter, having collected every balloon.
     if (exit->bossFlag == WARP_BOSS_FIRST && settings->balloonsPtr[settings->worldId] == 8) {
-        gParticlePtrList_addObject(obj);
+        free_object(obj);
     }
     // Disable the warp if it's for the second boss encounter, having not collected every balloon.
     if (exit->bossFlag == WARP_BOSS_REMATCH && settings->balloonsPtr[settings->worldId] < 8) {
-        gParticlePtrList_addObject(obj);
+        free_object(obj);
     }
 #else
     if (exit->bossFlag == WARP_BOSS_FIRST) {
-        gParticlePtrList_addObject(obj);
+        free_object(obj);
     }
 #endif
 }
@@ -2949,7 +2981,7 @@ void obj_loop_goldenballoon(Object *obj, s32 updateRate) {
             func_800AFC3C(obj, updateRate);
             obj->properties.npc.timer -= updateRate;
         } else {
-            gParticlePtrList_addObject(obj);
+            free_object(obj);
         }
     } else {
         obj->segment.trans.flags |= OBJ_FLAGS_INVISIBLE;
@@ -3517,7 +3549,7 @@ void obj_loop_flycoin(Object *obj, s32 updateRate) {
         if (racerObj->lap >= 10) {
             racerObj->raceFinished = TRUE;
         }
-        gParticlePtrList_addObject(obj);
+        free_object(obj);
         if (racerObj->playerIndex != PLAYER_COMPUTER) {
             play_sound_global(SOUND_SELECT, NULL);
         }
@@ -3565,7 +3597,7 @@ void obj_init_banana(Object *obj, UNUSED LevelObjectEntry_Banana *entry) {
     obj->properties.banana.unk4 = 20;
     obj->properties.banana.unk6 = 16;
     if (get_filtered_cheats() & CHEAT_DISABLE_BANANAS) {
-        gParticlePtrList_addObject(obj);
+        free_object(obj);
     }
 }
 
@@ -3599,7 +3631,7 @@ void obj_loop_banana(Object *obj, s32 updateRate) {
         obj->unk74 = 1;
         func_800AFC3C(obj, updateRate);
         if (properties->unk6 <= 0) {
-            gParticlePtrList_addObject(obj);
+            free_object(obj);
         }
     } else {
         if (banana->unk8 > 0) {
@@ -3687,7 +3719,7 @@ void obj_loop_banana(Object *obj, s32 updateRate) {
                         banana->spawner->properties.bananaSpawner.spawn = TRUE;
                     }
                     if (get_number_of_active_players() > TWO_PLAYERS) {
-                        gParticlePtrList_addObject(obj);
+                        free_object(obj);
                     } else {
                         properties->unk0 = -1;
                         obj->unk74 = 1;
@@ -3721,7 +3753,7 @@ void obj_init_silvercoin_adv2(Object *obj, UNUSED LevelObjectEntry_SilverCoinAdv
     }
     if (obj->properties.npc.action == SILVER_COIN_INACTIVE) {
         obj->segment.trans.flags |= OBJ_FLAGS_INVIS_PLAYER1 | OBJ_FLAGS_INVIS_PLAYER2;
-        gParticlePtrList_addObject(obj);
+        free_object(obj);
     }
 }
 
@@ -3745,7 +3777,7 @@ void obj_init_silvercoin(Object *obj, UNUSED LevelObjectEntry_SilverCoin *entry)
     }
     if (obj->properties.npc.action == SILVER_COIN_INACTIVE) {
         obj->segment.trans.flags |= OBJ_FLAGS_INVIS_PLAYER2 | OBJ_FLAGS_INVIS_PLAYER1;
-        gParticlePtrList_addObject(obj);
+        free_object(obj);
     }
 }
 
@@ -3804,7 +3836,7 @@ void obj_init_worldkey(Object *obj, LevelObjectEntry_WorldKey *entry) {
     if (!is_in_tracks_mode() && !(settings->keys & (1 << obj->properties.worldKey.keyID))) {
         return;
     }
-    gParticlePtrList_addObject(obj);
+    free_object(obj);
 }
 
 /**
@@ -3829,7 +3861,7 @@ void obj_loop_worldkey(Object *worldKeyObj, s32 updateRate) {
                     play_sequence(SEQUENCE_KEY_COLLECT);
                     settings = get_settings();
                     settings->keys |= 1 << worldKeyObj->properties.worldKey.keyID; // Set key flag
-                    gParticlePtrList_addObject(worldKeyObj);   // Makes the key unload.
+                    free_object(worldKeyObj);   // Makes the key unload.
                 }
             }
         }
@@ -3893,7 +3925,7 @@ void obj_init_weaponballoon(Object *obj, LevelObjectEntry_WeaponBalloon *entry) 
     obj->properties.weaponBalloon.unk4 = 0;
 
     if (get_filtered_cheats() & CHEAT_DISABLE_WEAPONS) {
-        gParticlePtrList_addObject(obj);
+        free_object(obj);
     }
 }
 
@@ -3914,9 +3946,9 @@ void obj_loop_weaponballoon(Object *obj, s32 updateRate) {
         obj->segment.trans.scale = 0.001f;
     }
     if (obj->segment.trans.scale < 0.1f) {
-        obj->segment.trans.flags |= 0x4000;
+        obj->segment.trans.flags |= OBJ_FLAGS_INVISIBLE;
     } else {
-        obj->segment.trans.flags &= 0xBFFF;
+        obj->segment.trans.flags &= ~OBJ_FLAGS_INVISIBLE;
     }
     if (obj->properties.weaponBalloon.unk4 > 0) {
         obj->unk74 = 1;
@@ -4160,7 +4192,7 @@ block_25:
                 }
             }
             func_8003FC44(obj->segment.trans.x_position, obj->segment.trans.y_position, obj->segment.trans.z_position, 44, SOUND_EXPLOSION, 1.0f, 1);
-            gParticlePtrList_addObject(obj);
+            free_object(obj);
             return;
         }
     }
@@ -4179,7 +4211,7 @@ block_37:
     obj->properties.projectile.timer -= updateRate;
     if (obj->properties.projectile.timer < 0) {
         func_8003FC44(obj->segment.trans.x_position, obj->segment.trans.y_position, obj->segment.trans.z_position, 44, SOUND_EXPLOSION, 1.0f, 1);
-        gParticlePtrList_addObject(obj);
+        free_object(obj);
         return;
     }
 }
@@ -4398,7 +4430,7 @@ void obj_init_audio(Object *obj, LevelObjectEntry_Audio *entry) {
             10, obj64->unk5, obj64->unk4, obj64->unk2, obj64->unkC,
             obj64->unk6, obj64->unkD, &obj64->soundMask);
     }
-    gParticlePtrList_addObject(obj);
+    free_object(obj);
 }
 
 /* Official name: audioLineInit */
@@ -4420,7 +4452,7 @@ void obj_init_audioline(Object *obj, LevelObjectEntry_AudioLine *entry) {
     func_800098A4(obj64->unk0, obj64->soundID, entry->common.x, entry->common.y, entry->common.z,
                   obj64->unkF, obj64->unkE, obj64->unk10, obj64->unk12, obj64->unk4, obj64->unk11,
                   obj64->unkC, obj64->unkD);
-    gParticlePtrList_addObject(obj);
+    free_object(obj);
 }
 
 void obj_init_audioreverb(Object *obj, LevelObjectEntry_AudioReverb *entry) {
@@ -4431,7 +4463,7 @@ void obj_init_audioreverb(Object *obj, LevelObjectEntry_AudioReverb *entry) {
     obj64->unk4 = temp & 0xFF;
     obj64->unk5 = entry->unkA;
     func_80009968(entry->common.x, entry->common.y, entry->common.z, obj64->unk2, obj64->unk4, obj64->unk5);
-    gParticlePtrList_addObject(obj);
+    free_object(obj);
 }
 
 /* Official name: texscrollInit */
@@ -4816,7 +4848,7 @@ void obj_init_frog(Object *obj, LevelObjectEntry_Frog *entry) {
           * if the player hasn't completed the trophy races yet.
           */
         if (is_drumstick_unlocked() || (get_settings()->trophies & 0xFF) != 0xFF) {
-            gParticlePtrList_addObject(obj);
+            free_object(obj);
         }
     } else {
         obj->segment.object.numModelIDs = FALSE;
@@ -4860,7 +4892,7 @@ void obj_loop_frog(Object *obj, s32 updateRate) {
                     set_eeprom_settings_value(2);
                     set_magic_code_flags(CHEAT_CONTROL_DRUMSTICK);
                     func_8006D8A4();
-                    gParticlePtrList_addObject(obj);
+                    free_object(obj);
                     break;
                 } else {
                     frog->action = 2;
@@ -4942,7 +4974,7 @@ void obj_loop_frog(Object *obj, s32 updateRate) {
                     set_eeprom_settings_value(2);
                     set_magic_code_flags(CHEAT_CONTROL_DRUMSTICK);
                     func_8006D8A4();
-                    gParticlePtrList_addObject(obj);
+                    free_object(obj);
                 } else {
                     frog->action = FROG_SQUISH;
                     play_sound_at_position(SOUND_SPLAT, obj->segment.trans.x_position, obj->segment.trans.y_position, obj->segment.trans.z_position, 4, NULL);
@@ -5007,7 +5039,7 @@ void obj_init_levelname(Object *obj, LevelObjectEntry_LevelName *entry) {
     obj->properties.levelName.levelID = entry->levelID;
     obj->properties.levelName.opacity = 0;
     if (is_in_tracks_mode()) {
-        gParticlePtrList_addObject(obj);
+        free_object(obj);
     }
     func_800C56D0(4);
 }

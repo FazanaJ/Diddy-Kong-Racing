@@ -156,7 +156,15 @@ typedef struct unk80126CDC {
     s16 unk218; 
     s8 unk21A;
     s8 unk21B;
-    u8 unk21C[0x24];
+    u8 pad21C[0x4];
+    Object *unk220;
+    u8 pad224[0x2];
+    s16 unk226;
+    u8 pad228[0x2];
+    f32 unk22C;
+    f32 unk230;
+    f32 unk234;
+    u8 pad238[0x8];
     struct unk80126CDC *unk240;
     u8 unk244[0x8];
     f32 unk24C;
@@ -164,9 +172,13 @@ typedef struct unk80126CDC {
     u8 unk254[0x98];
     f32 unk2EC;
     f32 unk2F0;
-    u8 unk2F4[0x1C];
+    u8 unk2F4[0xC];
+    s16 unk300;
+    u8 unk302[0xC];
     f32 unk310;
-    u8 unk314[0x1C];
+    u8 unk314[0xC];
+    s16 unk320;
+    u8 pad322[0xE];
     f32 unk330;
     s32 unk334;
     s16 unk338;
@@ -264,7 +276,15 @@ typedef struct unk80126CDC {
     struct unk80126CDC *unk580;
     u8 unk584[0x1C];
     struct unk80126CDC *unk5A0;
-    u8 unk484[0x7C];
+    u8 unk5A4[0x1C];
+    struct unk80126CDC *unk5C0;
+    u8 unk5C1[0xC];
+    f32 unk5D0;
+    u8 unk5D4[0x6];
+    s8 unk5DA;
+    s8 unk5DB;
+    s8 unk5DC;
+    u8 unk5DD[0x43];
     struct unk80126CDC *unk620;
     u8 unk624[0x14];
     s16 unk638;
@@ -318,11 +338,10 @@ typedef struct unk800E1E64 {
 
 /* Size: 0x10 bytes */
 typedef struct unk800E2770 {
-    s8 unk0;
-    s8 unk1;
-    s8 unk2;
+    u16 unk0;
+    u8 unk2;
     s8 unk3;
-    s32 unk4; //soundMask?
+    s32 *unk4; //soundmask?
     s32 unk8;
     s8 unkC;
     s8 unkD;
@@ -383,26 +402,26 @@ void render_minimap_and_misc_hud(Gfx **dList, MatrixS **mtx, Vertex **vtxList, s
 void init_hud(s32 viewportCount);
 void func_800A1C04(s32 arg0, Object *obj, s32 updateRate);
 void func_800A22F4(Object_Racer *racer, void *unused);
+void free_hud(void);
+void func_800A36CC(u8, u8, u8, u8, u8);
+void func_800A0BD4(s32 updateRate);
+void func_800A47A0(Object_Racer *racer, s32 updateRate);
+void func_800A7A60(Object *racerObj);
 
 // Non Matching
 void func_800A14F0(Object *, s32);
 void func_800A4C44(Object_Racer *racer, s32 updateRate);
-void func_800A47A0(Object_Racer *obj, s32 updateRate);
 void func_800A718C(Object_64 *obj);
 void func_800AA600(Gfx **dList, MatrixS **mtx, Vertex **vtxList, unk80126CDC **arg3);
-void func_800A003C(void);
 void func_800A7FBC(s32, s32, s32 minutes, s32 seconds, s32 hundredths, s32); 
 void func_800A1248(s32, Object*, s32);
 void func_800A277C(s32, Object*, s32);
 void func_800A6254(Object_64* obj, s32 updateRate);
 void func_800A6E30(Object_64* obj, s32 updateRate);
-void func_800A7A60(Object*, Gfx**);
-void func_800A0BD4(s32);
 void func_800A19A4(Object_Racer* racer, s32 updateRate);
 void func_800A1E48(Object*, s32);
 void render_treasure_hud(Object_Racer*);
 void func_800AA3EC(f32, f32, f32, f32, f32);
-void func_800A36CC(u8, u8, u8, u8, u8);
 void func_8009F034(void);
 
 #endif

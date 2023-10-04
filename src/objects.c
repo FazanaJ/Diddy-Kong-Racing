@@ -27,6 +27,8 @@
 #include "unknown_008C40.h"
 #include "main.h"
 #include "controller.h"
+#include "game_text.h"
+#include "audiosfx.h"
 
 #define MAX_CHECKPOINTS 60
 #define OBJECT_POOL_SIZE 0x15800
@@ -52,7 +54,7 @@ s16 D_800DC724 = 0x2A30;
 s16 D_800DC728 = -1;
 s16 D_800DC72C = 0;
 u8 gHasGhostToSave = 0;
-s32 D_800DC734 = 0; // Currently unknown, might be a different type.
+u8 D_800DC734 = 0;
 u8 D_800DC738 = 0;
 s8 D_800DC73C = 0;
 s8 D_800DC740 = 0;
@@ -312,11 +314,11 @@ void func_8000B290(void) {
         }
     }
     if (gShieldEffectObject)
-        gParticlePtrList_addObject(gShieldEffectObject);
+        free_object(gShieldEffectObject);
     gShieldEffectObject = NULL;
 
     if (gMagnetEffectObject)
-        gParticlePtrList_addObject(gMagnetEffectObject);
+        free_object(gMagnetEffectObject);
     gMagnetEffectObject = NULL;
     gParticlePtrList_flush();
 }
@@ -727,7 +729,7 @@ void func_8000E1EC(Object *obj, s32 vehicleID) {
     D_8011AD48 = obj->segment.trans.y_position;
     D_8011AD4A = obj->segment.trans.z_position;
     D_8011AD4C = obj->segment.trans.y_rotation;
-    gParticlePtrList_addObject(obj);
+    free_object(obj);
     gNumRacers = 0;
 }
 
@@ -876,7 +878,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 arg1) {
     }
     sp50 = curObj->segment.header->unk30 & 0x80;
     if (sp50) {
-        curObj->segment.trans.flags |= 0x80;
+        curObj->segment.trans.flags |= OBJ_FLAGS_UNK_0080;
     }
     if (curObj->segment.header->behaviorId == BHV_ROCKET_SIGNPOST && settings->cutsceneFlags & 1) {
         update_object_stack_trace(OBJECT_SPAWN, -1);
@@ -1320,7 +1322,8 @@ s32 func_8000FD34(Object *arg0, Object_5C *arg1) {
 
 GLOBAL_ASM("asm/non_matchings/objects/func_8000FD54.s")
 
-void gParticlePtrList_addObject(Object *object) {
+//Official Name: objFreeObject
+void free_object(Object *object) {
     func_800245B4(object->unk4A | 0x8000);
     gParticlePtrList[gParticleCount] = object;
     gParticleCount++;
@@ -2861,32 +2864,46 @@ GLOBAL_ASM("asm/non_matchings/objects/func_800159C8.s")
 GLOBAL_ASM("asm/non_matchings/objects/func_80016500.s")
 GLOBAL_ASM("asm/non_matchings/objects/func_80016748.s")
 
-void func_80016BC4(Object *arg0) {
-    s32 var_s0;
-    s32 var_s1;
-    s32 *temp_v0;
-    s8 var_v1;
+void func_80016BC4(Object *obj) {
+    s32 i;
 
-    arg0->unk5C->unk104 = 0;
-    func_8001709C(arg0);
-    func_8001709C(arg0);
-    var_s1 = 0;
-    var_v1 = arg0->segment.header->numberOfModelIds;
-    var_s0 = 0;
-    if (var_v1 > 0) {
-        do {
-            temp_v0 = (s32 *) *(arg0->unk68 + var_s0);
-            if (temp_v0 != NULL) {
-                func_8006017C(*temp_v0);
-                var_v1 = arg0->segment.header->numberOfModelIds;
-            }
-            var_s1 += 1;
-            var_s0 += 1;
-        } while (var_s1 < var_v1);
+    obj->unk5C->unk104 = 0;
+    func_8001709C(obj);
+    func_8001709C(obj);
+    for (i = 0; i < obj->segment.header->numberOfModelIds; i++) {
+        if (obj->unk68[i] != NULL) {
+            func_8006017C(obj->unk68[i]->objModel);
+        }
     }
 }
 
-GLOBAL_ASM("asm/non_matchings/objects/func_80016C68.s")
+Object *func_80016C68(f32 x, f32 y, f32 z, f32 maxDistCheck, s32 dontCheckYAxis) {
+    f32 yDiff;
+    f32 zDiff;
+    f32 xDiff;
+    f32 distance;
+    s32 i;
+    Object *curObj;
+    
+    for (i = 0; i < objCount; i++) {
+        curObj = gObjPtrList[i];
+        if (!(curObj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && (curObj->behaviorId == BHV_ANIMATED_OBJECT_3)) {
+            xDiff = curObj->segment.trans.x_position - x;
+            zDiff = curObj->segment.trans.z_position - z;
+            if (!dontCheckYAxis) {
+                yDiff = curObj->segment.trans.y_position - y;
+                distance = sqrtf((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff));
+            } else {
+                distance = sqrtf((xDiff * xDiff) + (zDiff * zDiff));
+            }
+            if (distance < maxDistCheck) {
+                return curObj;
+            }
+        }
+    }
+    return NULL;
+}
+
 GLOBAL_ASM("asm/non_matchings/objects/func_80016DE8.s")
 
 void func_8001709C(Object *obj) {
@@ -3098,7 +3115,38 @@ s32 func_8001B3AC(s32 arg0) {
     return arg0 == D_800DC718;
 }
 
-GLOBAL_ASM("asm/non_matchings/objects/func_8001B3C4.s")
+void func_8001B3C4(s32 arg0, s16 *playerId) {
+    s32 trackIdCount;
+    s8 *mainTrackIds;
+
+    D_800DC718 = 0;
+    free_tt_ghost_data();
+    D_800DC734 = 0;
+    mainTrackIds = (s8 *) get_misc_asset(ASSET_MISC_MAIN_TRACKS_IDS);
+    trackIdCount = 0;
+    while (mainTrackIds[trackIdCount] != -1 && mainTrackIds[trackIdCount] != arg0) {
+        trackIdCount++;
+    }
+    if (D_800DC738 != 0) {
+        //Save that TT has been beaten for this track.
+        set_eeprom_settings_value(16 << trackIdCount);
+        //Check if TT has been beaten for all tracks.
+        if ((get_eeprom_settings() & 0xFFFFF0) == 0xFFFFF0) {
+            set_magic_code_flags(CHEAT_CONTROL_TT);
+            play_sound_global(SOUND_VOICE_TT_BEAT_ALL_TIMES, NULL);
+            func_80000FDC(SOUND_VOICE_TT_UNLOCKED, 0, 1.5f);
+            func_800C31EC(ASSET_GAME_TEXT_84); //Text for "You have beaten all my times!" and then "Now you can PICK me!"
+        } else {
+            play_sound_global(SOUND_VOICE_TT_WELL_DONE, NULL);
+            func_80000FDC(SOUND_VOICE_TT_TRY_ANOTHER_TRACK, 0, 1.0f);
+            func_800C31EC(ASSET_GAME_TEXT_83); //Text for "Well Done! Now try another track."
+        }
+        D_800DC738 = 0;
+        return;
+    }
+    play_time_trial_end_message(playerId);
+}
+
 GLOBAL_ASM("asm/non_matchings/objects/func_8001B4FC.s")
 
 Object *func_8001B640(void) {
@@ -3440,7 +3488,62 @@ s32 func_8001C524(f32 diffX, f32 diffY, f32 diffZ, s32 someFlag) {
 }
 
 GLOBAL_ASM("asm/non_matchings/objects/func_8001C6C4.s")
+
+#ifdef NON_MATCHING
+typedef struct LevelObjectEntry_Unknown8001CC48 {
+    LevelObjectEntryCommon common;
+    u8 pad8[2];
+    u8 unkA[4];
+} LevelObjectEntry_Unknown8001CC48;
+
+typedef struct Object_Unknown8001CC48 {
+    s8 pad0[0x18];
+    s8 unk18[4];
+} Object_Unknown8001CC48;
+
+s32 func_8001CC48(s32 arg0, s32 arg1, s32 arg2) {
+    LevelObjectEntry_Unknown8001CC48 *entry;
+    Object *someObj;
+    Object_Unknown8001CC48 *someObj64;
+    s32 someCount;
+    s32 i;
+    s32 someIndex;
+    s32 test;
+
+    if ((arg0 < -1) || (arg0 >= 128)) {
+        return 255;
+    }
+    someObj = (*D_8011AF04)[arg0];
+    if (someObj == NULL) {
+        return 255;
+    }
+    entry = (LevelObjectEntry_Unknown8001CC48 *)someObj->segment.level_entry;
+    someObj64 = (Object_Unknown8001CC48*)someObj->unk64;
+    test = arg2 & 3;
+    
+    // Swapping these messes up the registers.
+    someCount = 0;
+    someIndex = (someObj64->unk18[test] + 1) & 3;
+    
+    for (i = 0; i < 4; i++) {
+        if (entry->unkA[someIndex] != 255) {
+            if (entry->unkA[someIndex] != arg1) {
+                someObj64->unk18[test] = someIndex;
+                i = 4;
+                someCount++;
+            } 
+        } 
+        someIndex = (someIndex + 1) & 3;
+    }
+    if (someCount == 0) {
+        return 255;
+    }
+    return entry->unkA[someObj64->unk18[test]];
+}
+#else
 GLOBAL_ASM("asm/non_matchings/objects/func_8001CC48.s")
+#endif
+
 GLOBAL_ASM("asm/non_matchings/objects/func_8001CD28.s")
 
 void func_8001D1AC(void) {
@@ -3653,8 +3756,119 @@ void func_8001E89C(void) {
 
 GLOBAL_ASM("asm/non_matchings/objects/func_8001E93C.s")
 GLOBAL_ASM("asm/non_matchings/objects/func_8001EE74.s")
-GLOBAL_ASM("asm/non_matchings/objects/func_8001EFA4.s")
-GLOBAL_ASM("asm/non_matchings/objects/func_8001F23C.s")
+
+void func_8001EFA4(Object *arg0, Object *animObj) {
+    LevelObjectEntry_Animation *animEntry;
+    Object_Animation *anim;
+    f32 scale;
+
+    animEntry = &arg0->segment.level_entry->animation;
+    anim = &animObj->unk64->animation;
+    scale = animEntry->scale & 0xFF;
+    if (scale < 1.0f) {
+        scale = 1.0f;
+    }
+    scale /= 64;
+    animObj->segment.trans.scale = animObj->segment.header->scale * scale;
+    animObj->properties.common.unk0 = 0;
+    animObj->properties.common.unk4 = 0;
+    if ((animEntry->unk22 >= 2) && (animEntry->unk22 < 10)) {
+        animObj->properties.common.unk0 = animEntry->unk22 - 1;
+    }
+    if ((animEntry->unk22 >= 10) && (animEntry->unk22 < 18)) {
+        animObj->properties.common.unk0 = animEntry->unk22 - 9;
+    }
+    animObj->segment.trans.x_position = arg0->segment.trans.x_position;
+    animObj->segment.trans.y_position = arg0->segment.trans.y_position;
+    animObj->segment.trans.z_position = arg0->segment.trans.z_position;
+    animObj->segment.trans.y_rotation = arg0->segment.trans.y_rotation;
+    animObj->segment.trans.z_rotation = arg0->segment.trans.z_rotation;
+    animObj->segment.trans.x_rotation = arg0->segment.trans.x_rotation;
+    anim->unk26 = 0;
+    anim->unk3D = animEntry->channel;
+    anim->unk28 = animEntry->actorIndex;
+    anim->unk8 = (f32)animEntry->nodeSpeed * 0.1;
+    anim->unk2A = normalise_time(animEntry->animationStartDelay);
+    animObj->segment.object.animationID = animEntry->objAnimIndex;
+    animObj->segment.animFrame = animEntry->unk16;
+    anim->unk14 = animEntry->objAnimSpeed;
+    anim->unk10 = 0;
+    anim->unk2C = animEntry->objAnimLoopType;
+    anim->unk2E = animEntry->rotateType;
+    anim->unk3E = animEntry->nextAnim;
+    anim->unk3F = animEntry->unk2D;
+    anim->unk31 = animEntry->yawSpinSpeed;
+    anim->unk32 = animEntry->rollSpinSpeed;
+    anim->unk33 = animEntry->pitchSpinSpeed;
+    anim->unk34 = animEntry->unk20;
+    anim->unk2D = 0; 
+    anim->unk4 = 0;
+    anim->unk0 = 0;
+    arg0->unk6C = NULL;
+    anim->unk36 = normalise_time(animEntry->pauseFrameCount);
+    anim->unk3A = animEntry->specialHide;
+    if (animEntry->unk13 >= 0) {
+        anim->unk2F = animEntry->unk13;
+    }
+    anim->unk39 = animEntry->unk1F;
+    anim->unk38 = animEntry->unk1E;
+    anim->unk3B = animEntry->unk29;
+    anim->unk40 = animEntry->soundEffect;
+    anim->unk41 = animEntry->fadeOptions;
+    anim->unk3C = animEntry->fadeAlpha;
+    anim->unk42 = 0xFF;
+    if (anim->unk18 != NULL) {
+        func_8000488C(anim->unk18);
+    }
+    anim->unk18 = 0;
+    anim->unk43 = animEntry->unk30;
+    anim->unk1C = arg0;
+    anim->unk45 = 0;
+}
+
+void func_8001F23C(Object *obj, LevelObjectEntry_Animation *animEntry) {
+    s32 i;
+    LevelObjectEntryCommon newObjEntry;
+    Object *newObj;
+    Object_AnimCamera *camera;
+    s32 viewportCount;
+
+    NEW_OBJECT_ENTRY(newObjEntry, animEntry->objectIdToSpawn, 8, animEntry->common.x, animEntry->common.y, animEntry->common.z);
+
+    obj->unk64 = (Object_64*)spawn_object((LevelObjectEntryCommon* ) &newObjEntry, 1);
+    newObj = (Object *) obj->unk64;
+    // (newObj->behaviorId == BHV_DINO_WHALE) is Dinosaur1, Dinosaur2, Dinosaur3, Whale, and Dinoisle
+    if ((obj->unk64 != NULL) && (newObj->behaviorId == BHV_DINO_WHALE) && (gTimeTrialEnabled)) {
+        free_object(newObj);
+        obj->unk64 = NULL;
+        newObj = NULL;
+    }
+    camera = (Object_AnimCamera *) newObj;
+    if (camera != NULL) {
+        camera->unk3C = 0;
+        func_8001EFA4(obj, newObj);
+        if (newObj->segment.header->behaviorId == BHV_CAMERA_ANIMATION) {
+            camera = &newObj->unk64->anim_camera;
+            camera->unk44 = D_8011AD3E;
+            viewportCount = get_viewport_count();
+            if (func_8006C19C()) {
+                viewportCount = VIEWPORTS_COUNT_2_PLAYERS;
+            }
+            for (i = 0; i < viewportCount;) {
+                newObj = spawn_object(&newObjEntry, 1);
+                if (newObj != NULL) {
+                    newObj->segment.level_entry = NULL;
+                    func_8001EFA4(obj, newObj);
+                    camera = &newObj->unk64->anim_camera;
+                    i++;
+                    camera->unk30 = i;
+                    camera->unk44 = D_8011AD3E;
+                }
+            }
+            D_8011AD3E++;
+        }
+    }
+}
 
 s8 func_8001F3B8(void) {
     return D_8011ADD4;
@@ -3698,8 +3912,77 @@ s32 func_800210CC(s8 arg0) {
     return 0;
 }
 
-GLOBAL_ASM("asm/non_matchings/objects/func_80021104.s")
-GLOBAL_ASM("asm/non_matchings/objects/func_8002125C.s")
+void func_80021104(Object *obj, Object_Animation *animObj, LevelObjectEntry_Animation *entry) {
+    ObjectSegment *seg;
+    ObjectTransform *animObjTrans;
+
+    animObjTrans = animObj->unk1C;
+    if (obj->behaviorId == BHV_CAMERA_ANIMATION) {
+        animObj->unk44 = D_8011AD3E;
+        D_8011AD3E++;
+    }
+    if (entry->unk22 == 18) {
+        set_active_camera(animObj->unk30);
+        seg = get_active_camera_segment_no_cutscenes();
+        animObjTrans->x_position = seg->trans.x_position;
+        animObjTrans->y_position = seg->trans.y_position;
+        animObjTrans->z_position = seg->trans.z_position;
+        animObjTrans->y_rotation = (0x8000 - seg->trans.y_rotation);
+        animObjTrans->x_rotation = -seg->trans.x_rotation;
+        animObjTrans->z_rotation = seg->trans.z_rotation;
+    }
+    if ((entry->unk22 >= 10) && (entry->unk22 < 18)) {
+        seg = &(*gRacers)[entry->unk22 - 10]->segment;
+        if (seg != NULL) {
+            animObjTrans->x_position = seg->trans.x_position;
+            animObjTrans->y_position = seg->trans.y_position;
+            animObjTrans->z_position = seg->trans.z_position;
+            animObjTrans->y_rotation = seg->trans.y_rotation;
+            animObjTrans->x_rotation = seg->trans.x_rotation;
+            animObjTrans->z_rotation = seg->trans.z_rotation;
+        }
+    }
+}
+
+void func_8002125C(Object *charSelectObj, LevelObjectEntry_CharacterSelect *entry, Object_CharacterSelect *charSelect, UNUSED s32 index) {
+    s32 initialAnimFrame;
+
+    initialAnimFrame = entry->unk12;
+    if (initialAnimFrame >= 0) {
+        if (initialAnimFrame != charSelectObj->segment.object.animationID) {
+            charSelectObj->segment.animFrame = entry->unk16;
+        }
+        charSelectObj->segment.object.animationID = entry->unk12;
+        charSelect->unk14 = entry->unk17;
+        charSelect->unk2C = entry->unk18;
+    }
+    if (entry->unk13 >= 0) {
+        charSelect->unk2F = entry->unk13;
+    }
+    charSelect->unk36 = normalise_time(entry->unk24);
+    charSelect->unk3F = entry->unk2D;
+    charSelect->unk3A = entry->unk26;
+    charSelect->unk39 = entry->unk1F;
+    charSelect->unk43 = entry->unk30;
+    charSelect->unk38 = entry->unk1E;
+    charSelect->unk3B = entry->unk29;
+    charSelect->unk40 = entry->unk2E;
+    charSelect->unk41 = entry->unk2F;
+    charSelect->unk3C = entry->unk2B;
+    if (entry->unk27 != 255) {
+        func_800C31EC(entry->unk27);
+    }
+    if (entry->unk2A >= 0) {
+        func_8001E45C(entry->unk2A);
+        return;
+    }
+    if (entry->unk15 >= 0) {
+        func_80021400(entry->unk15);
+    }
+    if (entry->unk28 >= 0) {
+        D_8011AD22[D_8011AD21]++;
+    }
+}
 
 void func_80021400(s32 arg0) {
     s32 i;
@@ -3722,7 +4005,6 @@ s8 func_800214C4(void) {
 }
 
 s8 func_800214E4(Object *obj, s32 updateRate) {
-    s16 temp_v1;
     s32 i;
     Object_AnimatedObject *animObj;
 
@@ -3741,20 +4023,10 @@ s8 func_800214E4(Object *obj, s32 updateRate) {
     }
     if (animObj->unk36 <= 0) {
         obj->segment.trans.flags |= OBJ_FLAGS_INVISIBLE;
-        i = 0;
-        if (D_8011AE78 > 0) {
-            temp_v1 = animObj->unk28;
-            if (temp_v1 != (s32) (*D_8011AE74)->properties.common.unk4) {
-loop_11:
-                i++;
-                if (i < D_8011AE78) {
-                    if (temp_v1 != (s32) D_8011AE74[i]->properties.common.unk4) {
-                        goto loop_11;
-                    }
-                }
-            }
+        for (i = 0; (i < D_8011AE78 && animObj->unk28 != D_8011AE74[i]->properties.common.unk4); i++) {
+            if (FALSE) {} //FAKEMATCH
         }
-        func_8001EFA4(D_8011AE74[i], (Object_Animation *) obj);
+        func_8001EFA4(D_8011AE74[i], obj);
         return 1;
     }
     return 0;
@@ -3796,12 +4068,12 @@ f32 cubic_spline_interpolation(f32 *data, s32 index, f32 x, f32 *derivative) {
 
 GLOBAL_ASM("asm/non_matchings/objects/func_8002277C.s")
 
-f32 lerp(f32 *arg0, u32 arg1, f32 arg2) {
+UNUSED f32 lerp(f32 *arg0, u32 arg1, f32 arg2) {
     f32 result = arg0[arg1 + 1] + ((arg0[arg1 + 2] - arg0[arg1 + 1]) * arg2);
     return result;
 }
 
-f32 func_800228B0(f32 *arg0, u32 arg1, f32 arg2, f32 *arg3) {
+UNUSED f32 func_800228B0(f32 *arg0, u32 arg1, f32 arg2, f32 *arg3) {
     f32 new_var2;
     f32 temp_f12;
     f32 new_var;

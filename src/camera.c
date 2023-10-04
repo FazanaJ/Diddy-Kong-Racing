@@ -11,6 +11,7 @@
 #include "math_util.h"
 #include "weather.h"
 #include "main.h"
+#include "lib/src/os/piint.h"
 
 
 /************ .data ************/
@@ -121,21 +122,25 @@ Matrix D_801210A0;
 
 /******************************/
 
-//#ifdef NON_EQUIVALENT
+#ifdef NON_MATCHING
 extern s32 D_B0000578;
 /**
  * Official Name: camInit
 */
 void func_80065EA0(void) {
-    s32 i, j;
-    for (i = 0; i < 5; i++) {
-        D_80120D70[i] = &D_80120DA0[i];
-    };
+    s32 i;
+    s32 j;
+    u32 stat;
+ 
+    // This loop is not cooperating. 
+    for (i = 0; i < 5; i++) { D_80120D70[i] = D_80120DA0 + i + i*0; } 
+
     for (j = 0; j < 8; j++) {
         gActiveCameraID = j;
         func_800663DC(200, 200, 200, 0, 0, 180);
-    };
-    gCutsceneCameraActive = FALSE;
+    }
+    
+    gCutsceneCameraActive = FALSE; 
     gActiveCameraID = 0;
     D_80120D1C = 0;
     D_80120D20 = 0;
@@ -145,10 +150,11 @@ void func_80065EA0(void) {
     gAdjustViewportHeight = 0;
 #ifndef NO_ANTIPIRACY
     gAntiPiracyViewport = 0;
-    while (IO_READ(PI_STATUS_REG) & PI_STATUS_ERROR) {
-    }
+    
+    WAIT_ON_IOBUSY(stat);
+    
     //0xB0000578 is a direct read from the ROM as opposed to RAM
-    if ((D_B0000578 & 0xFFFF) != 0x8965) {
+    if (((D_B0000578 & 0xFFFF) & 0xFFFF) != 0x8965) {
         gAntiPiracyViewport = TRUE;
     }
 #endif
@@ -156,9 +162,9 @@ void func_80065EA0(void) {
     f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gPerspectiveMatrixS);
     gCurCamFOV = CAMERA_DEFAULT_FOV;
 }
-/*#else
+#else
 GLOBAL_ASM("asm/non_matchings/camera/func_80065EA0.s")
-#endif*/
+#endif
 
 void reset_perspective_matrix(void) {
     guPerspectiveF(gPerspectiveMatrixF, &perspNorm, CAMERA_DEFAULT_FOV, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR, CAMERA_SCALE);

@@ -764,9 +764,9 @@ Particle *func_800B0698(Particle *arg0, Particle *arg1) {
     }
     if (properties->opacity < 255) {
         if (var_v0->segment.unk40 & 0x1000) {
-            var_v0->segment.trans.flags |= 0x100;
+            var_v0->segment.trans.flags |= OBJ_FLAGS_UNK_0100;
         } else {
-            var_v0->segment.trans.flags |= 0x80;
+            var_v0->segment.trans.flags |= OBJ_FLAGS_UNK_0080;
         }
     }
     if (var_v0->opacityTimer < var_v0->segment.particle.destroyTimer) {
@@ -1278,7 +1278,7 @@ void handle_particle_movement(Particle *particle, s32 updateRate) {
         }
         particle->segment.particle.destroyTimer -= gParticleUpdateRate;
         if (particle->segment.particle.destroyTimer <= 0) {
-            gParticlePtrList_addObject((Object*) particle);
+            free_object((Object*) particle);
         } else {
             if (particle->opacityTimer == 0) {
                 particle->opacity += gParticleUpdateRate * particle->opacityVel;
