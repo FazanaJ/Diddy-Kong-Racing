@@ -315,6 +315,7 @@ GCC_SAFE_FILES := \
     $(BUILD_DIR)/src/audiomgr.o \
     $(BUILD_DIR)/src/game.o \
     $(BUILD_DIR)/src/thread0_epc.o \
+    $(BUILD_DIR)/src/thread3_main.o \
     $(BUILD_DIR)/src/usb/reset.o \
     $(BUILD_DIR)/src/usb/usb.o \
     $(BUILD_DIR)/src/usb/dkr_usb.o \

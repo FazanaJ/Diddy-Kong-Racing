@@ -593,10 +593,19 @@ void load_and_set_texture(Gfx **dlist, TextureHeader *texhead, s32 flags, s32 te
             dlID = dRenderSettingsVtxAlpha[dlIndex];
             goto draw;
         }
+#ifdef PUPPYPRINT_DEBUG
+        dlIndex = gConfig.antiAliasing + 1;
+        if (!gPuppyPrint.showCvg) {
+            if (gIsObjectRender && gConfig.antiAliasing == 0) {
+                dlIndex++;
+            }
+        }
+#else
         dlIndex = gConfig.antiAliasing + 1;
         if (gIsObjectRender && gConfig.antiAliasing == 0) {
             dlIndex++;
         }
+#endif
         if (flags & RENDER_Z_COMPARE) {
             dlIndex += 3;
         }
