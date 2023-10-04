@@ -418,7 +418,6 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
         }
     }
 
-    var_s0 = settings->courseFlagsPtr[levelId]; // Redundant
     if (numberOfPlayers != ONE_PLAYER && gCurrentLevelHeader->race_type == RACETYPE_DEFAULT) {
         cutsceneId = CUTSCENE_ID_UNK_64;
     }

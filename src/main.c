@@ -638,15 +638,15 @@ void puppyprint_render_log(void) {
     }
 }
 
-void puppyprint_render_coverage(void) {
-    Gfx *gfx = gCurrDisplayList;
-    gDPSetCycleType(gfx++, G_CYC_1CYCLE);
-    gDPSetBlendColor(gfx++, 0xFF, 0xFF, 0xFF, 0xFF);
-    gDPSetPrimDepth(gfx++, 0xFFFF, 0xFFFF);
-    gDPSetDepthSource(gfx++, G_ZS_PRIM);
-    gDPSetRenderMode(gfx++, G_RM_VISCVG, G_RM_VISCVG2);
-    gDPFillRectangle(gfx++, 0,0, gScreenWidth-1, gScreenHeight-1);
-    gCurrDisplayList = gfx;
+void puppyprint_render_coverage(Gfx **dList) {
+    gSPClearGeometryMode((*dList)++, G_ZBUFFER);
+    gDPPipeSync((*dList)++);
+    gDPSetCycleType((*dList)++, G_CYC_1CYCLE);
+    gDPSetBlendColor((*dList)++, 0xFF, 0xFF, 0xFF, 0xFF);
+    gDPSetPrimDepth((*dList)++, 0xFFFF, 0xFFFF);
+    gDPSetDepthSource((*dList)++, G_ZS_PRIM);
+    gDPSetRenderMode((*dList)++, G_RM_VISCVG, G_RM_VISCVG2);
+    gDPFillRectangle((*dList)++, 0,0, gScreenWidth-1, gScreenHeight-1);
 }
 
 void render_page_menu(void) {
@@ -683,6 +683,7 @@ void render_profiler(void) {
 
     gDPSetScissor(gCurrDisplayList++, G_SC_NON_INTERLACE, 0, 0, gScreenWidth, gScreenHeight);
 
+    gPuppyPrint.showCvg = FALSE;
     switch (gPuppyPrint.page) {
     case PAGE_MINIMAL:
         puppyprint_render_minimal();
@@ -703,7 +704,7 @@ void render_profiler(void) {
         puppyprint_render_log();
         break;
     case PAGE_COVERAGE:
-        puppyprint_render_coverage();
+        gPuppyPrint.showCvg = TRUE;
         break;
     }
 

@@ -726,7 +726,6 @@ Sprite *func_8007C52C(s32 arg0) {
 s32 get_texture_size_from_id(s32 id) {
     s32 textureRomOffset;
     TempTexHeader *new_var2;
-    UNUSED s32 pad;
     u32 textureTable;
     s32 size;
     s32 new_var3;
@@ -824,7 +823,6 @@ void free_sprite(Sprite *sprite) {
 
 #ifdef NON_MATCHING
 void func_8007CDC0(Sprite *sprite1, Sprite *sprite2, s32 arg2) {
-    UNUSED s32 pad[2];
     s32 sprUnk4;
     s32 sprUnk6;
     s32 y0;

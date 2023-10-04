@@ -72,7 +72,6 @@ u8 D_80115D41;
 unk80115D48 D_80115D48[8];
 ALCSeq D_80115D88;
 ALCSeq D_80115E80;
-u8 gSkipResetChannels; // Stored and used by a single function, but redundant.
 u8 gAudioVolumeSetting;
 s32 D_80115F7C;
 s32 *gGlobalSoundMask;
@@ -160,7 +159,6 @@ void audio_init(OSSched *sc) {
     D_80115D40 = 0;
     D_80115D41 = 0;
     D_800DC658 = 0;
-    gSkipResetChannels = FALSE;
     gAudioVolumeSetting = VOLUME_NORMAL;
 }
 
@@ -169,8 +167,7 @@ void audio_init(OSSched *sc) {
 */
 void reset_sound_volume(u8 skipReset) {
     if (gAudioVolumeSetting == VOLUME_NORMAL) {
-        gSkipResetChannels = skipReset;
-        if (gSkipResetChannels == FALSE) {
+        if (skipReset == FALSE) {
             sMusicVolumeMultiplier = 256;
             set_relative_volume_for_music(musicRelativeVolume);
             set_sound_channel_volume(0, sMusicVolumeMultiplier * 128 - 1);

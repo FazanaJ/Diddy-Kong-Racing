@@ -389,6 +389,11 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
         profiler_add(PP_WEATHER, first);
         func_800AD030(get_active_camera_segment());
         func_800ACA20(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, get_active_camera_segment());
+#ifdef PUPPYPRINT_DEBUG
+        if (gPuppyPrint.showCvg) {
+            puppyprint_render_coverage(&gSceneCurrDisplayList);
+        }
+#endif
         profiler_reset_timer();
         render_hud(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, get_racer_object_by_port(gSceneCurrentPlayerID), updateRate);
         profiler_add(PP_HUD, first);

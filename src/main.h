@@ -189,6 +189,7 @@ struct PuppyPrint {
     u8 enabled; // Show the profiler
     u8 menuOpen; // Whether the page menu's open
     u8 page; // Current viewed page.
+    u8 showCvg;
     s8 menuOption; // Current option in the page menu.
     char logText[NUM_LOG_LINES][127];
 };
@@ -207,6 +208,7 @@ void profiler_add_obj(u32 objID, u32 time);
 void update_rdp_profiling(void);
 void profiler_snapshot(s32 eventID);
 void puppyprint_log(const char *str, ...);
+void puppyprint_render_coverage(Gfx **dList);
 #define profiler_begin_timer() u32 first = osGetCount();
 #define profiler_begin_timer2() u32 first2 = osGetCount();
 #define profiler_begin_timer3() u32 first3 = osGetCount();
