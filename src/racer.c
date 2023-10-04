@@ -5683,7 +5683,7 @@ void func_80059BF0(Object *obj, s32 updateRate) {
     racer = &obj->unk64->racer;
     yOffset = coss_f(racer->z_rotation_offset) * coss_f(racer->x_rotation_offset - racer->unk166);
     if (yOffset < 0) {
-        yOffset *= 0.5;
+        yOffset *= 0.5f;
     }
     yOffset = 17.0f - (yOffset * 17.0f);
     D_8011D59E -= updateRate;

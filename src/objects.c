@@ -3787,7 +3787,7 @@ void func_8001EFA4(Object *arg0, Object *animObj) {
     anim->unk26 = 0;
     anim->unk3D = animEntry->channel;
     anim->unk28 = animEntry->actorIndex;
-    anim->unk8 = (f32)animEntry->nodeSpeed * 0.1;
+    anim->unk8 = animEntry->nodeSpeed * 0.1f;
     anim->unk2A = normalise_time(animEntry->animationStartDelay);
     animObj->segment.object.animationID = animEntry->objAnimIndex;
     animObj->segment.animFrame = animEntry->unk16;
