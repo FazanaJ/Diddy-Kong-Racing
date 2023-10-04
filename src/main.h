@@ -48,14 +48,14 @@ enum DebugPages {
 };
 
 #define PP_PAGES \
-    {"Minimal"}, \
-    {"Overview"}, \
-    {"Breakdown"}, \
-    {"Objects"}, \
-    {"Memory"}, \
-    {"Audio"}, \
-    {"Logging\t"}, \
-    {"Coverage"}
+    "Minimal", \
+    "Overview", \
+    "Breakdown", \
+    "Objects", \
+    "Memory", \
+    "Audio", \
+    "Logging\t", \
+    "Coverage"
 
 enum rspFlags {
     RSP_NONE,
@@ -81,11 +81,11 @@ enum MainTimers {
 };
 
 #define PP_MAINDRAW \
-    {"Lvl Gfx"}, \
-    {"Obj Gfx"}, \
-    {"Objects"}, \
-    {"Racers"}, \
-    {"Audio"},
+    "Lvl Gfx", \
+    "Obj Gfx", \
+    "Objects", \
+    "Racers", \
+    "Audio",
 
 enum TrackTimers {
     PP_UNKNOWN,
@@ -135,26 +135,26 @@ enum PPProfilerEvent {
 };
 
 #define PP_STRINGS \
-    {"Unknown"}, \
-    {"Collision"}, \
-    {"Lighting"}, \
-    {"Envmaps"}, \
-    {"HUD\t"}, \
-    {"DMA\t"}, \
-    {"Pad\t"}, \
-    {"Text\t"}, \
-    {"Textures"}, \
-    {"Shadows"}, \
-    {"AI\t"}, \
-    {"Weather"}, \
-    {"Water\t"}, \
-    {"Dialogue"}, \
-    {"Camera"}, \
-    {"Matrix"}, \
-    {"BG\t"}, \
-    {"Billboards"}, \
-    {"Void"}, \
-    {"Sorting\t"}
+    "Unknown", \
+    "Collision", \
+    "Lighting", \
+    "Envmaps", \
+    "HUD\t", \
+    "DMA\t", \
+    "Pad\t", \
+    "Text\t", \
+    "Textures", \
+    "Shadows", \
+    "AI\t", \
+    "Weather", \
+    "Water\t", \
+    "Dialogue", \
+    "Camera", \
+    "Matrix", \
+    "BG\t", \
+    "Billboards", \
+    "Void", \
+    "Sorting\t"
 
 
 #ifdef PUPPYPRINT_DEBUG

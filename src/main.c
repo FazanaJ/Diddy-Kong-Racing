@@ -280,16 +280,16 @@ u32 gFreeMem[12];
 u8 sPrintOrder[PP_RSP_GFX];
 u16 sObjPrintOrder[NUM_OBJECT_PRINTS];
 struct PuppyPrint gPuppyPrint;
-char sPuppyPrintStrings[][16] = {
+char *sPuppyPrintStrings[] = {
     PP_STRINGS
 };
-char sPuppyPrintPageStrings[][16] = {
+char *sPuppyPrintPageStrings[] = {
     PP_PAGES
 };
-char sPuppyPrintMainTimerStrings[][16] = {
+char *sPuppyPrintMainTimerStrings[] = {
     PP_MAINDRAW
 };
-char sPuppyprintMemColours[][16] = {
+char *sPuppyprintMemColours[] = {
     "Red\t",
     "Green",
     "Blue\t",
@@ -567,7 +567,7 @@ void puppyprint_render_memory(void) {
     draw_text(&gCurrDisplayList, gScreenWidth - 136, 8, textBytes, ALIGN_TOP_LEFT);
     puppyprintf(textBytes, "Total:\t0x%X\n", memSize);
     draw_text(&gCurrDisplayList, gScreenWidth - 136, 18, textBytes, ALIGN_TOP_LEFT);
-    for (i = 0; i < sizeof(sPuppyprintMemColours) / 16; i++) {
+    for (i = 0; i < sizeof(sPuppyprintMemColours) / 4; i++) {
         puppyprintf(textBytes,  "%s:\t0x%X\n", sPuppyprintMemColours[i], gFreeMem[i]);
         draw_text(&gCurrDisplayList, gScreenWidth - 136, y, textBytes, ALIGN_TOP_LEFT);
         y += 10;
