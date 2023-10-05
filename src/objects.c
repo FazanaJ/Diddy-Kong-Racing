@@ -2032,10 +2032,6 @@ void render_3d_model(Object *obj) {
         if (alpha > 255) {
             alpha = 255;
         }
-        // If the behavior is a water zipper, then halve it's transparency.
-        if (obj->behaviorId == BHV_ZIPPER_WATER) {
-            alpha >>= 1;
-        }
         if (alpha < 255) {
             hasOpacity = TRUE;
         }

@@ -915,6 +915,10 @@ void obj_init_airzippers_waterzippers(Object *obj, LevelObjectEntry_AirZippers_W
     if (get_filtered_cheats() & CHEAT_TURN_OFF_ZIPPERS) {
         free_object(obj);
     }
+    // If the behavior is a water zipper, then halve it's transparency.
+    if (obj->behaviorId == BHV_ZIPPER_WATER) {
+        obj->segment.object.opacity >>= 1;
+    }
 }
 
 /**
@@ -948,7 +952,7 @@ void obj_loop_airzippers_waterzippers(Object *obj, UNUSED s32 updateRate) {
                 diffX = curRacerObj->segment.trans.x_position - obj->segment.trans.x_position;
                 diffY = curRacerObj->segment.trans.y_position - obj->segment.trans.y_position;
                 diffZ = curRacerObj->segment.trans.z_position - obj->segment.trans.z_position;
-                if ((s32) ((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ)) < 100 * 100) {
+                if (((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ)) < 100.0f * 100.0f) {
                     racer->zipperDirCorrection = TRUE;
                     racer->zipperObj = obj;
                 }
