@@ -1787,24 +1787,24 @@ s32 move_object(Object *obj, f32 xPos, f32 yPos, f32 zPos) {
  * Set up the basic model view matrix, load a texture, then render the mesh.
  * A much simpler, faster way to render an object model as opposed to render_3d_model
 */
-void render_misc_model(Object *obj, Vertex *verts, u32 numVertices, Triangle *triangles, u32 numTriangles, TextureHeader *tex, u32 flags, u32 texOffset, f32 scale) {
+void render_misc_model(Gfx **dList, Object *obj, Vertex *verts, u32 numVertices, Triangle *triangles, u32 numTriangles, TextureHeader *tex, u32 flags, u32 texOffset, f32 scale) {
     s32 hasTexture = FALSE;
-    camera_push_model_mtx(&gObjectCurrDisplayList, &gObjectCurrMatrix, &obj->segment.trans, scale, 0.0f);
-    gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, 255, 255, 255, 255);
-    gDPSetEnvColor(gObjectCurrDisplayList++, 255, 255, 255, 0);
+    camera_push_model_mtx(dList, &gObjectCurrMatrix, &obj->segment.trans, scale, 0.0f);
+    gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
+    gDPSetEnvColor((*dList)++, 255, 255, 255, 0);
     if (tex != NULL) {
         hasTexture = TRUE;
     }
-    load_and_set_texture(&gObjectCurrDisplayList, (TextureHeader* ) tex, flags, texOffset);
-    gSPVertexDKR(gObjectCurrDisplayList++, OS_K0_TO_PHYSICAL(verts), numVertices, 0);
-    gSPPolygon(gObjectCurrDisplayList++, OS_K0_TO_PHYSICAL(triangles), numTriangles, hasTexture);
-    apply_matrix_from_stack(&gObjectCurrDisplayList);
+    load_and_set_texture(dList, (TextureHeader* ) tex, flags, texOffset);
+    gSPVertexDKR((*dList)++, OS_K0_TO_PHYSICAL(verts), numVertices, 0);
+    gSPPolygon((*dList)++, OS_K0_TO_PHYSICAL(triangles), numTriangles, hasTexture);
+    apply_matrix_from_stack(dList);
 }
 
 /**
  * A few objects use unconventional means to render. They are handled here.
 */
-void render_3d_misc(Object *obj) {
+void render_3d_misc(Gfx **dList, Object *obj) {
     f32 scale;
     Object_64 *objData;
 
@@ -1812,25 +1812,27 @@ void render_3d_misc(Object *obj) {
         case BHV_CHARACTER_FLAG:
             if (obj->properties.characterFlag.characterID >= 0) {
                 objData = obj->unk64;
-                render_misc_model(obj, objData->character_flag.vertices, 4, objData->character_flag.triangles, 2, objData->character_flag.texture, 
+                render_misc_model(dList, obj, objData->character_flag.vertices, 4, objData->character_flag.triangles, 2, objData->character_flag.texture, 
                               RENDER_ANTI_ALIASING | RENDER_Z_COMPARE | RENDER_FOG_ACTIVE, 0, 1.0f);
             }
             break;
         case BHV_BUTTERFLY:
             objData = obj->unk64;
-            render_misc_model(obj, &objData->butterfly.vertices[objData->butterfly.unkFC * 6], 6, objData->butterfly.triangles, 8, objData->butterfly.texture, 
+            render_misc_model(dList, obj, &objData->butterfly.vertices[objData->butterfly.unkFC * 6], 6, objData->butterfly.triangles, 8, objData->butterfly.texture, 
                           RENDER_Z_COMPARE | RENDER_FOG_ACTIVE, 0, 1.0f);
             break;
         case BHV_FISH:
             objData = obj->unk64;
             scale = obj->segment.level_entry->fish.unkC[1];
             scale *= 0.01f;
-            render_misc_model(obj, &objData->fish.vertices[objData->fish.unkFC * 6], 6, objData->fish.triangles, 8, objData->fish.texture, 
+            render_misc_model(dList, obj, &objData->fish.vertices[objData->fish.unkFC * 6], 6, objData->fish.triangles, 8, objData->fish.texture, 
                           RENDER_Z_COMPARE | RENDER_FOG_ACTIVE | RENDER_CUTOUT, 0, scale);
             break;
         case BHV_BOOST:
             if (obj->properties.common.unk0 && (obj->unk64->boost.unk70 > 0 || obj->unk64->boost.unk74 > 0.0f)) {
+                gObjectCurrDisplayList = *dList;
                 func_800135B8(obj);
+                *dList = gObjectCurrDisplayList;
             }
             break;
     }
@@ -1841,7 +1843,7 @@ void render_3d_misc(Object *obj) {
  * A few tweaks are made depending on the behaviour ID of the object.
  * A few exceptions will not call to render a billboarded sprite.
  */
-void render_3d_billboard(Object *obj) {
+void render_3d_billboard(Gfx **dList, Object *obj) {
     s32 intensity;
     s32 flags;
     s32 alpha;
@@ -1880,23 +1882,23 @@ void render_3d_billboard(Object *obj) {
         hasPrimCol = TRUE;
     }
     if ((obj->behaviorId == 5) && (obj->segment.trans.scale == 6.0f)) {
-        gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, (intensity * 3) >> 2, intensity, intensity >> 1, alpha);
+        gDPSetPrimColor((*dList)++, 0, 0, (intensity * 3) >> 2, intensity, intensity >> 1, alpha);
         hasPrimCol = TRUE;
     } else if (obj->behaviorId == BHV_WIZPIG_GHOSTS) {  // If the behavior is a wizpig ghost
-        gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, 150, 230, 255, alpha);
+        gDPSetPrimColor((*dList)++, 0, 0, 150, 230, 255, alpha);
         hasPrimCol = TRUE;
     } else if (hasPrimCol || alpha < 255) {
-        gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, intensity, intensity, intensity, alpha);
+        gDPSetPrimColor((*dList)++, 0, 0, intensity, intensity, intensity, alpha);
     } else {
-        gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, 255, 255, 255, 255);
+        gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
     }
     if (hasEnvCol) {
-        gDPSetEnvColor(gObjectCurrDisplayList++, obj->shading->unk4, obj->shading->unk5, obj->shading->unk6, obj->shading->unk7);
+        gDPSetEnvColor((*dList)++, obj->shading->unk4, obj->shading->unk5, obj->shading->unk6, obj->shading->unk7);
     } else if (obj->behaviorId == BHV_LAVA_SPURT) {
         hasEnvCol = TRUE;
-        gDPSetEnvColor(gObjectCurrDisplayList++, 255, 255, 0, 255);
+        gDPSetEnvColor((*dList)++, 255, 255, 0, 255);
     } else {
-        gDPSetEnvColor(gObjectCurrDisplayList++, 255, 255, 255, 0);
+        gDPSetEnvColor((*dList)++, 255, 255, 255, 0);
     }
     gfxData = obj->unk68[obj->segment.object.modelIndex];
     bubbleTrap = NULL;
@@ -1924,15 +1926,15 @@ void render_3d_billboard(Object *obj) {
                 bubbleTrap = obj;
             }
         }
-        render_bubble_trap(&bubbleTrap->segment.trans, gfxData, (Object *) &objTrans, RENDER_Z_COMPARE | RENDER_SEMI_TRANSPARENT | RENDER_Z_UPDATE);
+        render_bubble_trap(dList, &bubbleTrap->segment.trans, gfxData, (Object *) &objTrans, RENDER_Z_COMPARE | RENDER_SEMI_TRANSPARENT | RENDER_Z_UPDATE);
     } else {
-        render_sprite_billboard(&gObjectCurrDisplayList, &gObjectCurrMatrix, &gObjectCurrVertexList, obj, (unk80068514_arg4 *) gfxData, flags);
+        render_sprite_billboard(dList, &gObjectCurrMatrix, &gObjectCurrVertexList, obj, (unk80068514_arg4 *) gfxData, flags);
     }
     if (hasPrimCol) {
-        gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, 255, 255, 255, 255);
+        gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
     }
     if (hasEnvCol) {
-        gDPSetEnvColor(gObjectCurrDisplayList++, 255, 255, 255, 0);
+        gDPSetEnvColor((*dList)++, 255, 255, 255, 0);
     }
 }
 
@@ -1942,7 +1944,7 @@ void render_3d_billboard(Object *obj) {
  * Computes the view matrix for the model, and calls a function to draw meshes.
  * Loops through racers to find vehicle parts, which are wheels and propellers.
 */
-void render_3d_model(Object *obj) {
+void render_3d_model(Gfx **dList, Object *obj) {
     s32 i;
     s32 intensity;
     s32 alpha;
@@ -2017,12 +2019,12 @@ void render_3d_model(Object *obj) {
             func_80011134(obj, objModel->unk52);
             obj68->objModel->unk52 = 0;
         }
-        camera_push_model_mtx(&gObjectCurrDisplayList, &gObjectCurrMatrix, &obj->segment.trans, D_8011AD28, 0);
+        camera_push_model_mtx(dList, &gObjectCurrMatrix, &obj->segment.trans, D_8011AD28, 0);
         spB0 = FALSE;
         if (racerObj != NULL) {
             object_undo_player_tumble(obj);
             if (obj->segment.object.animationID == 0 || racerObj->vehicleID >= VEHICLE_TRICKY) {
-                apply_head_turning_matrix(&gObjectCurrDisplayList, &gObjectCurrMatrix, obj68, racerObj->headAngle);
+                apply_head_turning_matrix(dList, &gObjectCurrMatrix, obj68, racerObj->headAngle);
                 spB0 = TRUE;
             } else {
                 racerObj->headAngle = 0;
@@ -2036,28 +2038,28 @@ void render_3d_model(Object *obj) {
             hasOpacity = TRUE;
         }
         if (hasEnvCol) {
-            gDPSetEnvColor(gObjectCurrDisplayList++, obj->shading->unk4, obj->shading->unk5, obj->shading->unk6, obj->shading->unk7);
+            gDPSetEnvColor((*dList)++, obj->shading->unk4, obj->shading->unk5, obj->shading->unk6, obj->shading->unk7);
         } else {
-            gDPSetEnvColor(gObjectCurrDisplayList++, 255, 255, 255, 0);
+            gDPSetEnvColor((*dList)++, 255, 255, 255, 0);
         }
         if (obj->segment.header->unk71) {
-            gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, obj->shading->unk18, obj->shading->unk19, obj->shading->unk1A, alpha);
+            gDPSetPrimColor((*dList)++, 0, 0, obj->shading->unk18, obj->shading->unk19, obj->shading->unk1A, alpha);
             func_8007B43C();
         } else if (hasOpacity) {
-            gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, intensity, intensity, intensity, alpha);
+            gDPSetPrimColor((*dList)++, 0, 0, intensity, intensity, intensity, alpha);
         } else {
-            gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, 255, 255, 255, 255);
+            gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
         }
         if (alpha < 255) {
-            meshBatch = func_800143A8(objModel, obj, 0, RENDER_SEMI_TRANSPARENT, spB0);
+            meshBatch = func_800143A8(dList, objModel, obj, 0, RENDER_SEMI_TRANSPARENT, spB0);
         } else {
-            meshBatch = func_800143A8(objModel, obj, 0, RENDER_NONE, spB0);
+            meshBatch = func_800143A8(dList, objModel, obj, 0, RENDER_NONE, spB0);
         }
         if (obj->segment.header->unk71) {
             if (hasOpacity) {
-                gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, intensity, intensity, intensity, alpha);
+                gDPSetPrimColor((*dList)++, 0, 0, intensity, intensity, intensity, alpha);
             } else {
-                gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, 255, 255, 255, 255);
+                gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
             }
             func_8007B454();
         }
@@ -2101,14 +2103,14 @@ void render_3d_model(Object *obj) {
                                 var_v0_2 = FALSE;
                             }
                             if (var_v0_2) {
-                                func_80012C98(&gObjectCurrDisplayList);
-                                gDPSetEnvColor(gObjectCurrDisplayList++, 255, 255, 255, 0);
-                                gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, intensity, intensity, intensity, alpha);
+                                func_80012C98(dList);
+                                gDPSetEnvColor((*dList)++, 255, 255, 255, 0);
+                                gDPSetPrimColor((*dList)++, 0, 0, intensity, intensity, intensity, alpha);
                             }
-                            loopObj->properties.common.unk0 = render_sprite_billboard(&gObjectCurrDisplayList, &gObjectCurrMatrix, &gObjectCurrVertexList, loopObj, (unk80068514_arg4 *) something, flags);
+                            loopObj->properties.common.unk0 = render_sprite_billboard(dList, &gObjectCurrMatrix, &gObjectCurrVertexList, loopObj, (unk80068514_arg4 *) something, flags);
                             if (var_v0_2) {
-                                gDkrInsertMatrix(gObjectCurrDisplayList++, 0, 0);
-                                func_80012CE8(&gObjectCurrDisplayList);
+                                gDkrInsertMatrix((*dList)++, 0, 0);
+                                func_80012CE8(dList);
                             }
                         }
                         loopObj->segment.trans.x_position -= vtxX;
@@ -2133,28 +2135,28 @@ void render_3d_model(Object *obj) {
                     loopObj->segment.trans.y_position += (vtxY - loopObj->segment.trans.y_position) * 0.25f;
                     loopObj->segment.trans.z_position += (vtxZ - loopObj->segment.trans.z_position) * 0.25f;
                     if (loopObj->segment.header->modelType == OBJECT_MODEL_TYPE_SPRITE_BILLBOARD) {
-                        render_sprite_billboard(&gObjectCurrDisplayList, &gObjectCurrMatrix, &gObjectCurrVertexList, loopObj, (unk80068514_arg4 *)something, flags);
+                        render_sprite_billboard(dList, &gObjectCurrMatrix, &gObjectCurrVertexList, loopObj, (unk80068514_arg4 *)something, flags);
                     }
                 }
             }
         }
         if (meshBatch != -1) {
             if (obj->segment.header->unk71) {
-                gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, obj->shading->unk18, obj->shading->unk19, obj->shading->unk1A, alpha);
+                gDPSetPrimColor((*dList)++, 0, 0, obj->shading->unk18, obj->shading->unk19, obj->shading->unk1A, alpha);
                 func_8007B43C();
             }
-            func_800143A8(objModel, obj, meshBatch, 4, spB0);
+            func_800143A8(dList, objModel, obj, meshBatch, 4, spB0);
             if (obj->segment.header->unk71) {
                 func_8007B454();
             }
         }
         if (hasOpacity || obj->segment.header->unk71) {
-            gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, 255, 255, 255, 255);
+            gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
         }
         if (hasEnvCol) {
-            gDPSetEnvColor(gObjectCurrDisplayList++, 255, 255, 255, 0);
+            gDPSetEnvColor((*dList)++, 255, 255, 255, 0);
         }
-        apply_matrix_from_stack(&gObjectCurrDisplayList);
+        apply_matrix_from_stack(dList);
     }
 }
 
@@ -2191,13 +2193,11 @@ void render_object(Gfx **dList, MatrixS **mtx, Vertex **verts, Object *obj) {
     f32 scale;
     if (obj->segment.trans.flags & (OBJ_FLAGS_INVISIBLE | OBJ_FLAGS_SHADOW_ONLY))
         return;
-    gObjectCurrDisplayList = *dList;
     gObjectCurrMatrix = *mtx;
     gObjectCurrVertexList = *verts;
     scale = obj->segment.trans.scale;
-    render_object_parts(obj);
+    render_object_parts(dList, obj);
     obj->segment.trans.scale = scale;
-    *dList = gObjectCurrDisplayList;
     *mtx = gObjectCurrMatrix;
     *verts = gObjectCurrVertexList;
 }
@@ -2406,17 +2406,17 @@ GLOBAL_ASM("asm/non_matchings/objects/func_80012F94.s")
  * Beforehand, call a function to apply a temporary transformation, mostly for racers.
  * Afterwards, undo that.
 */
-void render_object_parts(Object *obj) {
+void render_object_parts(Gfx **dList, Object *obj) {
     func_80012F94(obj);
     if (obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) {
-        render_particle((Particle *) obj, &gObjectCurrDisplayList, &gObjectCurrMatrix, &gObjectCurrVertexList, 0x8000);
+        render_particle((Particle *) obj, dList, &gObjectCurrMatrix, &gObjectCurrVertexList, 0x8000);
     } else {
         if (obj->segment.header->modelType == OBJECT_MODEL_TYPE_3D_MODEL) {
-            render_3d_model(obj);
+            render_3d_model(dList, obj);
         } else if (obj->segment.header->modelType == OBJECT_MODEL_TYPE_SPRITE_BILLBOARD) {
-            render_3d_billboard(obj);
+            render_3d_billboard(dList, obj);
         } else if (obj->segment.header->modelType == OBJECT_MODEL_TYPE_MISC) {
-            render_3d_misc(obj);
+            render_3d_misc(dList, obj);
         }
     }
     unset_temp_model_transforms(obj);
@@ -2438,7 +2438,7 @@ GLOBAL_ASM("asm/non_matchings/objects/func_800135B8.s")
 /**
  * Render the bubble trap weapon.
 */
-void render_bubble_trap(ObjectTransform *trans, Object_68 *gfxData, Object *obj, s32 flags) {
+void render_bubble_trap(Gfx **dList, ObjectTransform *trans, Object_68 *gfxData, Object *obj, s32 flags) {
     f32 x;
     f32 y;
     f32 z;
@@ -2464,7 +2464,7 @@ void render_bubble_trap(ObjectTransform *trans, Object_68 *gfxData, Object *obj,
     obj->segment.trans.x_position += x;
     obj->segment.trans.y_position += y;
     obj->segment.trans.z_position += z;
-    render_sprite_billboard(&gObjectCurrDisplayList, &gObjectCurrMatrix, &gObjectCurrVertexList, obj, (unk80068514_arg4 *) gfxData, flags);
+    render_sprite_billboard(dList, &gObjectCurrMatrix, &gObjectCurrVertexList, obj, (unk80068514_arg4 *) gfxData, flags);
 }
 
 /**
@@ -2484,7 +2484,6 @@ void render_racer_shield(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *o
 
     racer = (Object_Racer *) obj->unk64;
     if (racer->shieldTimer > 0 && gShieldEffectObject != NULL) {
-        gObjectCurrDisplayList = *dList;
         gObjectCurrMatrix = *mtx;
         gObjectCurrVertexList = *vtxList;
         var_a2 = racer->unk2;
@@ -2521,19 +2520,18 @@ void render_racer_shield(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *o
         gfxData = gShieldEffectObject->unk68[shieldType];
         mdl = gfxData->objModel;
         gShieldEffectObject->unk44 = (Vertex *) gfxData->unk4[gfxData->unk1F];
-        gDPSetEnvColor(gObjectCurrDisplayList++, 255, 255, 255, 0);
+        gDPSetEnvColor((*dList)++, 255, 255, 255, 0);
         if (racer->shieldTimer < 64) {
-            gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, 255, 255, 255, racer->shieldTimer * 4);
+            gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, racer->shieldTimer * 4);
         } else {
-            gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, 255, 255, 255, 255);
+            gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
         }
-        apply_object_shear_matrix(&gObjectCurrDisplayList, &gObjectCurrMatrix, gShieldEffectObject, obj, shear);
-        func_800143A8(mdl, gShieldEffectObject, 0, 4, 0);
-        gDkrInsertMatrix(gObjectCurrDisplayList++, 0, G_MTX_DKR_INDEX_0);
+        apply_object_shear_matrix(dList, &gObjectCurrMatrix, gShieldEffectObject, obj, shear);
+        func_800143A8(dList, mdl, gShieldEffectObject, 0, 4, 0);
+        gDkrInsertMatrix((*dList)++, 0, G_MTX_DKR_INDEX_0);
         if (racer->shieldTimer < 64) {
-            gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, 255, 255, 255, 255);
+            gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
         }
-        *dList = gObjectCurrDisplayList;
         *mtx = gObjectCurrMatrix;
         *vtxList = gObjectCurrVertexList;
     }
@@ -2557,7 +2555,6 @@ void render_racer_magnet(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *o
     var_t0 = racer->unk2 * 4;
     if (D_8011B07B[var_t0]) {
         if (gMagnetEffectObject != NULL) {
-            gObjectCurrDisplayList = *dList;
             gObjectCurrMatrix = *mtx;
             gObjectCurrVertexList = *vtxList;
             magnet = (f32 *) get_misc_asset(MISC_ASSET_MAGNET_DATA);
@@ -2585,15 +2582,14 @@ void render_racer_magnet(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *o
             mdl = gfxData->objModel;
             gMagnetEffectObject->unk44 = (Vertex *) gfxData->unk4[gfxData->unk1F];
             opacity = (((D_8011B078[(var_t0 * 4) + 1] * 8) & 0x7F) + 0x80);
-            func_8007F594(&gObjectCurrDisplayList, 2, 0xFFFFFF00 | opacity, gMagnetColours[racer->magnetModelID]);
-            apply_object_shear_matrix(&gObjectCurrDisplayList, &gObjectCurrMatrix, gMagnetEffectObject, obj, shear);
+            func_8007F594(dList, 2, 0xFFFFFF00 | opacity, gMagnetColours[racer->magnetModelID]);
+            apply_object_shear_matrix(dList, &gObjectCurrMatrix, gMagnetEffectObject, obj, shear);
             D_800DC720 = TRUE;
-            func_800143A8(mdl, gMagnetEffectObject, 0, 4, 0);
+            func_800143A8(dList, mdl, gMagnetEffectObject, 0, 4, 0);
             D_800DC720 = FALSE;
-            gDkrInsertMatrix(gObjectCurrDisplayList++, 0, G_MTX_DKR_INDEX_0);
-            gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, 255, 255, 255, 255);
-            reset_render_settings(&gObjectCurrDisplayList);
-            *dList = gObjectCurrDisplayList;
+            gDkrInsertMatrix((*dList)++, 0, G_MTX_DKR_INDEX_0);
+            gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
+            reset_render_settings(dList);
             *mtx = gObjectCurrMatrix;
             *vtxList = gObjectCurrVertexList;
         }
@@ -2622,7 +2618,7 @@ void func_800142B8(void) {
     }
 }
 
-s32 func_800143A8(ObjectModel *objModel, Object *obj, s32 startIndex, s32 flags, s32 someBool) {
+s32 func_800143A8(Gfx **dList, ObjectModel *objModel, Object *obj, s32 startIndex, s32 flags, s32 someBool) {
     s32 i;
     s32 textureIndex;
     s32 triOffset;
@@ -2637,9 +2633,7 @@ s32 func_800143A8(ObjectModel *objModel, Object *obj, s32 startIndex, s32 flags,
     s32 texToSetFlags;
     Triangle *tris;
     s32 vertOffset;
-    Gfx *dlist;
 
-    dlist = gObjectCurrDisplayList;
     i = startIndex;
     endLoop = FALSE;
     while (i < objModel->numberOfBatches && !endLoop) {
@@ -2671,25 +2665,25 @@ s32 func_800143A8(ObjectModel *objModel, Object *obj, s32 startIndex, s32 flags,
                     texToSetFlags |= RENDER_SEMI_TRANSPARENT;
                 }
                 if (D_800DC720 == 0) {
-                    load_and_set_texture(&dlist, texToSet, texToSetFlags, texOffset);
+                    load_and_set_texture(dList, texToSet, texToSetFlags, texOffset);
                 } else {
                     texToSet = func_8007B46C(texToSet, texOffset);
-                    gDkrDmaDisplayList(gObjectCurrDisplayList++, OS_K0_TO_PHYSICAL(texToSet->cmd), texToSet->numberOfCommands);
+                    gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(texToSet->cmd), texToSet->numberOfCommands);
                 }
                 if (offsetStartVertex == numVertices) {
-                    gSPVertexDKR(dlist++, OS_K0_TO_PHYSICAL(vtx), numVertices, 0);
+                    gSPVertexDKR((*dList)++, OS_K0_TO_PHYSICAL(vtx), numVertices, 0);
                 } else {
                     if (offsetStartVertex > 0) {
-                        gSPVertexDKR(dlist++, OS_K0_TO_PHYSICAL(vtx), offsetStartVertex, 0);
-                        gDkrInsertMatrix(dlist++, 0, G_MTX_DKR_INDEX_2);
-                        gSPVertexDKR(dlist++, OS_K0_TO_PHYSICAL(&vtx[offsetStartVertex]), (numVertices - offsetStartVertex), 1);
+                        gSPVertexDKR((*dList)++, OS_K0_TO_PHYSICAL(vtx), offsetStartVertex, 0);
+                        gDkrInsertMatrix((*dList)++, 0, G_MTX_DKR_INDEX_2);
+                        gSPVertexDKR((*dList)++, OS_K0_TO_PHYSICAL(&vtx[offsetStartVertex]), (numVertices - offsetStartVertex), 1);
                     } else {
-                        gDkrInsertMatrix(dlist++, 0, G_MTX_DKR_INDEX_2);
-                        gSPVertexDKR(dlist++, OS_K0_TO_PHYSICAL(vtx), numVertices, 0);
+                        gDkrInsertMatrix((*dList)++, 0, G_MTX_DKR_INDEX_2);
+                        gSPVertexDKR((*dList)++, OS_K0_TO_PHYSICAL(vtx), numVertices, 0);
                     }
-                    gDkrInsertMatrix(dlist++, 0, G_MTX_DKR_INDEX_1);
+                    gDkrInsertMatrix((*dList)++, 0, G_MTX_DKR_INDEX_1);
                 }
-                gSPPolygon(dlist++, OS_K0_TO_PHYSICAL(tris), numTris, texEnabled);
+                gSPPolygon((*dList)++, OS_K0_TO_PHYSICAL(tris), numTris, texEnabled);
             }
             i++;
         } else {
@@ -2699,7 +2693,6 @@ s32 func_800143A8(ObjectModel *objModel, Object *obj, s32 startIndex, s32 flags,
     if (i >= objModel->numberOfBatches) {
         i = -1;
     }
-    gObjectCurrDisplayList = dlist;
     return i;
 }
 

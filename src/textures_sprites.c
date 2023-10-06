@@ -56,13 +56,13 @@ Gfx dRenderSettingsCommon[][2] = {
     G_RM_OPA_SURF, G_RM_OPA_SURF2, G_RM_AA_OPA_SURF, G_RM_AA_OPA_SURF2, G_RM_ZB_OPA_SURF, G_RM_ZB_OPA_SURF2, G_RM_AA_ZB_OPA_SURF, G_RM_AA_ZB_OPA_SURF2),
     // Semitransparent Surface
     DRAW_TABLE_GROUP(G_CC_MODULATEIDECALA, G_CC_MODULATEIDECALA, DKR_OMH_1CYC_BILERP, 
-    G_RM_XLU_SURF, G_RM_XLU_SURF2, G_RM_AA_XLU_SURF, G_RM_AA_XLU_SURF2, G_RM_ZB_XLU_SURF, G_RM_ZB_XLU_SURF2, G_RM_AA_ZB_XLU_SURF, G_RM_AA_ZB_XLU_SURF2),
+    G_RM_XLU_SURF, G_RM_XLU_SURF2, G_RM_AA_XLU_SURF, G_RM_XLU_SURF2, G_RM_ZB_XLU_SURF, G_RM_ZB_XLU_SURF2, G_RM_AA_ZB_XLU_SURF, G_RM_AA_ZB_XLU_SURF2),
     // Opaque Surface with fog
     DRAW_TABLE_GROUP(G_CC_MODULATEIDECALA, DKR_CC_UNK1, DKR_OMH_2CYC_BILERP, 
     G_RM_FOG_SHADE_A, G_RM_OPA_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_OPA_SURF2, G_RM_FOG_SHADE_A, G_RM_ZB_OPA_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_ZB_OPA_SURF2),
     // Semitransparent Surface with fog
     DRAW_TABLE_GROUP(G_CC_MODULATEIDECALA, DKR_CC_UNK1, DKR_OMH_2CYC_BILERP, 
-    G_RM_FOG_SHADE_A, G_RM_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_ZB_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_ZB_XLU_SURF2),
+    G_RM_FOG_SHADE_A, G_RM_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_ZB_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_ZB_XLU_SURF2),
     // Cutout Surface with primitive colour
     DRAW_TABLE_GROUP(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_BILERP, 
     G_RM_XLU_SURF, G_RM_XLU_SURF2, G_RM_AA_XLU_SURF, G_RM_AA_XLU_SURF2, G_RM_RA_ZB_TEX_EDGE, G_RM_RA_ZB_TEX_EDGE2, G_RM_AA_ZB_XLU_INTER, G_RM_AA_ZB_XLU_INTER2),
@@ -602,13 +602,21 @@ void load_and_set_texture(Gfx **dlist, TextureHeader *texhead, s32 flags, s32 te
         dlIndex = gConfig.antiAliasing + 1;
         if (!gPuppyPrint.showCvg) {
             if (gIsObjectRender && gConfig.antiAliasing == 0) {
-                dlIndex++;
+                if (gIsObjectRender != 2) {
+                    dlIndex++;
+                } else {
+                    dlIndex = 0;
+                }
             }
         }
 #else
         dlIndex = gConfig.antiAliasing + 1;
         if (gIsObjectRender && gConfig.antiAliasing == 0) {
-            dlIndex++;
+            if (gIsObjectRender != 2) {
+                dlIndex++;
+            } else {
+                dlIndex = 0;
+            }
         }
 #endif
         if (flags & RENDER_Z_COMPARE) {
