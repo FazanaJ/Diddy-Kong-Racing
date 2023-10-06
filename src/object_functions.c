@@ -160,7 +160,7 @@ void obj_init_scenery(Object *obj, LevelObjectEntry_Scenery *entry) {
     radius /= 64.0f;
     obj->segment.trans.scale = obj->segment.header->scale * radius;
     obj->shadow->scale = obj->segment.header->shadowScale * radius;
-    obj->segment.object.numModelIDs = entry->numModelIDs;
+    obj->segment.object.modelIndex = entry->modelIndex;
     obj->segment.trans.y_rotation = U8_ANGLE_TO_U16(entry->angleY);
     if (entry->solid) {
         obj->interactObj->flags = INTERACT_FLAGS_SOLID;
@@ -170,8 +170,8 @@ void obj_init_scenery(Object *obj, LevelObjectEntry_Scenery *entry) {
         obj->interactObj->unk16 = -5;
         obj->interactObj->unk17 = entry->solid;
     }
-    if (obj->segment.object.numModelIDs >= obj->segment.header->numberOfModelIds) {
-        obj->segment.object.numModelIDs = 0;
+    if (obj->segment.object.modelIndex >= obj->segment.header->numberOfModelIds) {
+        obj->segment.object.modelIndex = 0;
     }
     obj->properties.scenery.interactObj = NULL;
     obj->properties.common.unk4 = 0;
@@ -856,8 +856,8 @@ void obj_init_lighthouse_rocketsignpost(Object *obj, LevelObjectEntry_Lighthouse
     radius /= 64.0f;
     obj->segment.trans.scale = obj->segment.header->scale * radius;
     obj->segment.trans.y_rotation = U8_ANGLE_TO_U16(entry->angleY);
-    if (obj->segment.object.numModelIDs >= obj->segment.header->numberOfModelIds) {
-        obj->segment.object.numModelIDs = 0;
+    if (obj->segment.object.modelIndex >= obj->segment.header->numberOfModelIds) {
+        obj->segment.object.modelIndex = 0;
     }
     obj->interactObj->flags = INTERACT_FLAGS_SOLID;
     obj->interactObj->unk11 = 2;
@@ -905,8 +905,8 @@ void obj_init_airzippers_waterzippers(Object *obj, LevelObjectEntry_AirZippers_W
     radius /= 64.0f;
     obj->segment.trans.scale = objHeader->scale * radius;
     obj->segment.trans.y_rotation = U8_ANGLE_TO_U16(entry->angleY);
-    if (obj->segment.object.numModelIDs >= objHeader->numberOfModelIds) {
-        obj->segment.object.numModelIDs = 0;
+    if (obj->segment.object.modelIndex >= objHeader->numberOfModelIds) {
+        obj->segment.object.modelIndex = 0;
     }
     obj->interactObj->flags = INTERACT_FLAGS_TANGIBLE;
     obj->interactObj->unk11 = 0;
@@ -978,8 +978,8 @@ void obj_init_groundzipper(Object *obj, LevelObjectEntry_GroundZipper *entry) {
     obj->segment.trans.scale = header->scale * radius;
     obj->shadow->scale = header->shadowScale * radius;
     obj->segment.trans.y_rotation = U8_ANGLE_TO_U16(entry->angleY);
-    if (obj->segment.object.numModelIDs >= obj->segment.header->numberOfModelIds) {
-        obj->segment.object.numModelIDs = 0;
+    if (obj->segment.object.modelIndex >= obj->segment.header->numberOfModelIds) {
+        obj->segment.object.modelIndex = 0;
     }
     obj->properties.zipper.radius = (s32) (28.0f * radius) + 15;
     if (obj->properties.zipper.radius < 0) {
@@ -1072,8 +1072,8 @@ void obj_loop_unknown58(Object *obj, s32 updateRate) {
         if (vehicleID == VEHICLE_HOVERCRAFT || vehicleID == VEHICLE_PLANE) {
             someObj = (Object *) obj60->unk4[0];
             someObj->segment.trans.y_rotation = 0x4000;
-            someObj->segment.object.numModelIDs++;
-            someObj->segment.object.numModelIDs &= 1;
+            someObj->segment.object.modelIndex++;
+            someObj->segment.object.modelIndex &= 1;
         }
     }
 }
@@ -1729,9 +1729,9 @@ void obj_loop_vehicleanim(Object *obj, s32 updateRate) {
         if (obj60->unk0 > 0) {
             someObj = obj60->unk0 == 3 ? obj60->unkC : obj60->unk4;
             someObj->segment.trans.y_rotation = 0x4000;
-            someObj->segment.object.numModelIDs++;
-            if (someObj->segment.object.numModelIDs == someObj->segment.header->numberOfModelIds) {
-                someObj->segment.object.numModelIDs = 0;
+            someObj->segment.object.modelIndex++;
+            if (someObj->segment.object.modelIndex == someObj->segment.header->numberOfModelIds) {
+                someObj->segment.object.modelIndex = 0;
             }
         }
     }
@@ -1910,7 +1910,7 @@ void obj_init_bombexplosion(Object *obj, LevelObjectEntry_BombExplosion *entry) 
     LevelObjectEntry_BombExplosion *entry2;
     obj->segment.animFrame = 0;
     obj->segment.trans.scale = 0.5f;
-    obj->segment.object.numModelIDs = get_random_number_from_range(0, obj->segment.header->numberOfModelIds - 1);
+    obj->segment.object.modelIndex = get_random_number_from_range(0, obj->segment.header->numberOfModelIds - 1);
     entry2 = entry; // Needed for a match.
     obj->properties.bombExplosion.timer = 0;
     obj->properties.bombExplosion.unk4 = 0xFF;
@@ -3050,7 +3050,7 @@ void obj_init_door(Object *obj, LevelObjectEntry_Door *entry) {
     obj64->unk11 = entry->numBalloonsToOpen;
     obj64->unk10 = entry->numBalloonsToOpen;
     obj64->unk12 = entry->distanceToOpen;
-    obj->segment.object.numModelIDs = entry->modelIndex;
+    obj->segment.object.modelIndex = entry->modelIndex;
     obj->segment.trans.y_rotation = U8_ANGLE_TO_U16(entry->closedRotation);
     obj64->homeY = obj->segment.trans.y_position;
     obj64->unk8 = 0;
@@ -3068,8 +3068,8 @@ void obj_init_door(Object *obj, LevelObjectEntry_Door *entry) {
     obj->interactObj->unk11 = 2;
     obj->interactObj->hitboxRadius = 20;
     obj->interactObj->pushForce = 0;
-    if (obj->segment.object.numModelIDs >= obj->segment.header->numberOfModelIds) {
-        obj->segment.object.numModelIDs = 0;
+    if (obj->segment.object.modelIndex >= obj->segment.header->numberOfModelIds) {
+        obj->segment.object.modelIndex = 0;
     }
 }
 
@@ -3079,7 +3079,7 @@ void obj_init_ttdoor(Object *obj, LevelObjectEntry_TTDoor *entry) {
     Object_TTDoor *obj64;
     f32 radius;
 
-    obj->segment.object.numModelIDs = 0;
+    obj->segment.object.modelIndex = 0;
     obj64 = &obj->unk64->tt_door;
     obj->segment.trans.y_rotation = U8_ANGLE_TO_U16(entry->angleY);
     obj64->doorID = entry->doorID;
@@ -3099,8 +3099,8 @@ void obj_init_ttdoor(Object *obj, LevelObjectEntry_TTDoor *entry) {
     obj->interactObj->unk11 = 2;
     obj->interactObj->hitboxRadius = 20;
     obj->interactObj->pushForce = 0;
-    if (obj->segment.object.numModelIDs >= obj->segment.header->numberOfModelIds) {
-        obj->segment.object.numModelIDs = 0;
+    if (obj->segment.object.modelIndex >= obj->segment.header->numberOfModelIds) {
+        obj->segment.object.modelIndex = 0;
     }
 }
 
@@ -3120,9 +3120,9 @@ void obj_loop_ttdoor(Object *obj, s32 updateRate) {
     ttDoor = (Object_TTDoor *) obj->unk64;
     settings = get_settings();
     if (ttDoor->doorID == 0) {
-        obj->segment.object.numModelIDs = D_800DCA94[settings->ttAmulet];
+        obj->segment.object.modelIndex = D_800DCA94[settings->ttAmulet];
     } else {
-        obj->segment.object.numModelIDs = D_800DCA9C[settings->ttAmulet];
+        obj->segment.object.modelIndex = D_800DCA9C[settings->ttAmulet];
     }
 #ifndef OPEN_ALL_DOORS
     if (obj->interactObj->distance < ttDoor->unk12 && (settings->ttAmulet < 4 || *settings->balloonsPtr < 47)) {
@@ -3283,7 +3283,7 @@ void obj_loop_trigger(Object *obj, UNUSED s32 updateRate) {
 
 void obj_init_bridge_whaleramp(Object *obj, LevelObjectEntry_Bridge_WhaleRamp *entry) {
     Object_Bridge_WhaleRamp *temp = &obj->unk64->bridge_whale_ramp;
-    obj->segment.object.numModelIDs = entry->numModelIDs;
+    obj->segment.object.modelIndex = entry->modelIndex;
     obj->segment.trans.y_rotation = U8_ANGLE_TO_U16(entry->angleY);
     temp->unk0 = obj->segment.trans.y_position;
     obj->interactObj->flags = INTERACT_FLAGS_SOLID | INTERACT_FLAGS_UNK_0020;
@@ -3291,8 +3291,8 @@ void obj_init_bridge_whaleramp(Object *obj, LevelObjectEntry_Bridge_WhaleRamp *e
     obj->interactObj->hitboxRadius = 20;
     obj->interactObj->pushForce = 0;
     temp->unk4 = 0;
-    if (obj->segment.object.numModelIDs >= obj->segment.header->numberOfModelIds) {
-        obj->segment.object.numModelIDs = 0;
+    if (obj->segment.object.modelIndex >= obj->segment.header->numberOfModelIds) {
+        obj->segment.object.modelIndex = 0;
     }
 }
 
@@ -3908,12 +3908,12 @@ void obj_init_weaponballoon(Object *obj, LevelObjectEntry_WeaponBalloon *entry) 
         entry->unk8 = 0;
     }
 
-    if (obj->segment.object.numModelIDs >= obj->segment.header->numberOfModelIds) {
-        obj->segment.object.numModelIDs = 0;
+    if (obj->segment.object.modelIndex >= obj->segment.header->numberOfModelIds) {
+        obj->segment.object.modelIndex = 0;
     }
 
-    obj->segment.object.numModelIDs = entry->balloonType;
-    obj->properties.weaponBalloon.balloonID = obj->segment.object.numModelIDs;
+    obj->segment.object.modelIndex = entry->balloonType;
+    obj->properties.weaponBalloon.balloonID = obj->segment.object.modelIndex;
 
     radius = entry->radius & 0xFF;
     if (radius < 10) {
@@ -4498,7 +4498,7 @@ GLOBAL_ASM("asm/non_matchings/object_functions/obj_loop_texscroll.s")
 
 /* Official name: rgbalightInit */
 void obj_init_rgbalight(Object *obj, LevelObjectEntry_RgbaLight *entry, UNUSED s32 arg2) {
-    obj->unk64 = func_80031CAC(obj, entry);
+    obj->unk64 = (Object_64 *) func_80031CAC(obj, entry);
 }
 
 /**
@@ -4541,7 +4541,7 @@ void obj_init_log(Object *obj, LevelObjectEntry_Log *entry, UNUSED s32 arg2) {
     }
     radius /= 64.0f;
     obj->segment.trans.scale = obj->segment.header->scale * radius;
-    obj->segment.object.numModelIDs = entry->numModelIDs;
+    obj->segment.object.modelIndex = entry->modelIndex;
     obj->segment.trans.y_rotation = U8_ANGLE_TO_U16(entry->angleY);
 }
 
@@ -4846,7 +4846,7 @@ void obj_init_frog(Object *obj, LevelObjectEntry_Frog *entry) {
     obj64->scaleY = 1.0f;
 
     if (obj64->drumstick) {
-        obj->segment.object.numModelIDs = TRUE;
+        obj->segment.object.modelIndex = TRUE;
         /**
           * Don't spawn the chicken frog if drumstick is already unlocked, or
           * if the player hasn't completed the trophy races yet.
@@ -4855,7 +4855,7 @@ void obj_init_frog(Object *obj, LevelObjectEntry_Frog *entry) {
             free_object(obj);
         }
     } else {
-        obj->segment.object.numModelIDs = FALSE;
+        obj->segment.object.modelIndex = FALSE;
     }
 }
 

@@ -10,16 +10,15 @@
 
 /************ .bss ************/
 
-MemoryPool gMemoryPools[4]; // Only two are used.
-
 #ifndef _ALIGN16
 #define _ALIGN16(a) (((u32) (a) & ~0xF) + 0x10)
 #endif
 
+MemoryPool gMemoryPools[4]; // Only two are used.
 s32 gNumberOfMemoryPools;
 FreeQueueSlot gFreeQueue[256];
 s32 gFreeQueueCount;
-s32 gFreeQueueState; //Official Name: mmDelay
+s32 gFreeQueueTimer; //Official Name: mmDelay
 
 extern MemoryPoolSlot gMainMemoryPool;
 
@@ -219,7 +218,7 @@ void *allocate_at_address_in_main_pool(s32 size, u8 *address, u32 colorTag) {
  */
 void set_free_queue_state(s32 state) {
     s32 *flags = clear_status_register_flags();
-    gFreeQueueState = state;
+    gFreeQueueTimer = state;
     if (state == 0) { // flush free queue if state is 0.
         while (gFreeQueueCount > 0) {
             free_slot_containing_address(gFreeQueue[--gFreeQueueCount].dataAddress);
@@ -235,7 +234,7 @@ void set_free_queue_state(s32 state) {
  */
 void free_from_memory_pool(void *data) {
     s32 *flags = clear_status_register_flags();
-    if (gFreeQueueState == 0) {
+    if (gFreeQueueTimer == 0) {
         free_slot_containing_address(data);
     } else {
         add_to_free_queue(data);
@@ -254,11 +253,11 @@ void clear_free_queue(void) {
     flags = clear_status_register_flags();
 
     for (i = 0; i < gFreeQueueCount;) {
-        gFreeQueue[i].unk4--;
-        if (gFreeQueue[i].unk4 == 0) {
+        gFreeQueue[i].freeTimer--;
+        if (gFreeQueue[i].freeTimer == 0) {
             free_slot_containing_address(gFreeQueue[i].dataAddress);
             gFreeQueue[i].dataAddress = gFreeQueue[gFreeQueueCount - 1].dataAddress;
-            gFreeQueue[i].unk4 = gFreeQueue[gFreeQueueCount - 1].unk4;
+            gFreeQueue[i].freeTimer = gFreeQueue[gFreeQueueCount - 1].freeTimer;
             gFreeQueueCount--;
         } else {
             i++;
@@ -297,7 +296,7 @@ void free_slot_containing_address(u8 *address) {
 */
 void add_to_free_queue(void *dataAddress) {
     gFreeQueue[gFreeQueueCount].dataAddress = dataAddress;
-    gFreeQueue[gFreeQueueCount].unk4 = gFreeQueueState;
+    gFreeQueue[gFreeQueueCount].freeTimer = gFreeQueueTimer;
     gFreeQueueCount++;
 }
 
