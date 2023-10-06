@@ -530,6 +530,11 @@ void load_and_set_texture(Gfx **dlist, TextureHeader *texhead, s32 flags, s32 te
                            (flags & (RENDER_VTX_ALPHA | RENDER_DECAL | RENDER_Z_UPDATE | RENDER_CUTOUT | RENDER_FOG_ACTIVE | RENDER_SEMI_TRANSPARENT | RENDER_Z_COMPARE | RENDER_ANTI_ALIASING));
     flags &= ~gBlockedRenderFlags;
     flags = (flags & RENDER_VTX_ALPHA) ? flags & ~RENDER_FOG_ACTIVE : flags & ~RENDER_Z_UPDATE;
+#ifdef PUPPYPRINT_DEBUG
+    if (gPuppyPrint.showCvg && gConfig.antiAliasing == 0) {
+        flags &= ~RENDER_SEMI_TRANSPARENT;
+    }
+#endif
     if (flags != gCurrentRenderFlags || forceFlags) {
 
         if (((flags & RENDER_VTX_ALPHA) != (gCurrentRenderFlags & RENDER_VTX_ALPHA)) || gForceFlags) {

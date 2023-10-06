@@ -364,9 +364,13 @@ void puppyprint_input(void) {
 
     // Handle opening and changing page in the menu.
     if (get_buttons_pressed_from_player(0) & L_TRIG) {
-        gPuppyPrint.menuOpen ^= 1;
-        gPuppyPrint.page = gPuppyPrint.menuOption;
-        gPuppyPrint.pageScroll = 0;
+        if (gPuppyPrint.menuOption != PAGE_COVERAGE) {
+            gPuppyPrint.menuOpen ^= 1;
+            gPuppyPrint.page = gPuppyPrint.menuOption;
+            gPuppyPrint.pageScroll = 0;
+        } else {
+            gPuppyPrint.showCvg ^= TRUE;
+        }
     }
 
     if (gPuppyPrint.menuOpen) {
@@ -680,10 +684,8 @@ void render_page_menu(void) {
 }
 
 void render_profiler(void) {
-
     gDPSetScissor(gCurrDisplayList++, G_SC_NON_INTERLACE, 0, 0, gScreenWidth, gScreenHeight);
 
-    gPuppyPrint.showCvg = FALSE;
     switch (gPuppyPrint.page) {
     case PAGE_MINIMAL:
         puppyprint_render_minimal();
@@ -704,7 +706,6 @@ void render_profiler(void) {
         puppyprint_render_log();
         break;
     case PAGE_COVERAGE:
-        gPuppyPrint.showCvg = TRUE;
         break;
     }
 

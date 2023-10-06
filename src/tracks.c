@@ -1014,7 +1014,7 @@ void render_level_geometry_and_objects(void) {
     if (D_8011D384 != 0) {
         profiler_begin_timer();
         func_800BA8E4(&gSceneCurrDisplayList, &gSceneCurrMatrix, gActiveCameraID);
-        profiler_add(PP_ENVMAP, first);
+        profiler_add(PP_WAVES, first);
     }
 
     reset_render_settings(&gSceneCurrDisplayList);
