@@ -266,6 +266,17 @@ void func_800249F0(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicl
     }
 }
 
+void puppyprint_render_coverage(Gfx **dList) {
+    gSPClearGeometryMode((*dList)++, G_ZBUFFER);
+    gDPPipeSync((*dList)++);
+    gDPSetCycleType((*dList)++, G_CYC_1CYCLE);
+    gDPSetBlendColor((*dList)++, 0xFF, 0xFF, 0xFF, 0xFF);
+    gDPSetPrimDepth((*dList)++, 0xFFFF, 0xFFFF);
+    gDPSetDepthSource((*dList)++, G_ZS_PRIM);
+    gDPSetRenderMode((*dList)++, G_RM_VISCVG, G_RM_VISCVG2);
+    gDPFillRectangle((*dList)++, 0,0, SCREEN_WIDTH-1, SCREEN_HEIGHT-1);
+}
+
 /**
  * The root function for rendering the entire scene.
  * Handles drawing the track, objects and the majority of the HUD in single player.
@@ -379,6 +390,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
         }
         func_800AD030(get_active_camera_segment());
         func_800ACA20(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, get_active_camera_segment());
+        puppyprint_render_coverage(&gSceneCurrDisplayList);
         render_hud(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, get_racer_object_by_port(gSceneCurrentPlayerID), updateRate);
     }
     // Show TT Cam toggle for the fourth viewport when playing 3 player.
