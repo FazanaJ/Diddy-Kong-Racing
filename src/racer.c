@@ -2137,7 +2137,7 @@ void obj_init_racer(Object *obj, LevelObjectEntry_Racer *racer) {
     tempRacer->unk21C = 0;
     if (tempRacer->playerIndex != PLAYER_COMPUTER && !D_8011D582) {
         set_active_camera(player);
-        gCameraObject = (ObjectCamera *) &gActiveCameraStack[gActiveCameraID];
+        gCameraObject = (ObjectCamera *) &gCameraSegment[gActiveCameraID];
         gCameraObject->trans.z_rotation = 0;
         gCameraObject->trans.x_rotation = 0x400;
         gCameraObject->trans.y_rotation = tempRacer->unk196;
@@ -2330,7 +2330,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
             }
         }
         set_active_camera(tempRacer->playerIndex);
-        gCameraObject = (ObjectCamera *) &gActiveCameraStack[gActiveCameraID];
+        gCameraObject = (ObjectCamera *) &gCameraSegment[gActiveCameraID];
         tempRacer->miscAnimCounter += updateRate;
         gCurrentPlayerIndex = tempRacer->playerIndex;
         if (tempRacer->raceFinished == TRUE || context == DRAW_MENU) {
@@ -2419,7 +2419,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
         }
         // Assign a camera to human players.
         if (gCurrentPlayerIndex != PLAYER_COMPUTER) {
-            gCameraObject = (ObjectCamera *) &gActiveCameraStack[gActiveCameraID];
+            gCameraObject = (ObjectCamera *) &gCameraSegment[gActiveCameraID];
         }
         gRacerWaveCount = func_8002B0F4(obj->segment.object.segmentID, obj->segment.trans.x_position, obj->segment.trans.z_position, &gRacerCurrentWave);
         if (gRacerWaveCount) {
