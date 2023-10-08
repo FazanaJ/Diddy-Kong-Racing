@@ -2661,7 +2661,11 @@ s32 func_800143A8(Gfx **dList, ObjectModel *objModel, Object *obj, s32 startInde
     while (i < objModel->numberOfBatches && !endLoop) {
         if ((objModel->batches[i].flags & 4) == 0 || (flags & 4)) {
             //Hidden/Invisible geometry
-            textureIndex = objModel->batches[i].flags & BATCH_FLAGS_HIDDEN;
+            if (gPuppyPrint.showCol) {
+                textureIndex = 0;
+            } else {
+                textureIndex = objModel->batches[i].flags & BATCH_FLAGS_HIDDEN;
+            }
             //Probably a fakematch to use textureIndex here, but it works.
             if (!textureIndex) {
                 vertOffset = objModel->batches[i].verticesOffset;

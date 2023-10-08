@@ -190,6 +190,7 @@ struct PuppyPrint {
     u8 menuOpen; // Whether the page menu's open
     u8 page; // Current viewed page.
     u8 showCvg;
+    u8 showCol;
     s8 menuOption; // Current option in the page menu.
     char logText[NUM_LOG_LINES][127];
 };
