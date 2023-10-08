@@ -882,15 +882,13 @@ void set_anti_aliasing(s32 setting) {
 
 void pop_render_list_track(Gfx **dList) {
     RenderNodeTrack *renderList = gRenderNodeHead;
-    s32 hasTexture;
 
     while (renderList) {
         if (renderList->material) {
             load_and_set_texture(dList, renderList->material, renderList->flags, renderList->texOffset);
         }
-        hasTexture = renderList->material != NULL;
         gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(renderList->vtx), renderList->vtxCount, 0);
-        gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(renderList->tri), renderList->triCount, hasTexture);
+        gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(renderList->tri), renderList->triCount, renderList->material != NULL);
         renderList = renderList->next;
     }
     gRenderNodeHead = NULL;
@@ -1564,9 +1562,10 @@ s32 check_if_in_draw_range(Object *obj) {
             fadeDist *= fadeDist;
             if (fadeDist < dist) {
                 temp2 = viewDistance - fadeDist;
+                temp2 *= 2;
                 if (temp2 > 0) {
                     fadeDist = dist - fadeDist;
-                    alpha = ((f32) (1.0f - ((fadeDist) / temp2)) * 255.0f);
+                    alpha = ((f32) (1.0f - (fadeDist / temp2)) * 255.0f);
                 }
                 if (alpha == 0) {
                     alpha = 1;
@@ -1998,7 +1997,8 @@ void render_object_shadow(Gfx **dList, Object *obj, ShadowData *shadow) {
             alpha = gCurrentShadowVerts[gCurrentShadowTexture[i].yOffset].a;
             flags = RENDER_FOG_ACTIVE | RENDER_Z_COMPARE;
             if (alpha == 0 || obj->segment.object.opacity == 0) {
-                i = shadow->meshEnd; // It'd be easier to just return...
+                profiler_add(PP_SHADOW, first);
+                return;
             } else if (alpha != 255 || obj->segment.object.opacity != 255) {
                 flags = RENDER_FOG_ACTIVE | RENDER_SEMI_TRANSPARENT | RENDER_Z_COMPARE;
                 alpha = (obj->segment.object.opacity * alpha) >> 8;
@@ -2046,8 +2046,9 @@ void render_object_water_effects(Gfx **dList, Object *obj, WaterEffect *effect) 
             if (obj->segment.header->waterEffectGroup == SHADOW_SCENERY) {
                 gShadowIndex = gShadowHeapFlip;
                 gShadowIndex += 2;
-                if (get_distance_to_active_camera(obj->segment.trans.x_position, obj->segment.trans.y_position, obj->segment.trans.z_position) > 768.0f) {
-                    i = effect->meshEnd; // Just return.
+                if (get_distance_to_active_camera(obj->segment.trans.x_position, obj->segment.trans.y_position, obj->segment.trans.z_position) > 768.0f * 768.0f) {
+                    profiler_add(PP_SHADOW, first);
+                    return;
                 }
             }
             flags = RENDER_FOG_ACTIVE | RENDER_Z_COMPARE;
@@ -2055,13 +2056,13 @@ void render_object_water_effects(Gfx **dList, Object *obj, WaterEffect *effect) 
             gCurrentShadowTris = gShadowHeapTris[gShadowIndex];
             gCurrentShadowVerts = gShadowHeapVerts[gShadowIndex];
             while (i < effect->meshEnd) {
-                load_and_set_texture_no_offset(&gSceneCurrDisplayList, gCurrentShadowTexture[i].texture, flags);
+                load_and_set_texture_no_offset(dList, gCurrentShadowTexture[i].texture, flags);
                 numTris = gCurrentShadowTexture[i + 1].xOffset - gCurrentShadowTexture[i].xOffset;
                 numVerts = gCurrentShadowTexture[i + 1].yOffset - gCurrentShadowTexture[i].yOffset;
                 tri = &gCurrentShadowTris[gCurrentShadowTexture[i].xOffset];
                 vtx = &gCurrentShadowVerts[gCurrentShadowTexture[i].yOffset];
-                gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
-                gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
+                gSPVertexDKR((*dList)++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
+                gSPPolygon((*dList)++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
                 i++;
             }
         }
@@ -2089,6 +2090,7 @@ void update_shadows(s32 group, s32 waterGroup, s32 updateRate) {
     ShadowData *shadow;
     WaterEffect *waterEffect;
     s32 playerIndex;
+    profiler_begin_timer();
 
     D_8011B0CC = gShadowHeapFlip;
     if (group == SHADOW_SCENERY) {
@@ -2163,7 +2165,7 @@ void update_shadows(s32 group, s32 waterGroup, s32 updateRate) {
                 } 
             }
                 
-            if (objHeader->shadowGroup == SHADOW_ACTORS && numViewports > ONE_PLAYER && numViewports <= FOUR_PLAYERS) {
+            if (objHeader->shadowGroup == SHADOW_ACTORS && numViewports > ONE_PLAYER) {
                 if (obj->behaviorId == BHV_RACER) {
                     playerIndex = obj->unk64->racer.playerIndex;
                     if (playerIndex != PLAYER_COMPUTER) {
@@ -2185,6 +2187,7 @@ void update_shadows(s32 group, s32 waterGroup, s32 updateRate) {
     }
     gCurrentShadowTexture[D_8011D364].xOffset = D_8011D368;
     gCurrentShadowTexture[D_8011D364].yOffset = D_8011D36C;
+    profiler_add(PP_SHADOW, first);
 }
 
 void func_8002DE30(Object *obj) {
