@@ -142,7 +142,7 @@ typedef struct RenderNodeTrack {
     u32 flags;
     s16 triCount;
     s16 vtxCount;
-    s16 texOffset;
+    u16 texOffset;
     s16 primAlpha;
     struct RenderNodeTrack *next;
     struct RenderNodeTrack *prev;

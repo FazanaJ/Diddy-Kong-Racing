@@ -885,12 +885,12 @@ void pop_render_list_track(Gfx **dList) {
     s32 prevAlpha = 256;
 
     while (renderList) {
-        if (renderList->material) {
-            load_and_set_texture(dList, renderList->material, renderList->flags, renderList->texOffset);
-        }
-        if (prevAlpha != renderList->primAlpha) {
+        if (renderList->primAlpha != prevAlpha) {
             gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, renderList->primAlpha);
             prevAlpha = renderList->primAlpha;
+        }
+        if (renderList->material) {
+            load_and_set_texture(dList, renderList->material, renderList->flags, renderList->texOffset);
         }
         gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(renderList->vtx), renderList->vtxCount, 0);
         gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(renderList->tri), renderList->triCount, renderList->material != NULL);
@@ -1235,6 +1235,7 @@ void render_level_segment(Gfx **dList, s32 segmentId, s32 nonOpaque) {
                 entry->material = texture;
                 entry->flags = batchFlags;
                 entry->texOffset = texOffset;
+                entry->primAlpha = 255;
                 entry->tri = (Triangle *) triangles;
                 entry->vtx = (Vertex *) vertices;
                 entry->triCount = numberTriangles;
@@ -2026,8 +2027,8 @@ void render_object_shadow(Gfx **dList, Object *obj, ShadowData *shadow) {
                     entry = (RenderNodeTrack *) gSorterPos;
                     entry->material = gCurrentShadowTexture[i].texture;
                     entry->flags = flags;
+                    entry->primAlpha = alpha;
                     entry->texOffset = 0;
-                    entry->primAlpha = 255;
                     entry->tri = (Triangle *) tri;
                     entry->vtx = (Vertex *) vtx;
                     entry->triCount = numTris;
