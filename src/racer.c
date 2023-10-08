@@ -2274,7 +2274,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
         if (is_taj_challenge()) {
             gDialogueCameraAngle = 0;
         }
-        context = get_render_context();
+        context = get_game_mode();
         if (gRaceStartTimer == 0) {
             if (D_8011D544 > 0.0f) {
                 D_8011D544 -= updateRateF;
@@ -2333,7 +2333,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
         gCameraObject = (ObjectCamera *) &gCameraSegment[gActiveCameraID];
         tempRacer->miscAnimCounter += updateRate;
         gCurrentPlayerIndex = tempRacer->playerIndex;
-        if (tempRacer->raceFinished == TRUE || context == DRAW_MENU) {
+        if (tempRacer->raceFinished == TRUE || context == GAMEMODE_MENU) {
             tempRacer->unk1CA = 1;
             tempRacer->playerIndex = PLAYER_COMPUTER;
             tempRacer->unk1C9 = 0;
@@ -2481,7 +2481,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
             playerIDF = -(f32) playerID;
             CLAMP(tempRacer->velocity, playerIDF, playerID);
         }
-        if (context != DRAW_MENU || func_8000E148()) {
+        if (context != GAMEMODE_MENU || func_8000E148()) {
             func_800050D0(obj, gCurrentButtonsPressed, gCurrentRacerInput, updateRate);
         }
         lastCheckpointDist = tempRacer->checkpoint_distance;
@@ -5599,8 +5599,8 @@ void allocate_ghost_data(void) {
     D_8011D5A0[0] = 0;
     D_8011D5A0[1] = 0;
     D_8011D5A0[2] = 0;
-    D_8011D5A8[0] = 0;
-    D_8011D5A8[1] = 0;
+    D_8011D5A8[0] = CONTPAK_ERROR_NONE;
+    D_8011D5A8[1] = CONTPAK_ERROR_NONE;
     D_8011D59D = 0;
     D_8011D5AC = -1;
 }
@@ -5608,7 +5608,7 @@ void allocate_ghost_data(void) {
 void func_80059944(void) {
     D_8011D59C = D_8011D59D;
     D_8011D5A0[D_8011D59C] = 0;
-    D_8011D5A8[D_8011D59C] = 0;
+    D_8011D5A8[D_8011D59C] = CONTPAK_ERROR_NONE;
     D_8011D59E = 0;
 }
 
@@ -5694,7 +5694,7 @@ void func_80059BF0(Object *obj, s32 updateRate) {
         D_8011D59E += 30;
         if (D_8011D5A0[D_8011D59C] >= 360) {
             if (!is_postrace_viewport_active()) {
-                D_8011D5A8[D_8011D59C] = 1;
+                D_8011D5A8[D_8011D59C] = CONTPAK_ERROR_UNKNOWN;
             }
             return;
         }
@@ -5790,7 +5790,7 @@ void racer_enter_door(Object_Racer* racer, s32 updateRate) {
         }
         racer->transitionTimer = 60 - updateRate;
     }
-    func_8006F388(1);
+    set_pause_lockout_timer(1);
     if (racer->transitionTimer > 0) {
         racer->transitionTimer -= updateRate;
         if (racer->transitionTimer <= 0) {
@@ -5824,7 +5824,7 @@ void update_AI_racer(Object *obj, Object_Racer *racer, s32 updateRate, f32 updat
     f32 temp_fv1_2;
 
     gCurrentPlayerIndex = -1;
-    renderContext = get_render_context();
+    renderContext = get_game_mode();
     levelHeader = gCurrentLevelHeader;
     if (racer->unk1F6 > 0) {
         racer->unk1F6 -= updateRate;
@@ -5962,7 +5962,7 @@ void update_AI_racer(Object *obj, Object_Racer *racer, s32 updateRate, f32 updat
         case VEHICLE_WIZPIG: update_wizpig(updateRate, updateRateF, obj, racer, &gCurrentRacerInput, &gCurrentButtonsPressed, &gRaceStartTimer); break;
         case VEHICLE_ROCKET: update_rocket(updateRate, updateRateF, obj, racer, &gCurrentRacerInput, &gCurrentButtonsPressed, &gRaceStartTimer); break;
         }
-        if (renderContext != DRAW_MENU) {
+        if (renderContext != GAMEMODE_MENU) {
             func_800050D0(obj, gCurrentButtonsPressed, gCurrentRacerInput, updateRate);
         }
         lastCheckpointDist = racer->checkpoint_distance;
@@ -6015,7 +6015,7 @@ void update_AI_racer(Object *obj, Object_Racer *racer, s32 updateRate, f32 updat
         racer->unk70 = obj->segment.trans.z_position;
     } else {
         func_8005B818(obj, racer, updateRate, updateRateF);
-        if (renderContext != DRAW_MENU) {
+        if (renderContext != GAMEMODE_MENU) {
             func_800050D0(obj, gCurrentButtonsPressed, gCurrentRacerInput, updateRate);
         }
     }

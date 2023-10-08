@@ -141,7 +141,7 @@ Gfx dRenderSettingsSolidColour[][2] = {
 };
 
 // Some kind of texture on top of a solid colour
-Gfx D_800DF028[][2] = {
+Gfx dRenderSettingsPrimOverlay[][2] = {
     // Opaque Surface
     DRAW_TABLE_ENTRY(DKR_CC_DECALFADEPRIM, DKR_CC_DECALFADEPRIM, DKR_OMH_1CYC_BILERP, G_RM_ZB_OPA_DECAL, G_RM_ZB_OPA_DECAL2),
     DRAW_TABLE_ENTRY(DKR_CC_DECALFADEPRIM, DKR_CC_DECALFADEPRIM, DKR_OMH_1CYC_BILERP, G_RM_AA_ZB_OPA_DECAL, G_RM_AA_ZB_OPA_DECAL2),
@@ -151,7 +151,7 @@ Gfx D_800DF028[][2] = {
 };
 
 // Not sure what it is specifically, but some onscreen actors like TT and Taj use it.
-Gfx D_800DF0A8[][2] = {
+Gfx dRenderSettingsPrimCol[][2] = {
     // Opaque Surface
     DRAW_TABLE_GROUP(DKR_CC_UNK5, DKR_CC_UNK6, DKR_OMH_2CYC_BILERP, 
     G_RM_NOOP, G_RM_OPA_SURF2, G_RM_NOOP, G_RM_AA_OPA_SURF2, G_RM_NOOP, G_RM_ZB_OPA_SURF2, G_RM_NOOP, G_RM_AA_ZB_OPA_SURF2),
@@ -249,10 +249,13 @@ s32 gBlockedRenderFlags;
 TextureHeader *gCurrentTextureHeader;
 s16 gUsingTexture;
 s16 gForceFlags;
-s16 D_80126384;
+s16 gUsePrimColour;
 
 /******************************/
 
+/**
+ * Load the texture table from ROM and allocate space for all the texture asset management.
+*/
 void tex_init_textures(void) {
     s32 i;
 
@@ -448,18 +451,24 @@ void reset_render_settings(Gfx **dlist) {
     gUsingTexture = FALSE;
     gForceFlags = TRUE;
     gBlockedRenderFlags = RENDER_NONE;
-    D_80126384 = FALSE;
+    gUsePrimColour = FALSE;
     gSPSetGeometryMode((*dlist)++, G_SHADING_SMOOTH | G_SHADE | G_ZBUFFER);
     gDPPipeSync((*dlist)++);
 }
 
-void func_8007B43C(void) {
-    D_80126384 = TRUE;
+/**
+ * Enables usage of combiners utilising the indidual primitive colours.
+*/
+void enable_primitive_colour(void) {
+    gUsePrimColour = TRUE;
     gForceFlags = TRUE;
 }
 
-void func_8007B454(void) {
-    D_80126384 = FALSE;
+/**
+ * Disables usage of combiners utilising the indidual primitive colours.
+*/
+void disable_primitive_colour(void) {
+    gUsePrimColour = FALSE;
     gForceFlags = TRUE;
 }
 
@@ -526,7 +535,7 @@ void load_and_set_texture(Gfx **dlist, TextureHeader *texhead, s32 flags, s32 te
         gUsingTexture = FALSE;
     }
 
-    flags = (D_80126384) ? (flags & (RENDER_DECAL | RENDER_ANTI_ALIASING | RENDER_Z_COMPARE | RENDER_SEMI_TRANSPARENT)) : 
+    flags = (gUsePrimColour) ? (flags & (RENDER_DECAL | RENDER_ANTI_ALIASING | RENDER_Z_COMPARE | RENDER_SEMI_TRANSPARENT)) : 
                            (flags & (RENDER_VTX_ALPHA | RENDER_DECAL | RENDER_Z_UPDATE | RENDER_CUTOUT | RENDER_FOG_ACTIVE | RENDER_SEMI_TRANSPARENT | RENDER_Z_COMPARE | RENDER_ANTI_ALIASING));
     flags &= ~gBlockedRenderFlags;
     flags = (flags & RENDER_VTX_ALPHA) ? flags & ~RENDER_FOG_ACTIVE : flags & ~RENDER_Z_UPDATE;
@@ -538,7 +547,7 @@ void load_and_set_texture(Gfx **dlist, TextureHeader *texhead, s32 flags, s32 te
     if (flags != gCurrentRenderFlags || forceFlags) {
 
         if (((flags & RENDER_VTX_ALPHA) != (gCurrentRenderFlags & RENDER_VTX_ALPHA)) || gForceFlags) {
-            if (flags & RENDER_VTX_ALPHA || D_80126384) {
+            if (flags & RENDER_VTX_ALPHA || gUsePrimColour) {
                 gSPClearGeometryMode((*dlist)++, G_FOG);
             } else {
                 gSPSetGeometryMode((*dlist)++, G_FOG);
@@ -564,13 +573,13 @@ void load_and_set_texture(Gfx **dlist, TextureHeader *texhead, s32 flags, s32 te
                 goto draw;
         }
 
-        if (D_80126384) {
+        if (gUsePrimColour) {
             if (flags & RENDER_DECAL && flags & RENDER_Z_COMPARE) {
                 dlIndex = (flags & RENDER_ANTI_ALIASING) | ((flags & RENDER_SEMI_TRANSPARENT) >> 1);
-                dlID = D_800DF028[dlIndex];
+                dlID = dRenderSettingsPrimOverlay[dlIndex];
                 goto draw;
             }
-            dlID = D_800DF0A8[flags];
+            dlID = dRenderSettingsPrimCol[flags];
             goto draw;
         }
 

@@ -193,14 +193,14 @@ s8 D_8011AE01;
 s8 gIsNonCarRacers;
 s8 gIsSilverCoinRace;
 Object *D_8011AE08[16];
-ObjectHeader *(*D_8011AE48)[ASSET_OBJECT_HEADER_TABLE_LENGTH];
-u8 (*D_8011AE4C)[ASSET_OBJECT_HEADER_TABLE_LENGTH];
+ObjectHeader *(*gLoadedObjectHeaders)[ASSET_OBJECT_HEADER_TABLE_LENGTH];
+u8 (*gObjectHeaderReferences)[ASSET_OBJECT_HEADER_TABLE_LENGTH];
 TextureHeader *D_8011AE50;
 TextureHeader *D_8011AE54;
 Object **gObjPtrList; // Not sure about the number of elements
-s32 objCount;
+s32 gObjectCount;
 s32 D_8011AE60;
-s32 D_8011AE64;
+s32 gParticleCount;
 Object *gObjectMemoryPool;
 Object **D_8011AE6C;
 s32 D_8011AE70;
@@ -224,7 +224,7 @@ s16 *gAssetsLvlObjTranslationTable;
 s32 gAssetsLvlObjTranslationTableLength;
 s32 D_8011AEC0;
 Object **gParticlePtrList;
-s32 gParticleCount;
+s32 gFreeListCount;
 CheckpointNode *gTrackCheckpoints; // Array of structs, unknown number of members
 s32 gNumberOfCheckpoints;
 s32 D_8011AED4;
@@ -244,7 +244,7 @@ s8 D_8011AEF7;
 s32 D_8011AEF8;
 s32 D_8011AEFC;
 s8 D_8011AF00;
-Object *(*D_8011AF04)[64]; // Not sure about the number of elements
+Object *(*D_8011AF04)[128];
 s32 D_8011AF08[2];
 s32 D_8011AF10[2];
 f32 D_8011AF18[4];
@@ -369,11 +369,11 @@ void allocate_object_pools(void) {
         gAssetsObjectHeadersTableLength++;
     }
     gAssetsObjectHeadersTableLength--;
-    D_8011AE48 = allocate_from_main_pool_safe(gAssetsObjectHeadersTableLength * 4, COLOUR_TAG_WHITE);
-    D_8011AE4C = allocate_from_main_pool_safe(gAssetsObjectHeadersTableLength, COLOUR_TAG_WHITE);
+    gLoadedObjectHeaders = allocate_from_main_pool_safe(gAssetsObjectHeadersTableLength * 4, COLOUR_TAG_WHITE);
+    gObjectHeaderReferences = allocate_from_main_pool_safe(gAssetsObjectHeadersTableLength, COLOUR_TAG_WHITE);
 
     for (i = 0; i < gAssetsObjectHeadersTableLength; i++) {
-        (*D_8011AE4C)[i] = 0;
+        (*gObjectHeaderReferences)[i] = 0;
     }
 
     gAssetsMiscSection = (s32 *) load_asset_section_from_rom(ASSET_MISC);
@@ -429,7 +429,7 @@ void clear_object_pointers(void) {
     D_8011AD26[0] = 1;
     D_8011AD5C = 0;
     D_8011AD60 = 0;
-    gParticleCount = 0;
+    gFreeListCount = 0;
     D_8011AE70 = 0;
     gNumberOfCheckpoints = 0;
     D_8011AED4 = 0;
@@ -451,9 +451,9 @@ void clear_object_pointers(void) {
 
     D_8011AF08[0] = 0xFF;
     D_8011AF08[1] = 0xFF;
-    objCount = 0;
+    gObjectCount = 0;
     D_8011AE60 = 0;
-    D_8011AE64 = 0;
+    gParticleCount = 0;
     D_8011AE88 = 0;
     D_8011ADD4 = 0;
     D_8011AE7A = 0;
@@ -482,26 +482,31 @@ void func_8000C604(void) {
         func_8006F398();
     }
     gParticlePtrList_flush();
-    len = objCount;
+    len = gObjectCount;
     for (i = 0; i < len; i++) {
         func_800101AC(gObjPtrList[i], 1);
     }
-    gParticleCount = 0;
-    objCount = 0;
+    gFreeListCount = 0;
+    gObjectCount = 0;
     D_8011AE60 = 0;
     clear_object_pointers();
     free_from_memory_pool((void *) D_8011AEB0[0]);
     free_from_memory_pool((void *) D_8011AEB0[1]);
 }
 
-ObjectHeader *func_8000C718(s32 index) {
+/**
+ * Set the object's header.
+ * Search if the intended header is already loaded and use that.
+ * Otherwise, allocate space and load it into ROM and set it to that.
+*/
+ObjectHeader *load_object_header(s32 index) {
     s32 assetOffset;
     s32 size;
     ObjectHeader *address;
 
-    if ((*D_8011AE4C)[index] != 0) {
-        (*D_8011AE4C)[index]++;
-        return (*D_8011AE48)[index];
+    if ((*gObjectHeaderReferences)[index] != 0) {
+        (*gObjectHeaderReferences)[index]++;
+        return (*gLoadedObjectHeaders)[index];
     }
     assetOffset = gAssetsObjectHeadersTable[index];
     size = gAssetsObjectHeadersTable[index + 1] - assetOffset;
@@ -513,19 +518,23 @@ ObjectHeader *func_8000C718(s32 index) {
         address->vehiclePartIds = (s32 *) ((uintptr_t) address + (uintptr_t) address->vehiclePartIds);
         address->vehiclePartIndices = (s8 *) ((uintptr_t) address + (uintptr_t) address->vehiclePartIndices);
         address->modelIds = (s32 *) ((uintptr_t) address + (uintptr_t) address->modelIds);
-        (*D_8011AE48)[index] = address;
-        (*D_8011AE4C)[index] = 1;
+        (*gLoadedObjectHeaders)[index] = address;
+        (*gObjectHeaderReferences)[index] = 1;
     } else {
         return NULL;
     }
     return address;
 }
 
-void func_8000C844(s32 index) {
-    if ((*D_8011AE4C)[index] != 0) {
-        (*D_8011AE4C)[index]--;
-        if ((*D_8011AE4C)[index] == 0) {
-            free_from_memory_pool((void *) (*D_8011AE48)[index]);
+/**
+ * Remove this object from the loaded header's references.
+ * If the reference number is zero, free the header.
+*/
+void try_free_object_header(s32 index) {
+    if ((*gObjectHeaderReferences)[index] != 0) {
+        (*gObjectHeaderReferences)[index]--;
+        if ((*gObjectHeaderReferences)[index] == 0) {
+            free_from_memory_pool((void *) (*gLoadedObjectHeaders)[index]);
         }
     }
 }
@@ -649,25 +658,29 @@ s32 func_8000CC20(Object *obj) {
 // Has a jump table
 GLOBAL_ASM("asm/non_matchings/objects/func_8000CC7C.s")
 
-s32 func_8000E0B0(void) {
+/**
+ * Return an error status for the controller pak.
+ * Categorises multiple different controller pak messages into one for fewer cases.
+*/
+s32 get_contpak_error(void) {
     // D_8011AD38 is likely an SIDeviceStatus value, but not 100% sure yet.
     switch (D_8011AD38) {
-        case 1: //NO_CONTROLLER_PAK
-            return -1;
-        case 7: //RUMBLE_PAK
-            return 0;
-        case 2: //CONTROLLER_PAK_INCONSISTENT
-        case 3: //CONTROLLER_PAK_WITH_BAD_ID
-            return 3;
-        case 4: //CONTROLLER_PAK_FULL
-        case 6: //CONTROLLER_PAK_UNK6
-            return 2;
-        case 0: //CONTROLLER_PAK_GOOD
-        case 5: //CONTROLLER_PAK_CHANGED
-        case 8: //CONTROLLER_PAK_UNK8
+        case NO_CONTROLLER_PAK:
+            return CONTPAK_ERROR_MISSING;
+        case RUMBLE_PAK:
+            return CONTPAK_ERROR_NONE;
+        case CONTROLLER_PAK_INCONSISTENT:
+        case CONTROLLER_PAK_WITH_BAD_ID:
+            return CONTPAK_ERROR_DAMAGED;
+        case CONTROLLER_PAK_FULL:
+        case CONTROLLER_PAK_UNK6:
+            return CONTPAK_ERROR_FULL;
+        case CONTROLLER_PAK_GOOD:
+        case CONTROLLER_PAK_CHANGED:
+        case CONTROLLER_PAK_UNK8:
             return func_80059E20();
         default:
-            return 0;
+            return CONTPAK_ERROR_NONE;
     }
 }
 
@@ -814,7 +827,7 @@ u8 is_in_time_trial(void) {
  * Official name: objGetObject
 */
 Object *get_object(s32 index) {
-    if (index < 0 || index >= objCount) {
+    if (index < 0 || index >= gObjectCount) {
         return 0;
     }
     return gObjPtrList[index];
@@ -825,15 +838,15 @@ Object *get_object(s32 index) {
 */
 Object **objGetObjList(s32 *arg0, s32 *cnt) {
     *arg0 = D_8011AE60;
-    *cnt = objCount;
+    *cnt = gObjectCount;
     return gObjPtrList;
 }
 
 void func_8000E9D0(Object *arg0) {
     arg0->segment.trans.flags |= OBJ_FLAGS_DEACTIVATED;
-    func_800245B4(arg0->segment.object.unk2C | 0xC000);
-    gObjPtrList[objCount++] = arg0;
-    D_8011AE64++;
+    func_800245B4(arg0->segment.object.unk2C | (OBJ_FLAGS_DEACTIVATED | OBJ_FLAGS_INVISIBLE));
+    gObjPtrList[gObjectCount++] = arg0;
+    gParticleCount++;
 }
 
 #ifdef NON_EQUIVALENT
@@ -872,7 +885,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 arg1) {
     }
     curObj = &(*gSpawnObjectHeap)[0];
     curObj->segment.trans.flags = 2;
-    curObj->segment.header = func_8000C718(var_a0);
+    curObj->segment.header = load_object_header(var_a0);
     if (curObj->segment.header == NULL) {
         return NULL;
     }
@@ -1000,7 +1013,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 arg1) {
     }
     if (var_v1) {
         objFreeAssets(curObj, assetCount, objType);
-        func_8000C844(var_a0);
+        try_free_object_header(var_a0);
         return NULL;
     }
     address = (u32 *) &curObj->unk68[curObj->segment.header->numberOfModelIds];
@@ -1016,19 +1029,19 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 arg1) {
         address = (u32 *) ((uintptr_t) address + sizeOfobj);
         if (sizeOfobj == 0) {
             objFreeAssets(curObj, assetCount, objType);
-            func_8000C844(var_a0);
+            try_free_object_header(var_a0);
             return NULL;
         }
     }
     if (sp50 & 4) {
-        sizeOfobj = func_8000FC6C(curObj, (ShadowData *) address);
+        sizeOfobj = init_object_water_effect(curObj, (ShadowData *) address);
         address = (u32 *) ((uintptr_t) address + sizeOfobj);
         if (sizeOfobj == 0) {
             if (D_8011AE50 != NULL) {
                 free_texture((u32)D_8011AE50);
             }
             objFreeAssets(curObj, assetCount, objType);
-            func_8000C844(var_a0);
+            try_free_object_header(var_a0);
             return NULL;
         }
     }
@@ -1060,7 +1073,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 arg1) {
             free_texture((u32)D_8011AE54);
         }
         objFreeAssets(curObj, assetCount, objType);
-        func_8000C844(var_a0);
+        try_free_object_header(var_a0);
         return NULL;
     }
     if (sizeOfobj & 0xF) {
@@ -1106,8 +1119,8 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 arg1) {
     }
     newObj->unk68 = (Object_68 **)((uintptr_t) newObj + (uintptr_t) 0x80);
     if (arg1 & 1) {
-        gObjPtrList[objCount] = newObj;
-        objCount++;
+        gObjPtrList[gObjectCount] = newObj;
+        gObjectCount++;
     }
     run_object_init_func(newObj, entry, 0);
     if (newObj->interactObj != NULL) {
@@ -1123,10 +1136,10 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 arg1) {
             free_texture(D_8011AE54);
         }
         objFreeAssets(newObj, assetCount, objType);
-        func_8000C844(var_a0);
+        try_free_object_header(var_a0);
         free_from_memory_pool(newObj);
         if (arg1 & 1) {
-            objCount--;
+            gObjectCount--;
         }
         return NULL;
     }
@@ -1232,7 +1245,7 @@ s32 func_8000F99C(Object *obj) {
             temp_v0 = obj60->unk4[i];
             if (temp_v0 != NULL) {
                 objFreeAssets(temp_v0, temp_v0->segment.header->numberOfModelIds, temp_v0->segment.header->modelType);
-                func_8000C844(temp_v0->segment.object.unk2C);
+                try_free_object_header(temp_v0->segment.object.unk2C);
                 free_from_memory_pool(temp_v0);
             }
         }
@@ -1274,31 +1287,35 @@ s32 init_object_shadow(Object *obj, ShadowData *shadow) {
     obj->shadow = shadow;
     shadow->texture = NULL;
     objHeader = ((ObjectSegment *) obj)->header;
-    if (objHeader->unk32) {
+    if (objHeader->shadowGroup) {
         shadow->texture = load_texture((s32) ((ObjectHeader *) objHeader)->unk34);
         objHeader = ((ObjectSegment *) obj)->header;
     }
     shadow->scale = objHeader->shadowScale;
-    shadow->unk8 = -1;
+    shadow->meshStart = -1;
     D_8011AE50 = shadow->texture;
-    if (((ObjectSegment *) obj)->header->unk32 && shadow->texture == NULL) {
+    if (((ObjectSegment *) obj)->header->shadowGroup && shadow->texture == NULL) {
         return 0;
     }
     return sizeof(ShadowData);
 }
 
-s32 func_8000FC6C(Object *obj, WaterEffect *shadow) {
-    obj->waterEffect = shadow;
-    shadow->scale = obj->segment.header->unk8;
-    shadow->unkC = 0;
-    shadow->unkE = obj->segment.header->unk0 >> 8;
-    shadow->texture = NULL;
-    if (obj->segment.header->unk36) {
-        shadow->texture = load_texture(obj->segment.header->unk38);
+/**
+ * Assigns water effect data to an object. Loads and assigns the effect texture, too.
+ * Returns zero if the texture is missing.
+*/
+s32 init_object_water_effect(Object *obj, WaterEffect *waterEffect) {
+    obj->waterEffect = waterEffect;
+    waterEffect->scale = obj->segment.header->unk8;
+    waterEffect->textureFrame = 0;
+    waterEffect->animationSpeed = obj->segment.header->unk0 >> 8;
+    waterEffect->texture = NULL;
+    if (obj->segment.header->waterEffectGroup) {
+        waterEffect->texture = load_texture(obj->segment.header->unk38);
     }
-    shadow->unk8 = -1;
-    D_8011AE54 = shadow->texture;
-    if (obj->segment.header->unk36 && shadow->texture == NULL) {
+    waterEffect->meshStart = -1;
+    D_8011AE54 = waterEffect->texture;
+    if (obj->segment.header->waterEffectGroup && waterEffect->texture == NULL) {
         return 0;
     }
     return sizeof(WaterEffect);
@@ -1314,19 +1331,24 @@ s32 init_object_interaction_data(Object *obj, ObjectInteraction *interactObj) {
     return sizeof(ObjectInteraction);
 }
 
-s32 func_8000FD34(Object *arg0, Object_5C *arg1) {
-    arg0->unk5C = arg1;
-    func_80016BC4(arg0);
+// Inits some matrix stuff for objects. It seems to be precomputing something, but not sure what.
+s32 func_8000FD34(Object *obj, Object_5C *matrices) {
+    obj->unk5C = matrices;
+    func_80016BC4(obj);
     return sizeof(Object_5C);
 }
 
 GLOBAL_ASM("asm/non_matchings/objects/func_8000FD54.s")
 
-//Official Name: objFreeObject
+/**
+ * Adds the object to the free list.
+ * This object will be deallocated on the next update cycle.
+ * Official Name: objFreeObject
+*/
 void free_object(Object *object) {
-    func_800245B4(object->unk4A | 0x8000);
-    gParticlePtrList[gParticleCount] = object;
-    gParticleCount++;
+    func_800245B4(object->unk4A | OBJ_FLAGS_DEACTIVATED);
+    gParticlePtrList[gFreeListCount] = object;
+    gFreeListCount++;
 }
 
 /*
@@ -1337,11 +1359,11 @@ void gParticlePtrList_flush(void) {
     Object *searchObj;
 
     D_8011AE88 = 0;
-    for (i = 0; i < gParticleCount; i++) {
+    for (i = 0; i < gFreeListCount; i++) {
         search_indx = -1;
         searchObj = gParticlePtrList[i];
 
-        for (j = 0; j < objCount; j++) {
+        for (j = 0; j < gObjectCount; j++) {
             if (searchObj == gObjPtrList[j])
                 search_indx = j;
         }
@@ -1351,14 +1373,14 @@ void gParticlePtrList_flush(void) {
             if (search_indx < D_8011AE7C) {
                 D_8011AE7C--;
             }
-            objCount--;
-            for (j = search_indx; j < objCount; j++) {
+            gObjectCount--;
+            for (j = search_indx; j < gObjectCount; j++) {
                 gObjPtrList[j] = gObjPtrList[j + 1];
             }
         }
         func_800101AC(searchObj, 0);
     }
-    gParticleCount = 0;
+    gFreeListCount = 0;
 }
 
 GLOBAL_ASM("asm/non_matchings/objects/func_800101AC.s")
@@ -1408,7 +1430,7 @@ void func_80010994(s32 updateRate) {
     for (i = 0; i < D_8011AE70; i++) {
         func_8001709C(D_8011AE6C[i]);
     }
-    tempVal = objCount;
+    tempVal = gObjectCount;
     for (i = D_8011AE60; i < tempVal; i++) {
         obj = gObjPtrList[i];
         if (!(obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED)) {
@@ -1463,7 +1485,7 @@ void func_80010994(s32 updateRate) {
             run_object_loop_func(obj, updateRate);
         }
     }
-    if (D_8011AE64 > 0) {
+    if (gParticleCount > 0) {
         for (i = D_8011AE60; i < tempVal; i++) {
             obj = gObjPtrList[i];
             if (obj->segment.trans.flags & 0x8000) {
@@ -1474,7 +1496,7 @@ void func_80010994(s32 updateRate) {
     }
     lightUpdateLights(updateRate);
     if (get_light_count() > 0) {
-        for (i = D_8011AE60; i < objCount; i++) {
+        for (i = D_8011AE60; i < gObjectCount; i++) {
             obj = gObjPtrList[i];
             if (!(obj->segment.trans.flags & 0x8000) && (obj->shading != NULL)) {
                 func_80032C7C(obj);
@@ -2044,7 +2066,7 @@ void render_3d_model(Gfx **dList, Object *obj) {
         }
         if (obj->segment.header->unk71) {
             gDPSetPrimColor((*dList)++, 0, 0, obj->shading->unk18, obj->shading->unk19, obj->shading->unk1A, alpha);
-            func_8007B43C();
+            enable_primitive_colour();
         } else if (hasOpacity) {
             gDPSetPrimColor((*dList)++, 0, 0, intensity, intensity, intensity, alpha);
         } else {
@@ -2061,7 +2083,7 @@ void render_3d_model(Gfx **dList, Object *obj) {
             } else {
                 gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
             }
-            func_8007B454();
+            disable_primitive_colour();
         }
         if (obj->unk60 != NULL) {
             obj60_unk0 = obj->unk60->unk0;
@@ -2143,11 +2165,11 @@ void render_3d_model(Gfx **dList, Object *obj) {
         if (meshBatch != -1) {
             if (obj->segment.header->unk71) {
                 gDPSetPrimColor((*dList)++, 0, 0, obj->shading->unk18, obj->shading->unk19, obj->shading->unk1A, alpha);
-                func_8007B43C();
+                enable_primitive_colour();
             }
             func_800143A8(dList, objModel, obj, meshBatch, 4, spB0);
             if (obj->segment.header->unk71) {
-                func_8007B454();
+                disable_primitive_colour();
             }
         }
         if (hasOpacity || obj->segment.header->unk71) {
@@ -2604,7 +2626,7 @@ void func_800142B8(void) {
     Object *currObj;
     Object_68 *curr_68;
 
-    for (; i < objCount; i++) {
+    for (; i < gObjectCount; i++) {
         currObj = gObjPtrList[i];
         if ((currObj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) == 0 && currObj->segment.header->modelType == OBJECT_MODEL_TYPE_3D_MODEL) {
             for (j = 0; j < currObj->segment.header->numberOfModelIds; j++) {
@@ -2702,12 +2724,12 @@ s32 func_80014814(s32 *retObjCount) {
     s32 maxObjCount;
     s32 curObjCount;
 
-    *retObjCount = objCount;
+    *retObjCount = gObjectCount;
     if (D_8011AE7C) {
         return D_8011AE7C;
     }
     curObjCount = D_8011AE60;
-    maxObjCount = objCount - 1;
+    maxObjCount = gObjectCount - 1;
     while (maxObjCount >= curObjCount) {
         for (i = 0; maxObjCount >= curObjCount && i == 0; i++) {
             if (!(gObjPtrList[curObjCount]->segment.trans.flags & 0x8000)) {
@@ -2778,7 +2800,7 @@ void func_800155B8(void) {
     Object *objList[257]; //257 seems random, but it works for now.
 
     objsWithInteractives = 0;
-    for (i = D_8011AE60; i < objCount; i++) {
+    for (i = D_8011AE60; i < gObjectCount; i++) {
         obj = gObjPtrList[i];
         if (!(obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED)) {
             objInteract = obj->interactObj;
@@ -2874,7 +2896,7 @@ Object *func_80016C68(f32 x, f32 y, f32 z, f32 maxDistCheck, s32 dontCheckYAxis)
     s32 i;
     Object *curObj;
     
-    for (i = 0; i < objCount; i++) {
+    for (i = 0; i < gObjectCount; i++) {
         curObj = gObjPtrList[i];
         if (!(curObj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && (curObj->behaviorId == BHV_ANIMATED_OBJECT_3)) {
             xDiff = curObj->segment.trans.x_position - x;
@@ -2999,7 +3021,7 @@ GLOBAL_ASM("asm/non_matchings/objects/func_800185E4.s")
 Object *find_taj_object(void) {
     s32 i;
     Object *current_obj;
-    for (i = D_8011AE60; i < objCount; i++) {
+    for (i = D_8011AE60; i < gObjectCount; i++) {
         current_obj = gObjPtrList[i];
         if (!(current_obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && (current_obj->behaviorId == BHV_PARK_WARDEN)) {
             return current_obj;
@@ -3322,7 +3344,7 @@ void func_8001BC54(void) {
     s32 i;
 
     gCameraObjCount = 0;
-    for (i = 0; i < objCount; i++) {
+    for (i = 0; i < gObjectCount; i++) {
         objPtr = gObjPtrList[i];
         if (!(objPtr->segment.trans.flags & OBJ_FLAGS_DEACTIVATED)) {
             if (objPtr->behaviorId == BHV_CAMERA_CONTROL) {
@@ -3689,7 +3711,7 @@ void func_8001E36C(s32 arg0, f32 *arg1, f32 *arg2, f32 *arg3) {
     *arg1 = -32000.0f;
     *arg2 = -32000.0f;
     *arg3 = -32000.0f;
-    for (i = 0; i < objCount; i++) {
+    for (i = 0; i < gObjectCount; i++) {
         current_obj = gObjPtrList[i];
 
         if (current_obj != NULL
@@ -3716,7 +3738,7 @@ void func_8001E45C(s32 arg0) {
         D_8011AE7A = arg0;
         D_8011ADAC = 0;
         D_8011AE7E = 1;
-        if (get_render_context() == DRAW_MENU) {
+        if (get_game_mode() == GAMEMODE_MENU) {
             gDrawFrameTimer = 2;
         }
     }
@@ -3911,7 +3933,7 @@ void func_80021104(Object *obj, Object_Animation *animObj, LevelObjectEntry_Anim
     ObjectSegment *seg;
     ObjectTransform *animObjTrans;
 
-    animObjTrans = animObj->unk1C;
+    animObjTrans = (ObjectTransform *) animObj->unk1C;
     if (obj->behaviorId == BHV_CAMERA_ANIMATION) {
         animObj->unk44 = D_8011AD3E;
         D_8011AD3E++;
@@ -4091,7 +4113,7 @@ void init_racer_for_challenge(s32 vehicleID) {
     racer->lap = 0;
     racer->unk1BA = 0;
     set_taj_challenge_type(vehicleID);
-    func_8006F388(10);
+    set_pause_lockout_timer(10);
 }
 
 GLOBAL_ASM("asm/non_matchings/objects/func_80022948.s")
@@ -4101,7 +4123,7 @@ void func_80022CFC(s32 arg0, f32 x, f32 y, f32 z) {
     unk80022CFC_1 *obj;
     Settings *settings = get_settings();
 
-    for (index = 0; index < objCount; index += 1) {
+    for (index = 0; index < gObjectCount; index += 1) {
         obj = ((unk80022CFC_1*) gObjPtrList[index]);
         if (obj->unk48 == 0x4D) {
             if (obj->unk3C != NULL) {
@@ -4142,7 +4164,7 @@ Object *func_8002342C(f32 x, f32 z) {
     bestDist = 0.0f;
     i = 0;
     bestObj = NULL;
-    if (objCount > 0) {
+    if (gObjectCount > 0) {
         do {
             tempObj = gObjPtrList[i];
             if (!(tempObj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && tempObj->behaviorId == BHV_UNK_57) {
@@ -4155,7 +4177,7 @@ Object *func_8002342C(f32 x, f32 z) {
                 }
             }
             i += 1;
-        } while (i < objCount);
+        } while (i < gObjectCount);
     }
     return bestObj;
 }
