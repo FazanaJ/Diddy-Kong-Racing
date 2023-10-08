@@ -10796,7 +10796,7 @@ void run_benchmark() {
     cutsceneId = (benchLvlIds[benchSel] == ASSET_LEVEL_CENTRALAREAHUB) ? 1 : 100;
     set_rng_seed(12345); // This is needed to make each run consistent.
     load_level_for_menu(benchLvlIds[benchSel], benchNumPlayers - 1, cutsceneId);
-    func_8006DB20(get_map_default_vehicle(benchLvlIds[benchSel]));
+    set_vehicle_id_for_menu(get_map_default_vehicle(benchLvlIds[benchSel]));
     func_8006BD10(1.0f);
     gLastBenchLevelID = benchLvlIds[benchSel];
     benchState = BENCHMARK_RUNNING;
