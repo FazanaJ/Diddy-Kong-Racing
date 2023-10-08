@@ -2079,24 +2079,9 @@ void render_object_water_effects(Gfx **dList, Object *obj, WaterEffect *effect) 
                 numVerts = gCurrentShadowTexture[i + 1].yOffset - gCurrentShadowTexture[i].yOffset;
                 tri = &gCurrentShadowTris[gCurrentShadowTexture[i].xOffset];
                 vtx = &gCurrentShadowVerts[gCurrentShadowTexture[i].yOffset];
-                if (sShowAll) {
-                    load_and_set_texture_no_offset(dList, gCurrentShadowTexture[i].texture, flags);
-                    gSPVertexDKR((*dList)++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
-                    gSPPolygon((*dList)++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
-                } else {
-                    RenderNodeTrack *entry;
-                    gSorterPos -= sizeof(RenderNodeTrack);
-                    entry = (RenderNodeTrack *) gSorterPos;
-                    entry->material = gCurrentShadowTexture[i].texture;
-                    entry->flags = flags;
-                    entry->texOffset = 0;
-                    entry->primAlpha = 255;
-                    entry->tri = (Triangle *) tri;
-                    entry->vtx = (Vertex *) vtx;
-                    entry->triCount = numTris;
-                    entry->vtxCount = numVerts;
-                    find_material_list_track(entry);
-                }
+                load_and_set_texture_no_offset(dList, gCurrentShadowTexture[i].texture, flags);
+                gSPVertexDKR((*dList)++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
+                gSPPolygon((*dList)++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
                 i++;
             }
         }
