@@ -882,10 +882,15 @@ void set_anti_aliasing(s32 setting) {
 
 void pop_render_list_track(Gfx **dList) {
     RenderNodeTrack *renderList = gRenderNodeHead;
+    s32 prevAlpha = 256;
 
     while (renderList) {
         if (renderList->material) {
             load_and_set_texture(dList, renderList->material, renderList->flags, renderList->texOffset);
+        }
+        if (prevAlpha != renderList->primAlpha) {
+            gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, renderList->primAlpha);
+            prevAlpha = renderList->primAlpha;
         }
         gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(renderList->vtx), renderList->vtxCount, 0);
         gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(renderList->tri), renderList->triCount, renderList->material != NULL);
@@ -1045,7 +1050,7 @@ void render_level_geometry_and_objects(Gfx **dList) {
             if (visible > 0) {
                 if (obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) {
                     render_object(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, obj);
-                    goto skip;
+                    continue;
                 } else if (obj->shadow != NULL) {
                     render_object_shadow(dList, obj, obj->shadow);
                 }
@@ -1054,7 +1059,6 @@ void render_level_geometry_and_objects(Gfx **dList) {
                     render_object_water_effects(dList, obj, obj->waterEffect);
                 }
             }
-skip:
             if (obj->behaviorId == BHV_RACER) {
                 render_racer_shield(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, obj);
                 render_racer_magnet(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, obj);
@@ -1062,11 +1066,13 @@ skip:
         }
     }
 
+    pop_render_list_track(dList);
     if (D_800DC924 && func_80027568()) {
         gSceneCurrDisplayList = *dList;
         func_8002581C(segmentIds, numberOfSegments, gActiveCameraID);
         *dList = gSceneCurrDisplayList;
     }
+    
     gAntiAliasing = FALSE;
 #ifdef PUPPYPRINT_DEBUG
     gPuppyPrint.mainTimerPoints[1][PP_PARTICLEGFX] = osGetCount();
@@ -1133,7 +1139,6 @@ void render_level_segment(Gfx **dList, s32 segmentId, s32 nonOpaque) {
     s32 vertices;
     s32 triangles;
     s32 color;
-    s32 isInvisible;
     s32 levelHeaderIndex;
     s32 texOffset;
     s32 sp78;
@@ -1158,8 +1163,7 @@ void render_level_segment(Gfx **dList, s32 segmentId, s32 nonOpaque) {
     for (i = startPos; i < endPos; i++) {
         batchInfo = &segment->batches[i];
         textureFlags = RENDER_NONE;
-        isInvisible = batchInfo->flags & BATCH_FLAGS_HIDDEN;
-        if (isInvisible && gPuppyPrint.showCol == FALSE) {
+        if (batchInfo->flags & BATCH_FLAGS_HIDDEN && gPuppyPrint.showCol == FALSE) {
             continue;
         }
         batchFlags = batchInfo->flags;
@@ -2005,7 +2009,6 @@ void render_object_shadow(Gfx **dList, Object *obj, ShadowData *shadow) {
                 gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, alpha);
             }
             while (i < shadow->meshEnd) {
-                load_and_set_texture_no_offset(dList, gCurrentShadowTexture[i].texture, flags);
                 // I hope we can clean this part up.
                 offsetX = gCurrentShadowTexture[i].xOffset;
                 offsetY = gCurrentShadowTexture[i].yOffset;
@@ -2013,8 +2016,24 @@ void render_object_shadow(Gfx **dList, Object *obj, ShadowData *shadow) {
                 numVerts = gCurrentShadowTexture[i+1].yOffset - offsetY;
                 tri = (Triangle *) &gCurrentShadowTris[offsetX];
                 vtx = (Vertex *) &gCurrentShadowVerts[offsetY];
-                gSPVertexDKR((*dList)++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
-                gSPPolygon((*dList)++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
+                if (sShowAll) {
+                    load_and_set_texture_no_offset(dList, gCurrentShadowTexture[i].texture, flags);
+                    gSPVertexDKR((*dList)++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
+                    gSPPolygon((*dList)++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
+                } else {
+                    RenderNodeTrack *entry;
+                    gSorterPos -= sizeof(RenderNodeTrack);
+                    entry = (RenderNodeTrack *) gSorterPos;
+                    entry->material = gCurrentShadowTexture[i].texture;
+                    entry->flags = flags;
+                    entry->texOffset = 0;
+                    entry->primAlpha = 255;
+                    entry->tri = (Triangle *) tri;
+                    entry->vtx = (Vertex *) vtx;
+                    entry->triCount = numTris;
+                    entry->vtxCount = numVerts;
+                    find_material_list_track(entry);
+                }
                 i++;
             }
             
@@ -2056,13 +2075,28 @@ void render_object_water_effects(Gfx **dList, Object *obj, WaterEffect *effect) 
             gCurrentShadowTris = gShadowHeapTris[gShadowIndex];
             gCurrentShadowVerts = gShadowHeapVerts[gShadowIndex];
             while (i < effect->meshEnd) {
-                load_and_set_texture_no_offset(dList, gCurrentShadowTexture[i].texture, flags);
                 numTris = gCurrentShadowTexture[i + 1].xOffset - gCurrentShadowTexture[i].xOffset;
                 numVerts = gCurrentShadowTexture[i + 1].yOffset - gCurrentShadowTexture[i].yOffset;
                 tri = &gCurrentShadowTris[gCurrentShadowTexture[i].xOffset];
                 vtx = &gCurrentShadowVerts[gCurrentShadowTexture[i].yOffset];
-                gSPVertexDKR((*dList)++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
-                gSPPolygon((*dList)++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
+                if (sShowAll) {
+                    load_and_set_texture_no_offset(dList, gCurrentShadowTexture[i].texture, flags);
+                    gSPVertexDKR((*dList)++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
+                    gSPPolygon((*dList)++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
+                } else {
+                    RenderNodeTrack *entry;
+                    gSorterPos -= sizeof(RenderNodeTrack);
+                    entry = (RenderNodeTrack *) gSorterPos;
+                    entry->material = gCurrentShadowTexture[i].texture;
+                    entry->flags = flags;
+                    entry->texOffset = 0;
+                    entry->primAlpha = 255;
+                    entry->tri = (Triangle *) tri;
+                    entry->vtx = (Vertex *) vtx;
+                    entry->triCount = numTris;
+                    entry->vtxCount = numVerts;
+                    find_material_list_track(entry);
+                }
                 i++;
             }
         }
