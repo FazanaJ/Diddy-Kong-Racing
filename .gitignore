@@ -33,3 +33,4 @@ m2cfiles/
 *.bat
 dkr_hot_reload.py
 lastRomPath.txt
+tools/flips

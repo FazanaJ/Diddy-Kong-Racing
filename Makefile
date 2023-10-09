@@ -187,6 +187,7 @@ N64CRC = $(TOOLS_DIR)/n64crc
 FIXCHECKSUMS = python3 $(TOOLS_DIR)/python/calc_func_checksums.py $(VERSION)
 COMPRESS = $(TOOLS_DIR)/dkr_assets_tool -fc
 BUILDER = $(TOOLS_DIR)/dkr_assets_tool -b $(VERSION) ./assets
+FLIPS = $(TOOLS_DIR)/flips
 
 LIB_DIRS := lib/
 ASM_DIRS := asm/ asm/boot/ asm/assets/ lib/asm/ lib/asm/non_decompilable
@@ -439,6 +440,10 @@ ifneq ($(wildcard $(BUILD_DIR)/src/.*),)
 else
 	@echo "/build/lib directory has already been deleted."
 endif
+
+ROM := $(BUILD_DIR)/$(TARGET).z64
+patch: $(ROM)
+	$(FLIPS) --create --bps ./baseroms/baserom.z64 $(ROM) $(BUILD_DIR)/$(TARGET).bps
 
 # Helps fix an issue with parallel jobs.
 $(ALL_ASSETS_BUILT): | $(BUILD_DIR)
