@@ -1493,7 +1493,6 @@ void func_8002A31C(void) {
 s32 should_segment_be_visible(LevelModelSegmentBoundingBox *bb) {
     s32 sp48;
     s32 i, j;
-    s32 isVisible;
     f32 dirX, dirY, dirZ, dirW;
     
     for (j = 0; j < 3; j++) {
@@ -1502,7 +1501,7 @@ s32 should_segment_be_visible(LevelModelSegmentBoundingBox *bb) {
         dirZ = D_8011D0F8[j].z;
         dirW = D_8011D0F8[j].w;
         
-        for (i = 0, isVisible = FALSE; i < 8 && !isVisible; i++) {
+        for (i = 0; i < 8; i++) {
             if (i & 1) {
                 sp48 = bb->x1 * dirX;
             } else {
@@ -1520,14 +1519,11 @@ s32 should_segment_be_visible(LevelModelSegmentBoundingBox *bb) {
             }
             sp48 += dirW;
             if (sp48 > 0) {
-                isVisible = TRUE;
+                return TRUE;
             }
         }
-        if (i == 8 && !isVisible) {
-            return FALSE;
-        }
     }
-    return TRUE;
+    return FALSE;
 }
 
 /**
