@@ -451,7 +451,7 @@ void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     profiler_begin_timer();
     alloc_displaylist_heap(numberOfPlayers);
     set_free_queue_state(0);
-    func_80065EA0();
+    camera_init();
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, gGameCurrentCutscene);
     init_hud(gNumberOfViewports);
     func_800AE728(8, 0x10, 0x96, 0x64, 0x32, 0);
@@ -909,7 +909,7 @@ void load_menu_with_level_background(s32 menuId, s32 levelId, s32 cutsceneId) {
     set_sound_channel_volume(0, 32767);
     set_sound_channel_volume(1, 32767);
     set_sound_channel_volume(2, 32767);
-    func_80065EA0();
+    camera_init();
 
     if (!gIsLoading) {
         gIsLoading = FALSE;
@@ -954,7 +954,7 @@ Vehicle get_level_default_vehicle(void) {
 void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicleId, s32 cutsceneId) {
     profiler_begin_timer();
     set_free_queue_state(0);
-    func_80065EA0();
+    camera_init();
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, cutsceneId);
     init_hud(gNumberOfViewports);
     func_800AE728(4, 4, 0x6E, 0x30, 0x20, 0);
