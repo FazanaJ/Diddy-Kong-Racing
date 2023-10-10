@@ -1694,7 +1694,9 @@ s32 func_8002B9BC(Object *obj, f32 *arg1, f32 *arg2, s32 arg3) {
     }
     seg = &gCurrentLevelModel->segments[obj->segment.object.segmentID];
     if ((seg->unk2B != 0) && (D_8011D384 != 0) && (arg3 == 1)) {
+        profiler_begin_timer();
         *arg1 = func_800BB2F4(obj->segment.object.segmentID, obj->segment.trans.x_position, obj->segment.trans.z_position, arg2);
+        profiler_add(PP_WAVES, first);
         return TRUE;
     } else {
         *arg1 = seg->unk38;
