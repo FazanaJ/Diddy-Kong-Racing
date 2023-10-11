@@ -5,6 +5,7 @@
 #include "macros.h"
 #include "libultra_internal.h"
 #include "config.h"
+#include "structs.h"
 
 #undef OS_CLOCK_RATE
 #undef OS_CPU_COUNTER
@@ -108,6 +109,8 @@ enum TrackTimers {
     PP_BILLBOARD,
     PP_VOID,
     PP_SORTING,
+    PP_INTERACT,
+    PP_ANIMATION,
 
     PP_RSP_GFX,
     PP_RSP_AUD,
@@ -154,7 +157,9 @@ enum PPProfilerEvent {
     "BG\t", \
     "Billboards", \
     "Void", \
-    "Sorting\t"
+    "Sorting\t", \
+    "Interaction", \
+    "Animation"
 
 
 #ifdef PUPPYPRINT_DEBUG
@@ -178,6 +183,7 @@ struct PuppyPrint {
     PPTimer coreTimers[PP_MAIN_TIMES_TOTAL]; // Large collection of timers for various things.
     PPTimer audTime; // Normalised total for audio processing time.
     PPTimer gameTime; // Normalised total for game processing time.
+    ObjectHeader *objHeaders[NUM_OBJECT_PRINTS];
     u32 threadTimes[NUM_THREAD_ITERATIONS][NUM_THREAD_TIMERS]; // Timers for individual threads.
     u16 objTimers[NUM_OBJECT_PRINTS][NUM_PERF_ITERATIONS + 2]; // Timers for individual object IDs
     u8 objCounts[NUM_OBJECT_PRINTS];
@@ -205,11 +211,12 @@ void render_profiler(void);
 void count_triangles(u8 *dlist, u8 *dlistEnd);
 void calculate_and_update_fps(void);
 void puppyprint_calculate_average_times(void);
-void profiler_add_obj(u32 objID, u32 time);
+void profiler_add_obj(u32 objID, u32 time, ObjectHeader *header);
 void update_rdp_profiling(void);
 void profiler_snapshot(s32 eventID);
 void puppyprint_log(const char *str, ...);
 void puppyprint_render_coverage(Gfx **dList);
+void profiler_reset_objects(void);
 #define profiler_begin_timer() u32 first = osGetCount();
 #define profiler_begin_timer2() u32 first2 = osGetCount();
 #define profiler_begin_timer3() u32 first3 = osGetCount();
@@ -246,9 +253,10 @@ extern u32 gFreeMem[12];
 #define profiler_get_timer2() 0
 #define profiler_get_timer3() 0
 #define profiler_add(x, y)
-#define profiler_add_obj(x, y)
+#define profiler_add_obj(x, y, z)
 #define profiler_update(x, y)
 #define profiler_offset(x, y)
+#define profiler_reset_objects(x)
 #ifdef __sgi
 #define puppyprint_log
 #else

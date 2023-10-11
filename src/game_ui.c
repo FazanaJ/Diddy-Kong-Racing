@@ -2730,7 +2730,7 @@ void render_minimap_and_misc_hud(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 u
                 sp113 = FALSE;
             }
         }
-        if (gHUDNumPlayers == THREE_PLAYERS && is_postrace_viewport_active() || gCutsceneCameraActive || sp113) {
+        if ((gHUDNumPlayers == THREE_PLAYERS && is_postrace_viewport_active()) || gCutsceneCameraActive || sp113) {
             goto test;
         } else if (gHudToggleSettings[gHUDNumPlayers] != 1) {
         test:

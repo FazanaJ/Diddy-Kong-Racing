@@ -299,7 +299,9 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
         func_800B9C18(tempUpdateRate);
         profiler_add(PP_WAVES, first2);
     }
-    update_shadows(SHADOW_ACTORS, SHADOW_ACTORS, updateRate);
+    if (gMapId != ASSET_LEVEL_CHARACTERSELECT) {
+        update_shadows(SHADOW_ACTORS, SHADOW_ACTORS, updateRate);
+    }
     for (i = 0; i < 7; i++) {
         if ((s32) gCurrentLevelHeader2->unk74[i] != -1) {
             update_colour_cycle(gCurrentLevelHeader2->unk74[i], tempUpdateRate);

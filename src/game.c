@@ -557,6 +557,7 @@ void clear_audio_and_track(void) {
     if (gCurrentLevelHeader->skyDome == -1) {
         free_texture(gCurrentLevelHeader->unkA4);
     }
+    profiler_reset_objects();
 }
 
 /**

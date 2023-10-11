@@ -2024,7 +2024,9 @@ void render_3d_model(Gfx **dList, Object *obj) {
         if (obj68->unk20 <= 0) {
             obj->unk44 = (Vertex *) obj68->unk4[obj68->unk1F];
             if (obj68->unk1E == 2) {
+                profiler_begin_timer();
                 func_80061D30(obj);
+                profiler_add(PP_ANIMATION, first);
             }
             if (obj68->unk1E && objModel->unk40 != NULL) {
                 flags = TRUE;
@@ -2825,6 +2827,7 @@ void process_object_interactions(void) {
     s32 i;
     s32 objsWithInteractives;
     Object *objList[257]; //257 seems random, but it works for now.
+    profiler_begin_timer();
 
     objsWithInteractives = 0;
     for (i = gObjectListStart; i < gObjectCount; i++) {
@@ -2896,6 +2899,7 @@ void process_object_interactions(void) {
         objInteract->y_position = obj->segment.trans.y_position;
         objInteract->z_position = obj->segment.trans.z_position;
     }
+    profiler_add(PP_INTERACT, first);
 }
 
 GLOBAL_ASM("asm/non_matchings/objects/func_800159C8.s")
@@ -4996,7 +5000,7 @@ void run_object_loop_func(Object *obj, s32 updateRate) {
             break;
     }
     set_crash_object(-1, CRASH_OBJ_NONE);
-    profiler_add_obj(obj->behaviorId, first);
+    profiler_add_obj(obj->behaviorId, first, obj->segment.header);
 }
 
 s16 *func_80024594(s32 *currentCount, s32 *maxCount) {
