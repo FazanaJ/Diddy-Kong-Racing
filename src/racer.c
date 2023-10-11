@@ -193,7 +193,7 @@ f32 gRacerMagnetVelX;
 f32 gRacerMagnetVelZ;
 u8 D_8011D580;
 s8 gCurrentSurfaceType;
-s8 D_8011D582;
+s8 gTajInteractStatus;
 s8 gRacerDialogueCamera;
 s8 gRacerInputBlocked;
 s8 gStartBoostTime;
@@ -238,7 +238,7 @@ void func_80042D20(Object *obj, Object_Racer *racer, s32 updateRate) {
     s16 sp3C;
     s16 sp38;
     Object_64 *sp58;
-    TempStruct5 *sp54;
+    AIBehaviourTable *sp54;
     s16 sp3A;
     f32 temp_f0;
     s16 sp6E;
@@ -255,7 +255,7 @@ void func_80042D20(Object *obj, Object_Racer *racer, s32 updateRate) {
     miscAsset2 = (s8 *) get_misc_asset(MISC_ASSET_UNK02);
     header = gCurrentLevelHeader;
     racerGroup = get_racer_objects_by_position(&numRacers);
-    sp54 = func_8006C18C();
+    sp54 = get_ai_behaviour_table();
     if (racer->unk1C6 > 0) {
         racer->unk1C6 -= updateRate;
     } else {
@@ -341,7 +341,7 @@ void func_80042D20(Object *obj, Object_Racer *racer, s32 updateRate) {
                 }
             }
             if (D_8011D544 != 0.0f) {
-                racer->unk1CA = D_800DCDA0[racer->unk1AE];
+                racer->unk1CA = D_800DCDA0[racer->racePosition];
             }
             if ((f32) (s16) ((racer->aiSkill - 2) << 2) <= 300.0f - D_8011D544) {
                 gCurrentRacerInput |= A_BUTTON;
@@ -352,10 +352,10 @@ void func_80042D20(Object *obj, Object_Racer *racer, s32 updateRate) {
             } else {
                 balloonType = racer->balloon_type;
             }
-            sp38 = (((sp54->unk8[1][1] - sp54->unk8[1][0]) * (7 - var_t5)) / 7) + sp54->unk8[1][0];
-            sp36 = (((sp54->unk8[2][1] - sp54->unk8[2][0]) * (7 - var_t5)) / 7) + sp54->unk8[2][0];
-            sp3A = (((sp54->unk8[0][1] - sp54->unk8[0][0]) * (7 - var_t5)) / 7) + sp54->unk8[0][0];
-            sp3C = (((sp54->unk8[3][1] - sp54->unk8[3][0]) * (7 - var_t5)) / 7) + sp54->unk8[3][0];
+            sp38 = (((sp54->percentages[1][1] - sp54->percentages[1][0]) * (7 - var_t5)) / 7) + sp54->percentages[1][0];
+            sp36 = (((sp54->percentages[2][1] - sp54->percentages[2][0]) * (7 - var_t5)) / 7) + sp54->percentages[2][0];
+            sp3A = (((sp54->percentages[0][1] - sp54->percentages[0][0]) * (7 - var_t5)) / 7) + sp54->percentages[0][0];
+            sp3C = (((sp54->percentages[3][1] - sp54->percentages[3][0]) * (7 - var_t5)) / 7) + sp54->percentages[3][0];
             if (racer->unk209 & 1) {
                 if (racer->unk201 == 0) {
                     if (racer->balloon_level == 0) {
@@ -545,43 +545,47 @@ void func_80042D20(Object *obj, Object_Racer *racer, s32 updateRate) {
 GLOBAL_ASM("asm/non_matchings/racer/func_80042D20.s")
 #endif
 
-void func_80043ECC(Object *obj, Object_Racer *racer, s32 updateRate) {
-    TempStruct5 *temp_v0;
+/**
+ * During specific or nonspecific actions, increase the steps in the AI behaviour table.
+ * Increment percent chances of them performing specific actions, with a maximum of 100%.
+*/
+void increment_ai_behaviour_chances(Object *obj, Object_Racer *racer, s32 updateRate) {
+    AIBehaviourTable *aiTable;
     s8 *test;
     s8 balloonType;
     s32 i;
-    static s8 D_8011D5BA;
-    static s8 D_8011D5BB;
+    static s8 sAIFramesSinceA;
+    static s8 sAIStartedBoosting;
     static s8 sBalloonLevelAI;
 
     if (!obj) {
-        D_8011D5BA = 0;
-        D_8011D5BB = 0;
+        sAIFramesSinceA = 0;
+        sAIStartedBoosting = 0;
         sBalloonLevelAI = 0;
         return;
     }
-    temp_v0 = func_8006C18C();
+    aiTable = get_ai_behaviour_table();
     if (racer->boostTimer) {
-        if (!D_8011D5BB) {
-            temp_v0->unk8[3][0] += temp_v0->unk8[3][2];
-            temp_v0->unk8[3][1] += temp_v0->unk8[3][3];
-            D_8011D5BB = 1;
+        if (sAIStartedBoosting == FALSE) {
+            aiTable->percentages[AI_BLUE_BALLOON][AI_MIN] += aiTable->percentages[AI_BLUE_BALLOON][AI_MIN_STEP];
+            aiTable->percentages[AI_BLUE_BALLOON][AI_MAX] += aiTable->percentages[AI_BLUE_BALLOON][AI_MAX_STEP];
+            sAIStartedBoosting = TRUE;
         }
         if (!(gCurrentRacerInput & A_BUTTON)) {
-            D_8011D5BA += updateRate;
+            sAIFramesSinceA += updateRate;
         }
     } else {
-        D_8011D5BB = 0;
-        if (D_8011D5BA > 20) {
-            temp_v0->unk8[0][0] += temp_v0->unk8[0][2];
-            temp_v0->unk8[0][1] += temp_v0->unk8[0][3];
+        sAIStartedBoosting = FALSE;
+        if (sAIFramesSinceA > 20) {
+            aiTable->percentages[AI_EMPOWERED_BOOST][AI_MIN] += aiTable->percentages[AI_EMPOWERED_BOOST][AI_MIN_STEP];
+            aiTable->percentages[AI_EMPOWERED_BOOST][AI_MAX] += aiTable->percentages[AI_EMPOWERED_BOOST][AI_MAX_STEP];
         }
-        D_8011D5BA = 0;
+        sAIFramesSinceA = 0;
     }
     if (racer->balloon_quantity) {
         if (sBalloonLevelAI < racer->balloon_level) {
-            temp_v0->unk8[1][0] += temp_v0->unk8[1][2];
-            temp_v0->unk8[1][1] += temp_v0->unk8[1][3];
+            aiTable->percentages[AI_GETS_BALLOON][AI_MIN] += aiTable->percentages[1][AI_MIN_STEP];
+            aiTable->percentages[AI_GETS_BALLOON][AI_MAX] += aiTable->percentages[1][AI_MAX_STEP];
         }
         sBalloonLevelAI = racer->balloon_level;
     } else {
@@ -595,22 +599,22 @@ void func_80043ECC(Object *obj, Object_Racer *racer, s32 updateRate) {
             balloonType = racer->balloon_type;
         }
         if (gRacerAIBalloonActionTable[balloonType] == 1) {
-            temp_v0->unk8[2][0] += temp_v0->unk8[2][2];
-            temp_v0->unk8[2][1] += temp_v0->unk8[2][3];
+            aiTable->percentages[AI_UNK_2][AI_MIN] += aiTable->percentages[AI_UNK_2][AI_MIN_STEP];
+            aiTable->percentages[AI_UNK_2][AI_MAX] += aiTable->percentages[AI_UNK_2][AI_MAX_STEP];
         }
     }
     for (i = 0; i < 2; i++) {
-        if (temp_v0->unk8[1][i] > 100 || temp_v0->unk8[1][i] < 0) {
-            temp_v0->unk8[1][i] = 100;
+        if (aiTable->percentages[AI_GETS_BALLOON][i] > 100 || aiTable->percentages[AI_GETS_BALLOON][i] < 0) {
+            aiTable->percentages[AI_GETS_BALLOON][i] = 100;
         }
-        if (temp_v0->unk8[0][i]  > 100 || temp_v0->unk8[0][i] < 0) {
-            temp_v0->unk8[0][i]  = 100;
+        if (aiTable->percentages[AI_EMPOWERED_BOOST][i]  > 100 || aiTable->percentages[AI_EMPOWERED_BOOST][i] < 0) {
+            aiTable->percentages[AI_EMPOWERED_BOOST][i]  = 100;
         }
-        if (temp_v0->unk8[3][i] > 100 || temp_v0->unk8[3][i] < 0) {
-            temp_v0->unk8[3][i] = 100;
+        if (aiTable->percentages[AI_BLUE_BALLOON][i] > 100 || aiTable->percentages[AI_BLUE_BALLOON][i] < 0) {
+            aiTable->percentages[AI_BLUE_BALLOON][i] = 100;
         }
-        if (temp_v0->unk8[2][i] > 100 || temp_v0->unk8[2][i] < 0) {
-            temp_v0->unk8[2][i] = 100;
+        if (aiTable->percentages[AI_UNK_2][i] > 100 || aiTable->percentages[AI_UNK_2][i] < 0) {
+            aiTable->percentages[AI_UNK_2][i] = 100;
         }
     }
 }
@@ -1034,7 +1038,7 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
     }
 
     if (racer->playerIndex == PLAYER_ONE && racer->groundedWheels && var_t1 == 12 && gCurrentButtonsPressed & Z_TRIG) {
-        D_8011D582 = 2;
+        gTajInteractStatus = 2;
     }
     if ((racer->groundedWheels) || (racer->buoyancy > 0.0f)) {
         if (racer->unk1E0 != 0) {
@@ -2125,7 +2129,7 @@ void obj_init_racer(Object *obj, LevelObjectEntry_Racer *racer) {
     obj->interactObj->z_position = obj->segment.trans.z_position;
     tempRacer->groundedWheels = 3;
     tempRacer->unk1AA = 1;
-    tempRacer->unk1AE = 1;
+    tempRacer->racePosition = 1;
     tempRacer->miscAnimCounter = tempRacer->playerIndex * 5;
     tempRacer->checkpoint_distance = 1.0f;
     tempRacer->unk1FD = 0;
@@ -2135,7 +2139,7 @@ void obj_init_racer(Object *obj, LevelObjectEntry_Racer *racer) {
     tempRacer->weaponSoundMask = NULL;
     tempRacer->unk220 = 0;
     tempRacer->unk21C = 0;
-    if (tempRacer->playerIndex != PLAYER_COMPUTER && !D_8011D582) {
+    if (tempRacer->playerIndex != PLAYER_COMPUTER && gTajInteractStatus == TAJ_WANDER) {
         set_active_camera(player);
         gCameraObject = (ObjectCamera *) &gCameraSegment[gActiveCameraID];
         gCameraObject->trans.z_rotation = 0;
@@ -2149,7 +2153,7 @@ void obj_init_racer(Object *obj, LevelObjectEntry_Racer *racer) {
         gCameraObject->unk18 = 0.0f;
         update_player_camera(obj, tempRacer, 1.0f);
     }
-    if (!D_8011D582) {
+    if (gTajInteractStatus == TAJ_WANDER) {
         gRacerDialogueCamera = FALSE;
         gDialogueCameraAngle = 0;
         gRacerInputBlocked = FALSE;
@@ -2159,7 +2163,7 @@ void obj_init_racer(Object *obj, LevelObjectEntry_Racer *racer) {
     obj->interactObj->hitboxRadius = 15;
     obj->interactObj->pushForce = 20;
     tempRacer->unk1EE = 0;
-    if (!D_8011D582) {
+    if (gTajInteractStatus == TAJ_WANDER) {
         tempRacer->transparency = 255;
     }
     D_8011D544 = 300.0f;
@@ -2171,7 +2175,7 @@ void obj_init_racer(Object *obj, LevelObjectEntry_Racer *racer) {
     for (i = 0; i < 4; i++) { \
         D_8011D58C[i] = 0; 
     }
-    func_80043ECC(NULL, NULL, 0);
+    increment_ai_behaviour_chances(NULL, NULL, 0);
     gRacerDialogueCamera = i;
     gStartBoostTime = 0;
     tempRacer->lightFlags = 0;
@@ -3075,7 +3079,7 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
     }
     // If on the Taj pad and the horn is honked, summon Taj
     if (racer->playerIndex == PLAYER_ONE && racer->groundedWheels && surfaceType == SURFACE_TAJ_PAD && gCurrentButtonsPressed & Z_TRIG) {
-        D_8011D582 = 2;
+        gTajInteractStatus = 2;
     }
     // Set grip levels to basically zero when floating on water.
     if (racer->buoyancy != 0.0f) {
@@ -3278,18 +3282,22 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
 GLOBAL_ASM("asm/non_matchings/racer/func_80050A28.s")
 #endif
 
-// Loops for as long as Taj exists. After swapping vehicle once, will remain true until you enter a door.
-s32 func_80052188(void) {
-    if (D_8011D582 == 2) {
-        D_8011D582 = 1;
+/**
+ * Checks if Taj's interaction status is set to try make him teleport and return true.
+*/
+s32 should_taj_teleport(void) {
+    if (gTajInteractStatus == TAJ_TELEPORT) {
+        gTajInteractStatus = TAJ_DIALOGUE;
         return TRUE;
     }
     return FALSE;
 }
 
-// Called when Taj swaps the active vehicle, is set to 1, each time.
-void func_800521B8(s32 arg0) {
-    D_8011D582 = arg0;
+/**
+ * Sets Taj's interaction status.
+*/
+void set_taj_status(s32 status) {
+    gTajInteractStatus = status;
 }
 
 /**
@@ -4382,7 +4390,7 @@ void handle_racer_items(Object *obj, Object_Racer *racer, UNUSED s32 updateRate)
             }
             magnetTarget = NULL;
             if (gCurrentButtonsPressed & Z_TRIG) {
-                func_800A74EC(318, racer->playerIndex);
+                func_800A74EC(SOUND_VOICE_TT_POWERUP, racer->playerIndex);
             }
             if (racer->magnetLevel3) {
                 if (racer->magnetTimer == 0) {
@@ -5077,7 +5085,7 @@ void second_racer_camera_update(Object *obj, Object_Racer *racer, s32 mode, f32 
             zPos = gCameraObject->trans.z_position;
             gCameraObject->mode = mode;
             update_player_camera(obj, racer, updateRateF);
-            if (gRaceStartTimer == 0 && D_8011D582 == 0) {
+            if (gRaceStartTimer == 0 && gTajInteractStatus == TAJ_WANDER) {
                 gCameraObject->offsetX = xPos - gCameraObject->trans.x_position;
                 gCameraObject->offsetY = yPos - (gCameraObject->trans.y_position + gCameraObject->unk30);
                 gCameraObject->offsetZ = zPos - gCameraObject->trans.z_position;
@@ -5807,7 +5815,7 @@ void racer_enter_door(Object_Racer* racer, s32 updateRate) {
 void update_AI_racer(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateRateF) {
     s32 var_t2;
     Object **objects;
-    s32 renderContext;
+    s32 gameMode;
     s32 countOfObjects;
     f32 xPos;
     f32 yPos;
@@ -5824,7 +5832,7 @@ void update_AI_racer(Object *obj, Object_Racer *racer, s32 updateRate, f32 updat
     f32 temp_fv1_2;
 
     gCurrentPlayerIndex = -1;
-    renderContext = get_game_mode();
+    gameMode = get_game_mode();
     levelHeader = gCurrentLevelHeader;
     if (racer->unk1F6 > 0) {
         racer->unk1F6 -= updateRate;
@@ -5962,7 +5970,7 @@ void update_AI_racer(Object *obj, Object_Racer *racer, s32 updateRate, f32 updat
         case VEHICLE_WIZPIG: update_wizpig(updateRate, updateRateF, obj, racer, &gCurrentRacerInput, &gCurrentButtonsPressed, &gRaceStartTimer); break;
         case VEHICLE_ROCKET: update_rocket(updateRate, updateRateF, obj, racer, &gCurrentRacerInput, &gCurrentButtonsPressed, &gRaceStartTimer); break;
         }
-        if (renderContext != GAMEMODE_MENU) {
+        if (gameMode != GAMEMODE_MENU) {
             func_800050D0(obj, gCurrentButtonsPressed, gCurrentRacerInput, updateRate);
         }
         lastCheckpointDist = racer->checkpoint_distance;
@@ -6015,7 +6023,7 @@ void update_AI_racer(Object *obj, Object_Racer *racer, s32 updateRate, f32 updat
         racer->unk70 = obj->segment.trans.z_position;
     } else {
         func_8005B818(obj, racer, updateRate, updateRateF);
-        if (renderContext != GAMEMODE_MENU) {
+        if (gameMode != GAMEMODE_MENU) {
             func_800050D0(obj, gCurrentButtonsPressed, gCurrentRacerInput, updateRate);
         }
     }

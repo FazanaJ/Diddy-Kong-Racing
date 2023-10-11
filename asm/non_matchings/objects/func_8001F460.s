@@ -10,8 +10,8 @@ glabel D_800E5680
 .text
 glabel func_8001F460
 /* 020060 8001F460 27BDFE68 */  addiu $sp, $sp, -0x198
-/* 020064 8001F464 3C0E8012 */  lui   $t6, %hi(D_8011AE7A) # $t6, 0x8012
-/* 020068 8001F468 85CEAE7A */  lh    $t6, %lo(D_8011AE7A)($t6)
+/* 020064 8001F464 3C0E8012 */  lui   $t6, %hi(gCutsceneID) # $t6, 0x8012
+/* 020068 8001F468 85CEAE7A */  lh    $t6, %lo(gCutsceneID)($t6)
 /* 02006C 8001F46C AFB60050 */  sw    $s6, 0x50($sp)
 /* 020070 8001F470 AFB40048 */  sw    $s4, 0x48($sp)
 /* 020074 8001F474 00C0A025 */  move  $s4, $a2
@@ -357,7 +357,7 @@ glabel func_8001F460
 /* 020548 8001F948 00580019 */  multu $v0, $t8
 /* 02054C 8001F94C 0000C812 */  mflo  $t9
 /* 020550 8001F950 A7B900A8 */  sh    $t9, 0xa8($sp)
-/* 020554 8001F954 0C030063 */  jal   fxFadeOn
+/* 020554 8001F954 0C030063 */  jal   check_fadeout_transition
 /* 020558 8001F958 00000000 */   nop   
 /* 02055C 8001F95C 10400006 */  beqz  $v0, .L8001F978
 /* 020560 8001F960 00000000 */   nop   

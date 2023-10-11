@@ -615,7 +615,7 @@ typedef struct LevelModelSegment {
            u8 pad22[0x06];
 /* 0x28 */ s16 unk28;
 /* 0x2A */ s8 unk2A;
-/* 0x2B */ s8 unk2B;
+/* 0x2B */ s8 hasWaves;
 /* 0x2C */ Vertex *unk2C;
 /* 0x30 */ s16 unk30;
 /* 0x32 */ s16 unk32;
@@ -727,7 +727,7 @@ typedef struct ObjectHeader {
   /* 0x24 */ ObjectHeader24 *unk24;
   /* 0x28 */ f32 shadeBrightness;
   /* 0x2C */ f32 shadeAmbient;
-  /* 0x30 */ u16 unk30;
+  /* 0x30 */ u16 flags;
   /* 0x32 */ s16 shadowGroup;
   /* 0x34 */ s16 unk34;
   /* 0x36 */ s16 waterEffectGroup;
@@ -1278,7 +1278,7 @@ typedef struct Object_Racer {
   /* 0x1A8 */ s16 unk1A8;
   /* 0x1AA */ u16 unk1AA;
   /* 0x1AC */ s16 unk1AC;
-  /* 0x1AE */ s16 unk1AE;
+  /* 0x1AE */ s16 racePosition;
   /* 0x1B0 */ s16 unk1B0;
   /* 0x1B2 */ s16 unk1B2;
   /* 0x1B4 */ s32 unk1B4;

@@ -52,16 +52,14 @@
 
 char *gTempLevelNames = NULL;
 s8 gCurrentDefaultVehicle = -1;
-u8 D_800DD318 = FALSE;
+u8 gTwoPlayerAdvRace = FALSE;
 s32 gIsInRace = 0;
 
 // Updated automatically from calc_func_checksums.py
 s32 gFunc80068158Checksum = 0x585E;
 s32 gFunc80068158Length = 0x154;
-
 s16 gLevelPropertyStackPos = 0;
 s16 D_800DD32C = 0;
-
 s8 D_800DD330 = 0;
 
 /*******************************/
@@ -74,13 +72,10 @@ LevelHeader *gCurrentLevelHeader;
 char **gLevelNames;
 s32 gNumberOfLevelHeaders;
 s32 gNumberOfWorlds;
-
 s8 *D_80121178;
 LevelGlobalData *gGlobalLevelTable;
-
-s32 D_80121180[16];
-
-TempStruct5 *D_801211C0;
+s32 gRaceTypeCountTable[16];
+AIBehaviourTable *gAIBehaviourTable;
 s16 gLevelPropertyStack[5 * 4]; // Stores level info for cutscenes. 5 sets of four properties.
 
 /******************************/
@@ -102,7 +97,7 @@ void init_level_globals(void) {
     gTempAssetTable = (s32 *) load_asset_section_from_rom(ASSET_LEVEL_HEADERS_TABLE);
     i = 0;
     while (i < 16) {
-        D_80121180[i++] = 0;
+        gRaceTypeCountTable[i++] = 0;
     }
     gNumberOfLevelHeaders = 0;
     while (gTempAssetTable[gNumberOfLevelHeaders] != -1) {
@@ -118,7 +113,7 @@ void init_level_globals(void) {
             gNumberOfWorlds = gCurrentLevelHeader->world;
         }
         if ((gCurrentLevelHeader->race_type >= 0) && (gCurrentLevelHeader->race_type < 16)) {
-            D_80121180[gCurrentLevelHeader->race_type]++;
+            gRaceTypeCountTable[gCurrentLevelHeader->race_type]++;
         }
         gGlobalLevelTable[i].world = gCurrentLevelHeader->world;
         gGlobalLevelTable[i].raceType = gCurrentLevelHeader->race_type;
@@ -422,16 +417,16 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
         cutsceneId = CUTSCENE_ID_UNK_64;
     }
     if ((gCurrentLevelHeader->race_type == RACETYPE_DEFAULT || gCurrentLevelHeader->race_type & RACETYPE_CHALLENGE) && is_in_two_player_adventure()) {
-        D_800DD318 = TRUE;
+        gTwoPlayerAdvRace = TRUE;
         cutsceneId = CUTSCENE_ID_UNK_64;
     } else {
-        D_800DD318 = FALSE;
+        gTwoPlayerAdvRace = FALSE;
 
     }
     if (gCurrentLevelHeader->race_type == RACETYPE_DEFAULT && numPlayers == 0 && is_time_trial_enabled()) {
         cutsceneId = CUTSCENE_ID_UNK_64;
     }
-    func_8001E450(cutsceneId);
+    set_cutscene_id(cutsceneId);
     init_track(gCurrentLevelHeader->geometry, gCurrentLevelHeader->skybox, numberOfPlayers, vehicleId, entranceId, gCurrentLevelHeader->collectables, gCurrentLevelHeader->unkBA);
     if (gCurrentLevelHeader->fogNear == 0 && gCurrentLevelHeader->fogFar == 0 && gCurrentLevelHeader->fogR == 0 && gCurrentLevelHeader->fogG == 0 && gCurrentLevelHeader->fogB == 0) {
         for (var_s0 = 0; var_s0 < 4; var_s0++) {
@@ -468,11 +463,14 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
     func_8007AB24(gCurrentLevelHeader->unk4[numberOfPlayers]);
 }
 
-void func_8006BD10(f32 arg0) {
-    if (gCurrentLevelHeader->music != 0) {
+/**
+ * If the level's music ID is nonzero, set the current background music.
+*/
+void start_level_music(f32 tempo) {
+    if (gCurrentLevelHeader->music != SEQUENCE_NONE) {
         func_800012E8();
         play_music(gCurrentLevelHeader->music);
-        multiply_music_tempo(arg0);
+        multiply_music_tempo(tempo);
         func_80001074(gCurrentLevelHeader->instruments);
     }
 }
@@ -541,7 +539,7 @@ char *get_level_name(s32 levelId) {
  * Call multiple functions to stop and free audio, then free track, weather and wave data.
 */
 void clear_audio_and_track(void) {
-    frontCleanupMultiSelect();
+    free_ai_behaviour_table();
     set_background_prim_colour(0, 0, 0);
     free_from_memory_pool(gCurrentLevelHeader);
     func_800049D8();
@@ -598,7 +596,7 @@ void set_ai_level(s8 *arg0) {
     if (get_game_mode() == GAMEMODE_MENU) {
         aiLevel = 5;
     }
-    gTempAssetTable = (s32 *) load_asset_section_from_rom(ASSET_UNKNOWN_0_TABLE);
+    gTempAssetTable = (s32 *) load_asset_section_from_rom(ASSET_AI_BEHAVIOUR_TABLE);
     phi_v1 = 0;
     while (-1 != (s32) gTempAssetTable[phi_v1]) {
         phi_v1++;
@@ -609,21 +607,30 @@ void set_ai_level(s8 *arg0) {
     }
     temp2 = gTempAssetTable[aiLevel];
     temp = gTempAssetTable[aiLevel + 1] - temp2;
-    D_801211C0 = allocate_from_main_pool_safe(temp, COLOUR_TAG_YELLOW);
-    load_asset_to_address(ASSET_UNKNOWN_0, (u32) D_801211C0, temp2, temp);
+    gAIBehaviourTable = allocate_from_main_pool_safe(temp, COLOUR_TAG_YELLOW);
+    load_asset_to_address(ASSET_AI_BEHAVIOUR, (u32) gAIBehaviourTable, temp2, temp);
     free_from_memory_pool(gTempAssetTable);
 }
 
-void frontCleanupMultiSelect(void) {
-    free_from_memory_pool(D_801211C0);
+/**
+ * Frees the AI behaviour table from memory.
+*/
+void free_ai_behaviour_table(void) {
+    free_from_memory_pool(gAIBehaviourTable);
 }
 
-TempStruct5 *func_8006C18C(void) {
-    return D_801211C0;
+/**
+ * Return the behaviour value table for AI racers.
+*/
+AIBehaviourTable *get_ai_behaviour_table(void) {
+    return gAIBehaviourTable;
 }
 
-s8 func_8006C19C(void) {
-    return D_800DD318;
+/**
+ * Return whether it is a standard race with two players in adventure mode.
+*/
+s8 is_two_player_adventure_race(void) {
+    return gTwoPlayerAdvRace;
 }
 
 /**

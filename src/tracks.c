@@ -34,8 +34,8 @@
 
 s32 D_800DC870 = 0; // Currently unknown, might be a different type.
 //!@bug These two transition effects are marked to not clear when done, meaning they stay active the whole time.
-FadeTransition gFullFadeToBlack = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_UNK2, FADE_COLOR_BLACK, 40, 0);
-FadeTransition gCircleFadeToBlack = FADE_TRANSITION(FADE_CIRCLE, FADE_FLAG_UNK2, FADE_COLOR_BLACK, 70, 0);
+FadeTransition gFullFadeToBlack = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_BLACK, 40, 0);
+FadeTransition gCircleFadeToBlack = FADE_TRANSITION(FADE_CIRCLE, FADE_FLAG_OUT, FADE_COLOR_BLACK, 70, 0);
 
 f32 D_800DC884[10] = {
     0.0f, 0.125f, 0.25f, 0.375f, 0.5f, 0.625f, 0.75f, 0.875f
@@ -144,7 +144,7 @@ s32 *D_8011D370;
 s32 *D_8011D374;
 s32 D_8011D378;
 s32 gScenePlayerViewports;
-u32 D_8011D384;
+u32 gWaveBlockCount;
 FogData gFogData[4];
 Vec3i gScenePerspectivePos;
 unk8011D474 *D_8011D474; // 0x10 bytes struct?
@@ -207,13 +207,13 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
 
     func_8002C0C4(geometry);
 
-    D_8011D384 = 0;
+    gWaveBlockCount = 0;
     
     if (numberOfPlayers < 2) {
         for (i = 0; i < gCurrentLevelModel->numberOfSegments; i++) {
-            if (gCurrentLevelModel->segments[i].unk2B != 0) {
-                D_8011D384++;
-                gCurrentLevelModel->segments[i].unk2B = 1;
+            if (gCurrentLevelModel->segments[i].hasWaves != 0) {
+                gWaveBlockCount++;
+                gCurrentLevelModel->segments[i].hasWaves = 1;
             }
         }
     }
@@ -224,7 +224,7 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
         i = numberOfPlayers + 1;
     }
     
-    if (D_8011D384) {
+    if (gWaveBlockCount) {
         func_800B82B4(gCurrentLevelModel, gCurrentLevelHeader2, i);
     }
     
@@ -294,7 +294,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
     } else {
         tempUpdateRate = updateRate;
     }
-    if (D_8011D384) {
+    if (gWaveBlockCount) {
         profiler_begin_timer2();
         func_800B9C18(tempUpdateRate);
         profiler_add(PP_WAVES, first2);
@@ -842,14 +842,14 @@ void initialise_player_viewport_vars(Gfx **dList, s32 updateRate) {
     gSceneActiveCamera = get_active_camera_segment();
     viewportID = gActiveCameraID;
     compute_scene_camera_transform_matrix();
-    update_envmap_position((f32) gScenePerspectivePos.x / 65536.0f, (f32) gScenePerspectivePos.y / 65536.0f, (f32) gScenePerspectivePos.z / 65536.0f);
+    update_envmap_position(gScenePerspectivePos.x / 65536.0f, gScenePerspectivePos.y / 65536.0f, gScenePerspectivePos.z / 65536.0f);
     segmentIndex = gSceneActiveCamera->object.cameraSegmentID;
     if (segmentIndex > -1 && (segmentIndex < gCurrentLevelModel->numberOfSegments)) {
         gSceneStartSegment = gCurrentLevelModel->segments[segmentIndex].unk28;
     } else {
         gSceneStartSegment = -1;
     }
-    if (D_8011D384 != 0) {
+    if (gWaveBlockCount != 0) {
         profiler_begin_timer();
         func_800B8B8C();
         racers = get_racer_objects(&numRacers);
@@ -861,7 +861,7 @@ void initialise_player_viewport_vars(Gfx **dList, s32 updateRate) {
             } while(i < numRacers - 1 && viewportID != racer->playerIndex);
             func_800B8C04(racers[i]->segment.trans.x_position, racers[i]->segment.trans.y_position, racers[i]->segment.trans.z_position, gActiveCameraID, updateRate);
         } else {
-            func_800B8C04((s32) gSceneActiveCamera->trans.x_position, (s32) gSceneActiveCamera->trans.y_position, (s32) gSceneActiveCamera->trans.z_position, gActiveCameraID, updateRate);
+            func_800B8C04(gSceneActiveCamera->trans.x_position, gSceneActiveCamera->trans.y_position, gSceneActiveCamera->trans.z_position, gActiveCameraID, updateRate);
         }
         profiler_add(PP_WAVES, first);
     }
@@ -981,7 +981,7 @@ void render_level_geometry_and_objects(Gfx **dList) {
                 render_object_shadow(dList, obj, obj->shadow);
             }
             render_object(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, obj);
-            if (obj->waterEffect != NULL && obj->segment.header->unk30 & 0x10) {
+            if (obj->waterEffect != NULL && obj->segment.header->flags & 0x10) {
                 render_object_water_effects(dList, obj, obj->waterEffect);
             }
         }
@@ -1003,7 +1003,7 @@ void render_level_geometry_and_objects(Gfx **dList) {
                 render_object_shadow(dList, obj, obj->shadow);
             }
             render_object(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, obj);
-            if ((obj->waterEffect != NULL) && (obj->segment.header->unk30 & 0x10)) {
+            if ((obj->waterEffect != NULL) && (obj->segment.header->flags & 0x10)) {
                 render_object_water_effects(dList, obj, obj->waterEffect);
             }
         }
@@ -1018,7 +1018,7 @@ void render_level_geometry_and_objects(Gfx **dList) {
         }
         pop_render_list_track(dList);
     }
-    if (D_8011D384 != 0) {
+    if (gWaveBlockCount != 0) {
         profiler_begin_timer();
         func_800BA8E4(dList, &gSceneCurrMatrix, gActiveCameraID);
         profiler_add(PP_WAVES, first);
@@ -1055,7 +1055,7 @@ void render_level_geometry_and_objects(Gfx **dList) {
                     render_object_shadow(dList, obj, obj->shadow);
                 }
                 render_object(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, obj);
-                if ((obj->waterEffect != 0) && (obj->segment.header->unk30 & 0x10)) {
+                if ((obj->waterEffect != 0) && (obj->segment.header->flags & 0x10)) {
                     render_object_water_effects(dList, obj, obj->waterEffect);
                 }
             }
@@ -1149,7 +1149,7 @@ void render_level_segment(Gfx **dList, s32 segmentId, s32 nonOpaque) {
     numberVertices = (batchInfo + 1)->verticesOffset - batchInfo->verticesOffset;
     segment = &gCurrentLevelModel->segments[segmentId];
     if (gScenePlayerViewports < VIEWPORTS_COUNT_2_PLAYERS) {
-        sp78 = (nonOpaque && D_8011D384) ? (func_800B9228(segment)) : (0);
+        sp78 = (nonOpaque && gWaveBlockCount) ? (func_800B9228(segment)) : (0);
     } else {
         sp78 = 0;
     }
@@ -1693,7 +1693,7 @@ s32 func_8002B9BC(Object *obj, f32 *arg1, f32 *arg2, s32 arg3) {
         return FALSE;
     }
     seg = &gCurrentLevelModel->segments[obj->segment.object.segmentID];
-    if ((seg->unk2B != 0) && (D_8011D384 != 0) && (arg3 == 1)) {
+    if ((seg->hasWaves != 0) && (gWaveBlockCount != 0) && (arg3 == 1)) {
         profiler_begin_timer();
         *arg1 = func_800BB2F4(obj->segment.object.segmentID, obj->segment.trans.x_position, obj->segment.trans.z_position, arg2);
         profiler_add(PP_WAVES, first);
@@ -1840,8 +1840,8 @@ void free_track(void) {
     s32 i;
 
     func_8000B290();
-    if (D_8011D384 != 0) {
-        func_800B7D20();
+    if (gWaveBlockCount != 0) {
+        free_waves();
     }
     for (i = 0; i < gCurrentLevelModel->numberOfTextures; i++) {
         free_texture(gCurrentLevelModel->textures[i].texture);
@@ -1861,7 +1861,7 @@ void free_track(void) {
         gParticlePtrList_flush();
     }
     free_ghost_pool();
-    func_8000C604();
+    free_all_objects();
     gCurrentLevelModel = NULL;
 }
 
@@ -2307,10 +2307,10 @@ void func_8002E234(Object *obj, s32 bool) {
     if (bool) {
         D_8011D0B8 = 0;
         obj->waterEffect->meshStart = D_8011D364;
-        D_8011D0C0 = func_8007B46C(obj->waterEffect->texture, obj->waterEffect->textureFrame << 8);
+        D_8011D0C0 = set_animated_texture_header(obj->waterEffect->texture, obj->waterEffect->textureFrame << 8);
         D_8011D0CE = obj->segment.header->unk48 + yPos;
         D_8011D0CC = obj->segment.header->unk46 + yPos;
-        if ((D_8011D384 == 0) || ((get_viewport_count() <= 0))) {
+        if ((gWaveBlockCount == 0) || ((get_viewport_count() <= 0))) {
             D_8011D0C8 = 0;
         }
         D_8011D0D8 = (obj->waterEffect->scale * character_scale);
@@ -2362,7 +2362,7 @@ void func_8002E234(Object *obj, s32 bool) {
     D_8011D0EC = -1;
     for (i = 0; i < segs; i++) {
         if (new_var[i] >= 0) {
-            if (bool && (gCurrentLevelModel->segments[inSegs[i]].unk2B != 0) && (D_8011D384 != 0)) {
+            if (bool && (gCurrentLevelModel->segments[inSegs[i]].hasWaves != 0) && (gWaveBlockCount != 0)) {
                 func_8002EEEC();
             } else {
                 test = func_800314DC(

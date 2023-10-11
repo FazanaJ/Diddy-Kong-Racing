@@ -650,8 +650,11 @@ void close_dialogue_box(s32 dialogueBoxID) {
     gDialogueBoxBackground[dialogueBoxID].flags &= DIALOGUE_BOX_CLOSED;
 }
 
-void func_800C56D0(s32 dialogueBoxID) {
-    gDialogueBoxBackground[dialogueBoxID].flags &= DIALOGUE_BOX_UNK_02;
+/**
+ * Clears the open flag from the dialogue box.
+*/
+void clear_dialogue_box_open_flag(s32 dialogueBoxID) {
+    gDialogueBoxBackground[dialogueBoxID].flags &= (DIALOGUE_BOX_VERTS + DIALOGUE_BOX_CLOSED);
 }
 
 /**
