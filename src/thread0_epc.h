@@ -5,6 +5,7 @@
 #include "libultra_internal.h"
 #include "macros.h"
 #include "config.h"
+#include "structs.h"
 
 enum ObjectActions {
     CRASH_OBJ_NONE,
@@ -14,7 +15,7 @@ enum ObjectActions {
 };
 
 #ifdef PUPPYPRINT_DEBUG
-void set_crash_object(s32 objectID, s32 act);
+void set_crash_object(ObjectHeader *objectID, s32 act);
 #else
 #define set_crash_object(objectID, act)
 #endif

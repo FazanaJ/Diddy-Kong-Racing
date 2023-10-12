@@ -22,7 +22,7 @@ s32 _Printf(outfun prout, char *dst, const char *fmt, va_list args);
 
 u16 sCrashX;
 u16 sCrashY;
-s16 sCrashObjID;
+ObjectHeader *sCrashObjID;
 s16 sCrashObjAct;
 u8 gAssert = 0;
 char gAssertString[64];
@@ -278,7 +278,7 @@ void draw_crash_screen(OSThread *thread) {
 
     crash_screen_sleep(75);
 
-    if (sCrashObjID != -1) {
+    if (sCrashObjID != NULL) {
         screenAdd = 10;
     }
 
@@ -288,8 +288,8 @@ void draw_crash_screen(OSThread *thread) {
     crash_screen_print(sCrashX + 10, sCrashY + 5, "THREAD:%d  (%s)", thread->id, gCauseDesc[cause]);
     crash_screen_print(sCrashX + 10, sCrashY + 15, "PC:%08XH   SR:%08XH   VA:%08XH", tc->pc, tc->sr, tc->badvaddr);
     osWritebackDCacheAll();
-    if (sCrashObjID != -1) {
-        crash_screen_print(sCrashX + 10, sCrashY - 5, "OBJ:%d during %s", sCrashObjID, sObjectStrings[sCrashObjAct - 1]);
+    if (sCrashObjID != NULL) {
+        crash_screen_print(sCrashX + 10, sCrashY - 5, "OBJ:%s during %s", sCrashObjID->internalName, sObjectStrings[sCrashObjAct - 1]);
     }
     if (!gAssert) {
         crash_screen_print(sCrashX + 10, sCrashY + 30, "AT:%08XH   V0:%08XH   V1:%08XH", (u32) tc->at, (u32) tc->v0, (u32) tc->v1);
@@ -381,7 +381,7 @@ void crash_screen_init(void) {
 }
 
 #ifdef PUPPYPRINT_DEBUG
-void set_crash_object(s32 objectID, s32 act) {
+void set_crash_object(ObjectHeader *objectID, s32 act) {
     sCrashObjID = objectID;
     sCrashObjAct = act;
 }

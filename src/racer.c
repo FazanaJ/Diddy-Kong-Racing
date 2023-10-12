@@ -29,6 +29,7 @@
 #include "main.h"
 #include "controller.h"
 #include "particles.h"
+#include "thread0_epc.h"
 
 #define MAX_NUMBER_OF_GHOST_NODES 360
 
@@ -2204,6 +2205,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
     f32 stretch;
     s32 i;
     struct LevelObjectEntryCommon newObject;
+    set_crash_object(obj->segment.header, CRASH_OBJ_UPDATE);
 
     gNumViewports = gNumberOfViewports + 1;
     gCurrentSurfaceType = SURFACE_DEFAULT;
@@ -2709,6 +2711,7 @@ void set_racer_tail_lights(Object_Racer *racer) {
     }
 
     racer->lightFlags = (racer->lightFlags & 0xFFF0) | lightTimer;
+    set_crash_object(NULL, CRASH_OBJ_NONE);
 }
 
 GLOBAL_ASM("asm/non_matchings/racer/func_8004F7F4.s")

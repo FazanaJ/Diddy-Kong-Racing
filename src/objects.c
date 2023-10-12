@@ -1476,9 +1476,7 @@ void func_80010994(s32 updateRate) {
     gPuppyPrint.mainTimerPoints[0][PP_RACER] = osGetCount();
 #endif
     for (i = 0; i < gNumRacers; i++) {
-        set_crash_object((*gRacers)[i]->behaviorId, CRASH_OBJ_UPDATE);
         update_player_racer((*gRacers)[i], updateRate);
-        set_crash_object(-1, CRASH_OBJ_NONE);
     }
     if (gCurrentLevelHeader->race_type == 0) {
         for (i = 0; i < gNumRacers; i++) {
@@ -4412,7 +4410,7 @@ s32 get_object_property_size(Object *obj, Object_64 *obj64) {
  * Arg2 is always zero. Effectively unused.
 */
 void run_object_init_func(Object *obj, void *entry, s32 param) {
-    set_crash_object(obj->behaviorId, CRASH_OBJ_UPDATE);
+    set_crash_object(obj->segment.header, CRASH_OBJ_UPDATE);
     obj->behaviorId = obj->segment.header->behaviorId;
     switch (obj->behaviorId) {
         case BHV_RACER:
@@ -4639,7 +4637,7 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             obj_init_char_select(obj);
             break;
     }
-    set_crash_object(-1, CRASH_OBJ_NONE);
+    set_crash_object(NULL, CRASH_OBJ_NONE);
 }
 
 /**
@@ -4783,7 +4781,7 @@ s32 obj_init_property_flags(s32 behaviorId) {
 */
 void run_object_loop_func(Object *obj, s32 updateRate) {
     profiler_begin_timer();
-    set_crash_object(obj->behaviorId, CRASH_OBJ_UPDATE);
+    set_crash_object(obj->segment.header, CRASH_OBJ_UPDATE);
     switch (obj->behaviorId) {
         case BHV_SCENERY:
             obj_loop_scenery(obj, updateRate);
@@ -5001,7 +4999,7 @@ void run_object_loop_func(Object *obj, s32 updateRate) {
             obj_loop_levelname(obj, updateRate);
             break;
     }
-    set_crash_object(-1, CRASH_OBJ_NONE);
+    set_crash_object(NULL, CRASH_OBJ_NONE);
     profiler_add_obj(obj->behaviorId, first, obj->segment.header);
 }
 
