@@ -1980,6 +1980,7 @@ void menu_init(u32 menuId) {
  */
 s32 menu_loop(Gfx **currDisplayList, MatrixS **currHudMat, Vertex **currHudVerts, TriangleList **currHudTris, s32 updateRate) {
     s32 ret;
+    profiler_begin_timer();
 
     sMenuCurrDisplayList = *currDisplayList;
     sMenuCurrHudMat = *currHudMat;
@@ -2058,6 +2059,7 @@ s32 menu_loop(Gfx **currDisplayList, MatrixS **currHudMat, Vertex **currHudVerts
     *currHudMat = sMenuCurrHudMat;
     *currHudVerts = sMenuCurrHudVerts;
     *currHudTris = sMenuCurrHudTris;
+    profiler_add(PP_MENU, first);
     return ret;
 }
 

@@ -111,6 +111,7 @@ enum TrackTimers {
     PP_SORTING,
     PP_INTERACT,
     PP_ANIMATION,
+    PP_MENU,
 
     PP_RSP_GFX,
     PP_RSP_AUD,
@@ -159,7 +160,8 @@ enum PPProfilerEvent {
     "Void", \
     "Sorting\t", \
     "Interaction", \
-    "Animation"
+    "Animation", \
+    "Menu\t"
 
 
 #ifdef PUPPYPRINT_DEBUG
