@@ -1039,6 +1039,8 @@ typedef struct Object_CharacterFlag {
   /* 0x00 */ Triangle triangles[2];
   /* 0x20 */ Vertex *vertices;
   /* 0x24 */ TextureHeader *texture;
+    s32 pad[8];
+    u16 shadeTimer;
 } Object_CharacterFlag;
 
 typedef struct Object_AnimCamera {

@@ -417,6 +417,8 @@ void obj_init_fish(Object *obj, LevelObjectEntry_Fish *entry);
 void obj_init_scenery(Object *obj, LevelObjectEntry_Scenery *entry);
 void calc_env_mapping_for_object(ObjectModel *, s16, s16, s16);
 void handle_rocket_projectile(Object *obj, s32 updateRate);
+void character_select_shading(Object *obj);
+void obj_init_char_select(Object *obj);
 
 s32 func_8001C524(f32 x, f32 y, f32 z, s32 arg3);
 s32 func_8001CC48(s32, s32, s32);

@@ -2024,9 +2024,7 @@ void render_3d_model(Gfx **dList, Object *obj) {
         if (obj68->unk20 <= 0) {
             obj->unk44 = (Vertex *) obj68->unk4[obj68->unk1F];
             if (obj68->unk1E == 2) {
-                profiler_begin_timer();
                 func_80061D30(obj);
-                profiler_add(PP_ANIMATION, first);
             }
             if (obj68->unk1E && objModel->unk40 != NULL) {
                 flags = TRUE;
@@ -4637,6 +4635,9 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
         case BHV_LEVEL_NAME:
             obj_init_levelname(obj, (LevelObjectEntry_LevelName *) entry);
             break;
+        case BHV_CHARACTER_SELECT:
+            obj_init_char_select(obj);
+            break;
     }
     set_crash_object(-1, CRASH_OBJ_NONE);
 }
@@ -4886,6 +4887,7 @@ void run_object_loop_func(Object *obj, s32 updateRate) {
             break;
         case BHV_CHARACTER_SELECT:
             obj_loop_char_select(obj, updateRate);
+            character_select_shading(obj);
             break;
         case BHV_TRIGGER:
             obj_loop_trigger(obj, updateRate);

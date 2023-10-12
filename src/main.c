@@ -536,6 +536,7 @@ void puppyprint_render_breakdown(void) {
     s32 y;
     s32 i;
 
+    puppyprint_render_minimal();
     y = 8;
     draw_blank_box(gScreenWidth - 144, 0, gScreenWidth, gScreenHeight, 0x00000064);
     gDPPipeSync(gCurrDisplayList++);
@@ -594,6 +595,7 @@ void puppyprint_render_objects(void) {
     s32 y;
     s32 i;
 
+    puppyprint_render_minimal();
     y = 8;
     draw_blank_box(gScreenWidth - 144, 0, gScreenWidth, gScreenHeight, 0x00000064);
     gDPPipeSync(gCurrDisplayList++);

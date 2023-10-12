@@ -10,5 +10,6 @@ s32 func_80031600(f32 *pos, f32 *pos2, f32 *radius, s8 *surface, s32, s32 *hasCo
 
 void func_80031130_2(s32, f32*, f32*, s32);
 s32 func_80031600_2(f32*, f32*, f32*, s8* surface, s32, s32*);
+s32 func_80061D30_2(Object *);
 
 #endif

@@ -145,6 +145,14 @@ s32 func_80031600(f32* arg0, f32* arg1, f32* arg2, s8* arg3, s32 arg4, s32* arg5
     return ret;
 }
 
+s32 func_80061D30(Object *obj) {
+    s32 ret;
+    profiler_begin_timer();
+    ret = func_80061D30_2(obj);
+    profiler_add(PP_ANIMATION, first);
+    return ret;
+}
+
 /**
  * Level scenery init behaviour.
  * Set rotation and scale based off spawn info.
@@ -1793,6 +1801,23 @@ void obj_loop_snowball(Object *obj, s32 updateRate) {
         }
     }
     func_8001F460(obj, updateRate, obj);
+}
+
+void obj_init_char_select(Object *obj) {
+    Object_CharacterFlag *chr = (Object_CharacterFlag *) obj->unk64;
+
+    chr->shadeTimer = 5;
+}
+
+void character_select_shading(Object *obj) {
+    Object_CharacterFlag *chr = (Object_CharacterFlag *) obj->unk64;
+
+    if (chr->shadeTimer > 0) {
+        chr->shadeTimer--;
+    }
+    if (chr->shadeTimer == 0) {
+        obj->unk68[obj->segment.object.modelIndex]->objModel->unk40 = NULL;
+    }
 }
 
 GLOBAL_ASM("asm/non_matchings/object_functions/obj_loop_char_select.s")
