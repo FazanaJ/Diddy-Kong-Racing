@@ -855,7 +855,6 @@ void calculate_individual_thread_timers(void) {
     gPuppyPrint.audTime[PERF_AGGREGATE] -= gPuppyPrint.audTime[perfIteration];
     gPuppyPrint.audTime[perfIteration] = MIN(highTime - lowTime, (s32) OS_USEC_TO_CYCLES(99999));
     gPuppyPrint.audTime[PERF_AGGREGATE] += gPuppyPrint.audTime[perfIteration];
-    gPuppyPrint.audTime[PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.audTime[PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
     // Game thread, unfortunately, does not. We have to take the times of the audio too, so we can offset the values for accuracy.
     highTime = 0;
     offsetTime = 0;
@@ -876,7 +875,10 @@ void calculate_individual_thread_timers(void) {
     gPuppyPrint.gameTime[PERF_AGGREGATE] -= gPuppyPrint.gameTime[perfIteration];
     gPuppyPrint.gameTime[perfIteration] = MIN(highTime - lowTime - offsetTime, (s32) OS_USEC_TO_CYCLES(99999));
     gPuppyPrint.gameTime[PERF_AGGREGATE] += gPuppyPrint.gameTime[perfIteration];
-    gPuppyPrint.gameTime[PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.gameTime[PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
+    if (gPuppyPrint.shouldUpdate) {
+        gPuppyPrint.audTime[PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.audTime[PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
+        gPuppyPrint.gameTime[PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.gameTime[PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
+    }
 }
 
 void calculate_core_timers(void) {
@@ -894,7 +896,9 @@ void calculate_core_timers(void) {
         gPuppyPrint.coreTimers[i][PERF_AGGREGATE] -= gPuppyPrint.coreTimers[i][perfIteration];
         gPuppyPrint.coreTimers[i][perfIteration] = MIN(highTime - lowTime - offsetTime, (s32) OS_USEC_TO_CYCLES(99999));
         gPuppyPrint.coreTimers[i][PERF_AGGREGATE] += gPuppyPrint.coreTimers[i][perfIteration];
-        gPuppyPrint.coreTimers[i][PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.coreTimers[i][PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
+        if (gPuppyPrint.shouldUpdate) {
+            gPuppyPrint.coreTimers[i][PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.coreTimers[i][PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
+        }
     }
 
     gPuppyPrint.coreTimers[PP_OBJECTS][perfIteration] -= gPuppyPrint.coreTimers[PP_RACER][perfIteration];
@@ -914,22 +918,30 @@ void puppyprint_calculate_average_times(void) {
     u32 highTime = 0;
     u32 lowTime = 0xFFFFFFFF;
 
-    gPuppyPrint.timers[PP_RSP_AUD][PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.timers[PP_RSP_AUD][PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
-    gPuppyPrint.timers[PP_RSP_GFX][PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.timers[PP_RSP_GFX][PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
+    gPuppyPrint.updateTimer += sLogicUpdateRate;
+    if (gPuppyPrint.updateTimer >= 4) {
+        gPuppyPrint.updateTimer -= 4;
+        gPuppyPrint.shouldUpdate = TRUE;
+    }
 
-    for (i = 1; i < PP_RDP_BUS; i++) {
-        gPuppyPrint.timers[i][PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.timers[i][PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
+    if (gPuppyPrint.shouldUpdate) {
+        gPuppyPrint.timers[PP_RSP_AUD][PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.timers[PP_RSP_AUD][PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
+        gPuppyPrint.timers[PP_RSP_GFX][PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.timers[PP_RSP_GFX][PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
+
+        for (i = 1; i < PP_RDP_BUS; i++) {
+            gPuppyPrint.timers[i][PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.timers[i][PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
+        }
+        
+        for (i = 1; i < NUM_OBJECT_PRINTS; i++) {
+            gPuppyPrint.objTimers[i][PERF_TOTAL] = (gPuppyPrint.objTimers[i][PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
+        }
+        gPuppyPrint.timers[PP_RDP_BUF][PERF_TOTAL] = (gPuppyPrint.timers[PP_RDP_BUF][PERF_AGGREGATE] * 10) / (625*NUM_PERF_ITERATIONS);
+        gPuppyPrint.timers[PP_RDP_BUS][PERF_TOTAL] = (gPuppyPrint.timers[PP_RDP_BUS][PERF_AGGREGATE] * 10) / (625*NUM_PERF_ITERATIONS);
+        gPuppyPrint.timers[PP_RDP_TMM][PERF_TOTAL] = (gPuppyPrint.timers[PP_RDP_TMM][PERF_AGGREGATE] * 10) / (625*NUM_PERF_ITERATIONS);
+        gPuppyPrint.rspTime = gPuppyPrint.timers[PP_RSP_AUD][PERF_TOTAL] + gPuppyPrint.timers[PP_RSP_GFX][PERF_TOTAL];
+        gPuppyPrint.rdpTime = MAX(gPuppyPrint.timers[PP_RDP_BUF][PERF_TOTAL], gPuppyPrint.timers[PP_RDP_BUS][PERF_TOTAL]);
+        gPuppyPrint.rdpTime = MAX(gPuppyPrint.timers[PP_RDP_TMM][PERF_TOTAL], gPuppyPrint.rdpTime);
     }
-    
-    for (i = 1; i < NUM_OBJECT_PRINTS; i++) {
-        gPuppyPrint.objTimers[i][PERF_TOTAL] = (gPuppyPrint.objTimers[i][PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
-    }
-    gPuppyPrint.timers[PP_RDP_BUF][PERF_TOTAL] = (gPuppyPrint.timers[PP_RDP_BUF][PERF_AGGREGATE] * 10) / (625*NUM_PERF_ITERATIONS);
-    gPuppyPrint.timers[PP_RDP_BUS][PERF_TOTAL] = (gPuppyPrint.timers[PP_RDP_BUS][PERF_AGGREGATE] * 10) / (625*NUM_PERF_ITERATIONS);
-    gPuppyPrint.timers[PP_RDP_TMM][PERF_TOTAL] = (gPuppyPrint.timers[PP_RDP_TMM][PERF_AGGREGATE] * 10) / (625*NUM_PERF_ITERATIONS);
-    gPuppyPrint.rspTime = gPuppyPrint.timers[PP_RSP_AUD][PERF_TOTAL] + gPuppyPrint.timers[PP_RSP_GFX][PERF_TOTAL];
-    gPuppyPrint.rdpTime = MAX(gPuppyPrint.timers[PP_RDP_BUF][PERF_TOTAL], gPuppyPrint.timers[PP_RDP_BUS][PERF_TOTAL]);
-    gPuppyPrint.rdpTime = MAX(gPuppyPrint.timers[PP_RDP_TMM][PERF_TOTAL], gPuppyPrint.rdpTime);
     // Find the earliest snapshot and the latest snapshot.
     for (i = 0; i < NUM_THREAD_TIMERS; i++) {
         for (j = 0; j < gPuppyPrint.threadIteration[i / 2]; j++) {
@@ -948,17 +960,22 @@ void puppyprint_calculate_average_times(void) {
     gPuppyPrint.cpuTime[PERF_AGGREGATE] -= gPuppyPrint.cpuTime[perfIteration];
     gPuppyPrint.cpuTime[perfIteration] = MIN(highTime - lowTime, OS_USEC_TO_CYCLES(99999));
     gPuppyPrint.cpuTime[PERF_AGGREGATE] += gPuppyPrint.cpuTime[perfIteration];
-    gPuppyPrint.cpuTime[PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.cpuTime[PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
+    if (gPuppyPrint.shouldUpdate) {
+        gPuppyPrint.cpuTime[PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.cpuTime[PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
+    }
     bzero(&gPuppyPrint.threadIteration, sizeof(gPuppyPrint.threadIteration));
     bzero(&gPuppyPrint.threadTimes, sizeof(gPuppyPrint.threadTimes));
     bzero(&gPuppyPrint.mainTimerPoints, sizeof(gPuppyPrint.mainTimerPoints));
-    if (gPuppyPrint.enabled) {
-        if (gPuppyPrint.page == PAGE_BREAKDOWN) {
-            calculate_print_order();
-        } else if (gPuppyPrint.page == PAGE_OBJECTS) {
-            calculate_obj_print_order();
+    if (gPuppyPrint.shouldUpdate) {
+        if (gPuppyPrint.enabled) {
+            if (gPuppyPrint.page == PAGE_BREAKDOWN) {
+                calculate_print_order();
+            } else if (gPuppyPrint.page == PAGE_OBJECTS) {
+                calculate_obj_print_order();
+            }
         }
     }
+    gPuppyPrint.shouldUpdate = FALSE;
 }
 
 void puppyprint_update_rsp(u8 flags) {

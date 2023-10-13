@@ -3616,19 +3616,20 @@ s32 func_8001955C(Object *obj, s32 checkpoint, u8 arg2, s32 arg3, s32 arg4, f32 
             checkpointIndex = 0;
         }
     }
-    temp2 = (1.0 - checkpointDist);
+    temp2 = (1.0f - checkpointDist);
     if (temp2 < 0.0f) {
         temp2 = 0.0f;
     }
-    if (temp2 > 1.0) {
+    if (temp2 > 1.0f) {
         temp2 = 1.0f;
     }
     xSpline = cubic_spline_interpolation(xData, 0, temp2, &dx);
     ySpline = cubic_spline_interpolation(yData, 0, temp2, &dy);
     zSpline = cubic_spline_interpolation(zData, 0, temp2, &dz);
-    temp2 = sqrtf((dx * dx) + (dy * dy) + (dz * dz));
+    temp2 = ((dx * dx) + (dy * dy) + (dz * dz));
     if (temp2 != 0.0f) {
-        temp2 = 500.0 / temp2;
+        temp2 = sqrtf(temp2);
+        temp2 = 500.0f / temp2;
         dx *= temp2;
         dy *= temp2;
         dz *= temp2;

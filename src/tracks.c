@@ -932,8 +932,10 @@ void render_level_geometry_and_objects(Gfx **dList) {
     sp160 = func_80014814(&objCount);
 
     if (gCurrentLevelModel->numberOfSegments > 1) {
+        profiler_begin_timer2();
         numberOfSegments = 0;
         traverse_segments_bsp_tree(0, 0, gCurrentLevelModel->numberOfSegments - 1, segmentIds, &numberOfSegments);
+        profiler_add(PP_BLOCKS, first2);
     } else {
         numberOfSegments = 1;
         segmentIds[0] = 0;
@@ -1070,9 +1072,11 @@ void render_level_geometry_and_objects(Gfx **dList) {
 
     pop_render_list_track(dList);
     if (D_800DC924 && func_80027568()) {
+        profiler_begin_timer3();
         gSceneCurrDisplayList = *dList;
         func_8002581C(segmentIds, numberOfSegments, gActiveCameraID);
         *dList = gSceneCurrDisplayList;
+        profiler_add(PP_VOID, first3);
     }
     
     gAntiAliasing = FALSE;
@@ -1233,7 +1237,6 @@ void render_level_segment(Gfx **dList, s32 segmentId, s32 nonOpaque) {
                 RenderNodeTrack *entry;
                 gSorterPos -= sizeof(RenderNodeTrack);
                 entry = (RenderNodeTrack *) gSorterPos;
-                //RenderNodeTrack *entry = (RenderNodeTrack *) allocate_from_main_pool(sizeof(RenderNodeTrack), COLOUR_TAG_MAGENTA);
                 entry->material = texture;
                 entry->flags = batchFlags;
                 entry->texOffset = texOffset;

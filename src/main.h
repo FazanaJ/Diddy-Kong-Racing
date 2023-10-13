@@ -112,6 +112,7 @@ enum TrackTimers {
     PP_INTERACT,
     PP_ANIMATION,
     PP_MENU,
+    PP_BLOCKS,
 
     PP_RSP_GFX,
     PP_RSP_AUD,
@@ -157,11 +158,12 @@ enum PPProfilerEvent {
     "Matrix", \
     "BG\t", \
     "Billboards", \
-    "Void", \
+    "Void\t", \
     "Sorting\t", \
     "Interaction", \
     "Animation", \
-    "Menu\t"
+    "Menu\t", \
+    "Blocks\t"
 
 
 #ifdef PUPPYPRINT_DEBUG
@@ -199,6 +201,8 @@ struct PuppyPrint {
     u8 page; // Current viewed page.
     u8 showCvg;
     u8 showCol;
+    u8 updateTimer;
+    u8 shouldUpdate;
     s8 menuOption; // Current option in the page menu.
     char logText[NUM_LOG_LINES][127];
 };
