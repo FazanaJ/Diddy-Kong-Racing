@@ -16,16 +16,13 @@ default: all
 
 n64crc_SOURCES := n64crc.c
 
-flips_SOURCES := flipssrc/flips.cpp
-flips_CFLAGS := -Wall -Wextra -fopenmp -Os -flto -fuse-linker-plugin -fomit-frame-pointer -fmerge-all-constants \
--fvisibility=hidden -fno-exceptions -fno-unwind-tables -fno-asynchronous-unwind-tables \
--ffunction-sections -fdata-sections -Wl,--gc-sections \
--Wl,-z,relro,-z,now,--as-needed,--hash-style=gnu,--relax
+all: $(PROGRAMS) recomp flips
 
-all: $(PROGRAMS)
-
+# make clean for flips doesn't work, so just manually delete it on a clean. 
 clean:
 	rm -Rf $(PROGRAMS) $(BUILD_DIR)
+	@make -C ido-static-recomp clean VERSION=5.3
+	rm -f Flips/flips
 
 distclean: clean
 
@@ -50,8 +47,14 @@ $(BUILD_DIR)/%.o: %.cpp
 dkr_assets_tool: $(dkr_assets_tool_OBJ_FILES)
 	$(CXX) $^ -o $@ $(CXXFLAGS) $(LDFLAGS) -lpthread
 
-flips: flipssrc/flips.cpp
-	$(CXX) $^ -o $@ $(flips_CFLAGS) $(LDFLAGS) -lpthread
+#recomp likes to echo some strings on all calls to make, the >/dev/null will silence them.
+recomp:
+	@make -C ido-static-recomp VERSION=5.3 RELEASE=1 setup >/dev/null
+	@make -C ido-static-recomp VERSION=5.3 RELEASE=1 >/dev/null
+
+#Builds the CLI only version of flips. It will complain about it being debug, but this makes it much faster compile.
+flips:
+	@make -s -C Flips TARGET=cli
 
 .PHONY: all clean distclean default
 
