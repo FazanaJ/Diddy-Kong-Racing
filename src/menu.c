@@ -1956,9 +1956,11 @@ void menu_init(u32 menuId) {
         case MENU_BOOT:
             menu_boot_init();
             break;
+#ifndef SKIP_WARNING_SCREEN
         case MENU_CAUTION:
             menu_caution_init();
             break;
+#endif
 #ifdef PUPPYPRINT_DEBUG
         case MENU_BENCHMARK:
             menu_benchmark_init();
@@ -2038,9 +2040,11 @@ s32 menu_loop(Gfx **currDisplayList, MatrixS **currHudMat, Vertex **currHudVerts
         case MENU_BOOT:
             ret = menu_boot_loop(updateRate);
             break;
+#ifndef SKIP_WARNING_SCREEN
         case MENU_CAUTION:
             ret = menu_caution_loop(updateRate);
             break;
+#endif
 #ifdef PUPPYPRINT_DEBUG
         case MENU_BENCHMARK:
             ret = menu_benchmark_loop(updateRate);
@@ -5268,7 +5272,9 @@ s32 menu_character_select_loop(s32 updateRate) {
                 func_80000B18();
                 load_level_for_menu(ASSET_LEVEL_OPTIONSBACKGROUND, -1, 0);
                 if (gNumberOfActivePlayers == 1 && !gPlayerHasSeenCautionMenu) {
+#ifndef SKIP_WARNING_SCREEN
                     menu_init(MENU_CAUTION);
+#endif
                 } else {
                     menu_init(MENU_GAME_SELECT);
                 }
@@ -5375,6 +5381,7 @@ void func_8008C168(s32 updateRate) {
     }
 }
 
+#ifndef SKIP_WARNING_SCREEN
 /**
  * Initialises the timer and transition for the controller pak warning screen.
  * Only seen once per game session, as set by gPlayerHasSeenCautionMenu.
@@ -5418,6 +5425,7 @@ s32 menu_caution_loop(s32 updateRate) {
 void unload_big_font_3(void) {
     unload_font(ASSET_FONTS_BIGFONT);
 }
+#endif
 
 /**
  * Initialises the selection menu that contains the options for adventure one, two and tracks mode.
