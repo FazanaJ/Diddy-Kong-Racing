@@ -28,7 +28,7 @@
 
 // Maximum size for a level model is 522.5 KiB
 #define LEVEL_MODEL_MAX_SIZE 0x80000
-#define LEVEL_SEGMENT_MAX 128
+#define LEVEL_SEGMENT_MAX 80
 
 /************ .data ************/
 
@@ -941,7 +941,11 @@ void render_level_geometry_and_objects(Gfx **dList) {
         segmentIds[0] = 0;
     }
 
-    bzero(&objectsVisible[1], gCurrentLevelModel->numberOfSegments - 1);
+    if (numberOfSegments > LEVEL_SEGMENT_MAX) {
+        puppyprint_assert("numberOfSegments exceeds LEVEL_SEGMENT_MAX.");
+    }
+
+    bzero(&objectsVisible[1], numberOfSegments - 1);
 
     objectsVisible[0] = TRUE;
 
@@ -977,7 +981,7 @@ void render_level_geometry_and_objects(Gfx **dList) {
         if (objFlags & visibleFlags) {
             visible = 0;
         }
-        if (obj != NULL && visible == 255 && (objectsVisible[obj->segment.object.segmentID + 1] || obj->segment.camera.unk34 > 1000.0f) && check_if_in_draw_range(obj)) {
+        if (obj != NULL && visible && (objectsVisible[obj->segment.object.segmentID + 1] || obj->segment.camera.unk34 > 1000.0f) && check_if_in_draw_range(obj)) {
             if (obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) {
                 render_object(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, obj);
                 continue;
