@@ -1514,6 +1514,7 @@ void update_camera_hovercraft(f32 updateRate, Object *obj, Object_Racer *racer) 
     s32 angle;
     s32 segmentIndex;
     s32 tempAngle;
+    s32 addAngle;
 
     phi_f14 = 165.0f;
     phi_f18 = 65.0f;
@@ -1581,6 +1582,17 @@ void update_camera_hovercraft(f32 updateRate, Object *obj, Object_Racer *racer) 
             phi_f14 = 180.0f;
         }
     }
+    if (get_buttons_held_from_player(racer->playerIndex) & L_TRIG) {
+        if (get_buttons_pressed_from_player(racer->playerIndex) & L_TRIG) {
+            play_sound_global(SOUND_TING_HIGH, NULL);
+        }
+        addAngle = 0x8000;
+    } else {
+        if (get_buttons_released_from_player(racer->playerIndex) & L_TRIG) {
+            play_sound_global(SOUND_TING_LOW, NULL);
+        }
+        addAngle = 0;
+    }
     if (gRaceStartTimer > 80) {
         gCameraObject->unk1C = phi_f14;
         gCameraObject->unk20 = phi_f18;
@@ -1590,8 +1602,8 @@ void update_camera_hovercraft(f32 updateRate, Object *obj, Object_Racer *racer) 
     sp34 = sins_f(gCameraObject->trans.x_rotation - sp24);
     phi_f18 = coss_f(gCameraObject->trans.x_rotation - sp24);
     phi_f18 = (gCameraObject->unk1C * sp34) + (gCameraObject->unk20 * phi_f18);
-    xVel = sins_f(-racer->unk196 + 0x8000) * gCameraObject->unk1C;
-    zVel = coss_f(-racer->unk196 + 0x8000) * gCameraObject->unk1C;
+    xVel = sins_f(-racer->unk196 + 0x8000  + addAngle) * gCameraObject->unk1C;
+    zVel = coss_f(-racer->unk196 + 0x8000  + addAngle) * gCameraObject->unk1C;
     yVel = (1.0f - (gDialogueCameraAngle / 10240.0f)); // Goes between 0-1
     xVel -= racer->ox1 * 10.0f * yVel;
     zVel -= racer->oz1 * 10.0f * yVel;
@@ -1619,7 +1631,7 @@ void update_camera_hovercraft(f32 updateRate, Object *obj, Object_Racer *racer) 
     }
 
     gCameraObject->trans.z_position = obj->segment.trans.z_position + zVel;
-    gCameraObject->trans.y_rotation = racer->unk196;
+    gCameraObject->trans.y_rotation = racer->unk196 + addAngle;
     segmentIndex = get_level_segment_index_from_position(gCameraObject->trans.x_position, gCameraObject->trans.y_position, gCameraObject->trans.z_position);
     if (segmentIndex != SEGMENT_NONE) {
         gCameraObject->segmentIndex = segmentIndex;
