@@ -187,11 +187,12 @@ struct PuppyPrint {
     PPTimer coreTimers[PP_MAIN_TIMES_TOTAL]; // Large collection of timers for various things.
     PPTimer audTime; // Normalised total for audio processing time.
     PPTimer gameTime; // Normalised total for game processing time.
-    ObjectHeader *objHeaders[NUM_OBJECT_PRINTS];
+    ObjectHeader *objHeaders[NUM_OBJECT_PRINTS]; // Stored to be able to access their names.
     u32 threadTimes[NUM_THREAD_ITERATIONS][NUM_THREAD_TIMERS]; // Timers for individual threads.
     u16 objTimers[NUM_OBJECT_PRINTS][NUM_PERF_ITERATIONS + 2]; // Timers for individual object IDs
-    u8 objCounts[NUM_OBJECT_PRINTS];
+    u8 objCounts[NUM_OBJECT_PRINTS]; // Tracks the number of objects of each type.
     u32 mainTimerPoints[2][PP_MAIN_TIMES_TOTAL]; // Timers for individual threads.
+    u32 ramPools[16]; // RAM totals for each colour tag.
     u16 menuScroll; // Page menu scroll value to offset the text.
     s16 pageScroll; // Generic scroller var for a page. Reset when swapped.
     u16 textureLoads; // Tracked number of texture loads.
@@ -223,6 +224,7 @@ void profiler_snapshot(s32 eventID);
 void puppyprint_log(const char *str, ...);
 void puppyprint_render_coverage(Gfx **dList);
 void profiler_reset_objects(void);
+void calculate_ram_total(s32 poolIndex, u32 colourTag);
 #define profiler_begin_timer() u32 first = osGetCount();
 #define profiler_begin_timer2() u32 first2 = osGetCount();
 #define profiler_begin_timer3() u32 first3 = osGetCount();
@@ -243,7 +245,6 @@ extern u32 gPrevLoadTimeObjects;
 extern u8 sPrevLoadTimer;
 extern u8 gShowHiddenGeometry;
 extern u8 gShowHiddenObjects;
-extern u32 gFreeMem[12];
 #else
 
 #define update_rdp_profiling()
@@ -263,6 +264,7 @@ extern u32 gFreeMem[12];
 #define profiler_update(x, y)
 #define profiler_offset(x, y)
 #define profiler_reset_objects(x)
+#define calculate_ram_total(x, y)
 #ifdef __sgi
 #define puppyprint_log
 #else

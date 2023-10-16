@@ -32,6 +32,8 @@
 #define COLOUR_TAG_ORANGE 0xFF7F7FFF
 // Controller Pak
 #define COLOUR_TAG_BLACK 0x000000FF
+// Audio task
+#define COLOUR_TAG_BROWN 0xA04000FF
     
 /* Size: 0x14 bytes */
 typedef struct MemoryPoolSlot {

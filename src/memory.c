@@ -38,9 +38,6 @@ void init_main_memory_pool(void) {
     } else {
         ramEnd = RAM_END;
     }
-#ifdef PUPPYPRINT_DEBUG
-    gFreeMem[11] = ramEnd - (s32)(&gMainMemoryPool);
-#endif
     new_memory_pool(&gMainMemoryPool, ramEnd - (s32)(&gMainMemoryPool), MAIN_POOL_SLOT_COUNT);
     set_free_queue_state(2);
     gFreeQueueCount = 0;
@@ -413,6 +410,7 @@ void free_memory_pool_slot(s32 poolIndex, s32 slotIndex) {
             slots[pool->curNumSlots].index = slotIndex;
         }
     }
+    calculate_ram_total(poolIndex, slot->colourTag);
 }
 
 /**
@@ -450,6 +448,7 @@ s32 allocate_memory_pool_slot(s32 poolIndex, s32 slotIndex, s32 size, s32 slotIs
         if (nextIndex != -1) {
             poolSlots[nextIndex].prevIndex = index;
         }
+        calculate_ram_total(poolIndex, colourTag);
         return index;
     }
     return slotIndex;
@@ -466,3 +465,64 @@ u8 *align16(u8 *address) {
     }
     return address;
 }
+
+#ifdef PUPPYPRINT_DEBUG
+void calculate_ram_total(s32 poolIndex, u32 colourTag) {
+    s32 index;
+    MemoryPoolSlot *slots;
+    MemoryPoolSlot *curSlot;
+    s32 i;
+
+    switch (colourTag) {
+    case COLOUR_TAG_RED:
+        index = 1;
+        break;
+    case COLOUR_TAG_BLACK:
+        index = 2;
+        break;
+    case COLOUR_TAG_BLUE:
+        index = 3;
+        break;
+    case COLOUR_TAG_CYAN:
+        index = 4;
+        break;
+    case COLOUR_TAG_GREEN:
+        index = 5;
+        break;
+    case COLOUR_TAG_GREY:
+        index = 6;
+        break;
+    case COLOUR_TAG_MAGENTA:
+        index = 7;
+        break;
+    case COLOUR_TAG_SEMITRANS_GREY:
+        index = 8;
+        break;
+    case COLOUR_TAG_WHITE:
+        index = 9;
+        break;
+    case COLOUR_TAG_YELLOW:
+        index = 10;
+        break;
+    case COLOUR_TAG_ORANGE:
+        index = 11;
+        break;
+    }
+
+    if (index == 0) {
+        return;
+    }
+
+    slots = gMemoryPools[poolIndex].slots;
+    gPuppyPrint.ramPools[0] -= gPuppyPrint.ramPools[index];
+    gPuppyPrint.ramPools[index] = 0;
+
+    for (i = 0; i != -1; i = curSlot->nextIndex) {
+        curSlot = &slots[i];
+        if (curSlot->flags != 0 && curSlot->colourTag == colourTag) {
+            gPuppyPrint.ramPools[index] += curSlot->sizeUsed;
+            gPuppyPrint.ramPools[0] += curSlot->sizeUsed;
+        }
+    }
+}
+#endif

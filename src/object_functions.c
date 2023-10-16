@@ -1816,7 +1816,8 @@ void character_select_shading(Object *obj) {
         chr->shadeTimer--;
     }
     if (chr->shadeTimer == 0) {
-        obj->unk68[obj->segment.object.modelIndex]->objModel->unk40 = NULL;
+        // In hindsight this was pretty stupid. I mean of COURSE it's gonna cause a memory leak.
+        //obj->unk68[obj->segment.object.modelIndex]->objModel->unk40 = NULL;
     }
 }
 
