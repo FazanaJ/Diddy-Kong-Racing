@@ -28,7 +28,7 @@
 
 // Maximum size for a level model is 522.5 KiB
 #define LEVEL_MODEL_MAX_SIZE 0x80000
-#define LEVEL_SEGMENT_MAX 80
+#define LEVEL_SEGMENT_MAX 128
 
 /************ .data ************/
 
