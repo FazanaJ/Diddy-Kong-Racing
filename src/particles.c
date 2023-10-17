@@ -217,6 +217,7 @@ void init_particle_assets(void) {
     s32 i;
 
     func_800AE490();
+    gAssetColourTag = MEMP_PARTICLES;
     gParticlesAssetTable = (ParticleProperties **) load_asset_section_from_rom(ASSET_PARTICLES_TABLE);
     gParticlesAssetTableCount = -1; 
     while (((s32) gParticlesAssetTable[gParticlesAssetTableCount + 1]) != -1) {
@@ -241,6 +242,7 @@ void init_particle_assets(void) {
             gParticleBehavioursAssetTable[i]->unk9C = (s32 *) get_misc_asset((s32) gParticleBehavioursAssetTable[i]->unk9C);
         }
     }
+    gAssetColourTag = COLOUR_TAG_GREY;
 }
 
 GLOBAL_ASM("asm/non_matchings/particles/func_800AE728.s")
@@ -455,7 +457,7 @@ void func_800AF29C(Particle *arg0, s32 behaviourID, s32 propertyID, s16 velX, s1
         } else {
             arg0->data.lifeTime = 255;
         }
-        arg0->data.unkC_400.unkC = (s32 *) allocate_from_main_pool_safe(arg0->data.lifeTime * sizeof(uintptr_t), COLOUR_TAG_SEMITRANS_GREY);
+        arg0->data.unkC_400.unkC = (s32 *) allocate_from_main_pool_safe(arg0->data.lifeTime * sizeof(uintptr_t), MEMP_PARTICLES);
         arg0->data.unkC_400.unk10 = behaviour->unk14;
         arg0->data.unkC_400.unk12 = behaviour->unk16;
         arg0->data.unkC_400.unk14 = behaviour->unk22;

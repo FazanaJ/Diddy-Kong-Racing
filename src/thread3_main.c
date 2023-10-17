@@ -224,7 +224,7 @@ void init_game(void) {
     gGameCurrentCutscene = 0;
     gSPTaskNum = 0;
 
-    gSorterHeap = allocate_from_main_pool(0x4000, COLOUR_TAG_ORANGE);
+    gSorterHeap = allocate_from_main_pool(0x4000, MEMP_MISC);
     gSorterPos = (u32) gSorterHeap + MATERIAL_SORT_BUFFER - sizeof(RenderNodeTrack);
 
     gCurrDisplayList = gDisplayLists[gSPTaskNum];
@@ -1208,7 +1208,7 @@ void calc_and_alloc_heap_for_settings(void) {
     sizes[13] = sizes[12] + dataSize; // courseTimesPtr[2]
     sizes[14] = sizes[13] + dataSize; // total size
 
-    gSettingsPtr = allocate_from_main_pool_safe(sizes[14], COLOUR_TAG_WHITE);
+    gSettingsPtr = allocate_from_main_pool_safe(sizes[14], MEMP_MISC);
     gSettingsPtr->courseFlagsPtr = (s32 *)((u8 *)gSettingsPtr + sizes[0]);
     gSettingsPtr->balloonsPtr = (s16 *)((u8 *)gSettingsPtr + sizes[1]);
     gSettingsPtr->tajFlags = 0;
@@ -1451,8 +1451,8 @@ void alloc_displaylist_heap(s32 numberOfPlayers) {
             + ((gNumHudMatPerPlayer[num] * sizeof(Matrix)))
             + ((gNumHudVertsPerPlayer[num] * sizeof(Vertex)))
             + ((gNumHudTrisPerPlayer[num] * sizeof(Triangle)));
-        gDisplayLists[0] = (Gfx *) allocate_at_address_in_main_pool(totalSize, (u8 *) gDisplayLists[0], COLOUR_TAG_RED);
-        gDisplayLists[1] = (Gfx *) allocate_at_address_in_main_pool(totalSize, (u8 *) gDisplayLists[1], COLOUR_TAG_YELLOW);
+        gDisplayLists[0] = (Gfx *) allocate_at_address_in_main_pool(totalSize, (u8 *) gDisplayLists[0], MEMP_GFXBUFFERS);
+        gDisplayLists[1] = (Gfx *) allocate_at_address_in_main_pool(totalSize, (u8 *) gDisplayLists[1], MEMP_GFXBUFFERS);
         if ((gDisplayLists[0] == NULL) || gDisplayLists[1] == NULL) {
             if (gDisplayLists[0] != NULL) {
                 free_from_memory_pool(gDisplayLists[0]);
@@ -1509,12 +1509,12 @@ void default_alloc_displaylist_heap(void) {
         + (gNumHudVertsPerPlayer[numberOfPlayers] * sizeof(Vertex))
         + (gNumHudTrisPerPlayer[numberOfPlayers] * sizeof(Triangle));
 
-    gDisplayLists[0] = (Gfx *) allocate_from_main_pool_safe(totalSize, COLOUR_TAG_RED);
+    gDisplayLists[0] = (Gfx *) allocate_from_main_pool_safe(totalSize, MEMP_GFXBUFFERS);
     gMatrixHeap[0] = (MatrixS *) ((u8 *) gDisplayLists[0] + (gNumF3dCmdsPerPlayer[numberOfPlayers] * sizeof(Gwords)));
     gVertexHeap[0] = (Vertex *) ((u8 *) gMatrixHeap[0] + (gNumHudMatPerPlayer[numberOfPlayers] * sizeof(Matrix)));
     gTriangleHeap[0] = (TriangleList *) ((u8 *) gVertexHeap[0] + (gNumHudVertsPerPlayer[numberOfPlayers] * sizeof(Vertex)));
 
-    gDisplayLists[1] = (Gfx *) allocate_from_main_pool_safe(totalSize, COLOUR_TAG_YELLOW);
+    gDisplayLists[1] = (Gfx *) allocate_from_main_pool_safe(totalSize, MEMP_GFXBUFFERS);
     gMatrixHeap[1] = (MatrixS *) ((u8 *) gDisplayLists[1] + (gNumF3dCmdsPerPlayer[numberOfPlayers] * sizeof(Gwords)));
     gVertexHeap[1] = (Vertex *) ((u8 *) gMatrixHeap[1] + (gNumHudMatPerPlayer[numberOfPlayers] * sizeof(Matrix)));
     gTriangleHeap[1] = (TriangleList *) ((u8 *) gVertexHeap[1] + (gNumHudVertsPerPlayer[numberOfPlayers] * sizeof(Vertex)));

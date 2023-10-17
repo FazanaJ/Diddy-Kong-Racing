@@ -94,7 +94,7 @@ void load_fonts(void) {
     }
 
     gDialogueBoxBackground = (DialogueBoxBackground *) allocate_from_main_pool_safe(
-        DIALOGUEBOXBACKGROUND_TOTAL_SIZE + DialogueTextElement_TOTAL_SIZE, COLOUR_TAG_YELLOW);
+        DIALOGUEBOXBACKGROUND_TOTAL_SIZE + DialogueTextElement_TOTAL_SIZE, MEMP_TEXT);
     gDialogueText = (DialogueTextElement *) &gDialogueBoxBackground[DIALOGUEBOXBACKGROUND_COUNT];
 
     for (i = 0; i < DIALOGUEBOXBACKGROUND_COUNT; i++) {

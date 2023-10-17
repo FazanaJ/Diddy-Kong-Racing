@@ -93,7 +93,7 @@ void init_level_globals(void) {
     s32 checksumCount;
     s32 j;
 #endif
-    header = allocate_from_main_pool_safe(sizeof(LevelHeader), COLOUR_TAG_YELLOW);
+    header = allocate_from_main_pool_safe(sizeof(LevelHeader), MEMP_HEADERS);
     gTempAssetTable = (s32 *) load_asset_section_from_rom(ASSET_LEVEL_HEADERS_TABLE);
     i = 0;
     while (i < 16) {
@@ -104,7 +104,7 @@ void init_level_globals(void) {
         gNumberOfLevelHeaders++;
     }
     gNumberOfLevelHeaders--;
-    gGlobalLevelTable = allocate_from_main_pool_safe(gNumberOfLevelHeaders * sizeof(LevelGlobalData), COLOUR_TAG_YELLOW);
+    gGlobalLevelTable = allocate_from_main_pool_safe(gNumberOfLevelHeaders * sizeof(LevelGlobalData), MEMP_HEADERS);
     gCurrentLevelHeader = (LevelHeader *) header;
     gNumberOfWorlds = -1;
     for (i = 0; i < gNumberOfLevelHeaders; i++) {
@@ -121,7 +121,7 @@ void init_level_globals(void) {
         gGlobalLevelTable[i].vehicles |= gCurrentLevelHeader->vehicle & 0xF;
     }
     gNumberOfWorlds++;
-    D_80121178 = allocate_from_main_pool_safe(gNumberOfWorlds, COLOUR_TAG_YELLOW);
+    D_80121178 = allocate_from_main_pool_safe(gNumberOfWorlds, MEMP_HEADERS);
     for (i = 0; i < gNumberOfWorlds; i++) {
         D_80121178[i] = -1;
     }
@@ -136,8 +136,8 @@ void init_level_globals(void) {
     for (i = 0; gTempAssetTable[i] != (-1); i++) { }
     i--;
     size = gTempAssetTable[i] - gTempAssetTable[0];
-    gLevelNames = allocate_from_main_pool_safe(i * sizeof(s32), COLOUR_TAG_YELLOW);
-    gTempLevelNames = allocate_from_main_pool_safe(size, COLOUR_TAG_YELLOW);
+    gLevelNames = allocate_from_main_pool_safe(i * sizeof(s32), MEMP_HEADERS);
+    gTempLevelNames = allocate_from_main_pool_safe(size, MEMP_HEADERS);
     load_asset_to_address(ASSET_LEVEL_NAMES, (u32) gTempLevelNames, 0, size);
     for (size = 0; size < i; size++) {
         gLevelNames[size] = (char *) &gTempLevelNames[gTempAssetTable[size]];
@@ -265,7 +265,7 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
 
     offset = gTempAssetTable[levelId];
     size = gTempAssetTable[levelId + 1] - offset;
-    gCurrentLevelHeader = (LevelHeader *) allocate_from_main_pool_safe(size, COLOUR_TAG_YELLOW);
+    gCurrentLevelHeader = (LevelHeader *) allocate_from_main_pool_safe(size, MEMP_HEADERS);
     load_asset_to_address(ASSET_LEVEL_HEADERS, (u32) gCurrentLevelHeader, offset, size);
     D_800DD330 = 0;
     prevLevelID = levelId;
@@ -329,7 +329,7 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
         free_from_memory_pool(gCurrentLevelHeader);
         offset = gTempAssetTable[levelId];
         size = gTempAssetTable[levelId + 1] - offset;
-        gCurrentLevelHeader = allocate_from_main_pool_safe(size, COLOUR_TAG_YELLOW);
+        gCurrentLevelHeader = allocate_from_main_pool_safe(size, MEMP_HEADERS);
         load_asset_to_address(ASSET_LEVEL_HEADERS, (u32) gCurrentLevelHeader, offset, size);
     }
 
@@ -608,7 +608,7 @@ void set_ai_level(s8 *arg0) {
     }
     temp2 = gTempAssetTable[aiLevel];
     temp = gTempAssetTable[aiLevel + 1] - temp2;
-    gAIBehaviourTable = allocate_from_main_pool_safe(temp, COLOUR_TAG_YELLOW);
+    gAIBehaviourTable = allocate_from_main_pool_safe(temp, MEMP_MISC);
     load_asset_to_address(ASSET_AI_BEHAVIOUR, (u32) gAIBehaviourTable, temp2, temp);
     free_from_memory_pool(gTempAssetTable);
 }

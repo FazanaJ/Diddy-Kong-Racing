@@ -483,7 +483,7 @@ void init_transition_shape(FadeTransition *transition, s32 numVerts, s32 numTris
     sizeTris = numTris * 16;
     i = j * 12;
     
-    sTransitionVtx[0] = allocate_from_main_pool_safe(((sizeVerts + sizeTris) * 2) + (i * 3), COLOUR_TAG_YELLOW);
+    sTransitionVtx[0] = allocate_from_main_pool_safe(((sizeVerts + sizeTris) * 2) + (i * 3), MEMP_HUD);
     sTransitionVtx[1] = sTransitionVtx[0] + j;
     sTransitionTris[0] = (Triangle*) (sTransitionVtx[1] + j);
     sTransitionTris[1] = (Triangle*) (((u8 *) sTransitionTris[0]) + sizeTris);

@@ -16,6 +16,7 @@ OSMesgQueue gDmaMesgQueue;
 OSMesg gPIMesgBuf[16];
 OSMesgQueue gPIMesgQueue;
 u32 *gAssetsLookupTable;
+u32 gAssetColourTag = COLOUR_TAG_GREY;
 
 /*******************************/
 
@@ -34,7 +35,7 @@ void init_PI_mesg_queue(void) {
     osCreateMesgQueue(&gDmaMesgQueue, &gDmaMesg, 1);
     osCreatePiManager((OSPri) 150, &gPIMesgQueue, gPIMesgBuf, ARRAY_COUNT(gPIMesgBuf));
     assetTableSize = __ASSETS_LUT_END - __ASSETS_LUT_START;
-    gAssetsLookupTable = (u32 *) allocate_from_main_pool_safe(assetTableSize, COLOUR_TAG_GREY);
+    gAssetsLookupTable = (u32 *) allocate_from_main_pool_safe(assetTableSize, MEMP_HEADERS);
     func_80071478((u8 *) gAssetsLookupTable);
     dmacopy((u32) __ASSETS_LUT_START, (u32) gAssetsLookupTable, (s32) assetTableSize);
 }
@@ -55,7 +56,7 @@ u32 *load_asset_section_from_rom(u32 assetIndex) {
     index = assetIndex + gAssetsLookupTable;
     start = *index;
     size = *(index + 1) - start;
-    out = (u32 *) allocate_from_main_pool_safe(size, COLOUR_TAG_GREY);
+    out = (u32 *) allocate_from_main_pool_safe(size, gAssetColourTag);
     if (out == 0) {
         return 0;
     }

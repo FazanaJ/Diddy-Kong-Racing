@@ -3250,8 +3250,8 @@ void menu_save_options_init(void) {
     gMenuDelay = 0;
     gMenuOptionCount = 1;
     gOpacityDecayTimer = 0;
-    D_80126A64 = (u8 *) allocate_from_main_pool_safe(0x800, COLOUR_TAG_WHITE);
-    D_80126A0C = (unk800861C8 *) allocate_from_main_pool_safe(0xA00, COLOUR_TAG_WHITE);
+    D_80126A64 = (u8 *) allocate_from_main_pool_safe(0x800, MEMP_MENU);
+    D_80126A0C = (unk800861C8 *) allocate_from_main_pool_safe(0xA00, MEMP_MENU);
     D_80126A04 = &D_80126A0C[80];
     D_80126A08 = 0;
     D_80126BD4 = 0;
@@ -3939,7 +3939,7 @@ void func_800887E8(void) {
     s32 i;
 
     // Starting point
-    D_80126AA0[0] = allocate_from_main_pool_safe(0x200, COLOUR_TAG_WHITE);
+    D_80126AA0[0] = allocate_from_main_pool_safe(0x200, MEMP_MENU);
 
     // Fills in the table.
     for (i = 1; i < 16; i++) {
@@ -4869,7 +4869,7 @@ void calculate_and_display_rom_checksum(void) {
         blockOffs = 0x1000;
         numLeft = (s32) &__ROM_END;
         numLeft -= 0x1000;
-        tempBuffer = allocate_from_main_pool_safe(size, COLOUR_TAG_BLACK);
+        tempBuffer = allocate_from_main_pool_safe(size, MEMP_MENU);
 
         while (numLeft != 0) {
             numBytes = numLeft;
@@ -9796,7 +9796,7 @@ void allocate_menu_images(s16 *imageSet) {
 
 void allocate_and_set_menu_image_properties(s32 imageID) {
     if (gMenuImageStack == NULL) {
-        gMenuImageStack = allocate_from_main_pool_safe(sizeof(unk800DF510) * 18, COLOUR_TAG_RED);
+        gMenuImageStack = allocate_from_main_pool_safe(sizeof(unk800DF510) * 18, MEMP_MENU);
     }
 
     gMenuImageStack[imageID].unk0 = sMenuImageProperties[imageID].unk0;

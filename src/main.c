@@ -278,6 +278,7 @@ u32 sTimerTemp = 0;
 u8 gShowHiddenGeometry = FALSE;
 u8 gShowHiddenObjects = FALSE;
 u8 sPrintOrder[PP_RSP_GFX];
+u8 sRAMPrintOrder[MEMP_TOTAL + 12];
 u16 sObjPrintOrder[NUM_OBJECT_PRINTS];
 struct PuppyPrint gPuppyPrint;
 char *sPuppyPrintStrings[] = {
@@ -290,17 +291,7 @@ char *sPuppyPrintMainTimerStrings[] = {
     PP_MAINDRAW
 };
 char *sPuppyprintMemColours[] = {
-    "Red\t",
-    "Black\t",
-    "Blue\t",
-    "Cyan\t",
-    "Green\t",
-    "Grey\t",
-    "Magenta",
-    "GreyXLU",
-    "White\t",
-    "Yellow\t",
-    "Orange\t"
+    PP_MEM
 };
 
 #define FRAMETIME_COUNT 10
@@ -580,11 +571,15 @@ void puppyprint_render_memory(void) {
     draw_text(&gCurrDisplayList, gScreenWidth - 136, 8, textBytes, ALIGN_TOP_LEFT);
     puppyprintf(textBytes, "Total\t\t0x%X\n", TOTALRAM);
     draw_text(&gCurrDisplayList, gScreenWidth - 136, 18, textBytes, ALIGN_TOP_LEFT);
-    puppyprintf(textBytes, "Code\t\t0x%X\n", TOTALRAM - ((u32) &gMainMemoryPool) - 0x80000000);
+    puppyprintf(textBytes, "Code\t\t0x%X\n", ((u32) &gMainMemoryPool) - 0x80000000);
     draw_text(&gCurrDisplayList, gScreenWidth - 136, 36, textBytes, ALIGN_TOP_LEFT);
-    for (i = 1; i < 12; i++) {
-        puppyprintf(textBytes,  "%s\t0x%X\n", sPuppyprintMemColours[i - 1], gPuppyPrint.ramPools[i]);
-        draw_text(&gCurrDisplayList, gScreenWidth - 136, y, textBytes, ALIGN_TOP_LEFT);
+    for (i = 1; i < MEMP_TOTAL + 12; i++) {
+        if (gPuppyPrint.ramPools[sRAMPrintOrder[i]] == 0) {
+            continue;
+        }
+        draw_text(&gCurrDisplayList, gScreenWidth - 136, y, sPuppyprintMemColours[sRAMPrintOrder[i]], ALIGN_TOP_LEFT);
+        puppyprintf(textBytes,  "0x%X\n", gPuppyPrint.ramPools[sRAMPrintOrder[i]]);
+        draw_text(&gCurrDisplayList, gScreenWidth - 64, y, textBytes, ALIGN_TOP_LEFT);
         y += 10;
     }
 }
@@ -787,6 +782,29 @@ void calculate_print_order(void) {
     }
 }
 
+void calculate_ram_print_order(void) {
+    u32 i, j, min_idx;
+    for (i = 1; i < MEMP_TOTAL + 12; i++) {
+        sRAMPrintOrder[i] = i;
+    }
+
+    // One by one move boundary of unsorted subarray
+    for (i = 1; i < MEMP_TOTAL + 12; i++) {
+
+        if (gPuppyPrint.ramPools[sRAMPrintOrder[i]] == 0)
+            continue;
+        // Find the minimum element in unsorted array
+        min_idx = i;
+        for (j = i + 1; j < MEMP_TOTAL + 12; j++)
+            if (gPuppyPrint.ramPools[sRAMPrintOrder[j]] > gPuppyPrint.ramPools[sRAMPrintOrder[min_idx]])
+                min_idx = j;
+
+        // Swap the found minimum element
+        // with the first element
+        swapu(&sRAMPrintOrder[min_idx], &sRAMPrintOrder[i]);
+    }
+}
+
 void calculate_obj_print_order(void) {
     u32 i, j, min_idx;
     for (i = 0; i < NUM_OBJECT_PRINTS; i++) {
@@ -973,6 +991,8 @@ void puppyprint_calculate_average_times(void) {
                 calculate_print_order();
             } else if (gPuppyPrint.page == PAGE_OBJECTS) {
                 calculate_obj_print_order();
+            } else if (gPuppyPrint.page == PAGE_MEMORY) {
+                calculate_ram_print_order();
             }
         }
     }

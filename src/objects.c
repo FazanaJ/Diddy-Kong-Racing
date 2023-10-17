@@ -348,31 +348,32 @@ void allocate_object_pools(void) {
 
     set_world_shading(0.67f, 0.33f, 0, -0x2000, 0);
     gObjectMemoryPool = (Object *) new_sub_memory_pool(OBJECT_POOL_SIZE, OBJECT_SLOT_COUNT);
-    gParticlePtrList = allocate_from_main_pool_safe(sizeof(uintptr_t) * 200, COLOUR_TAG_BLUE);
-    D_8011AE6C = allocate_from_main_pool_safe(0x50, COLOUR_TAG_BLUE);
-    D_8011AE74 = allocate_from_main_pool_safe(0x200, COLOUR_TAG_BLUE);
-    gTrackCheckpoints = allocate_from_main_pool_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, COLOUR_TAG_BLUE);
-    gCameraObjList = allocate_from_main_pool_safe(sizeof(uintptr_t *) * 20, COLOUR_TAG_BLUE);
-    gRacers = allocate_from_main_pool_safe(sizeof(uintptr_t) * 10, COLOUR_TAG_BLUE);
-    gRacersByPort = allocate_from_main_pool_safe(sizeof(uintptr_t) * 10, COLOUR_TAG_BLUE);
-    gRacersByPosition = allocate_from_main_pool_safe(sizeof(uintptr_t) * 10, COLOUR_TAG_BLUE);
-    D_8011AF04 = allocate_from_main_pool_safe(0x200, COLOUR_TAG_BLUE);
-    D_8011ADCC = allocate_from_main_pool_safe(8, COLOUR_TAG_BLUE);
-    D_8011AFF4 = allocate_from_main_pool_safe(0x400, COLOUR_TAG_BLUE);
+    gParticlePtrList = allocate_from_main_pool_safe(sizeof(uintptr_t) * 200, MEMP_PARTICLES);
+    D_8011AE6C = allocate_from_main_pool_safe(0x50, MEMP_OBJECTS);
+    D_8011AE74 = allocate_from_main_pool_safe(0x200, MEMP_OBJECTS);
+    gTrackCheckpoints = allocate_from_main_pool_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, MEMP_OBJECTS);
+    gCameraObjList = allocate_from_main_pool_safe(sizeof(uintptr_t *) * 20, MEMP_OBJECTS);
+    gRacers = allocate_from_main_pool_safe(sizeof(uintptr_t) * 10, MEMP_OBJECTS);
+    gRacersByPort = allocate_from_main_pool_safe(sizeof(uintptr_t) * 10, MEMP_OBJECTS);
+    gRacersByPosition = allocate_from_main_pool_safe(sizeof(uintptr_t) * 10, MEMP_OBJECTS);
+    D_8011AF04 = allocate_from_main_pool_safe(0x200, MEMP_OBJECTS);
+    D_8011ADCC = allocate_from_main_pool_safe(8, MEMP_OBJECTS);
+    D_8011AFF4 = allocate_from_main_pool_safe(0x400, MEMP_OBJECTS);
+    gAssetColourTag = MEMP_OBJECTS;
     gAssetsLvlObjTranslationTable = (s16 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE);
     gAssetsLvlObjTranslationTableLength = (get_size_of_asset_section(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE) >> 1) - 1;
     while (gAssetsLvlObjTranslationTable[gAssetsLvlObjTranslationTableLength] == 0) {
         gAssetsLvlObjTranslationTableLength--;
     }
-    gSpawnObjectHeap = allocate_from_main_pool_safe(sizeof(uintptr_t) * 512, COLOUR_TAG_BLUE);
+    gSpawnObjectHeap = allocate_from_main_pool_safe(sizeof(uintptr_t) * 512, MEMP_OBJECTS);
     gAssetsObjectHeadersTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_HEADERS_TABLE);
     gAssetsObjectHeadersTableLength = 0;
     while (-1 != gAssetsObjectHeadersTable[gAssetsObjectHeadersTableLength]) {
         gAssetsObjectHeadersTableLength++;
     }
     gAssetsObjectHeadersTableLength--;
-    gLoadedObjectHeaders = allocate_from_main_pool_safe(gAssetsObjectHeadersTableLength * 4, COLOUR_TAG_WHITE);
-    gObjectHeaderReferences = allocate_from_main_pool_safe(gAssetsObjectHeadersTableLength, COLOUR_TAG_WHITE);
+    gLoadedObjectHeaders = allocate_from_main_pool_safe(gAssetsObjectHeadersTableLength * 4, MEMP_HEADERS);
+    gObjectHeaderReferences = allocate_from_main_pool_safe(gAssetsObjectHeadersTableLength, MEMP_HEADERS);
 
     for (i = 0; i < gAssetsObjectHeadersTableLength; i++) {
         (*gObjectHeaderReferences)[i] = 0;
@@ -380,6 +381,7 @@ void allocate_object_pools(void) {
 
     gAssetsMiscSection = (s32 *) load_asset_section_from_rom(ASSET_MISC);
     gAssetsMiscTable = (s32 *) load_asset_section_from_rom(ASSET_MISC_TABLE);
+    gAssetColourTag = COLOUR_TAG_GREY;
     gAssetsMiscTableLength = 0;
     while (-1 != gAssetsMiscTable[gAssetsMiscTableLength]) {
         gAssetsMiscTableLength++;
@@ -387,7 +389,7 @@ void allocate_object_pools(void) {
 
     decrypt_magic_codes(&gAssetsMiscSection[gAssetsMiscTable[ASSET_MISC_MAGIC_CODES]], 
                         (gAssetsMiscTable[ASSET_MISC_TITLE_SCREEN_DEMO_IDS] - gAssetsMiscTable[ASSET_MISC_MAGIC_CODES]) * sizeof(s32 *));
-    gObjPtrList = allocate_from_main_pool_safe(sizeof(uintptr_t) * OBJECT_SLOT_COUNT, COLOUR_TAG_BLUE);
+    gObjPtrList = allocate_from_main_pool_safe(sizeof(uintptr_t) * OBJECT_SLOT_COUNT, MEMP_OBJECTS);
     gFirstTimeFinish = 0;
     gTimeTrialEnabled = 0;
     gIsTimeTrial = FALSE;
@@ -580,12 +582,14 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
     }
     
     D_8011AD3E = 0;
-    mem = allocate_from_main_pool_safe(0x3000, COLOUR_TAG_BLUE);
+    mem = allocate_from_main_pool_safe(0x3000, MEMP_OBJECTS);
     D_8011AEB0[arg1] = mem;
     D_8011AE98[arg1] = (u8 *) (D_8011AEB0[arg1] + 4);
     D_8011AEA0[arg1] = 0;
     D_8011AEA8[arg1] = arg0;
+    gAssetColourTag = MEMP_HEADERS;
     objMapTable = (u32 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_MAPS_TABLE);
+    gAssetColourTag = COLOUR_TAG_GREY;
     for (i = 0; objMapTable[i] != 0xFFFFFFFF; i++) { }
     i--;
     if (arg0 >= i) {
@@ -3717,7 +3721,9 @@ s32 func_8001B2F0(s32 mapId) {
     TTGhostTable *nextGhostTable;
 
     gMapDefaultVehicle = get_map_default_vehicle(mapId);
+    gAssetColourTag = MEMP_GHOST_DATA;
     ghostTable = (TTGhostTable *) load_asset_section_from_rom(ASSET_TTGHOSTS_TABLE);
+    gAssetColourTag = COLOUR_TAG_GREY;
 
     nextGhostTable = ghostTable;
     do {

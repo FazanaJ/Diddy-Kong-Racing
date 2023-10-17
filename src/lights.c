@@ -56,7 +56,7 @@ void setup_lights(s32 count) {
 
     free_lights();
     gMaxLights = count;
-    temp_v0 = (ObjectLight **) allocate_from_main_pool_safe(gMaxLights * (sizeof(s32 *) + sizeof(ObjectLight) + sizeof(unk800DC960) + sizeof(Vec3f)), COLOUR_TAG_MAGENTA);
+    temp_v0 = (ObjectLight **) allocate_from_main_pool_safe(gMaxLights * (sizeof(s32 *) + sizeof(ObjectLight) + sizeof(unk800DC960) + sizeof(Vec3f)), MEMP_LIGHTS);
     newCount = gMaxLights;
     gActiveLights = temp_v0;
     D_800DC954 = (ObjectLight *) (newCount + (0, temp_v0)); //fakematch

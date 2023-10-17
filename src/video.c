@@ -198,12 +198,12 @@ void init_framebuffer(s32 index) {
         width = SCREEN_WIDTH_WIDE;
     }
 #endif
-    gVideoFramebuffers[index] = allocate_from_main_pool_safe((width * SCREEN_HEIGHT * 2) + 0x30, COLOUR_TAG_WHITE);
+    gVideoFramebuffers[index] = allocate_from_main_pool_safe((width * SCREEN_HEIGHT * 2) + 0x30, MEMP_FRAMEBUFFERS);
     gVideoFramebuffers[index] = (u16 *)(((s32)gVideoFramebuffers[index] + 0x3F) & ~0x3F);
     fbAddr = gVideoFramebuffers[index];
     fbAddr[100] = 0xBEEF;
     if (gVideoDepthBuffer == NULL) {
-        gVideoDepthBuffer = allocate_from_main_pool_safe((width * SCREEN_HEIGHT * 2) + 0x30, COLOUR_TAG_WHITE);
+        gVideoDepthBuffer = allocate_from_main_pool_safe((width * SCREEN_HEIGHT * 2) + 0x30, MEMP_FRAMEBUFFERS);
         gVideoDepthBuffer = (u16 *)(((s32)gVideoDepthBuffer + 0x3F) & ~0x3F);
         fbAddr = gVideoDepthBuffer;
         fbAddr[100] = 0xBEEF;

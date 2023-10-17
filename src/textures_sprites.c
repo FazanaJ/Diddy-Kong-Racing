@@ -16,7 +16,7 @@
 
 /************ .data ************/
 
-u32 gTexColourTag = COLOUR_TAG_MAGENTA;
+u32 gTexColourTag = MEMP_MISC_TEXTURES;
 s32 gSpriteOpaque = TRUE;
 
 // See "include/f3ddkr.h" for the defines
@@ -259,10 +259,11 @@ s16 gUsePrimColour;
 void tex_init_textures(void) {
     s32 i;
 
-    gTextureCache = allocate_from_main_pool_safe(sizeof(TextureHeader) * TEX_HEADER_COUNT, COLOUR_TAG_MAGENTA);
-    gCiPalettes = allocate_from_main_pool_safe(0x280, COLOUR_TAG_MAGENTA);
+    gTextureCache = allocate_from_main_pool_safe(sizeof(TextureHeader) * TEX_HEADER_COUNT, MEMP_MISC_TEXTURES);
+    gCiPalettes = allocate_from_main_pool_safe(0x280, MEMP_MISC_TEXTURES);
     gNumberOfLoadedTextures = 0;
     gCiPalettesSize = 0;
+    gAssetColourTag = MEMP_MISC_TEXTURES;
     gTextureAssetTable[TEX_TABLE_2D] = (s32 *) load_asset_section_from_rom(ASSET_TEXTURES_2D_TABLE);
     gTextureAssetTable[TEX_TABLE_3D] = (s32 *) load_asset_section_from_rom(ASSET_TEXTURES_3D_TABLE);    
     
@@ -272,8 +273,8 @@ void tex_init_textures(void) {
     for (i = 0; gTextureAssetTable[TEX_TABLE_3D][i] != -1; i++) { }
     gTextureAssetID[TEX_TABLE_3D] = --i;
     
-    gSpriteCache = allocate_from_main_pool_safe(sizeof(Sprite) * TEX_SPRITE_COUNT, COLOUR_TAG_MAGENTA);
-    gCurrentSprite = allocate_from_main_pool_safe(sizeof(Sprite) * 32, COLOUR_TAG_MAGENTA);
+    gSpriteCache = allocate_from_main_pool_safe(sizeof(Sprite) * TEX_SPRITE_COUNT, MEMP_MISC_TEXTURES);
+    gCurrentSprite = allocate_from_main_pool_safe(sizeof(Sprite) * 32, MEMP_MISC_TEXTURES);
     D_80126358 = 0;
     gSpriteOffsetTable = (s32 *) load_asset_section_from_rom(ASSET_SPRITES_TABLE);
     gSpriteTableNum = 0;
@@ -282,8 +283,9 @@ void tex_init_textures(void) {
     }
     gSpriteTableNum--;
 
-    gTempTextureHeader = allocate_from_main_pool_safe(0x28, COLOUR_TAG_MAGENTA);
+    gTempTextureHeader = allocate_from_main_pool_safe(0x28, MEMP_MISC_TEXTURES);
     D_80126344 = 0;
+    gAssetColourTag = COLOUR_TAG_GREY;
 }
 
 /**

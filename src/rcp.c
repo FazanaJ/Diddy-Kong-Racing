@@ -218,7 +218,7 @@ void setup_ostask_fifo(Gfx* dlBegin, Gfx* dlEnd) {
 
 #if EXPANSION_PAK_SUPPORT || defined(FIFO_4MB)
     if (gGfxSPTaskOutputBuffer == NULL) {
-        gGfxSPTaskOutputBuffer = allocate_from_main_pool_safe(FIFO_BUFFER_SIZE, COLOUR_TAG_WHITE);
+        gGfxSPTaskOutputBuffer = allocate_from_main_pool_safe(FIFO_BUFFER_SIZE, MEMP_TASKBUFFER);
     }
     taskStart = (u32) gGfxSPTaskOutputBuffer;
     taskEnd = (u32) (gGfxSPTaskOutputBuffer + (FIFO_BUFFER_SIZE));

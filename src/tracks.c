@@ -249,9 +249,9 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     numberOfPlayers = gScenePlayerViewports;
     gAntiAliasing = 0;
     for (i = 0; i < ARRAY_COUNT(gShadowHeapTextures); i++) {
-        gShadowHeapTextures[i] = (DrawTexture *) allocate_from_main_pool_safe(sizeof(DrawTexture) * 400, COLOUR_TAG_YELLOW);
-        gShadowHeapTris[i] = (Triangle *) allocate_from_main_pool_safe(sizeof(Triangle) * 800, COLOUR_TAG_YELLOW);
-        gShadowHeapVerts[i] = (Vertex *) allocate_from_main_pool_safe(sizeof(Vertex) * 2000, COLOUR_TAG_YELLOW);
+        gShadowHeapTextures[i] = (DrawTexture *) allocate_from_main_pool_safe(sizeof(DrawTexture) * 400, MEMP_SHADOWS);
+        gShadowHeapTris[i] = (Triangle *) allocate_from_main_pool_safe(sizeof(Triangle) * 800, MEMP_SHADOWS);
+        gShadowHeapVerts[i] = (Vertex *) allocate_from_main_pool_safe(sizeof(Vertex) * 2000, MEMP_SHADOWS);
     }
 
     gShadowHeapFlip = 0;
@@ -1726,11 +1726,13 @@ void func_8002C0C4(s32 modelId) {
     LevelModel *mdl;
     s32 levelSize = 0;
     
-    set_texture_colour_tag(COLOUR_TAG_GREEN);
-    D_8011D370 = allocate_from_main_pool_safe(0x7D0, COLOUR_TAG_YELLOW);
-    D_8011D374 = allocate_from_main_pool_safe(0x1F4, COLOUR_TAG_YELLOW);
+    set_texture_colour_tag(MEMP_LEVEL_TEXTURES);
+    D_8011D370 = allocate_from_main_pool_safe(0x7D0, MEMP_LEVEL_MODELS);
+    D_8011D374 = allocate_from_main_pool_safe(0x1F4, MEMP_LEVEL_MODELS);
     D_8011D378 = 0;
+    gAssetColourTag = MEMP_HEADERS;
     gLevelModelTable = (s32*) load_asset_section_from_rom(ASSET_LEVEL_MODELS_TABLE);
+    gAssetColourTag = COLOUR_TAG_GREY;
     alloc_ghost_pool();
     
     for(i = 0; gLevelModelTable[i] != -1; i++);
@@ -1744,7 +1746,7 @@ void func_8002C0C4(s32 modelId) {
 
     levelSize = get_asset_uncompressed_size(ASSET_LEVEL_MODELS, gLevelModelTable[modelId]);
     levelSize = MIN(levelSize * 3, LEVEL_MODEL_MAX_SIZE);
-    gTrackModelHeap = allocate_from_main_pool_safe(LEVEL_MODEL_MAX_SIZE, COLOUR_TAG_YELLOW);
+    gTrackModelHeap = allocate_from_main_pool_safe(LEVEL_MODEL_MAX_SIZE, MEMP_LEVEL_MODELS);
     gCurrentLevelModel = gTrackModelHeap;
 
     // temp = compressedRamAddr
@@ -1789,7 +1791,7 @@ void func_8002C0C4(s32 modelId) {
     temp_s4 = j - (s32)gCurrentLevelModel;
     set_free_queue_state(0);
     free_from_memory_pool(gTrackModelHeap);
-    allocate_at_address_in_main_pool(temp_s4, (u8* ) gTrackModelHeap, COLOUR_TAG_YELLOW);
+    allocate_at_address_in_main_pool(temp_s4, (u8* ) gTrackModelHeap, MEMP_LEVEL_MODELS);
     set_free_queue_state(2);
     minimap_init(gCurrentLevelModel);
 
@@ -1809,7 +1811,7 @@ void func_8002C0C4(s32 modelId) {
             }
         }
     }
-    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
+    set_texture_colour_tag(MEMP_MISC_TEXTURES);
 }
 #else
 GLOBAL_ASM("asm/non_matchings/tracks/func_8002C0C4.s")

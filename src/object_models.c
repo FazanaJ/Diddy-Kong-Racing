@@ -39,8 +39,8 @@ void allocate_object_model_pools(void) {
     UNUSED s32 i;
     UNUSED s32 checksum;
 
-    D_8011D624 = (unk8011D624 *) allocate_from_main_pool_safe(0x230, COLOUR_TAG_GREEN);
-    D_8011D628 = allocate_from_main_pool_safe(0x190, COLOUR_TAG_GREEN);
+    D_8011D624 = (unk8011D624 *) allocate_from_main_pool_safe(0x230, MEMP_OBJECT_MODELS);
+    D_8011D628 = allocate_from_main_pool_safe(0x190, MEMP_OBJECT_MODELS);
     D_8011D62C = 0;
     D_8011D634 = 0;
     gObjectModelTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_MODELS_TABLE);
@@ -51,7 +51,7 @@ void allocate_object_model_pools(void) {
     D_8011D630--;
     gAnimationTable = (s16 *) load_asset_section_from_rom(ASSET_ANIMATION_IDS);
     gObjectAnimationTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_ANIMATIONS_TABLE);
-    D_8011D644 = (s32) allocate_from_main_pool_safe(0xC00, COLOUR_TAG_GREEN);
+    D_8011D644 = (s32) allocate_from_main_pool_safe(0xC00, MEMP_OBJECT_MODELS);
     D_8011D640 = 0;
 
 #ifndef NO_ANTIPIRACY

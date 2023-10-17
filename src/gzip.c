@@ -24,8 +24,8 @@ s32 gHuftTablePos; //gzip_hufts
 /******************************/
 
 void init_rzip(void) {
-    gHuftTable = (huft *)allocate_from_main_pool_safe(0x2800, COLOUR_TAG_BLACK);
-    gAssetAddress = (s32 *)allocate_from_main_pool_safe(0x10, COLOUR_TAG_BLACK);
+    gHuftTable = (huft *)allocate_from_main_pool_safe(0x2800, MEMP_MISC);
+    gAssetAddress = (s32 *)allocate_from_main_pool_safe(0x10, MEMP_MISC);
 }
 
 /**

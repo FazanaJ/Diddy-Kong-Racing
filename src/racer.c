@@ -5597,7 +5597,7 @@ void get_timestamp_from_frames(s32 frameCount, s32 *minutes, s32 *seconds, s32 *
 */
 void alloc_ghost_pool(void) {
     if (is_time_trial_enabled()) {
-        gGhostData[0] = allocate_from_main_pool_safe((sizeof(GhostNode) + sizeof(GhostDataFrame)) * MAX_NUMBER_OF_GHOST_NODES, COLOUR_TAG_RED);
+        gGhostData[0] = allocate_from_main_pool_safe((sizeof(GhostNode) + sizeof(GhostDataFrame)) * MAX_NUMBER_OF_GHOST_NODES, MEMP_GHOST_DATA);
         gGhostData[1] = ((GhostNode *) gGhostData[0] + MAX_NUMBER_OF_GHOST_NODES);
     }
 }
@@ -5668,13 +5668,13 @@ s32 func_800599B8(s32 arg0, s32 mapId, s16 arg2, s16 *arg3, s16 *arg4) {
  * Returns 0 if successful, or 1 if an error occured.
  */
 s32 load_tt_ghost(s32 ghostOffset, s32 size, s16 *outTime) {
-    GhostHeader *ghost = allocate_from_main_pool_safe(size, COLOUR_TAG_RED);
+    GhostHeader *ghost = allocate_from_main_pool_safe(size, MEMP_GHOST_DATA);
     if (ghost != NULL) {
         load_asset_to_address(ASSET_TTGHOSTS, (u32) ghost, ghostOffset, size);
         if (gGhostData[2] != NULL) {
             free_from_memory_pool(gGhostData[2]);
         }
-        gGhostData[2] = allocate_from_main_pool_safe(size - sizeof(GhostHeader), COLOUR_TAG_WHITE);
+        gGhostData[2] = allocate_from_main_pool_safe(size - sizeof(GhostHeader), MEMP_GHOST_DATA);
         if (gGhostData[2] != NULL) {
             *outTime = ghost->time;
             D_8011D5A0[2] = ghost->nodeCount;
