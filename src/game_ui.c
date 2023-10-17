@@ -1078,7 +1078,7 @@ void render_hud_hubworld(Object *obj, s32 updateRate) {
     }
 }
 
-#ifdef NON_EQUIVALENT
+#ifdef NON_MATCHING
 // render_hud_time_trial
 // https://decomp.me/scratch/BWqz9
 // Draws Time Trial HUD. Also handles music/audio?
@@ -1120,7 +1120,7 @@ void func_800A277C(s32 arg0, Object* playerRacerObj, s32 updateRate) {
              ((Object *) gAssetHudElements->entry[20])->segment.animFrame = 0;
         }
     }
-    if (gAssetHudElements->entry[34] == 0) {
+    if (gAssetHudElements->entry[34] == 0 && get_contpak_error() <= 0) {
         ttSWArms.objectID = gAssetHudElementIds[34] & 0xFFFF;
         ttSWArms.size = 8;
         ttSWArms.x = 0;
@@ -1140,10 +1140,10 @@ void func_800A277C(s32 arg0, Object* playerRacerObj, s32 updateRate) {
             } else if (gStopwatchFaceID == 4) {
                 posX = audio_get_chr_select_anim_frac();
                 temp_t6 = (obj68->objModel->animations[gStopwatchFaceID].unk4 - 1) << 4;
-                if (posX == -1.0) {
-                    ttSWBodyObject->segment.animFrame = 0.0;
-                } else if (posX > 0.5) {
-                    ttSWBodyObject->segment.animFrame = (temp_t6 - ((f32) (2.0 * (f32) (posX - 0.5)) * temp_t6));
+                if (posX == -1.0f) {
+                    ttSWBodyObject->segment.animFrame = 0.0f;
+                } else if (posX > 0.5f) {
+                    ttSWBodyObject->segment.animFrame = (temp_t6 - ((f32) (2.0f * (f32) (posX - 0.5f)) * temp_t6));
                 } else {
                     new_var = posX;
                     ttSWBodyObject->segment.animFrame = temp_t6 * (posX * 2);
@@ -1181,7 +1181,7 @@ void func_800A277C(s32 arg0, Object* playerRacerObj, s32 updateRate) {
         }
         
         if (osTvType == TV_TYPE_PAL) {
-            stopwatchTimer = (f32) stopwatchTimer * 1.2;
+            stopwatchTimer = (f32) stopwatchTimer * 1.2f;
         }
         if (normalise_time(36000) < stopwatchTimer) {
             stopwatchTimer = normalise_time(36000);
@@ -1201,8 +1201,7 @@ void func_800A277C(s32 arg0, Object* playerRacerObj, s32 updateRate) {
         if (!curRacer->raceFinished) {
             spB8 = gCurrentHud->unk2F0;
             for (i = 0; i < curRacer->countLap && i < gHudLevelHeader->laps; i++) {
-                 // FAKEMATCH
-                get_timestamp_from_frames(curRacer->lap_times[i] & 0xFFFFFFFFFFFFFFFF, &spB4, &spB0, &spAC);
+                get_timestamp_from_frames(curRacer->lap_times[i], &spB4, &spB0, &spAC);
                 gHudColour = D_800E27AC[i];
                 render_timer(gCurrentHud->unk2EC, spB8, spB4, spB0, spAC, 1);
                 gHudColour = COLOUR_RGBA32(255, 255, 255, 254);
@@ -1214,7 +1213,6 @@ void func_800A277C(s32 arg0, Object* playerRacerObj, s32 updateRate) {
                 gCurrentHud->unk330 += 12.0f;
                 gCurrentHud->unk310 += 12.0f;
             }
-            if (1) {} // FAKEMATCH
             posX = ((i * 4) - i) * 4;
             gCurrentHud->unk330 -= posX;
             gCurrentHud->unk310 -= posX;
