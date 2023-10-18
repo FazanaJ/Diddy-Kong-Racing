@@ -510,12 +510,10 @@ void calculate_ram_total(s32 poolIndex, u32 colourTag) {
     case COLOUR_TAG_BROWN:
         return;
     default:
+        if (colourTag > MEMP_TOTAL || colourTag == 0) {
+            return;
+        }
         index = colourTag;
-    }
-
-
-    if (index == 0 || index >= MEMP_TOTAL + 11) {
-        return;
     }
 
     slots = gMemoryPools[poolIndex].slots;
