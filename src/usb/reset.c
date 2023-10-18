@@ -10,6 +10,8 @@
 #include "PR/rcp.h"
 #include "PR/os_cache.h"
 
+#ifdef ENABLE_USB
+
 // TODO: Why don't these import?
 #define IO_WRITE(addr,data) (*(vu32 *)PHYS_TO_K1(addr)=(u32)(data))
 #define WAIT_ON_IOBUSY(stat)                                \
@@ -99,3 +101,5 @@ void reset(void) {
 
     (*resetFunc)(); // This executes the actual reset code at the end of ram.
 }
+
+#endif
