@@ -18,7 +18,7 @@
 #define UNLOCK_ALL                          // Unlock all characters, tracks and adventure 2.
 
 /* -------------------------Debug------------------------- */
-#define PUPPYPRINT_DEBUG                    // Enable debug features
+//#define PUPPYPRINT_DEBUG                    // Enable debug features
 #define SKIP_INTRO SKIP_TITLE               // Skip the boot screen, making getting ingame faster.
 #define DEFAULT_CHARACTER 7                 // If you skip character select, pick a default character.
 #define OPEN_ALL_DOORS                      // Removes any and all requirements to progress the game.

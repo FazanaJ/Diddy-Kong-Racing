@@ -3149,11 +3149,7 @@ s32 render_mesh(Gfx **dList, ObjectModel *objModel, Object *obj, s32 startIndex,
     while (i < objModel->numberOfBatches && !endLoop) {
         if (!(objModel->batches[i].flags & BATCH_FLAGS_UNK00000004) || flags & RENDER_SEMI_TRANSPARENT) {
             //Hidden/Invisible geometry
-            if (gPuppyPrint.showCol) {
-                textureIndex = 0;
-            } else {
-                textureIndex = objModel->batches[i].flags & BATCH_FLAGS_HIDDEN;
-            }
+            textureIndex = objModel->batches[i].flags & BATCH_FLAGS_HIDDEN;
             //Probably a fakematch to use textureIndex here, but it works.
             if (!textureIndex) {
                 vertOffset = objModel->batches[i].verticesOffset;

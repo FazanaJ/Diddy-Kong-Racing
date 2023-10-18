@@ -1173,7 +1173,7 @@ void render_level_segment(Gfx **dList, s32 segmentId, s32 nonOpaque) {
     for (i = startPos; i < endPos; i++) {
         batchInfo = &segment->batches[i];
         textureFlags = RENDER_NONE;
-        if (batchInfo->flags & BATCH_FLAGS_HIDDEN && gPuppyPrint.showCol == FALSE) {
+        if (batchInfo->flags & BATCH_FLAGS_HIDDEN) {
             continue;
         }
         batchFlags = batchInfo->flags;

@@ -1105,6 +1105,7 @@ void func_800A277C(s32 arg0, Object* playerRacerObj, s32 updateRate) {
     f32 posZ;
     f32 new_var;
     char *SWMessage[3];
+    s32 contpak = get_contpak_error();
     
     curRacer = &playerRacerObj->unk64->racer;
     stopwatchTimer = 0;
@@ -1120,7 +1121,7 @@ void func_800A277C(s32 arg0, Object* playerRacerObj, s32 updateRate) {
              ((Object *) gAssetHudElements->entry[20])->segment.animFrame = 0;
         }
     }
-    if (gAssetHudElements->entry[34] == 0 && get_contpak_error() <= 0) {
+    if (gAssetHudElements->entry[34] == 0 && contpak <= 0) {
         ttSWArms.objectID = gAssetHudElementIds[34] & 0xFFFF;
         ttSWArms.size = 8;
         ttSWArms.x = 0;
@@ -1187,12 +1188,12 @@ void func_800A277C(s32 arg0, Object* playerRacerObj, s32 updateRate) {
             stopwatchTimer = normalise_time(36000);
         }
         gCurrentHud->unk444 = ((stopwatchTimer * 0x444) + 0x7FF8);
-        if (get_contpak_error() <= 0) {
+        if (contpak <= 0) {
             func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, (unk80126CDC **) &gCurrentHud->unk440);
         }
         gCurrentHud->unk444 = ((((stopwatchTimer / 60) + 30) % 60) * 0x444);
         gCurrentHud->unk450 = gCurrentHud->unk350 + 28.0f;
-        if (get_contpak_error() <= 0) {
+        if (contpak <= 0) {
             func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, (unk80126CDC **) &gCurrentHud->unk440);
         }
         obj68->unk20 = 0;
@@ -1290,8 +1291,8 @@ void func_800A277C(s32 arg0, Object* playerRacerObj, s32 updateRate) {
         render_wrong_way_text(curRacer, updateRate);
         render_race_start(arg0, updateRate);
         render_speedometer(playerRacerObj, updateRate);
-        if (get_contpak_error() > 0) {
-            switch (get_contpak_error()) {
+        if (contpak > 0) {
+            switch (contpak) {
                 case 1:
                     SWMessage[0] = "CAN'T";
                     SWMessage[1] = "SAVE";
