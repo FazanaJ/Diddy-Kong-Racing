@@ -7,6 +7,7 @@
 #include "game.h"
 #include "main.h"
 #include "printf.h"
+#include "rcp.h"
 
 /************ .data ************/
 
@@ -196,6 +197,11 @@ void init_framebuffer(s32 index) {
 #if EXPANSION_PAK_SUPPORT
     if (gExpansionPak) {
         width = SCREEN_WIDTH_WIDE;
+    }
+#endif
+#if EXPANSION_PAK_SUPPORT || defined(FIFO_4MB)
+    if (gGfxSPTaskOutputBuffer == NULL) {
+        gGfxSPTaskOutputBuffer = allocate_from_main_pool_safe(FIFO_BUFFER_SIZE, MEMP_TASKBUFFER);
     }
 #endif
     gVideoFramebuffers[index] = allocate_from_main_pool_safe((width * SCREEN_HEIGHT * 2) + 0x30, MEMP_FRAMEBUFFERS);

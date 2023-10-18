@@ -24,7 +24,6 @@ TextureHeader *D_800DE4C4 = 0;
 TextureHeader *D_800DE4C8 = 0;
 
 BackgroundFunction gBackgroundDrawFunc = { NULL };
-s32 gGfxTaskIsRunning = FALSE;
 u64 *gGfxSPTaskOutputBuffer = NULL; 
 
 Gfx dRspInit[] = {
@@ -190,8 +189,6 @@ DKR_OSTask *gRdpCurTask = &gRdpTaskA;
 void setup_ostask_xbus(Gfx* dlBegin, Gfx* dlEnd) {
     DKR_OSTask *dkrtask;
 
-    gGfxTaskIsRunning = TRUE;
-
     dkrtask = gRdpCurTask;
     dkrtask->task.data_ptr = (u64 *) dlBegin;
     dkrtask->task.data_size = ((s32) dlEnd - (s32) dlBegin) >> 3; // Shifted by 3, repsenting the size of the Gfx type.
@@ -214,12 +211,7 @@ void setup_ostask_fifo(Gfx* dlBegin, Gfx* dlEnd) {
     u32 taskStart = 0x80680000;
     u32 taskEnd = 0x806E0000;
 
-    gGfxTaskIsRunning = TRUE;
-
 #if EXPANSION_PAK_SUPPORT || defined(FIFO_4MB)
-    if (gGfxSPTaskOutputBuffer == NULL) {
-        gGfxSPTaskOutputBuffer = allocate_from_main_pool_safe(FIFO_BUFFER_SIZE, MEMP_TASKBUFFER);
-    }
     taskStart = (u32) gGfxSPTaskOutputBuffer;
     taskEnd = (u32) (gGfxSPTaskOutputBuffer + (FIFO_BUFFER_SIZE));
 #endif

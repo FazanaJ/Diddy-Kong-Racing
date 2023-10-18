@@ -46,8 +46,8 @@ extern TextureHeader *D_800DE4C8;
 extern s32 gChequerBGEnabled;
 
 extern s32 gfxBufCounter;
-extern s32 gfxBufCounter2;
-extern s32 gGfxTaskIsRunning;
+
+extern u64 *gGfxSPTaskOutputBuffer;
 
 // Defined in dkr.ld
 extern s8 rspF3DDKRDramStart[];
