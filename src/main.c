@@ -582,20 +582,18 @@ void puppyprint_render_memory(void) {
     u32 i;
 
     y = 36 - gPuppyPrint.pageScroll;
-    draw_blank_box(gScreenWidth - 144, 0, gScreenWidth, gScreenHeight, 0x00000064);
+    draw_blank_box(gScreenWidth - 160, 0, gScreenWidth, gScreenHeight, 0x00000064);
     gDPPipeSync(gCurrDisplayList++);
     set_text_font(ASSET_FONTS_SMALLFONT);
     set_text_colour(255, 255, 255, 255, 255);
     set_text_background_colour(0, 0, 0, 0);
     set_kerning(FALSE);
-    puppyprintf(textBytes, "Free\t\t0x%X\n", TOTALRAM - gPuppyPrint.ramPools[0] - ((u32) &gMainMemoryPool) - 0x80000000);
-    draw_text(&gCurrDisplayList, gScreenWidth - 136, 8, textBytes, ALIGN_TOP_LEFT);
-    puppyprintf(textBytes, "Total\t\t0x%X\n", TOTALRAM);
-    draw_text(&gCurrDisplayList, gScreenWidth - 136, 18, textBytes, ALIGN_TOP_LEFT);
-    puppyprintf(textBytes, "Code\t\t0x%X\n", ((u32) &gMainMemoryPool) - 0x80000000);
-    gDPSetScissor(gCurrDisplayList++, G_SC_NON_INTERLACE, gScreenWidth - 136, 32, gScreenWidth, gScreenHeight);
-    draw_text(&gCurrDisplayList, gScreenWidth - 136, y, textBytes, ALIGN_TOP_LEFT);
-    y += 10;
+    puppyprintf(textBytes, "Free 0x%X", TOTALRAM - gPuppyPrint.ramPools[0] - ((u32) &gMainMemoryPool) - 0x80000000);
+    draw_text(&gCurrDisplayList, gScreenWidth - 78, 8, textBytes, ALIGN_TOP_CENTER);
+    puppyprintf(textBytes, "Total 0x%X", TOTALRAM);
+    draw_text(&gCurrDisplayList, gScreenWidth - 78, 18, textBytes, ALIGN_TOP_CENTER);
+    gDPSetScissor(gCurrDisplayList++, G_SC_NON_INTERLACE, gScreenWidth - 156, 32, gScreenWidth, gScreenHeight);
+    gPuppyPrint.ramPools[MEMP_CODE] = ((u32) &gMainMemoryPool) - 0x80000000;
     for (i = 1; i < MEMP_TOTAL + 12; i++) {
         if (gPuppyPrint.ramPools[sRAMPrintOrder[i]] == 0) {
             continue;
@@ -604,9 +602,10 @@ void puppyprint_render_memory(void) {
             y += 10;
             continue;
         }
-        draw_text(&gCurrDisplayList, gScreenWidth - 136, y, sPuppyprintMemColours[sRAMPrintOrder[i]], ALIGN_TOP_LEFT);
-        puppyprintf(textBytes,  "0x%X\n", gPuppyPrint.ramPools[sRAMPrintOrder[i]]);
-        draw_text(&gCurrDisplayList, gScreenWidth - 64, y, textBytes, ALIGN_TOP_LEFT);
+        draw_text(&gCurrDisplayList, gScreenWidth - 156, y, sPuppyprintMemColours[sRAMPrintOrder[i]], ALIGN_TOP_LEFT);
+        puppyprintf(textBytes,  "0x%X (%2.2f%%)", gPuppyPrint.ramPools[sRAMPrintOrder[i]], 
+                    (f64) (((f32) gPuppyPrint.ramPools[sRAMPrintOrder[i]] / (f32) TOTALRAM) * 100.0f));
+        draw_text(&gCurrDisplayList, gScreenWidth - 88, y, textBytes, ALIGN_TOP_LEFT);
         y += 10;
     }
     gDPSetScissor(gCurrDisplayList++, G_SC_NON_INTERLACE, 0, 0, gScreenWidth, gScreenHeight);

@@ -141,7 +141,7 @@ enum PPProfilerEvent {
 };
 
 #define PP_STRINGS \
-    "Unknown", \
+    "", \
     "Collision", \
     "Lighting", \
     "Envmaps", \
@@ -167,7 +167,8 @@ enum PPProfilerEvent {
     "Blocks\t"
 
 #define PP_MEM \
-    "Total", \
+    "", \
+    "Code", \
     "Animations", \
     "Models", \
     "Audio", \

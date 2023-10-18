@@ -14,8 +14,6 @@
 #define COLOUR_TAG_RED 0xFF0000FF
 // Models
 #define COLOUR_TAG_GREEN 0x00FF00FF
-// Objects
-#define COLOUR_TAG_BLUE 0x0000FFFF
 // Tracks
 #define COLOUR_TAG_YELLOW 0xFFFF00FF
 // Textures
@@ -32,11 +30,10 @@
 #define COLOUR_TAG_ORANGE 0xFF7F7FFF
 // Controller Pak
 #define COLOUR_TAG_BLACK 0x000000FF
-// Audio task
-#define COLOUR_TAG_BROWN 0xA04000FF
 
 enum MemoryTags {
     MEMP_OVERALL,
+    MEMP_CODE,
     MEMP_ANIMATION,
     MEMP_MODELS,
     MEMP_AUDIO,

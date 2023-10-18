@@ -481,9 +481,6 @@ void calculate_ram_total(s32 poolIndex, u32 colourTag) {
     case COLOUR_TAG_BLACK:
         index = MEMP_TOTAL + 1;
         break;
-    case COLOUR_TAG_BLUE:
-        index = MEMP_TOTAL + 2;
-        break;
     case COLOUR_TAG_CYAN:
         index = MEMP_TOTAL + 3;
         break;
@@ -508,8 +505,6 @@ void calculate_ram_total(s32 poolIndex, u32 colourTag) {
     case COLOUR_TAG_ORANGE:
         index = MEMP_TOTAL + 10;
         break;
-    case COLOUR_TAG_BROWN:
-        return;
     default:
         if (colourTag > MEMP_TOTAL || colourTag == 0) {
             return;
