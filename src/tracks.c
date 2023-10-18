@@ -249,9 +249,9 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     numberOfPlayers = gScenePlayerViewports;
     gAntiAliasing = 0;
     for (i = 0; i < ARRAY_COUNT(gShadowHeapTextures); i++) {
-        gShadowHeapTextures[i] = (DrawTexture *) allocate_from_main_pool_safe(sizeof(DrawTexture) * 400, MEMP_SHADOWS);
-        gShadowHeapTris[i] = (Triangle *) allocate_from_main_pool_safe(sizeof(Triangle) * 800, MEMP_SHADOWS);
-        gShadowHeapVerts[i] = (Vertex *) allocate_from_main_pool_safe(sizeof(Vertex) * 2000, MEMP_SHADOWS);
+        gShadowHeapTextures[i] = (DrawTexture *) allocate_from_main_pool_safe(sizeof(DrawTexture) * 200, MEMP_SHADOWS);
+        gShadowHeapTris[i] = (Triangle *) allocate_from_main_pool_safe(sizeof(Triangle) * 400, MEMP_SHADOWS);
+        gShadowHeapVerts[i] = (Vertex *) allocate_from_main_pool_safe(sizeof(Vertex) * 1000, MEMP_SHADOWS);
     }
 
     gShadowHeapFlip = 0;
