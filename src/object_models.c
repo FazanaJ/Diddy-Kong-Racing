@@ -39,8 +39,8 @@ void allocate_object_model_pools(void) {
     UNUSED s32 i;
     UNUSED s32 checksum;
 
-    D_8011D624 = allocate_from_main_pool_safe(0x230, COLOUR_TAG_GREEN);
-    D_8011D628 = allocate_from_main_pool_safe(0x190, COLOUR_TAG_GREEN);
+    D_8011D624 = allocate_from_main_pool_safe(0x230, MEMP_OBJECT_MODELS);
+    D_8011D628 = allocate_from_main_pool_safe(0x190, MEMP_OBJECT_MODELS);
     D_8011D62C = 0;
     D_8011D634 = 0;
     gObjectModelTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_MODELS_TABLE);
@@ -77,7 +77,7 @@ unk8005FCD0 *func_8005FCD0(ObjectModel *model, s32 arg1) {
 
     if ((model->numberOfAnimations != 0) && (arg1 & 8)) {
         temp = ((model->numberOfVertices << 1) * 10) + 36;
-        result = (unk8005FCD0 *) allocate_from_main_pool((model->unk4A * 6) + temp, COLOUR_TAG_BLUE);
+        result = (unk8005FCD0 *) allocate_from_main_pool((model->unk4A * 6) + temp, MEMP_OBJECT_MODELS);
         if (result == NULL) {
             return NULL;
         }
@@ -87,7 +87,7 @@ unk8005FCD0 *func_8005FCD0(ObjectModel *model, s32 arg1) {
         result->unk1E = 2;
     } else if ((model->unk40 != NULL) && (arg1 & 1)) {
         temp = (model->numberOfVertices * 10);
-        result = (unk8005FCD0 *) allocate_from_main_pool(temp + 36, COLOUR_TAG_BLUE);
+        result = (unk8005FCD0 *) allocate_from_main_pool(temp + 36, MEMP_OBJECT_MODELS);
         if (result == NULL) {
             return NULL;
         }
@@ -97,7 +97,7 @@ unk8005FCD0 *func_8005FCD0(ObjectModel *model, s32 arg1) {
         result->unkC = 0;
         result->unk1E = 1;
     } else {
-        result = (unk8005FCD0 *) allocate_from_main_pool(36, COLOUR_TAG_BLUE);
+        result = (unk8005FCD0 *) allocate_from_main_pool(36, MEMP_OBJECT_MODELS);
         if (result == NULL) {
             return NULL;
         }
@@ -306,7 +306,7 @@ s32 func_80061A00(ObjectModel *model, s32 animTableIndex) {
         }
     }
     model->numberOfAnimations = end - start;
-    allocAnimData = (ObjectModel_44 *) allocate_from_main_pool(model->numberOfAnimations * 8, COLOUR_TAG_RED);
+    allocAnimData = (ObjectModel_44 *) allocate_from_main_pool(model->numberOfAnimations * 8, MEMP_ANIMATION);
     model->animations = allocAnimData;
     if (allocAnimData == NULL) {
         return 1;
@@ -318,7 +318,7 @@ s32 func_80061A00(ObjectModel *model, s32 animTableIndex) {
         animAddress = gObjectAnimationTable[start+1] - assetOffset;
         assetSize = animAddress;
         size = get_asset_uncompressed_size(ASSET_OBJECT_ANIMATIONS, assetOffset) + 0x80;
-        model->animations[i].animData = (u8 *) allocate_from_main_pool(size, COLOUR_TAG_RED);
+        model->animations[i].animData = (u8 *) allocate_from_main_pool(size, MEMP_ANIMATION);
         if (model->animations[i].animData == NULL) {
             for(j = 0; j < i2; j++) {
                 free_from_memory_pool(model->animations[j].animData);
