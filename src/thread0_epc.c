@@ -380,7 +380,7 @@ void crash_screen_init(void) {
     osStartThread(&gCrashScreen.thread);
 }
 
-#ifdef PUPPYPRINT_DEBUG
+#ifdef DETAILED_CRASH
 void set_crash_object(ObjectHeader *objectID, s32 act) {
     sCrashObjID = objectID;
     sCrashObjAct = act;

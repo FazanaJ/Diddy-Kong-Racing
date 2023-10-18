@@ -14,7 +14,7 @@ enum ObjectActions {
     CRASH_OBJ_RENDER,
 };
 
-#ifdef PUPPYPRINT_DEBUG
+#ifdef DETAILED_CRASH
 void set_crash_object(ObjectHeader *objectID, s32 act);
 #else
 #define set_crash_object(objectID, act)

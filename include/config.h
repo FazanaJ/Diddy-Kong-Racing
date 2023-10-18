@@ -18,13 +18,14 @@
 #define UNLOCK_ALL                          // Unlock all characters, tracks and adventure 2.
 
 /* -------------------------Debug------------------------- */
-//#define PUPPYPRINT_DEBUG                    // Enable debug features
+#define PUPPYPRINT_DEBUG                    // Enable debug features
 #define SKIP_INTRO SKIP_TITLE               // Skip the boot screen, making getting ingame faster.
 #define DEFAULT_CHARACTER 7                 // If you skip character select, pick a default character.
 #define OPEN_ALL_DOORS                      // Removes any and all requirements to progress the game.
 //#define DISABLE_AUDIO                       // Disable all ingame audio, and prevent the RSP from working on audio tasks.
 //#define FORCE_4MB_MEMORY                    // Pretend the expansion pak is not installed.
 //#define CRASH_SCREEN_TEST                   // Intentionally crash the game to test the crash screen.
+#define DETAILED_CRASH                        // Enables more crash screen details
 
 #ifdef PUPPYPRINT_DEBUG
 #define GFX_ADD 1500
