@@ -271,8 +271,6 @@ ALL_ASSETS_BUILT += $(patsubst $(UCODE_IN_DIR)/%.bin,$(UCODE_OUT_DIR)/%.bin,$(UC
 $(BUILD_DIR)/lib/%.o: OPT_FLAGS := -O2 -Xfullwarn
 $(BUILD_DIR)/lib/src/os/%.o: OPT_FLAGS := -O2 -Xfullwarn
 $(BUILD_DIR)/lib/src/os/osViMgr.o: OPT_FLAGS := -O2 -Xfullwarn
-#$(BUILD_DIR)/lib/src/libc/llcvt.o: OPT_FLAGS :=
-#$(BUILD_DIR)/lib/src/libc/llcvt.o: MIPSISET := -mips3 32
 
 ####################### MATH UTIL #########################
 
@@ -325,7 +323,9 @@ GCC_SAFE_FILES := \
     $(BUILD_DIR)/lib/src/libc/rmonPrintf.o \
     $(BUILD_DIR)/lib/src/libc/string.o \
     $(BUILD_DIR)/lib/src/libc/xprintf.o \
-    $(BUILD_DIR)/lib/src/libc/xprintf.o \
+    $(BUILD_DIR)/lib/src/libc/llcvt.o \
+    $(BUILD_DIR)/lib/src/libc/ll.o \
+    $(BUILD_DIR)/lib/src/libc/lldiv.o \
     $(BUILD_DIR)/lib/src/os/osCreatePiManager.o \
     $(BUILD_DIR)/lib/src/os/osMotor.o \
 
