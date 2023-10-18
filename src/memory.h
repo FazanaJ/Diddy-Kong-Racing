@@ -74,8 +74,9 @@ typedef struct MemoryPoolSlot {
 /* 0x0A */ s16 prevIndex;
 /* 0x0C */ s16 nextIndex;
 /* 0x0E */ s16 index;
+#ifdef PUPPYPRINT_DEBUG
 /* 0x10 */ u32 colourTag;
-u32 sizeUsed;
+#endif
 } MemoryPoolSlot;
 
 /* Size: 0x10 bytes */

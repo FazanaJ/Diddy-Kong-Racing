@@ -430,7 +430,9 @@ s32 allocate_memory_pool_slot(s32 poolIndex, s32 slotIndex, s32 size, s32 slotIs
     poolSlots[slotIndex].flags = slotIsTaken;
     poolSize = poolSlots[slotIndex].size;
     poolSlots[slotIndex].size = size;
+#ifdef PUPPYPRINT_DEBUG
     poolSlots[slotIndex].colourTag = colourTag;
+#endif
     index = poolSlots[pool->curNumSlots].index;
     if (size < poolSize) {
         index = (pool->curNumSlots + poolSlots)->index;
@@ -438,7 +440,6 @@ s32 allocate_memory_pool_slot(s32 poolIndex, s32 slotIndex, s32 size, s32 slotIs
         poolSlots[index].data = &poolSlots[slotIndex].data[size];
         poolSlots[index].size = poolSize;
         poolSlots[index].size -= size;
-        poolSlots[index].sizeUsed = size;
         poolSlots[index].flags = newSlotIsTaken;
         poolSize = poolSlots[slotIndex].nextIndex;
         nextIndex = poolSize;
@@ -523,8 +524,8 @@ void calculate_ram_total(s32 poolIndex, u32 colourTag) {
     for (i = 0; i != -1; i = curSlot->nextIndex) {
         curSlot = &slots[i];
         if (curSlot->flags != 0 && curSlot->colourTag == colourTag) {
-            gPuppyPrint.ramPools[index] += curSlot->sizeUsed;
-            gPuppyPrint.ramPools[MEMP_OVERALL] += curSlot->sizeUsed;
+            gPuppyPrint.ramPools[index] += curSlot->size;
+            gPuppyPrint.ramPools[MEMP_OVERALL] += curSlot->size;
         }
     }
 }
