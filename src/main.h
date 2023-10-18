@@ -189,6 +189,8 @@ enum PPProfilerEvent {
     "Lights", \
     "HUD", \
     "Text", \
+    "Aud Pool", \
+    \
     "Red", \
     "Black", \
     "Blue", \

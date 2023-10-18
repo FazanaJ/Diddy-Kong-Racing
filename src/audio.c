@@ -43,7 +43,7 @@ u8 D_800DC670 = 0;
 /************ .bss ************/
 
 // The audio heap is located at the start of the BSS section.
-u8 gBssSectionStart[AUDIO_HEAP_SIZE];
+void *gBssSectionStart;
 
 ALHeap gALHeap;
 ALSeqFile *ALSeqFile_80115CF8;
@@ -93,33 +93,34 @@ void audio_init(OSSched *sc) {
     audioMgrConfig audConfig;
 
     seqLength = 0;
-    alHeapInit(&gALHeap, gBssSectionStart, sizeof(gBssSectionStart));
+    gBssSectionStart = allocate_from_main_pool_safe(AUDIO_HEAP_SIZE, MEMP_AUDIO_POOL);
+    alHeapInit(&gALHeap, gBssSectionStart, AUDIO_HEAP_SIZE);
 
     addrPtr = (s32 *) load_asset_section_from_rom(ASSET_AUDIO_TABLE);
-    ALBankFile_80115D14 = (ALBankFile *) allocate_from_main_pool_safe(addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1], COLOUR_TAG_CYAN);
+    ALBankFile_80115D14 = (ALBankFile *) allocate_from_main_pool_safe(addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1], MEMP_AUDIO);
     load_asset_to_address(ASSET_AUDIO, (u32) ALBankFile_80115D14, addrPtr[ASSET_AUDIO_1], addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1]);
     alBnkfNew(ALBankFile_80115D14, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_2]));
 
     sSoundEffectsPoolSize = addrPtr[ASSET_AUDIO_7] - addrPtr[ASSET_AUDIO_6];
-    sSoundEffectsPool = (unk80115D18 *) allocate_from_main_pool_safe(sSoundEffectsPoolSize, COLOUR_TAG_CYAN);
+    sSoundEffectsPool = (unk80115D18 *) allocate_from_main_pool_safe(sSoundEffectsPoolSize, MEMP_AUDIO_POOL);
     load_asset_to_address(ASSET_AUDIO, (u32) sSoundEffectsPool, addrPtr[ASSET_AUDIO_6], sSoundEffectsPoolSize);
     sSoundEffectsPoolCount = sSoundEffectsPoolSize / sizeof(unk80115D18);
 
     sMusicPoolSize = addrPtr[ASSET_AUDIO_6] - addrPtr[ASSET_AUDIO_5];
-    sMusicPool = (unk80115D1C *) allocate_from_main_pool_safe(sMusicPoolSize, COLOUR_TAG_CYAN);
+    sMusicPool = (unk80115D1C *) allocate_from_main_pool_safe(sMusicPoolSize, MEMP_AUDIO_POOL);
     load_asset_to_address(ASSET_AUDIO, (u32) sMusicPool, addrPtr[ASSET_AUDIO_5], sMusicPoolSize);
 
-    ALBankFile_80115D10 = (ALBankFile *) allocate_from_main_pool_safe(addrPtr[ASSET_AUDIO_0], COLOUR_TAG_CYAN);
+    ALBankFile_80115D10 = (ALBankFile *) allocate_from_main_pool_safe(addrPtr[ASSET_AUDIO_0], MEMP_AUDIO);
     load_asset_to_address(ASSET_AUDIO, (u32) ALBankFile_80115D10, 0, addrPtr[ASSET_AUDIO_0]);
     alBnkfNew(ALBankFile_80115D10, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_0]));
     ALSeqFile_80115CF8 = (ALSeqFile *) alHeapAlloc(&gALHeap, 1, 4);
     load_asset_to_address(ASSET_AUDIO, (u32) ALSeqFile_80115CF8, addrPtr[ASSET_AUDIO_4], 4);
 
     seqfSize = (ALSeqFile_80115CF8->seqCount) * 8 + 4;
-    ALSeqFile_80115CF8 = allocate_from_main_pool_safe(seqfSize, COLOUR_TAG_CYAN);
+    ALSeqFile_80115CF8 = allocate_from_main_pool_safe(seqfSize, MEMP_AUDIO);
     load_asset_to_address(ASSET_AUDIO, (u32) ALSeqFile_80115CF8, addrPtr[ASSET_AUDIO_4], seqfSize);
     alSeqFileNew(ALSeqFile_80115CF8, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_4]));
-    gSeqLengthTable = (u32 *) allocate_from_main_pool_safe((ALSeqFile_80115CF8->seqCount) * 4, COLOUR_TAG_CYAN);
+    gSeqLengthTable = (u32 *) allocate_from_main_pool_safe((ALSeqFile_80115CF8->seqCount) * 4, MEMP_AUDIO);
 
     for (iCnt = 0; iCnt < ALSeqFile_80115CF8->seqCount; iCnt++) {
         gSeqLengthTable[iCnt] = ALSeqFile_80115CF8->seqArray[iCnt].len;
@@ -143,8 +144,8 @@ void audio_init(OSSched *sc) {
     gMusicPlayer = func_80002224(24, 120);
     set_voice_limit(gMusicPlayer, 18);
     gSndFxPlayer = func_80002224(16, 50);
-    D_80115CFC = allocate_from_main_pool_safe(seqLength, COLOUR_TAG_CYAN);
-    D_80115D00 = allocate_from_main_pool_safe(seqLength, COLOUR_TAG_CYAN);
+    D_80115CFC = allocate_from_main_pool_safe(seqLength, MEMP_AUDIO);
+    D_80115D00 = allocate_from_main_pool_safe(seqLength, MEMP_AUDIO);
     audConfig.unk04 = 150;
     audConfig.unk00 = 32;
     audConfig.maxChannels = 16;

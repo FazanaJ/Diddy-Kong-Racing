@@ -134,8 +134,8 @@ void alFxNew(ALFx *r, ALSynConfig *c, s16 bus, UNUSED ALHeap *hp) {
     j = 0;
     r->section_count = param[j++];
     r->length 	     = param[j++];
-    r->delay = allocate_from_main_pool_safe(sizeof(ALDelay) * r->section_count, COLOUR_TAG_CYAN);
-    r->base = allocate_from_main_pool_safe(sizeof(s16) * r->length, COLOUR_TAG_CYAN);
+    r->delay = allocate_from_main_pool_safe(sizeof(ALDelay) * r->section_count, MEMP_AUDIO);
+    r->base = allocate_from_main_pool_safe(sizeof(s16) * r->length, MEMP_AUDIO);
     r->input = r->base;
     for ( k=0; k < r->length; k++)
 	r->base[k] = 0;
@@ -167,8 +167,8 @@ void alFxNew(ALFx *r, ALSynConfig *c, s16 bus, UNUSED ALHeap *hp) {
             d->rsgain 	 = (((f32) param[j++])/CONVERT) * LENGTH;
             d->rsval	 = 1.0f;
             d->rsdelta	 = 0.0f;
-            d->rs 	 = allocate_from_main_pool_safe(sizeof(ALResampler), COLOUR_TAG_CYAN);
-            d->rs->state = allocate_from_main_pool_safe(sizeof(RESAMPLE_STATE), COLOUR_TAG_CYAN);
+            d->rs 	 = allocate_from_main_pool_safe(sizeof(ALResampler), MEMP_AUDIO);
+            d->rs->state = allocate_from_main_pool_safe(sizeof(RESAMPLE_STATE), MEMP_AUDIO);
             d->rs->delta = 0.0f;
             d->rs->first = 1;
         } else {
@@ -177,8 +177,8 @@ void alFxNew(ALFx *r, ALSynConfig *c, s16 bus, UNUSED ALHeap *hp) {
             j++;
         }
         if (param[j]) {
-            d->lp = allocate_from_main_pool_safe(sizeof(ALLowPass), COLOUR_TAG_CYAN);
-            d->lp->fstate = allocate_from_main_pool_safe(sizeof(POLEF_STATE), COLOUR_TAG_CYAN);
+            d->lp = allocate_from_main_pool_safe(sizeof(ALLowPass), MEMP_AUDIO);
+            d->lp->fstate = allocate_from_main_pool_safe(sizeof(POLEF_STATE), MEMP_AUDIO);
             d->lp->fc = param[j++];
             init_lpfilter(d->lp);
         } else {

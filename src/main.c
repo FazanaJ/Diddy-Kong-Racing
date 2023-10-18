@@ -357,8 +357,10 @@ void puppyprint_input(void) {
     if (get_buttons_pressed_from_player(0) & L_TRIG) {
         if (gPuppyPrint.menuOption != PAGE_COVERAGE) {
             gPuppyPrint.menuOpen ^= 1;
+            if (gPuppyPrint.page != gPuppyPrint.menuOption) {
+                gPuppyPrint.pageScroll = 0;
+            }
             gPuppyPrint.page = gPuppyPrint.menuOption;
-            gPuppyPrint.pageScroll = 0;
         } else {
             gPuppyPrint.showCvg ^= TRUE;
         }
@@ -383,17 +385,36 @@ void puppyprint_input(void) {
         } else if (gPuppyPrint.menuScroll > gPuppyPrint.menuOption) {
             gPuppyPrint.menuScroll--;
         }
-    }
+    } else {
+        if (gPuppyPrint.page == PAGE_LOG) {
+            s32 maxPrints = (gScreenHeight - 36);
+            if (get_buttons_held_from_player(0) & D_JPAD) {
+                gPuppyPrint.pageScroll += sLogicUpdateRate * 2;
+                if (gPuppyPrint.pageScroll > ((NUM_LOG_LINES) * 10) - maxPrints) {
+                    gPuppyPrint.pageScroll = ((NUM_LOG_LINES) * 10) - maxPrints;
+                }
+            } else if (get_buttons_held_from_player(0) & U_JPAD) {
+                gPuppyPrint.pageScroll -= sLogicUpdateRate * 2;
+                if (gPuppyPrint.pageScroll < 0) {
+                    gPuppyPrint.pageScroll = 0;
+                }
+            } 
+        }
 
-    if (gPuppyPrint.page == PAGE_LOG) {
-        if (get_buttons_held_from_player(0) & D_JPAD) {
-            gPuppyPrint.pageScroll += sLogicUpdateRate * 2;
-        } else if (get_buttons_held_from_player(0) & U_JPAD) {
-            gPuppyPrint.pageScroll -= sLogicUpdateRate * 2;
-            if (gPuppyPrint.pageScroll < 0) {
-                gPuppyPrint.pageScroll = 0;
-            }
-        } 
+        if (gPuppyPrint.page == PAGE_MEMORY) {
+            s32 maxPrints = (gScreenHeight - 36);
+            if (get_buttons_held_from_player(0) & D_JPAD) {
+                gPuppyPrint.pageScroll += sLogicUpdateRate * 2;
+                if (gPuppyPrint.pageScroll > (10 * (MEMP_TOTAL + 10)) - maxPrints) {
+                    gPuppyPrint.pageScroll = (10 * (MEMP_TOTAL + 10)) - maxPrints;
+                }
+            } else if (get_buttons_held_from_player(0) & U_JPAD) {
+                gPuppyPrint.pageScroll -= sLogicUpdateRate * 2;
+                if (gPuppyPrint.pageScroll < 0) {
+                    gPuppyPrint.pageScroll = 0;
+                }
+            } 
+        }
     }
 }
 
@@ -560,7 +581,7 @@ void puppyprint_render_memory(void) {
     s32 y;
     u32 i;
 
-    y = 46;
+    y = 36 - gPuppyPrint.pageScroll;
     draw_blank_box(gScreenWidth - 144, 0, gScreenWidth, gScreenHeight, 0x00000064);
     gDPPipeSync(gCurrDisplayList++);
     set_text_font(ASSET_FONTS_SMALLFONT);
@@ -572,9 +593,15 @@ void puppyprint_render_memory(void) {
     puppyprintf(textBytes, "Total\t\t0x%X\n", TOTALRAM);
     draw_text(&gCurrDisplayList, gScreenWidth - 136, 18, textBytes, ALIGN_TOP_LEFT);
     puppyprintf(textBytes, "Code\t\t0x%X\n", ((u32) &gMainMemoryPool) - 0x80000000);
-    draw_text(&gCurrDisplayList, gScreenWidth - 136, 36, textBytes, ALIGN_TOP_LEFT);
+    gDPSetScissor(gCurrDisplayList++, G_SC_NON_INTERLACE, gScreenWidth - 136, 32, gScreenWidth, gScreenHeight);
+    draw_text(&gCurrDisplayList, gScreenWidth - 136, y, textBytes, ALIGN_TOP_LEFT);
+    y += 10;
     for (i = 1; i < MEMP_TOTAL + 12; i++) {
         if (gPuppyPrint.ramPools[sRAMPrintOrder[i]] == 0) {
+            continue;
+        }
+        if (y < 24 || y > gScreenHeight) {
+            y += 10;
             continue;
         }
         draw_text(&gCurrDisplayList, gScreenWidth - 136, y, sPuppyprintMemColours[sRAMPrintOrder[i]], ALIGN_TOP_LEFT);
@@ -582,6 +609,7 @@ void puppyprint_render_memory(void) {
         draw_text(&gCurrDisplayList, gScreenWidth - 64, y, textBytes, ALIGN_TOP_LEFT);
         y += 10;
     }
+    gDPSetScissor(gCurrDisplayList++, G_SC_NON_INTERLACE, 0, 0, gScreenWidth, gScreenHeight);
 }
 
 #undef TOTALRAM
@@ -623,10 +651,6 @@ void puppyprint_render_log(void) {
     set_text_colour(255, 255, 255, 255, 255);
     set_text_background_colour(0, 0, 0, 0);
     set_kerning(FALSE);
-
-    if (gPuppyPrint.pageScroll > (NUM_LOG_LINES) * 10) {
-        gPuppyPrint.pageScroll = (NUM_LOG_LINES) * 10;
-    }
 
     y = 4 - gPuppyPrint.pageScroll;
     for (i = NUM_LOG_LINES; i > 0; i--) {
