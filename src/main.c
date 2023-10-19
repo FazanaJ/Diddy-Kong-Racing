@@ -513,7 +513,7 @@ void puppyprint_render_minimal(void) {
     #define TOTALRAM 0x400000
 #endif
 
-#define CODESIZE (((u32) &gMainMemoryPool) - 0x80000000)
+extern u8 __ASSETS_LUT_START[];
 
 void puppyprint_render_overview(void) {
     char textBytes[32];
@@ -524,7 +524,7 @@ void puppyprint_render_overview(void) {
     draw_blank_box(((gScreenWidth/2) / 3) - 42, gScreenHeight - 50, ((gScreenWidth/2) / 3) + 62, gScreenHeight - 6, 0x0000007F);
     puppyprintf(textBytes, "Textures: %d", gPuppyPrint.textureLoads);
     draw_text(&gCurrDisplayList, ((gScreenWidth/2) / 3) + 10, gScreenHeight - 48, textBytes, ALIGN_TOP_CENTER);
-    puppyprintf(textBytes,  "RAM: 0x%06X", TOTALRAM - gPuppyPrint.ramPools[0] - CODESIZE);
+    puppyprintf(textBytes,  "RAM: 0x%06X", TOTALRAM - gPuppyPrint.ramPools[MEMP_OVERALL] - ((u32) &__ASSETS_LUT_START));
     draw_text(&gCurrDisplayList, ((gScreenWidth/2) / 3) + 10, gScreenHeight - 38, textBytes, ALIGN_TOP_CENTER);
     puppyprintf(textBytes,  "Tri: %d Vtx: %d", sTriCount, sVtxCount);
     draw_text(&gCurrDisplayList, ((gScreenWidth/2) / 3) + 10, gScreenHeight - 28, textBytes, ALIGN_TOP_CENTER);
@@ -590,12 +590,11 @@ void puppyprint_render_memory(void) {
     set_text_colour(255, 255, 255, 255, 255);
     set_text_background_colour(0, 0, 0, 0);
     set_kerning(FALSE);
-    puppyprintf(textBytes, "Free 0x%X", TOTALRAM - gPuppyPrint.ramPools[0] - CODESIZE);
+    puppyprintf(textBytes, "Free 0x%X", TOTALRAM - gPuppyPrint.ramPools[MEMP_OVERALL] - gPuppyPrint.ramPools[MEMP_CODE]);
     draw_text(&gCurrDisplayList, gScreenWidth - 78, 8, textBytes, ALIGN_TOP_CENTER);
     puppyprintf(textBytes, "Total 0x%X", TOTALRAM);
     draw_text(&gCurrDisplayList, gScreenWidth - 78, 18, textBytes, ALIGN_TOP_CENTER);
     gDPSetScissor(gCurrDisplayList++, G_SC_NON_INTERLACE, gScreenWidth - 156, 32, gScreenWidth, gScreenHeight);
-    gPuppyPrint.ramPools[MEMP_CODE] = CODESIZE;
     for (i = 1; i < MEMP_TOTAL + 12; i++) {
         if (gPuppyPrint.ramPools[sRAMPrintOrder[i]] == 0) {
             continue;
@@ -812,6 +811,7 @@ void calculate_ram_print_order(void) {
     for (i = 1; i < MEMP_TOTAL + 12; i++) {
         sRAMPrintOrder[i] = i;
     }
+    gPuppyPrint.ramPools[MEMP_CODE] = (u32) &__ASSETS_LUT_START;
 
     // One by one move boundary of unsorted subarray
     for (i = 1; i < MEMP_TOTAL + 12; i++) {
