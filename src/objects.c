@@ -830,7 +830,7 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
         }
     }
     if (((!(&curObj->segment.trans)) && (!(&curObj->segment.trans))) && (!(&curObj->segment.trans))) {}
-    entry = allocate_from_main_pool_safe(sizeof(LevelObjectEntry_Unk8000CC7C), COLOUR_TAG_YELLOW);
+    entry = allocate_from_main_pool_safe(sizeof(LevelObjectEntry_Unk8000CC7C), MEMP_OBJECTS);
     entry->unkC = 0;
     entry->unkA = 0;
     entry->unk8 = 0;
@@ -984,7 +984,7 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
             tajFlags = curObj->segment.header->flags;
             if ((tajFlags & 0x20) && (gIsTimeTrial)) {
                 free_object(curObj);
-            } else if ((tajFlags & 0x40) && (numPlayers >= 2)) {
+            } else if ((tajFlags & 0x40) && (numPlayers >= 2 && !gConfig.noCutbacks)) {
                 free_object(curObj);
             }
         }
