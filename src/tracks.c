@@ -1218,7 +1218,7 @@ void render_level_segment(Gfx **dList, s32 segmentId, s32 nonOpaque) {
         batchFlags |= BATCH_FLAGS_UNK00000008 | BATCH_FLAGS_UNK00000002;
         
         if (!(batchFlags & BATCH_FLAGS_DEPTH_WRITE) && !(batchFlags & BATCH_FLAGS_RECEIVE_SHADOWS)) {
-            if (gConfig.antiAliasing || gOverrideAA) {
+            if (gConfig.antiAliasing) {
                 batchFlags &= ~RENDER_ANTI_ALIASING;
             } else {
                 batchFlags |= RENDER_ANTI_ALIASING;

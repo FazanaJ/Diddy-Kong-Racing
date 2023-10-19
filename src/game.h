@@ -9,7 +9,6 @@
 
 extern Gfx *gDisplayLists[2];
 extern s32 sLogicUpdateRate;
-extern u8 gOverrideAA;
 extern u8 gHideHUD;
 extern s32 gMapId;
 extern u8 gSkipCutbacks;
@@ -77,5 +76,6 @@ s8 is_two_player_adventure_race(void);
 void push_level_property_stack(s32 levelId, s32 entranceId, Vehicle vehicleId, s32 cutsceneId);
 void pop_level_property_stack(s32 *levelId, s32 *entranceId, s32 *vehicleId, s32 *cutsceneId);
 s32 func_8006C300(void);
+s16 get_level_property_stack_pos(void);
 
 #endif

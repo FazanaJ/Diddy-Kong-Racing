@@ -11203,7 +11203,7 @@ void record_fps(void) {
         benchCPURecord[benchFramesRecorded] = benchCPU / benchFrames;
         benchRSPRecord[benchFramesRecorded] = benchRSP / benchFrames;
         benchRDPRecord[benchFramesRecorded] = benchRDP / benchFrames;
-        aaOvrRecord[benchFramesRecorded] = gOverrideAA || !gConfig.antiAliasing;
+        aaOvrRecord[benchFramesRecorded] = gConfig.antiAliasing == -1;
         benchFramesRecorded++;
         benchFrames = 0;
         benchCPU = 0;

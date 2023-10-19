@@ -244,8 +244,6 @@ s8 suCodeSwitch = 0;
 u32 sPrevTime = 0;
 u32 sDeltaTime = 0;
 s32 sTotalTime = 0;
-u8 gOverrideAA = 0;
-s32 gOverrideTimer = 0;
 
 /**
  * The main gameplay loop.
@@ -271,7 +269,7 @@ void main_game_loop(void) {
     } else {
         sDeltaTime = osGetCount() - sPrevTime;
         sPrevTime = osGetCount();
-        sLogicUpdateRateF = (f32) sDeltaTime / 1000000.0f;
+        sLogicUpdateRateF = (f32) sDeltaTime / (f32) OS_USEC_TO_CYCLES(33333);
         if (sLogicUpdateRateF <= 0.0001f) {
             sLogicUpdateRateF = 0.0001f;
         }
@@ -290,28 +288,8 @@ void main_game_loop(void) {
             if (sLogicUpdateRate > LOGIC_12FPS) {
                 sLogicUpdateRate = LOGIC_12FPS;
             }
-
         }
     }
-
-    /*if (gConfig.antiAliasing == 1) {
-        gOverrideTimer -= 40000;
-        gOverrideTimer += MIN(OS_CYCLES_TO_USEC(sDeltaTime), 66666);
-        if (gOverrideTimer <= -125000) {
-            gOverrideTimer = -125000;
-            if (gOverrideAA == TRUE) {
-                gOverrideAA = FALSE;
-                //set_dither_filter();
-            }
-        }
-        if (gOverrideTimer >= 125000) {
-            gOverrideTimer = 125000;
-            if (gOverrideAA == FALSE) {
-                gOverrideAA = TRUE;
-                //set_dither_filter();
-            }
-        }
-    }*/
 
     gCurrDisplayList = gDisplayLists[gSPTaskNum];
     gGameCurrMatrix = gMatrixHeap[gSPTaskNum];

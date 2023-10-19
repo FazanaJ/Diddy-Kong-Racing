@@ -43,17 +43,10 @@ void check_cache_emulation() {
     __osRestoreInt(saved);
 }
 
-f32 round_double_to_float(f64 v) {
-    return v;
-}
-
 void get_platform(void) {
     //u32 notiQue;
-    s32 i;
     gPlatform = 0;
-
-    for (i = 0; i < 0x400000; i++) {
-    }
+    
     // Read the RDP timing registers. Emulators read them as zero.
     if ((u32) IO_READ(DPC_PIPEBUSY_REG) | (u32) IO_READ(DPC_TMEM_REG) | (u32) IO_READ(DPC_BUFBUSY_REG)) {
         gPlatform |= CONSOLE;
@@ -72,18 +65,10 @@ void get_platform(void) {
         gPlatform |= PJ64;
     }
 
-    // Virtual console has a unique way of rounding floats. This function will single it out.
-    if (round_double_to_float(0.9999999999999999) != 1.0f) {
-        gPlatform |= EMULATOR;
-        gPlatform |= VC;
-    }
-
 #ifdef PUPPYPRINT_DEBUG
     // Piece together a string to print out.
     if (gPlatform & EMULATOR) {
-        if (gPlatform & VC) {
-            puppyprint_log("Virtual Console detected.");
-        } else if (gPlatform & ARES) {
+        if (gPlatform & ARES) {
             puppyprint_log("AresN64/Simple64 Emulator detected.");
         } else if (gPlatform & PJ64) {
             puppyprint_log("Project 64 detected.");
@@ -167,6 +152,7 @@ void find_expansion_pak(void) {
 /******************************/
 
 extern MemoryPoolSlot gMainMemoryPool;
+extern void *gBssSectionStart;
 
 /**
  * Where it all begins.
@@ -176,7 +162,7 @@ extern MemoryPoolSlot gMainMemoryPool;
 */
 void main2(void) {
     osInitialize();
-    bzero(&gMainMemoryPool, RAM_END - (s32)(&gMainMemoryPool));
+    bzero(&gBssSectionStart, RAM_END - (s32)(&gBssSectionStart));
     osCreateThread(&gThread1, 1, &thread1_main, 0, &gThread3Stack[THREAD1_STACK / (sizeof(u64))], OS_PRIORITY_IDLE);
     osStartThread(&gThread1);
 }
