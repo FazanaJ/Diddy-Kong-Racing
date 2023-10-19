@@ -1732,6 +1732,13 @@ void obj_loop_vehicleanim(Object *obj, s32 updateRate) {
     Object_60_800380F8 *obj60;
     Object *someObj;
 
+    
+#ifdef CRASH_SCREEN_TEST
+    if (++obj->properties.common.unk0 >= 30) {
+        puppyprint_assert("Test Successful?");
+    }
+#endif
+
     func_8001F460(obj, updateRate, obj);
     obj60 = (Object_60_800380F8 *) obj->unk60;
     if (obj60 != NULL) {

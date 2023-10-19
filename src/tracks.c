@@ -973,7 +973,7 @@ void render_level_geometry_and_objects(Gfx **dList) {
     }
 
     if (numberOfSegments > LEVEL_SEGMENT_MAX) {
-        puppyprint_assert("numberOfSegments exceeds LEVEL_SEGMENT_MAX.");
+        puppyprint_assert("numberOfSegments exceeds LEVEL_SEGMENT_MAX. (%d > %d)", numberOfSegments, LEVEL_SEGMENT_MAX);
     }
 
     bzero(&objectsVisible[1], numberOfSegments - 1);

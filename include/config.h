@@ -53,7 +53,7 @@
 /* -----------------------Performance--------------------- */
 // These tweaks can be used to improve performance
 #define FIFO_UCODE                          // Allow usage of the faster FIFO microcode. Emulators will still use xbus. Requires 96KB memory to work.
-//#define FIFO_4MB                            // Allows non expansion pak users to use FIFO microcode.
+#define FIFO_4MB                            // Allows non expansion pak users to use FIFO microcode.
 #define TRIPLE_BUFFERING                    // Uses more memory, but provides a much smoother gameplay experience. You may struggle to fit this in 4MB.
 //#define NATIVE_RES_WIDESCREEN               // Uses native resolution widescreen. Looks better than anamorphic, but uses more memory and performance.
 #define SCREEN_WIDTH            320         // Default width is 320. Recommended to be 304 for 4MB users.
@@ -66,7 +66,7 @@
 // Optional USB stuff
 //#define ENABLE_USB                          // Allows for USB detection for flashcarts. Automatically set if PUPPYPRINT_DEBUG is defined.
 //#define SHOW_USB_INFO                       // Renders USB information on HUD.
-#define USB_HOT_RELOAD                      // Allows for quick reloading of game code.
+//#define USB_HOT_RELOAD                      // Allows for quick reloading of game code.
 
 
 // Don't touch any of this below.
@@ -87,6 +87,12 @@
 #endif
 
 #ifdef EXPANSION_PAK_REQUIRED
+#undef EXPANSION_PAK_SUPPORT
+#define EXPANSION_PAK_SUPPORT 1
+#endif
+
+#ifdef USB_HOT_RELOAD // Since code is padded to 1MB, it's best if we use the expansion pak here.
+#undef EXPANSION_PAK_SUPPORT
 #define EXPANSION_PAK_SUPPORT 1
 #endif
 

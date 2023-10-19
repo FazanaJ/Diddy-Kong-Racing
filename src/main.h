@@ -17,7 +17,7 @@
 #define OS_CYCLES_TO_USEC(c)	(((u32)(c)*(1000000/15625))/(OS_CPU_COUNTER/15625))
 
 extern u8 gAssert;
-extern char gAssertString[64];
+extern char gAssertString[127];
 
 void main(void);
 void thread1_main(void *);
@@ -313,6 +313,6 @@ extern u8 gShowHiddenObjects;
 int puppyprintf(char *dst, const char *fmt, ...);
 void crash_screen_init(void);
 void get_platform(void);
-void puppyprint_assert(char *str);
+void puppyprint_assert(char *str, ...);
 
 #endif

@@ -83,6 +83,7 @@ extern s8 gCutsceneCameraActive;
 extern Matrix gOrthoMatrixF;
 extern ObjectSegment gCameraSegment[8];
 extern MatrixS gProjectionMatrixS;
+extern s32 gModelMatrixStackPos;
 
 
 void func_80066060(s32 arg0, s32 arg1);

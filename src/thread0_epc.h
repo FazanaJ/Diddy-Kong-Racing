@@ -14,8 +14,17 @@ enum ObjectActions {
     CRASH_OBJ_RENDER,
 };
 
+enum CrashPages {
+    CRASH_PAGE_REGISTERS,
+    CRASH_PAGE_OBJECT,
+    CRASH_PAGE_LOG,
+    CRASH_PAGE_ASSERT,
+    CRASH_PAGE_NONE,
+    CRASH_PAGE_COUNT
+};
+
 #ifdef DETAILED_CRASH
-void set_crash_object(ObjectHeader *objectID, s32 act);
+void set_crash_object(Object *objectID, s32 act);
 #else
 #define set_crash_object(objectID, act)
 #endif

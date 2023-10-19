@@ -2217,7 +2217,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
     f32 stretch;
     s32 i;
     struct LevelObjectEntryCommon newObject;
-    set_crash_object(obj->segment.header, CRASH_OBJ_UPDATE);
+    set_crash_object(obj, CRASH_OBJ_UPDATE);
 
     gNumViewports = gNumberOfViewports + 1;
     gCurrentSurfaceType = SURFACE_DEFAULT;

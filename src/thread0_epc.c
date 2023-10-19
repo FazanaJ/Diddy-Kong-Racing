@@ -14,6 +14,7 @@
 #include "stdarg.h"
 #include "string.h"
 #include "video.h"
+#include "main.h"
 
 s32 _Printf(outfun prout, char *dst, const char *fmt, va_list args);
 
@@ -22,20 +23,36 @@ s32 _Printf(outfun prout, char *dst, const char *fmt, va_list args);
 
 u16 sCrashX;
 u16 sCrashY;
-ObjectHeader *sCrashObjID;
+Object *sCrashObjID;
 s16 sCrashObjAct;
+s16 sCrashScroll;
 u8 gAssert = 0;
-char gAssertString[64];
+u8 sCrashPage;
+u8 sCrashUpdate;
+char gAssertString[127];
 char *sObjectStrings[] = {
     "INIT",
     "LOOP",
     "DRAW"
 };
 
-void puppyprint_assert(char *str) {
-    s32 len = strlen(str);
-    gAssert = 1;
-    memcpy(&gAssertString, str, len);
+static inline char *write_to_buf(char *buffer, const char *data, size_t size) {
+    return (char *) (memcpy(buffer, data, size) + size);
+}
+
+void puppyprint_assert(char *str, ...) {
+    char textBytes[127];
+    va_list arguments;
+    gAssert = TRUE;
+    
+    bzero(textBytes, sizeof(textBytes));
+    va_start(arguments, str);
+    if ((_Printf(write_to_buf, textBytes, str, arguments)) <= 0) {
+        va_end(arguments);
+        return;
+    }
+    memcpy(gAssertString, textBytes, sizeof(textBytes));
+    va_end(arguments);
     *(volatile int *) 0 = 0;
 }
 
@@ -201,10 +218,6 @@ void crash_screen_draw_glyph(s32 x, s32 y, s32 glyph) {
     }
 }
 
-static char *write_to_buf(char *buffer, const char *data, size_t size) {
-    return (char *) memcpy(buffer, data, size) + size;
-}
-
 void crash_screen_sleep(s32 ms) {
     u32 cycles = ms * 1000 * osClockRate / 1000000U;
     osSetTime(0);
@@ -240,7 +253,7 @@ void crash_screen_print_float_reg(s32 x, s32 y, s32 regNum, void *addr) {
     bits = *(u32 *) addr;
     exponent = ((bits & 0x7f800000U) >> 0x17) - 0x7f;
     if ((exponent >= -0x7e && exponent <= 0x7f) || bits == 0) {
-        crash_screen_print(x, y, "F%02d:%.3e", regNum, (f64) *(f32 *) addr);
+        crash_screen_print(x, y, "F%02d:%2.4f", regNum, (f64) *(f32 *) addr);
     } else {
         crash_screen_print(x, y, "F%02d:---------", regNum);
     }
@@ -261,74 +274,150 @@ void crash_screen_print_fpcsr(u32 fpcsr) {
     }
 }
 
-void draw_crash_screen(OSThread *thread) {
-    s16 cause;
-    s32 screenAdd = 0;
+void crash_page_registers(OSThread *thread) {
+    s32 cause;
     __OSThreadContext *tc = &thread->context;
 
-    cause = (tc->cause >> 2) & 0x1f;
-    if (cause == 23) // EXC_WATCH
-    {
+    cause = (tc->cause >> 2) & 0x1F;
+    if (cause == 23) { // EXC_WATCH
         cause = 16;
-    }
-    if (cause == 31) // EXC_VCED
-    {
+    } else if (cause == 31) { // EXC_VCED
         cause = 17;
     }
+    crash_screen_draw_rect(sCrashX, sCrashY, 270, 205);
+    crash_screen_print(sCrashX + 10, sCrashY + 5, "THREAD:%d  (%s)", thread->id, gCauseDesc[cause]);
+    crash_screen_print(sCrashX + 10, sCrashY + 15, "PC:%08XH   SR:%08XH   VA:%08XH", tc->pc, tc->sr, tc->badvaddr);
+    crash_screen_print(sCrashX + 10, sCrashY + 30, "AT:%08XH   V0:%08XH   V1:%08XH", (u32) tc->at, (u32) tc->v0, (u32) tc->v1);
+    crash_screen_print(sCrashX + 10, sCrashY + 40, "A0:%08XH   A1:%08XH   A2:%08XH", (u32) tc->a0, (u32) tc->a1, (u32) tc->a2);
+    crash_screen_print(sCrashX + 10, sCrashY + 50, "A3:%08XH   T0:%08XH   T1:%08XH", (u32) tc->a3, (u32) tc->t0, (u32) tc->t1);
+    crash_screen_print(sCrashX + 10, sCrashY + 60, "T2:%08XH   T3:%08XH   T4:%08XH", (u32) tc->t2, (u32) tc->t3, (u32) tc->t4);
+    crash_screen_print(sCrashX + 10, sCrashY + 70, "T5:%08XH   T6:%08XH   T7:%08XH", (u32) tc->t5, (u32) tc->t6, (u32) tc->t7);
+    crash_screen_print(sCrashX + 10, sCrashY + 80, "S0:%08XH   S1:%08XH   S2:%08XH", (u32) tc->s0, (u32) tc->s1, (u32) tc->s2);
+    crash_screen_print(sCrashX + 10, sCrashY + 90, "S3:%08XH   S4:%08XH   S5:%08XH", (u32) tc->s3, (u32) tc->s4, (u32) tc->s5);
+    crash_screen_print(sCrashX + 10, sCrashY + 100, "S6:%08XH   S7:%08XH   T8:%08XH", (u32) tc->s6, (u32) tc->s7, (u32) tc->t8);
+    crash_screen_print(sCrashX + 10, sCrashY + 110, "T9:%08XH   GP:%08XH   SP:%08XH", (u32) tc->t9, (u32) tc->gp, (u32) tc->sp);
+    crash_screen_print(sCrashX + 10, sCrashY + 120, "S8:%08XH   RA:%08XH", (u32) tc->s8, (u32) tc->ra);
+    crash_screen_print_fpcsr(tc->fpcsr);
+    crash_screen_print_float_reg(sCrashX + 10, sCrashY + 145, 0, &tc->fp0.f.f_even);
+    crash_screen_print_float_reg(sCrashX + 100, sCrashY + 145, 2, &tc->fp2.f.f_even);
+    crash_screen_print_float_reg(sCrashX + 190, sCrashY + 145, 4, &tc->fp4.f.f_even);
+    crash_screen_print_float_reg(sCrashX + 10, sCrashY + 155, 6, &tc->fp6.f.f_even);
+    crash_screen_print_float_reg(sCrashX + 100, sCrashY + 155, 8, &tc->fp8.f.f_even);
+    crash_screen_print_float_reg(sCrashX + 190, sCrashY + 155, 10, &tc->fp10.f.f_even);
+    crash_screen_print_float_reg(sCrashX + 10, sCrashY + 165, 12, &tc->fp12.f.f_even);
+    crash_screen_print_float_reg(sCrashX + 100, sCrashY + 165, 14, &tc->fp14.f.f_even);
+    crash_screen_print_float_reg(sCrashX + 190, sCrashY + 165, 16, &tc->fp16.f.f_even);
+    crash_screen_print_float_reg(sCrashX + 10, sCrashY + 175, 18, &tc->fp18.f.f_even);
+    crash_screen_print_float_reg(sCrashX + 100, sCrashY + 175, 20, &tc->fp20.f.f_even);
+    crash_screen_print_float_reg(sCrashX + 190, sCrashY + 175, 22, &tc->fp22.f.f_even);
+    crash_screen_print_float_reg(sCrashX + 10, sCrashY + 185, 24, &tc->fp24.f.f_even);
+    crash_screen_print_float_reg(sCrashX + 100, sCrashY + 185, 26, &tc->fp26.f.f_even);
+    crash_screen_print_float_reg(sCrashX + 190, sCrashY + 185, 28, &tc->fp28.f.f_even);
+    crash_screen_print_float_reg(sCrashX + 10, sCrashY + 195, 30, &tc->fp30.f.f_even);
+}
 
-    crash_screen_sleep(75);
-
-    if (sCrashObjID != NULL) {
-        screenAdd = 10;
+#ifdef DETAILED_CRASH
+void crash_page_object(void) {
+    crash_screen_draw_rect(sCrashX, sCrashY, 270, 205);
+    if (sCrashObjID) {
+        Object *o = sCrashObjID;
+        crash_screen_print(sCrashX + 10, sCrashY + 5, "OBJ: %s (ID: %d) DURING %s", o->segment.header->internalName, o->behaviorId, sObjectStrings[sCrashObjAct - 1]);
+        crash_screen_print(sCrashX + 10, sCrashY + 15, "X: %2.2f, Y: %2.2f, Z: %2.2f", 
+                            (f64) o->segment.trans.x_position, (f64) o->segment.trans.y_position, (f64) o->segment.trans.z_position);
+        crash_screen_print(sCrashX + 10, sCrashY + 25, "Y: 0x%X, P: 0x%X, R: 0x%X", 
+                            (u16) o->segment.trans.y_rotation, (u16) o->segment.trans.x_rotation,  (u16) o->segment.trans.z_rotation);
+        crash_screen_print(sCrashX + 10, sCrashY + 35, "FLAGS: %X, SCALE: %2.3f", o->segment.trans.flags, (f64) o->segment.trans.scale);
+        crash_screen_print(sCrashX + 10, sCrashY + 50, "MTX POS: %d", gModelMatrixStackPos);
+    } else {
+        crash_screen_print(sCrashX + 10, sCrashY + 5, "NO EXTRA INFORMATION");
     }
+}
+
+ #ifdef PUPPYPRINT_DEBUG
+void crash_page_log(void) {
+    s32 i;
+    s32 y = 0;
+    crash_screen_draw_rect(sCrashX, sCrashY, 270, 205);
+    for (i = NUM_LOG_LINES; i > 0; i--) {
+        if (gPuppyPrint.logText[i][0] == NULL) {
+            continue;
+        }
+        crash_screen_print(sCrashX + 10, sCrashY + 5 + y, "%s", gPuppyPrint.logText[i]);
+        y += 10;
+    }
+}
+ #endif
+#endif
+
+void crash_page_assert(void) {
+    crash_screen_draw_rect(sCrashX, sCrashY, 270, 205);
+    if (gAssert) {
+        crash_screen_print(sCrashX + 10, sCrashY + 5, "ASSERT TRIPPED");
+        crash_screen_print(sCrashX + 10, sCrashY + 20, gAssertString);
+    } else {
+        crash_screen_print(sCrashX + 10, sCrashY + 5, "NO ASSERT TO REPORT");
+    }
+}
+
+#ifdef DETAILED_CRASH
+void crash_screen_input(void) {
+    s32 i;
+    for (i = 0; i < 4; i++) {
+        if (get_buttons_pressed_from_player(i) & (Z_TRIG | L_TRIG)) {
+            sCrashPage--;
+            if (sCrashPage == 255) {
+                sCrashPage = CRASH_PAGE_COUNT - 1;
+            }
+            sCrashUpdate = TRUE;
+        } else if (get_buttons_pressed_from_player(i) & R_TRIG) {
+            sCrashPage++;
+            if (sCrashPage >= CRASH_PAGE_COUNT) {
+                sCrashPage = 0;
+            }
+            sCrashUpdate = TRUE;
+        }
+    }
+}
+#endif
+
+void draw_crash_screen(OSThread *thread) {
+#ifdef DETAILED_CRASH
+    crash_screen_input();
+#endif
+
+    if (sCrashUpdate == FALSE) {
+        return;
+    }
+
+    memcpy(gCrashScreen.framebuffer, gVideoLastFramebuffer, (gScreenWidth * gScreenHeight) * 2);
 
     sCrashX = (SCREEN_WIDTH - 270) / 2;
     sCrashY = (SCREEN_HEIGHT - 205) / 2;
-    crash_screen_draw_rect(sCrashX, sCrashY - screenAdd, 270, 205 + screenAdd);
-    crash_screen_print(sCrashX + 10, sCrashY + 5, "THREAD:%d  (%s)", thread->id, gCauseDesc[cause]);
-    crash_screen_print(sCrashX + 10, sCrashY + 15, "PC:%08XH   SR:%08XH   VA:%08XH", tc->pc, tc->sr, tc->badvaddr);
-    osWritebackDCacheAll();
-    if (sCrashObjID != NULL) {
-        crash_screen_print(sCrashX + 10, sCrashY - 5, "OBJ:%s during %s", sCrashObjID->internalName, sObjectStrings[sCrashObjAct - 1]);
+
+    switch (sCrashPage) {
+    case CRASH_PAGE_REGISTERS:
+        crash_page_registers(thread);
+        break;
+    case CRASH_PAGE_ASSERT:
+        crash_page_assert();
+        break;
+#ifdef DETAILED_CRASH
+    case CRASH_PAGE_OBJECT:
+        crash_page_object();
+        break;
+ #ifdef PUPPYPRINT_DEBUG
+    case CRASH_PAGE_LOG:
+        crash_page_log();
+        break;
+ #endif
+#endif
     }
-    if (!gAssert) {
-        crash_screen_print(sCrashX + 10, sCrashY + 30, "AT:%08XH   V0:%08XH   V1:%08XH", (u32) tc->at, (u32) tc->v0, (u32) tc->v1);
-        crash_screen_print(sCrashX + 10, sCrashY + 40, "A0:%08XH   A1:%08XH   A2:%08XH", (u32) tc->a0, (u32) tc->a1, (u32) tc->a2);
-        crash_screen_print(sCrashX + 10, sCrashY + 50, "A3:%08XH   T0:%08XH   T1:%08XH", (u32) tc->a3, (u32) tc->t0, (u32) tc->t1);
-        crash_screen_print(sCrashX + 10, sCrashY + 60, "T2:%08XH   T3:%08XH   T4:%08XH", (u32) tc->t2, (u32) tc->t3, (u32) tc->t4);
-        crash_screen_print(sCrashX + 10, sCrashY + 70, "T5:%08XH   T6:%08XH   T7:%08XH", (u32) tc->t5, (u32) tc->t6, (u32) tc->t7);
-        crash_screen_print(sCrashX + 10, sCrashY + 80, "S0:%08XH   S1:%08XH   S2:%08XH", (u32) tc->s0, (u32) tc->s1, (u32) tc->s2);
-        crash_screen_print(sCrashX + 10, sCrashY + 90, "S3:%08XH   S4:%08XH   S5:%08XH", (u32) tc->s3, (u32) tc->s4, (u32) tc->s5);
-        crash_screen_print(sCrashX + 10, sCrashY + 100, "S6:%08XH   S7:%08XH   T8:%08XH", (u32) tc->s6, (u32) tc->s7, (u32) tc->t8);
-        crash_screen_print(sCrashX + 10, sCrashY + 110, "T9:%08XH   GP:%08XH   SP:%08XH", (u32) tc->t9, (u32) tc->gp, (u32) tc->sp);
-        crash_screen_print(sCrashX + 10, sCrashY + 120, "S8:%08XH   RA:%08XH", (u32) tc->s8, (u32) tc->ra);
-        crash_screen_print_fpcsr(tc->fpcsr);
-        osWritebackDCacheAll();
-        crash_screen_print_float_reg(sCrashX + 10, sCrashY + 145, 0, &tc->fp0.f.f_even);
-        crash_screen_print_float_reg(sCrashX + 100, sCrashY + 145, 2, &tc->fp2.f.f_even);
-        crash_screen_print_float_reg(sCrashX + 190, sCrashY + 145, 4, &tc->fp4.f.f_even);
-        crash_screen_print_float_reg(sCrashX + 10, sCrashY + 155, 6, &tc->fp6.f.f_even);
-        crash_screen_print_float_reg(sCrashX + 100, sCrashY + 155, 8, &tc->fp8.f.f_even);
-        crash_screen_print_float_reg(sCrashX + 190, sCrashY + 155, 10, &tc->fp10.f.f_even);
-        crash_screen_print_float_reg(sCrashX + 10, sCrashY + 165, 12, &tc->fp12.f.f_even);
-        crash_screen_print_float_reg(sCrashX + 100, sCrashY + 165, 14, &tc->fp14.f.f_even);
-        crash_screen_print_float_reg(sCrashX + 190, sCrashY + 165, 16, &tc->fp16.f.f_even);
-        crash_screen_print_float_reg(sCrashX + 10, sCrashY + 175, 18, &tc->fp18.f.f_even);
-        crash_screen_print_float_reg(sCrashX + 100, sCrashY + 175, 20, &tc->fp20.f.f_even);
-        crash_screen_print_float_reg(sCrashX + 190, sCrashY + 175, 22, &tc->fp22.f.f_even);
-        crash_screen_print_float_reg(sCrashX + 10, sCrashY + 185, 24, &tc->fp24.f.f_even);
-        crash_screen_print_float_reg(sCrashX + 100, sCrashY + 185, 26, &tc->fp26.f.f_even);
-        crash_screen_print_float_reg(sCrashX + 190, sCrashY + 185, 28, &tc->fp28.f.f_even);
-        crash_screen_print_float_reg(sCrashX + 10, sCrashY + 195, 30, &tc->fp30.f.f_even);
-    } else {
-        crash_screen_print(sCrashX + 10, sCrashY + 30, "Assert tripped");
-        crash_screen_print(sCrashX + 10, sCrashY + 45, gAssertString);
-        crash_screen_print(sCrashX + 10, sCrashY + 120, "RA:%08XH", (u32) tc->ra);
-    }
+
     osWritebackDCacheAll();
     osViBlack(FALSE);
     change_vi(&gGlobalVI, SCREEN_WIDTH, SCREEN_HEIGHT);
     osViSwapBuffer(gCrashScreen.framebuffer);
+    sCrashUpdate = FALSE;
 }
 
 extern OSThread *__osFaultedThread;
@@ -360,15 +449,19 @@ void thread2_crash_screen(UNUSED void *arg) {
         }
         thread = get_crashed_thread();
     } while (thread == NULL);
-    draw_crash_screen(thread);
-    for (;;) {
+    if (gAssert) {
+        sCrashPage = CRASH_PAGE_ASSERT;
     }
-}
-
-void crash_screen_set_framebuffer(u16 *framebuffer, s16 width, s16 height) {
-    gCrashScreen.framebuffer = framebuffer;
-    gCrashScreen.width = width;
-    gCrashScreen.height = height;
+    sCrashUpdate = TRUE;
+    memcpy(gVideoLastFramebuffer, gVideoCurrFramebuffer, (gScreenWidth * gScreenHeight) * 2);
+    gCrashScreen.thread.priority = 11;
+    play_sound_global(SOUND_VOICE_BANJO_WOAH, NULL);
+    play_music(SEQUENCE_NONE);
+    crash_screen_sleep(75);
+    while (TRUE) {
+        handle_save_data_and_read_controller(0, LOGIC_30FPS);
+        draw_crash_screen(thread);
+    }
 }
 
 void crash_screen_init(void) {
@@ -381,7 +474,7 @@ void crash_screen_init(void) {
 }
 
 #ifdef DETAILED_CRASH
-void set_crash_object(ObjectHeader *objectID, s32 act) {
+void set_crash_object(Object *objectID, s32 act) {
     sCrashObjID = objectID;
     sCrashObjAct = act;
 }

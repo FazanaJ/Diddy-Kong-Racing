@@ -294,10 +294,6 @@ void main_game_loop(void) {
         }
     }
 
-#ifdef CRASH_SCREEN_TEST
-    *(volatile int *) 0 = 0;
-#endif
-
     /*if (gConfig.antiAliasing == 1) {
         gOverrideTimer -= 40000;
         gOverrideTimer += MIN(OS_CYCLES_TO_USEC(sDeltaTime), 66666);

@@ -2696,7 +2696,7 @@ void func_80012CE8(Gfx **dlist) {
 */
 void render_object(Gfx **dList, MatrixS **mtx, Vertex **verts, Object *obj) {
     f32 scale;
-    set_crash_object(obj->segment.header, CRASH_OBJ_RENDER);
+    set_crash_object(obj, CRASH_OBJ_RENDER);
     if (obj->segment.trans.flags & (OBJ_FLAGS_INVISIBLE | OBJ_FLAGS_SHADOW_ONLY))
         return;
     gObjectCurrMatrix = *mtx;
@@ -5315,8 +5315,8 @@ s32 get_object_property_size(Object *obj, Object_64 *obj64) {
  * Arg2 is always zero. Effectively unused.
 */
 void run_object_init_func(Object *obj, void *entry, s32 param) {
-    set_crash_object(obj->segment.header, CRASH_OBJ_SPAWN);
     obj->behaviorId = obj->segment.header->behaviorId;
+    set_crash_object(obj, CRASH_OBJ_SPAWN);
     switch (obj->behaviorId) {
         case BHV_RACER:
             obj_init_racer(obj, (LevelObjectEntry_Racer *) entry);
@@ -5686,7 +5686,7 @@ s32 obj_init_property_flags(s32 behaviorId) {
 */
 void run_object_loop_func(Object *obj, s32 updateRate) {
     profiler_begin_timer();
-    set_crash_object(obj->segment.header, CRASH_OBJ_UPDATE);
+    set_crash_object(obj, CRASH_OBJ_UPDATE);
     switch (obj->behaviorId) {
         case BHV_SCENERY:
             obj_loop_scenery(obj, updateRate);
