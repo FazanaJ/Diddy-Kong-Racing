@@ -590,9 +590,10 @@ void puppyprint_render_memory(void) {
     set_text_colour(255, 255, 255, 255, 255);
     set_text_background_colour(0, 0, 0, 0);
     set_kerning(FALSE);
-    puppyprintf(textBytes, "Free 0x%X", TOTALRAM - gPuppyPrint.ramPools[MEMP_OVERALL] - gPuppyPrint.ramPools[MEMP_CODE]);
+    puppyprintf(textBytes, "Free 0x%06X, (%2.2f%%)", TOTALRAM - gPuppyPrint.ramPools[MEMP_OVERALL] - gPuppyPrint.ramPools[MEMP_CODE], 
+                                        (f64) (((f32) (TOTALRAM - gPuppyPrint.ramPools[MEMP_OVERALL] - gPuppyPrint.ramPools[MEMP_CODE]) / (f32) TOTALRAM) * 100.0f));
     draw_text(&gCurrDisplayList, gScreenWidth - 78, 8, textBytes, ALIGN_TOP_CENTER);
-    puppyprintf(textBytes, "Total 0x%X", TOTALRAM);
+    puppyprintf(textBytes, "Total 0x%06X", TOTALRAM);
     draw_text(&gCurrDisplayList, gScreenWidth - 78, 18, textBytes, ALIGN_TOP_CENTER);
     gDPSetScissor(gCurrDisplayList++, G_SC_NON_INTERLACE, gScreenWidth - 156, 32, gScreenWidth, gScreenHeight);
     for (i = 1; i < MEMP_TOTAL + 12; i++) {
