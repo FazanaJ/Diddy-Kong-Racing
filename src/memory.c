@@ -790,7 +790,6 @@ void draw_blank_box(s32 x1, s32 y1, s32 x2, s32 y2, u32 colour) {
 }
 
 #define TOTALRAM 0x400000
-extern u8 __ASSETS_LUT_START[];
 
 char *sPuppyprintMemColours[] = {
     "",
@@ -838,7 +837,7 @@ void render_ram_total(void) {
     set_text_colour(255, 255, 255, 255, 255);
     set_text_background_colour(0, 0, 0, 0);
     set_kerning(FALSE);
-    gRamPools[1] = (u32) &__ASSETS_LUT_START;
+    gRamPools[1] = (u32) &gMainMemoryPool - 0x80000000;
     puppyprintf(textBytes, "Free 0x%06X, (%2.2f%%)", TOTALRAM - gRamPools[0] - gRamPools[1], 
                                         (f64) (((f32) (TOTALRAM - gRamPools[0] - gRamPools[1]) / (f32) TOTALRAM) * 100.0f));
     draw_text(&gCurrDisplayList, SCREEN_WIDTH - 78, 8, textBytes, ALIGN_TOP_CENTER);
