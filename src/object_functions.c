@@ -2020,6 +2020,7 @@ void obj_loop_teleport(Object *obj, UNUSED s32 updateRate) {
 void obj_init_exit(Object *obj, LevelObjectEntry_Exit *entry) {
     f32 radius;
     Object_Exit *exit;
+    UNUSED Settings* settings;
 
     radius = entry->radius & 0xFF;
     if (radius < 5.0f) {
