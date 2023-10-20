@@ -98,5 +98,7 @@ s32 get_memory_colour_tag_count(u32 colourTag);
 void free_slot_containing_address(u8 *address);
 MemoryPoolSlot *allocate_from_memory_pool(s32 memoryPoolIndex, s32 size, u32 colourTag);
 void *allocate_at_address_in_main_pool(s32 size, u8 *address, u32 colourTag);
+void calculate_ram_total(s32 poolIndex, u32 colourTag);
+void render_ram_total(void);
 
 #endif

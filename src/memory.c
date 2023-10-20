@@ -5,6 +5,9 @@
 #include "printf.h"
 #include "thread0_epc.h"
 #include "controller.h"
+#include "camera.h"
+#include "string.h"
+#include "lib/src/libc/xprintf.h"
 
 /************ .bss ************/
 
@@ -434,6 +437,7 @@ void free_memory_pool_slot(s32 poolIndex, s32 slotIndex) {
     MemoryPoolSlot *slot;
     MemoryPoolSlot *nextSlot;
     MemoryPoolSlot *prevSlot;
+    u32 colourTag;
     
     pool = &gMemoryPools[poolIndex];
     slots = pool->slots;
@@ -445,6 +449,7 @@ void free_memory_pool_slot(s32 poolIndex, s32 slotIndex) {
     nextSlot = &slots[nextIndex];
     prevSlot = &slots[prevIndex];
     slot->flags = 0;
+    colourTag = slot->colourTag;
     if (nextIndex != -1) {
         if (nextSlot->flags == 0) {
             slot->size += nextSlot->size;
@@ -469,6 +474,7 @@ void free_memory_pool_slot(s32 poolIndex, s32 slotIndex) {
             slots[pool->curNumSlots].index = slotIndex;
         }
     }
+    calculate_ram_total(poolIndex, colourTag);
 }
 
 /**
@@ -510,6 +516,7 @@ s32 allocate_memory_pool_slot(s32 poolIndex, s32 slotIndex, s32 size, s32 slotIs
         poolSlots[index].prevIndex = slotIndex;
         poolSlots[index].nextIndex = nextIndex;
         poolSlots[slotIndex].nextIndex = index;
+        calculate_ram_total(poolIndex, colourTag);
         if (nextIndex != -1) {
             poolSlots[nextIndex].prevIndex = index;
         }
@@ -702,4 +709,155 @@ UNUSED void func_80071CE8(void) {
     for (i = gNumberOfMemoryPools; i != -1; i--) {
         // Nothing here. There might've been a printf or something similar.
     }
+}
+
+u32 gRamPools[16];
+
+void calculate_ram_total(s32 poolIndex, u32 colourTag) {
+    s32 index;
+    MemoryPoolSlot *slots;
+    MemoryPoolSlot *curSlot;
+    s32 i;
+
+    switch (colourTag) {
+    case COLOUR_TAG_RED:
+        index = 2;
+        break;
+    case COLOUR_TAG_BLACK:
+        index = 3;
+        break;
+    case COLOUR_TAG_CYAN:
+        index = 4;
+        break;
+    case COLOUR_TAG_GREEN:
+        index = 5;
+        break;
+    case COLOUR_TAG_GREY:
+        index = 6;
+        break;
+    case COLOUR_TAG_MAGENTA:
+        index = 7;
+        break;
+    case COLOUR_TAG_SEMITRANS_GREY:
+        index = 8;
+        break;
+    case COLOUR_TAG_WHITE:
+        index = 9;
+        break;
+    case COLOUR_TAG_YELLOW:
+        index = 10;
+        break;
+    case COLOUR_TAG_ORANGE:
+        index = 11;
+        break;
+    case COLOUR_TAG_BLUE:
+        index = 12;
+        break;
+    default:
+        return;
+    }
+
+    slots = gMemoryPools[poolIndex].slots;
+    gRamPools[0] -= gRamPools[index];
+    gRamPools[index] = 0;
+
+    for (i = 0; i != -1; i = curSlot->nextIndex) {
+        curSlot = &slots[i];
+        if (curSlot->flags != 0 && curSlot->colourTag == colourTag) {
+            gRamPools[index] += curSlot->size;
+            gRamPools[0] += curSlot->size;
+        }
+    }
+}
+
+extern Gfx *gCurrDisplayList;
+
+void draw_blank_box(s32 x1, s32 y1, s32 x2, s32 y2, u32 colour) {
+    gDPSetCombineMode(gCurrDisplayList++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
+    gDPSetPrimColor(gCurrDisplayList++, 0, 0, (colour << 24) & 0xFF, (colour << 16) & 0xFF, (colour << 8) & 0xFF, (colour) & 0xFF);
+    gDPPipeSync(gCurrDisplayList++);
+    if (x1 < 0) x1 = 0;
+    if (y1 < 0) y1 = 0;
+    if (x2 > SCREEN_WIDTH) x2 = SCREEN_WIDTH;
+    if (y2 > SCREEN_HEIGHT) y2 = SCREEN_HEIGHT;
+    if ((colour & 0xFF) == 255) {
+        gDPSetRenderMode(gCurrDisplayList++, G_RM_OPA_SURF, G_RM_OPA_SURF2);
+    } else {
+        gDPSetRenderMode(gCurrDisplayList++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
+    }
+    gDPSetCycleType(gCurrDisplayList++, G_CYC_1CYCLE);
+    gDPFillRectangle(gCurrDisplayList++, x1, y1, x2, y2);
+}
+
+#define TOTALRAM 0x400000
+extern u8 __ASSETS_LUT_START[];
+
+char *sPuppyprintMemColours[] = {
+    "",
+    "Code",
+    "Red",
+    "Black",
+    "Cyan",
+    "Green",
+    "GREY",
+    "MAGENTA",
+    "GREYXLU",
+    "WHITE",
+    "YELLOW",
+    "ORANGE",
+    "BLUE"
+};
+
+s32 _Printf(outfun prout, char *dst, const char *fmt, va_list args);
+
+static char *proutSprintf(char *dst, const char *src, size_t count) {
+    return (char *)memcpy((u8 *)dst, (u8 *)src, count) + count;
+}
+
+int puppyprintf(char *dst, const char *fmt, ...) {
+    s32 ans;
+    va_list ap;
+    va_start(ap, fmt);
+    ans = _Printf(proutSprintf, dst, fmt, ap);
+    if (ans >= 0)
+    {
+        dst[ans] = 0;
+    }
+    return ans; 
+}
+
+void render_ram_total(void) {
+    char textBytes[24];
+    s32 y;
+    u32 i;
+
+    y = 36;
+    draw_blank_box(SCREEN_WIDTH - 160, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0x00000064);
+    gDPPipeSync(gCurrDisplayList++);
+    set_text_font(ASSET_FONTS_SMALLFONT);
+    set_text_colour(255, 255, 255, 255, 255);
+    set_text_background_colour(0, 0, 0, 0);
+    set_kerning(FALSE);
+    gRamPools[1] = (u32) &__ASSETS_LUT_START;
+    puppyprintf(textBytes, "Free 0x%06X, (%2.2f%%)", TOTALRAM - gRamPools[0] - gRamPools[1], 
+                                        (f64) (((f32) (TOTALRAM - gRamPools[0] - gRamPools[1]) / (f32) TOTALRAM) * 100.0f));
+    draw_text(&gCurrDisplayList, SCREEN_WIDTH - 78, 8, textBytes, ALIGN_TOP_CENTER);
+    puppyprintf(textBytes, "Total 0x%06X", TOTALRAM);
+    draw_text(&gCurrDisplayList, SCREEN_WIDTH - 78, 18, textBytes, ALIGN_TOP_CENTER);
+    gDPSetScissor(gCurrDisplayList++, G_SC_NON_INTERLACE, SCREEN_WIDTH - 156, 32, SCREEN_WIDTH, SCREEN_HEIGHT);
+    for (i = 1; i < 16; i++) {
+        if (gRamPools[i] == 0) {
+            continue;
+        }
+        if (y < 24 || y > SCREEN_HEIGHT) {
+            y += 10;
+            continue;
+        }
+        draw_text(&gCurrDisplayList, SCREEN_WIDTH - 156, y, sPuppyprintMemColours[i], ALIGN_TOP_LEFT);
+        puppyprintf(textBytes,  "0x%X (%2.2f%%)", gRamPools[i], 
+                    (f64) (((f32) gRamPools[i] / (f32) TOTALRAM) * 100.0f));
+        draw_text(&gCurrDisplayList, SCREEN_WIDTH - 88, y, textBytes, ALIGN_TOP_LEFT);
+        y += 10;
+    }
+    gDPSetScissor(gCurrDisplayList++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 }

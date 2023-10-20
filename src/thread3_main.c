@@ -304,6 +304,8 @@ void main_game_loop(void) {
     // This is a good spot to place custom text if you want it to overlay it over ALL the
     // menus & gameplay.
 
+    render_ram_total();
+
     handle_music_fade(sLogicUpdateRate);
     print_debug_strings(&gCurrDisplayList);
     render_dialogue_boxes(&gCurrDisplayList, &gGameCurrMatrix, &gGameCurrVertexList);
