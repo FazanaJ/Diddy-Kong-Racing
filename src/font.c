@@ -156,6 +156,7 @@ void set_kerning(s32 setting) {
  * This is required before any text using this font can be displayed in a scene.
 */
 void load_font(s32 fontID) {
+    set_texture_colour_tag(MEMP_TEXT);
     if (fontID < gNumberOfFonts) {
         FontData *fontData = &gFonts[fontID];
         fontData->loadedFonts[0]++;
@@ -167,6 +168,7 @@ void load_font(s32 fontID) {
             }
         }
     }
+    set_texture_colour_tag(MEMP_MISC_TEXTURES);
 }
 
 /**

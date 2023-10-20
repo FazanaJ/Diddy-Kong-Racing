@@ -192,7 +192,9 @@ void init_weather(void) {
     D_800E2A84 = TRUE;
     D_800E2A88 = 0;
     if (D_800E291C == NULL) {
+        gAssetColourTag = MEMP_WEATHER;
         D_800E291C = (s32 *)load_asset_section_from_rom(ASSET_WEATHER_PARTICLES);
+        gAssetColourTag = COLOUR_TAG_GREY;
         D_800E2920 = 0;
         while ((s32)D_800E291C[D_800E2920] != -1) {
             D_800E2920++;
@@ -270,7 +272,9 @@ void func_800ABB34(void) {
         phi_s1 += temp_v0;
     }
 
+    set_texture_colour_tag(MEMP_WEATHER);
     D_800E28D8.unk8 = load_texture(*D_800E291C);
+    set_texture_colour_tag(MEMP_MISC_TEXTURES);
 }
 
 

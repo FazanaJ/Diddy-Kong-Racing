@@ -199,10 +199,12 @@ void func_800B4A08(s32 arg0) {
 GLOBAL_ASM("asm/non_matchings/printf/vsprintf.s")
 
 void diPrintfInit(void) {
+    set_texture_colour_tag(MEMP_TEXT);
     gTexture[0] = load_texture(0);
     gTexture[1] = load_texture(1);
     gTexture[2] = load_texture(2);
     gDebugPrintBufferEnd = gDebugPrintBufferStart;
+    set_texture_colour_tag(MEMP_MISC_TEXTURES);
 }
 
 //Official Name: diPrintf

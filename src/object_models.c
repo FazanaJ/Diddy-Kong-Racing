@@ -39,6 +39,7 @@ void allocate_object_model_pools(void) {
     UNUSED s32 i;
     UNUSED s32 checksum;
 
+    gAssetColourTag = MEMP_OBJECT_MODELS;
     D_8011D624 = allocate_from_main_pool_safe(0x230, MEMP_OBJECT_MODELS);
     D_8011D628 = allocate_from_main_pool_safe(0x190, MEMP_OBJECT_MODELS);
     D_8011D62C = 0;
@@ -53,6 +54,7 @@ void allocate_object_model_pools(void) {
     gObjectAnimationTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_ANIMATIONS_TABLE);
     D_8011D644 = (s32) allocate_from_main_pool_safe(0xC00, MEMP_OBJECT_MODELS);
     D_8011D640 = 0;
+    gAssetColourTag = COLOUR_TAG_GREY;
 
 #ifndef NO_ANTIPIRACY
     // Antipiracy measure
@@ -127,12 +129,14 @@ Object_68 *func_8005F99C(s32 arg0, s32 arg1) {
     objMdl->numberOfAnimations = 0;
     objMdl->animations = NULL;
     sp3F = 0;
+    set_texture_colour_tag(MEMP_OBJECT_TEXTURES);
     for (i = 0; i < objMdl->numberOfTextures; i++) {
         objMdl->textures[i].texture = load_texture(((s32) objMdl->textures[i].texture) | 0x8000);
         if (objMdl->textures[i].texture == NULL) {
             sp3F = 1;
         }
     }
+    set_texture_colour_tag(MEMP_MISC_TEXTURES);
     if (!sp3F) {
         for(i = 0; i < objMdl->numberOfBatches; i++) {
             if ((objMdl->batches[i].textureIndex != 0xFF) && (objMdl->batches[i].textureIndex >= objMdl->numberOfTextures)) {

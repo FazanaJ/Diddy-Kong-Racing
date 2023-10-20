@@ -300,6 +300,8 @@ void init_hud(UNUSED s32 viewportCount) {
     s32 i;
     s32 playerCount;
 
+    set_texture_colour_tag(MEMP_HUD);
+    gAssetColourTag = MEMP_HUD;
     gHUDNumPlayers = get_viewport_count();
     gNumActivePlayers = set_active_viewports_and_max(gHUDNumPlayers);
     gHudSettings = get_settings();
@@ -317,6 +319,7 @@ void init_hud(UNUSED s32 viewportCount) {
         gAssetHudElementStaleCounter[i] = 0;
         gAssetHudElements->entry[i] = NULL;
     }
+
     gAssetHudElements->entry[HUD_ELEMENT_UNK_01] = func_8007C12C(gAssetHudElementIds[HUD_ELEMENT_UNK_01] & 0x3FFF, 1); //ID: 86 - 0x56
     gAssetHudElements->entry[HUD_ELEMENT_UNK_17] = func_8007C12C(gAssetHudElementIds[HUD_ELEMENT_UNK_17] & 0x3FFF, 1); //ID: 291 - 0x123
     gAssetHudElements->entry[HUD_ELEMENT_UNK_08] = func_8007C12C(gAssetHudElementIds[HUD_ELEMENT_UNK_08] & 0x3FFF, 1); //ID: 156 - 0x9C
@@ -357,6 +360,8 @@ void init_hud(UNUSED s32 viewportCount) {
             func_8000488C(D_800E2770[i].unk4);
         }
     }
+    gAssetColourTag = COLOUR_TAG_GREY;
+    set_texture_colour_tag(MEMP_MISC_TEXTURES);
 }
 
 GLOBAL_ASM("asm/non_matchings/game_ui/func_8009F034.s")

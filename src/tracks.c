@@ -209,7 +209,7 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
 
     gWaveBlockCount = 0;
     
-    if (numberOfPlayers < 2) {
+    if (numberOfPlayers < 2 && !gConfig.perfMode) {
         for (i = 0; i < gCurrentLevelModel->numberOfSegments; i++) {
             if (gCurrentLevelModel->segments[i].hasWaves != 0) {
                 gWaveBlockCount++;
@@ -267,6 +267,46 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
         D_8011B0E3 = gCurrentLevelHeader2->unkB6;
         func_80025510(numberOfPlayers + 1);
     }
+}
+
+u16 gFastBG[240];
+u8 gMakeBG = FALSE;
+
+f32 approach_f32_asymptotic(f32 current, f32 target, f32 multiplier) {
+    current = current + (target - current) * multiplier;
+    return current;
+}
+
+
+
+void render_fast_bg(Gfx **dList) {
+    if (gMakeBG) {
+        LevelHeader *h = gCurrentLevelHeader2;
+        u16 colour;
+        s32 i;
+        
+        for (i = 0; i < 240; i++) {
+            f32 index = (f32) ((f32) i / 240.0f);
+            
+            colour =  GPACK_RGBA5551(((s32) approach_f32_asymptotic(h->unkBE, h->unkC1, index)), 
+                                     ((s32) approach_f32_asymptotic(h->unkBF, h->unkC2, index)), 
+                                     ((s32) approach_f32_asymptotic(h->unkC0, h->unkC3, index)), 1);
+            gFastBG[i] = colour;
+        }
+        gMakeBG = FALSE;
+    }
+
+    gDPPipeSync((*dList)++);
+    gDPSetRenderMode((*dList)++, G_RM_NOOP, G_RM_NOOP2);
+    gDPSetCycleType((*dList)++, G_CYC_COPY);
+	gDPSetTextureImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, 240, gFastBG);
+	gDPSetTile((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, 60, 0, 7, 0, G_TX_WRAP | G_TX_NOMIRROR, 0, 0, G_TX_WRAP | G_TX_NOMIRROR, 0, 0);
+	gDPLoadTile((*dList)++, 7, 0, 0, 956, 0);
+	gDPSetTile((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, 60, 0, 0, 0, G_TX_CLAMP | G_TX_NOMIRROR, 0, 0, G_TX_CLAMP | G_TX_NOMIRROR, 8, 0);
+	gDPSetTileSize((*dList)++, 0, 0, 0, 956, 0);
+    gDPPipeSync((*dList)++);
+    gSPTextureRectangleFlip((*dList)++, 0, 0, (gScreenWidth - 1) << 2, (gScreenHeight - 1) << 2, G_TX_RENDERTILE, 0, 0, 4 << 10, 1 << 10);
+    gDPPipeSync((*dList)++);
 }
 
 /**
@@ -362,7 +402,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
         func_80066CDC(dList, &gSceneCurrMatrix);
         func_8002A31C();
         // Show detailed skydome in single player.
-        if (numViewports < 2 || gSkipCutbacks) {
+        if ((numViewports < 2 || gSkipCutbacks) && !gConfig.perfMode) {
             func_80068408(dList, &gSceneCurrMatrix);
             if (gCurrentLevelHeader2->skyDome == -1) {
                 gSceneCurrDisplayList = *dList;
@@ -375,6 +415,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
             func_8006807C(dList, &gSceneCurrMatrix);
             draw_gradient_background(dList);
             func_80067D3C(dList, &gSceneCurrMatrix);
+            //render_fast_bg(dList);
             func_80068408(dList, &gSceneCurrMatrix);
         }
         gDPPipeSync((*dList)++);
@@ -382,7 +423,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
         profiler_reset_timer();
         set_weather_limits(-1, -512);
         // Show weather effects in single player.
-        if (gCurrentLevelHeader2->weatherEnable > 0 && numViewports < 2) {
+        if (gCurrentLevelHeader2->weatherEnable > 0 && numViewports < 2 && !gConfig.perfMode) {
             process_weather(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, &gSceneCurrTriList, tempUpdateRate);
         }
         profiler_add(PP_WEATHER, first);
@@ -1189,7 +1230,7 @@ void render_level_segment(Gfx **dList, s32 segmentId, s32 nonOpaque) {
     s32 textureFlags;
     numberVertices = (batchInfo + 1)->verticesOffset - batchInfo->verticesOffset;
     segment = &gCurrentLevelModel->segments[segmentId];
-    if (gScenePlayerViewports < VIEWPORTS_COUNT_2_PLAYERS) {
+    if (gScenePlayerViewports < VIEWPORTS_COUNT_2_PLAYERS && !gConfig.perfMode) {
         sp78 = (nonOpaque && gWaveBlockCount) ? (func_800B9228(segment)) : (0);
     } else {
         sp78 = 0;
@@ -1904,6 +1945,7 @@ void free_track(void) {
     }
     free_ghost_pool();
     free_all_objects();
+    gMakeBG = TRUE;
     gCurrentLevelModel = NULL;
 }
 

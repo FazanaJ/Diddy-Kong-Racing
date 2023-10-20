@@ -235,7 +235,11 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
     Settings *settings;
     s32 offset;
 
-    gSkipCutbacks = gConfig.noCutbacks;
+    if ((gConfig.noCutbacks || numberOfPlayers < 3) && (gConfig.perfMode == FALSE)) {
+        gSkipCutbacks = TRUE;
+    } else {
+        gSkipCutbacks = FALSE;
+    }
     func_80072708();
     if (cutsceneId == -1) {
         cutsceneId = CUTSCENE_NONE;

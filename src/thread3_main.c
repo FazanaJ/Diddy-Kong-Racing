@@ -172,8 +172,10 @@ void init_config(void) {
         gConfig.noCutbacks = TRUE;
         gConfig.antiAliasing = 1;
         gConfig.dedither = TRUE;
+        gConfig.perfMode = FALSE;
     }
-    gSkipCutbacks = gConfig.noCutbacks;
+    gConfig.perfMode = TRUE;
+    gSkipCutbacks = gConfig.noCutbacks || gConfig.perfMode;
 }
 
 /**

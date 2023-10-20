@@ -56,6 +56,7 @@ enum MemoryTags {
     MEMP_HUD,
     MEMP_TEXT,
     MEMP_AUDIO_POOL,
+    MEMP_WEATHER,
 
     MEMP_TOTAL
 };

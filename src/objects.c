@@ -657,7 +657,7 @@ s32 func_8000CC20(Object *obj) {
     return NextFreeIndex;
 }
 
-#ifdef NON_EQUIVALENT
+#ifdef NON_MATCHING
 void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
     s32 numPlayers; // sp144
     enum GameMode gameMode;
@@ -901,11 +901,6 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
                     spawnObjFlags |= 8;
                 }
             }
-            if (entry->unkE != 4) {
-                if (numPlayers == 1) {
-                    spawnObjFlags |= 0x10;
-                }
-            }
             if (vehicle >= VEHICLE_TRICKY) {
                 spawnObjFlags = 1;
                 func_800619F4(0);
@@ -984,7 +979,7 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
             tajFlags = curObj->segment.header->flags;
             if ((tajFlags & 0x20) && (gIsTimeTrial)) {
                 free_object(curObj);
-            } else if ((tajFlags & 0x40) && (numPlayers >= 2 && !gConfig.noCutbacks)) {
+            } else if ((tajFlags & 0x40) && (numPlayers >= 2 || !gSkipCutbacks)) {
                 free_object(curObj);
             }
         }
@@ -1039,7 +1034,6 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
         for(i2 = 0; i2 < 10; i2++) {
             update_player_racer(curRacerObj, LOGIC_30FPS); // Simulate 10 updates?
         }
-        if (curRacer->playerIndex == PLAYER_COMPUTER) {
             var_s4 = (var_s4 + 1) & 1;
             for (i2 = 0; i2 < curRacerObj->segment.header->numberOfModelIds; i2++) {
                 if (curRacerObj->unk68[i2] != NULL) {
@@ -1048,16 +1042,6 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
                     }
                 }
             }
-        } else {
-            // curRacer is a human racer.
-            for (i2 = 0; i2 < curRacerObj->segment.header->numberOfModelIds; i2++) {
-                if (curRacerObj->unk68[i2] != NULL) {
-                    if (curRacerObj->unk68[i2]->unk20 != 0) {
-                        curRacerObj->unk68[i2]->unk20 = 0;
-                    }
-                }
-            }
-        }
         if (get_filtered_cheats() & CHEAT_BIG_CHARACTERS) {
             curRacerObj->segment.trans.scale *= 1.4f;
         }
@@ -1769,10 +1753,12 @@ s32 init_object_shadow(Object *obj, ShadowData *shadow) {
     obj->shadow = shadow;
     shadow->texture = NULL;
     objHeader = ((ObjectSegment *) obj)->header;
+    set_texture_colour_tag(MEMP_SHADOWS);
     if (objHeader->shadowGroup) {
         shadow->texture = load_texture((s32) ((ObjectHeader *) objHeader)->unk34);
         objHeader = ((ObjectSegment *) obj)->header;
     }
+    set_texture_colour_tag(MEMP_MISC_TEXTURES);
     shadow->scale = objHeader->shadowScale;
     shadow->meshStart = -1;
     D_8011AE50 = shadow->texture;
@@ -1792,9 +1778,11 @@ s32 init_object_water_effect(Object *obj, WaterEffect *waterEffect) {
     waterEffect->textureFrame = 0;
     waterEffect->animationSpeed = obj->segment.header->unk0 >> 8;
     waterEffect->texture = NULL;
+    set_texture_colour_tag(MEMP_SHADOWS);
     if (obj->segment.header->waterEffectGroup) {
         waterEffect->texture = load_texture(obj->segment.header->unk38);
     }
+    set_texture_colour_tag(MEMP_MISC_TEXTURES);
     waterEffect->meshStart = -1;
     D_8011AE54 = waterEffect->texture;
     if (obj->segment.header->waterEffectGroup && waterEffect->texture == NULL) {

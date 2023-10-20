@@ -190,6 +190,7 @@ enum PPProfilerEvent {
     "HUD", \
     "Text", \
     "Aud Pool", \
+    "Weather", \
     \
     "Red", \
     "Black", \
