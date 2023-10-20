@@ -471,7 +471,6 @@ void render_fade_fullscreen(Gfx **dList, UNUSED MatrixS **mats, UNUSED Vertex **
  * Allocate space for the new transitions vertices and triangles, then build the geometry based on the vertex and triangle shapes given.
 */
 void init_transition_shape(FadeTransition *transition, s32 numVerts, s32 numTris, s16 *coords, u8 *nextPos, u8 *targetPos, u8 *nextAlpha, u8 *targetAlpha, u8 *vertIndices) {
-    UNUSED s32 pad; 
     u8 *swap;
     s32 sizeVerts;
     s32 sizeTris;

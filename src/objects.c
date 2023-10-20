@@ -3252,25 +3252,6 @@ s32 func_80014814(s32 *retObjCount) {
 GLOBAL_ASM("asm/non_matchings/objects/func_80014814.s")
 #endif
 
-UNUSED void func_800149C0(unk800149C0 *arg0, UNUSED s32 arg1, s32 arg2, s32 arg3, s32 *arg4, s32 *arg5, s32 arg6) {
-    UNUSED s32 pad;
-    s32 endVal;
-    s32 startVal;
-    f32 temp_f0;
-    s32 i;
-
-    temp_f0 = arg0->unk6;
-    endVal = func_80014B50(arg2, arg3, temp_f0, arg0->unk4);
-    startVal = func_80014B50(arg2, endVal - 1, temp_f0, arg0->unk4 + 8);
-
-    for (i = startVal; i < endVal; i++) {
-        gObjPtrList[i]->segment.object.unk38 += arg6;
-    }
-
-    *arg4 = startVal;
-    *arg5 = endVal - 1;
-}
-
 GLOBAL_ASM("asm/non_matchings/objects/func_80014B50.s")
 GLOBAL_ASM("asm/non_matchings/objects/func_80015348.s")
 
@@ -4973,12 +4954,12 @@ f32 cubic_spline_interpolation(f32 *data, s32 index, f32 x, f32 *derivative) {
 
 GLOBAL_ASM("asm/non_matchings/objects/func_8002277C.s")
 
-UNUSED f32 lerp(f32 *arg0, u32 arg1, f32 arg2) {
+f32 lerp(f32 *arg0, u32 arg1, f32 arg2) {
     f32 result = arg0[arg1 + 1] + ((arg0[arg1 + 2] - arg0[arg1 + 1]) * arg2);
     return result;
 }
 
-UNUSED f32 func_800228B0(f32 *arg0, u32 arg1, f32 arg2, f32 *arg3) {
+f32 func_800228B0(f32 *arg0, u32 arg1, f32 arg2, f32 *arg3) {
     f32 new_var2;
     f32 temp_f12;
     f32 new_var;

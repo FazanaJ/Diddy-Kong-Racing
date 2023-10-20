@@ -907,7 +907,6 @@ void func_800A14F0(Object *racerObj, s32 updateRate) {
 
 void func_800A19A4(Object_Racer *racer, UNUSED s32 updateRate) {
     s32 i;
-    UNUSED s32 pad;
     s32 sp44;
     s32 sp40;
     s32 i2;
@@ -1334,7 +1333,6 @@ GLOBAL_ASM("asm/non_matchings/game_ui/func_800A277C.s")
 void set_stopwatch_face(u8 arg0, u8 arg1, u8 faceID, u8 arg3, u8 arg4) {
     s32 var_a3;
     s32 i;
-    UNUSED u8 *temp_v0_2;
     Object_68 **unk68;
     Object *hud20;
 

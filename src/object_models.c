@@ -150,7 +150,6 @@ unk8005FCD0 *func_8005FCD0(ObjectModel *model, s32 arg1) {
 }
 
 void func_8005FF40(ObjectModel **modelPtr) {
-    UNUSED s32 pad;
     s32 modelIndex;
     ObjectModel *model;
     s32 i;

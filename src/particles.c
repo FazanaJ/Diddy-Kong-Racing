@@ -1598,16 +1598,6 @@ void render_particle(Particle *particle, Gfx **dList, MatrixS **mtx, Vertex **vt
 
 GLOBAL_ASM("asm/non_matchings/particles/func_800B3E64.s")
 
-/**
- * Return a specific particle asset table from the main table.
-*/
-UNUSED ParticleProperties *get_particle_asset_table(s32 idx) {
-    if (idx < gParticlesAssetTableCount) {
-        return gParticlesAssetTable[idx];
-    }
-    return gParticlesAssetTable[gParticlesAssetTableCount - 1];
-}
-
 void func_800B4668(Object *obj, s32 idx, s32 arg2, s32 arg3) {
     s32 temp_v0;
 

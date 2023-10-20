@@ -116,7 +116,6 @@ Matrix gViewMatrixF;
 Matrix gCameraMatrixF;
 Matrix gProjectionMatrixF;
 MatrixS gProjectionMatrixS;
-UNUSED MatrixS gUnusedProjectionMatrixS; // Copied to the same way as gProjectionMatrixS, but not actually used.
 Matrix gCurrentModelMatrixF;
 Matrix D_801210A0;
 
@@ -855,7 +854,6 @@ void func_80067D3C(Gfx **dlist, UNUSED MatrixS **mats) {
     gCameraTransform.z_position = gCameraSegment[gActiveCameraID].trans.z_position;
 
     object_transform_to_matrix(gProjectionMatrixF, &gCameraTransform);
-    f32_matrix_to_s16_matrix(&gProjectionMatrixF, &gUnusedProjectionMatrixS);
 
     gActiveCameraID = temp;
 }
