@@ -272,10 +272,6 @@ $(BUILD_DIR)/lib/%.o: OPT_FLAGS := -O2 -Xfullwarn
 $(BUILD_DIR)/lib/src/os/%.o: OPT_FLAGS := -O2 -Xfullwarn
 $(BUILD_DIR)/lib/src/os/osViMgr.o: OPT_FLAGS := -O2 -Xfullwarn
 
-####################### MATH UTIL #########################
-
-$(BUILD_DIR)/src/waves.o: MIPSISET := -mips1
-
 ##############################################################
 
 GCC_SAFE_FILES := \

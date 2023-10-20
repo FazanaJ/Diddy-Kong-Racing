@@ -133,8 +133,7 @@ MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag
     }
     currIndex = -1;
     if (size & 0xF) {
-        size = (size & ~0xF);
-        size += 0x10;
+        size = _ALIGN16(size);
     }
     slots = pool->slots;
     slotSize = 0x7FFFFFFF;
