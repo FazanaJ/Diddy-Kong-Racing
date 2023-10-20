@@ -1839,7 +1839,7 @@ Object *func_8000FD54(s32 objectHeaderIndex) {
         return NULL;
     }
     objSize = (objHeader->numberOfModelIds * 4) + 0x80;
-    object = (Object *) allocate_from_main_pool(objSize, COLOUR_TAG_BLUE);
+    object = (Object *) allocate_from_main_pool(objSize, MEMP_OBJECTS);
     if (object == NULL) {
         try_free_object_header(objectHeaderIndex);
         return NULL;
@@ -3534,7 +3534,7 @@ void func_80016748(Object *obj0, Object *obj1) {
         xDiff = obj0->segment.trans.x_position - obj1->segment.trans.x_position;
         yDiff = obj0->segment.trans.y_position - obj1->segment.trans.y_position;
         zDiff = obj0->segment.trans.z_position - obj1->segment.trans.z_position;
-        if (!((objModel->unk3C + 50.0) < sqrtf((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff)))) {
+        if (!((objModel->unk3C + 50.0f) < sqrtf((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff)))) {
             obj0Interact = obj0->interactObj;
             obj1Interact = obj1->interactObj; 
             object_transform_to_matrix(obj1TransformMtx, &obj1->segment.trans);
@@ -3543,7 +3543,7 @@ void func_80016748(Object *obj0, Object *obj1) {
                 yDiff = obj1->unk44[objModel->unk1C[i]].y;
                 zDiff = obj1->unk44[objModel->unk1C[i]].z;
                 guMtxXFMF(obj1TransformMtx, xDiff, yDiff, zDiff, &xDiff, &yDiff, &zDiff);
-                temp = (((f32) objModel->unk1C[i + 1] / 64) * obj1->segment.trans.scale) * 50.0;
+                temp = (((f32) objModel->unk1C[i + 1] / 64.0f) * obj1->segment.trans.scale) * 50.0f;
                 xDiff -= obj0->segment.trans.x_position;
                 yDiff -= obj0->segment.trans.y_position;
                 zDiff -= obj0->segment.trans.z_position;
@@ -3572,11 +3572,11 @@ void func_80016748(Object *obj0, Object *obj1) {
                             func_80072348(racer->playerIndex, 18);
                         }
                         if (racer->vehicleID == VEHICLE_HOVERCRAFT) {
-                            if (radius > 0.1) {
+                            if (radius > 0.1f) {
                                 obj0->segment.x_velocity -= xDiff;
                                 obj0->segment.z_velocity -= zDiff;
                             }
-                        } else if (radius > 0.3) {
+                        } else if (radius > 0.3f) {
                             obj0->segment.x_velocity -= xDiff;
                             obj0->segment.z_velocity -= zDiff;
                             racer->velocity = radius * 4.0f;
