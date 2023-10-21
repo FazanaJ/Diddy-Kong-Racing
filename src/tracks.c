@@ -88,7 +88,6 @@ f32 D_8011B0EC;
 s32 D_8011B0F0;
 s32 D_8011B0F4;
 s32 D_8011B0F8; //gIsInCutscene?
-s32 gAntiAliasing;
 s32 D_8011B100;
 s32 D_8011B104;
 s32 D_8011B108;
@@ -247,7 +246,6 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     set_active_viewports_and_max(gScenePlayerViewports);
 
     numberOfPlayers = gScenePlayerViewports;
-    gAntiAliasing = 0;
     for (i = 0; i < ARRAY_COUNT(gShadowHeapTextures); i++) {
         gShadowHeapTextures[i] = (DrawTexture *) allocate_from_main_pool_safe(sizeof(DrawTexture) * 200, MEMP_SHADOWS);
         gShadowHeapTris[i] = (Triangle *) allocate_from_main_pool_safe(sizeof(Triangle) * 400, MEMP_SHADOWS);
@@ -353,10 +351,6 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
     gDrawLevelSegments = TRUE;
     if (gCurrentLevelHeader2->race_type == RACETYPE_CUTSCENE_2) {
         gDrawLevelSegments = FALSE;
-        gAntiAliasing = TRUE;
-    }
-    if (gCurrentLevelHeader2->race_type == RACETYPE_CUTSCENE_1 || gCurrentLevelHeader2->unkBD) {
-        gAntiAliasing = TRUE;
     }
     if (gCurrentLevelHeader2->skyDome == -1) {
         i = (gCurrentLevelHeader2->unkA4->width << 9) - 1;
@@ -950,8 +944,7 @@ void initialise_player_viewport_vars(Gfx **dList, s32 updateRate) {
  * Enable or disable anti aliasing.
  * Improves visual quality at the cost of performance.
 */
-void set_anti_aliasing(s32 setting) {
-    gAntiAliasing = setting;
+void set_anti_aliasing(UNUSED s32 setting) {
 }
 
 void pop_render_list_track(Gfx **dList) {
@@ -996,10 +989,6 @@ void render_level_geometry_and_objects(Gfx **dList) {
     Object *obj;
 
     func_80012C30();
-
-    if (get_settings()->courseId == ASSET_LEVEL_OPENINGSEQUENCE) {
-        gAntiAliasing = TRUE;
-    }
 
     sp160 = func_80014814(&objCount);
 
@@ -1155,7 +1144,6 @@ void render_level_geometry_and_objects(Gfx **dList) {
         profiler_add(PP_VOID, first3);
     }
     
-    gAntiAliasing = FALSE;
 #ifdef PUPPYPRINT_DEBUG
     gPuppyPrint.mainTimerPoints[1][PP_PARTICLEGFX] = osGetCount();
 #endif

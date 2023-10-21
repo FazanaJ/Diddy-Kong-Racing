@@ -26,7 +26,7 @@ u16 sCrashY;
 Object *sCrashObjID;
 s16 sCrashObjAct;
 s16 sCrashScroll;
-u8 gAssert = 0;
+u8 gAssert;
 u8 sCrashPage;
 u8 sCrashUpdate;
 char gAssertString[127];
@@ -442,6 +442,8 @@ void thread2_crash_screen(UNUSED void *arg) {
 
     osSetEventMesg(OS_EVENT_CPU_BREAK, &gCrashScreen.mesgQueue, (OSMesg) 1);
     osSetEventMesg(OS_EVENT_FAULT, &gCrashScreen.mesgQueue, (OSMesg) 2);
+
+    gAssert = 0;
     do {
         osRecvMesg(&gCrashScreen.mesgQueue, &mesg, 1);
         if (gVideoCurrFramebuffer) {
@@ -457,7 +459,8 @@ void thread2_crash_screen(UNUSED void *arg) {
     gCrashScreen.thread.priority = 11;
     play_sound_global(SOUND_VOICE_BANJO_WOAH, NULL);
     play_music(SEQUENCE_NONE);
-    crash_screen_sleep(75);
+    crash_screen_sleep(80);
+    gCrashScreen.thread.priority = OS_PRIORITY_APPMAX;
     while (TRUE) {
         handle_save_data_and_read_controller(0, LOGIC_30FPS);
         draw_crash_screen(thread);

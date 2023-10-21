@@ -507,8 +507,6 @@ void ingame_logic_loop(s32 updateRate) {
                 func_80093A40();
             }
         }
-    } else {
-        set_anti_aliasing(TRUE);
     }
     gPauseLockTimer -= updateRate;
     if (gPauseLockTimer < 0) {
