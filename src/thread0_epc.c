@@ -227,7 +227,7 @@ void crash_screen_sleep(s32 ms) {
 
 void crash_screen_print(s32 x, s32 y, const char *fmt, ...) {
     char *ptr;
-    char buf[0x108];
+    char buf[127];
     u32 glyph;
     va_list args;
 
@@ -460,7 +460,6 @@ void thread2_crash_screen(UNUSED void *arg) {
     play_sound_global(SOUND_VOICE_BANJO_WOAH, NULL);
     play_music(SEQUENCE_NONE);
     crash_screen_sleep(80);
-    gCrashScreen.thread.priority = OS_PRIORITY_APPMAX;
     while (TRUE) {
         handle_save_data_and_read_controller(0, LOGIC_30FPS);
         draw_crash_screen(thread);
