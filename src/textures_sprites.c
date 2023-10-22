@@ -557,6 +557,9 @@ void load_and_set_texture(Gfx **dlist, TextureHeader *texhead, s32 flags, s32 te
     flags = (gUsePrimColour) ? (flags & (RENDER_DECAL | RENDER_ANTI_ALIASING | RENDER_Z_COMPARE | RENDER_SEMI_TRANSPARENT)) : 
                            (flags & (RENDER_VTX_ALPHA | RENDER_DECAL | RENDER_Z_UPDATE | RENDER_CUTOUT | RENDER_FOG_ACTIVE | RENDER_SEMI_TRANSPARENT | RENDER_Z_COMPARE | RENDER_ANTI_ALIASING));
     flags &= ~gBlockedRenderFlags;
+    if (gConfig.antiAliasing == -1 || gConfig.perfMode) {
+        flags &= ~RENDER_ANTI_ALIASING;
+    }
     flags = (flags & RENDER_VTX_ALPHA) ? flags & ~RENDER_FOG_ACTIVE : flags & ~RENDER_Z_UPDATE;
 #ifdef PUPPYPRINT_DEBUG
     if (gPuppyPrint.showCvg && gConfig.antiAliasing == 0) {
@@ -626,9 +629,22 @@ void load_and_set_texture(Gfx **dlist, TextureHeader *texhead, s32 flags, s32 te
             dlID = dRenderSettingsVtxAlpha[dlIndex];
             goto draw;
         }
+        if (gConfig.perfMode) {
+            dlIndex = 0;
+        } else {
 #ifdef PUPPYPRINT_DEBUG
-        dlIndex = gConfig.antiAliasing + 1;
-        if (!gPuppyPrint.showCvg) {
+            dlIndex = gConfig.antiAliasing + 1;
+            if (!gPuppyPrint.showCvg) {
+                if (gIsObjectRender && gConfig.antiAliasing == 0) {
+                    if (gIsObjectRender != 2) {
+                        dlIndex++;
+                    } else {
+                        dlIndex = 0;
+                    }
+                }
+            }
+#else
+            dlIndex = gConfig.antiAliasing + 1;
             if (gIsObjectRender && gConfig.antiAliasing == 0) {
                 if (gIsObjectRender != 2) {
                     dlIndex++;
@@ -636,17 +652,8 @@ void load_and_set_texture(Gfx **dlist, TextureHeader *texhead, s32 flags, s32 te
                     dlIndex = 0;
                 }
             }
-        }
-#else
-        dlIndex = gConfig.antiAliasing + 1;
-        if (gIsObjectRender && gConfig.antiAliasing == 0) {
-            if (gIsObjectRender != 2) {
-                dlIndex++;
-            } else {
-                dlIndex = 0;
-            }
-        }
 #endif
+        }
         if (flags & RENDER_Z_COMPARE) {
             dlIndex += 3;
         }

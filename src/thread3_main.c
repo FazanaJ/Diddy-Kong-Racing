@@ -271,7 +271,7 @@ void main_game_loop(void) {
     } else {
         sDeltaTime = osGetCount() - sPrevTime;
         sPrevTime = osGetCount();
-        sLogicUpdateRateF = (f32) sDeltaTime / (f32) OS_USEC_TO_CYCLES(33333);
+        sLogicUpdateRateF = (f32) sDeltaTime / (f32) OS_USEC_TO_CYCLES(16666);
         if (sLogicUpdateRateF <= 0.0001f) {
             sLogicUpdateRateF = 0.0001f;
         }

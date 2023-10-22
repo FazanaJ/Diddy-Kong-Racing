@@ -936,8 +936,6 @@ void calculate_core_timers(void) {
     gPuppyPrint.coreTimers[PP_LEVELGFX][PERF_AGGREGATE] -= gPuppyPrint.coreTimers[PP_OBJGFX][perfIteration];
     gPuppyPrint.coreTimers[PP_LEVELGFX][perfIteration] -= gPuppyPrint.coreTimers[PP_PARTICLEGFX][perfIteration];
     gPuppyPrint.coreTimers[PP_LEVELGFX][PERF_AGGREGATE] -= gPuppyPrint.coreTimers[PP_PARTICLEGFX][perfIteration];
-    gPuppyPrint.coreTimers[PP_LEVELGFX][perfIteration] += gPuppyPrint.coreTimers[PP_PARTICLEGFX][perfIteration];
-    gPuppyPrint.coreTimers[PP_LEVELGFX][PERF_AGGREGATE] += gPuppyPrint.coreTimers[PP_PARTICLEGFX][perfIteration];
 }
 
 /// Add whichever times you wish to create aggregates of.

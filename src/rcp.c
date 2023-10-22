@@ -294,12 +294,12 @@ void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
     gDPSetScissor((*dList)++, 0, 0, 0, w, h);
     gDPSetCycleType((*dList)++, G_CYC_FILL);
     gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, w, SEGMENT_DEPTH_BUFFER);
-    gDPSetFillColor((*dList)++, GPACK_RGBA5551(255, 255, 240, 0) << 16 | GPACK_RGBA5551(255, 255, 240, 0));
+    gDPSetFillColor((*dList)++, GPACK_RGBA5551(255, 255, 255, 0) << 16 | GPACK_RGBA5551(255, 255, 255, 0));
     gDPFillRectangle((*dList)++, 0, 0, w - 1, h - 1);
     gDPPipeSync((*dList)++);
     gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, w, SEGMENT_COLOUR_BUFFER);
 
-    if (!gSkipCutbacks && (gMapId == ASSET_LEVEL_CENTRALAREAHUB || gMapId == ASSET_LEVEL_WHALEBAY || gMapId == ASSET_LEVEL_PIRATELAGOON || 
+    if ((!gConfig.perfMode && gConfig.noCutbacks) && (gMapId == ASSET_LEVEL_CENTRALAREAHUB || gMapId == ASSET_LEVEL_WHALEBAY || gMapId == ASSET_LEVEL_PIRATELAGOON || 
         gMapId == ASSET_LEVEL_DINODOMAINHUB || gMapId == ASSET_LEVEL_DINODOMAINTROPHYANIM || gMapId == ASSET_LEVEL_OPTIONSBACKGROUND ||
         gMapId == ASSET_LEVEL_FRONTEND || gMapId == ASSET_LEVEL_WIZPIG2)) {
         skip = FALSE;

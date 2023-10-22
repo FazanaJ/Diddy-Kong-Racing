@@ -4872,6 +4872,10 @@ void obj_loop_rangetrigger(Object *obj, s32 updateRate) {
 void obj_init_frog(Object *obj, LevelObjectEntry_Frog *entry) {
     Object_Frog *obj64;
 
+    if (gConfig.perfMode) {
+        free_object(obj);
+    }
+
     obj64 = &obj->unk64->frog;
     obj64->drumstick = entry->drumstick;
     obj64->homeX = obj->segment.trans.x_position;
