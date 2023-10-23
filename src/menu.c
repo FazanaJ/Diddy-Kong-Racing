@@ -7146,7 +7146,7 @@ void render_track_select(s32 x, s32 y, char *hubName, char *trackName, s32 rectO
             sp58 = 1.25f;
             sp54 = 1.25f;
             if (osTvType == TV_TYPE_PAL) {
-                sp54 *= 1.1;
+                sp54 *= 1.1f;
             }
             temp = xTemp - 80;
             if (copyViewPort) {
