@@ -935,9 +935,11 @@ void initialise_player_viewport_vars(Gfx **dList, s32 updateRate) {
     }
     gCurrentLevelHeader->unk3 = 1;
     render_level_geometry_and_objects(dList);
+#ifdef PUPPYPRINT_DEBUG
     if (get_buttons_pressed_from_player(0) & L_JPAD && viewportID == 0) {
         sShowAll ^= 1;
     }
+#endif
 }
 
 /**
@@ -1289,6 +1291,7 @@ void render_level_segment(Gfx **dList, s32 segmentId, s32 nonOpaque) {
             gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(triangles), numberTriangles, TRIN_ENABLE_TEXTURE);
             gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
         } else {
+#ifdef PUPPYPRINT_DEBUG
             if (sShowAll) {
                 load_and_set_texture(dList, texture, batchFlags, texOffset);
                 batchFlags = TRUE;
@@ -1298,6 +1301,7 @@ void render_level_segment(Gfx **dList, s32 segmentId, s32 nonOpaque) {
                 gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(vertices), numberVertices, 0);
                 gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(triangles), numberTriangles, batchFlags);
             } else {
+#endif
                 RenderNodeTrack *entry;
                 gSorterPos -= sizeof(RenderNodeTrack);
                 entry = (RenderNodeTrack *) gSorterPos;
@@ -1309,8 +1313,10 @@ void render_level_segment(Gfx **dList, s32 segmentId, s32 nonOpaque) {
                 entry->vtx = (Vertex *) vertices;
                 entry->triCount = numberTriangles;
                 entry->vtxCount = numberVertices;
+#ifdef PUPPYPRINT_DEBUG
                 find_material_list_track(entry);
             }
+#endif
         }
     }
 }
@@ -2087,11 +2093,13 @@ void render_object_shadow(Gfx **dList, Object *obj, ShadowData *shadow) {
                 numVerts = gCurrentShadowTexture[i+1].yOffset - offsetY;
                 tri = (Triangle *) &gCurrentShadowTris[offsetX];
                 vtx = (Vertex *) &gCurrentShadowVerts[offsetY];
+#ifdef PUPPYPRINT_DEBUG
                 if (sShowAll) {
                     load_and_set_texture_no_offset(dList, gCurrentShadowTexture[i].texture, flags);
                     gSPVertexDKR((*dList)++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
                     gSPPolygon((*dList)++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
                 } else {
+#endif
                     RenderNodeTrack *entry;
                     gSorterPos -= sizeof(RenderNodeTrack);
                     entry = (RenderNodeTrack *) gSorterPos;
@@ -2104,7 +2112,9 @@ void render_object_shadow(Gfx **dList, Object *obj, ShadowData *shadow) {
                     entry->triCount = numTris;
                     entry->vtxCount = numVerts;
                     find_material_list_track(entry);
+#ifdef PUPPYPRINT_DEBUG
                 }
+#endif
                 i++;
             }
             
