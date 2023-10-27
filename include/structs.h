@@ -336,7 +336,7 @@ typedef struct Settings {
   /* 0x0054 */ Racer racers[NUM_RACERS_1P];
   /* 0x0114 */ s8 timeTrialRacer;
   /* 0x0115 */ s8 unk115[2];
-  /* 0x0117 */ u8 display_times;
+  /* 0x0117 */ s8 display_times;
 } Settings;
 
 /* Size: 8 bytes */
