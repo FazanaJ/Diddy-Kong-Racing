@@ -86,12 +86,6 @@ typedef struct MemoryPool {
 /* 0x0C */ s32 size;
 } MemoryPool;
 
-/* Size: 0x8 bytes */
-typedef struct FreeQueueSlot {
-    void *dataAddress;
-    u8 freeTimer;
-} FreeQueueSlot;
-
 /* Unknown size */
 typedef struct unk800B7D10 {
     u8 pad0[0x14];
