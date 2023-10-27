@@ -396,20 +396,24 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
         func_80066CDC(dList, &gSceneCurrMatrix);
         func_8002A31C();
         // Show detailed skydome in single player.
-        if ((numViewports < 2 || gSkipCutbacks) && !gConfig.perfMode) {
-            func_80068408(dList, &gSceneCurrMatrix);
-            if (gCurrentLevelHeader2->skyDome == -1) {
-                gSceneCurrDisplayList = *dList;
-                func_80028050();
-                *dList = gSceneCurrDisplayList;
+        if (!gConfig.perfMode) {
+            if (numViewports < 2 || gSkipCutbacks) {
+                func_80068408(dList, &gSceneCurrMatrix);
+                if (gCurrentLevelHeader2->skyDome == -1) {
+                    gSceneCurrDisplayList = *dList;
+                    func_80028050();
+                    *dList = gSceneCurrDisplayList;
+                } else {
+                    render_skydome(dList);
+                }
             } else {
-                render_skydome(dList);
+                func_8006807C(dList, &gSceneCurrMatrix);
+                draw_gradient_background(dList);
+                func_80067D3C(dList, &gSceneCurrMatrix);
+                //render_fast_bg(dList);
+                func_80068408(dList, &gSceneCurrMatrix);
             }
         } else {
-            func_8006807C(dList, &gSceneCurrMatrix);
-            draw_gradient_background(dList);
-            func_80067D3C(dList, &gSceneCurrMatrix);
-            //render_fast_bg(dList);
             func_80068408(dList, &gSceneCurrMatrix);
         }
         gDPPipeSync((*dList)++);

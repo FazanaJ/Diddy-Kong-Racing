@@ -16,7 +16,8 @@
 
 MemoryPool gMemoryPools[4]; // Only two are used.
 s32 gNumberOfMemoryPools;
-FreeQueueSlot gFreeQueue[256];
+void *gFreeQueue[256];
+u8 gFreeQueueElementTimer[256];
 s32 gFreeQueueCount;
 s32 gFreeQueueTimer; //Official Name: mmDelay
 
@@ -217,7 +218,7 @@ void set_free_queue_state(s32 state) {
     gFreeQueueTimer = state;
     if (state == 0) { // flush free queue if state is 0.
         while (gFreeQueueCount > 0) {
-            free_slot_containing_address(gFreeQueue[--gFreeQueueCount].dataAddress);
+            free_slot_containing_address(gFreeQueue[--gFreeQueueCount]);
         }
     }
     set_status_register_flags(flags);
@@ -249,11 +250,11 @@ void clear_free_queue(void) {
     flags = clear_status_register_flags();
 
     for (i = 0; i < gFreeQueueCount;) {
-        gFreeQueue[i].freeTimer--;
-        if (gFreeQueue[i].freeTimer == 0) {
-            free_slot_containing_address(gFreeQueue[i].dataAddress);
-            gFreeQueue[i].dataAddress = gFreeQueue[gFreeQueueCount - 1].dataAddress;
-            gFreeQueue[i].freeTimer = gFreeQueue[gFreeQueueCount - 1].freeTimer;
+        gFreeQueueElementTimer[i]--;
+        if (gFreeQueueElementTimer[i] == 0) {
+            free_slot_containing_address(gFreeQueue[i]);
+            gFreeQueue[i] = gFreeQueue[gFreeQueueCount - 1];
+            gFreeQueueElementTimer[i] = gFreeQueueElementTimer[gFreeQueueCount - 1];
             gFreeQueueCount--;
         } else {
             i++;
@@ -291,8 +292,8 @@ void free_slot_containing_address(u8 *address) {
  * Adds the current memory address to the back of the queue, so it can be freed.
 */
 void add_to_free_queue(void *dataAddress) {
-    gFreeQueue[gFreeQueueCount].dataAddress = dataAddress;
-    gFreeQueue[gFreeQueueCount].freeTimer = gFreeQueueTimer;
+    gFreeQueue[gFreeQueueCount] = dataAddress;
+    gFreeQueueElementTimer[gFreeQueueCount] = gFreeQueueTimer;
     gFreeQueueCount++;
 }
 

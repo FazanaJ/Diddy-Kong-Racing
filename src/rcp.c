@@ -299,7 +299,7 @@ void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
     gDPPipeSync((*dList)++);
     gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, w, SEGMENT_COLOUR_BUFFER);
 
-    if ((!gConfig.perfMode && gConfig.noCutbacks) && (gMapId == ASSET_LEVEL_CENTRALAREAHUB || gMapId == ASSET_LEVEL_WHALEBAY || gMapId == ASSET_LEVEL_PIRATELAGOON || 
+    if ((gConfig.perfMode || gConfig.noCutbacks) || (gMapId == ASSET_LEVEL_CENTRALAREAHUB || gMapId == ASSET_LEVEL_WHALEBAY || gMapId == ASSET_LEVEL_PIRATELAGOON || 
         gMapId == ASSET_LEVEL_DINODOMAINHUB || gMapId == ASSET_LEVEL_DINODOMAINTROPHYANIM || gMapId == ASSET_LEVEL_OPTIONSBACKGROUND ||
         gMapId == ASSET_LEVEL_FRONTEND || gMapId == ASSET_LEVEL_WIZPIG2)) {
         skip = FALSE;
