@@ -12813,7 +12813,7 @@ s32 menu_benchmark_loop(s32 updateRate) {
             record_fps();
             benchTimer -= updateRate;
             if(benchState == BENCHMARK_RUNNING && benchTimer <= 60) {
-                transition_begin(&sMenuTransitionFadeOut);
+                transition_begin(&gFadeTitleScreenDemo);
                 benchState = BENCHMARK_RUNNING_FADE_OUT;
             }
             if (benchState == BENCHMARK_RUNNING_FADE_OUT && benchTimer <= 0){
