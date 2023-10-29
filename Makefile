@@ -323,6 +323,7 @@ GCC_SAFE_FILES := \
     $(BUILD_DIR)/lib/src/libc/ll.o \
     $(BUILD_DIR)/lib/src/libc/lldiv.o \
     $(BUILD_DIR)/lib/src/os/osCreatePiManager.o \
+    $(BUILD_DIR)/lib/src/os/osViMgr.o \
     $(BUILD_DIR)/lib/src/os/osMotor.o \
 
 $(GCC_SAFE_FILES): CC := $(CROSS)gcc

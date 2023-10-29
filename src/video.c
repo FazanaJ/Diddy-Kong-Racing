@@ -160,11 +160,9 @@ void change_vi(OSViMode *mode, int width, int height) {
 
 void set_dither_filter(void) {
     if (gConfig.dedither) {
-        osViSetSpecialFeatures(OS_VI_DIVOT_ON);
-        osViSetSpecialFeatures(OS_VI_DITHER_FILTER_ON);
+        osViSetSpecialFeatures(VI_CTRL_DITHER_FILTER_ON | VI_CTRL_DIVOT_ON, VI_CTRL_GAMMA_ON);
     } else {
-        osViSetSpecialFeatures(OS_VI_DIVOT_OFF);
-        osViSetSpecialFeatures(OS_VI_DITHER_FILTER_OFF);
+        osViSetSpecialFeatures(0, VI_CTRL_GAMMA_ON | VI_CTRL_DITHER_FILTER_ON | VI_CTRL_DIVOT_ON);
     }
 }
 
@@ -180,7 +178,6 @@ void init_vi_settings(void) {
     gScreenWidth = SCREEN_WIDTH;
     gScreenHeight = SCREEN_HEIGHT;
     set_dither_filter();
-    osViSetSpecialFeatures(OS_VI_GAMMA_OFF);
 }
 
 /**

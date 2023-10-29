@@ -85,7 +85,7 @@ void osCreateViManager(OSPri pri);
 void osViSetMode(OSViMode *mode);
 void osViSetEvent(OSMesgQueue *mq, OSMesg msg, u32 retraceCount);
 void osViBlack(u8 active);
-void osViSetSpecialFeatures(u32 func);
+void osViSetSpecialFeatures(u32 set, u32 unset);
 void osViSwapBuffer(void *vaddr);
 void osYieldThread(void);
 

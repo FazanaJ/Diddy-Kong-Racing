@@ -64,7 +64,6 @@ void osCreateViManager(OSPri pri) {
     }
 }
 
-#ifdef NON_EQUIVALENT
 void __osTimerInterrupt(void);
 //Fails due to how retrace is declared. Not sure how to fix it.
 void viMgrMain(void *arg) {
@@ -77,7 +76,7 @@ void viMgrMain(void *arg) {
 
     mesg = NULL;
     first = FALSE;
-    vc = __osViGetCurrentContext();
+    vc = __osViCurr;
     retrace = vc->retraceCount;
 
     if (retrace == 0)
@@ -92,7 +91,7 @@ void viMgrMain(void *arg) {
                 __osViSwapContext();
                 retrace--;
                 if (retrace == 0) {
-                    vc = __osViGetCurrentContext();
+                    vc = __osViCurr;
                     if (vc->msgq != NULL) {
                         osSendMesg(vc->msgq, vc->msg, OS_MESG_NOBLOCK);
                     }
@@ -116,6 +115,3 @@ void viMgrMain(void *arg) {
         }
     }
 }
-#else
-GLOBAL_ASM("lib/asm/non_matchings/osViMgr_0D2590/viMgrMain.s")
-#endif
