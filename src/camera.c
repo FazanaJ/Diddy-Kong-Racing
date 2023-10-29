@@ -566,15 +566,6 @@ void copy_viewport_frame_size_to_coords(s32 viewPortIndex, s32 *x1, s32 *y1, s32
     *y2 = gScreenViewports[viewPortIndex].y2;
 }
 
-//Alternative attempt: https://decomp.me/scratch/rcJYo
-// Still a work-in-progress but it doesn't seem to cause any problems,
-// which is why it is labeled under NON_EQUIVALENT
-
-#define SCISSOR_INTERLACE G_SC_NON_INTERLACE
-
-extern u32 osTvType;
-#define SCISSOR_INTERLACE G_SC_NON_INTERLACE
-
 void func_80066CDC(Gfx **dlist, MatrixS **mats) {
     s32 videoHeight;
     s32 videoWidth;
@@ -601,7 +592,7 @@ void func_80066CDC(Gfx **dlist, MatrixS **mats) {
     if (gScreenViewports[savedCameraID].flags & VIEWPORT_EXTRA_BG) {
         tempCameraID = gActiveCameraID;
         gActiveCameraID = savedCameraID;
-        gDPSetScissor((*dlist)++, SCISSOR_INTERLACE,
+        gDPSetScissor((*dlist)++, G_SC_NON_INTERLACE,
             gScreenViewports[gActiveCameraID].scissorX1,
             gScreenViewports[gActiveCameraID].scissorY1,
             gScreenViewports[gActiveCameraID].scissorX2,
@@ -666,7 +657,7 @@ void func_80066CDC(Gfx **dlist, MatrixS **mats) {
             pos[0] += size[0];
             pos[1] /= 2;
             break;
-            case 2:
+        case 2:
             x1 = 0;
             y1 = pos[1] + 2;
             x2 = pos[0]- 2;
@@ -685,7 +676,7 @@ void func_80066CDC(Gfx **dlist, MatrixS **mats) {
         }
         break;
     }
-    gDPSetScissor((*dlist)++, SCISSOR_INTERLACE, x1, y1, x2, y2);
+    gDPSetScissor((*dlist)++, G_SC_NON_INTERLACE, x1, y1, x2, y2);
 
     func_80068158(dlist, size[0], size[1], pos[0], pos[1]);
     if (mats != NULL) {
