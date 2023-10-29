@@ -17,3 +17,4 @@
 .include "asm/gcc_asm/__ull_divremi.s"
 .include "asm/gcc_asm/__ull_rem.s"
 .include "asm/gcc_asm/__ull_rshift.s"
+.include "asm/gcc_asm/__others.s"

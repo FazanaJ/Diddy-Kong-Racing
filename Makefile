@@ -274,59 +274,9 @@ $(BUILD_DIR)/lib/src/os/osViMgr.o: OPT_FLAGS := -O2 -Xfullwarn
 
 ##############################################################
 
-GCC_SAFE_FILES := \
-    $(BUILD_DIR)/src/video.o \
-    $(BUILD_DIR)/src/borders.o \
-    $(BUILD_DIR)/src/set_rsp_segment.o \
-    $(BUILD_DIR)/src/screen_asset.o \
-    $(BUILD_DIR)/src/asset_loading.o \
-    $(BUILD_DIR)/src/camera.o \
-    $(BUILD_DIR)/src/main.o \
-    $(BUILD_DIR)/src/font.o \
-    $(BUILD_DIR)/src/audio.o \
-    $(BUILD_DIR)/src/memory.o \
-    $(BUILD_DIR)/src/game_text.o \
-    $(BUILD_DIR)/src/gzip.o \
-    $(BUILD_DIR)/src/thread30_track_loading.o \
-    $(BUILD_DIR)/src/vehicle_bluey.o \
-    $(BUILD_DIR)/src/vehicle_bubbler.o \
-    $(BUILD_DIR)/src/vehicle_smokey.o \
-    $(BUILD_DIR)/src/vehicle_wizpig.o \
-    $(BUILD_DIR)/src/vehicle_rocket.o \
-    $(BUILD_DIR)/src/controller.o \
-    $(BUILD_DIR)/src/audiomgr.o \
-    $(BUILD_DIR)/src/game.o \
-    $(BUILD_DIR)/src/thread0_epc.o \
-    $(BUILD_DIR)/src/thread3_main.o \
-    $(BUILD_DIR)/src/usb/reset.o \
-    $(BUILD_DIR)/src/usb/usb.o \
-    $(BUILD_DIR)/src/usb/dkr_usb.o \
-    $(BUILD_DIR)/lib/src/al/%.o \
-	$(BUILD_DIR)/lib/src/mips1/al/alAuxBusPull.o \
-    $(BUILD_DIR)/lib/src/mips1/al/alSynSetPan.o \
-    $(BUILD_DIR)/lib/src/mips1/al/alSynAllocFX.o \
-    $(BUILD_DIR)/lib/src/mips1/al/reverb.o \
-    $(BUILD_DIR)/lib/src/mips1/al/alFxNew.o \
-    $(BUILD_DIR)/lib/src/mips1/al/reverb.o \
-    $(BUILD_DIR)/lib/src/mips1/al/seqplayer.o \
-    $(BUILD_DIR)/lib/src/mips1/al/synthesizer.o \
-    $(BUILD_DIR)/lib/src/mips1/al/unknown_0646F0.o \
-    $(BUILD_DIR)/lib/src/mips1/al/unknown_0647A0.o \
-    $(BUILD_DIR)/lib/src/mips1/al/unknown_064690.o \
-    $(BUILD_DIR)/lib/src/gu/cosf.o \
-    $(BUILD_DIR)/lib/src/gu/guMtxUtil.o \
-    $(BUILD_DIR)/lib/src/gu/guPerspectiveF.o \
-    $(BUILD_DIR)/lib/src/gu/sinf.o \
-    $(BUILD_DIR)/lib/src/libc/rmonPrintf.o \
-    $(BUILD_DIR)/lib/src/libc/string.o \
-    $(BUILD_DIR)/lib/src/libc/xprintf.o \
-    $(BUILD_DIR)/lib/src/libc/llcvt.o \
-    $(BUILD_DIR)/lib/src/libc/ll.o \
-    $(BUILD_DIR)/lib/src/libc/lldiv.o \
-    $(BUILD_DIR)/lib/src/os/osCreatePiManager.o \
-    $(BUILD_DIR)/lib/src/os/osViMgr.o \
-    $(BUILD_DIR)/lib/src/os/osTimer.o \
-    $(BUILD_DIR)/lib/src/os/osMotor.o \
+DUMMY != python3 ./tools/python/generate_gcc_files.py gcc_safe_files.mk
+
+include gcc_safe_files.mk
 
 $(GCC_SAFE_FILES): CC := $(CROSS)gcc
 
