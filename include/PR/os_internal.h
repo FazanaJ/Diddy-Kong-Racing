@@ -48,9 +48,6 @@ extern void		__osRestoreInt(u32);
 extern u32      __osSetFpcCsr(u32);
 extern u32      __osGetFpcCsr(void);
 
-/* Routine for HW interrupt "handler" */
-extern void		__osSetHWIntrRoutine(OSHWIntr, s32 (*handler)(void));
-
 /* Routine for global interrupt mask */
 extern void		__osSetGlobalIntMask(OSHWIntr);
 extern void		__osResetGlobalIntMask(OSHWIntr);
@@ -75,8 +72,6 @@ extern s32		__osSiRawStartDma(s32, void *);
 
 /* Signal processor interface (Sp) */
 
-extern u32 		__osSpGetStatus(void);
-extern void		__osSpSetStatus(u32);
 extern s32		__osSpSetPc(u32);
 extern s32		__osSpRawWriteIo(u32, u32);
 extern s32		__osSpRawReadIo(u32, u32 *);

@@ -38,7 +38,7 @@ void osSpTaskLoad(OSTask *intp) {
     }
 
     osWritebackDCache(tp, sizeof(OSTask));
-    __osSpSetStatus(SP_CLR_YIELD | SP_CLR_YIELDED | SP_CLR_TASKDONE | SP_SET_INTR_BREAK);
+    IO_WRITE(SP_STATUS_REG, SP_CLR_YIELD | SP_CLR_YIELDED | SP_CLR_TASKDONE | SP_SET_INTR_BREAK);
     while (__osSpSetPc(SP_IMEM_START) == -1)
         ;
 
@@ -54,8 +54,3 @@ void osSpTaskLoad(OSTask *intp) {
         ;
 }
 
-void osSpTaskStartGo(UNUSED OSTask *tp) {
-    while (__osSpDeviceBusy());
-
-    __osSpSetStatus(SP_SET_INTR_BREAK | SP_CLR_SSTEP | SP_CLR_BROKE | SP_CLR_HALT);
-}

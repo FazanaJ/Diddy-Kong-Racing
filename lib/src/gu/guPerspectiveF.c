@@ -38,10 +38,3 @@ void guPerspectiveF(Matrix mf, u16 *perspNorm, float fovy, float aspect, float n
     }
 }
 
-void guPerspective(Mtx *m, u16 *perspNorm, float fovy, float aspect, float near, float far, float scale) {
-    Matrix mf;
-
-    guPerspectiveF(mf, perspNorm, fovy, aspect, near, far, scale);
-
-    guMtxF2L(mf, m);
-}

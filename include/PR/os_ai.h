@@ -77,8 +77,6 @@ extern "C" {
  */
 
 /* Audio interface (Ai) */
-extern u32 		osAiGetStatus(void);
-extern u32 		osAiGetLength(void);
 extern s32		osAiSetFrequency(u32);
 extern s32		osAiSetNextBuffer(void *, u32);
 

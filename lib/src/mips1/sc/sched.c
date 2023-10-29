@@ -9,6 +9,7 @@
 #include "viint.h"
 #include "main.h"
 #include "game.h"
+#include "lib/src/os/osint.h"
 
 static void __scTaskComplete(OSSched *sc, OSScTask *t) {
     if (t->list.t.type == M_GFXTASK) {
@@ -38,7 +39,10 @@ static void __scExec(OSSched *sc, OSScTask *t) {
 
     t->state &= ~(OS_SC_YIELD | OS_SC_YIELDED);
     osSpTaskLoad(&t->list);
-    osSpTaskStartGo(&t->list);
+    while (__osSpDeviceBusy());
+
+    IO_WRITE(SP_STATUS_REG, SP_SET_INTR_BREAK | SP_CLR_SSTEP | SP_CLR_BROKE | SP_CLR_HALT);
+    
 
     sc->curRSPTask = t;
 

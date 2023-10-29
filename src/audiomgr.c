@@ -311,7 +311,7 @@ static u32 __amHandleFrameMsg(AudioInfo *info, AudioInfo *lastInfo) {
     
     /* calculate how many samples needed for this frame to keep the DAC full */
     /* this will vary slightly frame to frame, must recalculate every frame */
-    samplesLeft = osAiGetLength() >> 2; /* divide by four, to convert bytes */
+    samplesLeft = IO_READ(AI_LEN_REG) >> 2; /* divide by four, to convert bytes */
                                         /* to stereo 16 bit samples */
     info->frameSamples = (16 + (frameSize - samplesLeft + EXTRA_SAMPLES)) & ~0xf;
     if ((u32)info->frameSamples < minFrameSize)
@@ -365,7 +365,7 @@ static void __amHandleDoneMsg(UNUSED AudioInfo *info) {
     s32    samplesLeft;
     static int firstTime = 1;
 
-    samplesLeft = osAiGetLength()>>2;
+    samplesLeft = IO_READ(AI_LEN_REG)>>2;
     if (samplesLeft == 0 && !firstTime) {
         //stubbed_printf("audio: ai out of samples\n");    
         firstTime = 0;

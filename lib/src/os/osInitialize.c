@@ -17,8 +17,6 @@ extern __osExceptionVector __osExceptionPreamble;
 OSTime osClockRate = OS_CLOCK_RATE;
 u32 __osShutdown = 0;
 u32 __OSGlobalIntMask = OS_IM_ALL;
-s32 gLeoFound = FALSE;
-s32 __osLeoInterrupt(void);
 
 extern s32 osViClock; //This is defined in another file somehow
 extern u32 __osFinalrom; //This is defined in another file somehow
@@ -55,10 +53,4 @@ void osInitialize() {
    while (pistatus & PI_STATUS_ERROR) {
       pistatus = IO_READ(PI_STATUS_REG);
    };
-   if (!((leostatus = IO_READ(LEO_STATUS)) & LEO_STATUS_PRESENCE_MASK)) {
-      gLeoFound = TRUE;
-      __osSetHWIntrRoutine(1, __osLeoInterrupt);
-   } else {
-      gLeoFound = FALSE;
-   }
 }

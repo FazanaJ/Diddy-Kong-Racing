@@ -15,7 +15,7 @@ s32 osViClock = VI_NTSC_CLOCK;
 OSYieldResult osSpTaskYielded(OSTask *tp) {
     u32 status;
     OSYieldResult result;
-    status = __osSpGetStatus();
+    status = IO_READ(SP_STATUS_REG);
     if (status & SP_STATUS_YIELDED)
         result = OS_TASK_YIELDED;
     else

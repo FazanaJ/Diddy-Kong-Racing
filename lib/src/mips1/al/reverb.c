@@ -437,7 +437,3 @@ f32 _doModFunc(ALDelay *d, s32 count)
 void func_8006492C(u8 arg0) {
     D_800DCEB0 = arg0;
 }
-
-u8 func_8006493C() {
-    return D_800DCEB0;
-}
