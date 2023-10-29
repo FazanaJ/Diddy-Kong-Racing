@@ -280,6 +280,7 @@ GCC_SAFE_FILES := \
     $(BUILD_DIR)/src/set_rsp_segment.o \
     $(BUILD_DIR)/src/screen_asset.o \
     $(BUILD_DIR)/src/asset_loading.o \
+    $(BUILD_DIR)/src/camera.o \
     $(BUILD_DIR)/src/main.o \
     $(BUILD_DIR)/src/font.o \
     $(BUILD_DIR)/src/audio.o \
