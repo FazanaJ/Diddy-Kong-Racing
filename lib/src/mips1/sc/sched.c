@@ -82,6 +82,7 @@ static void __scHandlePrenmi(OSSched *sc) {
 u32 gRetraceTimer = 0;
 
 static void __scHandleRetrace(OSSched *sc) {
+    UNUSED s32 i;
 	sc->retraceCount++;
     if (sc->retraceCount > gConfig.frameCap && sc->scheduledFB && osViGetCurrentFramebuffer() == sc->scheduledFB) {
             if (sc->queuedFB) {
@@ -115,6 +116,20 @@ static void __scHandleRetrace(OSSched *sc) {
         }
 
         __scTryDispatch(sc);
+#ifdef PUPPYPRINT_DEBUG
+        gSchedStack[0]++;
+        gPokeThread[2] = 0;
+        gSchedStack[THREAD5_STACK / sizeof(u64) - 1]++;
+        if (gSchedStack[THREAD5_STACK / sizeof(u64) - 1] != gSchedStack[0]) {
+            puppyprint_assert("Thread 5 Stack overflow");
+        }
+        for (i = 0; i < 4; i++) {
+            gPokeThread[i]++;
+            if (gPokeThread[i] > 25000) {
+                puppyprint_assert("Thread %d unresponsive.", i);
+            }
+        }
+#endif
 }
 
 static void __scHandleRSP(OSSched *sc) {

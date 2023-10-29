@@ -115,6 +115,7 @@ extern s32 gSaveDataFlags;
 #define SAVE_DATA_FLAG_WRITE_SAVE_FILE_NUMBER(flags) ((flags >> 10) & SAVE_DATA_FLAG_INDEX_VALUE)
 
 extern s8 gDrawFrameTimer;
+extern u64 gSchedStack[THREAD5_STACK / sizeof(u64)];
 
 void thread3_main(UNUSED void *unused);
 void init_game(void);

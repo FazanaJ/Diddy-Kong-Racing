@@ -254,6 +254,7 @@ extern s32 gSPTaskNum;
 extern s32 gCurrNumF3dCmdsPerPlayer;
 extern s32 sLogicUpdateRate;
 
+u32 gPokeThread[4];
 u8 perfIteration = 0;
 f32 gFPS = 0;
 u8 gWidescreen = 0;

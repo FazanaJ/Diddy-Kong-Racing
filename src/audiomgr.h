@@ -7,6 +7,7 @@
 #include "asset_enums.h"
 #include "libultra_internal.h"
 #include "sched.h"
+#include "config.h"
 
 #define MAX_UPDATES             32
 #define MAX_EVENTS              32

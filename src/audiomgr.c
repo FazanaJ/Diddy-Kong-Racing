@@ -69,7 +69,7 @@ OSSched *gAudioSched;
 ALHeap *gAudioHeap; // Set but not used
 
 AMAudioMgr      __am;
-static          u64 audioStack[THREAD4_STACK / sizeof(u64)];
+u64 audioStack[THREAD4_STACK / sizeof(u64)];
 
 AMDMAState      dmaState;
 AMDMABuffer     dmaBuffs[NUM_DMA_BUFFERS];
@@ -259,6 +259,14 @@ static void __amMain(UNUSED void *arg) {
         default:
             break;
         }
+#ifdef PUPPYPRINT_DEBUG
+        gPokeThread[1] = 0;
+        audioStack[0]++;
+        audioStack[THREAD4_STACK / sizeof(u64) - 1]++;
+        if (audioStack[THREAD4_STACK / sizeof(u64) - 1] != audioStack[0]) {
+            puppyprint_assert("Thread 4 Stack overflow");
+        }
+#endif
 #endif
     }
 

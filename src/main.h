@@ -18,6 +18,7 @@
 
 extern u8 gAssert;
 extern char gAssertString[127];
+extern u64 gThread3Stack[THREAD3_STACK / sizeof(u64)];
 
 void main(void);
 void thread1_main(void *);
@@ -284,6 +285,7 @@ extern u32 gPrevLoadTimeObjects;
 extern u8 sPrevLoadTimer;
 extern u8 gShowHiddenGeometry;
 extern u8 gShowHiddenObjects;
+extern u32 gPokeThread[4];
 #else
 
 #define update_rdp_profiling()

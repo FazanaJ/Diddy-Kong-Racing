@@ -158,6 +158,14 @@ void thread3_main(UNUSED void *unused) {
             while (1);
             break;
         }
+#ifdef PUPPYPRINT_DEBUG
+    gPokeThread[0] = 0;
+    gThread3Stack[0]++;
+    gThread3Stack[THREAD3_STACK / sizeof(u64) - 1]++;
+    if (gThread3Stack[THREAD3_STACK / sizeof(u64) - 1] != gThread3Stack[0]) {
+        puppyprint_assert("Thread 3 Stack overflow");
+    }
+#endif
     }
 }
 
