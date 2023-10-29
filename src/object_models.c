@@ -106,7 +106,7 @@ Object_68 *func_8005F99C(s32 arg0, s32 arg1) {
     temp_s0 = gObjectModelTable[arg0];
     sp48 = gObjectModelTable[arg0 + 1] - temp_s0;
     sp34 = get_asset_uncompressed_size(ASSET_OBJECT_MODELS, temp_s0) + 0x80;
-    objMdl = (ObjectModel *) allocate_from_main_pool(sp34, COLOUR_TAG_RED);
+    objMdl = (ObjectModel *) allocate_from_main_pool(sp34, MEMP_OBJECT_MODELS);
     if (objMdl == NULL) {
         return NULL;
     }

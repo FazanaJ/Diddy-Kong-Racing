@@ -36,9 +36,6 @@ u16 *gVideoCurrDepthBuffer;
 u16 *gVideoLastDepthBuffer; //Official Name: otherZbuf
 u8 gFrameBufferIndex = 0;
 s32 gVideoHasReadyFrame;
-u8 D_801262E4;
-u8 gVideoDeltaCounter;
-u8 gVideoDeltaTime;
 OSScClient gVideoSched;
 u8 gExpansionPak = FALSE;
 u8 gUseExpansionMemory = FALSE;
@@ -62,7 +59,7 @@ void init_video(s32 videoModeIndex) {
 
     
 
-    reset_video_delta_time();
+    gVideoSkipNextRate = TRUE;
     set_video_mode_index(videoModeIndex);
     // I run this even with an expansion pak just to use up the memory.
     // Means I don't run into any issues if I test without a pak that just happened to work with.
@@ -92,8 +89,6 @@ void init_video(s32 videoModeIndex) {
     init_vi_settings();
     sBlackScreenTimer = 12;
     osViBlack(TRUE);
-    gVideoDeltaCounter = 0;
-    D_801262E4 = 3;
 }
 
 /**
@@ -213,16 +208,6 @@ void init_framebuffer(s32 index) {
     }
 }
 
-/**
- * Sets the video counters to their default values.
- * Another renmant from an unused system.
- */
-void reset_video_delta_time(void) {
-    gVideoDeltaCounter = 0;
-    gVideoDeltaTime = 2;
-    gVideoSkipNextRate = TRUE;
-}
-
 void swap_framebuffers(void);
 
 /**
@@ -268,11 +253,6 @@ void swap_framebuffer_when_ready(void) {
         }
     }
 }
-
-void func_8007AB24(u8 arg0) {
-    D_801262E4 = arg0;
-}
-
 
 void swap_framebuffers(void) {        
     gVideoLastFramebuffer = gVideoFramebuffers[(gVideoCurrFbIndex + (NUM_FRAMEBUFFERS - 1)) % NUM_FRAMEBUFFERS];
