@@ -15,7 +15,6 @@ extern u32 __osTimerCounter;
 
 OSTime __osInsertTimer(OSTimer *t);
 
-#ifdef NON_EQUIVALENT
 //Seems to be a mismatch based on where __osCurrentTime is defined.
 //Scratch proving that: https://decomp.me/scratch/OB3iP
 void __osTimerServicesInit(void) {
@@ -29,9 +28,6 @@ void __osTimerServicesInit(void) {
     __osTimerList->mq = NULL;
     __osTimerList->msg = 0;
 }
-#else
-GLOBAL_ASM("lib/asm/non_matchings/unknown_0D3020/__osTimerServicesInit.s")
-#endif
 
 void __osSetTimerIntr(OSTime tim);
 void __osSetCompare(u32);
