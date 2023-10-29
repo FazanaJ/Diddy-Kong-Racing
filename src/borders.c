@@ -18,13 +18,12 @@
  * 3 player will completely fill in where player 4 would normally be.
  */
 void render_borders_for_multiplayer(Gfx **dlist) {
-    u32 widthAndHeight, width, height;
+    u32 width, height;
     u32 y, x, xOffset, yOffset;
     LevelHeader *levelHeader;
 
-    widthAndHeight = get_video_width_and_height_as_s32();
-    width = GET_VIDEO_WIDTH(widthAndHeight);
-    height = GET_VIDEO_HEIGHT(widthAndHeight);
+    width = gScreenWidth;
+    height = gScreenHeight;
     xOffset = width / 256;
     yOffset = height / 128;
     gDPSetCycleType((*dlist)++, G_CYC_FILL);

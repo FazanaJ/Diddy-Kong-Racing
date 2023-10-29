@@ -129,7 +129,6 @@ extern s32 D_B0000578;
 void camera_init(void) {
     s32 i;
     s32 j;
-    u32 stat;
  
     // This loop is not cooperating. 
     for (i = 0; i < 5; i++) { gModelMatrixF[i] = D_80120DA0 + i + i*0; } 
@@ -454,12 +453,11 @@ s32 check_viewport_background_flag(s32 viewPortIndex) {
  * Official Name: camSetUserView
 */
 void resize_viewport(s32 viewPortIndex, s32 x1, s32 y1, s32 x2, s32 y2) {
-    s32 widthAndHeight, width, height;
+    s32 width, height;
     s32 temp;
 
-    widthAndHeight = get_video_width_and_height_as_s32();
-    height = GET_VIDEO_HEIGHT(widthAndHeight) & 0xFFFF;
-    width = GET_VIDEO_WIDTH(widthAndHeight);
+    height = gScreenHeight;
+    width = gScreenWidth;
 
     if (x2 < x1) {
         temp = x1;
@@ -690,7 +688,6 @@ void func_80066CDC(Gfx **dlist, MatrixS **mats) {
  * Official Name: camSetScissor
 */
 void set_viewport_scissor(Gfx **dlist) {
-    s32 size;
     s32 lrx;
     s32 lry;
     s32 ulx;
@@ -703,9 +700,8 @@ void set_viewport_scissor(Gfx **dlist) {
     s32 width;
     s32 height;
 
-    size = get_video_width_and_height_as_s32();
-    height = (u16) GET_VIDEO_HEIGHT(size);
-    width = (u16) size;
+    height = gScreenHeight;
+    width = gScreenWidth;
     numViewports = gNumberOfViewports;
 
     if (numViewports != 0) {
@@ -866,6 +862,7 @@ void func_8006807C(Gfx **dlist, MatrixS **mtx) {
 //Official Name: camSetViewport?
 void func_80068158(Gfx **dlist, s32 width, s32 height, s32 posX, s32 posY) {
     s32 tempWidth = (get_filtered_cheats() & CHEAT_MIRRORED_TRACKS) ? -width : width;
+    Vp *vp;
 #ifndef NO_ANTIPIRACY
     // Antipiracy measure. Flips the screen upside down.
     if (gAntiPiracyViewport) {
@@ -878,21 +875,21 @@ void func_80068158(Gfx **dlist, s32 width, s32 height, s32 posX, s32 posY) {
         gViewportStack[gActiveCameraID].vp.vtrans[1] = posY * 4;
         gViewportStack[gActiveCameraID].vp.vscale[0] = tempWidth * 4;
         gViewportStack[gActiveCameraID].vp.vscale[1] = height * 4;
-        gSPViewport((*dlist)++, OS_PHYSICAL_TO_K0(&gViewportStack[gActiveCameraID]));
+        vp = &gViewportStack[gActiveCameraID];
     } else {
-        gSPViewport((*dlist)++, OS_PHYSICAL_TO_K0(&gViewportStack[gActiveCameraID + 10 + (gViewportWithBG * 5)]));
+        vp = &gViewportStack[gActiveCameraID + 10 + (gViewportWithBG * 5)];
     }
+    gSPViewport((*dlist)++, OS_PHYSICAL_TO_K0(vp));
 }
 
 //Official Name: camResetView?
 void func_800682AC(Gfx **dlist) {
-    u32 widthAndHeight, width, height;
+    u32 width, height;
     gActiveCameraID = 4;
-    widthAndHeight = get_video_width_and_height_as_s32();
-    height = GET_VIDEO_HEIGHT(widthAndHeight);
-    width = GET_VIDEO_WIDTH(widthAndHeight);
+    height = gScreenHeight;
+    width = gScreenWidth;
     if (!(gScreenViewports[gActiveCameraID].flags & VIEWPORT_EXTRA_BG)) {
-        gDPSetScissor((*dlist)++, G_SC_NON_INTERLACE, 0, 0, width - 1, height - 1);
+        gDPSetScissor((*dlist)++, G_SC_NON_INTERLACE, 0, 0, width, height);
         func_80068158(dlist, width >> 1, height >> 1, width >> 1, height >> 1);
     } else {
         set_viewport_scissor(dlist);

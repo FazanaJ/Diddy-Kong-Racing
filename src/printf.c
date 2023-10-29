@@ -231,12 +231,10 @@ s32 render_printf(const char *format, ...) {
  */
 void print_debug_strings(Gfx **dList) {
     char *buffer;
-    u32 widthAndHeight;
 
     init_rdp_and_framebuffer(dList);
-    widthAndHeight = get_video_width_and_height_as_s32();
-    D_80127CD2 = GET_VIDEO_HEIGHT(widthAndHeight);
-    D_80127CD0 = GET_VIDEO_WIDTH(widthAndHeight);
+    D_80127CD2 = gScreenHeight;
+    D_80127CD0 = gScreenWidth;
     gDPSetScissor((*dList)++, 0, 0, 0, D_80127CD0, D_80127CD2);
     func_800B6E50();
     gSPDisplayList((*dList)++, dDebugFontSettings);

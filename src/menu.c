@@ -8896,9 +8896,8 @@ void func_80094688(s32 arg0, s32 arg1) {
     }
     reset_controller_sticks();
     func_8006D8E0(arg0);
-    gTrackSelectViewPortX = get_video_width_and_height_as_s32();
-    gTrackSelectViewportY = GET_VIDEO_HEIGHT(gTrackSelectViewPortX) & 0xFFFF;
-    gTrackSelectViewPortX = GET_VIDEO_WIDTH(gTrackSelectViewPortX);
+    gTrackSelectViewportY = gScreenHeight;
+    gTrackSelectViewPortX = gScreenWidth;
     gTrackSelectViewPortHalfX = gTrackSelectViewPortX >> 1;
     gTrackSelectViewPortHalfY = gTrackSelectViewportY >> 1;
     if ((gNumberOfActivePlayers == 1) && (gTrophyRaceWorldId == 0)) {

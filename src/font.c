@@ -736,9 +736,8 @@ void s32_to_string(char **outString, s32 number) {
  * lrx, lry = lower-right position
  */
 void render_fill_rectangle(Gfx **dlist, s32 ulx, s32 uly, s32 lrx, s32 lry) {
-    u32 widthAndHeight = get_video_width_and_height_as_s32();
-    u32 width = GET_VIDEO_WIDTH(widthAndHeight);
-    u32 height = GET_VIDEO_HEIGHT(widthAndHeight);
+    u32 width = gScreenWidth;
+    u32 height = gScreenHeight;
 
     if (lrx >= 0 && (u32) ulx < width && lry >= 0 && (u32) uly < height) {
         if (ulx < 0) {

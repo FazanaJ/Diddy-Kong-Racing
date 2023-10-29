@@ -276,7 +276,6 @@ void set_background_fill_colour(s32 red, s32 green, s32 blue) {
  * Official Name: rcpClearScreen
 */
 void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
-    s32 widthAndHeight;
     s32 w;
     s32 h;
     s32 x1;
@@ -286,9 +285,8 @@ void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
     u32 skip = TRUE;
     profiler_begin_timer();
 
-    widthAndHeight = get_video_width_and_height_as_s32();
-    w = GET_VIDEO_WIDTH(widthAndHeight);
-    h = GET_VIDEO_HEIGHT(widthAndHeight);
+    w = gScreenWidth;
+    h = gScreenHeight;
 
     gDPPipeSync((*dList)++);
     gDPSetScissor((*dList)++, 0, 0, 0, w, h);
@@ -556,9 +554,8 @@ void render_texture_rectangle_scaled(Gfx **dlist, DrawTexture *element, f32 xPos
     s32 width;
     s32 height;
 
-    height = get_video_width_and_height_as_s32();
-    width = GET_VIDEO_WIDTH(height) * 4;
-    height = (GET_VIDEO_HEIGHT(height) & 0xFFFF) * 4;
+    width = gScreenWidth * 4;
+    height = gScreenHeight * 4;
 
     //If the colour is fully opaque
     if ((colour & 0xFF) == 0xFF) {
