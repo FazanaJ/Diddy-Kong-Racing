@@ -7612,8 +7612,8 @@ void func_800904E8(s32 updateRate) {
 
     tick_thread30();
     for(i = 0; i < updateRate; i++) {
-        gTrackSelectX += (D_801269E8 - gTrackSelectX) * 0.1;
-        gTrackSelectY += (D_801269EC - gTrackSelectY) * 0.1;
+        gTrackSelectX += (D_801269E8 - gTrackSelectX) * 0.1f;
+        gTrackSelectY += (D_801269EC - gTrackSelectY) * 0.1f;
     }
     if (gOpacityDecayTimer == 32 && get_thread30_level_id_to_load() == 0) {
         if (gTrackIdForPreview == D_801263D0) {

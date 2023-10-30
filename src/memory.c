@@ -7,6 +7,7 @@
 #include "controller.h"
 #include "video.h"
 #include "main.h"
+#include "math_util.h"
 
 /************ .bss ************/
 
