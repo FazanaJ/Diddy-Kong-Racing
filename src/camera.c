@@ -900,7 +900,13 @@ void func_800682AC(Gfx **dlist) {
 
 //Official Name: camOffsetZero?
 void func_80068408(Gfx **dlist, MatrixS **mtx) {
-    f32_matrix_from_position(gModelMatrixF[gModelMatrixStackPos], 0.0f, 0.0f, 0.0f);
+    s32 i;
+    for (i = 1; i < 14; i++) {
+        (*gModelMatrixF)[gModelMatrixStackPos][0][i] = 0.0f;
+    }
+    for (i = 0; i < 4; i++) {
+        (*gModelMatrixF)[gModelMatrixStackPos][i][i] = 1.0f;
+    }
     f32_matrix_mult(gModelMatrixF[gModelMatrixStackPos], &gViewMatrixF, &gCurrentModelMatrixF);
     f32_matrix_to_s16_matrix(&gCurrentModelMatrixF, *mtx);
     gModelMatrixS[gModelMatrixStackPos] = *mtx;
@@ -1025,6 +1031,17 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
     return result;
 }
 
+void f32_matrix_from_scale(Matrix *mtx, f32 scaleX, f32 scaleY, f32 scaleZ) {
+    s32 i;
+    for (i = 1; i < 14; i++) {
+        (*mtx)[0][i] = 0.0f;
+    }
+    (*mtx)[0][0] = scaleX;
+    (*mtx)[1][1] = scaleY;
+    (*mtx)[2][2] = scaleZ;
+    (*mtx)[3][3] = 1.0f;
+}
+
 /**
  * Sets transform and scale matrices to set position and size, loads the texture, sets the rendermodes, then draws the result onscreen.
 */
@@ -1056,12 +1073,12 @@ void render_ortho_triangle_image(Gfx **dList, MatrixS **mtx, Vertex **vtx, Objec
         gCameraTransform.z_position = 0.0f;
         if (gAdjustViewportHeight) {
             scale = segment->trans.scale;
-            f32_matrix_from_scale(scaleMtxF, scale, scale, 1.0f);
+            f32_matrix_from_scale(&scaleMtxF, scale, scale, 1.0f);
             f32_matrix_from_rotation_and_scale(aspectMtxF, 0, 1.0f, gVideoAspectRatio);
             f32_matrix_mult(&aspectMtxF, &scaleMtxF, &gCurrentModelMatrixF);
         } else {
             scale = segment->trans.scale;
-            f32_matrix_from_scale(gCurrentModelMatrixF, scale, scale, 1.0f);
+            f32_matrix_from_scale(&gCurrentModelMatrixF, scale, scale, 1.0f);
         }
         object_transform_to_matrix_2(aspectMtxF, &gCameraTransform);
         f32_matrix_mult(&gCurrentModelMatrixF, &aspectMtxF, gModelMatrixF[gModelMatrixStackPos]);

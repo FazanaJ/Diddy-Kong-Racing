@@ -44,6 +44,7 @@
 #include "math_util.h"
 #include "controller.h"
 #include "game.h"
+#include "string.h"
 
 #include "config.h"
 #ifdef ENABLE_USB
@@ -386,7 +387,7 @@ void main_game_loop(void) {
 #endif
     if (gDrawFrameTimer == 2) {
         framebufferSize = SCREEN_WIDTH * SCREEN_HEIGHT * 2;
-        dmacopy_doubleword(gVideoLastFramebuffer, gVideoCurrFramebuffer, (s32) gVideoCurrFramebuffer + framebufferSize);
+        memcpy(gVideoLastFramebuffer, gVideoCurrFramebuffer, (s32) gVideoCurrFramebuffer + framebufferSize);
     }
 
     swap_framebuffer_when_ready();

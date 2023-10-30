@@ -51,7 +51,7 @@ void init_main_memory_pool(void) {
 MemoryPoolSlot *new_sub_memory_pool(s32 poolDataSize, s32 numSlots) {
     s32 size;
     MemoryPoolSlot *slots;
-    s32 *flags = clear_status_register_flags();
+    u32 flags = clear_status_register_flags();
     MemoryPoolSlot *newPool;
 
     size = poolDataSize + (numSlots * sizeof(MemoryPoolSlot));
@@ -121,7 +121,7 @@ MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag
     MemoryPoolSlot *curSlot;
     MemoryPool *pool;
     MemoryPoolSlot *slots;
-    s32 *flags;
+    s32 flags;
     s32 nextIndex;
     s32 currIndex;
         
@@ -176,7 +176,7 @@ void *allocate_at_address_in_main_pool(s32 size, u8 *address, u32 colorTag) {
     s32 i;
     MemoryPoolSlot *curSlot;
     MemoryPoolSlot *slots;
-    s32 *flags;
+    s32 flags;
     
     flags = clear_status_register_flags();
     if ((gMemoryPools[0].curNumSlots + 1) == gMemoryPools[0].maxNumSlots) {
@@ -214,7 +214,7 @@ void *allocate_at_address_in_main_pool(s32 size, u8 *address, u32 colorTag) {
  * Official name: mmSetDelay
  */
 void set_free_queue_state(s32 state) {
-    s32 *flags = clear_status_register_flags();
+    u32 flags = clear_status_register_flags();
     gFreeQueueTimer = state;
     if (state == 0) { // flush free queue if state is 0.
         while (gFreeQueueCount > 0) {
@@ -230,7 +230,7 @@ void set_free_queue_state(s32 state) {
  * Official Name: mmFree
  */
 void free_from_memory_pool(void *data) {
-    s32 *flags = clear_status_register_flags();
+    u32 flags = clear_status_register_flags();
     if (gFreeQueueTimer == 0) {
         free_slot_containing_address(data);
     } else {
@@ -245,7 +245,7 @@ void free_from_memory_pool(void *data) {
  */
 void clear_free_queue(void) {
     s32 i;
-    s32 *flags;
+    s32 flags;
 
     flags = clear_status_register_flags();
 
@@ -301,7 +301,7 @@ s32 func_80071478(u8 *address) {
     s32 slotIndex;
     MemoryPoolSlot *slot;
     MemoryPool *pool;
-    s32 *flags;
+    s32 flags;
 
     flags = clear_status_register_flags();
     pool = &gMemoryPools[get_memory_pool_index_containing_address(address)];
@@ -325,7 +325,7 @@ s32 func_80071538(u8 *address) {
     s32 slotIndex;
     MemoryPoolSlot *slot;
     MemoryPool *pool;
-    s32 *flags;
+    s32 flags;
 
     flags = clear_status_register_flags();
     pool = &gMemoryPools[get_memory_pool_index_containing_address(address)];

@@ -260,8 +260,6 @@ typedef struct VertexPosition {
 extern Triangle D_800DCAA8[8];
 extern VertexPosition D_800DCB28[6];
 
-f32 sins_f(s16); // No idea where it's located
-f32 coss_f(s16); // No idea where it's located
 s32 get_random_number_from_range(s32, s32); // Non Matching src/math_util.c
 s32 atan2s(s32, s32); // Non Matching src/math_util.c
 

@@ -1,4 +1,4 @@
-glabel get_D_800DD430
-/* 070170 8006F570 3C02800E */  lui   $v0, %hi(D_800DD430) # $v0, 0x800e
+glabel get_gDisableIntMask
+/* 070170 8006F570 3C02800E */  lui   $v0, %hi(gDisableIntMask) # $v0, 0x800e
 /* 070174 8006F574 03E00008 */  jr    $ra
-/* 070178 8006F578 9042D430 */   lbu   $v0, %lo(D_800DD430)($v0)
+/* 070178 8006F578 9042D430 */   lbu   $v0, %lo(gDisableIntMask)($v0)

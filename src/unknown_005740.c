@@ -12,6 +12,7 @@
 #include "racer.h"
 #include "PR/libaudio.h"
 #include "game_ui.h"
+#include "math_util.h"
 
 /************ .data ************/
 

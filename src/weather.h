@@ -107,8 +107,6 @@ void changeWeather(s32 arg0, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5);
 void func_800AD030(ObjectSegment *cameraSegment);
 void func_800AC0C8(s32 updateRate);
 
-s32 coss(s16);
-s32 sins(s16);
 void init_weather(void);
 void f32_matrix_dot(Matrix *arg0, Matrix *arg1, Matrix *arg2);
 void func_800AC21C(void);
