@@ -9,7 +9,7 @@
 #include "structs.h"
 #include "game.h"
 
-extern s32 gDisableIntMask;
+extern s32 gIntDisFlag;
 extern s32 gCurrentRNGSeed; //Official Name: rngSeed
 extern s32 gPrevRNGSeed;
 extern s16 gSineTable[];
@@ -24,20 +24,20 @@ extern s16 gArcTanTable[];
 /******************************/
 
 /* Official Name: disableInterrupts*/
-u32 clear_status_register_flags(void) {
-    if (gDisableIntMask) {
+u32 disable_interrupts(void) {
+    if (gIntDisFlag) {
         return __osDisableInt();
     }
 }
 
-void set_status_register_flags(u32 flags) {
-    if (gDisableIntMask) {
+void enable_interrupts(u32 flags) {
+    if (gIntDisFlag) {
         __osRestoreInt(flags);
     }
 }
 
-void set_intmask_protection(s8 setting) {
-    gDisableIntMask = setting;
+void set_gIntDisFlag(s8 setting) {
+    gIntDisFlag = setting;
 }
 
 void f32_matrix_to_s32_matrix(Matrix *input, MatrixS *output) {

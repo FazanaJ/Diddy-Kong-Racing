@@ -5288,16 +5288,16 @@ s8 func_800214E4(Object *obj, s32 updateRate) {
 
 GLOBAL_ASM("asm/non_matchings/objects/func_80021600.s")
 
-f32 catmull_rom_interpolation(f32 *arg0, s32 arg1, f32 arg2) {
+f32 catmull_rom_interpolation(f32 *data, s32 index, f32 x) {
     f32 ret;
     f32 temp3, temp2, temp;
     
-    temp =  (-0.5f * arg0[arg1])    + ( 1.5f * arg0[arg1 + 1]) + (-1.5f * arg0[arg1 + 2]) + ( 0.5f * arg0[arg1 + 3]);
-    temp2 = ( 1.0f * arg0[arg1])    + (-2.5f * arg0[arg1 + 1]) + ( 2.0f * arg0[arg1 + 2]) + (-0.5f * arg0[arg1 + 3]);
-    temp3 = (arg0[arg1 + 2] * 0.5f)+ ( 0.0f * arg0[arg1 + 1]) + (-0.5f * arg0[arg1])     + ( 0.0f * arg0[arg1 + 3]);
+    temp =  (-0.5f * data[index])    + ( 1.5f * data[index + 1]) + (-1.5f * data[index + 2]) + ( 0.5f * data[index + 3]);
+    temp2 = ( 1.0f * data[index])    + (-2.5f * data[index + 1]) + ( 2.0f * data[index + 2]) + (-0.5f * data[index + 3]);
+    temp3 = (data[index + 2] * 0.5f)+ ( 0.0f * data[index + 1]) + (-0.5f * data[index])     + ( 0.0f * data[index + 3]);
     
-    ret = (1.0f * arg0[arg1 + 1]);
-    ret = (((((temp * arg2) + temp2) * arg2) + temp3) * arg2) + ret;
+    ret = (1.0f * data[index + 1]);
+    ret = (((((temp * x) + temp2) * x) + temp3) * x) + ret;
     
     return ret;
 }

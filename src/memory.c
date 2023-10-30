@@ -51,13 +51,13 @@ void init_main_memory_pool(void) {
 MemoryPoolSlot *new_sub_memory_pool(s32 poolDataSize, s32 numSlots) {
     s32 size;
     MemoryPoolSlot *slots;
-    u32 flags = clear_status_register_flags();
+    u32 flags = disable_interrupts();
     MemoryPoolSlot *newPool;
 
     size = poolDataSize + (numSlots * sizeof(MemoryPoolSlot));
     slots = (MemoryPoolSlot *) allocate_from_main_pool_safe(size, COLOUR_TAG_WHITE);
     newPool = new_memory_pool(slots, size, numSlots);
-    set_status_register_flags(flags);
+    enable_interrupts(flags);
     return newPool;
 }
 
@@ -125,10 +125,10 @@ MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag
     s32 nextIndex;
     s32 currIndex;
         
-    flags = clear_status_register_flags();
+    flags = disable_interrupts();
     pool = &gMemoryPools[poolIndex];
     if ((pool->curNumSlots + 1) == (*pool).maxNumSlots) {
-        set_status_register_flags(flags);
+        enable_interrupts(flags);
         puppyprint_assert("Out of slots (%X)", colourTag);
         return NULL;
     }
@@ -151,10 +151,10 @@ MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag
     } while (nextIndex != -1);
     if (currIndex != -1) {
         allocate_memory_pool_slot(poolIndex, (s32) currIndex, size, 1, 0, colourTag);
-        set_status_register_flags(flags);
+        enable_interrupts(flags);
         return (MemoryPoolSlot *) (slots + currIndex)->data;
     }
-    set_status_register_flags(flags);
+    enable_interrupts(flags);
     
     puppyprint_assert("Out of memory (%X)", colourTag);
     return NULL;
@@ -178,9 +178,9 @@ void *allocate_at_address_in_main_pool(s32 size, u8 *address, u32 colorTag) {
     MemoryPoolSlot *slots;
     s32 flags;
     
-    flags = clear_status_register_flags();
+    flags = disable_interrupts();
     if ((gMemoryPools[0].curNumSlots + 1) == gMemoryPools[0].maxNumSlots) {
-        set_status_register_flags(flags);
+        enable_interrupts(flags);
     } else {
         if (size & 0xF) {
             size = _ALIGN16(size);
@@ -192,18 +192,18 @@ void *allocate_at_address_in_main_pool(s32 size, u8 *address, u32 colorTag) {
                 if ((u32) address >= (u32) curSlot->data && (u32)address + size <= (u32) curSlot->data + curSlot->size)  {
                     if (address == (u8 *) curSlot->data) {
                         allocate_memory_pool_slot(0, i, size, 1, 0, colorTag);
-                        set_status_register_flags(flags);
+                        enable_interrupts(flags);
                         return curSlot->data;
                     } else {
                         i = allocate_memory_pool_slot(0, i, (u32) address - (u32) curSlot->data, 0, 1, colorTag);
                         allocate_memory_pool_slot(0, i, size, 1, 0, colorTag);
-                        set_status_register_flags(flags);
+                        enable_interrupts(flags);
                         return (slots + i)->data;
                     }
                 }
             }
         }
-        set_status_register_flags(flags);
+        enable_interrupts(flags);
     }
     return NULL;
 }
@@ -214,14 +214,14 @@ void *allocate_at_address_in_main_pool(s32 size, u8 *address, u32 colorTag) {
  * Official name: mmSetDelay
  */
 void set_free_queue_state(s32 state) {
-    u32 flags = clear_status_register_flags();
+    u32 flags = disable_interrupts();
     gFreeQueueTimer = state;
     if (state == 0) { // flush free queue if state is 0.
         while (gFreeQueueCount > 0) {
             free_slot_containing_address(gFreeQueue[--gFreeQueueCount]);
         }
     }
-    set_status_register_flags(flags);
+    enable_interrupts(flags);
 }
 
 /**
@@ -230,13 +230,13 @@ void set_free_queue_state(s32 state) {
  * Official Name: mmFree
  */
 void free_from_memory_pool(void *data) {
-    u32 flags = clear_status_register_flags();
+    u32 flags = disable_interrupts();
     if (gFreeQueueTimer == 0) {
         free_slot_containing_address(data);
     } else {
         add_to_free_queue(data);
     }
-    set_status_register_flags(flags);
+    enable_interrupts(flags);
 }
 
 /**
@@ -247,7 +247,7 @@ void clear_free_queue(void) {
     s32 i;
     s32 flags;
 
-    flags = clear_status_register_flags();
+    flags = disable_interrupts();
 
     for (i = 0; i < gFreeQueueCount;) {
         gFreeQueueElementTimer[i]--;
@@ -261,7 +261,7 @@ void clear_free_queue(void) {
         }
     }
 
-    set_status_register_flags(flags);
+    enable_interrupts(flags);
 }
 
 /* Official name: heapFree */
@@ -303,7 +303,7 @@ s32 func_80071478(u8 *address) {
     MemoryPool *pool;
     s32 flags;
 
-    flags = clear_status_register_flags();
+    flags = disable_interrupts();
     pool = &gMemoryPools[get_memory_pool_index_containing_address(address)];
     slotIndex = 0;
     while (slotIndex != -1) {
@@ -311,13 +311,13 @@ s32 func_80071478(u8 *address) {
         if (address == (u8 *) slot->data) {
             if (slot->flags == 1 || slot->flags == 4) {
                 slot->flags |= 2;
-                set_status_register_flags(flags);
+                enable_interrupts(flags);
                 return TRUE;
             }
         }
         slotIndex = slot->nextIndex;
     }
-    set_status_register_flags(flags);
+    enable_interrupts(flags);
     return FALSE;
 }
 
@@ -327,7 +327,7 @@ s32 func_80071538(u8 *address) {
     MemoryPool *pool;
     s32 flags;
 
-    flags = clear_status_register_flags();
+    flags = disable_interrupts();
     pool = &gMemoryPools[get_memory_pool_index_containing_address(address)];
     slotIndex = 0;
     while (slotIndex != -1) {
@@ -335,13 +335,13 @@ s32 func_80071538(u8 *address) {
         if (address == (u8 *)slot->data) {
             if (slot->flags & 2) {
                 slot->flags ^= 2;
-                set_status_register_flags(flags);
+                enable_interrupts(flags);
                 return TRUE;
             }
         }
         slotIndex = slot->nextIndex;
     }
-    set_status_register_flags(flags);
+    enable_interrupts(flags);
     return FALSE;
 }
 
