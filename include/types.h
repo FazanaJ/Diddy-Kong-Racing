@@ -48,8 +48,7 @@ typedef u8 TriangleList;
 #define stubbed_printf
 #else
 #define stubbed_printf(...)
+#define sqrtf(f) __builtin_sqrtf(f)
 #endif
-
-//#define sqrtf(f) __builtin_sqrtf(f)
 
 #endif
