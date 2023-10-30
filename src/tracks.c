@@ -1224,11 +1224,7 @@ void render_level_segment(Gfx **dList, s32 segmentId, s32 nonOpaque) {
     s32 textureFlags;
     numberVertices = (batchInfo + 1)->verticesOffset - batchInfo->verticesOffset;
     segment = &gCurrentLevelModel->segments[segmentId];
-    if (gScenePlayerViewports < VIEWPORTS_COUNT_2_PLAYERS && !gConfig.perfMode) {
-        sp78 = (nonOpaque && gWaveBlockCount) ? (func_800B9228(segment)) : (0);
-    } else {
-        sp78 = 0;
-    }
+    sp78 = (nonOpaque && gWaveBlockCount) ? (func_800B9228(segment)) : (0);
     if (nonOpaque) {
         startPos = segment->numberofOpaqueBatches;
         endPos = segment->numberOfBatches;
