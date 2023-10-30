@@ -57,31 +57,38 @@ void guMtxXFMF(Matrix mf, float x, float y, float z, float *ox, float *oy, float
         *oz = mf[0][2]*x + mf[1][2]*y + mf[2][2]*z + mf[3][2];
 }
 
-#ifdef NON_EQUIVALENT
 /* Official name: mathMtxFastXFMF */
 void f32_matrix_dot(Matrix *mat1, Matrix *mat2, Matrix *output) {
-    (*output)[0][0] = ((*mat2)[0][0] * (*mat1)[0][0]) + ((*mat2)[0][1] * (*mat1)[1][0]) + ((*mat2)[0][2] * (*mat1)[2][0]);
-    (*output)[0][1] = ((*mat2)[0][0] * (*mat1)[0][1]) + ((*mat2)[0][1] * (*mat1)[1][1]) + ((*mat2)[0][2] * (*mat1)[2][1]);
-    (*output)[0][2] = ((*mat2)[0][0] * (*mat1)[0][2]) + ((*mat2)[0][1] * (*mat1)[1][2]) + ((*mat2)[0][2] * (*mat1)[2][2]);
-}
-#else
-GLOBAL_ASM("asm/math_util/f32_matrix_dot.s")
-#endif
+    f32 temp_f4;
+    f32 temp_f6;
+    f32 temp_f8;
 
-#ifdef NON_EQUIVALENT
+    temp_f4 = (*mat2)[0][0];
+    temp_f6 = (*mat2)[0][1];
+    temp_f8 = (*mat2)[0][2];
+    (*output)[0][0] = (temp_f4 * (*mat1)[0][0]) + (temp_f6 * (*mat1)[1][0]) + (temp_f8 * (*mat1)[2][0]);
+    (*output)[0][1] = (temp_f4 * (*mat1)[0][1]) + (temp_f6 * (*mat1)[1][1]) + (temp_f8 * (*mat1)[2][1]);
+    (*output)[0][2] = (temp_f4 * (*mat1)[0][2]) + (temp_f6 * (*mat1)[1][2]) + (temp_f8 * (*mat1)[2][2]);
+}
+
 /* Official name: mathMtxCatF */
 void f32_matrix_mult(Matrix *mat1, Matrix *mat2, Matrix *output) {
     s32 i;
+    f32 x;
+    f32 y;
+    f32 z;
+    f32 w;
     for(i = 0; i < 4; i++) {
-        (*output)[i][0] = (f32) (((*mat1)[i][1] * (*mat2)[1][0]) + ((*mat1)[i][3] * (*mat2)[2][0]) + (((*mat1)[i][0] * (*mat2)[0][0]) + ((*mat1)[i][3] * (*mat2)[3][0])));
-        (*output)[i][1] = (f32) (((*mat1)[i][1] * (*mat2)[1][1]) + ((*mat1)[i][3] * (*mat2)[2][1]) + (((*mat1)[i][0] * (*mat2)[0][1]) + ((*mat1)[i][3] * (*mat2)[3][1])));
-        (*output)[i][2] = (f32) (((*mat1)[i][1] * (*mat2)[1][2]) + ((*mat1)[i][3] * (*mat2)[2][2]) + (((*mat1)[i][0] * (*mat2)[0][2]) + ((*mat1)[i][3] * (*mat2)[3][2])));
-        (*output)[i][3] = (f32) (((*mat1)[i][1] * (*mat2)[1][3]) + ((*mat1)[i][3] * (*mat2)[2][3]) + (((*mat1)[i][0] * (*mat2)[0][3]) + ((*mat1)[i][3] * (*mat2)[3][3])));
+        x = (*mat1)[i][0];
+        y = (*mat1)[i][1];
+        z = (*mat1)[i][2];
+        w = (*mat1)[i][3];
+        (*output)[i][0] = (f32) ((y * (*mat2)[1][0]) + (z * (*mat2)[2][0]) + ((x * (*mat2)[0][0]) + (w * (*mat2)[3][0])));
+        (*output)[i][1] = (f32) ((y * (*mat2)[1][1]) + (z * (*mat2)[2][1]) + ((x * (*mat2)[0][1]) + (w * (*mat2)[3][1])));
+        (*output)[i][2] = (f32) ((y * (*mat2)[1][2]) + (z * (*mat2)[2][2]) + ((x * (*mat2)[0][2]) + (w * (*mat2)[3][2])));
+        (*output)[i][3] = (f32) ((y * (*mat2)[1][3]) + (z * (*mat2)[2][3]) + ((x * (*mat2)[0][3]) + (w * (*mat2)[3][3])));
     }
 }
-#else
-GLOBAL_ASM("asm/math_util/f32_matrix_mult.s")
-#endif
 
 /* Official name: mathMtxF2L */
 void f32_matrix_to_s16_matrix(Matrix *input, MatrixS *output) {

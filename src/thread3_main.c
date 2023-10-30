@@ -183,7 +183,7 @@ void init_config(void) {
         gConfig.dedither = TRUE;
         gConfig.perfMode = FALSE;
     }
-    gConfig.perfMode = TRUE;
+    //gConfig.perfMode = TRUE;
     gSkipCutbacks = gConfig.noCutbacks || gConfig.perfMode;
 }
 
