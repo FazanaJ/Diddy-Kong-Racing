@@ -34,3 +34,4 @@ m2cfiles/
 dkr_hot_reload.py
 lastRomPath.txt
 tools/flips
+gcc_safe_files.mk
