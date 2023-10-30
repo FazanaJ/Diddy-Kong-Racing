@@ -1180,10 +1180,14 @@ void camera_push_model_mtx(Gfx **dList, MatrixS **mtx, ObjectTransform *trans, f
 
     object_transform_to_matrix(gCurrentModelMatrixF, trans);
     if (scaleY != 0.0f) {
-        f32_matrix_y_scale(&gCurrentModelMatrixF, scaleY);
+        gCurrentModelMatrixF[3][0] += gCurrentModelMatrixF[1][0] * scaleY;
+        gCurrentModelMatrixF[3][1] += gCurrentModelMatrixF[1][1] * scaleY;
+        gCurrentModelMatrixF[3][2] += gCurrentModelMatrixF[1][2] * scaleY;
     }
     if (scale != 1.0f) {
-        f32_matrix_scale(&gCurrentModelMatrixF, scale);
+        gCurrentModelMatrixF[1][0] *= scaleY;
+        gCurrentModelMatrixF[1][1] *= scaleY;
+        gCurrentModelMatrixF[1][2] *= scaleY;
     }
     f32_matrix_mult(&gCurrentModelMatrixF, gModelMatrixF[gModelMatrixStackPos], gModelMatrixF[gModelMatrixStackPos + 1]);
     f32_matrix_mult(gModelMatrixF[gModelMatrixStackPos + 1], &gViewMatrixF, &D_801210A0);

@@ -191,20 +191,6 @@ void object_transform_to_matrix(Matrix arg0, ObjectTransform *trans) {
 GLOBAL_ASM("asm/math_util/object_transform_to_matrix.s")
 #endif
 
-/* Official name: mathSquashY */
-void f32_matrix_scale(Matrix *input, f32 scale) {
-    input[0][1][0] *= scale;
-    input[0][1][1] *= scale;
-    input[0][1][2] *= scale;
-}
-
-/* Official name: mathTransY */
-void f32_matrix_y_scale(Matrix *input, f32 scale) {
-    input[0][3][0] += input[0][1][0] * scale;
-    input[0][3][1] += input[0][1][1] * scale;
-    input[0][3][2] += input[0][1][2] * scale;
-}
-
 #ifdef NON_EQUIVALENT
 void object_transform_to_matrix_2(Matrix mtx, ObjectTransform *trans) {
     f32 yRotSine;
