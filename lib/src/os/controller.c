@@ -13,15 +13,16 @@
 #define HALF_A_SECOND HALF_MIL_CYLCES * osClockRate / ONE_MIL_CYLCES
 
 
-OSPifRam __osPfsPifRam;
-s32 D_8012CDD4[2]; //Padding? Maybe osClockRate should be declared here?
-OSMesg __osEepromTimerMsg;
-OSMesgQueue __osEepromTimerQ;
-OSTimer __osEepromTimer;
-u8 __osMaxControllers;
-u8 __osContLastCmd;
-OSPifRam __osContPifRam;
+
 u32 __osContinitialized = 0;
+ALIGNED16 OSPifRam __osContPifRam;
+u8 __osContLastCmd;
+u8 __osMaxControllers;
+OSTimer __osEepromTimer;
+OSMesgQueue __osEepromTimerQ;
+OSMesg __osEepromTimerMsg;
+s32 D_8012CDD4[2]; //Padding? Maybe osClockRate should be declared here?
+ALIGNED16 OSPifRam __osPfsPifRam;
 
 extern OSTime osClockRate;
 

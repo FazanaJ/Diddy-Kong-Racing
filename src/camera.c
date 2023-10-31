@@ -1013,14 +1013,14 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
     return result;
 }
 
-void f32_matrix_from_scale(Matrix *mtx, f32 scaleX, f32 scaleY, f32 scaleZ) {
+void f32_matrix_from_scale(Matrix *mtx, f32 scaleX) {
     s32 i;
     for (i = 1; i < 14; i++) {
         (*mtx)[0][i] = 0.0f;
     }
     (*mtx)[0][0] = scaleX;
-    (*mtx)[1][1] = scaleY;
-    (*mtx)[2][2] = scaleZ;
+    (*mtx)[1][1] = scaleX;
+    (*mtx)[2][2] = 1.0f;
     (*mtx)[3][3] = 1.0f;
 }
 
@@ -1051,12 +1051,12 @@ void render_ortho_triangle_image(Gfx **dList, MatrixS **mtx, Vertex **vtx, Objec
         gCameraTransform.z_position = 0.0f;
         if (gAdjustViewportHeight) {
             scale = segment->trans.scale;
-            f32_matrix_from_scale(&scaleMtxF, scale, scale, 1.0f);
+            f32_matrix_from_scale(&scaleMtxF, scale);
             f32_matrix_from_rotation_and_scale(aspectMtxF, 0, 1.0f, gVideoAspectRatio);
             f32_matrix_mult(&aspectMtxF, &scaleMtxF, &gCurrentModelMatrixF);
         } else {
             scale = segment->trans.scale;
-            f32_matrix_from_scale(&gCurrentModelMatrixF, scale, scale, 1.0f);
+            f32_matrix_from_scale(&gCurrentModelMatrixF, scale);
         }
         object_transform_to_matrix_2(aspectMtxF, &gCameraTransform);
         f32_matrix_mult(&gCurrentModelMatrixF, &aspectMtxF, gModelMatrixF[gModelMatrixStackPos]);
