@@ -286,9 +286,9 @@ void render_fast_bg(Gfx **dList) {
         for (i = 0; i < 240; i++) {
             f32 index = (f32) ((f32) i / 240.0f);
             
-            colour =  GPACK_RGBA5551(((s32) approach_f32_asymptotic(h->unkBE, h->unkC1, index)), 
-                                     ((s32) approach_f32_asymptotic(h->unkBF, h->unkC2, index)), 
-                                     ((s32) approach_f32_asymptotic(h->unkC0, h->unkC3, index)), 1);
+            colour =  GPACK_RGBA5551(((s32) approach_f32_asymptotic(h->BGColourBottomR, h->BGColourTopR, index)), 
+                                     ((s32) approach_f32_asymptotic(h->BGColourBottomG, h->BGColourTopG, index)), 
+                                     ((s32) approach_f32_asymptotic(h->BGColourBottomB, h->BGColourTopB, index)), 1);
             gFastBG[i] = colour;
         }
         gMakeBG = FALSE;

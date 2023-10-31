@@ -7,7 +7,7 @@
 .set noreorder # dont insert nops after branches
 .set gp=64     # 64-bit instructions are used
 
-glabel object_animate
+glabel object_animate_2
 /* 062930 80061D30 27BDFFF8 */  addiu $sp, $sp, -8
 /* 062934 80061D34 AFB10004 */  sw    $s1, 4($sp)
 /* 062938 80061D38 AFB00000 */  sw    $s0, ($sp)

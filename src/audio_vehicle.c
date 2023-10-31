@@ -403,44 +403,44 @@ void racer_sound_hovercraft(Object *obj, UNUSED u32 buttonsPressed, u32 buttonsH
     angleSine = sins_f(angleDiff);
     angleSine = ABSF(angleSine);
     if (check_if_showing_cutscene_camera() == FALSE && get_race_countdown() == 0) {
-        var_f18 = (gRacerSound->unkBC * angleSine * velocity) / 15.0;
+        var_f18 = (gRacerSound->unkBC * angleSine * velocity) / 15.0f;
     } else {
         var_f18 = 0.0f;
     }
     if (func_800A0190() == FALSE) {
         gRacerSound->throttlePitch = 0.0f;
     }
-    if (velocity > 10.0) {
-        velocity -= 10.0;
+    if (velocity > 10.0f) {
+        velocity -= 10.0f;
     } else {
         velocity = 0.0f;
     }
     //!@Delta: This entire block is not timing correct.
-    if (velocity != 0.0 && gSoundRacerObj->bananas != 0) {
+    if (velocity != 0.0f && gSoundRacerObj->bananas != 0) {
         if (gSoundRacerObj->bananas <= 10) {
             bananaPitch = gSoundRacerObj->bananas;
         } else {
             bananaPitch = 10;
         }
-        if (gRacerSound->bananaPitch < 0.05 * bananaPitch) {
-            gRacerSound->bananaPitch += (0.05 * bananaPitch) / (bananaPitch * 64);
-        } else if (gRacerSound->bananaPitch > 0.05 * bananaPitch) {
-            gRacerSound->bananaPitch = 0.05 * bananaPitch;
+        if (gRacerSound->bananaPitch < 0.05f * bananaPitch) {
+            gRacerSound->bananaPitch += (0.05f * bananaPitch) / (bananaPitch * 64);
+        } else if (gRacerSound->bananaPitch > 0.05f * bananaPitch) {
+            gRacerSound->bananaPitch = 0.05f * bananaPitch;
         }
         pitch += gRacerSound->bananaPitch;
     } else {
-        gRacerSound->bananaPitch *= 0.95;
+        gRacerSound->bananaPitch *= 0.95f;
         pitch += gRacerSound->bananaPitch;
     }
     pitch += ((velocity * gRacerSound->unkCC) + var_f18 + gRacerSound->throttlePitch);
     if (gSoundRacerObj->playerIndex != PLAYER_COMPUTER && gSoundRacerObj->groundedWheels == 0 && gSoundRacerObj->waterTimer < 4) {
         if (get_race_countdown() == 0) {
-            pitch += 0.3;
+            pitch += 0.3f;
         }
     }
     gRacerSound->unk5C[0] += ((pitch - gRacerSound->unk5C[0]) / 8);
-    if (gRacerSound->unk5C[0] > (0x7FFF / 5000.0)) {
-        gRacerSound->unk5C[0] = (0x7FFF / 5000.0); //6.5534
+    if (gRacerSound->unk5C[0] > (32767.0f / 5000.0f)) {
+        gRacerSound->unk5C[0] = (32767.0f / 5000.0f); //6.5534
     }
     temp_f10 = gRacerSound->unk5C[0] * 10000.0f;
     for (i = 0; temp_f10 >= gRacerSound->unk18[i] && i < 4; i++) { }
@@ -652,13 +652,13 @@ void func_80006BFC(Object *obj, ObjectSegment *segment, Object *obj2, s32 update
         } else if (var_f2_2 < -15.0f) {
             var_f2_2 = -15.0f;
         }
-        new_var = func_80007FA4(gRacerSound->unk5C[0]) * 1731.23404;
+        new_var = func_80007FA4(gRacerSound->unk5C[0]) * 1731.23404f;
         gRacerSound->unk68 += (((alCents2Ratio((((70.0f + var_f2_2) / (70.0f - var_f2_2)) * new_var)) - gRacerSound->unk5C[0]) - gRacerSound->unk68) / 2);
         gRacerSound->unk68 *= sp1C;
-        if (gRacerSound->unk68 > 0.8) {
-            gRacerSound->unk68 = 0.8;
-        } else if (gRacerSound->unk68 < -0.8) {
-            gRacerSound->unk68 = -0.8;
+        if (gRacerSound->unk68 > 0.8f) {
+            gRacerSound->unk68 = 0.8f;
+        } else if (gRacerSound->unk68 < -0.8f) {
+            gRacerSound->unk68 = -0.8f;
         }
         gRacerSound->unk6C[racer->playerIndex] = posSquared;
     }
@@ -946,7 +946,7 @@ f32 func_80007FA4(f32 arg0) {
     arg0 = (arg0 - 1.0f) / (1.0f + arg0);
     var_f14 = arg0;
     temp_f12 = arg0 * arg0;
-    for (var_v0 = 1; (var_f2 - temp_f0) > 0.001; var_v0 += 2) {
+    for (var_v0 = 1; (var_f2 - temp_f0) > 0.001f; var_v0 += 2) {
         temp_f0 = var_f2;
         var_f2 += var_f14 / var_v0;
         var_f14 *= temp_f12;

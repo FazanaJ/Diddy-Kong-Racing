@@ -145,10 +145,10 @@ s32 func_80031600(f32* arg0, f32* arg1, f32* arg2, s8* arg3, s32 arg4, s32* arg5
     return ret;
 }
 
-s32 func_80061D30(Object *obj) {
+s32 object_animate(Object *obj) {
     s32 ret;
     profiler_begin_timer();
-    ret = func_80061D30_2(obj);
+    ret = object_animate_2(obj);
     profiler_add(PP_ANIMATION, first);
     return ret;
 }

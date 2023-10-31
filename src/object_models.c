@@ -84,7 +84,6 @@ Object_68 *object_model_init(s32 modelID, s32 flags) {
     s32 sp34;
 
     if (modelID >= gNumModelIDs) {
-        stubbed_printf(D_800E6B20);
         modelID = 0;
     }
 
@@ -145,7 +144,6 @@ Object_68 *object_model_init(s32 modelID, s32 flags) {
     if (!sp3F) {
         for(i = 0; i < objMdl->numberOfBatches; i++) {
             if ((objMdl->batches[i].textureIndex != 0xFF) && (objMdl->batches[i].textureIndex >= objMdl->numberOfTextures)) {
-                stubbed_printf(D_800E6B4C);
                 goto block_30;
             }
         }
