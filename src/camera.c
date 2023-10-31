@@ -135,7 +135,7 @@ void camera_init(void) {
 
     for (j = 0; j < 8; j++) {
         gActiveCameraID = j;
-        func_800663DC(200, 200, 200, 0, 0, 180);
+        func_800663DC(200.0f, 200.0f, 200.0f, 0, 0, 180);
     }
     
     gCutsceneCameraActive = FALSE; 
@@ -275,11 +275,11 @@ f32 get_distance_to_active_camera(f32 xPos, f32 yPos, f32 zPos) {
     return ((dz * dz) + ((dx * dx) + (dy * dy)));
 }
 
-void func_800663DC(s32 xPos, s32 yPos, s32 zPos, s32 arg3, s32 arg4, s32 arg5) {
+void func_800663DC(f32 xPos, f32 yPos, f32 zPos, s32 arg3, s32 arg4, s32 arg5) {
     gCameraSegment[gActiveCameraID].trans.z_rotation = (s16) (arg3 * 0xB6);
-    gCameraSegment[gActiveCameraID].trans.x_position = (f32) xPos;
-    gCameraSegment[gActiveCameraID].trans.y_position = (f32) yPos;
-    gCameraSegment[gActiveCameraID].trans.z_position = (f32) zPos;
+    gCameraSegment[gActiveCameraID].trans.x_position = xPos;
+    gCameraSegment[gActiveCameraID].trans.y_position = yPos;
+    gCameraSegment[gActiveCameraID].trans.z_position = zPos;
     gCameraSegment[gActiveCameraID].trans.x_rotation = (s16) (arg4 * 0xB6);
     gCameraSegment[gActiveCameraID].camera.unk38 = (s16) 0;
     gCameraSegment[gActiveCameraID].z_velocity = 0.0f;
@@ -508,20 +508,6 @@ void resize_viewport(s32 viewPortIndex, s32 x1, s32 y1, s32 x2, s32 y2) {
  * If you pass VIEWPORT_AUTO through, then the property will be automatically set when the game creates the viewports.
  */
 void set_viewport_properties(s32 viewPortIndex, s32 posX, s32 posY, s32 width, s32 height) {
-    if (posX != VIEWPORT_AUTO) {
-        gScreenViewports[viewPortIndex].posX = posX;
-        gScreenViewports[viewPortIndex].flags |= VIEWPORT_X_CUSTOM;
-    } else {
-        gScreenViewports[viewPortIndex].flags &= ~VIEWPORT_X_CUSTOM;
-    }
-    if (posY != VIEWPORT_AUTO) {
-//!@bug Viewport Y writes to the X value. Luckily, all cases this function is called use VIEWPORT_AUTO,
-// so this bug doesn't happen in practice.
-        gScreenViewports[viewPortIndex].posX = posY;
-        gScreenViewports[viewPortIndex].flags |= VIEWPORT_Y_CUSTOM;
-    } else {
-        gScreenViewports[viewPortIndex].flags &= ~VIEWPORT_Y_CUSTOM;
-    }
     if (width != VIEWPORT_AUTO) {
         gScreenViewports[viewPortIndex].width = width;
         gScreenViewports[viewPortIndex].flags |= VIEWPORT_WIDTH_CUSTOM;
@@ -1053,12 +1039,7 @@ void render_ortho_triangle_image(Gfx **dList, MatrixS **mtx, Vertex **vtx, Objec
         temp_v1->x = segment->trans.x_position;
         temp_v1->y = segment->trans.y_position;
         temp_v1->z = segment->trans.z_position;
-        temp_v1->r = 255;
-        temp_v1->g = 255;
-        temp_v1->b = 255;
-        temp_v1->a = 255;
-        gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(*vtx), 1, 0);
-        (*vtx)++; // Can't be done in the macro?
+        gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0((*vtx)++), 1, 0);
         index = segment->animFrame;
         gModelMatrixStackPos ++;
         gCameraTransform.y_rotation = -segment->trans.y_rotation;

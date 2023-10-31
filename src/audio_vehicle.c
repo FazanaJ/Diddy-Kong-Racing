@@ -402,7 +402,7 @@ void racer_sound_hovercraft(Object *obj, UNUSED u32 buttonsPressed, u32 buttonsH
     WRAP(angleDiff, -0x8000, 0x8000);
     angleSine = sins_f(angleDiff);
     angleSine = ABSF(angleSine);
-    if (check_if_showing_cutscene_camera() == FALSE && get_race_countdown() == 0) {
+    if (gCutsceneCameraActive == FALSE && get_race_countdown() == 0) {
         var_f18 = (gRacerSound->unkBC * angleSine * velocity) / 15.0f;
     } else {
         var_f18 = 0.0f;

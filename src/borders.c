@@ -19,33 +19,37 @@
  */
 void render_borders_for_multiplayer(Gfx **dlist) {
     u32 width, height;
-    u32 y, x, xOffset, yOffset;
     LevelHeader *levelHeader;
+    s32 x1;
+    s32 y1;
+    s32 x2;
+    s32 y2;
+    s32 heightHalf;
+    s32 widthHalf;
 
     width = gScreenWidth;
     height = gScreenHeight;
-    xOffset = width / 256;
-    yOffset = height / 128;
+    heightHalf = height / 2;
+    widthHalf = width / 2;
     gDPSetCycleType((*dlist)++, G_CYC_FILL);
     gDPSetFillColor((*dlist)++, GPACK_RGBA5551(0, 0, 0, 1) << 16 | GPACK_RGBA5551(0, 0, 0, 1)); // Black fill color
     switch (gNumberOfViewports) {
-        case VIEWPORTS_COUNT_2_PLAYERS:
-            // Draws a solid horizontal black line in the middle of the screen.
-            y = (height >> 1) - yOffset;
-            gDPFillRectangle((*dlist)++, height * 0, y, width, y + yOffset);
-            break;
         case VIEWPORTS_COUNT_3_PLAYERS:
             levelHeader = gCurrentLevelHeader;
             // Draw black square in the bottom-right corner.
-            if (gHudToggleSettings[gHUDNumPlayers] || (levelHeader->race_type & RACETYPE_CHALLENGE)) {
-                gDPFillRectangle((*dlist)++, width >> 1, height >> 1, width, height);
+            if (gHudToggleSettings[gHUDNumPlayers] || levelHeader->race_type & RACETYPE_CHALLENGE) {
+                gDPFillRectangle((*dlist)++, widthHalf + 2, heightHalf + 2, width, height);
             }
             // There is no break statement here. This is intentional.
         case VIEWPORTS_COUNT_4_PLAYERS:
-            x = (width >> 1) - xOffset;
-            // Draws 2 black lines in the middle of the screen. One vertical, another horizontal.
-            gDPFillRectangle((*dlist)++, height * 0, (height >> 1) - yOffset, width, ((height >> 1) - yOffset) + yOffset);
-            gDPFillRectangle((*dlist)++, x, 0, x + xOffset, height);
+            gDPFillRectangle((*dlist)++, widthHalf - 2 , 0, widthHalf + 2, height);
+            // Fallthrough
+        case VIEWPORTS_COUNT_2_PLAYERS:
+            x1 = 0;
+            y1 = heightHalf - 2;
+            x2 = width;
+            y2 = heightHalf + 2;
             break;
     }
+    gDPFillRectangle((*dlist)++, x1, y1, x2, y2);
 }
