@@ -1039,7 +1039,8 @@ void render_ortho_triangle_image(Gfx **dList, MatrixS **mtx, Vertex **vtx, Objec
         temp_v1->x = segment->trans.x_position;
         temp_v1->y = segment->trans.y_position;
         temp_v1->z = segment->trans.z_position;
-        gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0((*vtx)++), 1, 0);
+        gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(*vtx), 1, 0);
+        (*vtx)++; // Can't be done in the macro?
         index = segment->animFrame;
         gModelMatrixStackPos ++;
         gCameraTransform.y_rotation = -segment->trans.y_rotation;

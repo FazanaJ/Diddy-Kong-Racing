@@ -285,14 +285,18 @@ $(GCC_SAFE_FILES): CFLAGS := -c -DNDEBUG -DAVOID_UB -Os $(INCLUDE_CFLAGS) $(DEF_
     -march=vr4300 \
     -mabi=32 \
     -mfix4300 \
-	  -mdivide-breaks \
     -mno-check-zero-division \
     -mno-abicalls \
+    -mgp32 \
+    -mfp32 \
+    -mhard-float \
     -ffreestanding \
     -fno-builtin \
     -fno-common \
+    -mno-long-calls \
     -ffast-math \
     -mips3 \
+    -mlong32 \
     -funsafe-math-optimizations \
     -finline-functions-called-once \
     -fno-merge-constants \
