@@ -9,6 +9,8 @@
 #include "structs.h"
 #include "game.h"
 
+#undef NON_MATCHING
+
 extern s32 gIntDisFlag;
 extern s32 gCurrentRNGSeed; //Official Name: rngSeed
 extern s32 gPrevRNGSeed;
@@ -40,6 +42,7 @@ void set_gIntDisFlag(s8 setting) {
     gIntDisFlag = setting;
 }
 
+#ifdef NON_MATCHING
 void f32_matrix_to_s32_matrix(Matrix *input, MatrixS *output) {
     s32 i;
     for(i = 0; i < 4; i++) {
@@ -49,14 +52,22 @@ void f32_matrix_to_s32_matrix(Matrix *input, MatrixS *output) {
         (*output)[i][3] = (s32) ((*input)[i][3] * 65536.0f);
     }
 }
+#else
+GLOBAL_ASM("asm/math_util/f32_matrix_to_s32_matrix.s")
+#endif
 
+#ifdef NON_MATCHING
 /* Official name: mathMtxXFMF */
 void guMtxXFMF(Matrix mf, float x, float y, float z, float *ox, float *oy, float *oz) {
         *ox = mf[0][0]*x + mf[1][0]*y + mf[2][0]*z + mf[3][0];
         *oy = mf[0][1]*x + mf[1][1]*y + mf[2][1]*z + mf[3][1];
         *oz = mf[0][2]*x + mf[1][2]*y + mf[2][2]*z + mf[3][2];
 }
+#else
+GLOBAL_ASM("asm/math_util/guMtxXFMF.s")
+#endif
 
+#ifdef NON_MATCHING
 /* Official name: mathMtxFastXFMF */
 void f32_matrix_dot(Matrix *mat1, Matrix *mat2, Matrix *output) {
     f32 temp_f4;
@@ -70,7 +81,11 @@ void f32_matrix_dot(Matrix *mat1, Matrix *mat2, Matrix *output) {
     (*output)[0][1] = (temp_f4 * (*mat1)[0][1]) + (temp_f6 * (*mat1)[1][1]) + (temp_f8 * (*mat1)[2][1]);
     (*output)[0][2] = (temp_f4 * (*mat1)[0][2]) + (temp_f6 * (*mat1)[1][2]) + (temp_f8 * (*mat1)[2][2]);
 }
+#else
+GLOBAL_ASM("asm/math_util/f32_matrix_dot.s")
+#endif
 
+#ifdef NON_MATCHING
 /* Official name: mathMtxCatF */
 void f32_matrix_mult(Matrix *mat1, Matrix *mat2, Matrix *output) {
     s32 i;
@@ -89,11 +104,18 @@ void f32_matrix_mult(Matrix *mat1, Matrix *mat2, Matrix *output) {
         (*output)[i][3] = (f32) ((y * (*mat2)[1][3]) + (z * (*mat2)[2][3]) + ((x * (*mat2)[0][3]) + (w * (*mat2)[3][3])));
     }
 }
+#else
+GLOBAL_ASM("asm/math_util/f32_matrix_mult.s")
+#endif
 
+#ifdef NON_MATCHING
 /* Official name: mathMtxF2L */
 void f32_matrix_to_s16_matrix(Matrix *input, MatrixS *output) {
     guMtxF2L(input, output);
 }
+#else
+GLOBAL_ASM("asm/math_util/f32_matrix_to_s16_matrix.s")
+#endif
 
 /* Official Name: mathSeed */
 void set_rng_seed(s32 num) {
@@ -139,6 +161,7 @@ void s16_matrix_rotate(s16 *arg0[4][4], s16 arg1[4][4]) {
 GLOBAL_ASM("asm/math_util/s16_matrix_rotate.s")
 #endif
 
+#ifdef NON_MATCHING
 void s16_vec3_mult_by_s32_matrix(MatrixS input, Vec3s *output) {
     s32 x;
     s32 y;
@@ -151,6 +174,9 @@ void s16_vec3_mult_by_s32_matrix(MatrixS input, Vec3s *output) {
     output->y = ((x * input[0][1]) + (y * input[1][1]) + (z * input[2][1])) >> 16;
     output->z = ((x * input[0][2]) + (y * input[1][2]) + (z * input[2][2])) >> 16;
 }
+#else
+GLOBAL_ASM("asm/math_util/s16_vec3_mult_by_s32_matrix.s")
+#endif
 
 #ifdef NON_EQUIVALENT
 void object_transform_to_matrix(Matrix arg0, ObjectTransform *trans) {
@@ -231,6 +257,7 @@ void object_transform_to_matrix_2(Matrix mtx, ObjectTransform *trans) {
 GLOBAL_ASM("asm/math_util/object_transform_to_matrix_2.s")
 #endif
 
+#ifdef NON_MATCHING
 void f32_matrix_from_rotation_and_scale(Matrix mtx, s32 angle, f32 arg2, f32 arg3) {
     f32 cosine, sine;
 
@@ -253,6 +280,9 @@ void f32_matrix_from_rotation_and_scale(Matrix mtx, s32 angle, f32 arg2, f32 arg
     mtx[3][2] = 0;
     mtx[3][3] = 1.0f;
 }
+#else
+GLOBAL_ASM("asm/math_util/f32_matrix_from_rotation_and_scale.s")
+#endif
 
 #ifdef NON_EQUIVALENT
 void s16_vec3_apply_object_rotation(ObjectTransform *trans, s16 *vec3Arg) {
@@ -399,6 +429,7 @@ void f32_vec3_apply_object_rotation3(ObjectTransform *trans, f32 *vec3_f32) {
 GLOBAL_ASM("asm/math_util/f32_vec3_apply_object_rotation3.s")
 #endif
 
+#ifdef NON_MATCHING
 s32 point_triangle_2d_xz_intersection(s32 x, s32 z, s16 *vec3A, s16 *vec3B, s16 *vec3C) {
     s32 result;
     s32 aX;
@@ -437,7 +468,11 @@ s32 point_triangle_2d_xz_intersection(s32 x, s32 z, s16 *vec3A, s16 *vec3B, s16 
     }
     return result;
 }
+#else
+GLOBAL_ASM("asm/math_util/point_triangle_2d_xz_intersection.s")
+#endif
 
+#ifdef NON_MATCHING
 static u16 atan2_lookup(f32 y, f32 x) {
     u16 ret;
 
@@ -490,16 +525,24 @@ s32 atan2s(s32 x, s32 y) {
     }
     return ret;
 }
+#else
+GLOBAL_ASM("asm/math_util/atan2s.s")
+#endif
 
+#ifdef NON_MATCHING
 s16 arctan2_f(f32 y, f32 x) {
     return atan2s((s32) (y * 255.0f), (s32) (x * 255.0f));
 }
+#else
+GLOBAL_ASM("asm/math_util/arctan2_f.s")
+#endif
 
 GLOBAL_ASM("asm/math_util/sins_f.s")
 GLOBAL_ASM("asm/math_util/coss_f.s")
 GLOBAL_ASM("asm/math_util/coss.s")
 GLOBAL_ASM("asm/math_util/sins_2.s")
 
+#ifdef NON_MATCHING
 /**
  * Signed distance field calculation. It's used to calculate the level of intersection between a point and a triangle.
 */
@@ -520,3 +563,6 @@ f32 area_triangle_2d(f32 x0, f32 z0, f32 x1, f32 z1, f32 x2, f32 z2) {
     }
     return sqrtf(result);
 }
+#else
+GLOBAL_ASM("asm/math_util/area_triangle_2d.s")
+#endif
