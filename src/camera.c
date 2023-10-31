@@ -988,10 +988,6 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
         v->x = obj->segment.trans.x_position;
         v->y = obj->segment.trans.y_position;
         v->z = obj->segment.trans.z_position;
-        v->r = 255;
-        v->g = 255;
-        v->b = 255;
-        v->a = 255;
         gSPVertexDKR((*dlist)++, OS_PHYSICAL_TO_K0(*vertexList), 1, 0);
         (*vertexList)++;
         if (gCutsceneCameraActive == 0) {
