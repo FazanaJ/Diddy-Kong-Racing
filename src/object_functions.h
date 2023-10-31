@@ -260,9 +260,6 @@ typedef struct VertexPosition {
 extern Triangle D_800DCAA8[8];
 extern VertexPosition D_800DCB28[6];
 
-s32 get_random_number_from_range(s32, s32); // Non Matching src/math_util.c
-s32 atan2s(s32, s32); // Non Matching src/math_util.c
-
 void obj_init_fireball_octoweapon(Object *obj, LevelObjectEntry_Fireball_Octoweapon *entry);
 void obj_init_lasergun(Object *obj, LevelObjectEntry_Lasergun *entry);
 void obj_init_laserbolt(Object *obj, LevelObjectEntry_Laserbolt *entry);

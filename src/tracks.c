@@ -802,12 +802,12 @@ void draw_gradient_background(Gfx **dList) {
 
     verts = (Vertex *) gSceneCurrVertexList;
     tris = (Triangle *) gSceneCurrTriList;
-    headerRed0 = gCurrentLevelHeader2->unkC1;
-    headerGreen0 = gCurrentLevelHeader2->unkC2;
-    headerBlue0 = gCurrentLevelHeader2->unkC3;
-    headerRed1 = gCurrentLevelHeader2->unkBE;
-    headerGreen1 = gCurrentLevelHeader2->unkBF;
-    headerBlue1 = gCurrentLevelHeader2->unkC0;
+    headerRed0 = gCurrentLevelHeader2->BGColourTopR;
+    headerGreen0 = gCurrentLevelHeader2->BGColourTopG;
+    headerBlue0 = gCurrentLevelHeader2->BGColourTopB;
+    headerRed1 = gCurrentLevelHeader2->BGColourBottomR;
+    headerGreen1 = gCurrentLevelHeader2->BGColourBottomG;
+    headerBlue1 = gCurrentLevelHeader2->BGColourBottomB;
     reset_render_settings(dList);
     load_and_set_texture_no_offset(dList, 0, RENDER_FOG_ACTIVE);
     gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(verts), 4, 0);
@@ -1033,7 +1033,7 @@ void render_level_geometry_and_objects(Gfx **dList) {
     gPuppyPrint.mainTimerPoints[0][PP_OBJGFX] = osGetCount();
 #endif
     gIsObjectRender = TRUE;
-    func_80015348(sp160, objCount - 1);
+    sort_objects_by_dist(sp160, objCount - 1);
     visibleFlags = OBJ_FLAGS_INVIS_PLAYER1 << (gActiveCameraID & 1);
 
     for (i = sp160; i < objCount; i++) {

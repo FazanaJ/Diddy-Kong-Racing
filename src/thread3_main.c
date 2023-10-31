@@ -33,7 +33,7 @@
 #include "printf.h"
 #include "fade_transition.h"
 #include "borders.h"
-#include "unknown_008C40.h"
+#include "audio_spatial.h"
 #include "tracks.h"
 #include "game_text.h"
 #include "game_ui.h"
@@ -508,7 +508,7 @@ void ingame_logic_loop(s32 updateRate) {
     if (!gIsPaused) {
         update_time_dialation(updateRate);
         func_80010994(updateRate);
-        if (gCutsceneCameraActive == 0 || func_8001139C()) {
+        if (gCutsceneCameraActive == 0 || get_race_countdown()) {
             if (buttonPressedInputs & START_BUTTON && gLevelPropertyStackPos == 0 && gDrumstickSceneLoadTimer == 0
                 && gGameMode == GAMEMODE_INGAME && gPostRaceViewPort == NULL && gLevelLoadTimer == 0 && gPauseLockTimer == 0) {
                 buttonPressedInputs = 0;

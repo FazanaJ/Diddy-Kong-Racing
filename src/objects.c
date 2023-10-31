@@ -24,12 +24,12 @@
 #include "object_models.h"
 #include "lights.h"
 #include "game_ui.h"
-#include "unknown_008C40.h"
+#include "audio_spatial.h"
 #include "main.h"
 #include "controller.h"
 #include "game_text.h"
 #include "audiosfx.h"
-#include "unknown_005740.h"
+#include "audio_vehicle.h"
 #include "vehicle_misc.h"
 
 #define MAX_CHECKPOINTS 60
@@ -177,9 +177,9 @@ s32 gAssetsMiscTableLength;
 s16 D_8011ADA4;
 f32 gObjectUpdateRateF;
 s32 D_8011ADAC;
-s32 D_8011ADB0;
+s32 gEventCountdown;
 s32 D_8011ADB4;
-s32 gRaceStartCountdown;
+s32 gEventStartTimer;
 s32 D_8011ADBC;
 s32 D_8011ADC0;
 s8 gFirstTimeFinish;
@@ -692,7 +692,7 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
     s32 tajFlags;
 
     D_8011AD20 = 0;
-    D_8011ADB0 = 0;
+    gEventCountdown = 0;
     gFirstTimeFinish = 0;
     gNumRacers = 0;
     D_8011AF00 = 0;
@@ -733,7 +733,7 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
         curObj = gObjPtrList[i2];
         if (!(curObj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED)) {
             if (curObj->behaviorId == BHV_SETUP_POINT) {
-                if (arg1 == curObj->properties.setupPoint.unk4) {
+                if (arg1 == (u32) curObj->properties.setupPoint.unk4) {
                     if (curObj->properties.setupPoint.unk0 < 8) {
                         spF4[curObj->properties.setupPoint.unk0] = curObj->segment.trans.x_position;
                         spD4[curObj->properties.setupPoint.unk0] = curObj->segment.trans.y_position;
@@ -829,7 +829,6 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
             }
         }
     }
-    if (((!(&curObj->segment.trans)) && (!(&curObj->segment.trans))) && (!(&curObj->segment.trans))) {}
     entry = allocate_from_main_pool_safe(sizeof(LevelObjectEntry_Unk8000CC7C), MEMP_OBJECTS);
     entry->unkC = 0;
     entry->unkA = 0;
@@ -914,7 +913,7 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
             newRacerObj->segment.level_entry = NULL;
             curRacer->vehicleID = vehicle;
             curRacer->vehicleIDPrev = vehicle;
-            if (sp127 != -1 && sp127 != vehicle) {
+            if (sp127 != -1 && sp127 != (s32) vehicle) {
                 D_8011AD20 = 1;
             }
             sp127 = vehicle;
@@ -944,9 +943,9 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
                 }
             }
             if ((gameMode != GAMEMODE_MENU || D_8011AD3C == 2) && vehicle < VEHICLE_TRICKY) {
-                curRacer->unk118 = func_80004B40(curRacer->characterId, curRacer->vehicleID);
+                curRacer->vehicleSound = func_80004B40(curRacer->characterId, curRacer->vehicleID);
             } else {
-                curRacer->unk118 = NULL;
+                curRacer->vehicleSound = NULL;
             }
             
             newRacerObj->interactObj->pushForce = miscAsset16[curRacer->characterId] + 1;
@@ -959,7 +958,7 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
                 case VEHICLE_BUBBLER:
                 case VEHICLE_WIZPIG:
                 case VEHICLE_ROCKET:
-                    func_8005C2F0(newRacerObj, curRacer);
+                    racer_special_init(newRacerObj, curRacer);
                     break;
                 default:
                     break;
@@ -1027,7 +1026,7 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
             newRacerObj->unk64->racer.transparency = 0x60;
         }
     }
-    D_8011ADB0 = 100;
+    gEventCountdown = 100;
     for (j = 0; j < gNumRacers; j++) {
         curRacerObj = (*gRacers)[j];
         curRacer = &curRacerObj->unk64->racer;
@@ -1052,9 +1051,9 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
         curRacer->stretch_height = 1.0f;
     }
     if (raceType == RACETYPE_DEFAULT || isChallengeMode || gIsTimeTrial || D_8011AD3C) {
-        D_8011ADB0 = 80;
+        gEventCountdown = 80;
     } else {
-        D_8011ADB0 = 0;
+        gEventCountdown = 0;
     }
     if (raceType == RACETYPE_DEFAULT && numPlayers == 1 && !is_in_adventure_two()) {
         if (is_two_player_adventure_race() == 0) {
@@ -1103,7 +1102,7 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
     }
     if (func_8000E148() != 0) {
         func_80072298(0);
-        D_8011ADB0 = 0;
+        gEventCountdown = 0;
         start_level_music(1.0f);
     }
     set_free_queue_state(0);
@@ -1253,7 +1252,7 @@ void transform_player_vehicle(void) {
     racer->unk2 = 0;
     racer->characterId = settings->racers[PLAYER_ONE].character;
     racer->playerIndex = 0;
-    racer->unk118 = 0;
+    racer->vehicleSound = 0;
     if (get_filtered_cheats() & CHEAT_BIG_CHARACTERS) {
         player->segment.trans.scale *= 1.4f;
     }
@@ -1452,7 +1451,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 arg1) {
             } else if (var_a2 == 1 && arg1 & 8) {
                 curObj->unk68[var_a2] = NULL;
             } else {
-                curObj->unk68[var_a2] = (Object_68 *) func_8005F99C(curObj->segment.header->modelIds[var_a2], sp50);
+                curObj->unk68[var_a2] = (Object_68 *) object_model_init(curObj->segment.header->modelIds[var_a2], sp50);
                 if (curObj->unk68[var_a2] == NULL) {
                     var_v1 = TRUE;
                 }
@@ -1625,7 +1624,7 @@ void objFreeAssets(Object *obj, s32 count, s32 objType) {
     if (objType == OBJECT_MODEL_TYPE_3D_MODEL) { // 3D model
         for (i = 0; i < count; i++) {
             if (obj->unk68[i] != NULL) {
-                func_8005FF40((ObjectModel **) (s32) obj->unk68[i]);
+                free_3d_model((ObjectModel **) (s32) obj->unk68[i]);
             }
         } 
     } else if (objType == OBJECT_MODEL_TYPE_MISC) {
@@ -1851,7 +1850,7 @@ Object *func_8000FD54(s32 objectHeaderIndex) {
     failedToLoadModel = FALSE;
     if (modelType == OBJECT_MODEL_TYPE_3D_MODEL) {
         for(i = 0; i < numModelIds; i++) {
-            object->unk68[i] = func_8005F99C(object->segment.header->modelIds[i], 0);
+            object->unk68[i] = object_model_init(object->segment.header->modelIds[i], 0);
             if (object->unk68[i] == NULL) {
                 failedToLoadModel = TRUE;
             }
@@ -1934,15 +1933,15 @@ void func_80010994(s32 updateRate) {
 #endif
 
     func_800245B4(-1);
-    gRaceStartCountdown = D_8011ADB0;
-    if ((D_8011ADB0 > 0) && (func_800A0190() != 0)) {
-        D_8011ADB0 -= updateRate;
+    gEventStartTimer = gEventCountdown;
+    if ((gEventCountdown > 0) && (func_800A0190() != 0)) {
+        gEventCountdown -= updateRate;
         D_8011ADBC = 0;
     } else {
         D_8011ADBC += updateRate;
     }
-    if (D_8011ADB0 <= 0) {
-        D_8011ADB0 = 0;
+    if (gEventCountdown <= 0) {
+        gEventCountdown = 0;
     }
     D_8011AD3D = 0;
     D_8011AD21 = 1 - D_8011AD21;
@@ -2064,7 +2063,7 @@ void func_80010994(s32 updateRate) {
     try_close_dialogue_box();
     func_800179D0();
     if (D_8011AF00 == 1) {
-        if ((D_8011ADB0 == 0x50) && (gCutsceneID == 0)) {
+        if ((gEventCountdown == 0x50) && (gCutsceneID == 0)) {
             sp54 = 0;
             for (i = 0; i < MAXCONTROLLERS; i++) {
                 tempVal = get_buttons_pressed_from_player(i);
@@ -2176,22 +2175,22 @@ void func_80011390(void) {
 
 extern s32 benchState;
 
-s32 func_8001139C(void) {
+s32 get_race_countdown(void) {
 #ifdef PUPPYPRINT_DEBUG
     if (benchState == 1) {
         return 0;
     }
 #endif
-    return D_8011ADB0;
+    return gEventCountdown;
 }
 
 /**
- * Return the timer countdown before the race starts.
+ * Return the timer that the countdown is set to before the race starts.
  * There exists another variable in racer.c with exactly the same purpose.
  * This does not get used anywhere else.
  */
 s32 get_race_start_timer(void) {
-    return gRaceStartCountdown;
+    return gEventStartTimer;
 }
 
 /**
@@ -2539,9 +2538,9 @@ void render_3d_model(Gfx **dList, Object *obj) {
             racerObj = NULL;
         }
         if (obj68->unk20 <= 0) {
-            obj->unk44 = (Vertex *) obj68->unk4[obj68->unk1F];
+            obj->unk44 = (Vertex *) obj68->unk4[obj68->animationTaskNum];
             if (obj68->unk1E == 2) {
-                func_80061D30(obj);
+                object_animate(obj);
             }
             if (obj68->unk1E && objModel->unk40 != NULL) {
                 flags = TRUE;
@@ -2551,7 +2550,7 @@ void render_3d_model(Gfx **dList, Object *obj) {
                 if (gNumberOfViewports != VIEWPORTS_COUNT_1_PLAYER) {
                     flags = FALSE;
                 }
-                obj->unk44 = (Vertex *) obj68->unk4[obj68->unk1F];
+                obj->unk44 = (Vertex *) obj68->unk4[obj68->animationTaskNum];
                 if (obj->behaviorId == BHV_UNK_3F) { // 63 = stopwatchicon, stopwatchhand
                     calc_dyn_light_and_env_map_for_object(objModel, obj, 0, gCurrentLightIntensity);
                 } else if (flags) {
@@ -2566,7 +2565,7 @@ void render_3d_model(Gfx **dList, Object *obj) {
                 obj68->unk20 = 1;
             }
         }
-        obj->unk44 = (Vertex *) obj68->unk4[obj68->unk1F];
+        obj->unk44 = (Vertex *) obj68->unk4[obj68->animationTaskNum];
         if (obj->behaviorId == BHV_DOOR) {
             func_80011264(objModel, obj);
         }
@@ -3076,7 +3075,7 @@ void render_racer_shield(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *o
         shear *= scale;
         gfxData = gShieldEffectObject->unk68[shieldType];
         mdl = gfxData->objModel;
-        gShieldEffectObject->unk44 = (Vertex *) gfxData->unk4[gfxData->unk1F];
+        gShieldEffectObject->unk44 = (Vertex *) gfxData->unk4[gfxData->animationTaskNum];
         gDPSetEnvColor((*dList)++, 255, 255, 255, 0);
         if (racer->shieldTimer < 64) {
             gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, racer->shieldTimer * 4);
@@ -3137,8 +3136,8 @@ void render_racer_magnet(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *o
             gMagnetEffectObject->segment.trans.z_rotation = 0;
             gfxData = *gMagnetEffectObject->unk68;
             mdl = gfxData->objModel;
-            gMagnetEffectObject->unk44 = (Vertex *) gfxData->unk4[gfxData->unk1F];
-            opacity = (((D_8011B078[(var_t0 * 4) + 1] * 8) & 0x7F) + 0x80);
+            gMagnetEffectObject->unk44 = (Vertex *) gfxData->unk4[gfxData->animationTaskNum];
+            opacity = ((D_8011B078[(var_t0 * 4) + 1] * 8) & 0x7F) + 0x80;
             func_8007F594(&gObjectCurrDisplayList, 2, COLOUR_RGBA32(255, 255, 255, opacity), gMagnetColours[racer->magnetModelID]);
             apply_object_shear_matrix(dList, &gObjectCurrMatrix, gMagnetEffectObject, obj, shear);
             gObjectTexAnim = TRUE;
@@ -3304,8 +3303,10 @@ GLOBAL_ASM("asm/non_matchings/objects/func_80014814.s")
 
 GLOBAL_ASM("asm/non_matchings/objects/func_80014B50.s")
 
-// Sorts objects by distance to the camera.
-void func_80015348(s32 startIndex, s32 lastIndex) {
+/**
+ * Takes every object and sorts the main object list by distance to the camera.
+*/
+void sort_objects_by_dist(s32 startIndex, s32 lastIndex) {
     s32 i;
     s32 didNotSwap;
     Object *obj;
@@ -3318,12 +3319,12 @@ void func_80015348(s32 startIndex, s32 lastIndex) {
         obj = gObjPtrList[i];
         if (obj != NULL) {
             if (obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) {
-                // func_80069DC8 calculates the distance to the camera from a XYZ location.
-                obj->segment.object.distanceToCamera = -func_80069DC8(obj->segment.trans.x_position, obj->segment.trans.y_position, obj->segment.trans.z_position);
+                // get_distance_to_camera calculates the distance to the camera from a XYZ location.
+                obj->segment.object.distanceToCamera = -get_distance_to_camera(obj->segment.trans.x_position, obj->segment.trans.y_position, obj->segment.trans.z_position);
             } else if (obj->segment.header->flags & OBJ_FLAGS_UNK_0080) {
                 obj->segment.object.distanceToCamera += -16000.0f;
             } else {
-                obj->segment.object.distanceToCamera = -func_80069DC8(obj->segment.trans.x_position, obj->segment.trans.y_position, obj->segment.trans.z_position);
+                obj->segment.object.distanceToCamera = -get_distance_to_camera(obj->segment.trans.x_position, obj->segment.trans.y_position, obj->segment.trans.z_position);
             }
         } else {
             //!@bug obj is NULL here, so it would probably cause a crash. Thankfully, gObjPtrList shouldn't have NULL objects in it.
@@ -3525,13 +3526,13 @@ void func_80016748(Object *obj0, Object *obj1) {
         if (!((objModel->unk3C + 50.0f) < sqrtf((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff)))) {
             obj0Interact = obj0->interactObj;
             obj1Interact = obj1->interactObj; 
-            object_transform_to_matrix(obj1TransformMtx, &obj1->segment.trans);
+            object_transform_to_matrix((float (*)[4]) obj1TransformMtx, &obj1->segment.trans);
             for(i = 0; i < objModel->unk20; i += 2) {
                 xDiff = obj1->unk44[objModel->unk1C[i]].x;
                 yDiff = obj1->unk44[objModel->unk1C[i]].y;
                 zDiff = obj1->unk44[objModel->unk1C[i]].z;
-                guMtxXFMF(obj1TransformMtx, xDiff, yDiff, zDiff, &xDiff, &yDiff, &zDiff);
-                temp = (((f32) objModel->unk1C[i + 1] / 64.0f) * obj1->segment.trans.scale) * 50.0f;
+                guMtxXFMF((float (*)[4]) obj1TransformMtx, xDiff, yDiff, zDiff, &xDiff, &yDiff, &zDiff);
+                temp = (((f32) objModel->unk1C[i + 1] / 64) * obj1->segment.trans.scale) * 50.0f;
                 xDiff -= obj0->segment.trans.x_position;
                 yDiff -= obj0->segment.trans.y_position;
                 zDiff -= obj0->segment.trans.z_position;
@@ -4089,7 +4090,7 @@ u8 func_8001B4FC(s32 trackId) {
     gBeatStaffGhost = FALSE;
     gTimeTrialStaffGhost = FALSE;
     settings = get_settings();
-    if (get_map_default_vehicle(trackId) == D_8011AE82) {
+    if (get_map_default_vehicle(trackId) == (Vehicle) D_8011AE82) {
         mainTrackIds = (s8 *) get_misc_asset(ASSET_MISC_MAIN_TRACKS_IDS);
         temp_v0 = (u16 *) get_misc_asset(ASSET_MISC_24);
         for (i = 0; mainTrackIds[i] != -1 && trackId != mainTrackIds[i]; i++) { }
@@ -5446,8 +5447,8 @@ void func_80022E18(s32 arg0) {
         if (arg0 == 2) {
             set_current_text(0);
         }
-        D_8011ADB0 = 0;
-        gRaceStartCountdown = 0;
+        gEventCountdown = 0;
+        gEventStartTimer = 0;
         obj->properties.common.unk0 = 0x14;
     }
     func_80000B28();

@@ -92,9 +92,6 @@ typedef struct unk800B7D10 {
     s32 unk14;
 } unk800B7D10;
 
-//Functions below don't have files or matches yet
-unk800B7D10 *get_stack_pointer(void); // Non Matching with own file?
-
 void init_main_memory_pool(void);
 MemoryPoolSlot *new_sub_memory_pool(s32 poolDataSize, s32 numSlots);
 void *allocate_from_main_pool_safe(s32 size, u32 colourTag);

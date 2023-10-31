@@ -11,6 +11,7 @@
 #include "game.h"
 #include "main.h"
 #include "tracks.h"
+#include "math_util.h"
 
 /************ .data ************/
 
