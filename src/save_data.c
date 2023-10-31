@@ -1145,25 +1145,25 @@ loop_10:
                     }
                 }
                 if (fileOffset == 0) {
-                    ret = CONTROLLER_PAK_UNK6;
+                    ret = CONTROLLER_PAK_NO_ROOM_FOR_GHOSTS;
                     if (fileData[4] == 0xFF) {
-                        ret = CONTROLLER_PAK_UNK8;
+                        ret = CONTROLLER_PAK_SWITCH_TO_RUMBLE;
                     }
                     temp_v0_4 = temp_a1 + (2 * 4);
                     if (fileData[4] == 0xFF) {
-                        ret = CONTROLLER_PAK_UNK8;
+                        ret = CONTROLLER_PAK_SWITCH_TO_RUMBLE;
                     }
                     if (temp_v0_4[0] == 0xFF) {
-                        ret = CONTROLLER_PAK_UNK8;
+                        ret = CONTROLLER_PAK_SWITCH_TO_RUMBLE;
                     }
                     if (temp_v0_4[4] == 0xFF) {
-                        ret = CONTROLLER_PAK_UNK8;
+                        ret = CONTROLLER_PAK_SWITCH_TO_RUMBLE;
                     }
                     if (temp_v0_4[8] == 0xFF) {
-                        ret = CONTROLLER_PAK_UNK8;
+                        ret = CONTROLLER_PAK_SWITCH_TO_RUMBLE;
                     }
                     if (temp_v0_4[12] == 0xFF) {
-                        ret = CONTROLLER_PAK_UNK8;
+                        ret = CONTROLLER_PAK_SWITCH_TO_RUMBLE;
                     }
                 }
             } else {
@@ -1259,12 +1259,12 @@ typedef struct GhostData {
 GLOBAL_ASM("asm/non_matchings/save_data/func_80074EB8.s")
 
 #ifdef NON_EQUIVALENT
-s32 func_80075000(s32 controllerIndex, s16 levelId, s16 vehicleId, s16 ghostCharacterId, s16 ghostTime, s16 ghostNodeCount, GhostHeader *ghostData) {
+SIDeviceStatus func_80075000(s32 controllerIndex, s16 levelId, s16 vehicleId, s16 ghostCharacterId, s16 ghostTime, s16 ghostNodeCount, GhostHeader *ghostData) {
     GhostHeaderAlt *sp70;
     s32 sp58;
     s32 fileSize;
     s32 fileNumber;
-    s32 ret;
+    SIDeviceStatus ret;
     s32 ghostIndex;
     s32 i;
     GhostHeader *ghostFileData;
@@ -1325,7 +1325,7 @@ s32 func_80075000(s32 controllerIndex, s16 levelId, s16 vehicleId, s16 ghostChar
                     if (ghostIndex == -2) {
                         ret = CONTROLLER_PAK_GOOD;
                     } else if (ghostIndex == -1) {
-                        ret = CONTROLLER_PAK_UNK6;
+                        ret = CONTROLLER_PAK_NO_ROOM_FOR_GHOSTS;
                     } else {
                         sp58 = (0x1100 - ghostFileData[ghostIndex].nodeCount) + ghostFileData[ghostIndex].unk2;
                         fileDataToWrite = allocate_from_main_pool_safe(fileSize + 0x100, COLOUR_TAG_BLACK);
@@ -1505,7 +1505,7 @@ SIDeviceStatus get_si_device_status(s32 controllerIndex) {
 
     if (sControllerMesgQueue->validCount == 0) {
         if (osMotorInit(sControllerMesgQueue,  &pfs[controllerIndex], controllerIndex) == 0) {
-            return RUMBLE_PAK;
+            return CONTROLLER_PAK_RUMBLE_PAK_FOUND;
         }
     }
 
@@ -1523,18 +1523,18 @@ SIDeviceStatus get_si_device_status(s32 controllerIndex) {
         }
         if (ret == PFS_ERR_ID_FATAL) {
             if (osMotorInit(sControllerMesgQueue,  &pfs[controllerIndex], controllerIndex) == 0) {
-                return RUMBLE_PAK;
+                return CONTROLLER_PAK_RUMBLE_PAK_FOUND;
             }
         }
         if (ret == PFS_ERR_NEW_PACK) {
             if ((osPfsInit(sControllerMesgQueue,  &pfs[controllerIndex], controllerIndex) == PFS_ERR_ID_FATAL)
                 && (osMotorInit(sControllerMesgQueue,  &pfs[controllerIndex], controllerIndex) == 0)) {
-                return RUMBLE_PAK;
+                return CONTROLLER_PAK_RUMBLE_PAK_FOUND;
             }
             return CONTROLLER_PAK_CHANGED;
         }
         if (ret == PFS_ERR_NOPACK || ret == PFS_ERR_DEVICE) {
-            return NO_CONTROLLER_PAK;
+            return CONTROLLER_PAK_NOT_FOUND;
         }
         if (ret == PFS_ERR_BAD_DATA) {
             return CONTROLLER_PAK_BAD_DATA;
@@ -1550,7 +1550,7 @@ SIDeviceStatus get_si_device_status(s32 controllerIndex) {
         }
     }
 
-    return NO_CONTROLLER_PAK;
+    return CONTROLLER_PAK_NOT_FOUND;
 }
 
 /* Official name: packClose */
@@ -1875,7 +1875,7 @@ SIDeviceStatus get_file_number(s32 controllerIndex, char *fileName, char *fileEx
         return CONTROLLER_PAK_GOOD;
     }
     if ((ret == PFS_ERR_NOPACK) || (ret == PFS_ERR_DEVICE)) {
-        return NO_CONTROLLER_PAK;
+        return CONTROLLER_PAK_NOT_FOUND;
     }
     if (ret == PFS_ERR_INCONSISTENT) {
         return CONTROLLER_PAK_INCONSISTENT;
@@ -1898,7 +1898,7 @@ SIDeviceStatus read_data_from_controller_pak(s32 controllerIndex, s32 fileNum, u
         return CONTROLLER_PAK_GOOD;
     }
     if ((readResult == PFS_ERR_NOPACK) || (readResult == PFS_ERR_DEVICE)) {
-        return NO_CONTROLLER_PAK;
+        return CONTROLLER_PAK_NOT_FOUND;
     }
     if (readResult == PFS_ERR_INCONSISTENT) {
         return CONTROLLER_PAK_INCONSISTENT;
@@ -1972,7 +1972,7 @@ SIDeviceStatus write_controller_pak_file(s32 controllerIndex, s32 fileNumber, ch
         if (temp == 0) {
             ret = CONTROLLER_PAK_GOOD;
         } else if ((temp == PFS_ERR_NOPACK) || (temp == PFS_ERR_DEVICE)) {
-            ret = NO_CONTROLLER_PAK;
+            ret = CONTROLLER_PAK_NOT_FOUND;
         } else if (temp == PFS_ERR_INCONSISTENT) {
             ret = CONTROLLER_PAK_INCONSISTENT;
         } else if (temp == PFS_ERR_ID_FATAL) {
