@@ -1035,7 +1035,7 @@ void build_tex_display_list(TextureHeader *tex, Gfx *dlist) {
     s32 maskt;
     u8 height;
     u8 width;
-    s32 pal;
+    u8 *pal;
     s32 siz;
     s32 fmt;
     s32 dxt;
@@ -1067,14 +1067,14 @@ void build_tex_display_list(TextureHeader *tex, Gfx *dlist) {
         }
         siz <<= 1;
     }
-    if (uClamp || (tex->flags & 0x40)) {
-        cms = 2;
+    if (uClamp || tex->flags & RENDER_CLAMP_X) {
+        cms = G_TX_CLAMP;
         masks = 0;
     } else {
         cms = 0;
     }
-    if (vClamp || (tex->flags & 0x80)) {
-        cmt = 2;
+    if (vClamp || tex->flags & RENDER_CLAMP_Y) {
+        cmt = G_TX_CLAMP;
         maskt = 0;
     } else {
         cmt = 0;
@@ -1120,17 +1120,17 @@ void build_tex_display_list(TextureHeader *tex, Gfx *dlist) {
     case TEX_FORMAT_CI8:
         fmt = G_IM_FMT_CI;
         siz = G_IM_SIZ_8b;
-        pal = func_8007EF64(tex->ciPaletteOffset);
+        pal = tex->ciPaletteOffset + gCiPalettes;
         gDPLoadTLUT_pal256(dlist++, pal);
         break;
     case TEX_FORMAT_CI4:
         fmt = G_IM_FMT_CI;
         siz = G_IM_SIZ_4b;
-        pal = func_8007EF64(tex->ciPaletteOffset);
+        pal = tex->ciPaletteOffset + gCiPalettes;
         gDPLoadTLUT_pal16(dlist++, 0, pal);
         break;
     }
-    if (tex->flags & 0x400) {
+    if (tex->flags & RENDER_LINE_SWAP) {
         dxt = 0;
     } else {
         dxt = CALC_DXT(width, get_tile_bytes(3, siz));
@@ -1152,9 +1152,6 @@ void build_tex_display_list(TextureHeader *tex, Gfx *dlist) {
     tex->numberOfCommands = ((s32)((u8*)dlist) - (s32)((u8*)tex->cmd)) >> 3;
 }
 
-s32 func_8007EF64(s16 arg0) {
-    return (s32) (arg0 + gCiPalettes);
-}
 /**
  * Official Name: texAnimateTexture
 */
