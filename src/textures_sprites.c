@@ -1028,7 +1028,6 @@ void build_tex_display_list(TextureHeader *tex, Gfx *dlist) {
     s32 cms;
     s32 cmt;
     s32 texFormat;
-    s32 temp_v0_4;
     s32 i;
     s32 uClamp;
     s32 vClamp;
@@ -1036,7 +1035,7 @@ void build_tex_display_list(TextureHeader *tex, Gfx *dlist) {
     s32 maskt;
     u8 height;
     u8 width;
-    s32 var_v0;
+    s32 pal;
     s32 siz;
     s32 fmt;
     s32 dxt;
@@ -1047,25 +1046,26 @@ void build_tex_display_list(TextureHeader *tex, Gfx *dlist) {
     texFlags = (tex->format >> 4) & 0xF;
     height = tex->height;
     width = tex->width;
-    var_v0 = 1;
+    siz = 1;
     masks = 1;
     maskt = 1;
+    pal = 0;
     uClamp = TRUE;
     vClamp = TRUE;
     for (i = 0; i < 7; i++) {
-        if (var_v0 < width) {
+        if (siz < width) {
             masks = i + 1;
         }
-        if (var_v0 == width) {
+        if (siz == width) {
             uClamp = FALSE;
         }
-        if (var_v0 < height) {
+        if (siz < height) {
             maskt = i + 1;
         }
-        if (var_v0 == height) {
+        if (siz == height) {
             vClamp = FALSE;
         }
-        var_v0 <<= 1;
+        siz <<= 1;
     }
     if (uClamp || (tex->flags & 0x40)) {
         cms = 2;
@@ -1117,6 +1117,18 @@ void build_tex_display_list(TextureHeader *tex, Gfx *dlist) {
         fmt = G_IM_FMT_I;
         siz = G_IM_SIZ_4b;
         break;
+    case TEX_FORMAT_CI8:
+        fmt = G_IM_FMT_CI;
+        siz = G_IM_SIZ_8b;
+        pal = func_8007EF64(tex->ciPaletteOffset);
+        gDPLoadTLUT_pal256(dlist++, pal);
+        break;
+    case TEX_FORMAT_CI4:
+        fmt = G_IM_FMT_CI;
+        siz = G_IM_SIZ_4b;
+        pal = func_8007EF64(tex->ciPaletteOffset);
+        gDPLoadTLUT_pal16(dlist++, 0, pal);
+        break;
     }
     if (tex->flags & 0x400) {
         dxt = 0;
@@ -1135,7 +1147,7 @@ void build_tex_display_list(TextureHeader *tex, Gfx *dlist) {
     gDPLoadSync(dlist++);
     gDPLoadBlock(dlist++, G_TX_LOADTILE, 0, 0, (((width)*(height) + get_tile_bytes(1, siz)) >> get_tile_bytes(2, siz))-1, dxt);
     gDPTileSync(dlist++);
-    gDPSetTile(dlist++, fmt, siz, (((width) * get_tile_bytes(0, siz))+7)>>3, 0, G_TX_RENDERTILE, 0, cmt, maskt, 0, cms, masks, 0);
+    gDPSetTile(dlist++, fmt, siz, (((width) * get_tile_bytes(0, siz))+7)>>3, 0, G_TX_RENDERTILE, pal, cmt, maskt, 0, cms, masks, 0);
     gDPSetTileSize(dlist++, G_TX_RENDERTILE, 0, 0, ((width)-1) << G_TEXTURE_IMAGE_FRAC, ((height)-1) << G_TEXTURE_IMAGE_FRAC);
     tex->numberOfCommands = ((s32)((u8*)dlist) - (s32)((u8*)tex->cmd)) >> 3;
 }
