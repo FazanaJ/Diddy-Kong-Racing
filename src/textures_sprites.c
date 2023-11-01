@@ -990,9 +990,39 @@ void func_8007CDC0(Sprite *sprite1, Sprite *sprite2, s32 arg2) {
 GLOBAL_ASM("asm/non_matchings/textures_sprites/func_8007CDC0.s")
 #endif
 
-#ifdef NON_EQUIVALENT
-//HEAVILY WIP
-//Alternative attempt: https://decomp.me/scratch/TbR8j
+s32 get_tile_bytes(s32 type, s32 siz) {
+    if (type == 0) {
+        switch (siz) {
+        case G_IM_SIZ_4b:  return G_IM_SIZ_4b_TILE_BYTES;
+        case G_IM_SIZ_8b:  return G_IM_SIZ_8b_TILE_BYTES;
+        case G_IM_SIZ_16b: return G_IM_SIZ_16b_TILE_BYTES;
+        case G_IM_SIZ_32b: return G_IM_SIZ_32b_TILE_BYTES;
+        }
+    } else if (type == 1) {
+        switch (siz) {
+        case G_IM_SIZ_4b:  return G_IM_SIZ_4b_INCR;
+        case G_IM_SIZ_8b:  return G_IM_SIZ_8b_INCR;
+        case G_IM_SIZ_16b: return G_IM_SIZ_16b_INCR;
+        case G_IM_SIZ_32b: return G_IM_SIZ_32b_INCR;
+        }
+    } else if (type == 2) {
+        switch (siz) {
+        case G_IM_SIZ_4b:  return G_IM_SIZ_4b_SHIFT;
+        case G_IM_SIZ_8b:  return G_IM_SIZ_8b_SHIFT;
+        case G_IM_SIZ_16b: return G_IM_SIZ_16b_SHIFT;
+        case G_IM_SIZ_32b: return G_IM_SIZ_32b_SHIFT;
+        }
+    } else if (type == 3) {
+        switch (siz) {
+        case G_IM_SIZ_4b:  return G_IM_SIZ_4b_BYTES;
+        case G_IM_SIZ_8b:  return G_IM_SIZ_8b_BYTES;
+        case G_IM_SIZ_16b: return G_IM_SIZ_16b_BYTES;
+        case G_IM_SIZ_32b: return G_IM_SIZ_32b_BYTES;
+        }
+    }
+    return 0;
+}
+
 void build_tex_display_list(TextureHeader *tex, Gfx *dlist) {
     s32 texFlags;
     s32 cms;
@@ -1007,6 +1037,10 @@ void build_tex_display_list(TextureHeader *tex, Gfx *dlist) {
     u8 height;
     u8 width;
     s32 var_v0;
+    s32 siz;
+    s32 fmt;
+    s32 dxt;
+    s32 firstSiz;
 
     tex->cmd = (s32 *) dlist;
     texFormat = tex->format & 0xF;
@@ -1045,96 +1079,66 @@ void build_tex_display_list(TextureHeader *tex, Gfx *dlist) {
     } else {
         cmt = 0;
     }
-    if (!(tex->flags & 0x400)) {
-        if (texFormat == 0) {
-            gDPLoadTextureBlock(dlist++, OS_PHYSICAL_TO_K0(tex + 1), G_IM_FMT_RGBA, G_IM_SIZ_32b, width, height, 0, cms, cmt, masks, maskt, G_TX_NOLOD, G_TX_NOLOD);
-            if ((texFlags == 0) || (texFlags == 2)) {
-                tex->flags |= 4;
-            }
+    
+    switch (texFormat) {
+    case TEX_FORMAT_RGBA32:
+        fmt = G_IM_FMT_RGBA;
+        siz = G_IM_SIZ_32b;
+        if ((texFlags == 0) || (texFlags == 2)) {
+            tex->flags |= RENDER_SEMI_TRANSPARENT;
         }
-        if (texFormat == 1) {
-            gDPLoadTextureBlock(dlist++, OS_PHYSICAL_TO_K0(tex + 1), G_IM_FMT_RGBA, G_IM_SIZ_16b, width, height, 0, cms, cmt, masks, maskt, G_TX_NOLOD, G_TX_NOLOD);
-            if ((texFlags == 0) || (texFlags == 2)) {
-                tex->flags |= 4;
-            }
+        break;
+    case TEX_FORMAT_RGBA16:
+        fmt = G_IM_FMT_RGBA;
+        siz = G_IM_SIZ_16b;
+        if ((texFlags == 0) || (texFlags == 2)) {
+            tex->flags |= RENDER_SEMI_TRANSPARENT;
         }
-        if (texFormat == 7) {
-            gDPLoadTextureBlock(dlist++, OS_PHYSICAL_TO_K0(tex + 1), G_IM_FMT_CI, G_IM_SIZ_16b, width, height, 0, cms, cmt, masks, maskt, G_TX_NOLOD, G_TX_NOLOD);
-            temp_v0_4 = func_8007EF64(tex->ciPaletteOffset);
-            gDPLoadTLUT_pal16(dlist++, 0, temp_v0_4);
-
-            tex->flags |= 0x20;
-            if ((texFlags == 0) || (texFlags == 2)) {
-                tex->flags |= 4;
-            }
-        }
-        if (texFormat == 4) {
-            gDPLoadTextureBlock(dlist++, OS_PHYSICAL_TO_K0(tex + 1), G_IM_FMT_IA, G_IM_SIZ_16b, width, height, 0, cms, cmt, masks, maskt, G_TX_NOLOD, G_TX_NOLOD);
-            tex->flags |= 4;
-        }
-        if (texFormat == 5) {
-            gDPLoadTextureBlock(dlist++, OS_PHYSICAL_TO_K0(tex + 1), G_IM_FMT_IA, G_IM_SIZ_8b, width, height, 0, cms, cmt, masks, maskt, G_TX_NOLOD, G_TX_NOLOD);
-            tex->flags |= 4;
-        }
-        if (texFormat == 6) {
-            gDPLoadTextureBlock(dlist++, OS_PHYSICAL_TO_K0(tex + 1), G_IM_FMT_IA, G_IM_SIZ_4b, width, height, 0, cms, cmt, masks, maskt, G_TX_NOLOD, G_TX_NOLOD);
-            tex->flags |= 4;
-        }
-        if (texFormat == 2) {
-            gDPLoadTextureBlock(dlist++, OS_PHYSICAL_TO_K0(tex + 1), G_IM_FMT_I, G_IM_SIZ_8b, width, height, 0, cms, cmt, masks, maskt, G_TX_NOLOD, G_TX_NOLOD);
-        }
-        if (texFormat == 3) {
-            gDPLoadTextureBlock(dlist++, OS_PHYSICAL_TO_K0(tex + 1), G_IM_FMT_I, G_IM_SIZ_4b, width, height, 0, cms, cmt, masks, maskt, G_TX_NOLOD, G_TX_NOLOD);
-        }
-        tex->numberOfCommands = ((s32) ((s32)dlist - (s32)tex->cmd) >> 3);
-    } else {
-        
-        if (texFormat == 0) {
-            gDPLoadTextureBlockS(dlist++, OS_PHYSICAL_TO_K0(tex + 1), G_IM_FMT_RGBA, G_IM_SIZ_32b, width, height, 0, cms, cmt, masks, maskt, G_TX_NOLOD, G_TX_NOLOD);
-            if ((texFlags == 0) || (texFlags == 2)) {
-                tex->flags |= 4;
-            }
-        }
-        if (texFormat == 1) {
-            gDPLoadTextureBlockS(dlist++, OS_PHYSICAL_TO_K0(tex + 1), G_IM_FMT_RGBA, G_IM_SIZ_16b, width, height, 0, cms, cmt, masks, maskt, G_TX_NOLOD, G_TX_NOLOD);
-            if ((texFlags == 0) || (texFlags == 2)) {
-                tex->flags |= 4;
-            }
-        }
-        if (texFormat == 7) {
-            gDPLoadTextureBlockS(dlist++, OS_PHYSICAL_TO_K0(tex + 1), G_IM_FMT_CI, G_IM_SIZ_16b, width, height, 0, cms, cmt, masks, maskt, G_TX_NOLOD, G_TX_NOLOD);
-            temp_v0_4 = func_8007EF64(tex->ciPaletteOffset);
-            gDPLoadTLUT_pal16(dlist++, 0, temp_v0_4);
-
-            tex->flags |= 0x20;
-            if ((texFlags == 0) || (texFlags == 2)) {
-                tex->flags |= 4;
-            }
-        }
-        if (texFormat == 4) {
-            gDPLoadTextureBlockS(dlist++, OS_PHYSICAL_TO_K0(tex + 1), G_IM_FMT_IA, G_IM_SIZ_16b, width, height, 0, cms, cmt, masks, maskt, G_TX_NOLOD, G_TX_NOLOD);
-            tex->flags |= 4;
-        }
-        if (texFormat == 5) {
-            gDPLoadTextureBlockS(dlist++, OS_PHYSICAL_TO_K0(tex + 1), G_IM_FMT_IA, G_IM_SIZ_8b, width, height, 0, cms, cmt, masks, maskt, G_TX_NOLOD, G_TX_NOLOD);
-            tex->flags |= 4;
-        }
-        if (texFormat == 6) {
-            gDPLoadTextureBlockS(dlist++, OS_PHYSICAL_TO_K0(tex + 1), G_IM_FMT_IA, G_IM_SIZ_4b, width, height, 0, cms, cmt, masks, maskt, G_TX_NOLOD, G_TX_NOLOD);
-            tex->flags |= 4;
-        }
-        if (texFormat == 2) {
-            gDPLoadTextureBlockS(dlist++, OS_PHYSICAL_TO_K0(tex + 1), G_IM_FMT_I, G_IM_SIZ_8b, width, height, 0, cms, cmt, masks, maskt, G_TX_NOLOD, G_TX_NOLOD);
-        }
-        if (texFormat == 3) {
-            gDPLoadTextureBlockS(dlist++, OS_PHYSICAL_TO_K0(tex + 1), G_IM_FMT_I, G_IM_SIZ_4b, width, height, 0, cms, cmt, masks, maskt, G_TX_NOLOD, G_TX_NOLOD);
-        }
-        tex->numberOfCommands = ((s32) ((s32)dlist - (s32)tex->cmd) >> 3);
+        break;
+    case TEX_FORMAT_IA16:
+        fmt = G_IM_FMT_IA;
+        siz = G_IM_SIZ_16b;
+        tex->flags |= RENDER_SEMI_TRANSPARENT;
+        break;
+    case TEX_FORMAT_IA8:
+        fmt = G_IM_FMT_IA;
+        siz = G_IM_SIZ_8b;
+        tex->flags |= RENDER_SEMI_TRANSPARENT;
+        break;
+    case TEX_FORMAT_IA4:
+        fmt = G_IM_FMT_IA;
+        siz = G_IM_SIZ_4b;
+        tex->flags |= RENDER_SEMI_TRANSPARENT;
+        break;
+    case TEX_FORMAT_I8:
+        fmt = G_IM_FMT_I;
+        siz = G_IM_SIZ_8b;
+    case TEX_FORMAT_I4:
+        fmt = G_IM_FMT_I;
+        siz = G_IM_SIZ_4b;
+        break;
     }
+    if (tex->flags & 0x400) {
+        dxt = 0;
+    } else {
+        dxt = CALC_DXT(width, get_tile_bytes(3, siz));
+    }
+
+    if (siz == G_IM_SIZ_32b) {
+        firstSiz = G_IM_SIZ_32b;
+    } else {
+        firstSiz = G_IM_SIZ_16b;
+    }
+    
+    gDPSetTextureImage(dlist++, fmt, firstSiz, 1, OS_PHYSICAL_TO_K0(tex + 1));
+    gDPSetTile(dlist++, fmt, firstSiz, 0, 0, G_TX_LOADTILE, 0 , cmt, maskt,	0, cms, masks, 0);
+    gDPLoadSync(dlist++);
+    gDPLoadBlock(dlist++, G_TX_LOADTILE, 0, 0, (((width)*(height) + get_tile_bytes(1, siz)) >> get_tile_bytes(2, siz))-1, dxt);
+    gDPTileSync(dlist++);
+    gDPSetTile(dlist++, fmt, siz, (((width) * get_tile_bytes(0, siz))+7)>>3, 0, G_TX_RENDERTILE, 0, cmt, maskt, 0, cms, masks, 0);
+    gDPSetTileSize(dlist++, G_TX_RENDERTILE, 0, 0, ((width)-1) << G_TEXTURE_IMAGE_FRAC, ((height)-1) << G_TEXTURE_IMAGE_FRAC);
+    tex->numberOfCommands = ((s32)((u8*)dlist) - (s32)((u8*)tex->cmd)) >> 3;
 }
-#else
-GLOBAL_ASM("asm/non_matchings/textures_sprites/build_tex_display_list.s")
-#endif
 
 s32 func_8007EF64(s16 arg0) {
     return (s32) (arg0 + gCiPalettes);
