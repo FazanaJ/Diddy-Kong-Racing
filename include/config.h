@@ -16,6 +16,7 @@
 #define ADVENTURE_TWO_SPEED         1.0f    // Global speed multiplier for adventure 2. Default is 1.0f, but set it higher for high speed action
 #define ADVENTURE_TWO_BOOST_SPEED   2.0f    // Global boost multiplier for adventure 2. Default is 2.0f, but set it lower to make boosting controllable.
 #define UNLOCK_ALL                          // Unlock all characters, tracks and adventure 2.
+#define NUMBER_OF_SAVE_FILES 3              // Number of on cartridge saves. Default is 3. More will not at all fit on EEP4K
 
 /* -------------------------Debug------------------------- */
 #define PUPPYPRINT_DEBUG                    // Enable debug features

@@ -21,8 +21,6 @@
 // This is RARE's unique code
 #define COMPANY_CODE 0x3459
 
-#define NUMBER_OF_SAVE_FILES 3
-
 // One unique thing about results using SIDeviceStatus is that they
 // store the enum value in the lower 0xFF byte, and they store
 // the controller index in the upper 3 bits.
