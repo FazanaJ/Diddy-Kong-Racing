@@ -457,8 +457,8 @@ void thread2_crash_screen(UNUSED void *arg) {
     sCrashUpdate = TRUE;
     memcpy(gVideoLastFramebuffer, gVideoCurrFramebuffer, (gScreenWidth * gScreenHeight) * 2);
     gCrashScreen.thread.priority = 11;
-    play_sound_global(SOUND_VOICE_BANJO_WOAH, NULL);
-    play_music(SEQUENCE_NONE);
+    sound_play(SOUND_VOICE_BANJO_WOAH, NULL);
+    music_play(SEQUENCE_NONE);
     crash_screen_sleep(80);
     while (TRUE) {
         handle_save_data_and_read_controller(0, LOGIC_30FPS);

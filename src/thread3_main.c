@@ -496,7 +496,7 @@ void ingame_logic_loop(s32 updateRate) {
         } else {
             soundID = SOUND_TING_LOW;
         }
-        play_sound_global(soundID, NULL);
+        sound_play(soundID, NULL);
     }*/
 #ifndef NO_ANTIPIRACY
     // Spam the start button, making the game unplayable because it's constantly paused.
