@@ -83,10 +83,8 @@ void audio_init(OSSched *sc) {
     ALSynConfig synth_config;
     s32 *addrPtr;
     u32 seqfSize;
-    u32 seqLength;
     audioMgrConfig audConfig;
 
-    seqLength = 0;
     gBssSectionStart = allocate_from_main_pool_safe(AUDIO_HEAP_SIZE, MEMP_AUDIO_POOL);
     alHeapInit(&gALHeap, gBssSectionStart, AUDIO_HEAP_SIZE);
 
@@ -678,7 +676,6 @@ void sound_play(u16 soundID, s32 *soundMask) {
         if (soundMask != NULL) {
             *soundMask = NULL;
         }
-        stubbed_printf("amSndPlay: Illegal sound effects table index\n");
         return;
     }
     soundBite = gSoundTable[soundID].soundBite;
@@ -686,7 +683,6 @@ void sound_play(u16 soundID, s32 *soundMask) {
         if (soundMask != NULL) {
             *soundMask = NULL;
         }
-        stubbed_printf("amSndPlayDirect: Somebody tried to play illegal sound %d\n", soundID);
         return;
     }
     pitch = gSoundTable[soundID].pitch / 100.0f;
@@ -811,8 +807,6 @@ void music_sequence_start(u8 seqID, ALSeqPlayer *seqPlayer) {
         } else {
             gJingleNextSeqID = seqID;
         }
-    } else {
-        stubbed_printf("Invalid midi sequence index\n");
     }
 }
 
