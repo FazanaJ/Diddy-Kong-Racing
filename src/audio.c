@@ -15,6 +15,7 @@
 #include "video.h"
 #include "lib/src/mips1/al/seqchannel.h"
 #include "racer.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -43,8 +44,7 @@ void *gBssSectionStart;
 
 ALHeap gALHeap;
 ALSeqFile *gSequenceTable;
-void *gMusicSequenceData;
-void *gJingleSequenceData;
+void *gSequenceData[2];
 u8 gCurrentSequenceID;
 u8 gCurrentJingleID;
 s32 gMusicTempo;
@@ -89,10 +89,9 @@ void audio_init(OSSched *sc) {
     seqLength = 0;
     gBssSectionStart = allocate_from_main_pool_safe(AUDIO_HEAP_SIZE, MEMP_AUDIO_POOL);
     alHeapInit(&gALHeap, gBssSectionStart, AUDIO_HEAP_SIZE);
-    gAssetColourTag = MEMP_AUDIO;
 
     addrPtr = (s32 *) load_asset_section_from_rom(ASSET_AUDIO_TABLE);
-    gSoundBank = (ALBankFile *) allocate_from_main_pool_safe(addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1], MEMP_AUDIO);
+    gSoundBank = (ALBankFile *) allocate_from_main_pool_safe(addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1], MEMP_AUDIO_BANK);
     load_asset_to_address(ASSET_AUDIO, (u32) gSoundBank, addrPtr[ASSET_AUDIO_1], addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1]);
     alBnkfNew(gSoundBank, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_2]));
 
@@ -106,7 +105,7 @@ void audio_init(OSSched *sc) {
     load_asset_to_address(ASSET_AUDIO, (u32) gSeqSoundTable, addrPtr[ASSET_AUDIO_5], gSeqSoundTableSize);
     gSeqSoundCount = gSeqSoundTableSize / sizeof(MusicData);
 
-    gSequenceBank = (ALBankFile *) allocate_from_main_pool_safe(addrPtr[ASSET_AUDIO_0], MEMP_AUDIO);
+    gSequenceBank = (ALBankFile *) allocate_from_main_pool_safe(addrPtr[ASSET_AUDIO_0], MEMP_AUDIO_BANK);
     load_asset_to_address(ASSET_AUDIO, (u32) gSequenceBank, 0, addrPtr[ASSET_AUDIO_0]);
     alBnkfNew(gSequenceBank, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_0]));
     gSequenceTable = (ALSeqFile *) alHeapAlloc(&gALHeap, 1, 4);
@@ -118,15 +117,10 @@ void audio_init(OSSched *sc) {
     alSeqFileNew(gSequenceTable, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_4]));
     gSeqLengthTable = (u32 *) allocate_from_main_pool_safe((gSequenceTable->seqCount) * 4, MEMP_AUDIO);
 
-    gAssetColourTag = COLOUR_TAG_GREY;
-
     for (iCnt = 0; iCnt < gSequenceTable->seqCount; iCnt++) {
         gSeqLengthTable[iCnt] = gSequenceTable->seqArray[iCnt].len;
         if (gSeqLengthTable[iCnt] & 1) {
             gSeqLengthTable[iCnt]++;
-        }
-        if (seqLength < gSeqLengthTable[iCnt]) {
-            seqLength = gSeqLengthTable[iCnt];
         }
     }
 
@@ -142,8 +136,8 @@ void audio_init(OSSched *sc) {
     gMusicPlayer = sound_seqplayer_init(24, 120);
     set_voice_limit(gMusicPlayer, 18);
     gJinglePlayer = sound_seqplayer_init(16, 50);
-    gMusicSequenceData = allocate_from_main_pool_safe(seqLength, MEMP_AUDIO);
-    gJingleSequenceData = allocate_from_main_pool_safe(seqLength, MEMP_AUDIO);
+    gSequenceData[0] = NULL;
+    gSequenceData[1] = NULL;
     audConfig.unk04 = 150;
     audConfig.unk00 = 32;
     audConfig.maxChannels = AUDIO_CHANNELS;
@@ -346,8 +340,8 @@ void sound_update_queue(u8 updateRate) {
         }
     }
 
-    music_sequence_init(gMusicPlayer, gMusicSequenceData, &gMusicNextSeqID, &gMusicSequence);
-    music_sequence_init(gJinglePlayer, gJingleSequenceData, &gJingleNextSeqID, &gJingleSequence);
+    music_sequence_init(gMusicPlayer, 0, &gMusicNextSeqID, &gMusicSequence);
+    music_sequence_init(gJinglePlayer, 1, &gJingleNextSeqID, &gJingleSequence);
     if (sMusicTempo == -1 && gMusicPlayer->target) {
         sMusicTempo = 60000000 / alCSPGetTempo((ALCSPlayer *) gMusicPlayer);
     }
@@ -825,12 +819,16 @@ void music_sequence_start(u8 seqID, ALSeqPlayer *seqPlayer) {
 /** 
  * If the sequence player is currently inactive, start a new sequence with the current properties.
 */
-void music_sequence_init(ALSeqPlayer *seqp, void *sequence, u8 *seqID, ALCSeq *seq) {
+void music_sequence_init(ALSeqPlayer *seqp, s32 sequence, u8 *seqID, ALCSeq *seq) {
     s32 i;
 
     if ((alCSPGetState((ALCSPlayer* ) seqp) == AL_STOPPED) && (*seqID != 0)) {
-        load_asset_to_address(ASSET_AUDIO, (u32) sequence, gSequenceTable->seqArray[*seqID].offset - get_rom_offset_of_asset(ASSET_AUDIO, 0), (s32) gSeqLengthTable[*seqID]);
-        alCSeqNew(seq, sequence);
+        if (gSequenceData[sequence]) {
+            free_from_memory_pool(gSequenceData[sequence]);
+        }
+        gSequenceData[sequence] = allocate_from_main_pool(gSeqLengthTable[*seqID], MEMP_SEQUENCE);
+        load_asset_to_address(ASSET_AUDIO, (u32) gSequenceData[sequence], gSequenceTable->seqArray[*seqID].offset - get_rom_offset_of_asset(ASSET_AUDIO, 0), (s32) gSeqLengthTable[*seqID]);
+        alCSeqNew(seq, gSequenceData[sequence]);
         alCSPSetSeq((ALCSPlayer* ) seqp, seq);
         alCSPPlay((ALCSPlayer* ) seqp);
         if (seqp == gMusicPlayer) {
