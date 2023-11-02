@@ -84,7 +84,7 @@ Matrix gOrthoMatrixF = {
     { 0.0f, 0.0f, 0.0f, 160.0f },
 };
 
-u8 D_800DD2F8[8] = {
+u8 gCameraZoomLevels[8] = {
     0, 0, 0, 0, 0, 0, 0, 0
 };
 
@@ -118,7 +118,7 @@ Matrix gCameraMatrixF;
 Matrix gProjectionMatrixF;
 MatrixS gProjectionMatrixS;
 Matrix gCurrentModelMatrixF;
-Matrix D_801210A0;
+Matrix gCurrentModelMatrixS;
 
 /******************************/
 
@@ -135,7 +135,7 @@ void camera_init(void) {
 
     for (j = 0; j < 8; j++) {
         gActiveCameraID = j;
-        func_800663DC(200.0f, 200.0f, 200.0f, 0, 0, 180);
+        camera_reset(200.0f, 200.0f, 200.0f, 0, 0, 180);
     }
     
     gCutsceneCameraActive = FALSE; 
@@ -166,10 +166,10 @@ void reset_perspective_matrix(void) {
     f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gProjectionMatrixS);
 }
 
-void func_80066060(s32 arg0, s32 arg1) {
-    if (arg0 >= 0 && arg0 < 4) {
-        D_800DD2F8[arg0] = arg1;
-        gCameraSegment[arg0].object.animationID = arg1;
+void func_80066060(s32 cameraID, s32 zoomLevel) {
+    if (cameraID >= 0 && cameraID < 4) {
+        gCameraZoomLevels[cameraID] = zoomLevel;
+        gCameraSegment[cameraID].object.animationID = zoomLevel;
     }
 }
 
@@ -218,7 +218,10 @@ s32 get_current_viewport(void) {
     return gActiveCameraID;
 }
 
-void func_80066230(Gfx **dlist, MatrixS **mats) {
+/**
+ * Initialises the camera object for the tracks menu.
+*/
+void camera_init_tracks_menu(Gfx **dList, MatrixS **mtxS) {
     ObjectSegment *cam;
     s16 angleY;
     s16 angleX;
@@ -246,7 +249,7 @@ void func_80066230(Gfx **dlist, MatrixS **mats) {
     cam->trans.y_position = 0.0f;
     cam->trans.z_position = 0.0f;
     update_envmap_position(0.0f, 0.0f, -1.0f);
-    func_80066CDC(dlist, mats);
+    func_80066CDC(dList, mtxS);
     cam->camera.unk38 = sp24;
     cam->trans.y_rotation = angleY;
     cam->trans.x_rotation = angleX;
@@ -275,20 +278,20 @@ f32 get_distance_to_active_camera(f32 xPos, f32 yPos, f32 zPos) {
     return ((dz * dz) + ((dx * dx) + (dy * dy)));
 }
 
-void func_800663DC(f32 xPos, f32 yPos, f32 zPos, s32 arg3, s32 arg4, s32 arg5) {
-    gCameraSegment[gActiveCameraID].trans.z_rotation = (s16) (arg3 * 0xB6);
+void camera_reset(f32 xPos, f32 yPos, f32 zPos, s32 angleZ, s32 angleX, s32 angleY) {
+    gCameraSegment[gActiveCameraID].trans.z_rotation = (s16) (angleZ * 0xB6);
     gCameraSegment[gActiveCameraID].trans.x_position = xPos;
     gCameraSegment[gActiveCameraID].trans.y_position = yPos;
     gCameraSegment[gActiveCameraID].trans.z_position = zPos;
-    gCameraSegment[gActiveCameraID].trans.x_rotation = (s16) (arg4 * 0xB6);
+    gCameraSegment[gActiveCameraID].trans.x_rotation = (s16) (angleX * 0xB6);
     gCameraSegment[gActiveCameraID].camera.unk38 = (s16) 0;
     gCameraSegment[gActiveCameraID].z_velocity = 0.0f;
     gCameraSegment[gActiveCameraID].unk28 = 0.0f;
     gCameraSegment[gActiveCameraID].camera.unk2C = 0.0f;
     gCameraSegment[gActiveCameraID].camera.distanceToCamera = 0.0f;
     gCameraSegment[gActiveCameraID].x_velocity = 160.0f;
-    gCameraSegment[gActiveCameraID].trans.y_rotation = (s16) (arg5 * 0xB6);
-    gCameraSegment[gActiveCameraID].object.animationID = D_800DD2F8[gActiveCameraID];
+    gCameraSegment[gActiveCameraID].trans.y_rotation = (s16) (angleY * 0xB6);
+    gCameraSegment[gActiveCameraID].object.animationID = gCameraZoomLevels[gActiveCameraID];
 }
 
 /**
@@ -452,7 +455,7 @@ s32 check_viewport_background_flag(s32 viewPortIndex) {
  * Sets the intended viewport to the size passed through by arguments.
  * Official Name: camSetUserView
 */
-void resize_viewport(s32 viewPortIndex, s32 x1, s32 y1, s32 x2, s32 y2) {
+void viewport_menu_set(s32 viewPortIndex, s32 x1, s32 y1, s32 x2, s32 y2) {
     s32 width, height;
     s32 temp;
 
@@ -582,7 +585,7 @@ void func_80066CDC(Gfx **dlist, MatrixS **mats) {
             gScreenViewports[gActiveCameraID].scissorX2,
             gScreenViewports[gActiveCameraID].scissorY2
         );
-        func_80068158(dlist, 0, 0, 0, 0);
+        viewport_rsp_set(dlist, 0, 0, 0, 0);
         gActiveCameraID = tempCameraID;
         if (mats != 0) {
             func_80067D3C(dlist, mats);
@@ -662,7 +665,7 @@ void func_80066CDC(Gfx **dlist, MatrixS **mats) {
     }
     gDPSetScissor((*dlist)++, G_SC_NON_INTERLACE, x1, y1, x2, y2);
 
-    func_80068158(dlist, size[0], size[1], pos[0], pos[1]);
+    viewport_rsp_set(dlist, size[0], size[1], pos[0], pos[1]);
     if (mats != NULL) {
         func_80067D3C(dlist, mats);
     }
@@ -670,10 +673,10 @@ void func_80066CDC(Gfx **dlist, MatrixS **mats) {
 }
 
 /**
- * Takes the size of the screen as depicted by an active screen viewport, then sets the RDP scissor to match it.
+ * Takes the size of the screen as depicted by the active menu viewport, then sets the RDP scissor to match it.
  * Official Name: camSetScissor
 */
-void set_viewport_scissor(Gfx **dlist) {
+void viewport_scissor(Gfx **dlist) {
     s32 lrx;
     s32 lry;
     s32 ulx;
@@ -703,58 +706,52 @@ void set_viewport_scissor(Gfx **dlist) {
         temp4 = lrx >> 1;
         temp3 = lry >> 1;
         switch (numViewports) {
+        case 1:
+            switch (gActiveCameraID) {
+            case 0:
+                lry = temp3 - temp;
+                break;
+            default:
+                uly = temp3 + temp;
+                lry -= temp;
+                break;
+            }
+            break;
+        case 2:
+            switch (gActiveCameraID) {
+            case 0:
+                lrx = temp4 - temp2;
+                break;
+            default:
+                ulx = temp4 + temp2;
+                lrx -= temp2;
+                break;
+            }
+            break;
+        case 3:
+            switch (gActiveCameraID) {
+            case 0:
+                lrx = temp4 - temp2;\
+                    lry = temp3 - temp;
+                break;
             case 1:
-                switch (gActiveCameraID) {
-                    case 0:
-                        lry = temp3 - temp;
-                        break;
-                    default:
-                        uly = temp3 + temp;
-                        lry -= temp;
-                        break;
-                }
+                ulx = temp4 + temp2;
+                lrx -= temp2;
+                lry = temp3 - temp;
                 break;
-
             case 2:
-                switch (gActiveCameraID) {
-                    case 0:
-                        lrx = temp4 - temp2;
-                        break;
-
-                    default:
-                        ulx = temp4 + temp2;
-                        lrx -= temp2;
-                        break;
-                }
+                uly = temp3 + temp;
+                lrx = temp4 - temp2;\
+                lry -= temp;
                 break;
-
             case 3:
-                switch (gActiveCameraID) {
-                    case 0:
-                        lrx = temp4 - temp2;\
-                        lry = temp3 - temp;
-                        break;
-
-                    case 1:
-                        ulx = temp4 + temp2;
-                        lrx -= temp2;
-                        lry = temp3 - temp;
-                        break;
-
-                    case 2:
-                        uly = temp3 + temp;
-                        lrx = temp4 - temp2;\
-                        lry -= temp;
-                        break;
-
-                    case 3:
-                        ulx = temp4 + temp2; \
-                        uly = temp3 + temp;
-                        lrx -= temp2; \
-                        lry -= temp;
-                        break;
-                }
+                ulx = temp4 + temp2; \
+                uly = temp3 + temp;
+                lrx -= temp2; \
+                lry -= temp;
                 break;
+            }
+            break;
         }
         gDPSetScissor((*dlist)++, 0, ulx, uly, lrx, lry);
         return;
@@ -845,8 +842,12 @@ void func_8006807C(Gfx **dlist, MatrixS **mtx) {
     gMatrixType = G_MTX_DKR_INDEX_0;
 }
 
-//Official Name: camSetViewport?
-void func_80068158(Gfx **dlist, s32 width, s32 height, s32 posX, s32 posY) {
+/**
+ * Sets the RSP viewport onscreen to the given properties.
+ * Viewports have a centre position and a scale factor, rather than a standard four corners.
+ * Official Name: camSetViewport
+*/
+void viewport_rsp_set(Gfx **dlist, s32 width, s32 height, s32 posX, s32 posY) {
     s32 tempWidth = (get_filtered_cheats() & CHEAT_MIRRORED_TRACKS) ? -width : width;
     Vp *vp;
 #ifndef NO_ANTIPIRACY
@@ -868,24 +869,32 @@ void func_80068158(Gfx **dlist, s32 width, s32 height, s32 posX, s32 posY) {
     gSPViewport((*dlist)++, OS_PHYSICAL_TO_K0(vp));
 }
 
-//Official Name: camResetView?
-void func_800682AC(Gfx **dlist) {
+/**
+ * Resets the viewport back to default.
+ * If in the track menu, or post-race, set it to a small screen view instead.
+ * Official Name: camResetView?
+*/
+void viewport_reset(Gfx **dlist) {
     u32 width, height;
     gActiveCameraID = 4;
     height = gScreenHeight;
     width = gScreenWidth;
     if (!(gScreenViewports[gActiveCameraID].flags & VIEWPORT_EXTRA_BG)) {
         gDPSetScissor((*dlist)++, G_SC_NON_INTERLACE, 0, 0, width, height);
-        func_80068158(dlist, width >> 1, height >> 1, width >> 1, height >> 1);
+        viewport_rsp_set(dlist, width >> 1, height >> 1, width >> 1, height >> 1);
     } else {
-        set_viewport_scissor(dlist);
-        func_80068158(dlist, 0, 0, 0, 0);
+        viewport_scissor(dlist);
+        viewport_rsp_set(dlist, 0, 0, 0, 0);
     }
     gActiveCameraID = 0;
 }
 
-//Official Name: camOffsetZero?
-void func_80068408(Gfx **dlist, MatrixS **mtx) {
+/**
+ * Sets the matrix position to the world origin (0, 0, 0)
+ * Used when the next thing rendered relies on there not being any matrix offset.
+ * Official Name: camOffsetZero?
+*/
+void matrix_world_origin(Gfx **dlist, MatrixS **mtx) {
     s32 i;
     for (i = 1; i < 14; i++) {
         (*gModelMatrixF)[gModelMatrixStackPos][0][i] = 0.0f;
@@ -1141,8 +1150,8 @@ void apply_object_shear_matrix(Gfx **dList, MatrixS **mtx, Object *arg2, Object 
     matrix_mult[3][2] = (((-sinsf_y_arg3 * cossf_z_arg3) + (sinsf_z_arg3 * (sinsf_x_arg3 * cossf_y_arg3))) * arg2_xPos) + (arg2_yPos * ((-sinsf_z_arg3 * -sinsf_y_arg3) + (cossf_z_arg3 * (sinsf_x_arg3 * cossf_y_arg3)))) + (arg2_zPos * (cossf_x_arg3 * cossf_y_arg3)) + arg3_zPos;
     matrix_mult[3][3] = 1.0f;
 
-    f32_matrix_mult(&matrix_mult, &gViewMatrixF, &D_801210A0);
-    f32_matrix_to_s16_matrix(&D_801210A0, *mtx);
+    f32_matrix_mult(&matrix_mult, &gViewMatrixF, &gCurrentModelMatrixS);
+    f32_matrix_to_s16_matrix(&gCurrentModelMatrixS, *mtx);
     gSPMatrix((*dList)++, OS_PHYSICAL_TO_K0((*mtx)++), G_MTX_DKR_INDEX_1);
 }
 
@@ -1168,8 +1177,8 @@ void camera_push_model_mtx(Gfx **dList, MatrixS **mtx, ObjectTransform *trans, f
         gCurrentModelMatrixF[1][2] *= scale;
     }
     f32_matrix_mult(&gCurrentModelMatrixF, gModelMatrixF[gModelMatrixStackPos], gModelMatrixF[gModelMatrixStackPos + 1]);
-    f32_matrix_mult(gModelMatrixF[gModelMatrixStackPos + 1], &gViewMatrixF, &D_801210A0);
-    f32_matrix_to_s16_matrix(&D_801210A0, *mtx);
+    f32_matrix_mult(gModelMatrixF[gModelMatrixStackPos + 1], &gViewMatrixF, &gCurrentModelMatrixS);
+    f32_matrix_to_s16_matrix(&gCurrentModelMatrixS, *mtx);
     gModelMatrixStackPos++;
     gModelMatrixS[gModelMatrixStackPos] = *mtx;
     gSPMatrix((*dList)++, OS_PHYSICAL_TO_K0((*mtx)++), G_MTX_DKR_INDEX_1);
@@ -1239,7 +1248,7 @@ void apply_head_turning_matrix(Gfx **dlist, MatrixS **mtx, Object_68 *objGfx, s1
     headMtxF[3][1] = (-f_unk16 * (coss_headAngle * sins_unk1C)) + (-f_unk18 * coss_unk1C) + (-f_unk1A * (sins_headAngle * sins_unk1C)) + f_unk18;
     headMtxF[3][2] = (-f_unk16 * -sins_headAngle) + (-f_unk1A * coss_headAngle) + f_unk1A;
     headMtxF[3][3] = 1.0f;
-    f32_matrix_mult(&headMtxF, &D_801210A0, &rotationMtxF);
+    f32_matrix_mult(&headMtxF, &gCurrentModelMatrixS, &rotationMtxF);
     f32_matrix_to_s16_matrix(&rotationMtxF, *mtx);
     gSPMatrix((*dlist)++, OS_PHYSICAL_TO_K0((*mtx)++), G_MTX_DKR_INDEX_2);
     gDkrInsertMatrix((*dlist)++, G_MWO_MATRIX_XX_XY_I, G_MTX_DKR_INDEX_1);

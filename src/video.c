@@ -183,7 +183,7 @@ void init_framebuffer(s32 index) {
     s32 width = SCREEN_WIDTH;
     u16 *fbAddr;
     if (gVideoFramebuffers[index] != 0) {
-        func_80071538((u8 *) gVideoFramebuffers[index]);
+        memory_slot_exists((u8 *) gVideoFramebuffers[index]); // Effectively unused.
         free_from_memory_pool(gVideoFramebuffers[index]);
     }
 #if EXPANSION_PAK_SUPPORT
