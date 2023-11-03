@@ -146,7 +146,7 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
     if (c->fxType[0] == AL_FX_CUSTOM) {
         assetAudioTable = load_asset_section_from_rom(ASSET_AUDIO_TABLE);
         assetSize = assetAudioTable[ASSET_AUDIO_9] - assetAudioTable[ASSET_AUDIO_8];
-        asset8 = allocate_from_main_pool_safe(assetSize, MEMP_AUDIO_POOL);
+        asset8 = allocate_from_main_pool_safe(assetSize, MEMP_AUDIO);
         load_asset_to_address(ASSET_AUDIO, (u32) asset8, assetAudioTable[ASSET_AUDIO_8], assetSize);
         c->params = asset8;
         c[1].maxVVoices = 0;

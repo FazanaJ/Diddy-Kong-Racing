@@ -42,7 +42,6 @@ u8 gBlockVoiceLimitChange = FALSE;
 // The audio heap is located at the start of the BSS section.
 void *gBssSectionStart;
 
-ALHeap gALHeap;
 ALSeqFile *gSequenceTable;
 void *gSequenceData[2];
 u8 gCurrentSequenceID;
@@ -85,9 +84,6 @@ void audio_init(OSSched *sc) {
     u32 seqfSize;
     audioMgrConfig audConfig;
 
-    gBssSectionStart = allocate_from_main_pool_safe(AUDIO_HEAP_SIZE, MEMP_AUDIO_POOL);
-    alHeapInit(&gALHeap, gBssSectionStart, AUDIO_HEAP_SIZE);
-
     addrPtr = (s32 *) load_asset_section_from_rom(ASSET_AUDIO_TABLE);
     gSoundBank = (ALBankFile *) allocate_from_main_pool_safe(addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1], MEMP_AUDIO_BANK);
     load_asset_to_address(ASSET_AUDIO, (u32) gSoundBank, addrPtr[ASSET_AUDIO_1], addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1]);
@@ -106,7 +102,7 @@ void audio_init(OSSched *sc) {
     gSequenceBank = (ALBankFile *) allocate_from_main_pool_safe(addrPtr[ASSET_AUDIO_0], MEMP_AUDIO_BANK);
     load_asset_to_address(ASSET_AUDIO, (u32) gSequenceBank, 0, addrPtr[ASSET_AUDIO_0]);
     alBnkfNew(gSequenceBank, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_0]));
-    gSequenceTable = (ALSeqFile *) alHeapAlloc(&gALHeap, 1, 4);
+    gSequenceTable = (ALSeqFile *) alHeapAlloc(NULL, 1, 4);
     load_asset_to_address(ASSET_AUDIO, (u32) gSequenceTable, addrPtr[ASSET_AUDIO_4], 4);
 
     seqfSize = (gSequenceTable->seqCount) * 8 + 4;
@@ -129,7 +125,6 @@ void audio_init(OSSched *sc) {
     synth_config.fxType[0] = 6;
     synth_config.fxType[1] = 2;
     synth_config.outputRate = 0;
-    synth_config.heap = &gALHeap;
     amCreateAudioMgr(&synth_config, 12, sc);
     gMusicPlayer = sound_seqplayer_init(24, 120);
     set_voice_limit(gMusicPlayer, 18);
@@ -140,7 +135,6 @@ void audio_init(OSSched *sc) {
     audConfig.unk00 = 32;
     audConfig.maxChannels = AUDIO_CHANNELS;
     audConfig.unk10 = 1;
-    audConfig.hp = &gALHeap;
     alSndPNew(&audConfig);
     audioStartThread();
     sound_volume_change(VOLUME_NORMAL);
@@ -783,7 +777,6 @@ ALSeqPlayer *sound_seqplayer_init(s32 maxVoices, s32 maxEvents) {
     config.maxEvents = maxEvents;
     config.unknown_0x10 = maxVoices; //this member doesn't exist in other versions of ALSeqpConfig
     config.maxChannels = AUDIO_CHANNELS;
-    config.heap = &gALHeap;
     config.initOsc = NULL;
     config.updateOsc = NULL;
     config.stopOsc = NULL;

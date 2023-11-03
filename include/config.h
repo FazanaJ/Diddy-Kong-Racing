@@ -81,6 +81,9 @@
 #ifndef NON_MATCHING
 #define NON_MATCHING
 #endif
+#ifndef AVOID_UB
+#define AVOID_UB
+#endif
 
 #ifdef TRIPLE_BUFFERING
 #define NUM_FRAMEBUFFERS 3
