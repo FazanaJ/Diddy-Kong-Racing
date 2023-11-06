@@ -182,9 +182,8 @@ u32 gSorterPos;
  * Like most other viewport vars, it's 0-3 rather than 1-4.
  * Set as an s32 for some reason.
 */
-s32 set_scene_viewport_num(s32 numPorts) {
+void set_scene_viewport_num(s32 numPorts) {
     gScenePlayerViewports = numPorts;
-    return 0;
 }
 
 /**
@@ -398,7 +397,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
         func_8002A31C();
         // Show detailed skydome in single player.
         if (!gConfig.perfMode) {
-            if ((numViewports < 2 || gConfig.noCutbacks) && !gConfig.perfMode) {
+            if (numViewports < 2 || gConfig.noCutbacks) {
                 matrix_world_origin(dList, &gSceneCurrMatrix);
                 if (gCurrentLevelHeader2->skyDome == -1) {
                     gSceneCurrDisplayList = *dList;

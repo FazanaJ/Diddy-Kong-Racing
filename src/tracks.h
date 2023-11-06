@@ -171,7 +171,7 @@ extern u32 gSortEnvColour;
 extern void *gSorterHeap;
 extern u32 gSorterPos;
 
-s32 set_scene_viewport_num(s32 arg0);
+void set_scene_viewport_num(s32 arg0);
 void func_800257D0(void);
 void spawn_skydome(s32 arg0);
 void set_skydome_visbility(s32 renderSky);

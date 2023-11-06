@@ -436,6 +436,9 @@ OSThread *get_crashed_thread(void) {
     return NULL;
 }
 
+extern OSThread gThread3;
+extern OSThread gThread30;
+
 void thread2_crash_screen(UNUSED void *arg) {
     OSMesg mesg;
     OSThread *thread;
@@ -456,9 +459,15 @@ void thread2_crash_screen(UNUSED void *arg) {
     }
     sCrashUpdate = TRUE;
     memcpy(gVideoLastFramebuffer, gVideoCurrFramebuffer, (gScreenWidth * gScreenHeight) * 2);
-    gCrashScreen.thread.priority = 11;
-    sound_play(SOUND_VOICE_BANJO_WOAH, NULL);
-    music_play(SEQUENCE_NONE);
+    if (thread->id == 4) { // Audio thread crashed, so go top prio.
+        gCrashScreen.thread.priority = 255;
+    } else {
+        gCrashScreen.thread.priority = 11;
+        sound_play(SOUND_VOICE_BANJO_WOAH, NULL);
+        music_play(SEQUENCE_NONE);
+    }
+    osStopThread(&gThread3);
+    osStopThread(&gThread30);
     crash_screen_sleep(80);
     while (TRUE) {
         handle_save_data_and_read_controller(0, LOGIC_30FPS);
