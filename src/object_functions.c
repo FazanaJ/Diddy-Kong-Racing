@@ -4496,6 +4496,8 @@ void obj_init_audioline(Object *obj, LevelObjectEntry_AudioLine *entry) {
     func_800098A4(obj64->unk0, obj64->soundID, entry->common.x, entry->common.y, entry->common.z,
                   obj64->unkF, obj64->unkE, obj64->unk10, obj64->unk12, obj64->unk4, obj64->unk11,
                   obj64->unkC, obj64->unkD);
+    
+    sound_reverb_set(TRUE);
     free_object(obj);
 }
 
@@ -4507,6 +4509,7 @@ void obj_init_audioreverb(Object *obj, LevelObjectEntry_AudioReverb *entry) {
     obj64->unk4 = temp & 0xFF;
     obj64->unk5 = entry->unkA;
     func_80009968(entry->common.x, entry->common.y, entry->common.z, obj64->unk2, obj64->unk4, obj64->unk5);
+    sound_reverb_set(TRUE);
     free_object(obj);
 }
 

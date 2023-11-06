@@ -253,6 +253,7 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
     } else {
         set_sound_channel_count(16);
     }
+    sound_reverb_set(FALSE);
     settings = get_settings();
     gTempAssetTable = (s32 *) load_asset_section_from_rom(ASSET_LEVEL_HEADERS_TABLE);
 
