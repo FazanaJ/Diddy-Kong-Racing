@@ -6,6 +6,7 @@
 #include "libultra_internal.h"
 #include "audio_internal.h"
 #include "initfx.h"
+#include "src/main.h"
 
 // TODO: these come from headers
 #ident "$Revision: 1.49 $"
@@ -53,6 +54,7 @@ Acmd *alFxPull(void *filter, s16 *outp, s32 outCount, s32 sampleOffset,
     s16		i, buff1, buff2, input, output;
     s16		*in_ptr, *out_ptr, *prev_out_ptr = 0;
     ALDelay	*d;
+    profiler_begin_timer();
 
 #ifdef AUD_PROFILE
     lastCnt[++cnt_index] = osGetCount();
@@ -71,6 +73,7 @@ Acmd *alFxPull(void *filter, s16 *outp, s32 outCount, s32 sampleOffset,
     if (alFXEnabled == FALSE) {
         return ptr;
     }
+    profiler_reset_timer();
 
     input  = AL_AUX_L_OUT;
     output = AL_AUX_R_OUT;
@@ -138,6 +141,7 @@ Acmd *alFxPull(void *filter, s16 *outp, s32 outCount, s32 sampleOffset,
 #ifdef AUD_PROFILE
     PROFILE_AUD(reverb_num, reverb_cnt, reverb_max, reverb_min);
 #endif
+    profiler_add(PP_REVERB, first);
     return ptr;
 }
 

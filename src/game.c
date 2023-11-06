@@ -235,7 +235,7 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
     Settings *settings;
     s32 offset;
 
-    if ((gConfig.noCutbacks || numberOfPlayers < 3) && (gConfig.perfMode == FALSE)) {
+    if (gConfig.noCutbacks && gConfig.perfMode == FALSE) {
         gSkipCutbacks = TRUE;
     } else {
         gSkipCutbacks = FALSE;

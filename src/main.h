@@ -114,6 +114,7 @@ enum TrackTimers {
     PP_ANIMATION,
     PP_MENU,
     PP_BLOCKS,
+    PP_REVERB,
 
     PP_RSP_GFX,
     PP_RSP_AUD,
@@ -164,7 +165,8 @@ enum PPProfilerEvent {
     "Interaction", \
     "Animation", \
     "Menu\t", \
-    "Blocks\t"
+    "Blocks\t", \
+    "Reverb\t"
 
 #define PP_MEM \
     "", \
@@ -267,6 +269,7 @@ void puppyprint_log(const char *str, ...);
 void puppyprint_render_coverage(Gfx **dList);
 void profiler_reset_objects(void);
 void calculate_ram_total(s32 poolIndex, u32 colourTag);
+s32 find_thread_interrupt_offset(u32 lowTime, u32 highTime);
 #define profiler_begin_timer() u32 first = osGetCount();
 #define profiler_begin_timer2() u32 first2 = osGetCount();
 #define profiler_begin_timer3() u32 first3 = osGetCount();

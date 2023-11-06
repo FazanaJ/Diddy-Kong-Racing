@@ -283,13 +283,13 @@ char *sPuppyprintMemColours[] = {
 
 #define FRAMETIME_COUNT 10
 
-OSTime frameTimes[FRAMETIME_COUNT];
+u32 frameTimes[FRAMETIME_COUNT];
 u8 curFrameTimeIndex = 0;
 
 // Call once per frame
 void calculate_and_update_fps(void) {
-    OSTime newTime = osGetCount();
-    OSTime oldTime = frameTimes[curFrameTimeIndex];
+    u32 newTime = osGetCount();
+    u32 oldTime = frameTimes[curFrameTimeIndex];
     frameTimes[curFrameTimeIndex] = newTime;
 
     curFrameTimeIndex++;
@@ -321,7 +321,9 @@ void profiler_offset(u32 *time, u32 offset) {
 }
 
 void profiler_add(u32 time, u32 offset) {
-    offset = osGetCount() - offset;
+    u32 newTime = osGetCount();
+    u32 offsetTime = find_thread_interrupt_offset(offset, newTime);
+    offset = newTime - offset - offsetTime;
     if (offset > OS_USEC_TO_CYCLES(99999)) {
         offset =  OS_USEC_TO_CYCLES(99999);
     }
@@ -737,7 +739,7 @@ static inline char *write_to_buf(char *buffer, const char *data, size_t size) {
 
 void puppyprint_log(const char *str, ...) {
     s32 i;
-    char textBytes[255];
+    char textBytes[127];
     va_list arguments;
 
     bzero(textBytes, sizeof(textBytes));

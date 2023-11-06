@@ -84,6 +84,7 @@ extern Matrix gOrthoMatrixF;
 extern ObjectSegment gCameraSegment[8];
 extern MatrixS gProjectionMatrixS;
 extern s32 gModelMatrixStackPos;
+extern s16 gViewportScissor[4];
 
 
 void func_80066060(s32 arg0, s32 arg1);

@@ -257,6 +257,9 @@ void object_transform_to_matrix_2(Matrix mtx, ObjectTransform *trans) {
 GLOBAL_ASM("asm/math_util/object_transform_to_matrix_2.s")
 #endif
 
+
+GLOBAL_ASM("asm/math_util/f32_matrix_from_position.s")
+
 #ifdef NON_MATCHING
 void f32_matrix_from_rotation_and_scale(Matrix mtx, s32 angle, f32 arg2, f32 arg3) {
     f32 cosine, sine;

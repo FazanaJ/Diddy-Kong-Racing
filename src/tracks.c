@@ -25,6 +25,7 @@
 #include "printf.h"
 #include "collision.h"
 #include "controller.h"
+#include "rcp.h"
 
 // Maximum size for a level model is 522.5 KiB
 #define LEVEL_MODEL_MAX_SIZE 0x80000
@@ -787,6 +788,7 @@ void draw_gradient_background(Gfx **dList) {
     Vertex *verts;
     Triangle *tris;
     f32 widescreen = 1.0f;
+    s32 viewHeight;
     profiler_begin_timer();
 
 #ifndef NATIVE_RES_WIDESCREEN
@@ -800,6 +802,10 @@ void draw_gradient_background(Gfx **dList) {
     } 
 #endif
 
+    /*viewHeight = (gViewportScissor[3] - gViewportScissor[1]);
+    viewHeight *= ((f32) gBGHeight / (f32)gScreenHeight);
+    gDPSetScissor((*dList)++, 0, gViewportScissor[0], gViewportScissor[1], gViewportScissor[2], gViewportScissor[1] + viewHeight);*/
+
     verts = (Vertex *) gSceneCurrVertexList;
     tris = (Triangle *) gSceneCurrTriList;
     headerRed0 = gCurrentLevelHeader2->BGColourTopR;
@@ -812,6 +818,7 @@ void draw_gradient_background(Gfx **dList) {
     load_and_set_texture_no_offset(dList, 0, RENDER_FOG_ACTIVE);
     gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(verts), 4, 0);
     gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(tris), 2, 0);
+    //gDPSetScissor((*dList)++, 0, gViewportScissor[0], gViewportScissor[1], gViewportScissor[2], gViewportScissor[3]);
     y0 = -150;
     y1 = 150;
     if (gNumberOfViewports == TWO_PLAYERS) {

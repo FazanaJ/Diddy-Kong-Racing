@@ -22,6 +22,7 @@ s32 sBackgroundFillColour = GPACK_RGBA5551(0, 0, 0, 1) | (GPACK_RGBA5551(0, 0, 0
 u32 D_800DE4C0 = 0x40;
 TextureHeader *D_800DE4C4 = 0;
 TextureHeader *D_800DE4C8 = 0;
+s32 gBGHeight = 240;
 
 BackgroundFunction gBackgroundDrawFunc = { NULL };
 u64 *gGfxSPTaskOutputBuffer = NULL; 
@@ -297,10 +298,16 @@ void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
     gDPPipeSync((*dList)++);
     gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, w, SEGMENT_COLOUR_BUFFER);
 
-    if ((gConfig.perfMode || gConfig.noCutbacks) || (gMapId == ASSET_LEVEL_CENTRALAREAHUB || gMapId == ASSET_LEVEL_WHALEBAY || gMapId == ASSET_LEVEL_PIRATELAGOON || 
+    if ((gMapId == ASSET_LEVEL_CENTRALAREAHUB || gMapId == ASSET_LEVEL_WHALEBAY || gMapId == ASSET_LEVEL_PIRATELAGOON || 
         gMapId == ASSET_LEVEL_DINODOMAINHUB || gMapId == ASSET_LEVEL_DINODOMAINTROPHYANIM || gMapId == ASSET_LEVEL_OPTIONSBACKGROUND ||
         gMapId == ASSET_LEVEL_FRONTEND || gMapId == ASSET_LEVEL_WIZPIG2)) {
         skip = FALSE;
+        gBGHeight = gScreenHeight;
+    } else if (gConfig.perfMode || gConfig.noCutbacks) {
+        skip = FALSE;
+        gBGHeight = gScreenHeight / 2;
+    } else {
+        gBGHeight = gScreenHeight;
     }
 
     if (drawBG) {
@@ -312,7 +319,7 @@ void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
             } else {
                 if (skip == FALSE) {
                     gDPSetFillColor((*dList)++, sBackgroundFillColour);
-                    gDPFillRectangle((*dList)++, 0, 0, w - 1, h - 1);
+                    gDPFillRectangle((*dList)++, 0, 0, w - 1, gBGHeight - 1);
                 }
             }
 			if (copy_viewport_background_size_to_coords(0, &x1, &y1, &x2, &y2)) {
@@ -330,7 +337,7 @@ void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
                 if (skip == FALSE) {
                     gDPSetFillColor((*dList)++, (GPACK_RGBA5551(sBackgroundPrimColourR, sBackgroundPrimColourG, sBackgroundPrimColourB, 1) << 16) | 
                                                  GPACK_RGBA5551(sBackgroundPrimColourR, sBackgroundPrimColourG, sBackgroundPrimColourB, 1));
-                    gDPFillRectangle((*dList)++, 0, 0, w - 1, h - 1);
+                    gDPFillRectangle((*dList)++, 0, 0, w - 1, gBGHeight - 1);
                 }
             }
         }

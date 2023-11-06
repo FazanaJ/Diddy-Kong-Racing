@@ -119,6 +119,7 @@ Matrix gProjectionMatrixF;
 MatrixS gProjectionMatrixS;
 Matrix gCurrentModelMatrixF;
 Matrix gCurrentModelMatrixS;
+s16 gViewportScissor[4];
 
 /******************************/
 
@@ -754,8 +755,16 @@ void viewport_scissor(Gfx **dlist) {
             break;
         }
         gDPSetScissor((*dlist)++, 0, ulx, uly, lrx, lry);
+        gViewportScissor[0] = ulx;
+        gViewportScissor[1] = uly;
+        gViewportScissor[2] = lrx;
+        gViewportScissor[3] = lry;
         return;
     }
+    gViewportScissor[0] = 0;
+    gViewportScissor[1] = 0;
+    gViewportScissor[2] = width;
+    gViewportScissor[3] = height;
     gDPSetScissor((*dlist)++, 0, 0, 0, width, height);
 }
 
@@ -882,6 +891,10 @@ void viewport_reset(Gfx **dlist) {
     if (!(gScreenViewports[gActiveCameraID].flags & VIEWPORT_EXTRA_BG)) {
         gDPSetScissor((*dlist)++, G_SC_NON_INTERLACE, 0, 0, width, height);
         viewport_rsp_set(dlist, width >> 1, height >> 1, width >> 1, height >> 1);
+        gViewportScissor[0] = 0;
+        gViewportScissor[1] = 0;
+        gViewportScissor[2] = width;
+        gViewportScissor[3] = height;
     } else {
         viewport_scissor(dlist);
         viewport_rsp_set(dlist, 0, 0, 0, 0);

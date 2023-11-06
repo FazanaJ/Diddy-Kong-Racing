@@ -46,6 +46,7 @@ extern TextureHeader *D_800DE4C8;
 extern s32 gChequerBGEnabled;
 
 extern s32 gfxBufCounter;
+extern s32 gBGHeight;
 
 extern u64 *gGfxSPTaskOutputBuffer;
 
