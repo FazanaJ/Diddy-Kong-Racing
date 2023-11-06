@@ -11,7 +11,6 @@ extern Gfx *gDisplayLists[2];
 extern s32 sLogicUpdateRate;
 extern u8 gHideHUD;
 extern s32 gMapId;
-extern u8 gSkipCutbacks;
 
 struct ConfigOptions {
     s8 antiAliasing;

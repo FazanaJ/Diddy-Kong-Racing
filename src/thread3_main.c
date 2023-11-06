@@ -173,7 +173,6 @@ void thread3_main(UNUSED void *unused) {
 
 struct ConfigOptions gConfig;
 u8 gHideHUD = FALSE;
-u8 gSkipCutbacks = FALSE;
 
 void init_config(void) {
     bzero(&gConfig, sizeof(gConfig));
@@ -184,7 +183,6 @@ void init_config(void) {
         gConfig.perfMode = FALSE;
     }
     gConfig.perfMode = TRUE;
-    gSkipCutbacks = gConfig.noCutbacks || gConfig.perfMode;
 }
 
 /**

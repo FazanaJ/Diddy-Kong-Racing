@@ -1488,7 +1488,7 @@ void render_race_start(s32 arg0, s32 updateRate) {
             if (gCurrentHud->unk19A[gHudCurrentViewport] >= 60) {
                 if (gRaceStartShowHudStep == 4) {
                     // Mute background music in 3/4 player.
-                    if (gNumberOfViewports > TWO_PLAYERS && gSkipCutbacks == FALSE) {
+                    if (gNumberOfViewports > TWO_PLAYERS && gConfig.noCutbacks == FALSE) {
                         music_play(SEQUENCE_NONE);
                     } else {
                         start_level_music(1.0f);
