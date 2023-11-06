@@ -1035,7 +1035,7 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
     return result;
 }
 
-void f32_matrix_from_scale(Matrix *mtx, f32 scaleX) {
+/*void f32_matrix_from_scale(Matrix *mtx, f32 scaleX) {
     s32 i;
     for (i = 1; i < 14; i++) {
         (*mtx)[0][i] = 0.0f;
@@ -1044,13 +1044,12 @@ void f32_matrix_from_scale(Matrix *mtx, f32 scaleX) {
     (*mtx)[1][1] = scaleX;
     (*mtx)[2][2] = 1.0f;
     (*mtx)[3][3] = 1.0f;
-}
+}*/
 
 /**
  * Sets transform and scale matrices to set position and size, loads the texture, sets the rendermodes, then draws the result onscreen.
 */
 void render_ortho_triangle_image(Gfx **dList, MatrixS **mtx, Vertex **vtx, ObjectSegment *segment, Sprite *sprite, s32 flags) {
-    f32 scale;
     s32 index;
     Vertex *temp_v1;
     Matrix aspectMtxF;
@@ -1072,13 +1071,13 @@ void render_ortho_triangle_image(Gfx **dList, MatrixS **mtx, Vertex **vtx, Objec
         gCameraTransform.y_position = 0.0f;
         gCameraTransform.z_position = 0.0f;
         if (gAdjustViewportHeight) {
-            scale = segment->trans.scale;
-            f32_matrix_from_scale(&scaleMtxF, scale);
+            f32_matrix_from_scale(scaleMtxF, segment->trans.scale, segment->trans.scale, 1.0f);
+            //f32_matrix_from_scale(&scaleMtxF, segment->trans.scale);
             f32_matrix_from_rotation_and_scale(aspectMtxF, 0, 1.0f, gVideoAspectRatio);
             f32_matrix_mult(&aspectMtxF, &scaleMtxF, &gCurrentModelMatrixF);
         } else {
-            scale = segment->trans.scale;
-            f32_matrix_from_scale(&gCurrentModelMatrixF, scale);
+            f32_matrix_from_scale(gCurrentModelMatrixF, segment->trans.scale, segment->trans.scale, 1.0f);
+            //f32_matrix_from_scale(&gCurrentModelMatrixF, segment->trans.scale);
         }
         object_transform_to_matrix_2(aspectMtxF, &gCameraTransform);
         f32_matrix_mult(&gCurrentModelMatrixF, &aspectMtxF, gModelMatrixF[gModelMatrixStackPos]);
