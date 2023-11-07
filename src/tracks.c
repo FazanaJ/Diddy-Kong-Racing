@@ -1319,8 +1319,8 @@ void render_level_segment(Gfx **dList, s32 segmentId, s32 nonOpaque) {
                 entry->vtx = (Vertex *) vertices;
                 entry->triCount = numberTriangles;
                 entry->vtxCount = numberVertices;
-#ifdef PUPPYPRINT_DEBUG
                 find_material_list_track(entry);
+#ifdef PUPPYPRINT_DEBUG
             }
 #endif
         }
@@ -2092,6 +2092,7 @@ void render_object_shadow(Gfx **dList, Object *obj, ShadowData *shadow) {
                 gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, alpha);
             }
             while (i < shadow->meshEnd) {
+                RenderNodeTrack *entry;
                 // I hope we can clean this part up.
                 offsetX = gCurrentShadowTexture[i].xOffset;
                 offsetY = gCurrentShadowTexture[i].yOffset;
@@ -2106,7 +2107,6 @@ void render_object_shadow(Gfx **dList, Object *obj, ShadowData *shadow) {
                     gSPPolygon((*dList)++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
                 } else {
 #endif
-                    RenderNodeTrack *entry;
                     gSorterPos -= sizeof(RenderNodeTrack);
                     entry = (RenderNodeTrack *) gSorterPos;
                     entry->material = gCurrentShadowTexture[i].texture;

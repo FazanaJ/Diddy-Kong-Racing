@@ -12,6 +12,8 @@
 
 /************ .data ************/
 
+#ifdef PUPPYPRINT_DEBUG
+
 s32 D_800E2EF0 = 0;
 
 //Char width is (v - u) + 1
@@ -365,3 +367,5 @@ void func_800B6F04(void) {
     D_80127CAC = D_80127CBC;
     D_80127CAE += 11;
 }
+
+#endif

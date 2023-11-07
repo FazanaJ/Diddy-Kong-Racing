@@ -44,6 +44,7 @@ typedef struct TexFontCoords {
     RENDER_PRINTF_CMD_END
 
 
+#ifdef PUPPYPRINT_DEBUG
 char *_itoa(u64 n, char *outBuffer, u32 radix, s32 useUpperCase);
 void func_800B4A08(s32 arg0);
 void diPrintfInit(void);
@@ -57,8 +58,19 @@ s32 render_printf(const char *format, ...);
 void func_800B6E50(void);
 void func_800B6EE0(void);
 void func_800B6F04(void);
-
 s32 func_800B653C(Gfx**, char*);
 int vsprintf(char *s, const char *fmt, ...);
+#else
+#define set_render_printf_colour(red, green, blue, alpha)
+#define set_render_printf_background_colour(red, green, blue, alpha)
+#define set_render_printf_position(x, y)
+#define diPrintfInit()
+#define print_debug_strings(dList)
+#ifdef __sgi
+#define render_printf
+#else
+#define render_printf(...)
+#endif
+#endif
 
 #endif

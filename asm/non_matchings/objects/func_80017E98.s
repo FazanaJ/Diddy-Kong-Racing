@@ -154,11 +154,11 @@ glabel func_80017E98
 /* 018CD4 800180D4 1120000A */  beqz  $t1, .L80018100
 /* 018CD8 800180D8 AC39AED0 */   sw    $t9, %lo(gNumberOfCheckpoints)($at)
 /* 018CDC 800180DC 24040014 */  li    $a0, 20
-/* 018CE0 800180E0 0C02D8D7 */  jal   set_render_printf_position
+/* 018CA4 800180A4 00000000 */  nop   
 /* 018CE4 800180E4 240500DC */   li    $a1, 220
 /* 018CE8 800180E8 3C04800E */  lui   $a0, %hi(sDuplicateCheckpointString) # $a0, 0x800e
 /* 018CEC 800180EC 248450D4 */  addiu $a0, %lo(sDuplicateCheckpointString) # addiu $a0, $a0, 0x50d4
-/* 018CF0 800180F0 0C02D7B7 */  jal   render_printf
+/* 018CA4 800180A4 00000000 */  nop   
 /* 018CF4 800180F4 02402825 */   move  $a1, $s2
 /* 018CF8 800180F8 3C088012 */  lui   $t0, %hi(D_8011AED4) # $t0, 0x8012
 /* 018CFC 800180FC 2508AED4 */  addiu $t0, %lo(D_8011AED4) # addiu $t0, $t0, -0x512c
