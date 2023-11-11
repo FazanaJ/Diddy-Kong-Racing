@@ -379,6 +379,7 @@ void allocate_object_pools(void) {
         (*gObjectHeaderReferences)[i] = 0;
     }
 
+    gAssetColourTag = MEMP_MISCASSET;
     gAssetsMiscSection = (s32 *) load_asset_section_from_rom(ASSET_MISC);
     gAssetsMiscTable = (s32 *) load_asset_section_from_rom(ASSET_MISC_TABLE);
     gAssetColourTag = COLOUR_TAG_GREY;

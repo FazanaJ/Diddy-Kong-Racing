@@ -196,6 +196,7 @@ enum PPProfilerEvent {
     "Weather", \
     "Audio Banks", \
     "Sequences", \
+    "Misc Asset", \
     \
     "Red", \
     "Black", \

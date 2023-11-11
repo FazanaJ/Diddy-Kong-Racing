@@ -59,6 +59,7 @@ enum MemoryTags {
     MEMP_WEATHER,
     MEMP_AUDIO_BANK,
     MEMP_SEQUENCE,
+    MEMP_MISCASSET,
 
     MEMP_TOTAL
 };
