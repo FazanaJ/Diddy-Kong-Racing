@@ -100,7 +100,7 @@ f32 get_distance_to_active_camera(f32 xPos, f32 yPos, f32 zPos);
 void camera_reset(f32 xPos, f32 yPos, f32 zPos, s32 arg3, s32 arg4, s32 arg5);
 void write_to_object_render_stack(s32 arg0, f32 xPos, f32 yPos, f32 zPos, s16 arg4, s16 arg5, s16 arg6);
 s8 check_if_showing_cutscene_camera(void);
-s32 set_active_viewports_and_max(s32 arg0);
+s32 set_active_viewports_and_max(s32 num);
 void set_active_camera(s32 arg0);
 void camEnableUserView(s32 viewPortIndex, s32 arg1);
 void camDisableUserView(s32 viewPortIndex, s32 arg1);
