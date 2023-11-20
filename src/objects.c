@@ -5546,11 +5546,11 @@ f32 func_8002277C(f32 *data, s32 index, f32 x) {
     f32 derivative;
     f32 temp3, temp2, temp;
     
-    temp =  (-0.5 * data[index])    + ( 1.5 * data[index + 1]) + (-1.5 * data[index + 2]) + ( 0.5 * data[index + 3]);
-    temp2 = ( 1.0 * data[index])    + (-2.5 * data[index + 1]) + ( 2.0 * data[index + 2]) + (-0.5 * data[index + 3]);
-    temp3 = (data[index + 2] * 0.5) + ( 0.0 * data[index + 1]) + (-0.5 * data[index])     + ( 0.0 * data[index + 3]);
+    temp =  (-0.5f * data[index])    + ( 1.5f * data[index + 1]) + (-1.5f * data[index + 2]) + ( 0.5f * data[index + 3]);
+    temp2 = ( 1.0f * data[index])    + (-2.5f * data[index + 1]) + ( 2.0f * data[index + 2]) + (-0.5f * data[index + 3]);
+    temp3 = (data[index + 2] * 0.5f) + ( 0.0f * data[index + 1]) + (-0.5f * data[index])     + ( 0.0f * data[index + 3]);
     
-    derivative = (((temp * 3 * x) + (2 * temp2)) * x) + temp3;
+    derivative = (((temp * 3.0f * x) + (2.0f * temp2)) * x) + temp3;
     
     return derivative;
 }

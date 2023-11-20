@@ -122,14 +122,12 @@ void set_rng_seed(s32 num) {
     gCurrentRNGSeed = num;
 }
 
-void save_rng_seed(s32 num) {
-    num = gCurrentRNGSeed;
-    gPrevRNGSeed = num;
+void save_rng_seed(void) {
+    gPrevRNGSeed = gCurrentRNGSeed;
 }
 
-void load_rng_seed(s32 num) {
-    num = gPrevRNGSeed;
-    gCurrentRNGSeed = num;
+void load_rng_seed(void) {
+    gCurrentRNGSeed = gPrevRNGSeed;
 }
 
 s32 get_rng_seed(void) {
