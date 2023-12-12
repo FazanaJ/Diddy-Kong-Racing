@@ -5395,6 +5395,10 @@ void obj_init_butterfly(Object *butterflyObj, LevelObjectEntry_Butterfly *butter
     s32 uMask;
     s32 vMask;
     s32 i;
+
+    if (gConfig.perfMode) {
+        free_object(butterflyObj);
+    }
     
     butterfly = &butterflyObj->unk64->butterfly;
     if (param == 0) {
