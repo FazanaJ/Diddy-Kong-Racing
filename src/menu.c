@@ -2509,7 +2509,7 @@ void draw_menu_elements(s32 flags, MenuElement *elems, f32 scale) {
     set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
     while (elems->unk14_a.element != NULL) {
         if ((elems->unk14_a.element != &D_80126850)) { //fakematch
-            if (flags == ((elems->unk14_a.element != (&D_80126850)) * 0)) { //fakematch
+            if (flags == ((elems->unk14_a.element != 0))) {
                 xPos = ((s32) ((elems->center - elems->left) * scale)) + elems->left;
                 yPos = ((s32) ((elems->middle - elems->top) * scale)) + elems->top;
             } else if((flags == 1)) {
@@ -2856,7 +2856,6 @@ void func_80083098(f32 arg0) {
                 text = introCharData->unk0;
                 didUpdate = TRUE;
             } else {
-                if (!gTitleCinematicTextColours[0].red){} // Fake
                 D_801268E0++;
             }
         }
@@ -5386,7 +5385,6 @@ s32 menu_magic_codes_loop(s32 updateRate) {
                             foundCheat = FALSE;
                         }
                         if(!foundCheat) { 
-                            do { } while (0); // Fakematch
                             break;
                         }
                     } while(cheatCodeText[i] != '\0' && D_80126C58[i] != '\0');
@@ -6310,7 +6308,6 @@ void menu_game_select_init(void) {
     }
 
     for (i = 0; i <= gMenuOptionCount; i++) {
-        //Fakematch? What's the (i ^ 0)?
         gGameSelectElements[(i* 2) + 2].unk14_a.texture = gMenuObjects[TEXTURE_SURFACE_BUTTON_WOOD];
     }
 }
@@ -6333,7 +6330,6 @@ void func_8008C698(UNUSED s32 updateRate) {
             if (i == gMenuCurIndex) {
                 filterBlendFactor = fade;
             }
-            //Fakematch? What's the (i ^ 0)?
             gGameSelectElements[(i * 2) + 3].filterBlendFactor = filterBlendFactor;
         }
 
@@ -7692,7 +7688,6 @@ void func_8008FF1C(UNUSED s32 updateRate) {
                         cur->trackName = (char*) gQMarkPtr;
                     }
                     cur->xOff = ((trackX * 320) - gTrackSelectX);
-                    if (1){ } //Fakematch
                     cur->yOff = ((-trackY * gTrackSelectViewportY) - gTrackSelectY);
                     cur->opacity = 0xFF;
                     if ((trackX == gSelectedTrackX) && (trackY == gSelectedTrackY)) {
@@ -9231,7 +9226,6 @@ void func_80094D28(UNUSED s32 updateRate) {
                 if (i == settings->racers[0].starting_position) {
                     sp3C = (textAlpha >> 1) + 128;
                 }
-                if (y){} // Fake
                 gRaceOrderMenuElements[7 - j].filterRed = sp3C;
                 gRaceOrderMenuElements[7 - j].filterGreen = sp3C;
                 gRaceOrderMenuElements[7 - j].filterBlue = sp3C;
@@ -9292,7 +9286,6 @@ void func_80094D28(UNUSED s32 updateRate) {
                     render_dialogue_text(7, POS_CENTRED, y, D_80126C1C[temp], 1, ALIGN_MIDDLE_CENTER);
                 }
             } else {
-                if (y && y){} //fake
                 viewportULY -= 24;
                 if (gMenuSubOption != 0) {
                     render_dialogue_text(7, POS_CENTRED, viewportULY + 8, gMenuText[ASSET_MENU_TEXT_QUITGAMETITLE], 1, ALIGN_MIDDLE_CENTER);
@@ -11030,7 +11023,6 @@ void func_80099E8C(UNUSED s32 updateRate) {
     set_text_font(FONT_SMALL);
     x = 40;
     while (spE4 < D_801264D4 && spE8 > 0) {
-        if (gGhostDataElementPositions[0]){} // Fakematch
 
         currentWorldId = get_map_world_id(D_80126508[spE4]) - 1;
         if (currentWorldId < 0 || currentWorldId >= 5) {
@@ -11772,14 +11764,11 @@ void func_8009C6D4(s32 arg0) {
     if (!D_80126750[arg0]) {
         i = (*gAssetsMenuElementIds)[arg0];
         
-        if (((!arg0) && (!arg0)) && (!arg0)){} // Fakematch
-        
         if ((i & 0xC000) == 0xC000) {
             gMenuObjects[arg0] = (TextureHeader *) load_texture(i & 0x3FFF);
         } else if (i & 0x8000) {
             gMenuObjects[arg0] = (TextureHeader *) func_8007C12C(i & 0x3FFF, 0);
         } else if (i & 0x4000) {
-            if (gMenuElementIdCount){} // Fakematch
             entry.objectID = i & 0xFFFF;
             entry.size = 8;
             entry.x = 0;
@@ -11832,7 +11821,6 @@ void func_8009CA60(s32 stackIndex) {
     if (gMenuObjects[gMenuImageStack[stackIndex].unk6] != 0) {
         if (((*gAssetsMenuElementIds)[gMenuImageStack[stackIndex].unk6] & 0xC000) != 0xC000) {
             if ((*gAssetsMenuElementIds)[gMenuImageStack[stackIndex].unk6] & 0x4000) {
-                if (0) {} // Fakematch
                 new_var = (Object*)gMenuObjects[gMenuImageStack[stackIndex].unk6];
                 new_var2 = (unk8009CA602 *) &gMenuImageStack[stackIndex];
                 new_var->segment.trans.y_rotation = new_var2->trans.y_rotation;

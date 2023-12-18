@@ -1220,7 +1220,6 @@ void camera_push_model_mtx(Gfx **dList, MatrixS **mtx, ObjectTransform *trans, f
     gModelMatrixViewX[index] = tempX;
     gModelMatrixViewY[index] = tempY;
     gModelMatrixViewZ[index] = tempZ;
-    if (0) {} // Fakematch
 }
 
 /**

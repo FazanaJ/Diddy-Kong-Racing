@@ -983,7 +983,6 @@ s32 write_eeprom_data(Settings *settings, u8 flags) {
 
     if (flags & SAVE_DATA_FLAG_READ_FLAP_TIMES) {
         s32 size = 24;
-        if (1){} //Fake Match
         if (!is_reset_pressed()) {
             for (i = 0; i != size; i++) {
                 osEepromWrite(&sSIMesgQueue, i + 16, (u8 *)&alloc[i]);

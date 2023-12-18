@@ -6111,7 +6111,9 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             obj_init_wavegenerator(obj, (LevelObjectEntry_WaveGenerator *) entry, param);
             break;
         case BHV_BUTTERFLY:
+            obj_init_butterfly(obj, (LevelObjectEntry_Butterfly *) entry, param);
             break;
+        case BHV_PARK_WARDEN:
             obj_init_parkwarden(obj, (LevelObjectEntry_Parkwarden *) entry);
             break;
         case BHV_WORLD_KEY:

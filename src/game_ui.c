@@ -808,7 +808,6 @@ void render_hud_banana_challenge(s32 arg0, Object *obj, s32 updateRate) {
             gCurrentHud->unk64C += 55.0f;
             gCurrentHud->unk40C += 55.0f;
         }
-        if (1) {} // Fakematch
         gCurrentHud->unk64C -= 275.0f;
         gCurrentHud->unk40C -= 275.0f;
         break;
@@ -2645,7 +2644,6 @@ void render_magnet_reticle(Object *racerObj) {
     Object_Racer *racer;
     s32 hudElementIndex;
 
-    if(entry){} // Fakematch
     racer = &racerObj->unk64->racer;
     if (racer->magnetTargetObj != NULL && get_current_viewport() == racer->playerIndex) {
         hud = gCurrentHud;

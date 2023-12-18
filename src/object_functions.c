@@ -1558,10 +1558,8 @@ void obj_loop_fish(Object *fishObj, s32 updateRate) {
     xThing = coss_f(fish->unkFE) * fish->unk114;
     sinUnk104 = sins_f(fish->unk104);
     cosUnk104 = coss_f(fish->unk104);
-    dist3D += 0; // Fakematch
     prevXThing = zThing; 
     prevZThing = xThing;
-    zThing = prevXThing; // Fakematch?
     zThing = (zThing * cosUnk104) + (prevZThing * sinUnk104);
     xThing = (prevZThing * cosUnk104) - (prevXThing * sinUnk104);
     zThing += fish->unk108;

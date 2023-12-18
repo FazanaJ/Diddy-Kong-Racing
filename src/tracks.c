@@ -1785,10 +1785,6 @@ s32 func_8002B9BC(Object *obj, f32 *arg1, f32 *arg2, s32 arg3) {
     }
 }
 
-#ifdef NON_MATCHING
-// Collision: Returns the Y Values in yOut, and the number of values in the array as the return.
-// Get's the Y Offset acrross a surface.
-// Basically it goes down, finds a triangle, then locates where the intersection is and returns the Y level of that.
 s32 func_8002BAB0(s32 levelSegmentIndex, f32 xIn, f32 zIn, f32 *yOut) {
     LevelModelSegment *currentSegment;
     LevelModelSegmentBoundingBox *currentBoundingBox;
@@ -1825,13 +1821,13 @@ s32 func_8002BAB0(s32 levelSegmentIndex, f32 xIn, f32 zIn, f32 *yOut) {
     Vec4f tempVec4f;
     u16 *new_var;
     u16 temp;
+    profiler_begin_timer();
 
     if (levelSegmentIndex < 0 || levelSegmentIndex >= gCurrentLevelModel->numberOfSegments) {
+        profiler_add(PP_COLLISION, first);
         return 0;
     }
 
-    // if (!temp_v1_4){} //Fake, but fixes one regalloc, at the cost of a much worse stack.    
-    vert = NULL; //fake?
     currentSegment = &gCurrentLevelModel->segments[levelSegmentIndex];
     currentBoundingBox = &gCurrentLevelModel->segmentsBoundingBoxes[levelSegmentIndex];
     var_a1 = 1;
@@ -1866,7 +1862,6 @@ s32 func_8002BAB0(s32 levelSegmentIndex, f32 xIn, f32 zIn, f32 *yOut) {
 
     yOutCount = 0;
     for (batchNum = 0; batchNum < currentSegment->numberOfBatches; batchNum++) {
-        if (1) { } // fake
         currentBatch = &currentSegment->batches[batchNum];
         currentFaceOffset = currentBatch->facesOffset;
         nextFaceOffset = (currentBatch + 1)->facesOffset;
@@ -1895,7 +1890,7 @@ s32 func_8002BAB0(s32 levelSegmentIndex, f32 xIn, f32 zIn, f32 *yOut) {
                     tempVec4f.y = temp_v1_4[1];
                     tempVec4f.z = temp_v1_4[2];
                     tempVec4f.w = temp_v1_4[3];
-                    if (tempVec4f.y != 0.0) {
+                    if (tempVec4f.y != 0.0f) {
                         yOut[yOutCount] = -(((tempVec4f.x * xIn) + (tempVec4f.z * zIn) + tempVec4f.w) / tempVec4f.y);
                         yOutCount++;
                     }
@@ -1915,12 +1910,10 @@ s32 func_8002BAB0(s32 levelSegmentIndex, f32 xIn, f32 zIn, f32 *yOut) {
             }
         }
     } while (!stopSorting);
-
+    
+    profiler_add(PP_COLLISION, first);
     return yOutCount;
 }
-#else
-GLOBAL_ASM("asm/non_matchings/tracks/func_8002BAB0.s")
-#endif
 
 #ifdef NON_MATCHING
 // generate_track

@@ -543,7 +543,6 @@ void func_800AD030(ObjectSegment *cameraSegment) {
     s32 i; 
     D_800E2A84 = FALSE;
     if (D_800E2A88 > 0 && D_800E2A80 != 0) {
-        if(D_80127C40[0]){} // Fakematch
         for (i = 0; i < D_800E2A88; i++) {
             xDiff = cameraSegment->trans.x_position - D_80127C40[i]->segment.trans.x_position;
             yDiff = cameraSegment->trans.y_position - D_80127C40[i]->segment.trans.y_position;

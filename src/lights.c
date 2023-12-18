@@ -60,9 +60,9 @@ void setup_lights(s32 count) {
     temp_v0 = (ObjectLight **) allocate_from_main_pool_safe(gMaxLights * (sizeof(s32 *) + sizeof(ObjectLight) + sizeof(unk800DC960) + sizeof(Vec3f)), MEMP_LIGHTS);
     newCount = gMaxLights;
     gActiveLights = temp_v0;
-    D_800DC954 = (ObjectLight *) (newCount + (0, temp_v0)); //fakematch
-    D_800DC960 = (unk800DC960 *) (newCount + (0, D_800DC954)); //fakematch
-    D_800DC964 = (Vec3f *) (newCount + (0, D_800DC960)); //fakematch
+    D_800DC954 = (ObjectLight *) (newCount + (temp_v0));
+    D_800DC960 = (unk800DC960 *) (newCount + (D_800DC954));
+    D_800DC964 = (Vec3f *) (newCount + (D_800DC960));
     for (i = 0; i < gMaxLights; i++) {
         gActiveLights[i] = &D_800DC954[i];
     }
@@ -421,7 +421,6 @@ void func_800337E4(void) {
 
     for (i = 1; i < D_800DC968; i++) {
         index = i; // Needed?
-        if ((&D_800DC960[index])->unk10){} // Fakematch
         temp_a1 = (0, D_800DC960) + index;
         temp_a2 = temp_a1->unk10;
         if (temp_a2 >= 2) {
