@@ -377,6 +377,30 @@
 #endif
 #endif
 
+#define NO_SYNCS_IN_TEXTURE_LOADS
+
+#ifdef NO_SYNCS_IN_TEXTURE_LOADS
+#define gDPLoadSyncInTexLoad(pkt) (void)0
+#define gDPTileSyncInTexLoad(pkt) (void)0
+#define gDPPipeSyncInTexLoad(pkt) (void)0
+#define gsDPLoadSyncInTexLoad
+#define gsDPTileSyncInTexLoad
+#define gsDPPipeSyncInTexLoad
+#define gsDPPipeSyncEndOfTexLoad
+#define _G_TEXLOADTILE(rtile) (G_TX_LOADTILE - (rtile))
+#define _G_PALLOADTILE(rtile) (G_TX_LOADTILE - 2 - (rtile))
+#else
+#define gDPLoadSyncInTexLoad(pkt) gDPLoadSync(pkt)
+#define gDPTileSyncInTexLoad(pkt) gDPTileSync(pkt)
+#define gDPPipeSyncInTexLoad(pkt) gDPPipeSync(pkt)
+#define gsDPLoadSyncInTexLoad gsDPLoadSync(),
+#define gsDPTileSyncInTexLoad gsDPTileSync(),
+#define gsDPPipeSyncInTexLoad gsDPPipeSync(),
+#define gsDPPipeSyncEndOfTexLoad , gsDPPipeSync()
+#define _G_TEXLOADTILE(rtile) G_TX_LOADTILE
+#define _G_PALLOADTILE(rtile) G_TX_LOADTILE
+#endif
+
 /* Need these defined for Sprite Microcode */
 #ifdef _LANGUAGE_ASSEMBLY
 #define	G_TX_LOADTILE	7
@@ -3448,909 +3472,797 @@ typedef union {
 	_SHIFTL((tile), 24, 3) | _SHIFTL((count), 14, 10)		\
 }}
 
-#define	gDPLoadTextureBlock(pkt, timg, fmt, siz, width, height,		\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-{									\
-	gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);	\
-	gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE, 	\
-		0 , cmt, maskt, shiftt, cms, masks, shifts);		\
-	gDPLoadSync(pkt);						\
-	gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0, 				\
-		(((width)*(height) + siz##_INCR) >> siz##_SHIFT) -1,	\
-		CALC_DXT(width, siz##_BYTES)); 				\
-	gDPPipeSync(pkt);						\
-	gDPSetTile(pkt, fmt, siz,					\
-		(((width) * siz##_LINE_BYTES)+7)>>3, 0,			\
-		G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,	\
-		shifts);						\
-	gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,			\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)			\
-}
+#define _DW(macro) do {macro} while (0)
 
-#define	gDPLoadTextureBlockYuv(pkt, timg, fmt, siz, width, height,	\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-{									\
-	gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);	\
-	gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE, 	\
-		0 , cmt, maskt, shiftt, cms, masks, shifts);		\
-	gDPLoadSync(pkt);						\
-	gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0, 				\
-		(((width)*(height) + siz##_INCR) >> siz##_SHIFT) -1,	\
-		CALC_DXT(width, siz##_BYTES)); 				\
-	gDPPipeSync(pkt);						\
-	gDPSetTile(pkt, fmt, siz,					\
-		(((width) * 1)+7)>>3, 0,				\
-		G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,	\
-		shifts);						\
-	gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,			\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)			\
-}
+#define gDPLoadTextureBlock(pkt, timg, fmt, siz, width, height, pal,        \
+                                 cms, cmt, masks, maskt, shifts, shiftt)    \
+_DW({                                                                       \
+    gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);                \
+    gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE,             \
+        0, cmt, maskt, shiftt, cms, masks, shifts);                         \
+    gDPLoadSyncInTexLoad(pkt);                                              \
+    gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0,                                  \
+        (((width) * (height) + siz##_INCR) >> siz##_SHIFT) -1,              \
+        CALC_DXT(width, siz##_BYTES));                                      \
+    gDPPipeSyncInTexLoad(pkt);                                              \
+    gDPSetTile(pkt, fmt, siz,                                               \
+        (((width) * siz##_LINE_BYTES) + 7) >> 3, 0,                         \
+        G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks, shifts);      \
+    gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,                              \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                             \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC);                            \
+})
+
+#define gDPLoadTextureBlockYuv(pkt, timg, fmt, siz, width, height, pal,     \
+                                    cms, cmt, masks, maskt, shifts, shiftt) \
+_DW({                                                                       \
+    gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);                \
+    gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE,             \
+        0, cmt, maskt, shiftt, cms, masks, shifts);                         \
+    gDPLoadSyncInTexLoad(pkt);                                              \
+    gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0,                                  \
+        (((width) * (height) + siz##_INCR) >> siz##_SHIFT) -1,              \
+        CALC_DXT(width, siz##_BYTES));                                      \
+    gDPPipeSyncInTexLoad(pkt);                                              \
+    gDPSetTile(pkt, fmt, siz,                                               \
+        (((width) * 1) + 7) >> 3, 0,                                        \
+        G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks, shifts);      \
+    gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,                              \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                             \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC);                            \
+})
 
 /* Load fix rww 27jun95 */
 /* The S at the end means odd lines are already word Swapped */
 
-#define	gDPLoadTextureBlockS(pkt, timg, fmt, siz, width, height,	\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-{									\
-	gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);	\
-	gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE, 	\
-		0 , cmt, maskt,	shiftt, cms, masks, shifts);		\
-	gDPLoadSync(pkt);						\
-	gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0, 				\
-		(((width)*(height) + siz##_INCR) >> siz##_SHIFT)-1,0);	\
-	gDPPipeSync(pkt);						\
-	gDPSetTile(pkt, fmt, siz,					\
-		(((width) * siz##_LINE_BYTES)+7)>>3, 0,			\
-		G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,	\
-		shifts);						\
-	gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,			\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)			\
-}
+#define gDPLoadTextureBlockS(pkt, timg, fmt, siz, width, height, pal,       \
+                                  cms, cmt, masks, maskt, shifts, shiftt)   \
+_DW({                                                                       \
+    gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);                \
+    gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE,             \
+        0, cmt, maskt, shiftt, cms, masks, shifts);                         \
+    gDPLoadSyncInTexLoad(pkt);                                              \
+    gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0,                                  \
+        (((width) * (height) + siz##_INCR) >> siz##_SHIFT) - 1, 0);         \
+    gDPPipeSyncInTexLoad(pkt);                                              \
+    gDPSetTile(pkt, fmt, siz,                                               \
+        (((width) * siz##_LINE_BYTES) + 7) >> 3, 0,                         \
+        G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks, shifts);      \
+    gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,                              \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                             \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC);                            \
+})
 
-/* 
+/*
  *  Allow tmem address and render tile to be specified.
- *  The S at the end means odd lines are already word Swapped 
+ *  The S at the end means odd lines are already word Swapped
  */
-#define	gDPLoadMultiBlockS(pkt, timg, tmem, rtile, fmt, siz, width, 	\
-		   height, pal, cms, cmt, masks, maskt, shifts, shiftt)	\
-{									\
-	gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);	\
-	gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, tmem, G_TX_LOADTILE, 	\
-		0 , cmt, maskt,	shiftt, cms, masks, shifts);		\
-	gDPLoadSync(pkt);						\
-	gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0, 				\
-		(((width)*(height) + siz##_INCR) >> siz##_SHIFT)-1,0);	\
-	gDPPipeSync(pkt);						\
-	gDPSetTile(pkt, fmt, siz,					\
-		(((width) * siz##_LINE_BYTES)+7)>>3, tmem,		\
-		rtile, pal, cmt, maskt, shiftt, cms, masks,		\
-		shifts);						\
-	gDPSetTileSize(pkt, rtile, 0, 0,				\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)			\
-}
+#define gDPLoadMultiBlockS(pkt, timg, tmem, rtile, fmt, siz, width, height, pal,    \
+                                cms, cmt, masks, maskt, shifts, shiftt)             \
+_DW({                                                                               \
+    gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);                        \
+    gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, tmem, _G_TEXLOADTILE(rtile),          \
+        0, cmt, maskt, shiftt, cms, masks, shifts);                                 \
+    gDPLoadSyncInTexLoad(pkt);                                                      \
+    gDPLoadBlock(pkt, _G_TEXLOADTILE(rtile), 0, 0,                                  \
+        (((width) * (height) + siz##_INCR) >> siz##_SHIFT) - 1,0);                  \
+    gDPPipeSyncInTexLoad(pkt);                                                      \
+    gDPSetTile(pkt, fmt, siz,                                                       \
+        (((width) * siz##_LINE_BYTES) + 7) >> 3, tmem,                              \
+        rtile, pal, cmt, maskt, shiftt, cms, masks,                                 \
+        shifts);                                                                    \
+    gDPSetTileSize(pkt, rtile, 0, 0,                                                \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                                     \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC);                                    \
+})
 
 
-#define	gDPLoadTextureBlockYuvS(pkt, timg, fmt, siz, width, height,	\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-{									\
-	gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);	\
-	gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE, 	\
-		0 , cmt, maskt,	shiftt, cms, masks, shifts);		\
-	gDPLoadSync(pkt);						\
-	gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0, 				\
-		(((width)*(height) + siz##_INCR) >> siz##_SHIFT)-1,0);	\
-	gDPPipeSync(pkt);						\
-	gDPSetTile(pkt, fmt, siz,					\
-		(((width) * 1)+7)>>3, 0,				\
-		G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,	\
-		shifts);						\
-	gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,			\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)			\
-}
+#define gDPLoadTextureBlockYuvS(pkt, timg, fmt, siz, width, height, pal,        \
+                                     cms, cmt, masks, maskt, shifts, shiftt)    \
+_DW({                                                                           \
+    gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);                    \
+    gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE,                 \
+        0, cmt, maskt, shiftt, cms, masks, shifts);                             \
+    gDPLoadSyncInTexLoad(pkt);                                                  \
+    gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0,                                      \
+        (((width) * (height) + siz##_INCR) >> siz##_SHIFT) - 1,0);              \
+    gDPPipeSyncInTexLoad(pkt);                                                  \
+    gDPSetTile(pkt, fmt, siz,                                                   \
+        (((width) * 1) + 7) >> 3, 0,                                            \
+        G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks, shifts);          \
+    gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,                                  \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                                 \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC);                                \
+})
 
 /*
  *  allows tmem address to be specified
  */
-#define	_gDPLoadTextureBlock(pkt, timg, tmem, fmt, siz, width, height,	\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-{									\
-	gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);	\
-	gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, tmem, G_TX_LOADTILE,  \
-		0, cmt, maskt, shiftt, cms, masks, shifts);		\
-	gDPLoadSync(pkt);						\
-	gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0, 				\
-		(((width)*(height) + siz##_INCR) >> siz##_SHIFT)-1,	\
-		CALC_DXT(width, siz##_BYTES)); 				\
-	gDPPipeSync(pkt);						\
-	gDPSetTile(pkt, fmt, siz, (((width) * siz##_LINE_BYTES)+7)>>3,	\
-		tmem, G_TX_RENDERTILE, pal, cmt,			\
-		maskt, shiftt, cms, masks, shifts);			\
-	gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,			\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)			\
-}
+#define _gDPLoadTextureBlock(pkt, timg, tmem, fmt, siz, width, height, pal, \
+                                  cms, cmt, masks, maskt, shifts, shiftt)   \
+_DW({                                                                       \
+    gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);                \
+    gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, tmem, G_TX_LOADTILE,          \
+        0, cmt, maskt, shiftt, cms, masks, shifts);                         \
+    gDPLoadSyncInTexLoad(pkt);                                              \
+    gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0,                                  \
+        (((width) * (height) + siz##_INCR) >> siz##_SHIFT) - 1,             \
+        CALC_DXT(width, siz##_BYTES));                                      \
+    gDPPipeSyncInTexLoad(pkt);                                              \
+    gDPSetTile(pkt, fmt, siz,                                               \
+        (((width) * siz##_LINE_BYTES) + 7) >> 3, tmem,                      \
+        G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks, shifts);      \
+    gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,                              \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                             \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC);                            \
+})
 
 /*
  *  allows tmem address and render tile to be specified
  */
-#define	_gDPLoadTextureBlockTile(pkt, timg, tmem, rtile, fmt, siz, width,  \
-		height, pal, cms, cmt, masks, maskt, shifts, shiftt)	\
-{									\
-	gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);	\
-	gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, tmem, G_TX_LOADTILE, 0,\
-		cmt, maskt, shiftt, cms, masks, shifts);		\
-	gDPLoadSync(pkt);						\
-	gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0, 				\
-		(((width)*(height) + siz##_INCR) >> siz##_SHIFT)-1,	\
-		CALC_DXT(width, siz##_BYTES)); 				\
-	gDPPipeSync(pkt);						\
-	gDPSetTile(pkt, fmt, siz, (((width) * siz##_LINE_BYTES)+7)>>3,	\
-		tmem, rtile, pal, cmt,					\
-		maskt, shiftt, cms, masks, shifts);			\
-	gDPSetTileSize(pkt, rtile, 0, 0,				\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)			\
-}
+#define _gDPLoadTextureBlockTile(pkt, timg, tmem, rtile, fmt, siz, width, height, pal,  \
+                                      cms, cmt, masks, maskt, shifts, shiftt)           \
+_DW({                                                                                   \
+    gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);                            \
+    gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, tmem, _G_TEXLOADTILE(rtile),              \
+        0, cmt, maskt, shiftt, cms, masks, shifts);                                     \
+    gDPLoadSyncInTexLoad(pkt);                                                          \
+    gDPLoadBlock(pkt, _G_TEXLOADTILE(rtile), 0, 0,                                      \
+        (((width) * (height) + siz##_INCR) >> siz##_SHIFT) - 1,                         \
+        CALC_DXT(width, siz##_BYTES));                                                  \
+    gDPPipeSyncInTexLoad(pkt);                                                          \
+    gDPSetTile(pkt, fmt, siz,                                                           \
+        (((width) * siz##_LINE_BYTES) + 7) >> 3, tmem,                                  \
+        rtile, pal, cmt, maskt, shiftt, cms, masks, shifts);                            \
+    gDPSetTileSize(pkt, rtile, 0, 0,                                                    \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                                         \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC);                                        \
+})
 
 /*
  *  allows tmem address and render tile to be specified
  */
-#define	gDPLoadMultiBlock(pkt, timg, tmem, rtile, fmt, siz, width,  	\
-		height, pal, cms, cmt, masks, maskt, shifts, shiftt)	\
-{									\
-	gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);	\
-	gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, tmem, G_TX_LOADTILE, 0,\
-		cmt, maskt, shiftt, cms, masks, shifts);		\
-	gDPLoadSync(pkt);						\
-	gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0, 				\
-		(((width)*(height) + siz##_INCR) >> siz##_SHIFT)-1,	\
-		CALC_DXT(width, siz##_BYTES)); 				\
-	gDPPipeSync(pkt);						\
-	gDPSetTile(pkt, fmt, siz, (((width) * siz##_LINE_BYTES)+7)>>3,	\
-		tmem, rtile, pal, cmt,					\
-		maskt, shiftt, cms, masks, shifts);			\
-	gDPSetTileSize(pkt, rtile, 0, 0,				\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)			\
-}
+#define gDPLoadMultiBlock(pkt, timg, tmem, rtile, fmt, siz, width, height, pal, \
+                               cms, cmt, masks, maskt, shifts, shiftt)          \
+_DW({                                                                           \
+    gDPSetTextureImage(pkt, fmt, siz##_LOAD_BLOCK, 1, timg);                    \
+    gDPSetTile(pkt, fmt, siz##_LOAD_BLOCK, 0, tmem, _G_TEXLOADTILE(rtile),      \
+        0, cmt, maskt, shiftt, cms, masks, shifts);                             \
+    gDPLoadSyncInTexLoad(pkt);                                                  \
+    gDPLoadBlock(pkt, _G_TEXLOADTILE(rtile), 0, 0,                              \
+        (((width) * (height) + siz##_INCR) >> siz##_SHIFT) - 1,                 \
+        CALC_DXT(width, siz##_BYTES));                                          \
+    gDPPipeSyncInTexLoad(pkt);                                                  \
+    gDPSetTile(pkt, fmt, siz,                                                   \
+        (((width) * siz##_LINE_BYTES) + 7) >> 3, tmem,                          \
+        rtile, pal, cmt, maskt, shiftt, cms, masks, shifts);                    \
+    gDPSetTileSize(pkt, rtile, 0, 0,                                            \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                                 \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC);                                \
+})
 
-#define	gsDPLoadTextureBlock(timg, fmt, siz, width, height,		\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-									\
-	gsDPSetTextureImage(fmt, siz##_LOAD_BLOCK, 1, timg),		\
-	gsDPSetTile(fmt, siz##_LOAD_BLOCK, 0, 0, 			\
-		G_TX_LOADTILE, 	0 , cmt, maskt,	shiftt, cms, 		\
-		masks, shifts),						\
-	gsDPLoadSync(),							\
-	gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 				\
-		(((width)*(height) + siz##_INCR) >> siz##_SHIFT)-1,	\
-		CALC_DXT(width, siz##_BYTES)), 				\
-	gsDPPipeSync(),							\
-	gsDPSetTile(fmt, siz, ((((width) * siz##_LINE_BYTES)+7)>>3), 0,	\
-		G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,	\
-		shifts),						\
-	gsDPSetTileSize(G_TX_RENDERTILE, 0, 0,				\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)
+#define gsDPLoadTextureBlock(timg, fmt, siz, width, height, pal,        \
+                             cms, cmt, masks, maskt, shifts, shiftt)    \
+    gsDPSetTextureImage(fmt, siz##_LOAD_BLOCK, 1, timg),                \
+    gsDPSetTile(fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE,             \
+        0, cmt, maskt, shiftt, cms, masks, shifts),                     \
+    gsDPLoadSyncInTexLoad                                               \
+    gsDPLoadBlock(G_TX_LOADTILE, 0, 0,                                  \
+        (((width)*(height) + siz##_INCR) >> siz##_SHIFT) - 1,           \
+        CALC_DXT(width, siz##_BYTES)),                                  \
+    gsDPPipeSyncInTexLoad                                               \
+    gsDPSetTile(fmt, siz,                                               \
+        ((((width) * siz##_LINE_BYTES) + 7) >> 3), 0,                   \
+        G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks, shifts),  \
+    gsDPSetTileSize(G_TX_RENDERTILE, 0, 0,                              \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                         \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC)
 
 /* Here is the static form of the pre-swapped texture block loading */
 /* See gDPLoadTextureBlockS() for reference.  Basically, just don't
    calculate DxT, use 0 */
 
-#define	gsDPLoadTextureBlockS(timg, fmt, siz, width, height,		\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-									\
-	gsDPSetTextureImage(fmt, siz##_LOAD_BLOCK, 1, timg),		\
-	gsDPSetTile(fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE, 0 , 	\
-		cmt, maskt,shiftt, cms, masks, shifts),			\
-	gsDPLoadSync(),							\
-	gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 				\
-		(((width)*(height) + siz##_INCR) >> siz##_SHIFT)-1, 0 ),\
-	gsDPPipeSync(),							\
-	gsDPSetTile(fmt, siz, ((((width) * siz##_LINE_BYTES)+7)>>3), 0,	\
-		G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,	\
-		shifts),						\
-	gsDPSetTileSize(G_TX_RENDERTILE, 0, 0,				\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)
+#define gsDPLoadTextureBlockS(timg, fmt, siz, width, height, pal,       \
+                              cms, cmt, masks, maskt, shifts, shiftt)   \
+    gsDPSetTextureImage(fmt, siz##_LOAD_BLOCK, 1, timg),                \
+    gsDPSetTile(fmt, siz##_LOAD_BLOCK, 0, 0, G_TX_LOADTILE,             \
+        0, cmt, maskt,shiftt, cms, masks, shifts),                      \
+    gsDPLoadSyncInTexLoad                                               \
+    gsDPLoadBlock(G_TX_LOADTILE, 0, 0,                                  \
+        (((width) * (height) + siz##_INCR) >> siz##_SHIFT) - 1, 0),     \
+    gsDPPipeSyncInTexLoad                                               \
+    gsDPSetTile(fmt, siz,                                               \
+        ((((width) * siz##_LINE_BYTES) + 7) >> 3), 0,                   \
+        G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,           \
+        shifts),                                                        \
+    gsDPSetTileSize(G_TX_RENDERTILE, 0, 0,                              \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                         \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC)
 
 /*
  *  Allow tmem address to be specified
  */
-#define	_gsDPLoadTextureBlock(timg, tmem, fmt, siz, width, height,	\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-									\
-	gsDPSetTextureImage(fmt, siz##_LOAD_BLOCK, 1, timg),		\
-	gsDPSetTile(fmt, siz##_LOAD_BLOCK, 0, tmem, G_TX_LOADTILE, 	\
-		0 , cmt, maskt,	shiftt, cms, masks, shifts),		\
-	gsDPLoadSync(),							\
-	gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 				\
-		(((width)*(height) + siz##_INCR) >> siz##_SHIFT)-1,	\
-		CALC_DXT(width, siz##_BYTES)), 				\
-	gsDPPipeSync(),							\
-	gsDPSetTile(fmt, siz,						\
-		((((width) * siz##_LINE_BYTES)+7)>>3), tmem,		\
-		G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,	\
-		shifts),						\
-	gsDPSetTileSize(G_TX_RENDERTILE, 0, 0,				\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)
+#define _gsDPLoadTextureBlock(timg, tmem, fmt, siz, width, height, pal, \
+                              cms, cmt, masks, maskt, shifts, shiftt)   \
+    gsDPSetTextureImage(fmt, siz##_LOAD_BLOCK, 1, timg),                \
+    gsDPSetTile(fmt, siz##_LOAD_BLOCK, 0, tmem, G_TX_LOADTILE,          \
+        0, cmt, maskt, shiftt, cms, masks, shifts),                     \
+    gsDPLoadSyncInTexLoad                                               \
+    gsDPLoadBlock(G_TX_LOADTILE, 0, 0,                                  \
+        (((width) * (height) + siz##_INCR) >> siz##_SHIFT) - 1,         \
+        CALC_DXT(width, siz##_BYTES)),                                  \
+    gsDPPipeSyncInTexLoad                                               \
+    gsDPSetTile(fmt, siz,                                               \
+        ((((width) * siz##_LINE_BYTES) + 7) >> 3), tmem,                \
+        G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,           \
+        shifts),                                                        \
+    gsDPSetTileSize(G_TX_RENDERTILE, 0, 0,                              \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                         \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC)
 
 
 /*
  *  Allow tmem address and render_tile to be specified
  */
-#define	_gsDPLoadTextureBlockTile(timg, tmem, rtile, fmt, siz, width,	\
-		height, pal, cms, cmt, masks, maskt, shifts, shiftt)	\
-									\
-	gsDPSetTextureImage(fmt, siz##_LOAD_BLOCK, 1, timg),		\
-	gsDPSetTile(fmt, siz##_LOAD_BLOCK, 0, tmem, G_TX_LOADTILE, 	\
-		0 , cmt, maskt,	shiftt, cms, masks, shifts),		\
-	gsDPLoadSync(),							\
-	gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 				\
-		(((width)*(height) + siz##_INCR) >> siz##_SHIFT)-1,	\
-		CALC_DXT(width, siz##_BYTES)), 				\
-	gsDPPipeSync(),							\
-	gsDPSetTile(fmt, siz,						\
-		((((width) * siz##_LINE_BYTES)+7)>>3), tmem,		\
-		rtile, pal, cmt, maskt, shiftt, cms, masks,		\
-		shifts),						\
-	gsDPSetTileSize(rtile, 0, 0,					\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)
+#define _gsDPLoadTextureBlockTile(timg, tmem, rtile, fmt, siz, width, height, pal,  \
+                                  cms, cmt, masks, maskt, shifts, shiftt)           \
+    gsDPSetTextureImage(fmt, siz##_LOAD_BLOCK, 1, timg),                            \
+    gsDPSetTile(fmt, siz##_LOAD_BLOCK, 0, tmem, _G_TEXLOADTILE(rtile),              \
+        0, cmt, maskt, shiftt, cms, masks, shifts),                                 \
+    gsDPLoadSyncInTexLoad                                                           \
+    gsDPLoadBlock(_G_TEXLOADTILE(rtile), 0, 0,                                      \
+        (((width) * (height) + siz##_INCR) >> siz##_SHIFT) - 1,                     \
+        CALC_DXT(width, siz##_BYTES)),                                              \
+    gsDPPipeSyncInTexLoad                                                           \
+    gsDPSetTile(fmt, siz,                                                           \
+        ((((width) * siz##_LINE_BYTES) + 7) >> 3), tmem,                            \
+        rtile, pal, cmt, maskt, shiftt, cms, masks,                                 \
+        shifts),                                                                    \
+    gsDPSetTileSize(rtile, 0, 0,                                                    \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                                     \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC)
 
 
 /*
  *  Allow tmem address and render_tile to be specified, useful when loading
  *  mutilple tiles at a time.
  */
-#define	gsDPLoadMultiBlock(timg, tmem, rtile, fmt, siz, width,		\
-		height, pal, cms, cmt, masks, maskt, shifts, shiftt)	\
-									\
-	gsDPSetTextureImage(fmt, siz##_LOAD_BLOCK, 1, timg),		\
-	gsDPSetTile(fmt, siz##_LOAD_BLOCK, 0, tmem, G_TX_LOADTILE, 	\
-		0 , cmt, maskt,	shiftt, cms, masks, shifts),		\
-	gsDPLoadSync(),							\
-	gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 				\
-		(((width)*(height) + siz##_INCR) >> siz##_SHIFT)-1,	\
-		CALC_DXT(width, siz##_BYTES)), 				\
-	gsDPPipeSync(),							\
-	gsDPSetTile(fmt, siz,						\
-		((((width) * siz##_LINE_BYTES)+7)>>3), tmem,		\
-		rtile, pal, cmt, maskt, shiftt, cms, masks,		\
-		shifts),						\
-	gsDPSetTileSize(rtile, 0, 0,					\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)
+#define gsDPLoadMultiBlock(timg, tmem, rtile, fmt, siz, width, height, pal, \
+                           cms, cmt, masks, maskt, shifts, shiftt)          \
+    gsDPSetTextureImage(fmt, siz##_LOAD_BLOCK, 1, timg),                    \
+    gsDPSetTile(fmt, siz##_LOAD_BLOCK, 0, tmem, _G_TEXLOADTILE(rtile),      \
+        0, cmt, maskt, shiftt, cms, masks, shifts),                         \
+    gsDPLoadSyncInTexLoad                                                   \
+    gsDPLoadBlock(_G_TEXLOADTILE(rtile), 0, 0,                              \
+        (((width) * (height) + siz##_INCR) >> siz##_SHIFT) - 1,             \
+        CALC_DXT(width, siz##_BYTES)),                                      \
+    gsDPPipeSyncInTexLoad                                                   \
+    gsDPSetTile(fmt, siz,                                                   \
+        ((((width) * siz##_LINE_BYTES) + 7) >> 3), tmem,                    \
+        rtile, pal, cmt, maskt, shiftt, cms, masks, shifts),                \
+    gsDPSetTileSize(rtile, 0, 0,                                            \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                             \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC)
 
-/* 
+/*
  *  Allows tmem and render tile to be specified.  Useful when loading
  *  several tiles at a time.
  *
  *  Here is the static form of the pre-swapped texture block loading
  *  See gDPLoadTextureBlockS() for reference.  Basically, just don't
- *  calculate DxT, use 0 
+ *  calculate DxT, use 0
  */
 
-#define	gsDPLoadMultiBlockS(timg, tmem, rtile, fmt, siz, width, height,	\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-									\
-	gsDPSetTextureImage(fmt, siz##_LOAD_BLOCK, 1, timg),		\
-	gsDPSetTile(fmt, siz##_LOAD_BLOCK, 0, tmem, G_TX_LOADTILE, 0 , 	\
-		cmt, maskt,shiftt, cms, masks, shifts),			\
-	gsDPLoadSync(),							\
-	gsDPLoadBlock(G_TX_LOADTILE, 0, 0, 				\
-		(((width)*(height) + siz##_INCR) >> siz##_SHIFT)-1, 0 ),\
-	gsDPPipeSync(),							\
-	gsDPSetTile(fmt, siz, ((((width) * siz##_LINE_BYTES)+7)>>3), tmem,\
-		rtile, pal, cmt, maskt, shiftt, cms, masks,		\
-		shifts),						\
-	gsDPSetTileSize(rtile, 0, 0,					\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)
+#define gsDPLoadMultiBlockS(timg, tmem, rtile, fmt, siz, width, height, pal,    \
+                            cms, cmt, masks, maskt, shifts, shiftt)             \
+    gsDPSetTextureImage(fmt, siz##_LOAD_BLOCK, 1, timg),                        \
+    gsDPSetTile(fmt, siz##_LOAD_BLOCK, 0, tmem, _G_TEXLOADTILE(rtile),          \
+        0, cmt, maskt,shiftt, cms, masks, shifts),                              \
+    gsDPLoadSyncInTexLoad                                                       \
+    gsDPLoadBlock(_G_TEXLOADTILE(rtile), 0, 0,                                  \
+        (((width) * (height) + siz##_INCR) >> siz##_SHIFT) - 1, 0),             \
+    gsDPPipeSyncInTexLoad                                                       \
+    gsDPSetTile(fmt, siz,                                                       \
+        ((((width) * siz##_LINE_BYTES) + 7) >> 3), tmem,                        \
+        rtile, pal, cmt, maskt, shiftt, cms, masks, shifts),                    \
+    gsDPSetTileSize(rtile, 0, 0,                                                \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                                 \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC)
 
 
-#define	gDPLoadTextureBlock_4b(pkt, timg, fmt, width, height,		\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-{									\
-	gDPSetTextureImage(pkt, fmt, G_IM_SIZ_16b, 1, timg);		\
-	gDPSetTile(pkt, fmt, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE, 0,	\
-		cmt, maskt, shiftt, cms, masks, shifts);		\
-	gDPLoadSync(pkt);						\
-	gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0,				\
-		(((width)*(height)+3)>>2)-1,				\
-		CALC_DXT_4b(width)); 					\
-	gDPPipeSync(pkt);						\
-	gDPSetTile(pkt, fmt, G_IM_SIZ_4b, ((((width)>>1)+7)>>3), 0,	\
-		G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,	\
-		shifts);						\
-	gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,			\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)			\
-}
+#define gDPLoadTextureBlock_4b(pkt, timg, fmt, width, height, pal,          \
+                                    cms, cmt, masks, maskt, shifts, shiftt) \
+_DW({                                                                       \
+    gDPSetTextureImage(pkt, fmt, G_IM_SIZ_16b, 1, timg);                    \
+    gDPSetTile(pkt, fmt, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE,                 \
+        0, cmt, maskt, shiftt, cms, masks, shifts);                         \
+    gDPLoadSyncInTexLoad(pkt);                                              \
+    gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0,                                  \
+        (((width) * (height) + 3) >> 2) - 1,                                \
+        CALC_DXT_4b(width));                                                \
+    gDPPipeSyncInTexLoad(pkt);                                              \
+    gDPSetTile(pkt, fmt, G_IM_SIZ_4b,                                       \
+        ((((width) >> 1) + 7) >> 3), 0,                                     \
+        G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks, shifts);      \
+    gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,                              \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                             \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC);                            \
+})
 
 /* Load fix rww 27jun95 */
 /* The S at the end means odd lines are already word Swapped */
 
-#define	gDPLoadTextureBlock_4bS(pkt, timg, fmt, width, height,		\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-{									\
-	gDPSetTextureImage(pkt, fmt, G_IM_SIZ_16b, 1, timg);		\
-	gDPSetTile(pkt, fmt, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE, 0,	\
-		cmt, maskt, shiftt, cms, masks, shifts);		\
-	gDPLoadSync(pkt);						\
-	gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0,				\
-		(((width)*(height)+3)>>2)-1, 0 );			\
-	gDPPipeSync(pkt);						\
-	gDPSetTile(pkt, fmt, G_IM_SIZ_4b, ((((width)>>1)+7)>>3), 0,	\
-		G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,	\
-		shifts);						\
-	gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,			\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)			\
-}
+#define gDPLoadTextureBlock_4bS(pkt, timg, fmt, width, height, pal,             \
+                                     cms, cmt, masks, maskt, shifts, shiftt)    \
+_DW({                                                                           \
+    gDPSetTextureImage(pkt, fmt, G_IM_SIZ_16b, 1, timg);                        \
+    gDPSetTile(pkt, fmt, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE,                     \
+        0, cmt, maskt, shiftt, cms, masks, shifts);                             \
+    gDPLoadSyncInTexLoad(pkt);                                                  \
+    gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0,                                      \
+        (((width) * (height) + 3) >> 2) - 1,                                    \
+        0);                                                                     \
+    gDPPipeSyncInTexLoad(pkt);                                                  \
+    gDPSetTile(pkt, fmt, G_IM_SIZ_4b,                                           \
+        ((((width) >> 1) + 7) >> 3), 0,                                         \
+        G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks, shifts);          \
+    gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,                                  \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                                 \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC);                                \
+})
 
 /*
  *  4-bit load block.  Useful when loading multiple tiles
  */
-#define	gDPLoadMultiBlock_4b(pkt, timg, tmem, rtile, fmt, width, height,\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-{									\
-	gDPSetTextureImage(pkt, fmt, G_IM_SIZ_16b, 1, timg);		\
-	gDPSetTile(pkt, fmt, G_IM_SIZ_16b, 0, tmem, G_TX_LOADTILE, 0,	\
-		cmt, maskt, shiftt, cms, masks, shifts);		\
-	gDPLoadSync(pkt);						\
-	gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0,				\
-		(((width)*(height)+3)>>2)-1,				\
-		CALC_DXT_4b(width));					\
-	gDPPipeSync(pkt);						\
-	gDPSetTile(pkt, fmt, G_IM_SIZ_4b, ((((width)>>1)+7)>>3), tmem,	\
-		rtile, pal, cmt, maskt, shiftt, cms, masks,		\
-		shifts);						\
-	gDPSetTileSize(pkt, rtile, 0, 0,				\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)			\
-}
+#define gDPLoadMultiBlock_4b(pkt, timg, tmem, rtile, fmt, width, height, pal,   \
+                                  cms, cmt, masks, maskt, shifts, shiftt)       \
+_DW({                                                                           \
+    gDPSetTextureImage(pkt, fmt, G_IM_SIZ_16b, 1, timg);                        \
+    gDPSetTile(pkt, fmt, G_IM_SIZ_16b, 0, tmem, _G_TEXLOADTILE(rtile),          \
+        0, cmt, maskt, shiftt, cms, masks, shifts);                             \
+    gDPLoadSyncInTexLoad(pkt);                                                  \
+    gDPLoadBlock(pkt, _G_TEXLOADTILE(rtile), 0, 0,                              \
+        (((width) * (height) + 3) >> 2) - 1,                                    \
+        CALC_DXT_4b(width));                                                    \
+    gDPPipeSyncInTexLoad(pkt);                                                  \
+    gDPSetTile(pkt, fmt, G_IM_SIZ_4b,                                           \
+        ((((width) >> 1) + 7) >> 3), tmem,                                      \
+        rtile, pal, cmt, maskt, shiftt, cms, masks, shifts);                    \
+    gDPSetTileSize(pkt, rtile, 0, 0,                                            \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                                 \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC);                                \
+})
 
 /*
- *  4-bit load block.  Allows tmem and render tile to be specified.  Useful when  
+ *  4-bit load block.  Allows tmem and render tile to be specified.  Useful when
  *  loading multiple tiles.  The S means odd lines are already word swapped.
  */
-#define	gDPLoadMultiBlock_4bS(pkt, timg, tmem, rtile, fmt, width, height,\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-{									\
-	gDPSetTextureImage(pkt, fmt, G_IM_SIZ_16b, 1, timg);		\
-	gDPSetTile(pkt, fmt, G_IM_SIZ_16b, 0, tmem, G_TX_LOADTILE, 0,	\
-		cmt, maskt, shiftt, cms, masks, shifts);		\
-	gDPLoadSync(pkt);						\
-	gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0,				\
-		(((width)*(height)+3)>>2)-1, 0 );			\
-	gDPPipeSync(pkt);						\
-	gDPSetTile(pkt, fmt, G_IM_SIZ_4b, ((((width)>>1)+7)>>3), tmem,	\
-		rtile, pal, cmt, maskt, shiftt, cms, masks,		\
-		shifts);						\
-	gDPSetTileSize(pkt, rtile, 0, 0,				\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)			\
-}
+#define gDPLoadMultiBlock_4bS(pkt, timg, tmem, rtile, fmt, width, height, pal,  \
+                                   cms, cmt, masks, maskt, shifts, shiftt)      \
+_DW({                                                                           \
+    gDPSetTextureImage(pkt, fmt, G_IM_SIZ_16b, 1, timg);                        \
+    gDPSetTile(pkt, fmt, G_IM_SIZ_16b, 0, tmem, _G_TEXLOADTILE(rtile),          \
+        0, cmt, maskt, shiftt, cms, masks, shifts);                             \
+    gDPLoadSyncInTexLoad(pkt);                                                  \
+    gDPLoadBlock(pkt, _G_TEXLOADTILE(rtile), 0, 0,                              \
+        (((width) * (height) + 3) >> 2) - 1,                                    \
+        0);                                                                     \
+    gDPPipeSyncInTexLoad(pkt);                                                  \
+    gDPSetTile(pkt, fmt, G_IM_SIZ_4b,                                           \
+        ((((width) >> 1) + 7) >> 3), tmem,                                      \
+        rtile, pal, cmt, maskt, shiftt, cms, masks, shifts);                    \
+    gDPSetTileSize(pkt, rtile, 0, 0,                                            \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                                 \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC);                                \
+})
 
 
-#define	_gDPLoadTextureBlock_4b(pkt, timg, tmem, fmt, width, height,	\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-{									\
-	gDPSetTextureImage(pkt, fmt, G_IM_SIZ_16b, 1, timg);		\
-	gDPSetTile(pkt, fmt, G_IM_SIZ_16b, 0, tmem, G_TX_LOADTILE, 0,	\
-		cmt, maskt, shiftt, cms, masks, shifts);		\
-	gDPLoadSync(pkt);						\
-	gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0,				\
-		(((width)*(height)+3)>>2)-1,				\
-		CALC_DXT_4b(width));					\
-	gDPPipeSync(pkt);						\
-	gDPSetTile(pkt, fmt, G_IM_SIZ_4b, ((((width)>>1)+7)>>3), tmem,	\
-		G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,	\
-		shifts);						\
-	gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,			\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)			\
-}
+#define _gDPLoadTextureBlock_4b(pkt, timg, tmem, fmt, width, height, pal,       \
+                                     cms, cmt, masks, maskt, shifts, shiftt)    \
+_DW({                                                                           \
+    gDPSetTextureImage(pkt, fmt, G_IM_SIZ_16b, 1, timg);                        \
+    gDPSetTile(pkt, fmt, G_IM_SIZ_16b, 0, tmem, G_TX_LOADTILE,                  \
+        0, cmt, maskt, shiftt, cms, masks, shifts);                             \
+    gDPLoadSyncInTexLoad(pkt);                                                  \
+    gDPLoadBlock(pkt, G_TX_LOADTILE, 0, 0,                                      \
+        (((width) * (height) + 3) >> 2) - 1,                                    \
+        CALC_DXT_4b(width));                                                    \
+    gDPPipeSyncInTexLoad(pkt);                                                  \
+    gDPSetTile(pkt, fmt, G_IM_SIZ_4b,                                           \
+        ((((width) >> 1) + 7) >> 3), tmem,                                      \
+        G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks, shifts);          \
+    gDPSetTileSize(pkt, G_TX_RENDERTILE, 0, 0,                                  \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                                 \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC);                                \
+})
 
-#define	gsDPLoadTextureBlock_4b(timg, fmt, width, height,		\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-									\
-	gsDPSetTextureImage(fmt, G_IM_SIZ_16b, 1, timg),		\
-	gsDPSetTile(fmt, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE, 0 , cmt,	\
-		maskt, shiftt, cms, masks, shifts),			\
-	gsDPLoadSync(),							\
-	gsDPLoadBlock(G_TX_LOADTILE, 0, 0, (((width)*(height)+3)>>2)-1,	\
-		CALC_DXT_4b(width)),					\
-	gsDPPipeSync(),							\
-	gsDPSetTile(fmt, G_IM_SIZ_4b, ((((width)>>1)+7)>>3), 0,		\
-		G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,	\
-		shifts),						\
-	gsDPSetTileSize(G_TX_RENDERTILE, 0, 0,				\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)
+#define gsDPLoadTextureBlock_4b(timg, fmt, width, height, pal,          \
+                                cms, cmt, masks, maskt, shifts, shiftt) \
+    gsDPSetTextureImage(fmt, G_IM_SIZ_16b, 1, timg),                    \
+    gsDPSetTile(fmt, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE,                 \
+        0, cmt, maskt, shiftt, cms, masks, shifts),                     \
+    gsDPLoadSyncInTexLoad                                               \
+    gsDPLoadBlock(G_TX_LOADTILE, 0, 0,                                  \
+        (((width) * (height) + 3) >> 2) - 1,                            \
+        CALC_DXT_4b(width)),                                            \
+    gsDPPipeSyncInTexLoad                                               \
+    gsDPSetTile(fmt, G_IM_SIZ_4b,                                       \
+        ((((width) >> 1) + 7) >> 3), 0,                                 \
+        G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks, shifts),  \
+    gsDPSetTileSize(G_TX_RENDERTILE, 0, 0,                              \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                         \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC)
 
-#define	gsDPLoadTextureBlock_4bS(timg, fmt, width, height,		\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-									\
-	gsDPSetTextureImage(fmt, G_IM_SIZ_16b, 1, timg),		\
-	gsDPSetTile(fmt, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE, 0 , cmt,	\
-		maskt, shiftt, cms, masks, shifts),			\
-	gsDPLoadSync(),							\
-	gsDPLoadBlock(G_TX_LOADTILE, 0, 0, (((width)*(height)+3)>>2)-1,0),\
-	gsDPPipeSync(),							\
-	gsDPSetTile(fmt, G_IM_SIZ_4b, ((((width)>>1)+7)>>3), 0,		\
-		G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,	\
-		shifts),						\
-	gsDPSetTileSize(G_TX_RENDERTILE, 0, 0,				\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)
+#define gsDPLoadTextureBlock_4bS(timg, fmt, width, height, pal,             \
+                                 cms, cmt, masks, maskt, shifts, shiftt)    \
+    gsDPSetTextureImage(fmt, G_IM_SIZ_16b, 1, timg),                        \
+    gsDPSetTile(fmt, G_IM_SIZ_16b, 0, 0, G_TX_LOADTILE,                     \
+        0, cmt, maskt, shiftt, cms, masks, shifts),                         \
+    gsDPLoadSyncInTexLoad                                                   \
+    gsDPLoadBlock(G_TX_LOADTILE, 0, 0,                                      \
+        (((width) * (height) + 3) >> 2) - 1,                                \
+        0),                                                                 \
+    gsDPPipeSyncInTexLoad                                                   \
+    gsDPSetTile(fmt, G_IM_SIZ_4b,                                           \
+        ((((width) >> 1) + 7) >> 3), 0,                                     \
+        G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks, shifts),      \
+    gsDPSetTileSize(G_TX_RENDERTILE, 0, 0,                                  \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                             \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC)
 
 /*
  *  4-bit load block.  Allows tmem address and render tile to be specified.
  *  Useful when loading multiple tiles.
  */
-#define	gsDPLoadMultiBlock_4b(timg, tmem, rtile, fmt, width, height,	\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-									\
-	gsDPSetTextureImage(fmt, G_IM_SIZ_16b, 1, timg),		\
-	gsDPSetTile(fmt, G_IM_SIZ_16b, 0, tmem, G_TX_LOADTILE, 0 , cmt,	\
-		maskt, shiftt, cms, masks, shifts),			\
-	gsDPLoadSync(),							\
-	gsDPLoadBlock(G_TX_LOADTILE, 0, 0, (((width)*(height)+3)>>2)-1,	\
-		CALC_DXT_4b(width)), 					\
-	gsDPPipeSync(),							\
-	gsDPSetTile(fmt, G_IM_SIZ_4b, ((((width)>>1)+7)>>3), tmem,	\
-		rtile, pal, cmt, maskt, shiftt, cms, masks,		\
-		shifts),						\
-	gsDPSetTileSize(rtile, 0, 0,					\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)
+#define gsDPLoadMultiBlock_4b(timg, tmem, rtile, fmt, width, height, pal,   \
+                              cms, cmt, masks, maskt, shifts, shiftt)       \
+    gsDPSetTextureImage(fmt, G_IM_SIZ_16b, 1, timg),                        \
+    gsDPSetTile(fmt, G_IM_SIZ_16b, 0, tmem, _G_TEXLOADTILE(rtile),          \
+        0, cmt, maskt, shiftt, cms, masks, shifts),                         \
+    gsDPLoadSyncInTexLoad                                                   \
+    gsDPLoadBlock(_G_TEXLOADTILE(rtile), 0, 0,                              \
+        (((width) * (height) + 3) >> 2) - 1,                                \
+        CALC_DXT_4b(width)),                                                \
+    gsDPPipeSyncInTexLoad                                                   \
+    gsDPSetTile(fmt, G_IM_SIZ_4b,                                           \
+        ((((width) >> 1) + 7) >> 3), tmem,                                  \
+        rtile, pal, cmt, maskt, shiftt, cms, masks, shifts),                \
+    gsDPSetTileSize(rtile, 0, 0,                                            \
+        ((width)-1) << G_TEXTURE_IMAGE_FRAC,                                \
+        ((height)-1) << G_TEXTURE_IMAGE_FRAC)
 
 
 /*
  *  4-bit load block.  Allows tmem address and render tile to be specified.
  *  Useful when loading multiple tiles.  S means odd lines are already swapped.
  */
-#define	gsDPLoadMultiBlock_4bS(timg, tmem, rtile, fmt, width, height,	\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-									\
-	gsDPSetTextureImage(fmt, G_IM_SIZ_16b, 1, timg),		\
-	gsDPSetTile(fmt, G_IM_SIZ_16b, 0, tmem, G_TX_LOADTILE, 0 , cmt,	\
-		maskt, shiftt, cms, masks, shifts),			\
-	gsDPLoadSync(),							\
-	gsDPLoadBlock(G_TX_LOADTILE, 0, 0, (((width)*(height)+3)>>2)-1,0),\
-	gsDPPipeSync(),							\
-	gsDPSetTile(fmt, G_IM_SIZ_4b, ((((width)>>1)+7)>>3), tmem,	\
-		rtile, pal, cmt, maskt, shiftt, cms, masks,		\
-		shifts),						\
-	gsDPSetTileSize(rtile, 0, 0,					\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)
+#define gsDPLoadMultiBlock_4bS(timg, tmem, rtile, fmt, width, height, pal,  \
+                               cms, cmt, masks, maskt, shifts, shiftt)      \
+    gsDPSetTextureImage(fmt, G_IM_SIZ_16b, 1, timg),                        \
+    gsDPSetTile(fmt, G_IM_SIZ_16b, 0, tmem, _G_TEXLOADTILE(rtile),          \
+        0, cmt, maskt, shiftt, cms, masks, shifts),                         \
+    gsDPLoadSyncInTexLoad                                                   \
+    gsDPLoadBlock(_G_TEXLOADTILE(rtile), 0, 0,                              \
+        (((width) * (height) + 3) >> 2) - 1,                                \
+        0),                                                                 \
+    gsDPPipeSyncInTexLoad                                                   \
+    gsDPSetTile(fmt, G_IM_SIZ_4b,                                           \
+        ((((width) >> 1) + 7) >> 3), tmem,                                  \
+        rtile, pal, cmt, maskt, shiftt, cms, masks, shifts),                \
+    gsDPSetTileSize(rtile, 0, 0,                                            \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                             \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC)
 
 
 /*
  *  Allows tmem address to be specified
  */
-#define	_gsDPLoadTextureBlock_4b(timg, tmem, fmt, width, height,	\
-		pal, cms, cmt, masks, maskt, shifts, shiftt)		\
-									\
-	gsDPSetTextureImage(fmt, G_IM_SIZ_16b, 1, timg),		\
-	gsDPSetTile(fmt, G_IM_SIZ_16b, 0, tmem, G_TX_LOADTILE, 0 , cmt,	\
-		maskt, shiftt, cms, masks, shifts),			\
-	gsDPLoadSync(),							\
-	gsDPLoadBlock(G_TX_LOADTILE, 0, 0, (((width)*(height)+3)>>2)-1,	\
-		CALC_DXT_4b(width)), 					\
-	gsDPPipeSync(),							\
-	gsDPSetTile(fmt, G_IM_SIZ_4b, ((((width)>>1)+7)>>3), tmem,	\
-		G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,	\
-		shifts),						\
-	gsDPSetTileSize(G_TX_RENDERTILE, 0, 0,				\
-		((width)-1) << G_TEXTURE_IMAGE_FRAC,			\
-		((height)-1) << G_TEXTURE_IMAGE_FRAC)
+#define _gsDPLoadTextureBlock_4b(timg, tmem, fmt, width, height, pal,       \
+                                 cms, cmt, masks, maskt, shifts, shiftt)    \
+    gsDPSetTextureImage(fmt, G_IM_SIZ_16b, 1, timg),                        \
+    gsDPSetTile(fmt, G_IM_SIZ_16b, 0, tmem, G_TX_LOADTILE,                  \
+        0, cmt, maskt, shiftt, cms, masks, shifts),                         \
+    gsDPLoadSyncInTexLoad                                                   \
+    gsDPLoadBlock(G_TX_LOADTILE, 0, 0,                                      \
+        (((width) * (height) + 3) >> 2) - 1,                                \
+        CALC_DXT_4b(width)),                                                \
+    gsDPPipeSyncInTexLoad                                                   \
+    gsDPSetTile(fmt, G_IM_SIZ_4b,                                           \
+        ((((width) >> 1) + 7) >> 3), tmem,                                  \
+        G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks, shifts),      \
+    gsDPSetTileSize(G_TX_RENDERTILE, 0, 0,                                  \
+        ((width)  - 1) << G_TEXTURE_IMAGE_FRAC,                             \
+        ((height) - 1) << G_TEXTURE_IMAGE_FRAC)
 
-#ifndef _HW_VERSION_1
-
-#define	gDPLoadTextureTile(pkt, timg, fmt, siz, width, height,		\
-		uls, ult, lrs, lrt, pal,				\
-		cms, cmt, masks, maskt, shifts, shiftt)			\
-{									\
-	gDPSetTextureImage(pkt, fmt, siz, width, timg);			\
-	gDPSetTile(pkt, fmt, siz,					\
-		(((((lrs)-(uls)+1) * siz##_TILE_BYTES)+7)>>3), 0,	\
-		G_TX_LOADTILE, 0 , cmt, maskt, shiftt, cms, masks,	\
-		shifts);						\
-	gDPLoadSync(pkt);						\
-	gDPLoadTile(	pkt, G_TX_LOADTILE,				\
-			(uls)<<G_TEXTURE_IMAGE_FRAC,			\
-			(ult)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrs)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrt)<<G_TEXTURE_IMAGE_FRAC);			\
-	gDPPipeSync(pkt);						\
-	gDPSetTile(pkt, fmt, siz,					\
-		(((((lrs)-(uls)+1) * siz##_LINE_BYTES)+7)>>3), 0,	\
-		G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,	\
-		shifts);						\
-	gDPSetTileSize(pkt, G_TX_RENDERTILE,				\
-			(uls)<<G_TEXTURE_IMAGE_FRAC,			\
-			(ult)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrs)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrt)<<G_TEXTURE_IMAGE_FRAC)			\
-}
-
-#else /******** WORKAROUND hw 1 load tile bug ********/
-
-#define	gDPLoadTextureTile(pkt, timg, fmt, siz, width, height,		\
-		uls, ult, lrs, lrt, pal,				\
-		cms, cmt, masks, maskt, shifts, shiftt)			\
-									\
-{									\
-	int _loadtile_i, _loadtile_nw; Gfx *_loadtile_temp = pkt; 	\
-	guDPLoadTextureTile(_loadtile_temp, timg, fmt, siz, 		\
-		width, height,        					\
-                uls, ult, lrs, lrt, pal,                                \
-                cms, cmt, masks, maskt, shifts, shiftt);		\
-	_loadtile_nw = guGetDPLoadTextureTileSz(ult, lrt) - 1;		\
-	for(_loadtile_i = 0; _loadtile_i < _loadtile_nw; _loadtile_i++)	\
-	  pkt;								\
-}
-
-#endif /* HW_VERSION_1 */
+#define gDPLoadTextureTile(pkt, timg, fmt, siz, width, height,          \
+                                uls, ult, lrs, lrt, pal,                \
+                                cms, cmt, masks, maskt, shifts, shiftt) \
+_DW({                                                                   \
+    gDPSetTextureImage(pkt, fmt, siz, width, timg);                     \
+    gDPSetTile(pkt, fmt, siz,                                           \
+        (((((lrs) - (uls) + 1) * siz##_TILE_BYTES) + 7) >> 3), 0,       \
+        G_TX_LOADTILE, 0, cmt, maskt, shiftt, cms, masks,               \
+        shifts);                                                        \
+    gDPLoadSyncInTexLoad(pkt);                                          \
+    gDPLoadTile(pkt, G_TX_LOADTILE,                                     \
+        (uls) << G_TEXTURE_IMAGE_FRAC,                                  \
+        (ult) << G_TEXTURE_IMAGE_FRAC,                                  \
+        (lrs) << G_TEXTURE_IMAGE_FRAC,                                  \
+        (lrt) << G_TEXTURE_IMAGE_FRAC);                                 \
+    gDPPipeSyncInTexLoad(pkt);                                          \
+    gDPSetTile(pkt, fmt, siz,                                           \
+        (((((lrs) - (uls) + 1) * siz##_LINE_BYTES) + 7) >> 3), 0,       \
+        G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks, shifts);  \
+    gDPSetTileSize(pkt, G_TX_RENDERTILE,                                \
+        (uls) << G_TEXTURE_IMAGE_FRAC,                                  \
+        (ult) << G_TEXTURE_IMAGE_FRAC,                                  \
+        (lrs) << G_TEXTURE_IMAGE_FRAC,                                  \
+        (lrt) << G_TEXTURE_IMAGE_FRAC);                                 \
+})
 
 /*
  *  Load texture tile.  Allows tmem address and render tile to be specified.
  *  Useful for loading multiple tiles.
  */
-#define	gDPLoadMultiTile(pkt, timg, tmem, rtile, fmt, siz, width, height,\
-		uls, ult, lrs, lrt, pal,				\
-		cms, cmt, masks, maskt, shifts, shiftt)			\
-{									\
-	gDPSetTextureImage(pkt, fmt, siz, width, timg);			\
-	gDPSetTile(pkt, fmt, siz,					\
-		(((((lrs)-(uls)+1) * siz##_TILE_BYTES)+7)>>3), tmem,	\
-		G_TX_LOADTILE, 0 , cmt, maskt, shiftt, cms, masks,	\
-		shifts);						\
-	gDPLoadSync(pkt);						\
-	gDPLoadTile(	pkt, G_TX_LOADTILE,				\
-			(uls)<<G_TEXTURE_IMAGE_FRAC,			\
-			(ult)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrs)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrt)<<G_TEXTURE_IMAGE_FRAC);			\
-	gDPPipeSync(pkt);						\
-	gDPSetTile(pkt, fmt, siz,					\
-		(((((lrs)-(uls)+1) * siz##_LINE_BYTES)+7)>>3), tmem,	\
-		rtile, pal, cmt, maskt, shiftt, cms, masks,		\
-		shifts);						\
-	gDPSetTileSize(pkt, rtile,					\
-			(uls)<<G_TEXTURE_IMAGE_FRAC,			\
-			(ult)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrs)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrt)<<G_TEXTURE_IMAGE_FRAC)			\
-}
+#define gDPLoadMultiTile(pkt, timg, tmem, rtile, fmt, siz, width, height,   \
+                              uls, ult, lrs, lrt, pal,                      \
+                              cms, cmt, masks, maskt, shifts, shiftt)       \
+_DW({                                                                       \
+    gDPSetTextureImage(pkt, fmt, siz, width, timg);                         \
+    gDPSetTile(pkt, fmt, siz,                                               \
+        (((((lrs) - (uls) + 1) * siz##_TILE_BYTES) + 7) >> 3), tmem,        \
+        _G_TEXLOADTILE(rtile), 0, cmt, maskt, shiftt, cms, masks, shifts);  \
+    gDPLoadSyncInTexLoad(pkt);                                              \
+    gDPLoadTile(pkt, _G_TEXLOADTILE(rtile),                                 \
+        (uls) << G_TEXTURE_IMAGE_FRAC,                                      \
+        (ult) << G_TEXTURE_IMAGE_FRAC,                                      \
+        (lrs) << G_TEXTURE_IMAGE_FRAC,                                      \
+        (lrt) << G_TEXTURE_IMAGE_FRAC);                                     \
+    gDPPipeSyncInTexLoad(pkt);                                              \
+    gDPSetTile(pkt, fmt, siz,                                               \
+        (((((lrs) - (uls) + 1) * siz##_LINE_BYTES) + 7) >> 3), tmem,        \
+        rtile, pal, cmt, maskt, shiftt, cms, masks, shifts);                \
+    gDPSetTileSize(pkt, rtile,                                              \
+        (uls) << G_TEXTURE_IMAGE_FRAC,                                      \
+        (ult) << G_TEXTURE_IMAGE_FRAC,                                      \
+        (lrs) << G_TEXTURE_IMAGE_FRAC,                                      \
+        (lrt) << G_TEXTURE_IMAGE_FRAC);                                     \
+})
 
 
-#define	gsDPLoadTextureTile(timg, fmt, siz, width, height,		\
-		uls, ult, lrs, lrt, pal,				\
-		cms, cmt, masks, maskt, shifts, shiftt)			\
-									\
-	gsDPSetTextureImage(fmt, siz, width, timg),			\
-	gsDPSetTile(fmt, siz, 						\
-		    (((((lrs)-(uls)+1) * siz##_TILE_BYTES)+7)>>3), 0,	\
-		    G_TX_LOADTILE, 0 , cmt, maskt, shiftt, cms, masks,	\
-		    shifts),						\
-	gsDPLoadSync(),							\
-	gsDPLoadTile(	G_TX_LOADTILE,					\
-			(uls)<<G_TEXTURE_IMAGE_FRAC,			\
-			(ult)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrs)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrt)<<G_TEXTURE_IMAGE_FRAC),			\
-	gsDPPipeSync(),							\
-	gsDPSetTile(fmt, siz, 						\
-		    (((((lrs)-(uls)+1) * siz##_LINE_BYTES)+7)>>3), 0,	\
-		    G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,\
-		    shifts),						\
-	gsDPSetTileSize(G_TX_RENDERTILE,				\
-			(uls)<<G_TEXTURE_IMAGE_FRAC,			\
-			(ult)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrs)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrt)<<G_TEXTURE_IMAGE_FRAC)
+#define gsDPLoadTextureTile(timg, fmt, siz, width, height,              \
+                            uls, ult, lrs, lrt, pal,                    \
+                            cms, cmt, masks, maskt, shifts, shiftt)     \
+    gsDPSetTextureImage(fmt, siz, width, timg),                         \
+    gsDPSetTile(fmt, siz,                                               \
+        (((((lrs) - (uls) + 1) * siz##_TILE_BYTES) + 7) >> 3), 0,       \
+        G_TX_LOADTILE, 0, cmt, maskt, shiftt, cms, masks, shifts),      \
+    gsDPLoadSyncInTexLoad                                               \
+    gsDPLoadTile(G_TX_LOADTILE,                                         \
+        (uls) << G_TEXTURE_IMAGE_FRAC,                                  \
+        (ult) << G_TEXTURE_IMAGE_FRAC,                                  \
+        (lrs) << G_TEXTURE_IMAGE_FRAC,                                  \
+        (lrt) << G_TEXTURE_IMAGE_FRAC),                                 \
+    gsDPPipeSyncInTexLoad                                               \
+    gsDPSetTile(fmt, siz,                                               \
+        (((((lrs) - (uls) + 1) * siz##_LINE_BYTES) + 7) >> 3), 0,       \
+        G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks, shifts),  \
+    gsDPSetTileSize(G_TX_RENDERTILE,                                    \
+        (uls) << G_TEXTURE_IMAGE_FRAC,                                  \
+        (ult) << G_TEXTURE_IMAGE_FRAC,                                  \
+        (lrs) << G_TEXTURE_IMAGE_FRAC,                                  \
+        (lrt) << G_TEXTURE_IMAGE_FRAC)
 
 /*
  *  Load texture tile.  Allows tmem address and render tile to be specified.
  *  Useful for loading multiple tiles.
  */
-#define	gsDPLoadMultiTile(timg, tmem, rtile, fmt, siz, width, height,	\
-		uls, ult, lrs, lrt, pal,				\
-		cms, cmt, masks, maskt, shifts, shiftt)			\
-									\
-	gsDPSetTextureImage(fmt, siz, width, timg),			\
-	gsDPSetTile(fmt, siz, 						\
-		    (((((lrs)-(uls)+1) * siz##_TILE_BYTES)+7)>>3), 	\
-		    tmem, G_TX_LOADTILE, 0 , cmt, maskt, shiftt, cms, 	\
-		    masks, shifts),					\
-	gsDPLoadSync(),							\
-	gsDPLoadTile(	G_TX_LOADTILE,					\
-			(uls)<<G_TEXTURE_IMAGE_FRAC,			\
-			(ult)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrs)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrt)<<G_TEXTURE_IMAGE_FRAC),			\
-	gsDPPipeSync(),							\
-	gsDPSetTile(fmt, siz, 						\
-		    (((((lrs)-(uls)+1) * siz##_LINE_BYTES)+7)>>3), 	\
-		    tmem, rtile, pal, cmt, maskt, shiftt, cms, masks,	\
-		    shifts),						\
-	gsDPSetTileSize(rtile,						\
-			(uls)<<G_TEXTURE_IMAGE_FRAC,			\
-			(ult)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrs)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrt)<<G_TEXTURE_IMAGE_FRAC)
+#define gsDPLoadMultiTile(timg, tmem, rtile, fmt, siz, width, height,      \
+                          uls, ult, lrs, lrt, pal,                         \
+                          cms, cmt, masks, maskt, shifts, shiftt)          \
+    gsDPSetTextureImage(fmt, siz, width, timg),                            \
+    gsDPSetTile(fmt, siz,                                                  \
+        (((((lrs) - (uls) + 1) * siz##_TILE_BYTES) + 7) >> 3), tmem,       \
+        _G_TEXLOADTILE(rtile), 0, cmt, maskt, shiftt, cms, masks, shifts), \
+    gsDPLoadSyncInTexLoad                                                  \
+    gsDPLoadTile(_G_TEXLOADTILE(rtile),                                    \
+        (uls) << G_TEXTURE_IMAGE_FRAC,                                     \
+        (ult) << G_TEXTURE_IMAGE_FRAC,                                     \
+        (lrs) << G_TEXTURE_IMAGE_FRAC,                                     \
+        (lrt) << G_TEXTURE_IMAGE_FRAC),                                    \
+    gsDPPipeSyncInTexLoad                                                  \
+    gsDPSetTile(fmt, siz,                                                  \
+        (((((lrs) - (uls) + 1) * siz##_LINE_BYTES) + 7) >> 3),             \
+        tmem, rtile, pal, cmt, maskt, shiftt, cms, masks, shifts),         \
+    gsDPSetTileSize(rtile,                                                 \
+        (uls) << G_TEXTURE_IMAGE_FRAC,                                     \
+        (ult) << G_TEXTURE_IMAGE_FRAC,                                     \
+        (lrs) << G_TEXTURE_IMAGE_FRAC,                                     \
+        (lrt) << G_TEXTURE_IMAGE_FRAC)
 
-#define	gDPLoadTextureTile_4b(pkt, timg, fmt, width, height,		\
-		uls, ult, lrs, lrt, pal,				\
-		cms, cmt, masks, maskt, shifts, shiftt)			\
-{									\
-	gDPSetTextureImage(pkt, fmt, G_IM_SIZ_8b, ((width)>>1), timg);	\
-	gDPSetTile(pkt, fmt, G_IM_SIZ_8b, 				\
-		   (((((lrs)-(uls)+1)>>1)+7)>>3), 0,			\
-		   G_TX_LOADTILE, 0 , cmt, maskt, shiftt, cms, masks,	\
-		   shifts);						\
-	gDPLoadSync(pkt);						\
-	gDPLoadTile(	pkt, G_TX_LOADTILE,				\
-			(uls)<<(G_TEXTURE_IMAGE_FRAC-1),		\
-			(ult)<<(G_TEXTURE_IMAGE_FRAC),			\
-			(lrs)<<(G_TEXTURE_IMAGE_FRAC-1),		\
-			(lrt)<<(G_TEXTURE_IMAGE_FRAC));			\
-	gDPPipeSync(pkt);						\
-	gDPSetTile(pkt, fmt, G_IM_SIZ_4b, 				\
-		   (((((lrs)-(uls)+1)>>1)+7)>>3), 0,			\
-		   G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, 	\
-		   masks, shifts);					\
-	gDPSetTileSize(pkt, G_TX_RENDERTILE,				\
-			(uls)<<G_TEXTURE_IMAGE_FRAC,			\
-			(ult)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrs)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrt)<<G_TEXTURE_IMAGE_FRAC)			\
-}
+#define gDPLoadTextureTile_4b(pkt, timg, fmt, width, height,                \
+                                   uls, ult, lrs, lrt, pal,                 \
+                                   cms, cmt, masks, maskt, shifts, shiftt)  \
+_DW({                                                                       \
+    gDPSetTextureImage(pkt, fmt, G_IM_SIZ_8b, ((width) >> 1), timg);        \
+    gDPSetTile(pkt, fmt, G_IM_SIZ_8b,                                       \
+        (((((lrs) - (uls) + 1) >> 1) + 7) >> 3), 0,                         \
+        G_TX_LOADTILE, 0, cmt, maskt, shiftt, cms, masks, shifts);          \
+    gDPLoadSyncInTexLoad(pkt);                                              \
+    gDPLoadTile(pkt, G_TX_LOADTILE,                                         \
+        (uls) << (G_TEXTURE_IMAGE_FRAC - 1),                                \
+        (ult) << (G_TEXTURE_IMAGE_FRAC),                                    \
+        (lrs) << (G_TEXTURE_IMAGE_FRAC - 1),                                \
+        (lrt) << (G_TEXTURE_IMAGE_FRAC));                                   \
+    gDPPipeSyncInTexLoad(pkt);                                              \
+    gDPSetTile(pkt, fmt, G_IM_SIZ_4b,                                       \
+        (((((lrs) - (uls) + 1) >> 1) + 7) >> 3), 0,                         \
+        G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks, shifts);      \
+    gDPSetTileSize(pkt, G_TX_RENDERTILE,                                    \
+        (uls) << G_TEXTURE_IMAGE_FRAC,                                      \
+        (ult) << G_TEXTURE_IMAGE_FRAC,                                      \
+        (lrs) << G_TEXTURE_IMAGE_FRAC,                                      \
+        (lrt) << G_TEXTURE_IMAGE_FRAC);                                     \
+})
 
 /*
  *  Load texture tile.  Allows tmem address and render tile to be specified.
  *  Useful for loading multiple tiles.
  */
-#define	gDPLoadMultiTile_4b(pkt, timg, tmem, rtile, fmt, width, height,	\
-		uls, ult, lrs, lrt, pal,				\
-		cms, cmt, masks, maskt, shifts, shiftt)			\
-{									\
-	gDPSetTextureImage(pkt, fmt, G_IM_SIZ_8b, ((width)>>1), timg);	\
-	gDPSetTile(pkt, fmt, G_IM_SIZ_8b, 			        \
-		   (((((lrs)-(uls)+1)>>1)+7)>>3), tmem,			\
-		   G_TX_LOADTILE, 0 , cmt, maskt, shiftt, cms, masks,	\
-		   shifts);						\
-	gDPLoadSync(pkt);						\
-	gDPLoadTile(	pkt, G_TX_LOADTILE,				\
-			(uls)<<(G_TEXTURE_IMAGE_FRAC-1),		\
-			(ult)<<(G_TEXTURE_IMAGE_FRAC),			\
-			(lrs)<<(G_TEXTURE_IMAGE_FRAC-1),		\
-			(lrt)<<(G_TEXTURE_IMAGE_FRAC));			\
-	gDPPipeSync(pkt);						\
-	gDPSetTile(pkt, fmt, G_IM_SIZ_4b, 				\
-		   (((((lrs)-(uls)+1)>>1)+7)>>3), tmem,			\
-		   rtile, pal, cmt, maskt, shiftt, cms, masks,		\
-		   shifts);						\
-	gDPSetTileSize(pkt, rtile,					\
-			(uls)<<G_TEXTURE_IMAGE_FRAC,			\
-			(ult)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrs)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrt)<<G_TEXTURE_IMAGE_FRAC)			\
-}
+#define gDPLoadMultiTile_4b(pkt, timg, tmem, rtile, fmt, width, height,     \
+                                 uls, ult, lrs, lrt, pal,                   \
+                                 cms, cmt, masks, maskt, shifts, shiftt)    \
+_DW({                                                                       \
+    gDPSetTextureImage(pkt, fmt, G_IM_SIZ_8b, ((width) >> 1), timg);        \
+    gDPSetTile(pkt, fmt, G_IM_SIZ_8b,                                       \
+        (((((lrs) - (uls) + 1) >> 1) + 7) >> 3), tmem,                      \
+        _G_TEXLOADTILE(rtile), 0, cmt, maskt, shiftt, cms, masks, shifts);  \
+    gDPLoadSyncInTexLoad(pkt);                                              \
+    gDPLoadTile(pkt, _G_TEXLOADTILE(rtile),                                 \
+        (uls) << (G_TEXTURE_IMAGE_FRAC - 1),                                \
+        (ult) << (G_TEXTURE_IMAGE_FRAC),                                    \
+        (lrs) << (G_TEXTURE_IMAGE_FRAC - 1),                                \
+        (lrt) << (G_TEXTURE_IMAGE_FRAC));                                   \
+    gDPPipeSyncInTexLoad(pkt);                                              \
+    gDPSetTile(pkt, fmt, G_IM_SIZ_4b,                                       \
+        (((((lrs) - (uls) + 1) >> 1) + 7) >> 3), tmem,                      \
+        rtile, pal, cmt, maskt, shiftt, cms, masks, shifts);                \
+    gDPSetTileSize(pkt, rtile,                                              \
+        (uls) << G_TEXTURE_IMAGE_FRAC,                                      \
+        (ult) << G_TEXTURE_IMAGE_FRAC,                                      \
+        (lrs) << G_TEXTURE_IMAGE_FRAC,                                      \
+        (lrt) << G_TEXTURE_IMAGE_FRAC);                                     \
+})
 
-#define	gsDPLoadTextureTile_4b(timg, fmt, width, height,		\
-		uls, ult, lrs, lrt, pal,				\
-		cms, cmt, masks, maskt, shifts, shiftt)			\
-									\
-	gsDPSetTextureImage(fmt, G_IM_SIZ_8b, ((width)>>1), timg),	\
-	gsDPSetTile(fmt, G_IM_SIZ_8b, (((((lrs)-(uls)+1)>>1)+7)>>3), 0,	\
-		G_TX_LOADTILE, 0 , cmt, maskt, shiftt, cms, masks,	\
-		shifts),						\
-	gsDPLoadSync(),							\
-	gsDPLoadTile(	G_TX_LOADTILE,					\
-			(uls)<<(G_TEXTURE_IMAGE_FRAC-1),		\
-			(ult)<<(G_TEXTURE_IMAGE_FRAC),			\
-			(lrs)<<(G_TEXTURE_IMAGE_FRAC-1),		\
-			(lrt)<<(G_TEXTURE_IMAGE_FRAC)),			\
-	gsDPPipeSync(),							\
-	gsDPSetTile(fmt, G_IM_SIZ_4b, (((((lrs)-(uls)+1)>>1)+7)>>3), 0,	\
-		G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks,	\
-		shifts),						\
-	gsDPSetTileSize(G_TX_RENDERTILE,				\
-			(uls)<<G_TEXTURE_IMAGE_FRAC,			\
-			(ult)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrs)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrt)<<G_TEXTURE_IMAGE_FRAC)
+#define gsDPLoadTextureTile_4b(timg, fmt, width, height,                \
+                               uls, ult, lrs, lrt, pal,                 \
+                               cms, cmt, masks, maskt, shifts, shiftt)  \
+    gsDPSetTextureImage(fmt, G_IM_SIZ_8b, ((width) >> 1), timg),        \
+    gsDPSetTile(fmt, G_IM_SIZ_8b,                                       \
+        (((((lrs) - (uls) + 1) >> 1) + 7) >> 3), 0,                     \
+        G_TX_LOADTILE, 0, cmt, maskt, shiftt, cms, masks, shifts),      \
+    gsDPLoadSyncInTexLoad                                               \
+    gsDPLoadTile(G_TX_LOADTILE,                                         \
+        (uls) << (G_TEXTURE_IMAGE_FRAC - 1),                            \
+        (ult) << (G_TEXTURE_IMAGE_FRAC),                                \
+        (lrs) << (G_TEXTURE_IMAGE_FRAC - 1),                            \
+        (lrt) << (G_TEXTURE_IMAGE_FRAC)),                               \
+    gsDPPipeSyncInTexLoad                                               \
+    gsDPSetTile(fmt, G_IM_SIZ_4b,                                       \
+        (((((lrs) - (uls) + 1) >> 1) + 7) >> 3), 0,                     \
+        G_TX_RENDERTILE, pal, cmt, maskt, shiftt, cms, masks, shifts),  \
+    gsDPSetTileSize(G_TX_RENDERTILE,                                    \
+        (uls) << G_TEXTURE_IMAGE_FRAC,                                  \
+        (ult) << G_TEXTURE_IMAGE_FRAC,                                  \
+        (lrs) << G_TEXTURE_IMAGE_FRAC,                                  \
+        (lrt) << G_TEXTURE_IMAGE_FRAC)
 
 /*
  *  Load texture tile.  Allows tmem address and render tile to be specified.
  *  Useful for loading multiple tiles.
  */
-#define	gsDPLoadMultiTile_4b(timg, tmem, rtile, fmt, width, height,	\
-		uls, ult, lrs, lrt, pal,				\
-		cms, cmt, masks, maskt, shifts, shiftt)			\
-									\
-	gsDPSetTextureImage(fmt, G_IM_SIZ_8b, ((width)>>1), timg),	\
-	gsDPSetTile(fmt, G_IM_SIZ_8b, (((((lrs)-(uls)+1)>>1)+7)>>3), 	\
-		    tmem, G_TX_LOADTILE, 0 , cmt, maskt, shiftt, cms, 	\
-		    masks, shifts),					\
-	gsDPLoadSync(),							\
-	gsDPLoadTile(	G_TX_LOADTILE,					\
-			(uls)<<(G_TEXTURE_IMAGE_FRAC-1),		\
-			(ult)<<(G_TEXTURE_IMAGE_FRAC),			\
-			(lrs)<<(G_TEXTURE_IMAGE_FRAC-1),		\
-			(lrt)<<(G_TEXTURE_IMAGE_FRAC)),			\
-	gsDPPipeSync(),							\
-	gsDPSetTile(fmt, G_IM_SIZ_4b, (((((lrs)-(uls)+1)>>1)+7)>>3), 	\
-		    tmem, rtile, pal, cmt, maskt, shiftt, cms, masks,	\
-		    shifts),						\
-	gsDPSetTileSize(rtile,						\
-			(uls)<<G_TEXTURE_IMAGE_FRAC,			\
-			(ult)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrs)<<G_TEXTURE_IMAGE_FRAC,			\
-			(lrt)<<G_TEXTURE_IMAGE_FRAC)
+#define gsDPLoadMultiTile_4b(timg, tmem, rtile, fmt, width, height,        \
+                             uls, ult, lrs, lrt, pal,                      \
+                             cms, cmt, masks, maskt, shifts, shiftt)       \
+                                                                           \
+    gsDPSetTextureImage(fmt, G_IM_SIZ_8b, ((width) >> 1), timg),           \
+    gsDPSetTile(fmt, G_IM_SIZ_8b,                                          \
+        (((((lrs) - (uls) + 1) >> 1) + 7) >> 3), tmem,                     \
+        _G_TEXLOADTILE(rtile), 0, cmt, maskt, shiftt, cms, masks, shifts), \
+    gsDPLoadSyncInTexLoad                                                  \
+    gsDPLoadTile(_G_TEXLOADTILE(rtile),                                    \
+        (uls) << (G_TEXTURE_IMAGE_FRAC - 1),                               \
+        (ult) << (G_TEXTURE_IMAGE_FRAC),                                   \
+        (lrs) << (G_TEXTURE_IMAGE_FRAC - 1),                               \
+        (lrt) << (G_TEXTURE_IMAGE_FRAC)),                                  \
+    gsDPPipeSyncInTexLoad                                                  \
+    gsDPSetTile(fmt, G_IM_SIZ_4b,                                          \
+        (((((lrs) - (uls) + 1) >> 1) + 7) >> 3), tmem,                     \
+        rtile, pal, cmt, maskt, shiftt, cms, masks, shifts),               \
+    gsDPSetTileSize(rtile,                                                 \
+        (uls) << G_TEXTURE_IMAGE_FRAC,                                     \
+        (ult) << G_TEXTURE_IMAGE_FRAC,                                     \
+        (lrs) << G_TEXTURE_IMAGE_FRAC,                                     \
+        (lrt) << G_TEXTURE_IMAGE_FRAC)
 
 /*
  *  Load a 16-entry palette (for 4-bit CI textures)
  *  Assumes a 16 entry tlut is being loaded, palette # is 0-15
+ *  With NO_SYNCS_IN_TEXTURE_LOADS: assumes that palette 0 is for multitexture
+ *  texture 0 and palette 1 is for texture 1 (uses load tiles 5 and 4)
  */
-#ifndef _HW_VERSION_1
 
-#define gDPLoadTLUT_pal16(pkt, pal, dram)				\
-{									\
-	gDPSetTextureImage(pkt, G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, dram);	\
-	gDPTileSync(pkt);						\
-	gDPSetTile(pkt, 0, 0, 0, (256+(((pal)&0xf)*16)),		\
-		G_TX_LOADTILE, 0 , 0, 0, 0, 0, 0, 0);			\
-	gDPLoadSync(pkt);						\
-	gDPLoadTLUTCmd(pkt, G_TX_LOADTILE, 15);				\
-	gDPPipeSync(pkt)						\
-}
+#define gDPLoadTLUT_pal16(pkt, pal, dram)                            \
+_DW({                                                                \
+    gDPSetTextureImage(pkt, G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, dram);   \
+    gDPTileSyncInTexLoad(pkt);                                       \
+    gDPSetTile(pkt, 0, 0, 0, (256 + (((pal) & 0xF) * 16)),           \
+                    _G_PALLOADTILE((pal) & 1), 0, 0, 0, 0, 0, 0, 0); \
+    gDPLoadSyncInTexLoad(pkt);                                       \
+    gDPLoadTLUTCmd(pkt, _G_PALLOADTILE((pal) & 1), 15);              \
+    gDPPipeSyncInTexLoad(pkt);                                       \
+})
 
-#else /* **** WORKAROUND hardware 1 load_tlut bug ****** */
-
-#define gDPLoadTLUT_pal16(pkt, pal, dram)				\
-									\
-        _gDPLoadTextureBlock(pkt, dram, (256+(((pal)&0xf)*16)),		\
-		G_IM_FMT_RGBA, G_IM_SIZ_16b, 4*16, 1,			\
-		pal, 0, 0, 0, 0, 0, 0)
-
-#endif /* _HW_VERSION_1 */
-
-
-/*
- *  Load a 16-entry palette (for 4-bit CI textures)
- *  Assumes a 16 entry tlut is being loaded, palette # is 0-15
- */
-#ifndef _HW_VERSION_1
-
-#define gsDPLoadTLUT_pal16(pal, dram)					\
- 									\
-	gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, dram),	\
-	gsDPTileSync(),							\
-	gsDPSetTile(0, 0, 0, (256+(((pal)&0xf)*16)),			\
-		G_TX_LOADTILE, 0 , 0, 0, 0, 0, 0, 0),			\
-	gsDPLoadSync(),							\
-	gsDPLoadTLUTCmd(G_TX_LOADTILE, 15),				\
-	gsDPPipeSync()
-
-#else /* **** WORKAROUND hardware 1 load_tlut bug ****** */
-
-#define gsDPLoadTLUT_pal16(pal, dram)                                   \
-									\
-	_gsDPLoadTextureBlock(dram, (256+(((pal)&0xf)*16)),           	\
-                G_IM_FMT_RGBA, G_IM_SIZ_16b, 4*16, 1,                   \
-                pal, 0, 0, 0, 0, 0, 0)
-
-#endif /* _HW_VERSION_1 */ 
+#define gsDPLoadTLUT_pal16(pal, dram)                            \
+    gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, dram),   \
+    gsDPTileSyncInTexLoad                                        \
+    gsDPSetTile(0, 0, 0, (256 + (((pal) & 0xF) * 16)),           \
+                _G_PALLOADTILE((pal) & 1), 0, 0, 0, 0, 0, 0, 0), \
+    gsDPLoadSyncInTexLoad                                        \
+    gsDPLoadTLUTCmd(_G_PALLOADTILE((pal) & 1), 15)               \
+    gsDPPipeSyncEndOfTexLoad
 
 /*
  *  Load a 256-entry palette (for 8-bit CI textures)
  *  Assumes a 256 entry tlut is being loaded, palette # is not used
  */
-#ifndef _HW_VERSION_1
-
-#define gDPLoadTLUT_pal256(pkt, dram)					\
-{									\
-	gDPSetTextureImage(pkt, G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, dram);	\
-	gDPTileSync(pkt);						\
-	gDPSetTile(pkt, 0, 0, 0, 256,					\
-		G_TX_LOADTILE, 0 , 0, 0, 0, 0, 0, 0);			\
-	gDPLoadSync(pkt);						\
-	gDPLoadTLUTCmd(pkt, G_TX_LOADTILE, 255);			\
-	gDPPipeSync(pkt)						\
-}
-
-#else /* **** WORKAROUND hardware 1 load_tlut bug ****** */
 
 #define gDPLoadTLUT_pal256(pkt, dram)                                   \
-	                                                                \
-	_gDPLoadTextureBlock(pkt, dram, 256,           			\
-                G_IM_FMT_RGBA, G_IM_SIZ_16b, 4*256, 1,			\
-                0, 0, 0, 0, 0, 0, 0)
+_DW({                                                                   \
+    gDPSetTextureImage(pkt, G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, dram);      \
+    gDPTileSyncInTexLoad(pkt);                                          \
+    gDPSetTile(pkt, 0, 0, 0, 256,                                       \
+                    _G_PALLOADTILE(0), 0, 0, 0, 0, 0, 0, 0);            \
+    gDPLoadSyncInTexLoad(pkt);                                          \
+    gDPLoadTLUTCmd(pkt, _G_PALLOADTILE(0), 255);                        \
+    gDPPipeSyncInTexLoad(pkt);                                          \
+})
 
+#define gsDPLoadTLUT_pal256(dram)                               \
+    gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, dram),  \
+    gsDPTileSyncInTexLoad                                       \
+    gsDPSetTile(0, 0, 0, 256,                                   \
+                _G_PALLOADTILE(0), 0, 0, 0, 0, 0, 0, 0),        \
+    gsDPLoadSyncInTexLoad                                       \
+    gsDPLoadTLUTCmd(_G_PALLOADTILE(0), 255)                     \
+    gsDPPipeSyncEndOfTexLoad
 
-#endif /* _HW_VERSION_1 */
+/*
+ * Assumes that the starting TMEM address is calculated like in DPLoadTLUT_pal16
+ * (which is the only sane way to do it if you are loading two palettes for
+ * multitexture)
+ */
+#define _G_PALTMEMTOTILE(tmemaddr) _G_PALLOADTILE(((tmemaddr) >> 4) & 1)
 
+#define gDPLoadTLUT(pkt, count, tmemaddr, dram)                       \
+_DW({                                                                 \
+    gDPSetTextureImage(pkt, G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, dram);    \
+    gDPTileSyncInTexLoad(pkt);                                        \
+    gDPSetTile(pkt, 0, 0, 0, tmemaddr,                                \
+                    _G_PALTMEMTOTILE(tmemaddr), 0, 0, 0, 0, 0, 0, 0); \
+    gDPLoadSyncInTexLoad(pkt);                                        \
+    gDPLoadTLUTCmd(pkt, _G_PALTMEMTOTILE(tmemaddr), ((count) - 1));   \
+    gDPPipeSyncInTexLoad(pkt);                                        \
+})
 
-#ifndef _HW_VERSION_1
-
-#define gsDPLoadTLUT_pal256(dram)					\
- 									\
-	gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, dram),	\
-	gsDPTileSync(),							\
-	gsDPSetTile(0, 0, 0, 256,					\
-		G_TX_LOADTILE, 0 , 0, 0, 0, 0, 0, 0),			\
-	gsDPLoadSync(),							\
-	gsDPLoadTLUTCmd(G_TX_LOADTILE, 255),				\
-	gsDPPipeSync()
- 
-#else /* **** WORKAROUND hardware 1 load_tlut bug ****** */
-
-#define gsDPLoadTLUT_pal256(dram)                                       \
-                                                                        \
-	_gsDPLoadTextureBlock(dram, 256,                            	\
-                G_IM_FMT_RGBA, G_IM_SIZ_16b, 4*256, 1,                  \
-                0, 0, 0, 0, 0, 0, 0)
-
-#endif /* _HW_VERSION_1 */
-
-
-#ifndef _HW_VERSION_1
-
-#define gDPLoadTLUT(pkt, count, tmemaddr, dram)				\
-{									\
-	gDPSetTextureImage(pkt, G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, dram);	\
-	gDPTileSync(pkt);						\
-	gDPSetTile(pkt, 0, 0, 0, tmemaddr,				\
-		G_TX_LOADTILE, 0 , 0, 0, 0, 0, 0, 0);			\
-	gDPLoadSync(pkt);						\
-	gDPLoadTLUTCmd(pkt, G_TX_LOADTILE, ((count)-1));		\
-	gDPPipeSync(pkt);						\
-}
-
-#else /* **** WORKAROUND hardware 1 load_tlut bug ****** */
-
-#define gDPLoadTLUT(pkt, count, tmemaddr, dram)                         \
-									\
-        _gDPLoadTextureBlock(pkt, dram, tmemaddr,                       \
-                G_IM_FMT_RGBA, G_IM_SIZ_16b, 4, count,                  \
-                0, 0, 0, 0, 0, 0, 0)
-
-#endif /* _HW_VERSION_1 */
-
-
-#ifndef _HW_VERSION_1
-
-#define gsDPLoadTLUT(count, tmemaddr, dram)				\
- 									\
-	gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, dram),	\
-	gsDPTileSync(),							\
-	gsDPSetTile(0, 0, 0, tmemaddr,					\
-		G_TX_LOADTILE, 0 , 0, 0, 0, 0, 0, 0),			\
-	gsDPLoadSync(),							\
-	gsDPLoadTLUTCmd(G_TX_LOADTILE, ((count)-1)),			\
-	gsDPPipeSync()
-
-#else /* **** WORKAROUND hardware 1 load_tlut bug ****** */
-#define gsDPLoadTLUT(count, tmemaddr, dram)                             \
-                                                                        \
-        _gsDPLoadTextureBlock(dram, tmemaddr,                       	\
-                G_IM_FMT_RGBA, G_IM_SIZ_16b, 4, count,                  \
-                0, 0, 0, 0, 0, 0, 0)
-
-#endif /* _HW_VERSION_1 */ 
+#define gsDPLoadTLUT(count, tmemaddr, dram)                       \
+    gsDPSetTextureImage(G_IM_FMT_RGBA, G_IM_SIZ_16b, 1, dram),    \
+    gsDPTileSyncInTexLoad                                         \
+    gsDPSetTile(0, 0, 0, tmemaddr,                                \
+                _G_PALTMEMTOTILE(tmemaddr), 0, 0, 0, 0, 0, 0, 0), \
+    gsDPLoadSyncInTexLoad                                         \
+    gsDPLoadTLUTCmd(_G_PALTMEMTOTILE(tmemaddr), ((count) - 1))    \
+    gsDPPipeSyncEndOfTexLoad
 
 #define gDPSetScissor(pkt, mode, ulx, uly, lrx, lry)			\
 {									\
