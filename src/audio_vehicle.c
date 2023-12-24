@@ -368,7 +368,6 @@ GLOBAL_ASM("asm/non_matchings/audio_vehicle/func_80005254.s")
  * Those values are calculated in this function.
 */
 void racer_sound_hovercraft(Object *obj, UNUSED u32 buttonsPressed, u32 buttonsHeld, s32 updateRate) {
-    UNUSED s32 pad;
     f32 velocity;
     f32 new_var;
     u16 temp_f10;
@@ -911,27 +910,6 @@ void func_80006FC8(Object **objs, s32 numRacers, ObjectSegment *segment, u8 arg3
 #else
 GLOBAL_ASM("asm/non_matchings/audio_vehicle/func_80006FC8.s")
 #endif
-
-/**
- * Enable the vehicle sounds made during gameplay.
-*/
-UNUSED void sound_vehicle_enable(void) {
-    gVehicleSounds = TRUE;
-}
-
-/**
- * Disable the vehicle sounds made during gameplay.
-*/
-UNUSED void sound_vehicle_disable(void) {
-    gVehicleSounds = FALSE;
-}
-
-/**
- * Return whether vehicle sounds should be playing during gameplay.
-*/
-UNUSED u8 sound_vehicle_check(void) {
-    return gVehicleSounds;
-}
 
 // This is likely an arctanh function.
 f32 func_80007FA4(f32 arg0) {

@@ -125,7 +125,7 @@ static void __scHandleRetrace(OSSched *sc) {
         }
         for (i = 0; i < 4; i++) {
             gPokeThread[i]++;
-            if (gPokeThread[i] > 25000) {
+            if (gPokeThread[i] > 250000) {
                 puppyprint_assert("Thread %d unresponsive.", i);
             }
         }
