@@ -161,30 +161,9 @@ Gfx dRenderSettingsPrimCol[][2] = {
 };
 
 Gfx dRenderSettingsBlinkingLights[][2] = {
-    // Opaque Surface
-    DRAW_TABLE_GROUP(DKR_CC_UNK7, DKR_CC_UNK8, DKR_OMH_2CYC_BILERP, 
-    G_RM_NOOP, G_RM_OPA_SURF2, G_RM_NOOP, G_RM_AA_OPA_SURF2, G_RM_NOOP, G_RM_ZB_OPA_SURF2, G_RM_NOOP, G_RM_AA_ZB_OPA_SURF2),
-    // Semitransparent Surface
-    DRAW_TABLE_GROUP(DKR_CC_UNK7, DKR_CC_UNK8, DKR_OMH_2CYC_BILERP, 
-    G_RM_NOOP, G_RM_XLU_SURF2, G_RM_NOOP, G_RM_AA_XLU_SURF2, G_RM_NOOP, G_RM_ZB_XLU_SURF2, G_RM_NOOP, G_RM_AA_ZB_XLU_SURF2),
     // Opaque Surface with fog
     DRAW_TABLE_GROUP(DKR_CC_UNK7, DKR_CC_UNK8, DKR_OMH_2CYC_BILERP, 
     G_RM_FOG_SHADE_A, G_RM_OPA_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_OPA_SURF2, G_RM_FOG_SHADE_A, G_RM_ZB_OPA_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_ZB_OPA_SURF2),
-    // Semitransparent Surface with fog
-    DRAW_TABLE_GROUP(DKR_CC_UNK7, DKR_CC_UNK8, DKR_OMH_2CYC_BILERP, 
-    G_RM_FOG_SHADE_A, G_RM_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_ZB_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_ZB_XLU_SURF2),
-    // Cutout Surface
-    DRAW_TABLE_GROUP(DKR_CC_UNK7, DKR_CC_UNK8, DKR_OMH_2CYC_BILERP, 
-    G_RM_NOOP, G_RM_XLU_SURF2, G_RM_NOOP, G_RM_AA_XLU_SURF2, G_RM_NOOP, G_RM_AA_ZB_TEX_EDGE2, G_RM_NOOP, DKR_RM_UNKNOWN4_2),
-    // Cutout Surface (Copy)
-    DRAW_TABLE_GROUP(DKR_CC_UNK7, DKR_CC_UNK8, DKR_OMH_2CYC_BILERP, 
-    G_RM_NOOP, G_RM_XLU_SURF2, G_RM_NOOP, G_RM_AA_XLU_SURF2, G_RM_NOOP, G_RM_AA_ZB_TEX_EDGE2, G_RM_NOOP, DKR_RM_UNKNOWN4_2),
-    // Cutout Surface with fog
-    DRAW_TABLE_GROUP(DKR_CC_UNK7, DKR_CC_UNK8, DKR_OMH_2CYC_BILERP, 
-    G_RM_FOG_SHADE_A, G_RM_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_ZB_TEX_EDGE2, G_RM_FOG_SHADE_A, DKR_RM_UNKNOWN4_2),
-    // Cutout Surface with fog (Copy)
-    DRAW_TABLE_GROUP(DKR_CC_UNK7, DKR_CC_UNK8, DKR_OMH_2CYC_BILERP, 
-    G_RM_FOG_SHADE_A, G_RM_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_ZB_TEX_EDGE2, G_RM_FOG_SHADE_A, DKR_RM_UNKNOWN4_2),
 };
 
 Gfx D_800DF3A8[] = {
@@ -703,18 +682,11 @@ void load_blinking_lights_texture(Gfx **dlist, TextureHeader *texture_list, u32 
     gDPLoadTextureBlock((*dlist)++, OS_K0_TO_PHYSICAL(tblock), G_IM_FMT_RGBA, G_IM_SIZ_16b, texW, texH, 0, 0, 0, tileW, tileH, 0, 0);
 
     gCurrentTextureHeader = 0;
-    flags &= (RENDER_ANTI_ALIASING | RENDER_Z_COMPARE | RENDER_SEMI_TRANSPARENT | RENDER_FOG_ACTIVE | RENDER_CUTOUT);
     gSPSetGeometryMode((*dlist)++, G_FOG);
-
-    if (flags & RENDER_Z_COMPARE) {
-        gSPSetGeometryMode((*dlist)++, G_ZBUFFER);
-    } else {
-        gSPClearGeometryMode((*dlist)++, G_ZBUFFER);
-    }
     gForceFlags = TRUE;
     gCurrentRenderFlags = RENDER_NONE;
     gDPTileSync((*dlist)++);
-    gDkrDmaDisplayList((*dlist)++, OS_PHYSICAL_TO_K0(dRenderSettingsBlinkingLights[flags]), numberOfGfxCommands(dRenderSettingsBlinkingLights[0]));
+    gDkrDmaDisplayList((*dlist)++, OS_PHYSICAL_TO_K0(dRenderSettingsBlinkingLights[0]), numberOfGfxCommands(dRenderSettingsBlinkingLights[0]));
 }
 
 /**

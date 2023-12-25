@@ -3389,7 +3389,7 @@ void obj_init_door(Object *obj, LevelObjectEntry_Door *entry) {
 void obj_loop_door(Object *doorObj, s32 updateRate) {
     s32 temp2;
     s16 temp;
-    volatile s32 sp54; // ???
+    s32 sp54;
     s32 sp50;
     s32 sp4C;
     Object_Racer *racer; 
