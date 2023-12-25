@@ -1263,10 +1263,6 @@ void func_800A277C(s32 arg0, Object* playerRacerObj, s32 updateRate) {
         for(i = 0; curRacer->lap >= i && i < 5; i++) { 
             stopwatchTimer += curRacer->lap_times[i];
         }
-        
-        if (osTvType == TV_TYPE_PAL) {
-            stopwatchTimer = (f32) stopwatchTimer * 1.2f;
-        }
         if (normalise_time(36000) < stopwatchTimer) {
             stopwatchTimer = normalise_time(36000);
         }
@@ -2497,11 +2493,7 @@ void render_balloon_count(UNUSED Object_Racer *racer) {
     Settings *settings;
 
     settings = get_settings();
-    if (osTvType == TV_TYPE_PAL) {
-        balloonTickTimer = 646;
-    } else {
-        balloonTickTimer = 840;
-    }
+    balloonTickTimer = 840;
     if (settings->cutsceneFlags & CUTSCENE_ADVENTURE_TWO) {
         gCurrentHud->unk266 = 69; // Use the adventure two balloon sprite.
     }

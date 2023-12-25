@@ -106,8 +106,8 @@ u16 perspNorm;
 s32 D_80120D18;
 s32 gModelMatrixStackPos;
 s32 gCameraMatrixPos;
-f32 gModelMatrixViewX[6];
-f32 gModelMatrixViewY[6];
+f32 gModelMatrixViewX[5];
+f32 gModelMatrixViewY[5];
 f32 gModelMatrixViewZ[5];
 Matrix *gModelMatrixF[6];
 MatrixS *gModelMatrixS[6];
@@ -132,7 +132,7 @@ void camera_init(void) {
     s32 j;
  
     // This loop is not cooperating. 
-    for (i = 0; i < 5; i++) { gModelMatrixF[i] = D_80120DA0 + i + i*0; } 
+    for (i = 0; i < 5; i++) { gModelMatrixF[i] = D_80120DA0 + i; } 
 
     for (j = 0; j < 8; j++) {
         gActiveCameraID = j;
@@ -957,7 +957,7 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
         tanX = -sins(arctan2_f(sp44, diffZ)) >> 8;
         if (diffZ < 0.0f) {
             diffZ = -diffZ;
-            tanX = 1 - tanX;
+            tanX ^= 1;
             tanY = -tanY;
         }
         angleDiff = arctan2_f(diffY, diffZ);

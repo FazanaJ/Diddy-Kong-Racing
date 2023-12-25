@@ -3399,14 +3399,10 @@ void obj_loop_door(Object *doorObj, s32 updateRate) {
     ObjectInteraction *racerObjInter;
     LevelObjectEntry_Door *doorEntry;
     f32 updateRateF;
-    UNUSED s32 pad;
     s32 sp28;
     
     doorEntry = &doorObj->segment.level_entry->door;
     updateRateF = updateRate; 
-    if (osTvType == TV_TYPE_PAL) {
-        updateRateF *= 1.2f;
-    }
     settings = get_settings();
     temp2 = settings->courseFlagsPtr[settings->courseId];
     door = &doorObj->unk64->door;
@@ -3418,6 +3414,7 @@ void obj_loop_door(Object *doorObj, s32 updateRate) {
             sp50 = 0;
         }
         sp28 = temp2 & sp54;
+#ifndef OPEN_ALL_DOORS
         if (sp28 == 0 && racerObjInter->distance < door->unk12) {
             racerObj = racerObjInter->obj;
             if (racerObj != NULL && racerObj->segment.header->behaviorId == BHV_RACER) {
@@ -3440,15 +3437,16 @@ void obj_loop_door(Object *doorObj, s32 updateRate) {
             }
         }
         if (door->unk8 != 0 && music_jingle_playing() == SEQUENCE_NONE) {
-                if (updateRate < door->unk8) {
-                    door->unk8 -= updateRate;
-                } else {
-                    door->unk8 = 0;
-                    music_fade(8);
-                    music_jingle_voicelimit_set(6);
-                    func_80008168();
-                }
+            if (updateRate < door->unk8) {
+                door->unk8 -= updateRate;
+            } else {
+                door->unk8 = 0;
+                music_fade(8);
+                music_jingle_voicelimit_set(6);
+                func_80008168();
+            }
         }
+#endif
         if (door->unkA > 0) {
             door->unkA -= updateRate;
         } else {
@@ -3564,6 +3562,7 @@ void obj_loop_door(Object *doorObj, s32 updateRate) {
                 door->unk4 = NULL;
             }
         }
+#ifndef OPEN_ALL_DOORS
         if (door->unk14[0] >= 0) {
             sp4C = (1 << door->unk14[0]);
             if (settings->keys & sp4C) {
@@ -3582,6 +3581,11 @@ void obj_loop_door(Object *doorObj, s32 updateRate) {
                 settings->courseFlagsPtr[settings->courseId] &= ~sp54;
             }
         }
+#else
+        if (door->unk14[0] >= 0) {
+            settings->courseFlagsPtr[settings->courseId] |= sp54;
+        }
+#endif
     }
     doorObj->interactObj->distance = 0xFF;
     doorObj->interactObj->obj = NULL;
@@ -4926,9 +4930,6 @@ void func_8003F2E8(Object *weaponObj, s32 updateRate) {
     weaponOwner = &weapon->owner->unk64->racer; 
     updateRateF = (f32) updateRate;
     weaponProperties = &weaponObj->properties.weapon;
-    if (osTvType == TV_TYPE_PAL) {
-        updateRateF *= 1.2f;
-    }
     if (weaponProperties->unk4 == 0) {
         sp58.x = weaponObj->segment.trans.x_position + (weaponObj->segment.x_velocity * updateRateF);
         sp58.y = weaponObj->segment.trans.y_position + (weaponObj->segment.y_velocity * updateRateF);

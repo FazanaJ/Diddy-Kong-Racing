@@ -607,11 +607,7 @@ unk800E3190 *func_800BF634(Object *obj, f32 xPos, f32 zPos, f32 arg3, s32 arg4, 
             result->unk18 = i;
             result->unk14 = arg3 * arg3;
             result->unk1A = arg4;
-            if (osTvType == TV_TYPE_PAL) {
-                result->unk1C = arg5 * 20971.52f;//(f64) (0x80000 / 25.0);
-            } else {
-                result->unk1C = arg5 * 17476.27f;//(f64) ((0x80000 / 1.2) / 25.0);
-            }
+            result->unk1C = arg5 * 17476.27f;//(f64) ((0x80000 / 1.2) / 25.0);
             result->unk20 = 65536.0f / arg6;
             result->unk24 = arg7; 
             result->unk28 = arg5;

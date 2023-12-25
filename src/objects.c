@@ -346,9 +346,6 @@ void func_8000BADC(s32 updateRate) {
     }
     for (i = 0; i < gNumRacers; i++) {
         updateRateF = (f32) updateRate;
-        if (osTvType == TV_TYPE_PAL) {
-            updateRateF *= 1.2f;
-        }
         racer = &(*gRacers)[i]->unk64->racer;
         asset20Part = &asset20[racer->unk2];
         if (racer->shieldTimer != 0) {
@@ -4074,11 +4071,7 @@ void func_8001A8F4(s32 updateRate) {
         set_anti_aliasing(TRUE);
         disable_racer_input();
         if (!(get_current_level_race_type() & RACETYPE_CHALLENGE_BATTLE)) {
-            if (osTvType == TV_TYPE_PAL) {
-                cutsceneTimerLimit = 415;
-            } else {
-                cutsceneTimerLimit = 540;
-            }
+            cutsceneTimerLimit = 540;
             gBalloonCutsceneTimer += updateRate;
             if (gBalloonCutsceneTimer < cutsceneTimerLimit) {
                 func_800AB194(1);
@@ -4189,9 +4182,6 @@ void func_8001AE64(void) {
                 D_800DC72C = settings->racers[0].character;
                 func_80059984(get_current_map_id());
                 gHasGhostToSave = 1;
-            }
-            if (osTvType == TV_TYPE_PAL) {
-                bestCourseTime = (bestCourseTime * 6) / 5;
             }
             if (bestCourseTime < gTTGhostTimeToBeat) {
                 if (gTimeTrialStaffGhost) {

@@ -363,7 +363,7 @@ void render_fade_transition(Gfx **dList, MatrixS **mats, Vertex **verts) {
                 render_fade_barndoor_horizontal(dList, mats, verts);
                 break;
             case FADE_BARNDOOR_VERTICAL:
-                render_fade_barndoor_vertical(dList, mats, verts);
+                render_fade_barndoor_horizontal(dList, mats, verts);
                 break;
             case FADE_CIRCLE:
                 render_fade_circle(dList, mats, verts);
@@ -582,18 +582,6 @@ void process_transition_shape(s32 updateRate) {
  * Renders a transition effect on screen that will close in from both sides horizonally.
 */
 void render_fade_barndoor_horizontal(Gfx **dList, UNUSED MatrixS **mats, UNUSED Vertex **verts) {
-    reset_render_settings(dList);
-    gSPDisplayList((*dList)++, dTransitionShapeSettings);
-    gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(sTransitionVtx[sTransitionTaskNum]), 12, 0);
-    gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(sTransitionTris[sTransitionTaskNum]), 8, TRIN_DISABLE_TEXTURE);
-    reset_render_settings(dList);
-}
-
-/**
- * Renders a transition effect on screen that will close in from both sides vertically.
- * Codewise, exactly the same as above, but uses a different vertex layout to make the difference.
-*/
-void render_fade_barndoor_vertical(Gfx **dList, UNUSED MatrixS **mats, UNUSED Vertex **verts) {
     reset_render_settings(dList);
     gSPDisplayList((*dList)++, dTransitionShapeSettings);
     gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(sTransitionVtx[sTransitionTaskNum]), 12, 0);

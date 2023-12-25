@@ -235,11 +235,7 @@ void reset_delayed_text(void) {
  * Set the delayed text ID and delay (in seconds)
 */
 void set_delayed_text(s32 textID, f32 delay) {
-    if (osTvType == TV_TYPE_PAL) {
-        gTextboxDelay = delay * 50.0f;
-    } else {
-        gTextboxDelay = delay * 60.0f;
-    }
+    gTextboxDelay = delay * 60.0f;
     gDelayedTextID = textID;
 }
 

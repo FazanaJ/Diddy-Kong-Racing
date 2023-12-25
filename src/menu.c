@@ -2720,18 +2720,12 @@ s32 menu_logo_screen_loop(s32 updateRate) {
 
     if (osTvType == TV_TYPE_PAL) {
         yOffset = 26;
-        if (sBootScreenTimer < 2.6f && gMenuDelay == 0) {
-            transition_begin(&gFadeLogoToTitleScreen);
-            gMenuDelay = 1;
-        }
-        sBootScreenTimer -= updateRate / 50.0f;
     } else {
         yOffset = 0;
-        if (sBootScreenTimer < 2.17f && gMenuDelay == 0) {
-            transition_begin(&gFadeLogoToTitleScreen);
-            gMenuDelay = 1;
-        }
-        sBootScreenTimer -= updateRate / 60.0f;
+    }
+    if (sBootScreenTimer < 2.17f && gMenuDelay == 0) {
+        transition_begin(&gFadeLogoToTitleScreen);
+        gMenuDelay = 1;
     }
     sBootScreenTimer -= updateRate / 60.0f;
     if (sBootScreenTimer <= 0.0f) {
