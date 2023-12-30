@@ -51,41 +51,37 @@ Gfx dRdpInit[] = {
     gsDPSetAlphaCompare(G_AC_NONE),
     gsDPSetRenderMode(G_RM_OPA_SURF, G_RM_OPA_SURF2),
     gsDPSetColorDither(G_CD_MAGICSQ),
-    gsDPPipeSync(),
     gsSPEndDisplayList(),
 };
 
 Gfx dRaceFinishBackgroundSettings[] = {
+    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
     gsDPPipeSync(),
     gsDPSetTextureLOD(G_TL_TILE),
     gsDPSetTextureLUT(G_TT_NONE),
     gsDPSetAlphaCompare(G_AC_NONE),
-    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
-    gsDPPipeSync(),
     gsDPSetCombineMode(G_CC_DECALRGBA, G_CC_DECALRGBA),
     gsDPSetOtherMode(DKR_OMH_1CYC_POINT_NOPERSP, DKR_OML_COMMON | G_RM_OPA_SURF | G_RM_OPA_SURF2),
     gsSPEndDisplayList(),
 };
 
 Gfx dTextureRectangleModes[] = {
+    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
     gsDPPipeSync(),
     gsDPSetTextureLOD(G_TL_TILE),
     gsDPSetTextureLUT(G_TT_NONE),
     gsDPSetAlphaCompare(G_AC_NONE),
-    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
-    gsDPPipeSync(),
     gsDPSetCombineMode(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM),
     gsDPSetOtherMode(DKR_OMH_1CYC_POINT_NOPERSP, DKR_OML_COMMON | G_RM_XLU_SURF | G_RM_XLU_SURF2),
     gsSPEndDisplayList(),
 };
 
 Gfx dScaledRectangleBaseModes[] = {
+    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
     gsDPPipeSync(),
     gsDPSetTextureLOD(G_TL_TILE),
     gsDPSetTextureLUT(G_TT_NONE),
     gsDPSetAlphaCompare(G_AC_NONE),
-    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
-    gsDPPipeSync(),
     gsSPEndDisplayList(),
 };
 
@@ -270,6 +266,7 @@ void set_background_fill_colour(s32 red, s32 green, s32 blue) {
     sBackgroundFillColour = GPACK_RGBA5551(red, green, blue, 1);
     sBackgroundFillColour |= (sBackgroundFillColour << 16);
 }
+
 /**
  * Clears the ZBuffer first, then decides how to draw the background which goes directly
  * over the colour buffer. DrawBG if set to 0 (which never happens) will completely skip

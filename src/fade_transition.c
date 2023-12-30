@@ -176,8 +176,8 @@ TriangleList gTransitionWaveTris[244] = {
 };
 
 Gfx dTransitionShapeSettings[] = {
-    gsDPPipeSync(),
     gsSPClearGeometryMode(G_FOG),
+    gsDPPipeSync(),
     gsDPSetCombineMode(G_CC_SHADE, G_CC_SHADE),
     gsDPSetOtherMode(DKR_OMH_1CYC_POINT, DKR_OML_COMMON | G_RM_CLD_SURF | G_RM_CLD_SURF2),
     gsSPEndDisplayList(),

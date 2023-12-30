@@ -167,21 +167,21 @@ Gfx dRenderSettingsBlinkingLights[][2] = {
 };
 
 Gfx D_800DF3A8[] = {
+    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
     gsDPPipeSync(),
     gsDPSetTextureLOD(G_TL_TILE),
     gsDPSetTextureLUT(G_TT_NONE),
     gsDPSetAlphaCompare(G_AC_NONE),
-    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
     gsSPEndDisplayList(),
 };
 
 Gfx D_800DF3D8[] = {
+    gsSPClearGeometryMode(G_FOG),
+    gsSPSetGeometryMode(G_ZBUFFER),
     gsDPPipeSync(),
     gsDPSetTextureLOD(G_TL_TILE),
     gsDPSetTextureLUT(G_TT_NONE),
     gsDPSetAlphaCompare(G_AC_NONE),
-    gsSPClearGeometryMode(G_FOG),
-    gsSPSetGeometryMode(G_ZBUFFER),
     gsSPEndDisplayList(),
 };
 

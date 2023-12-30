@@ -5381,10 +5381,6 @@ void obj_init_butterfly(Object *butterflyObj, LevelObjectEntry_Butterfly *butter
     s32 uMask;
     s32 vMask;
     s32 i;
-
-    if (gConfig.perfMode) {
-        free_object(butterflyObj);
-    }
     
     butterfly = &butterflyObj->unk64->butterfly;
     if (param == 0) {
@@ -5442,6 +5438,11 @@ void obj_init_butterfly(Object *butterflyObj, LevelObjectEntry_Butterfly *butter
         butterfly->triangles[i].uv2.u = D_800DCAA8[i].uv2.u & uMask;
         butterfly->triangles[i].uv2.v = D_800DCAA8[i].uv2.v & vMask;
     }
+
+    if (gConfig.perfMode) {
+        free_object(butterflyObj);
+    }
+
 }
 
 
@@ -5534,9 +5535,7 @@ void obj_loop_rangetrigger(Object *obj, s32 updateRate) {
 void obj_init_frog(Object *obj, LevelObjectEntry_Frog *entry) {
     Object_Frog *obj64;
 
-    if (gConfig.perfMode) {
-        free_object(obj);
-    }
+    
 
     obj64 = &obj->unk64->frog;
     obj64->drumstick = entry->drumstick;
@@ -5551,8 +5550,14 @@ void obj_init_frog(Object *obj, LevelObjectEntry_Frog *entry) {
     obj64->squishCooldown = 0;
     obj64->scaleY = 1.0f;
 
+    if (gConfig.perfMode) {
+        free_object(obj);
+        obj->segment.object.modelIndex = 1;
+        return;
+    }
+
     if (obj64->drumstick) {
-        obj->segment.object.modelIndex = TRUE;
+        obj->segment.object.modelIndex = 1;
         /**
           * Don't spawn the chicken frog if drumstick is already unlocked, or
           * if the player hasn't completed the trophy races yet.
@@ -5561,7 +5566,7 @@ void obj_init_frog(Object *obj, LevelObjectEntry_Frog *entry) {
             free_object(obj);
         }
     } else {
-        obj->segment.object.modelIndex = FALSE;
+        obj->segment.object.modelIndex = 0;
     }
 }
 
