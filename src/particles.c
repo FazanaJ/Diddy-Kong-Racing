@@ -1531,7 +1531,6 @@ void move_particle_with_velocities(Particle *particle, s32 updateRate) {
  * Apply translation, rotation and scale based off the velocities of the particle.
 */
 void move_particle_basic(Particle *particle, s32 updateRate) {
-    s32 i;
     f32 updateRateF = updateRate;
 
     particle->segment.trans.x_position += particle->segment.x_velocity * updateRateF;
@@ -1549,7 +1548,6 @@ void move_particle_basic(Particle *particle, s32 updateRate) {
  * Velocity is set from forward velocity.
 */
 void move_particle_with_velocity(Particle *particle, s32 updateRate) {
-    s32 i;
     f32 updateRateF = updateRate;
 
     particle->segment.x_velocity = 0.0f;

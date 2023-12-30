@@ -79,56 +79,55 @@ static void __scHandlePrenmi(OSSched *sc) {
     osSendMesg(sc->gfxmq, (OSMesg) OS_SC_PRE_NMI_MSG, OS_MESG_NOBLOCK);
 }
 
-u32 gRetraceTimer = 0;
-
 static void __scHandleRetrace(OSSched *sc) {
     UNUSED s32 i;
 	sc->retraceCount++;
     if (sc->retraceCount > gConfig.frameCap && sc->scheduledFB && osViGetCurrentFramebuffer() == sc->scheduledFB) {
-            if (sc->queuedFB) {
-                sc->scheduledFB = sc->queuedFB;
-                sc->queuedFB = NULL;
-                osViSwapBuffer(sc->scheduledFB);
-                sc->retraceCount = 0;
-            } else {
-                sc->scheduledFB = NULL;
-            }
+        if (sc->queuedFB) {
+            sc->scheduledFB = sc->queuedFB;
+            sc->queuedFB = NULL;
+            osViSwapBuffer(sc->scheduledFB);
+            sc->retraceCount = 0;
+        } else {
+            sc->scheduledFB = NULL;
         }
+    }
 
-        sc->audioFlip ^= 1;
+    sc->audioFlip ^= 1;
 
-        if (sc->audmq && sc->audioFlip == 0) {
-            osSendMesg(sc->audmq, &sc->retraceMsg, OS_MESG_NOBLOCK);
+    if (sc->audmq && sc->audioFlip == 0) {
+        osSendMesg(sc->audmq, &sc->retraceMsg, OS_MESG_NOBLOCK);
 
-            if (sc->nextAudTask) {
+        if (sc->nextAudTask) {
 #ifdef DISABLE_AUDIO
-                sc->doAudio = 0;
+            sc->doAudio = 0;
 #else
-                sc->doAudio = 1;
+            sc->doAudio = 1;
 #endif
 
-                if (sc->curRSPTask && sc->curRSPTask->list.t.type == M_GFXTASK) {
-                    puppyprint_update_rsp(RSP_GFX_PAUSED);
-                    sc->curRSPTask->state |= OS_SC_YIELD;
-                    osSpTaskYield();
-                }
+            if (sc->curRSPTask && sc->curRSPTask->list.t.type == M_GFXTASK) {
+                puppyprint_update_rsp(RSP_GFX_PAUSED);
+                sc->curRSPTask->state |= OS_SC_YIELD;
+                osSpTaskYield();
             }
         }
+    }
 
-        __scTryDispatch(sc);
+    __scTryDispatch(sc);
 #ifdef PUPPYPRINT_DEBUG
-        gSchedStack[0]++;
-        gPokeThread[2] = 0;
-        gSchedStack[THREAD5_STACK / sizeof(u64) - 1]++;
-        if (gSchedStack[THREAD5_STACK / sizeof(u64) - 1] != gSchedStack[0]) {
-            puppyprint_assert("Thread 5 Stack overflow");
+    gSchedStack[0]++;
+    gPokeThread[2] = 0;
+    gSchedStack[THREAD5_STACK / sizeof(u64) - 1]++;
+    if (gSchedStack[THREAD5_STACK / sizeof(u64) - 1] != gSchedStack[0]) {
+        puppyprint_assert("Thread 5 Stack overflow");
+    }
+    for (i = 0; i < 4; i++) {
+        gPokeThread[i]++;
+        if (gPokeThread[i] > 250000) {
+            s32 threadNums[] = {3, 4, 5, 30};
+            puppyprint_assert("Thread %d unresponsive", threadNums[i]);
         }
-        for (i = 0; i < 4; i++) {
-            gPokeThread[i]++;
-            if (gPokeThread[i] > 250000) {
-                puppyprint_assert("Thread %d unresponsive", i);
-            }
-        }
+    }
 #endif
 }
 

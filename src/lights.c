@@ -421,7 +421,7 @@ void func_800337E4(void) {
 
     for (i = 1; i < D_800DC968; i++) {
         index = i; // Needed?
-        temp_a1 = (0, D_800DC960) + index;
+        temp_a1 = D_800DC960 + index;
         temp_a2 = temp_a1->unk10;
         if (temp_a2 >= 2) {
             temp_a3 = D_800DC960->unk10;

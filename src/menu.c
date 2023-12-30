@@ -2701,10 +2701,10 @@ void menu_logos_screen_init(void) {
     set_background_fill_colour(0, 0, 0);
     if (osTvType == TV_TYPE_PAL) {
         viewport_menu_set(0, 0, 38, SCREEN_WIDTH, SCREEN_HEIGHT - 16);
-        set_viewport_properties(0, VIEWPORT_AUTO, VIEWPORT_AUTO, SCREEN_WIDTH, SCREEN_HEIGHT_PAL);
+        set_viewport_properties(0, SCREEN_WIDTH, SCREEN_HEIGHT_PAL);
     } else {
         viewport_menu_set(0, 0, 40, SCREEN_WIDTH, SCREEN_HEIGHT - 44);
-        set_viewport_properties(0, VIEWPORT_AUTO, VIEWPORT_AUTO, SCREEN_WIDTH, SCREEN_HEIGHT);
+        set_viewport_properties(0, SCREEN_WIDTH, SCREEN_HEIGHT);
     }
     copy_viewports_to_stack(); //Init viewports
     camEnableUserView(0, 1);
@@ -2730,7 +2730,7 @@ s32 menu_logo_screen_loop(s32 updateRate) {
     sBootScreenTimer -= updateRate / 60.0f;
     if (sBootScreenTimer <= 0.0f) {
         camDisableUserView(0, FALSE);
-        set_viewport_properties(0, VIEWPORT_AUTO, VIEWPORT_AUTO, VIEWPORT_AUTO, VIEWPORT_AUTO);
+        set_viewport_properties(0, VIEWPORT_AUTO, VIEWPORT_AUTO);
         init_title_screen_variables();
         menu_init(MENU_TITLE);
     }
@@ -2905,7 +2905,7 @@ void menu_title_screen_init(void) {
     func_800660C0();
     set_text_font(ASSET_FONTS_FUNFONT);
     load_font(ASSET_FONTS_BIGFONT);
-    sound_volume_reset(FALSE);
+    sound_volume_reset();
     set_time_trial_enabled(FALSE);
     gTitleDemoIndex = 0;
     sTitleScreenDemoIds = (s8 *) get_misc_asset(ASSET_MISC_TITLE_SCREEN_DEMO_IDS);
@@ -3161,7 +3161,7 @@ void title_screen_exit(void) {
     music_voicelimit_set(16);
     func_800660D0();
     unload_font(ASSET_FONTS_BIGFONT);
-    sound_volume_reset(TRUE);
+    sound_volume_reset();
 }
 
 /**
@@ -6607,12 +6607,7 @@ void render_file_select_menu(UNUSED s32 updateRate) {
             if (!gSavefileInfo[saveNum].isStarted) {
                 trim_filename_string(gFilenames[saveNum], trimmedFilename);
             }
-            if (trimmedFilename) {
-                draw_text(&sMenuCurrDisplayList, 
-                    x + gFileSelectElementPos[0],
-                    gFileSelectButtons.y + gFileSelectElementPos[1] + yPos,
-                    trimmedFilename, ALIGN_MIDDLE_CENTER);
-            }
+            draw_text(&sMenuCurrDisplayList, x + gFileSelectElementPos[0], gFileSelectButtons.y + gFileSelectElementPos[1] + yPos, trimmedFilename, ALIGN_MIDDLE_CENTER);
         }
         x += 92;
     }
@@ -7962,7 +7957,7 @@ void render_track_select_setup_ui(UNUSED s32 updateRate) {
             sMenuGuiOpacity = 0;
         }
         availableVehicleFlags = get_map_available_vehicles(gTrackIdForPreview);
-        i = get_level_name(gTrackIdForPreview);
+        i = (s32) get_level_name(gTrackIdForPreview);
         set_text_font(ASSET_FONTS_BIGFONT);
         set_text_colour(192, 192, 255, 0, sMenuGuiOpacity);
         set_text_background_colour(0, 0, 0, 0);
@@ -11321,10 +11316,10 @@ void menu_credits_init(void) {
     set_background_fill_colour(0, 0, 0);
     if (osTvType == TV_TYPE_PAL) {
         viewport_menu_set(0, 0, 38, SCREEN_WIDTH, 224);
-        set_viewport_properties(0, VIEWPORT_AUTO, VIEWPORT_AUTO, SCREEN_WIDTH, SCREEN_HEIGHT_PAL);
+        set_viewport_properties(0, SCREEN_WIDTH, SCREEN_HEIGHT_PAL);
     } else {
         viewport_menu_set(0, 0, 40, SCREEN_WIDTH, 196);
-        set_viewport_properties(0, VIEWPORT_AUTO, VIEWPORT_AUTO, SCREEN_WIDTH, SCREEN_HEIGHT);
+        set_viewport_properties(0, SCREEN_WIDTH, SCREEN_HEIGHT);
     }
     copy_viewports_to_stack();
     camEnableUserView(0, 1);
@@ -11396,7 +11391,7 @@ void func_8009BCF0(void) {
     music_voicelimit_set(18);
     disable_new_screen_transitions();
     camDisableUserView(0, FALSE);
-    set_viewport_properties(0, VIEWPORT_AUTO, VIEWPORT_AUTO, VIEWPORT_AUTO, VIEWPORT_AUTO);
+    set_viewport_properties(0, VIEWPORT_AUTO, VIEWPORT_AUTO);
     func_8009C4A8(gCreditsObjectIndices);
     unload_font(ASSET_FONTS_BIGFONT);
     set_gIntDisFlag(FALSE);

@@ -106,7 +106,7 @@ void camEnableUserView(s32 viewPortIndex, s32 arg1);
 void camDisableUserView(s32 viewPortIndex, s32 arg1);
 s32 check_viewport_background_flag(s32 viewPortIndex);
 void viewport_menu_set(s32 viewPortIndex, s32 x1, s32 y1, s32 x2, s32 y2);
-void set_viewport_properties(s32 viewPortIndex, s32 x1, s32 x2, s32 y1, s32 y2);
+void set_viewport_properties(s32 viewPortIndex, s32 y1, s32 y2);
 s32 copy_viewport_background_size_to_coords(s32 viewPortIndex, s32 *x1, s32 *y1, s32 *x2, s32 *y2);
 void copy_viewport_frame_size_to_coords(s32 viewPortIndex, s32 *x1, s32 *y1, s32 *x2, s32 *y2);
 void copy_framebuffer_size_to_coords(s32 *x1, s32 *y1, s32 *x2, s32 *y2);

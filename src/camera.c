@@ -511,7 +511,7 @@ void viewport_menu_set(s32 viewPortIndex, s32 x1, s32 y1, s32 x2, s32 y2) {
  * Set the selected viewport's coordinate offsets and view size.
  * If you pass VIEWPORT_AUTO through, then the property will be automatically set when the game creates the viewports.
  */
-void set_viewport_properties(s32 viewPortIndex, s32 posX, s32 posY, s32 width, s32 height) {
+void set_viewport_properties(s32 viewPortIndex, s32 width, s32 height) {
     if (width != VIEWPORT_AUTO) {
         gScreenViewports[viewPortIndex].width = width;
         gScreenViewports[viewPortIndex].flags |= VIEWPORT_WIDTH_CUSTOM;
@@ -754,18 +754,17 @@ void viewport_scissor(Gfx **dlist) {
             }
             break;
         }
-        gDPSetScissor((*dlist)++, 0, ulx, uly, lrx, lry);
         gViewportScissor[0] = ulx;
         gViewportScissor[1] = uly;
         gViewportScissor[2] = lrx;
         gViewportScissor[3] = lry;
-        return;
+    } else {
+        gViewportScissor[0] = 0;
+        gViewportScissor[1] = 0;
+        gViewportScissor[2] = width;
+        gViewportScissor[3] = height;
     }
-    gViewportScissor[0] = 0;
-    gViewportScissor[1] = 0;
-    gViewportScissor[2] = width;
-    gViewportScissor[3] = height;
-    gDPSetScissor((*dlist)++, 0, 0, 0, width, height);
+    gDPSetScissor((*dlist)++, 0, gViewportScissor[0], gViewportScissor[1], gViewportScissor[2], gViewportScissor[3]);
 }
 
 //Official Name: camGetPlayerProjMtx / camSetProjMtx - ??

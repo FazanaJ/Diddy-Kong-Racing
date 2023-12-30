@@ -600,7 +600,6 @@ void set_ai_level(s8 *aiLevelTable) {
     }
     tableIndexCount--;
     if (aiLevel >= tableIndexCount) {
-        stubbed_printf("AITABLE Error: Table out of range\n");
         aiLevel = 0;
     }
     temp = gTempAssetTable[aiLevel + 1] - gTempAssetTable[aiLevel];

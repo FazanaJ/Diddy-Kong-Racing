@@ -787,7 +787,7 @@ void draw_gradient_background(Gfx **dList) {
     Vertex *verts;
     Triangle *tris;
     f32 widescreen = 1.0f;
-    s32 viewHeight;
+    //s32 viewHeight;
     profiler_begin_timer();
 
 #ifndef NATIVE_RES_WIDESCREEN
@@ -1292,7 +1292,7 @@ void render_level_segment(Gfx **dList, s32 segmentId, s32 nonOpaque) {
         if (batchFlags & BATCH_FLAGS_PULSATING_LIGHTS) {
             color = gCurrentLevelHeader2->pulseLightData->outColorValue;
             gDPSetPrimColor((*dList)++, 0, 0, color, color, color, color);
-            load_blinking_lights_texture(dList, texture, batchFlags, texOffset);
+            load_blinking_lights_texture(dList, texture, texOffset);
             gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(vertices), numberVertices, 0);
             gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(triangles), numberTriangles, TRIN_ENABLE_TEXTURE);
             gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);

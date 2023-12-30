@@ -684,9 +684,9 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
     D_8011AEA0[arg1] = 0;
     D_8011AEA8[arg1] = arg0;
     gAssetColourTag = MEMP_HEADERS;
-    objMapTable = (u32 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_MAPS_TABLE);
+    objMapTable = (s32 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_MAPS_TABLE);
     gAssetColourTag = COLOUR_TAG_GREY;
-    for (i = 0; objMapTable[i] != 0xFFFFFFFF; i++) { }
+    for (i = 0; objMapTable[i] != -1; i++) { }
     i--;
     if (arg0 >= i) {
         arg0 = 0;
@@ -1743,7 +1743,7 @@ void objFreeAssets(Object *obj, s32 count, s32 objType) {
 void light_setup_light_sources(Object *obj) {
     s32 i;
     for (i = 0; i < obj->segment.header->numLightSources; i++) {
-        obj->lightData[i] = (u32) add_object_light(obj, &obj->segment.header->unk24[i]);
+        obj->lightData[i] = (Object_LightData *) add_object_light(obj, &obj->segment.header->unk24[i]);
     }
 }
 
@@ -4335,7 +4335,7 @@ s32 unbeaten_staff_time(void) {
 }
 
 s32 func_8001B668(s32 arg0) {
-    s16 sp2E;
+    u16 sp2E;
     s16 sp2C;
     s32 temp_v0;
     s32 mapId;

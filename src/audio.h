@@ -64,7 +64,7 @@ void alCSPStop(ALCSPlayer *seqp); //lib/src/al/unknown_0C91A0.c
 s32  alCSPGetState(ALCSPlayer *seqp); //lib/src/unknown_0C8650.c
 
 void audio_init(OSSched *arg0);
-void sound_volume_reset(u8 skipReset);
+void sound_volume_reset(void);
 void sound_volume_change(s32 arg0);
 void music_change_off(void);
 void music_change_on(void);

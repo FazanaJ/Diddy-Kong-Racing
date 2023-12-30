@@ -655,7 +655,7 @@ void load_and_set_texture(Gfx **dlist, TextureHeader *texhead, s32 flags, s32 te
 /**
  * Loads the texture and render settings for the blinking lights seen in Spaceport Alpha.
 */
-void load_blinking_lights_texture(Gfx **dlist, TextureHeader *texture_list, u32 flags, s32 texture_index) {
+void load_blinking_lights_texture(Gfx **dlist, TextureHeader *texture_list, s32 texture_index) {
     u16 *mblock;
     u16 *tblock;
     s32 texW;

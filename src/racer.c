@@ -5644,7 +5644,7 @@ s32 func_800599A8(void) {
     return D_8011D5AC;
 }
 
-s32 func_800599B8(s32 arg0, s32 mapId, s16 arg2, s16 *arg3, s16 *arg4) {
+s32 func_800599B8(s32 arg0, s32 mapId, s16 arg2, u16 *arg3, s16 *arg4) {
     s32 temp_v0;
     s32 temp_t8;
     s16 sp2E;

@@ -160,7 +160,7 @@ void audio_init(OSSched *sc) {
 /**
  * Depending on whether or not the audio volume is set to normal and the argument is false, reset sound effect channel volumes.
 */
-void sound_volume_reset(u8 skipReset) {
+void sound_volume_reset(void) {
     if (gAudioVolumeSetting == VOLUME_NORMAL) {
         gGlobalMusicVolume = 256;
         music_volume_set(gMusicBaseVolume);

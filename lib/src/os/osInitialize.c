@@ -23,7 +23,6 @@ extern u32 __osFinalrom; //This is defined in another file somehow
 void osInitialize() {
    u32 pifdata;
    u32 clock = 0;
-   u32 leostatus;
    u32 pistatus;
    __osFinalrom = TRUE;
    __osSetSR(__osGetSR() | SR_CU1);    //enable fpu

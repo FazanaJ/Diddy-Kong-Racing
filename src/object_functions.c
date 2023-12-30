@@ -2081,8 +2081,7 @@ void obj_loop_char_select(Object *charSelectObj, s32 updateRate) {
                     }
                     
                     for (i2 = 0; i2 < objMdl->numberOfBatches; i2++) {
-                        //Unneccessary check for textureIndex to be greater than or equal to zero since it's a u8 and can't be less.
-                        if (objMdl->batches[i2].textureIndex >= 0 && objMdl->batches[i2].textureIndex < 4) {
+                        if (objMdl->batches[i2].textureIndex < 4) {
                             objMdl->batches[i2].textureIndex = sp50[D_800DCA88[i]];
                         }
                     }
@@ -3404,7 +3403,11 @@ void obj_loop_door(Object *doorObj, s32 updateRate) {
     doorEntry = &doorObj->segment.level_entry->door;
     updateRateF = updateRate; 
     settings = get_settings();
+#ifndef OPEN_ALL_DOORS
     temp2 = settings->courseFlagsPtr[settings->courseId];
+#else
+    temp2 = 0xFFFFFFFF;
+#endif
     door = &doorObj->unk64->door;
     if (door->unkE >= 0) {
         sp54 = 0x10000 << door->unkE; 
@@ -3446,12 +3449,12 @@ void obj_loop_door(Object *doorObj, s32 updateRate) {
                 func_80008168();
             }
         }
-#endif
         if (door->unkA > 0) {
             door->unkA -= updateRate;
         } else {
             door->unkA = 0;
         }
+#endif
         racerObjInter = doorObj->interactObj;
         sp4C = 0;
         if (racerObjInter->distance < door->unk12) {
@@ -3562,7 +3565,6 @@ void obj_loop_door(Object *doorObj, s32 updateRate) {
                 door->unk4 = NULL;
             }
         }
-#ifndef OPEN_ALL_DOORS
         if (door->unk14[0] >= 0) {
             sp4C = (1 << door->unk14[0]);
             if (settings->keys & sp4C) {
@@ -3581,11 +3583,6 @@ void obj_loop_door(Object *doorObj, s32 updateRate) {
                 settings->courseFlagsPtr[settings->courseId] &= ~sp54;
             }
         }
-#else
-        if (door->unk14[0] >= 0) {
-            settings->courseFlagsPtr[settings->courseId] |= sp54;
-        }
-#endif
     }
     doorObj->interactObj->distance = 0xFF;
     doorObj->interactObj->obj = NULL;
@@ -4265,16 +4262,11 @@ void obj_init_silvercoin_adv2(Object *obj, UNUSED LevelObjectEntry_SilverCoinAdv
     obj->interactObj->flags = INTERACT_FLAGS_TANGIBLE;
     obj->interactObj->unk11 = 0;
     obj->interactObj->hitboxRadius = 30;
-    obj->properties.npc.action = SILVER_COIN_INACTIVE;
     obj->properties.npc.timer = 16;
-    if (!is_in_tracks_mode()) {
-        if (check_if_silver_coin_race() && is_in_adventure_two()) {
-            obj->properties.npc.action = SILVER_COIN_ACTIVE;
-        } else {
-            obj->properties.npc.action = SILVER_COIN_INACTIVE;
-        }
-    }
-    if (obj->properties.npc.action == SILVER_COIN_INACTIVE) {
+    if (!is_in_tracks_mode() && check_if_silver_coin_race() && is_in_adventure_two()) {
+        obj->properties.npc.action = SILVER_COIN_ACTIVE;
+    } else {
+        obj->properties.npc.action = SILVER_COIN_INACTIVE;
         obj->segment.trans.flags |= OBJ_FLAGS_INVIS_PLAYER1 | OBJ_FLAGS_INVIS_PLAYER2;
         free_object(obj);
     }
@@ -4289,17 +4281,12 @@ void obj_init_silvercoin(Object *obj, UNUSED LevelObjectEntry_SilverCoin *entry)
     obj->interactObj->flags = INTERACT_FLAGS_TANGIBLE;
     obj->interactObj->unk11 = 0;
     obj->interactObj->hitboxRadius = 30;
-    obj->properties.npc.action = SILVER_COIN_INACTIVE;
     obj->properties.npc.timer = 0;
-    if (!is_in_tracks_mode()) {
-        if (check_if_silver_coin_race() && !is_in_adventure_two()) {
-            obj->properties.npc.action = SILVER_COIN_ACTIVE;
-        } else {
-            obj->properties.npc.action = SILVER_COIN_INACTIVE;
-        }
-    }
-    if (obj->properties.npc.action == SILVER_COIN_INACTIVE) {
-        obj->segment.trans.flags |= OBJ_FLAGS_INVIS_PLAYER2 | OBJ_FLAGS_INVIS_PLAYER1;
+    if (!is_in_tracks_mode() && check_if_silver_coin_race() && !is_in_adventure_two()) {
+        obj->properties.npc.action = SILVER_COIN_ACTIVE;
+    } else {
+        obj->properties.npc.action = SILVER_COIN_INACTIVE;
+        obj->segment.trans.flags |= OBJ_FLAGS_INVIS_PLAYER1 | OBJ_FLAGS_INVIS_PLAYER2;
         free_object(obj);
     }
 }
