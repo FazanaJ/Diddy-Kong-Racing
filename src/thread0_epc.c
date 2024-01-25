@@ -30,11 +30,7 @@ u8 gAssert;
 u8 sCrashPage;
 u8 sCrashUpdate;
 char gAssertString[127];
-char *sObjectStrings[] = {
-    "INIT",
-    "LOOP",
-    "DRAW"
-};
+char *sObjectStrings[] = { "INIT", "LOOP", "DRAW" };
 
 static inline char *write_to_buf(char *buffer, const char *data, size_t size) {
     return (char *) (memcpy(buffer, data, size) + size);
@@ -44,7 +40,7 @@ void puppyprint_assert(char *str, ...) {
     char textBytes[127];
     va_list arguments;
     gAssert = TRUE;
-    
+
     bzero(textBytes, sizeof(textBytes));
     va_start(arguments, str);
     if ((_Printf(write_to_buf, textBytes, str, arguments)) <= 0) {
@@ -78,17 +74,15 @@ const char *const gCauseDesc[18] = {
 };
 
 const char *const gFpcsrDesc[6] = {
-    "Unimplemented operation", "Invalid operation", "Division by zero", "Overflow", "Underflow",
-    "Inexact operation",
+    "Unimplemented operation", "Invalid operation", "Division by zero", "Overflow", "Underflow", "Inexact operation",
 };
 
 const u8 gCrashScreenCharToGlyph[128] = {
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 41, -1, -1, -1, 43, -1, -1, 37, 38, -1, 42,
-    -1, 39, 44, -1, 0,  1,  2,  3,  4,  5,  6,  7,  8,  9,  36, -1, -1, -1, -1, 40, -1, 10,
-    11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32,
-    33, 34, 35, -1, -1, -1, -1, -1, -1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
-    23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1, -1, -1, 41, -1, -1, -1, 43, -1, -1, 37, 38, -1, 42, -1, 39, 44, -1, 0,  1,  2,  3,
+    4,  5,  6,  7,  8,  9,  36, -1, -1, -1, -1, 40, -1, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+    23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, -1, -1, -1, -1, -1, -1, 10, 11, 12, 13, 14, 15, 16,
+    17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, -1, -1, -1, -1, -1,
 };
 
 // Bit-compressed font. '#' = 1, '.' = 0
@@ -221,8 +215,7 @@ void crash_screen_draw_glyph(s32 x, s32 y, s32 glyph) {
 void crash_screen_sleep(s32 ms) {
     u32 cycles = ms * 1000 * osClockRate / 1000000U;
     osSetTime(0);
-    while (osGetTime() < cycles) {
-    }
+    while (osGetTime() < cycles) {}
 }
 
 void crash_screen_print(s32 x, s32 y, const char *fmt, ...) {
@@ -253,7 +246,7 @@ void crash_screen_print_float_reg(s32 x, s32 y, s32 regNum, void *addr) {
     bits = *(u32 *) addr;
     exponent = ((bits & 0x7f800000U) >> 0x17) - 0x7f;
     if ((exponent >= -0x7e && exponent <= 0x7f) || bits == 0) {
-        crash_screen_print(x, y, "F%02d:%2.4f", regNum, (f64) *(f32 *) addr);
+        crash_screen_print(x, y, "F%02d:%2.4f", regNum, (f64) * (f32 *) addr);
     } else {
         crash_screen_print(x, y, "F%02d:---------", regNum);
     }
@@ -287,15 +280,24 @@ void crash_page_registers(OSThread *thread) {
     crash_screen_draw_rect(sCrashX, sCrashY, 270, 205);
     crash_screen_print(sCrashX + 10, sCrashY + 5, "THREAD:%d  (%s)", thread->id, gCauseDesc[cause]);
     crash_screen_print(sCrashX + 10, sCrashY + 15, "PC:%08XH   SR:%08XH   VA:%08XH", tc->pc, tc->sr, tc->badvaddr);
-    crash_screen_print(sCrashX + 10, sCrashY + 30, "AT:%08XH   V0:%08XH   V1:%08XH", (u32) tc->at, (u32) tc->v0, (u32) tc->v1);
-    crash_screen_print(sCrashX + 10, sCrashY + 40, "A0:%08XH   A1:%08XH   A2:%08XH", (u32) tc->a0, (u32) tc->a1, (u32) tc->a2);
-    crash_screen_print(sCrashX + 10, sCrashY + 50, "A3:%08XH   T0:%08XH   T1:%08XH", (u32) tc->a3, (u32) tc->t0, (u32) tc->t1);
-    crash_screen_print(sCrashX + 10, sCrashY + 60, "T2:%08XH   T3:%08XH   T4:%08XH", (u32) tc->t2, (u32) tc->t3, (u32) tc->t4);
-    crash_screen_print(sCrashX + 10, sCrashY + 70, "T5:%08XH   T6:%08XH   T7:%08XH", (u32) tc->t5, (u32) tc->t6, (u32) tc->t7);
-    crash_screen_print(sCrashX + 10, sCrashY + 80, "S0:%08XH   S1:%08XH   S2:%08XH", (u32) tc->s0, (u32) tc->s1, (u32) tc->s2);
-    crash_screen_print(sCrashX + 10, sCrashY + 90, "S3:%08XH   S4:%08XH   S5:%08XH", (u32) tc->s3, (u32) tc->s4, (u32) tc->s5);
-    crash_screen_print(sCrashX + 10, sCrashY + 100, "S6:%08XH   S7:%08XH   T8:%08XH", (u32) tc->s6, (u32) tc->s7, (u32) tc->t8);
-    crash_screen_print(sCrashX + 10, sCrashY + 110, "T9:%08XH   GP:%08XH   SP:%08XH", (u32) tc->t9, (u32) tc->gp, (u32) tc->sp);
+    crash_screen_print(sCrashX + 10, sCrashY + 30, "AT:%08XH   V0:%08XH   V1:%08XH", (u32) tc->at, (u32) tc->v0,
+                       (u32) tc->v1);
+    crash_screen_print(sCrashX + 10, sCrashY + 40, "A0:%08XH   A1:%08XH   A2:%08XH", (u32) tc->a0, (u32) tc->a1,
+                       (u32) tc->a2);
+    crash_screen_print(sCrashX + 10, sCrashY + 50, "A3:%08XH   T0:%08XH   T1:%08XH", (u32) tc->a3, (u32) tc->t0,
+                       (u32) tc->t1);
+    crash_screen_print(sCrashX + 10, sCrashY + 60, "T2:%08XH   T3:%08XH   T4:%08XH", (u32) tc->t2, (u32) tc->t3,
+                       (u32) tc->t4);
+    crash_screen_print(sCrashX + 10, sCrashY + 70, "T5:%08XH   T6:%08XH   T7:%08XH", (u32) tc->t5, (u32) tc->t6,
+                       (u32) tc->t7);
+    crash_screen_print(sCrashX + 10, sCrashY + 80, "S0:%08XH   S1:%08XH   S2:%08XH", (u32) tc->s0, (u32) tc->s1,
+                       (u32) tc->s2);
+    crash_screen_print(sCrashX + 10, sCrashY + 90, "S3:%08XH   S4:%08XH   S5:%08XH", (u32) tc->s3, (u32) tc->s4,
+                       (u32) tc->s5);
+    crash_screen_print(sCrashX + 10, sCrashY + 100, "S6:%08XH   S7:%08XH   T8:%08XH", (u32) tc->s6, (u32) tc->s7,
+                       (u32) tc->t8);
+    crash_screen_print(sCrashX + 10, sCrashY + 110, "T9:%08XH   GP:%08XH   SP:%08XH", (u32) tc->t9, (u32) tc->gp,
+                       (u32) tc->sp);
     crash_screen_print(sCrashX + 10, sCrashY + 120, "S8:%08XH   RA:%08XH", (u32) tc->s8, (u32) tc->ra);
     crash_screen_print_fpcsr(tc->fpcsr);
     crash_screen_print_float_reg(sCrashX + 10, sCrashY + 145, 0, &tc->fp0.f.f_even);
@@ -321,19 +323,22 @@ void crash_page_object(void) {
     crash_screen_draw_rect(sCrashX, sCrashY, 270, 205);
     if (sCrashObjID) {
         Object *o = sCrashObjID;
-        crash_screen_print(sCrashX + 10, sCrashY + 5, "OBJ: %s (ID: %d) DURING %s", o->segment.header->internalName, o->behaviorId, sObjectStrings[sCrashObjAct - 1]);
-        crash_screen_print(sCrashX + 10, sCrashY + 15, "X: %2.2f, Y: %2.2f, Z: %2.2f", 
-                            (f64) o->segment.trans.x_position, (f64) o->segment.trans.y_position, (f64) o->segment.trans.z_position);
-        crash_screen_print(sCrashX + 10, sCrashY + 25, "Y: 0x%X, P: 0x%X, R: 0x%X", 
-                            (u16) o->segment.trans.y_rotation, (u16) o->segment.trans.x_rotation,  (u16) o->segment.trans.z_rotation);
-        crash_screen_print(sCrashX + 10, sCrashY + 35, "FLAGS: %X, SCALE: %2.3f", o->segment.trans.flags, (f64) o->segment.trans.scale);
+        crash_screen_print(sCrashX + 10, sCrashY + 5, "OBJ: %s (ID: %d) DURING %s", o->segment.header->internalName,
+                           o->behaviorId, sObjectStrings[sCrashObjAct - 1]);
+        crash_screen_print(sCrashX + 10, sCrashY + 15, "X: %2.2f, Y: %2.2f, Z: %2.2f",
+                           (f64) o->segment.trans.x_position, (f64) o->segment.trans.y_position,
+                           (f64) o->segment.trans.z_position);
+        crash_screen_print(sCrashX + 10, sCrashY + 25, "Y: 0x%X, P: 0x%X, R: 0x%X", (u16) o->segment.trans.y_rotation,
+                           (u16) o->segment.trans.x_rotation, (u16) o->segment.trans.z_rotation);
+        crash_screen_print(sCrashX + 10, sCrashY + 35, "FLAGS: %X, SCALE: %2.3f", o->segment.trans.flags,
+                           (f64) o->segment.trans.scale);
         crash_screen_print(sCrashX + 10, sCrashY + 50, "MTX POS: %d", gModelMatrixStackPos);
     } else {
         crash_screen_print(sCrashX + 10, sCrashY + 5, "NO EXTRA INFORMATION");
     }
 }
 
- #ifdef PUPPYPRINT_DEBUG
+#ifdef PUPPYPRINT_DEBUG
 void crash_page_log(void) {
     s32 i;
     s32 y = 0;
@@ -346,7 +351,7 @@ void crash_page_log(void) {
         y += 10;
     }
 }
- #endif
+#endif
 #endif
 
 void crash_page_assert(void) {
@@ -395,21 +400,21 @@ void draw_crash_screen(OSThread *thread) {
     sCrashY = (SCREEN_HEIGHT - 205) / 2;
 
     switch (sCrashPage) {
-    case CRASH_PAGE_REGISTERS:
-        crash_page_registers(thread);
-        break;
-    case CRASH_PAGE_ASSERT:
-        crash_page_assert();
-        break;
+        case CRASH_PAGE_REGISTERS:
+            crash_page_registers(thread);
+            break;
+        case CRASH_PAGE_ASSERT:
+            crash_page_assert();
+            break;
 #ifdef DETAILED_CRASH
-    case CRASH_PAGE_OBJECT:
-        crash_page_object();
-        break;
- #ifdef PUPPYPRINT_DEBUG
-    case CRASH_PAGE_LOG:
-        crash_page_log();
-        break;
- #endif
+        case CRASH_PAGE_OBJECT:
+            crash_page_object();
+            break;
+#ifdef PUPPYPRINT_DEBUG
+        case CRASH_PAGE_LOG:
+            crash_page_log();
+            break;
+#endif
 #endif
     }
 
@@ -427,8 +432,7 @@ OSThread *get_crashed_thread(void) {
 
     thread = __osFaultedThread;
     while (thread->priority != -1) {
-        if (thread->priority > OS_PRIORITY_IDLE && thread->priority < OS_PRIORITY_APPMAX
-            && (thread->flags & 3) != 0) {
+        if (thread->priority > OS_PRIORITY_IDLE && thread->priority < OS_PRIORITY_APPMAX && (thread->flags & 3) != 0) {
             return thread;
         }
         thread = thread->tlnext;
@@ -450,7 +454,7 @@ void thread2_crash_screen(UNUSED void *arg) {
     do {
         osRecvMesg(&gCrashScreen.mesgQueue, &mesg, 1);
         if (gVideoCurrFramebuffer) {
-            gCrashScreen.framebuffer = (u16 *) gVideoCurrFramebuffer; 
+            gCrashScreen.framebuffer = (u16 *) gVideoCurrFramebuffer;
         }
         thread = get_crashed_thread();
     } while (thread == NULL);
@@ -479,7 +483,8 @@ void crash_screen_init(void) {
     gCrashScreen.width = SCREEN_WIDTH;
     gCrashScreen.height = SCREEN_HEIGHT;
     osCreateMesgQueue(&gCrashScreen.mesgQueue, &gCrashScreen.mesg, 1);
-    osCreateThread(&gCrashScreen.thread, 2, thread2_crash_screen, NULL, (u8 *) gCrashScreen.stack + sizeof(gCrashScreen.stack), 15);
+    osCreateThread(&gCrashScreen.thread, 2, thread2_crash_screen, NULL,
+                   (u8 *) gCrashScreen.stack + sizeof(gCrashScreen.stack), 15);
     osStartThread(&gCrashScreen.thread);
 }
 
@@ -491,4 +496,3 @@ void set_crash_object(Object *objectID, s32 act) {
 #endif
 
 #endif
-

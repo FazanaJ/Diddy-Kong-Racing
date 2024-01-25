@@ -14,8 +14,12 @@
         * Create functions for sending/recieving data to/from PC
 */
 
-#define RETURN_IF_USB_NOT_VALID() if(usbState != 1) return
-#define RETURN_IF_CART_NOT_VALID() if(cartType <= 0) return
+#define RETURN_IF_USB_NOT_VALID() \
+    if (usbState != 1)            \
+    return
+#define RETURN_IF_CART_NOT_VALID() \
+    if (cartType <= 0)             \
+    return
 
 // Funny number
 #define USB_THREAD_ID 69
@@ -37,7 +41,7 @@ char textBuffer[64];
 u8 usbBuffer[512]; // UNFLoader only supports reads/writes of up to 512 bytes.
 
 #ifdef USB_HOT_RELOAD
-    s32 isHotReloading = FALSE;
+s32 isHotReloading = FALSE;
 #endif
 
 void threadusb_loop(UNUSED void *arg);
@@ -51,10 +55,11 @@ void init_usb_thread(void) {
 #ifdef USB_HOT_RELOAD
     isHotReloading = FALSE;
 #endif
-    
+
     // Create USB thread.
     osCreateMesgQueue(&gThreadUsbMesgQueue, &gThreadUsbMessage[0], 2);
-    osCreateThread(&gThreadUsb, USB_THREAD_ID, &threadusb_loop, NULL, &gThreadUsbStack[THREADUSB_STACK / sizeof(u64)], THREADUSB_PRIORITY);
+    osCreateThread(&gThreadUsb, USB_THREAD_ID, &threadusb_loop, NULL, &gThreadUsbStack[THREADUSB_STACK / sizeof(u64)],
+                   THREADUSB_PRIORITY);
     osStartThread(&gThreadUsb);
 }
 
@@ -64,17 +69,17 @@ void tick_usb_thread(void) {
     osSendMesg(&gThreadUsbMesgQueue, (OSMesg *) OS_MESG_TYPE_LOOPBACK, OS_MESG_NOBLOCK);
 }
 
-void dkr_usb_poll(void) {    
+void dkr_usb_poll(void) {
     RETURN_IF_USB_NOT_VALID();
     RETURN_IF_CART_NOT_VALID();
-    while(usb_poll()) {
+    while (usb_poll()) {
         int header, numBytesToRead;
         UNUSED int dataType;
         header = usb_poll();
         dataType = USBHEADER_GETTYPE(header);
         numBytesToRead = USBHEADER_GETSIZE(header);
         // Read text data sent from computer. Note: Data sent from computer must be 4-byte aligned!
-        if(numBytesToRead > 32) {
+        if (numBytesToRead > 32) {
             usb_skip(numBytesToRead);
             continue;
         }
@@ -91,42 +96,42 @@ int numBytesReadHR = 0;
 void check_hot_reload(void) {
     s32 header;
     s32 numBytesToRead;
-    
+
     // Check if the message is "hot", if it is then start the hot reloading process!
-    if(!isHotReloading) {
-        if(textBuffer[0] != 'h' || textBuffer[1] != 'o' || textBuffer[2] != 't' || textBuffer[3] != 0) {
+    if (!isHotReloading) {
+        if (textBuffer[0] != 'h' || textBuffer[1] != 'o' || textBuffer[2] != 't' || textBuffer[3] != 0) {
             return;
         }
-        
+
         // This is here to make it so that the USB data ends up at the start of the ROM file.
         usb_set_debug_address(0);
-        
+
         // Send message to PC that it should send the 1MB of ROM.
         usb_write(DATATYPE_TEXT, (u8 *) "SEND_HOTRELOAD\n", 16);
-        
+
         numBytesReadHR = 0;
         isHotReloading = 1;
         return;
     }
-    
-    while(usb_poll()) {
+
+    while (usb_poll()) {
         header = usb_poll();
         numBytesToRead = USBHEADER_GETSIZE(header);
-        if(numBytesToRead > 0) {
-            if(numBytesToRead > 512) {
+        if (numBytesToRead > 0) {
+            if (numBytesToRead > 512) {
                 numBytesToRead = 512;
             }
-            
+
             // Note: I don't do anything with the usbBuffer, the data is already at the start of the ROM.
             usb_read(usbBuffer, numBytesToRead);
             numBytesReadHR += numBytesToRead;
         }
-    
+
         // Finished sending over 1MB of data.
-        if((numBytesReadHR > 0) && (USBHEADER_GETSIZE(usb_poll()) < 1)) {
-            usb_restore_debug_address(); // Move the debug address back to the end of ROM.
+        if ((numBytesReadHR > 0) && (USBHEADER_GETSIZE(usb_poll()) < 1)) {
+            usb_restore_debug_address();                             // Move the debug address back to the end of ROM.
             usb_write(DATATYPE_TEXT, (u8 *) "HOTRELOAD_DONE\n", 16); // Tell the computer that we are done.
-            reset(); // Reset the game.
+            reset();                                                 // Reset the game.
         }
     }
 }
@@ -137,33 +142,33 @@ void threadusb_loop(UNUSED void *arg) {
     while (TRUE) {
         // Wait for a tick signal from the main thread
         osRecvMesg(&gThreadUsbMesgQueue, &mesg, OS_MESG_BLOCK);
-        
-        // Do USB logic here  
+
+        // Do USB logic here
 #ifdef USB_HOT_RELOAD
-        if(!isHotReloading) {
-            dkr_usb_poll();  
+        if (!isHotReloading) {
+            dkr_usb_poll();
         }
         check_hot_reload();
 #else
-        dkr_usb_poll();  
+        dkr_usb_poll();
 #endif
     }
 }
 
 // Called from main thread.
-void render_usb_info(void) {    
+void render_usb_info(void) {
     set_render_printf_background_colour(0, 0, 0, 128);
     render_printf("Does USB work? %d\n", usbState);
     RETURN_IF_USB_NOT_VALID();
     render_printf("Cart type: %d\n", cartType);
     RETURN_IF_CART_NOT_VALID();
-    
+
 #ifdef USB_HOT_RELOAD
-    if(isHotReloading) {
+    if (isHotReloading) {
         render_printf("HOT RELOADING!\n");
     }
 #endif
-    
+
     // Show message sent from the computer.
     render_printf("%s\n", textBuffer);
 }

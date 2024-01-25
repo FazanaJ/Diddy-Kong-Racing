@@ -42,7 +42,7 @@ void render_borders_for_multiplayer(Gfx **dlist) {
             }
             // There is no break statement here. This is intentional.
         case VIEWPORTS_COUNT_4_PLAYERS:
-            gDPFillRectangle((*dlist)++, widthHalf - 2 , 0, widthHalf + 2, height);
+            gDPFillRectangle((*dlist)++, widthHalf - 2, 0, widthHalf + 2, height);
             // Fallthrough
         case VIEWPORTS_COUNT_2_PLAYERS:
             x1 = 0;

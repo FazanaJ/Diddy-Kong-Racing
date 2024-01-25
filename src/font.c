@@ -41,19 +41,58 @@ s32 gDescPowsOf10[9] = {
 // The dialogue box will draw in pieces, using properties from each line. It starts with a box
 // and goes inwards or outwards depending on the direction, set by the define.
 
-#define INWARDS  0
+#define INWARDS 0
 #define OUTWARDS 1
 
 s8 sDialogueBoxDimensions[48] = {
-    /*X Offset*/ 4,  INWARDS,  /*Y Start*/  0,  INWARDS,  /*Y end*/  1,
-    /*X Offset*/ 2,  INWARDS,  /*Y Start*/  1,  INWARDS,  /*Y end*/  2,
-    /*X Offset*/ 1,  INWARDS,  /*Y Start*/  2,  INWARDS,  /*Y end*/  4,
-    /*X Offset*/ 0,  INWARDS,  /*Y Start*/  4,  OUTWARDS, /*Y end*/ -4,
-    /*X Offset*/ 1,  OUTWARDS, /*Y Start*/ -4,  OUTWARDS, /*Y end*/ -2,
-    /*X Offset*/ 2,  OUTWARDS, /*Y Start*/ -2,  OUTWARDS, /*Y end*/ -1,
-    /*X Offset*/ 4,  OUTWARDS, /*Y Start*/ -1,  OUTWARDS,  0,
-    /*X Offset*/ -1, 0, 0, 0, 0, // End of Data
-    /*X Offset*/ 0, 0, 0, 0, 0, 0, 0, 0,
+    /*X Offset*/ 4,
+    INWARDS,
+    /*Y Start*/ 0,
+    INWARDS,
+    /*Y end*/ 1,
+    /*X Offset*/ 2,
+    INWARDS,
+    /*Y Start*/ 1,
+    INWARDS,
+    /*Y end*/ 2,
+    /*X Offset*/ 1,
+    INWARDS,
+    /*Y Start*/ 2,
+    INWARDS,
+    /*Y end*/ 4,
+    /*X Offset*/ 0,
+    INWARDS,
+    /*Y Start*/ 4,
+    OUTWARDS,
+    /*Y end*/ -4,
+    /*X Offset*/ 1,
+    OUTWARDS,
+    /*Y Start*/ -4,
+    OUTWARDS,
+    /*Y end*/ -2,
+    /*X Offset*/ 2,
+    OUTWARDS,
+    /*Y Start*/ -2,
+    OUTWARDS,
+    /*Y end*/ -1,
+    /*X Offset*/ 4,
+    OUTWARDS,
+    /*Y Start*/ -1,
+    OUTWARDS,
+    0,
+    /*X Offset*/ -1,
+    0,
+    0,
+    0,
+    0, // End of Data
+    /*X Offset*/ 0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
 };
 
 #undef INWARDS
@@ -68,10 +107,11 @@ OSDevMgr __osPiDevMgr = {
 /************ .bss ************/
 
 s32 gNumberOfFonts;
-FontData *gFonts; //Official Name: Font
-DialogueBoxBackground *gDialogueBoxBackground; //Official Name: Window
-DialogueTextElement *gDialogueText; //Official Name: String
-s32 gCompactKerning; // Official Name: squash - Boolean value, seems to be related to X placement of menus on the X Axis?
+FontData *gFonts;                              // Official Name: Font
+DialogueBoxBackground *gDialogueBoxBackground; // Official Name: Window
+DialogueTextElement *gDialogueText;            // Official Name: String
+s32 gCompactKerning; // Official Name: squash - Boolean value, seems to be related to X placement of menus on the X
+                     // Axis?
 s8 sDialogueBoxCloseTimer;
 
 /******************************/
@@ -146,7 +186,7 @@ void load_fonts(void) {
 /**
  * Sets text kerning to true or false.
  * If false, text displayed will be monospaced.
-*/
+ */
 void set_kerning(s32 setting) {
     gCompactKerning = setting;
 }
@@ -154,7 +194,7 @@ void set_kerning(s32 setting) {
 /**
  * Load the texture assets of the given font into RAM.
  * This is required before any text using this font can be displayed in a scene.
-*/
+ */
 void load_font(s32 fontID) {
     set_texture_colour_tag(MEMP_TEXT);
     if (fontID < gNumberOfFonts) {
@@ -174,7 +214,7 @@ void load_font(s32 fontID) {
 /**
  * Free a font's assets from RAM.
  * Highly recommended to do for any existing font when unloading a scene to prevent leaks.
-*/
+ */
 void unload_font(s32 fontID) {
     if (fontID < gNumberOfFonts) {
         FontData *fontData = &gFonts[fontID];
@@ -241,7 +281,8 @@ void draw_text(Gfx **displayList, s32 xpos, s32 ypos, char *text, AlignmentFlags
  * Loops through a string, then draws each character onscreen.
  * Will also draw a fillrect if text backgrounds are enabled.
  */
-void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, AlignmentFlags alignmentFlags, f32 scisScale) {
+void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, AlignmentFlags alignmentFlags,
+                        f32 scisScale) {
     s32 scisOffset;
     s32 scisPos;
     s32 ypos;
@@ -309,8 +350,7 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
         gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(dDialogueBoxDrawModes[0]), 2);
         xpos += box->textOffsetX;
         ypos += box->textOffsetY;
-        for (charIndex = 0; (text[charIndex] != '\0') && (box->y2 >= ypos);
-             xpos += charSpace, charIndex++) {
+        for (charIndex = 0; (text[charIndex] != '\0') && (box->y2 >= ypos); xpos += charSpace, charIndex++) {
             curChar = text[charIndex];
             newData = FALSE;
             charSpace = 0;
@@ -352,8 +392,7 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
                     textureT = fontData->letter[curChar].t;
                     xAlignmentDiff = fontData->letter[curChar].lrx;
                     yAlignmentDiff = fontData->letter[curChar].lry;
-                    charSpace =
-                        (fontData->x == 0) ? (fontData->letter[curChar].ulx) : (fontData->x);
+                    charSpace = (fontData->x == 0) ? (fontData->letter[curChar].ulx) : (fontData->x);
                     newData = TRUE;
                 }
             }
@@ -372,7 +411,8 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
                     textureT += -textureUly * 8;
                     textureUly = 0;
                 }
-                gSPTextureRectangle((*dList)++, textureUlx, textureUly, textureLrx, newTempY, 0, textureS, textureT, 1 << 10, 1 << 10);
+                gSPTextureRectangle((*dList)++, textureUlx, textureUly, textureLrx, newTempY, 0, textureS, textureT,
+                                    1 << 10, 1 << 10);
             }
             if (gCompactKerning && charSpace) {
                 charSpace--;
@@ -654,7 +694,7 @@ void close_dialogue_box(s32 dialogueBoxID) {
 
 /**
  * Clears the open flag from the dialogue box.
-*/
+ */
 void clear_dialogue_box_open_flag(s32 dialogueBoxID) {
     gDialogueBoxBackground[dialogueBoxID].flags &= (DIALOGUE_BOX_VERTS + DIALOGUE_BOX_CLOSED);
 }
@@ -771,12 +811,17 @@ void render_dialogue_box(Gfx **dlist, MatrixS **mat, Vertex **verts, s32 dialogu
         gDkrDmaDisplayList((*dlist)++, OS_K0_TO_PHYSICAL(&dDialogueBoxDrawModes[1]), 2);
         gDPSetEnvColor((*dlist)++, 0, 0, 0, 0);
         if (dialogueBox->x2 - dialogueBox->x1 < 10 || dialogueBox->y2 - dialogueBox->y1 < 10) {
-            render_fill_rectangle(dlist, dialogueBox->x1 - 2, dialogueBox->y1 - 2, dialogueBox->x2 + 2, dialogueBox->y2 + 2);
+            render_fill_rectangle(dlist, dialogueBox->x1 - 2, dialogueBox->y1 - 2, dialogueBox->x2 + 2,
+                                  dialogueBox->y2 + 2);
         } else {
-            render_fill_rectangle(dlist, dialogueBox->x1 - 2, dialogueBox->y1 + 2, dialogueBox->x1 + 2, dialogueBox->y2 - 2);
-            render_fill_rectangle(dlist, dialogueBox->x1 - 2, dialogueBox->y1 - 2, dialogueBox->x2 + 2, dialogueBox->y1 + 2);
-            render_fill_rectangle(dlist, dialogueBox->x2 - 2, dialogueBox->y1 + 2, dialogueBox->x2 + 2, dialogueBox->y2 - 2);
-            render_fill_rectangle(dlist, dialogueBox->x1 - 2, dialogueBox->y2 - 2, dialogueBox->x2 + 2, dialogueBox->y2 + 2);
+            render_fill_rectangle(dlist, dialogueBox->x1 - 2, dialogueBox->y1 + 2, dialogueBox->x1 + 2,
+                                  dialogueBox->y2 - 2);
+            render_fill_rectangle(dlist, dialogueBox->x1 - 2, dialogueBox->y1 - 2, dialogueBox->x2 + 2,
+                                  dialogueBox->y1 + 2);
+            render_fill_rectangle(dlist, dialogueBox->x2 - 2, dialogueBox->y1 + 2, dialogueBox->x2 + 2,
+                                  dialogueBox->y2 - 2);
+            render_fill_rectangle(dlist, dialogueBox->x1 - 2, dialogueBox->y2 - 2, dialogueBox->x2 + 2,
+                                  dialogueBox->y2 + 2);
         }
         gDPPipeSync((*dlist)++);
         gDPSetEnvColor((*dlist)++, dialogueBox->backgroundColourR, dialogueBox->backgroundColourG,
@@ -785,9 +830,11 @@ void render_dialogue_box(Gfx **dlist, MatrixS **mat, Vertex **verts, s32 dialogu
         // The array determines the width and height of each entry before drawing it.
         for (i = 0; sDialogueBoxDimensions[i] >= 0; i += 5) {
             x1 = sDialogueBoxDimensions[i] + dialogueBox->x1;
-            y1 = (sDialogueBoxDimensions[i + 1]) ? sDialogueBoxDimensions[i + 2] + dialogueBox->y2 : sDialogueBoxDimensions[i + 2] + dialogueBox->y1;
+            y1 = (sDialogueBoxDimensions[i + 1]) ? sDialogueBoxDimensions[i + 2] + dialogueBox->y2
+                                                 : sDialogueBoxDimensions[i + 2] + dialogueBox->y1;
             x2 = dialogueBox->x2 - sDialogueBoxDimensions[i];
-            y2 = (sDialogueBoxDimensions[i + 3]) ? sDialogueBoxDimensions[i + 4] + dialogueBox->y2 : sDialogueBoxDimensions[i + 4] + dialogueBox->y1;
+            y2 = (sDialogueBoxDimensions[i + 3]) ? sDialogueBoxDimensions[i + 4] + dialogueBox->y2
+                                                 : sDialogueBoxDimensions[i + 4] + dialogueBox->y1;
             render_fill_rectangle(dlist, x1, y1, x2, y2);
         }
         gDPPipeSync((*dlist)++);

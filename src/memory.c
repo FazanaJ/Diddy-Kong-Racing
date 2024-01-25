@@ -20,14 +20,14 @@ s32 gNumberOfMemoryPools;
 void *gFreeQueue[256];
 u8 gFreeQueueElementTimer[256];
 s32 gFreeQueueCount;
-s32 gFreeQueueTimer; //Official Name: mmDelay
+s32 gFreeQueueTimer; // Official Name: mmDelay
 
 extern MemoryPoolSlot gMainMemoryPool;
 
 /******************************/
 
 /**
- * Creates the main memory pool. 
+ * Creates the main memory pool.
  * Starts at 0x8012D3F0. Ends at 0x80400000. Contains 1600 allocation slots.
  * Official Name: mmInit
  */
@@ -40,7 +40,7 @@ void init_main_memory_pool(void) {
     } else {
         ramEnd = RAM_END;
     }
-    new_memory_pool(&gMainMemoryPool, ramEnd - (s32)(&gMainMemoryPool), MAIN_POOL_SLOT_COUNT);
+    new_memory_pool(&gMainMemoryPool, ramEnd - (s32) (&gMainMemoryPool), MAIN_POOL_SLOT_COUNT);
     set_free_queue_state(2);
     gFreeQueueCount = 0;
 }
@@ -65,13 +65,13 @@ MemoryPoolSlot *new_sub_memory_pool(s32 poolDataSize, s32 numSlots) {
 /**
  * Create and initialise a memory pool in RAM that will act as the place where arbitrary allocations can go.
  * Will return the location of the first free slot in that pool.
-*/
+ */
 MemoryPoolSlot *new_memory_pool(MemoryPoolSlot *slots, s32 poolSize, s32 numSlots) {
     MemoryPoolSlot *firstSlot;
     s32 poolCount;
     s32 i;
     s32 firstSlotSize;
-    
+
     poolCount = ++gNumberOfMemoryPools;
     firstSlotSize = poolSize - (numSlots * sizeof(MemoryPoolSlot));
     gMemoryPools[poolCount].maxNumSlots = numSlots;
@@ -116,7 +116,7 @@ MemoryPoolSlot *allocate_from_main_pool(s32 size, u32 colourTag) {
 /**
  * Search the existing empty slots and try to find one that can meet the size requirement.
  * Afterwards, write the new allocation data to the slot in question and return the address.
-*/
+ */
 MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag) {
     s32 slotSize;
     MemoryPoolSlot *curSlot;
@@ -125,7 +125,7 @@ MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag
     s32 flags;
     s32 nextIndex;
     s32 currIndex;
-        
+
     flags = disable_interrupts();
     pool = &gMemoryPools[poolIndex];
     if ((pool->curNumSlots + 1) == (*pool).maxNumSlots) {
@@ -156,7 +156,7 @@ MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag
         return (MemoryPoolSlot *) (slots + currIndex)->data;
     }
     enable_interrupts(flags);
-    
+
     puppyprint_assert("Out of memory (%X)", colourTag);
     return NULL;
 }
@@ -169,7 +169,7 @@ void *allocate_from_pool_containing_slots(MemoryPoolSlot *slots, s32 size) {
             return allocate_from_memory_pool(i, size, 0);
         }
     }
-    return (void *)NULL;
+    return (void *) NULL;
 }
 
 /* Official Name: mmAllocAtAddr */
@@ -178,7 +178,7 @@ void *allocate_at_address_in_main_pool(s32 size, u8 *address, u32 colorTag) {
     MemoryPoolSlot *curSlot;
     MemoryPoolSlot *slots;
     s32 flags;
-    
+
     flags = disable_interrupts();
     if ((gMemoryPools[0].curNumSlots + 1) == gMemoryPools[0].maxNumSlots) {
         enable_interrupts(flags);
@@ -190,7 +190,8 @@ void *allocate_at_address_in_main_pool(s32 size, u8 *address, u32 colorTag) {
         for (i = 0; i != -1; i = curSlot->nextIndex) {
             curSlot = &slots[i];
             if (curSlot->flags == 0) {
-                if ((u32) address >= (u32) curSlot->data && (u32)address + size <= (u32) curSlot->data + curSlot->size)  {
+                if ((u32) address >= (u32) curSlot->data &&
+                    (u32) address + size <= (u32) curSlot->data + curSlot->size) {
                     if (address == (u8 *) curSlot->data) {
                         allocate_memory_pool_slot(0, i, size, 1, 0, colorTag);
                         enable_interrupts(flags);
@@ -272,13 +273,13 @@ void free_slot_containing_address(u8 *address) {
     MemoryPool *pool;
     MemoryPoolSlot *slots;
     MemoryPoolSlot *slot;
-    
+
     poolIndex = get_memory_pool_index_containing_address(address);
     pool = gMemoryPools;
     slots = pool[poolIndex].slots;
     for (slotIndex = 0; slotIndex != -1; slotIndex = slot->nextIndex) {
         slot = &slots[slotIndex];
-        
+
         if (address == (u8 *) slot->data) {
             if (slot->flags == 1 || slot->flags == 4) {
                 free_memory_pool_slot(poolIndex, slotIndex);
@@ -291,7 +292,7 @@ void free_slot_containing_address(u8 *address) {
 
 /**
  * Adds the current memory address to the back of the queue, so it can be freed.
-*/
+ */
 void add_to_free_queue(void *dataAddress) {
     gFreeQueue[gFreeQueueCount] = dataAddress;
     gFreeQueueElementTimer[gFreeQueueCount] = gFreeQueueTimer;
@@ -325,7 +326,7 @@ s32 func_80071478(u8 *address) {
 /**
  * Search the memory pool for the slot that's tied to the given address.
  * Return true if it's found, otherwise return false.
-*/
+ */
 s32 memory_slot_exists(u8 *address) {
     s32 slotIndex;
     MemoryPoolSlot *slot;
@@ -337,7 +338,7 @@ s32 memory_slot_exists(u8 *address) {
     slotIndex = 0;
     while (slotIndex != -1) {
         slot = slotIndex + pool->slots; // `slot = &pool->slots[slotIndex];` does not match.
-        if (address == (u8 *)slot->data) {
+        if (address == (u8 *) slot->data) {
             if (slot->flags & 2) {
                 slot->flags ^= 2;
                 enable_interrupts(flags);
@@ -372,7 +373,7 @@ s32 get_memory_pool_index_containing_address(u8 *address) {
 /**
  * Clears the current slot of all information, effectively freeing the allocated memory.
  * Unused slots before and after will be merged with this slot
-*/
+ */
 void free_memory_pool_slot(s32 poolIndex, s32 slotIndex) {
     s32 nextIndex;
     s32 prevIndex;
@@ -382,7 +383,7 @@ void free_memory_pool_slot(s32 poolIndex, s32 slotIndex) {
     MemoryPoolSlot *slot;
     MemoryPoolSlot *nextSlot;
     MemoryPoolSlot *prevSlot;
-    
+
     pool = &gMemoryPools[poolIndex];
     slots = pool->slots;
     slot = &slots[slotIndex];
@@ -422,14 +423,15 @@ void free_memory_pool_slot(s32 poolIndex, s32 slotIndex) {
  * Initialise and attempts to fit the new memory block in the slot given.
  * Updates the linked list with any entries before and after then returns the new slot index.
  * If the region cannot fit, return the old slot instead.
-*/
-s32 allocate_memory_pool_slot(s32 poolIndex, s32 slotIndex, s32 size, s32 slotIsTaken, s32 newSlotIsTaken, u32 colourTag) {
+ */
+s32 allocate_memory_pool_slot(s32 poolIndex, s32 slotIndex, s32 size, s32 slotIsTaken, s32 newSlotIsTaken,
+                              u32 colourTag) {
     MemoryPool *pool;
     MemoryPoolSlot *poolSlots;
     s32 index;
     s32 nextIndex;
     s32 poolSize;
-    
+
     pool = &gMemoryPools[poolIndex];
     poolSlots = pool->slots;
     poolSlots[slotIndex].flags = slotIsTaken;
@@ -465,9 +467,9 @@ s32 allocate_memory_pool_slot(s32 poolIndex, s32 slotIndex, s32 size, s32 slotIs
  * Official name: mmAlign16
  */
 u8 *align16(u8 *address) {
-    s32 remainder = (s32)address & 0xF;
+    s32 remainder = (s32) address & 0xF;
     if (remainder > 0) {
-        address = (u8 *)(((s32)address - remainder) + 16);
+        address = (u8 *) (((s32) address - remainder) + 16);
     }
     return address;
 }
@@ -480,41 +482,41 @@ void calculate_ram_total(s32 poolIndex, u32 colourTag) {
     s32 i;
 
     switch (colourTag) {
-    case COLOUR_TAG_RED:
-        index = MEMP_TOTAL + 0;
-        break;
-    case COLOUR_TAG_BLACK:
-        index = MEMP_TOTAL + 1;
-        break;
-    case COLOUR_TAG_CYAN:
-        index = MEMP_TOTAL + 3;
-        break;
-    case COLOUR_TAG_GREEN:
-        index = MEMP_TOTAL + 4;
-        break;
-    case COLOUR_TAG_GREY:
-        index = MEMP_TOTAL + 5;
-        break;
-    case COLOUR_TAG_MAGENTA:
-        index = MEMP_TOTAL + 6;
-        break;
-    case COLOUR_TAG_SEMITRANS_GREY:
-        index = MEMP_TOTAL + 7;
-        break;
-    case COLOUR_TAG_WHITE:
-        index = MEMP_TOTAL + 8;
-        break;
-    case COLOUR_TAG_YELLOW:
-        index = MEMP_TOTAL + 9;
-        break;
-    case COLOUR_TAG_ORANGE:
-        index = MEMP_TOTAL + 10;
-        break;
-    default:
-        if (colourTag > MEMP_TOTAL || colourTag == 0) {
-            return;
-        }
-        index = colourTag;
+        case COLOUR_TAG_RED:
+            index = MEMP_TOTAL + 0;
+            break;
+        case COLOUR_TAG_BLACK:
+            index = MEMP_TOTAL + 1;
+            break;
+        case COLOUR_TAG_CYAN:
+            index = MEMP_TOTAL + 3;
+            break;
+        case COLOUR_TAG_GREEN:
+            index = MEMP_TOTAL + 4;
+            break;
+        case COLOUR_TAG_GREY:
+            index = MEMP_TOTAL + 5;
+            break;
+        case COLOUR_TAG_MAGENTA:
+            index = MEMP_TOTAL + 6;
+            break;
+        case COLOUR_TAG_SEMITRANS_GREY:
+            index = MEMP_TOTAL + 7;
+            break;
+        case COLOUR_TAG_WHITE:
+            index = MEMP_TOTAL + 8;
+            break;
+        case COLOUR_TAG_YELLOW:
+            index = MEMP_TOTAL + 9;
+            break;
+        case COLOUR_TAG_ORANGE:
+            index = MEMP_TOTAL + 10;
+            break;
+        default:
+            if (colourTag > MEMP_TOTAL || colourTag == 0) {
+                return;
+            }
+            index = colourTag;
     }
 
     slots = gMemoryPools[poolIndex].slots;

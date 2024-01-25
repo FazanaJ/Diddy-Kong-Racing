@@ -14,7 +14,6 @@
 #include "lib/src/os/piint.h"
 #include "printf.h"
 
-
 /************ .data ************/
 
 s8 gAntiPiracyViewport = FALSE;
@@ -23,11 +22,9 @@ s8 gAntiPiracyViewport = FALSE;
 // posX, posY, width, height
 // scissorX1, scissorY1, scissorX2, scissorY2
 // flags
-#define DEFAULT_VIEWPORT                                                \
-    0, 0, SCREEN_WIDTH, SCREEN_HEIGHT,                                  \
-    SCREEN_WIDTH_HALF, SCREEN_HEIGHT_HALF, SCREEN_WIDTH, SCREEN_HEIGHT, \
-    0, 0, SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1,                          \
-    0
+#define DEFAULT_VIEWPORT                                                                                         \
+    0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH_HALF, SCREEN_HEIGHT_HALF, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, \
+        SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1, 0
 
 ScreenViewport gScreenViewports[4] = {
     { DEFAULT_VIEWPORT },
@@ -38,35 +35,23 @@ ScreenViewport gScreenViewports[4] = {
 
 u32 gViewportWithBG = FALSE;
 
-Vertex gVehiclePartVertex = {
-    0, 0, 0, 255, 255, 255, 255
-};
+Vertex gVehiclePartVertex = { 0, 0, 0, 255, 255, 255, 255 };
 
-//The viewport z-range below is half of the max (511)
+// The viewport z-range below is half of the max (511)
 #define G_HALFZ (G_MAXZ / 2) /* 9 bits of integer screen-Z precision */
 
 // RSP Viewports
 Vp gViewportStack[20] = {
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
-    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
+    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } }, { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
+    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } }, { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
+    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } }, { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
+    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } }, { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
+    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } }, { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
+    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } }, { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
+    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } }, { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
+    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } }, { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
+    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } }, { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
+    { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } }, { { { 0, 0, G_HALFZ, 0 }, { 0, 0, G_HALFZ, 0 } } },
 };
 
 ObjectTransform D_800DD288 = {
@@ -84,9 +69,7 @@ Matrix gOrthoMatrixF = {
     { 0.0f, 0.0f, 0.0f, 160.0f },
 };
 
-u8 gCameraZoomLevels[8] = {
-    0, 0, 0, 0, 0, 0, 0, 0
-};
+u8 gCameraZoomLevels[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 /*******************************/
 
@@ -126,20 +109,22 @@ s16 gViewportScissor[4];
 extern s32 D_B0000578;
 /**
  * Official Name: camInit
-*/
+ */
 void camera_init(void) {
     s32 i;
     s32 j;
- 
-    // This loop is not cooperating. 
-    for (i = 0; i < 5; i++) { gModelMatrixF[i] = D_80120DA0 + i; } 
+
+    // This loop is not cooperating.
+    for (i = 0; i < 5; i++) {
+        gModelMatrixF[i] = D_80120DA0 + i;
+    }
 
     for (j = 0; j < 8; j++) {
         gActiveCameraID = j;
         camera_reset(200.0f, 200.0f, 200.0f, 0, 0, 180);
     }
-    
-    gCutsceneCameraActive = FALSE; 
+
+    gCutsceneCameraActive = FALSE;
     gActiveCameraID = 0;
     gModelMatrixStackPos = 0;
     gCameraMatrixPos = 0;
@@ -149,21 +134,23 @@ void camera_init(void) {
     gAdjustViewportHeight = 0;
 #ifndef NO_ANTIPIRACY
     gAntiPiracyViewport = 0;
-    
+
     WAIT_ON_IOBUSY(stat);
-    
-    //0xB0000578 is a direct read from the ROM as opposed to RAM
+
+    // 0xB0000578 is a direct read from the ROM as opposed to RAM
     if (((D_B0000578 & 0xFFFF) & 0xFFFF) != 0x8965) {
         gAntiPiracyViewport = TRUE;
     }
 #endif
-    guPerspectiveF(gPerspectiveMatrixF, &perspNorm, CAMERA_DEFAULT_FOV, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR, CAMERA_SCALE);
+    guPerspectiveF(gPerspectiveMatrixF, &perspNorm, CAMERA_DEFAULT_FOV, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR,
+                   CAMERA_SCALE);
     f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gProjectionMatrixS);
     gCurCamFOV = CAMERA_DEFAULT_FOV;
 }
 
 void reset_perspective_matrix(void) {
-    guPerspectiveF(gPerspectiveMatrixF, &perspNorm, CAMERA_DEFAULT_FOV, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR, CAMERA_SCALE);
+    guPerspectiveF(gPerspectiveMatrixF, &perspNorm, CAMERA_DEFAULT_FOV, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR,
+                   CAMERA_SCALE);
     f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gProjectionMatrixS);
 }
 
@@ -177,7 +164,7 @@ void func_80066060(s32 cameraID, s32 zoomLevel) {
 /**
  * Set gAdjustViewportHeight to PAL mode if necessary, if setting is 1.
  * Otherwise, set it to 0, regardless of TV type.
-*/
+ */
 void set_viewport_tv_type(s8 setting) {
     if (osTvType == TV_TYPE_PAL) {
         gAdjustViewportHeight = setting;
@@ -199,14 +186,15 @@ void func_800660D0(void) {
 void update_camera_fov(f32 camFieldOfView) {
     if (CAMERA_MIN_FOV < camFieldOfView && camFieldOfView < CAMERA_MAX_FOV && camFieldOfView != gCurCamFOV) {
         gCurCamFOV = camFieldOfView;
-        guPerspectiveF(gPerspectiveMatrixF, &perspNorm, camFieldOfView, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR, CAMERA_SCALE);
+        guPerspectiveF(gPerspectiveMatrixF, &perspNorm, camFieldOfView, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR,
+                       CAMERA_SCALE);
         f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gProjectionMatrixS);
     }
 }
 
 /**
  * Returns the number of active viewports.
-*/
+ */
 s32 get_viewport_count(void) {
     return gNumberOfViewports;
 }
@@ -214,14 +202,14 @@ s32 get_viewport_count(void) {
 /**
  * Return the index of the active view.
  * 0-3 is players 1-4, and 4-7 is the same, but with 4 added on for cutscenes.
-*/
+ */
 s32 get_current_viewport(void) {
     return gActiveCameraID;
 }
 
 /**
  * Initialises the camera object for the tracks menu.
-*/
+ */
 void camera_init_tracks_menu(Gfx **dList, MatrixS **mtxS) {
     ObjectSegment *cam;
     s16 angleY;
@@ -262,7 +250,7 @@ void camera_init_tracks_menu(Gfx **dList, MatrixS **mtxS) {
 
 /**
  * Compare the coordinates passed through to the active camera and return the distance between them.
-*/
+ */
 f32 get_distance_to_active_camera(f32 xPos, f32 yPos, f32 zPos) {
     s32 index;
     f32 dx, dz, dy;
@@ -299,7 +287,7 @@ void camera_reset(f32 xPos, f32 yPos, f32 zPos, s32 angleZ, s32 angleX, s32 angl
  * Write directly to the second set of object stack indeces.
  * The first 4 are reserved for the 4 player viewports, so the misc views, used in the title screen
  * and course previews instead use the next 4.
-*/
+ */
 void write_to_object_render_stack(s32 stackPos, f32 xPos, f32 yPos, f32 zPos, s16 arg4, s16 arg5, s16 arg6) {
     stackPos += 4;
     gCameraSegment[stackPos].camera.unk38 = 0;
@@ -316,7 +304,7 @@ void write_to_object_render_stack(s32 stackPos, f32 xPos, f32 yPos, f32 zPos, s1
 /**
  * Check if the misc camera view is active.
  * Official name: camIsUserView
-*/
+ */
 s8 check_if_showing_cutscene_camera(void) {
     return gCutsceneCameraActive;
 }
@@ -325,7 +313,7 @@ s8 check_if_showing_cutscene_camera(void) {
  * Sets the cap for the viewports. Usually reflecting how many there are.
  * If the number passed is within 1-4, then the stack cap is set to
  * how many active viewports there are.
-*/
+ */
 s32 set_active_viewports_and_max(s32 num) {
     if (num >= 0 && num < 4) {
         gNumberOfViewports = num;
@@ -356,7 +344,7 @@ s32 set_active_viewports_and_max(s32 num) {
  * Sets the active viewport ID to the passed number.
  * If it's not within 1-4, then it's set to 0.
  * Official name: camSetView
-*/
+ */
 void set_active_camera(s32 num) {
     if (num >= 0 && num < 4) {
         gActiveCameraID = num;
@@ -368,7 +356,7 @@ void set_active_camera(s32 num) {
 /**
  * Takes the size of each view frame and writes them to the viewport stack, using values compatable with the RSP.
  * Only does this if extended backgrounds are enabled.
-*/
+ */
 void copy_viewports_to_stack(void) {
     s32 width;
     s32 height;
@@ -447,7 +435,7 @@ void camDisableUserView(s32 viewPortIndex, s32 arg1) {
 /**
  * Return's the current viewport's flag status for extended backgrounds.
  * Required to draw some extra things used in menus.
-*/
+ */
 s32 check_viewport_background_flag(s32 viewPortIndex) {
     return gScreenViewports[viewPortIndex].flags & VIEWPORT_EXTRA_BG;
 }
@@ -455,7 +443,7 @@ s32 check_viewport_background_flag(s32 viewPortIndex) {
 /**
  * Sets the intended viewport to the size passed through by arguments.
  * Official Name: camSetUserView
-*/
+ */
 void viewport_menu_set(s32 viewPortIndex, s32 x1, s32 y1, s32 x2, s32 y2) {
     s32 width, height;
     s32 temp;
@@ -532,7 +520,7 @@ void set_viewport_properties(s32 viewPortIndex, s32 width, s32 height) {
  * Official name: camGetVisibleUserView
  */
 s32 copy_viewport_background_size_to_coords(s32 viewPortIndex, s32 *x1, s32 *y1, s32 *x2, s32 *y2) {
-    //gDPFillRectangle values
+    // gDPFillRectangle values
     *x1 = gScreenViewports[viewPortIndex].scissorX1;
     *x2 = gScreenViewports[viewPortIndex].scissorX2;
     *y1 = gScreenViewports[viewPortIndex].scissorY1;
@@ -580,12 +568,9 @@ void func_80066CDC(Gfx **dlist, MatrixS **mats) {
     if (gScreenViewports[savedCameraID].flags & VIEWPORT_EXTRA_BG) {
         tempCameraID = gActiveCameraID;
         gActiveCameraID = savedCameraID;
-        gDPSetScissor((*dlist)++, G_SC_NON_INTERLACE,
-            gScreenViewports[gActiveCameraID].scissorX1,
-            gScreenViewports[gActiveCameraID].scissorY1,
-            gScreenViewports[gActiveCameraID].scissorX2,
-            gScreenViewports[gActiveCameraID].scissorY2
-        );
+        gDPSetScissor((*dlist)++, G_SC_NON_INTERLACE, gScreenViewports[gActiveCameraID].scissorX1,
+                      gScreenViewports[gActiveCameraID].scissorY1, gScreenViewports[gActiveCameraID].scissorX2,
+                      gScreenViewports[gActiveCameraID].scissorY2);
         viewport_rsp_set(dlist, 0, 0, 0, 0);
         gActiveCameraID = tempCameraID;
         if (mats != 0) {
@@ -606,63 +591,63 @@ void func_80066CDC(Gfx **dlist, MatrixS **mats) {
 
     // Cursed usage of the pos vars, but that's to save redoing width and height divide by 2.
     switch (viewports) {
-    case VIEWPORTS_COUNT_1_PLAYER:
-        x1 = 0;
-        y1 = 0;
-        x2 = videoWidth;
-        y2 = videoHeight;
-        break;
-    case VIEWPORTS_COUNT_2_PLAYERS:
-        x1 = 0;
-        x2 = videoWidth;
-        if (gActiveCameraID == 0) {
-            y1 = 0;
-            y2 = pos[1] - 2;
-            pos[1] /= 2;
-        } else {
-            y1 = pos[1] + 2;
-            y2 = videoHeight;
-            pos[1] += size[1] / 2;
-        }
-        break;
-    case VIEWPORTS_COUNT_4_PLAYERS:
-        size[0] /= 2;
-        size[1] /= 2;
-        switch (gActiveCameraID) {
-        case 0:
+        case VIEWPORTS_COUNT_1_PLAYER:
             x1 = 0;
             y1 = 0;
-            x2 = pos[0] - 2;
-            y2 = pos[1] - 2;
-            pos[0] /= 2;
-            pos[1] /= 2;
-            break;
-        case 1:
-            x1 = pos[0] + 2;
-            y1 = 0;
             x2 = videoWidth;
-            y2 = pos[1] - 2;
-            pos[0] += size[0];
-            pos[1] /= 2;
+            y2 = videoHeight;
             break;
-        case 2:
+        case VIEWPORTS_COUNT_2_PLAYERS:
             x1 = 0;
-            y1 = pos[1] + 2;
-            x2 = pos[0]- 2;
-            y2 = videoHeight;
-            pos[0] /= 2;
-            pos[1] += size[1];
-            break;
-        case 3:
-            x1 = pos[0] + 2;
-            y1 = pos[1] + 2;
             x2 = videoWidth;
-            y2 = videoHeight;
-            pos[0] += size[0];
-            pos[1] += size[1];
+            if (gActiveCameraID == 0) {
+                y1 = 0;
+                y2 = pos[1] - 2;
+                pos[1] /= 2;
+            } else {
+                y1 = pos[1] + 2;
+                y2 = videoHeight;
+                pos[1] += size[1] / 2;
+            }
             break;
-        }
-        break;
+        case VIEWPORTS_COUNT_4_PLAYERS:
+            size[0] /= 2;
+            size[1] /= 2;
+            switch (gActiveCameraID) {
+                case 0:
+                    x1 = 0;
+                    y1 = 0;
+                    x2 = pos[0] - 2;
+                    y2 = pos[1] - 2;
+                    pos[0] /= 2;
+                    pos[1] /= 2;
+                    break;
+                case 1:
+                    x1 = pos[0] + 2;
+                    y1 = 0;
+                    x2 = videoWidth;
+                    y2 = pos[1] - 2;
+                    pos[0] += size[0];
+                    pos[1] /= 2;
+                    break;
+                case 2:
+                    x1 = 0;
+                    y1 = pos[1] + 2;
+                    x2 = pos[0] - 2;
+                    y2 = videoHeight;
+                    pos[0] /= 2;
+                    pos[1] += size[1];
+                    break;
+                case 3:
+                    x1 = pos[0] + 2;
+                    y1 = pos[1] + 2;
+                    x2 = videoWidth;
+                    y2 = videoHeight;
+                    pos[0] += size[0];
+                    pos[1] += size[1];
+                    break;
+            }
+            break;
     }
     gDPSetScissor((*dlist)++, G_SC_NON_INTERLACE, x1, y1, x2, y2);
 
@@ -676,7 +661,7 @@ void func_80066CDC(Gfx **dlist, MatrixS **mats) {
 /**
  * Takes the size of the screen as depicted by the active menu viewport, then sets the RDP scissor to match it.
  * Official Name: camSetScissor
-*/
+ */
 void viewport_scissor(Gfx **dlist) {
     s32 lrx;
     s32 lry;
@@ -700,59 +685,59 @@ void viewport_scissor(Gfx **dlist) {
         }
         lrx = ulx = 0;
         lry = uly = 0;
-        lrx += width;\
+        lrx += width;
         lry += height;
         temp = lry >> 7;
         temp2 = lrx >> 8;
         temp4 = lrx >> 1;
         temp3 = lry >> 1;
         switch (numViewports) {
-        case 1:
-            switch (gActiveCameraID) {
-            case 0:
-                lry = temp3 - temp;
-                break;
-            default:
-                uly = temp3 + temp;
-                lry -= temp;
-                break;
-            }
-            break;
-        case 2:
-            switch (gActiveCameraID) {
-            case 0:
-                lrx = temp4 - temp2;
-                break;
-            default:
-                ulx = temp4 + temp2;
-                lrx -= temp2;
-                break;
-            }
-            break;
-        case 3:
-            switch (gActiveCameraID) {
-            case 0:
-                lrx = temp4 - temp2;\
-                    lry = temp3 - temp;
-                break;
             case 1:
-                ulx = temp4 + temp2;
-                lrx -= temp2;
-                lry = temp3 - temp;
+                switch (gActiveCameraID) {
+                    case 0:
+                        lry = temp3 - temp;
+                        break;
+                    default:
+                        uly = temp3 + temp;
+                        lry -= temp;
+                        break;
+                }
                 break;
             case 2:
-                uly = temp3 + temp;
-                lrx = temp4 - temp2;\
-                lry -= temp;
+                switch (gActiveCameraID) {
+                    case 0:
+                        lrx = temp4 - temp2;
+                        break;
+                    default:
+                        ulx = temp4 + temp2;
+                        lrx -= temp2;
+                        break;
+                }
                 break;
             case 3:
-                ulx = temp4 + temp2; \
-                uly = temp3 + temp;
-                lrx -= temp2; \
-                lry -= temp;
+                switch (gActiveCameraID) {
+                    case 0:
+                        lrx = temp4 - temp2;
+                        lry = temp3 - temp;
+                        break;
+                    case 1:
+                        ulx = temp4 + temp2;
+                        lrx -= temp2;
+                        lry = temp3 - temp;
+                        break;
+                    case 2:
+                        uly = temp3 + temp;
+                        lrx = temp4 - temp2;
+                        lry -= temp;
+                        break;
+                    case 3:
+                        ulx = temp4 + temp2;
+                        uly = temp3 + temp;
+                        lrx -= temp2;
+                        lry -= temp;
+                        break;
+                }
                 break;
-            }
-            break;
         }
         gViewportScissor[0] = ulx;
         gViewportScissor[1] = uly;
@@ -767,7 +752,7 @@ void viewport_scissor(Gfx **dlist) {
     gDPSetScissor((*dlist)++, 0, gViewportScissor[0], gViewportScissor[1], gViewportScissor[2], gViewportScissor[3]);
 }
 
-//Official Name: camGetPlayerProjMtx / camSetProjMtx - ??
+// Official Name: camGetPlayerProjMtx / camSetProjMtx - ??
 void func_80067D3C(Gfx **dlist, UNUSED MatrixS **mats) {
     s32 temp;
 
@@ -779,7 +764,8 @@ void func_80067D3C(Gfx **dlist, UNUSED MatrixS **mats) {
     }
 
     gCameraTransform.y_rotation = 0x8000 + gCameraSegment[gActiveCameraID].trans.y_rotation;
-    gCameraTransform.x_rotation = gCameraSegment[gActiveCameraID].trans.x_rotation + gCameraSegment[gActiveCameraID].camera.unk38;
+    gCameraTransform.x_rotation =
+        gCameraSegment[gActiveCameraID].trans.x_rotation + gCameraSegment[gActiveCameraID].camera.unk38;
     gCameraTransform.z_rotation = gCameraSegment[gActiveCameraID].trans.z_rotation;
 
     gCameraTransform.x_position = -gCameraSegment[gActiveCameraID].trans.x_position;
@@ -793,7 +779,8 @@ void func_80067D3C(Gfx **dlist, UNUSED MatrixS **mats) {
     f32_matrix_mult(&gCameraMatrixF, &gPerspectiveMatrixF, &gViewMatrixF);
 
     gCameraTransform.y_rotation = -0x8000 - gCameraSegment[gActiveCameraID].trans.y_rotation;
-    gCameraTransform.x_rotation = -(gCameraSegment[gActiveCameraID].trans.x_rotation + gCameraSegment[gActiveCameraID].camera.unk38);
+    gCameraTransform.x_rotation =
+        -(gCameraSegment[gActiveCameraID].trans.x_rotation + gCameraSegment[gActiveCameraID].camera.unk38);
     gCameraTransform.z_rotation = -gCameraSegment[gActiveCameraID].trans.z_rotation;
     gCameraTransform.scale = 1.0f;
     gCameraTransform.x_position = gCameraSegment[gActiveCameraID].trans.x_position;
@@ -812,7 +799,7 @@ void func_80067D3C(Gfx **dlist, UNUSED MatrixS **mats) {
  * Sets the current matrix to represent an orthogonal view.
  * Used for drawing triangles on screen as HUD.
  * Official Name: camStandardOrtho
-*/
+ */
 void set_ortho_matrix_view(Gfx **dlist, MatrixS **mtx) {
     s32 width, height;
     s32 i, j;
@@ -831,18 +818,18 @@ void set_ortho_matrix_view(Gfx **dlist, MatrixS **mtx) {
     gMatrixType = G_MTX_DKR_INDEX_0;
 
     for (i = 0; i < 4; i++) {
-        //Required to be one line, but the "\" fixes that.
-        for (j = 0; j < 4; j++){ \
+        // Required to be one line, but the "\" fixes that.
+        for (j = 0; j < 4; j++) {
             gViewMatrixF[i][j] = gOrthoMatrixF[i][j];
         }
     }
 }
 
-//Official Name: camStandardPersp?
+// Official Name: camStandardPersp?
 void func_8006807C(Gfx **dlist, MatrixS **mtx) {
     object_transform_to_matrix_2(gCurrentModelMatrixF, &D_800DD288);
     f32_matrix_mult(&gCurrentModelMatrixF, &gPerspectiveMatrixF, &gViewMatrixF);
-    object_transform_to_matrix_2((float (*)[4]) gModelMatrixF[0], &D_800DD2A0);
+    object_transform_to_matrix_2((float(*)[4]) gModelMatrixF[0], &D_800DD2A0);
     f32_matrix_mult(gModelMatrixF[0], &gViewMatrixF, &gCurrentModelMatrixF);
     f32_matrix_to_s16_matrix(&gCurrentModelMatrixF, *mtx);
     gSPMatrix((*dlist)++, OS_PHYSICAL_TO_K0((*mtx)++), G_MTX_NOPUSH | G_MTX_MUL | G_MTX_MODELVIEW);
@@ -854,7 +841,7 @@ void func_8006807C(Gfx **dlist, MatrixS **mtx) {
  * Sets the RSP viewport onscreen to the given properties.
  * Viewports have a centre position and a scale factor, rather than a standard four corners.
  * Official Name: camSetViewport
-*/
+ */
 void viewport_rsp_set(Gfx **dlist, s32 width, s32 height, s32 posX, s32 posY) {
     s32 tempWidth = (get_filtered_cheats() & CHEAT_MIRRORED_TRACKS) ? -width : width;
     Vp *vp;
@@ -881,7 +868,7 @@ void viewport_rsp_set(Gfx **dlist, s32 width, s32 height, s32 posX, s32 posY) {
  * Resets the viewport back to default.
  * If in the track menu, or post-race, set it to a small screen view instead.
  * Official Name: camResetView?
-*/
+ */
 void viewport_reset(Gfx **dlist) {
     u32 width, height;
     gActiveCameraID = 4;
@@ -905,7 +892,7 @@ void viewport_reset(Gfx **dlist) {
  * Sets the matrix position to the world origin (0, 0, 0)
  * Used when the next thing rendered relies on there not being any matrix offset.
  * Official Name: camOffsetZero?
-*/
+ */
 void matrix_world_origin(Gfx **dlist, MatrixS **mtx) {
     s32 i;
     for (i = 1; i < 14; i++) {
@@ -927,7 +914,8 @@ void func_80068508(s32 bool) {
 /**
  * Calculates angle from object to camera, then renders the sprite as a billboard, facing the camera.
  */
-s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Object *obj, unk80068514_arg4 *arg4, s32 flags) {
+s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Object *obj, unk80068514_arg4 *arg4,
+                            s32 flags) {
     f32 diffX;
     f32 diffY;
     Vertex *v;
@@ -984,7 +972,8 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
         gCameraTransform.z_position = obj->segment.trans.z_position;
         object_transform_to_matrix(gCurrentModelMatrixF, &gCameraTransform);
         gModelMatrixStackPos++;
-        f32_matrix_mult(&gCurrentModelMatrixF, gModelMatrixF[gModelMatrixStackPos-1], gModelMatrixF[gModelMatrixStackPos]);
+        f32_matrix_mult(&gCurrentModelMatrixF, gModelMatrixF[gModelMatrixStackPos - 1],
+                        gModelMatrixF[gModelMatrixStackPos]);
         f32_matrix_mult(gModelMatrixF[gModelMatrixStackPos], &gViewMatrixF, &gCurrentModelMatrixF);
         f32_matrix_to_s16_matrix(&gCurrentModelMatrixF, *mtx);
         gModelMatrixS[gModelMatrixStackPos] = *mtx;
@@ -1004,7 +993,8 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
         }
         textureFrame = obj->segment.animFrame;
         gModelMatrixStackPos++;
-        f32_matrix_from_rotation_and_scale((f32 (*)[4]) gModelMatrixF[gModelMatrixStackPos], angleDiff, obj->segment.trans.scale, gVideoAspectRatio);
+        f32_matrix_from_rotation_and_scale((f32(*)[4]) gModelMatrixF[gModelMatrixStackPos], angleDiff,
+                                           obj->segment.trans.scale, gVideoAspectRatio);
         f32_matrix_to_s16_matrix(gModelMatrixF[gModelMatrixStackPos], *mtx);
         gModelMatrixS[gModelMatrixStackPos] = *mtx;
         gSPMatrix((*dlist)++, OS_PHYSICAL_TO_K0((*mtx)++), G_MTX_DKR_INDEX_2);
@@ -1017,7 +1007,8 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
     if (flags & RENDER_SEMI_TRANSPARENT) {
         flags |= RENDER_ANTI_ALIASING;
     }
-    func_8007BF34(dlist, arg4->unk6 | (flags & (RENDER_FOG_ACTIVE | RENDER_SEMI_TRANSPARENT | RENDER_Z_COMPARE | RENDER_ANTI_ALIASING)));
+    func_8007BF34(dlist, arg4->unk6 | (flags & (RENDER_FOG_ACTIVE | RENDER_SEMI_TRANSPARENT | RENDER_Z_COMPARE |
+                                                RENDER_ANTI_ALIASING)));
     if (!(flags & RENDER_Z_UPDATE)) {
         gDPSetPrimColor((*dlist)++, 0, 0, 255, 255, 255, 255);
     }
@@ -1046,9 +1037,11 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
 }*/
 
 /**
- * Sets transform and scale matrices to set position and size, loads the texture, sets the rendermodes, then draws the result onscreen.
-*/
-void render_ortho_triangle_image(Gfx **dList, MatrixS **mtx, Vertex **vtx, ObjectSegment *segment, Sprite *sprite, s32 flags) {
+ * Sets transform and scale matrices to set position and size, loads the texture, sets the rendermodes, then draws the
+ * result onscreen.
+ */
+void render_ortho_triangle_image(Gfx **dList, MatrixS **mtx, Vertex **vtx, ObjectSegment *segment, Sprite *sprite,
+                                 s32 flags) {
     s32 index;
     Vertex *temp_v1;
     Matrix aspectMtxF;
@@ -1062,7 +1055,7 @@ void render_ortho_triangle_image(Gfx **dList, MatrixS **mtx, Vertex **vtx, Objec
         gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(*vtx), 1, 0);
         (*vtx)++; // Can't be done in the macro?
         index = segment->animFrame;
-        gModelMatrixStackPos ++;
+        gModelMatrixStackPos++;
         gCameraTransform.y_rotation = -segment->trans.y_rotation;
         gCameraTransform.x_rotation = -segment->trans.x_rotation;
         gCameraTransform.z_rotation = gCameraSegment[gActiveCameraID].trans.z_rotation + segment->trans.z_rotation;
@@ -1071,12 +1064,12 @@ void render_ortho_triangle_image(Gfx **dList, MatrixS **mtx, Vertex **vtx, Objec
         gCameraTransform.z_position = 0.0f;
         if (gAdjustViewportHeight) {
             f32_matrix_from_scale(scaleMtxF, segment->trans.scale, segment->trans.scale, 1.0f);
-            //f32_matrix_from_scale(&scaleMtxF, segment->trans.scale);
+            // f32_matrix_from_scale(&scaleMtxF, segment->trans.scale);
             f32_matrix_from_rotation_and_scale(aspectMtxF, 0, 1.0f, gVideoAspectRatio);
             f32_matrix_mult(&aspectMtxF, &scaleMtxF, &gCurrentModelMatrixF);
         } else {
             f32_matrix_from_scale(gCurrentModelMatrixF, segment->trans.scale, segment->trans.scale, 1.0f);
-            //f32_matrix_from_scale(&gCurrentModelMatrixF, segment->trans.scale);
+            // f32_matrix_from_scale(&gCurrentModelMatrixF, segment->trans.scale);
         }
         object_transform_to_matrix_2(aspectMtxF, &gCameraTransform);
         f32_matrix_mult(&gCurrentModelMatrixF, &aspectMtxF, gModelMatrixF[gModelMatrixStackPos]);
@@ -1085,7 +1078,7 @@ void render_ortho_triangle_image(Gfx **dList, MatrixS **mtx, Vertex **vtx, Objec
         gSPMatrix((*dList)++, OS_PHYSICAL_TO_K0((*mtx)++), G_MTX_DKR_INDEX_2);
         gDkrEnableBillboard((*dList)++);
         if (D_80120D0C == FALSE) {
-            index =  (((u8) index) * sprite->baseTextureId) >> 8;
+            index = (((u8) index) * sprite->baseTextureId) >> 8;
         }
         func_8007BF34(dList, sprite->unk6 | flags);
         if (index >= sprite->baseTextureId) {
@@ -1105,7 +1098,7 @@ void render_ortho_triangle_image(Gfx **dList, MatrixS **mtx, Vertex **vtx, Objec
 /**
  * Generate a matrix with rotation, scaling and shearing and run it.
  * Used for wavy type effects like the shield.
-*/
+ */
 void apply_object_shear_matrix(Gfx **dList, MatrixS **mtx, Object *arg2, Object *arg3, f32 shear) {
     f32 cossf_x_arg2;
     f32 cossf_y_arg2;
@@ -1144,21 +1137,60 @@ void apply_object_shear_matrix(Gfx **dList, MatrixS **mtx, Object *arg2, Object 
     arg3_zPos = arg3->segment.trans.z_position;
     arg2_scale = arg2->segment.trans.scale;
     shear *= arg2_scale;
-    matrix_mult[0][0] = ((((cossf_z_arg3 * cossf_y_arg3) + (sinsf_z_arg3 * (sinsf_x_arg3 * sinsf_y_arg3))) * cossf_y_arg2) + (-sinsf_y_arg2 * (cossf_x_arg3 * sinsf_y_arg3))) * arg2_scale;
+    matrix_mult[0][0] =
+        ((((cossf_z_arg3 * cossf_y_arg3) + (sinsf_z_arg3 * (sinsf_x_arg3 * sinsf_y_arg3))) * cossf_y_arg2) +
+         (-sinsf_y_arg2 * (cossf_x_arg3 * sinsf_y_arg3))) *
+        arg2_scale;
     matrix_mult[0][1] = (((sinsf_z_arg3 * cossf_x_arg3) * cossf_y_arg2) + (-sinsf_y_arg2 * -sinsf_x_arg3)) * arg2_scale;
-    matrix_mult[0][2] = ((((-sinsf_y_arg3 * cossf_z_arg3) + (sinsf_z_arg3 * (sinsf_x_arg3 * cossf_y_arg3))) * cossf_y_arg2) + (-sinsf_y_arg2 * (cossf_x_arg3 * cossf_y_arg3))) * arg2_scale;
+    matrix_mult[0][2] =
+        ((((-sinsf_y_arg3 * cossf_z_arg3) + (sinsf_z_arg3 * (sinsf_x_arg3 * cossf_y_arg3))) * cossf_y_arg2) +
+         (-sinsf_y_arg2 * (cossf_x_arg3 * cossf_y_arg3))) *
+        arg2_scale;
     matrix_mult[0][3] = 0.0f;
-    matrix_mult[1][0] = ((((-sinsf_z_arg3 * cossf_y_arg3) + (cossf_z_arg3 * (sinsf_x_arg3 * sinsf_y_arg3))) * cossf_x_arg2) + (sinsf_x_arg2 * ((sinsf_y_arg2 * ((cossf_z_arg3 * cossf_y_arg3) + (sinsf_z_arg3 * (sinsf_x_arg3 * sinsf_y_arg3)))) + (cossf_y_arg2 * (cossf_x_arg3 * sinsf_y_arg3))))) * shear;
-    matrix_mult[1][1] = (((cossf_z_arg3 * cossf_x_arg3) * cossf_x_arg2) + (sinsf_x_arg2 * ((sinsf_y_arg2 * (sinsf_z_arg3 * cossf_x_arg3)) + (cossf_y_arg2 * -sinsf_x_arg3)))) * shear;
-    matrix_mult[1][2] = ((((-sinsf_z_arg3 * -sinsf_y_arg3) + (cossf_z_arg3 * (sinsf_x_arg3 * cossf_y_arg3))) * cossf_x_arg2) + (sinsf_x_arg2 * ((sinsf_y_arg2 * ((-sinsf_y_arg3 * cossf_z_arg3) + (sinsf_z_arg3 * (sinsf_x_arg3 * cossf_y_arg3)))) + (cossf_y_arg2 * (cossf_x_arg3 * cossf_y_arg3))))) * shear;
+    matrix_mult[1][0] =
+        ((((-sinsf_z_arg3 * cossf_y_arg3) + (cossf_z_arg3 * (sinsf_x_arg3 * sinsf_y_arg3))) * cossf_x_arg2) +
+         (sinsf_x_arg2 *
+          ((sinsf_y_arg2 * ((cossf_z_arg3 * cossf_y_arg3) + (sinsf_z_arg3 * (sinsf_x_arg3 * sinsf_y_arg3)))) +
+           (cossf_y_arg2 * (cossf_x_arg3 * sinsf_y_arg3))))) *
+        shear;
+    matrix_mult[1][1] =
+        (((cossf_z_arg3 * cossf_x_arg3) * cossf_x_arg2) +
+         (sinsf_x_arg2 * ((sinsf_y_arg2 * (sinsf_z_arg3 * cossf_x_arg3)) + (cossf_y_arg2 * -sinsf_x_arg3)))) *
+        shear;
+    matrix_mult[1][2] =
+        ((((-sinsf_z_arg3 * -sinsf_y_arg3) + (cossf_z_arg3 * (sinsf_x_arg3 * cossf_y_arg3))) * cossf_x_arg2) +
+         (sinsf_x_arg2 *
+          ((sinsf_y_arg2 * ((-sinsf_y_arg3 * cossf_z_arg3) + (sinsf_z_arg3 * (sinsf_x_arg3 * cossf_y_arg3)))) +
+           (cossf_y_arg2 * (cossf_x_arg3 * cossf_y_arg3))))) *
+        shear;
     matrix_mult[1][3] = 0.0f;
-    matrix_mult[2][0] = ((-sinsf_x_arg2 * ((-sinsf_z_arg3 * cossf_y_arg3) + (cossf_z_arg3 * (sinsf_x_arg3 * sinsf_y_arg3)))) + (cossf_x_arg2 * ((sinsf_y_arg2 * ((cossf_z_arg3 * cossf_y_arg3) + (sinsf_z_arg3 * (sinsf_x_arg3 * sinsf_y_arg3)))) + (cossf_y_arg2 * (cossf_x_arg3 * sinsf_y_arg3))))) * arg2_scale;
-    matrix_mult[2][1] = ((-sinsf_x_arg2 * (cossf_z_arg3 * cossf_x_arg3)) + (cossf_x_arg2 * ((sinsf_y_arg2 * (sinsf_z_arg3 * cossf_x_arg3)) + (cossf_y_arg2 * -sinsf_x_arg3)))) * arg2_scale;
-    matrix_mult[2][2] = ((-sinsf_x_arg2 * ((-sinsf_z_arg3 * -sinsf_y_arg3) + (cossf_z_arg3 * (sinsf_x_arg3 * cossf_y_arg3)))) + (cossf_x_arg2 * ((sinsf_y_arg2 * ((-sinsf_y_arg3 * cossf_z_arg3) + (sinsf_z_arg3 * (sinsf_x_arg3 * cossf_y_arg3)))) + (cossf_y_arg2 * (cossf_x_arg3 * cossf_y_arg3))))) * arg2_scale;
+    matrix_mult[2][0] =
+        ((-sinsf_x_arg2 * ((-sinsf_z_arg3 * cossf_y_arg3) + (cossf_z_arg3 * (sinsf_x_arg3 * sinsf_y_arg3)))) +
+         (cossf_x_arg2 *
+          ((sinsf_y_arg2 * ((cossf_z_arg3 * cossf_y_arg3) + (sinsf_z_arg3 * (sinsf_x_arg3 * sinsf_y_arg3)))) +
+           (cossf_y_arg2 * (cossf_x_arg3 * sinsf_y_arg3))))) *
+        arg2_scale;
+    matrix_mult[2][1] =
+        ((-sinsf_x_arg2 * (cossf_z_arg3 * cossf_x_arg3)) +
+         (cossf_x_arg2 * ((sinsf_y_arg2 * (sinsf_z_arg3 * cossf_x_arg3)) + (cossf_y_arg2 * -sinsf_x_arg3)))) *
+        arg2_scale;
+    matrix_mult[2][2] =
+        ((-sinsf_x_arg2 * ((-sinsf_z_arg3 * -sinsf_y_arg3) + (cossf_z_arg3 * (sinsf_x_arg3 * cossf_y_arg3)))) +
+         (cossf_x_arg2 *
+          ((sinsf_y_arg2 * ((-sinsf_y_arg3 * cossf_z_arg3) + (sinsf_z_arg3 * (sinsf_x_arg3 * cossf_y_arg3)))) +
+           (cossf_y_arg2 * (cossf_x_arg3 * cossf_y_arg3))))) *
+        arg2_scale;
     matrix_mult[2][3] = 0.0f;
-    matrix_mult[3][0] = (((cossf_z_arg3 * cossf_y_arg3) + (sinsf_z_arg3 * (sinsf_x_arg3 * sinsf_y_arg3))) * arg2_xPos) + (arg2_yPos * ((-sinsf_z_arg3 * cossf_y_arg3) + (cossf_z_arg3 * (sinsf_x_arg3 * sinsf_y_arg3)))) + (arg2_zPos * (cossf_x_arg3 * sinsf_y_arg3)) + arg3_xPos;
-    matrix_mult[3][1] = ((sinsf_z_arg3 * cossf_x_arg3) * arg2_xPos) + (arg2_yPos * (cossf_z_arg3 * cossf_x_arg3)) + (arg2_zPos * -sinsf_x_arg3) + arg3_yPos;
-    matrix_mult[3][2] = (((-sinsf_y_arg3 * cossf_z_arg3) + (sinsf_z_arg3 * (sinsf_x_arg3 * cossf_y_arg3))) * arg2_xPos) + (arg2_yPos * ((-sinsf_z_arg3 * -sinsf_y_arg3) + (cossf_z_arg3 * (sinsf_x_arg3 * cossf_y_arg3)))) + (arg2_zPos * (cossf_x_arg3 * cossf_y_arg3)) + arg3_zPos;
+    matrix_mult[3][0] =
+        (((cossf_z_arg3 * cossf_y_arg3) + (sinsf_z_arg3 * (sinsf_x_arg3 * sinsf_y_arg3))) * arg2_xPos) +
+        (arg2_yPos * ((-sinsf_z_arg3 * cossf_y_arg3) + (cossf_z_arg3 * (sinsf_x_arg3 * sinsf_y_arg3)))) +
+        (arg2_zPos * (cossf_x_arg3 * sinsf_y_arg3)) + arg3_xPos;
+    matrix_mult[3][1] = ((sinsf_z_arg3 * cossf_x_arg3) * arg2_xPos) + (arg2_yPos * (cossf_z_arg3 * cossf_x_arg3)) +
+                        (arg2_zPos * -sinsf_x_arg3) + arg3_yPos;
+    matrix_mult[3][2] =
+        (((-sinsf_y_arg3 * cossf_z_arg3) + (sinsf_z_arg3 * (sinsf_x_arg3 * cossf_y_arg3))) * arg2_xPos) +
+        (arg2_yPos * ((-sinsf_z_arg3 * -sinsf_y_arg3) + (cossf_z_arg3 * (sinsf_x_arg3 * cossf_y_arg3)))) +
+        (arg2_zPos * (cossf_x_arg3 * cossf_y_arg3)) + arg3_zPos;
     matrix_mult[3][3] = 1.0f;
 
     f32_matrix_mult(&matrix_mult, &gViewMatrixF, &gCurrentModelMatrixS);
@@ -1168,7 +1200,7 @@ void apply_object_shear_matrix(Gfx **dList, MatrixS **mtx, Object *arg2, Object 
 
 /**
  * Official Name: camPushModelMtx
-*/
+ */
 void camera_push_model_mtx(Gfx **dList, MatrixS **mtx, ObjectTransform *trans, f32 scale, f32 scaleY) {
     f32 tempX;
     f32 tempY;
@@ -1187,7 +1219,8 @@ void camera_push_model_mtx(Gfx **dList, MatrixS **mtx, ObjectTransform *trans, f
         gCurrentModelMatrixF[1][1] *= scale;
         gCurrentModelMatrixF[1][2] *= scale;
     }
-    f32_matrix_mult(&gCurrentModelMatrixF, gModelMatrixF[gModelMatrixStackPos], gModelMatrixF[gModelMatrixStackPos + 1]);
+    f32_matrix_mult(&gCurrentModelMatrixF, gModelMatrixF[gModelMatrixStackPos],
+                    gModelMatrixF[gModelMatrixStackPos + 1]);
     f32_matrix_mult(gModelMatrixF[gModelMatrixStackPos + 1], &gViewMatrixF, &gCurrentModelMatrixS);
     f32_matrix_to_s16_matrix(&gCurrentModelMatrixS, *mtx);
     gModelMatrixStackPos++;
@@ -1223,7 +1256,7 @@ void camera_push_model_mtx(Gfx **dList, MatrixS **mtx, ObjectTransform *trans, f
 
 /**
  * Calculate the rotation matrix for an actors head, then run it.
-*/
+ */
 void apply_head_turning_matrix(Gfx **dlist, MatrixS **mtx, Object_68 *objGfx, s16 headAngle) {
     f32 coss_headAngle;
     f32 sins_headAngle;
@@ -1254,8 +1287,10 @@ void apply_head_turning_matrix(Gfx **dlist, MatrixS **mtx, Object_68 *objGfx, s1
     headMtxF[2][1] = (sins_headAngle * sins_unk1C);
     headMtxF[2][2] = coss_headAngle;
     headMtxF[2][3] = 0.0f;
-    headMtxF[3][0] = (-f_unk16 * (coss_headAngle * coss_unk1C)) + (-f_unk18 * -sins_unk1C) + (-f_unk1A * (sins_headAngle * coss_unk1C)) + f_unk16;
-    headMtxF[3][1] = (-f_unk16 * (coss_headAngle * sins_unk1C)) + (-f_unk18 * coss_unk1C) + (-f_unk1A * (sins_headAngle * sins_unk1C)) + f_unk18;
+    headMtxF[3][0] = (-f_unk16 * (coss_headAngle * coss_unk1C)) + (-f_unk18 * -sins_unk1C) +
+                     (-f_unk1A * (sins_headAngle * coss_unk1C)) + f_unk16;
+    headMtxF[3][1] = (-f_unk16 * (coss_headAngle * sins_unk1C)) + (-f_unk18 * coss_unk1C) +
+                     (-f_unk1A * (sins_headAngle * sins_unk1C)) + f_unk18;
     headMtxF[3][2] = (-f_unk16 * -sins_headAngle) + (-f_unk1A * coss_headAngle) + f_unk1A;
     headMtxF[3][3] = 1.0f;
     f32_matrix_mult(&headMtxF, &gCurrentModelMatrixS, &rotationMtxF);
@@ -1267,7 +1302,7 @@ void apply_head_turning_matrix(Gfx **dlist, MatrixS **mtx, Object_68 *objGfx, s1
 /**
  * Run a matrix from the top of the stack and pop it.
  * If the stack pos is less than zero, add a matrix instead.
-*/
+ */
 void apply_matrix_from_stack(Gfx **dlist) {
     gCameraMatrixPos--;
     gModelMatrixStackPos--;
@@ -1281,14 +1316,14 @@ void apply_matrix_from_stack(Gfx **dlist) {
 
 /**
  * Returns the segment data of the active camera, but won't apply the offset for cutscenes.
-*/
+ */
 ObjectSegment *get_active_camera_segment_no_cutscenes(void) {
     return &gCameraSegment[gActiveCameraID];
 }
 
 /**
  * Returns the segment data of the active camera.
-*/
+ */
 ObjectSegment *get_active_camera_segment(void) {
     if (gCutsceneCameraActive) {
         return &gCameraSegment[gActiveCameraID + 4];
@@ -1299,7 +1334,7 @@ ObjectSegment *get_active_camera_segment(void) {
 /**
  * Returns the segment data of the active cutscene camera.
  * If no cutscene is active, return player 1's camera.
-*/
+ */
 ObjectSegment *get_cutscene_camera_segment(void) {
     if (gCutsceneCameraActive) {
         return &gCameraSegment[4];
@@ -1309,28 +1344,28 @@ ObjectSegment *get_cutscene_camera_segment(void) {
 
 /**
  * Return the current floating point projection matrix.
-*/
+ */
 Matrix *get_projection_matrix_f32(void) {
     return &gProjectionMatrixF;
 }
 
 /**
  * Return the current fixed point projection matrix.
-*/
+ */
 MatrixS *get_projection_matrix_s16(void) {
     return &gProjectionMatrixS;
 }
 
 /**
  * Return the current camera matrix.
-*/
+ */
 Matrix *get_camera_matrix(void) {
     return &gCameraMatrixF;
 }
 
 /**
  * Return the screenspace distance to the camera.
-*/
+ */
 f32 get_distance_to_camera(f32 x, f32 y, f32 z) {
     f32 ox, oy, oz;
 
@@ -1341,7 +1376,7 @@ f32 get_distance_to_camera(f32 x, f32 y, f32 z) {
 
 /**
  * Apply a shake to the camera based on the distance to the source.
-*/
+ */
 void set_camera_shake_by_distance(f32 x, f32 y, f32 z, f32 dist, f32 magnitude) {
     f32 diffX;
     f32 distance;
@@ -1363,7 +1398,7 @@ void set_camera_shake_by_distance(f32 x, f32 y, f32 z, f32 dist, f32 magnitude) 
 
 /**
  * Apply a shake to all active cameras.
-*/
+ */
 void set_camera_shake(f32 magnitude) {
     s32 i;
     for (i = 0; i <= gNumberOfViewports; i++) {

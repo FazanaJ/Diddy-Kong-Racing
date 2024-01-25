@@ -40,7 +40,7 @@ void f32_matrix_mult(Matrix *mat1, Matrix *mat2, Matrix *output);
 void f32_matrix_to_s16_matrix(Matrix *input, MatrixS *output);
 void s16_matrix_rotate(s16 *arg0[4][4], s16 arg1[4][4]);
 void s16_vec3_mult_by_s32_matrix(MatrixS input, Vec3s *output);
-void object_transform_to_matrix(Matrix mtx, ObjectTransform *trans);
+void object_transform_to_matrix(Matrix arg0, ObjectTransform *trans);
 void f32_matrix_scale(Matrix *input, f32 scale);
 void f32_matrix_y_scale(Matrix *input, f32 scale);
 void object_transform_to_matrix_2(Matrix mtx, ObjectTransform *trans);

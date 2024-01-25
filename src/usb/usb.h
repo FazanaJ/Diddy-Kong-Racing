@@ -92,10 +92,9 @@
         @param The buffer to put the read data in
         @param The number of bytes to read
     ==============================*/
-    
-    extern void usb_read(u8* buffer, int size);
-    
-    
+
+    extern void usb_read(u8 *buffer, int nbytes);
+
     /*==============================
         usb_skip
         Skips a USB read by the specified amount of bytes

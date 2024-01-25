@@ -17,24 +17,22 @@
 
 /************ .data ************/
 
-u16 gTrickyVoiceTable[16] = {
-    SOUND_VOICE_BOSS_LAUGH,
-    SOUND_VOICE_TRICKY_WOAH,
-    SOUND_VOICE_TRICKY_WOAH2,
-    SOUND_VOICE_WIZPIG_LAUGH_SHORT2,
-    SOUND_VOICE_WIZPIG_LAUGH_SHORT3,
-    SOUND_VOICE_TRICKY_WOAH3,
-    SOUND_VOICE_TRICKY_WOAH4,
-    SOUND_VOICE_TRICKY_LAUGH,
-    SOUND_VOICE_TRICKY_LAUGH2,
-    SOUND_VOICE_TRICKY_OW,
-    SOUND_VOICE_TRICKY_OW2,
-    SOUND_VOICE_CONKER_YEHAHA,
-    SOUND_VOICE_TIMBER_WOW,
-    SOUND_WHOOSH2,
-    SOUND_NONE,
-    SOUND_NONE
-};
+u16 gTrickyVoiceTable[16] = { SOUND_VOICE_BOSS_LAUGH,
+                              SOUND_VOICE_TRICKY_WOAH,
+                              SOUND_VOICE_TRICKY_WOAH2,
+                              SOUND_VOICE_WIZPIG_LAUGH_SHORT2,
+                              SOUND_VOICE_WIZPIG_LAUGH_SHORT3,
+                              SOUND_VOICE_TRICKY_WOAH3,
+                              SOUND_VOICE_TRICKY_WOAH4,
+                              SOUND_VOICE_TRICKY_LAUGH,
+                              SOUND_VOICE_TRICKY_LAUGH2,
+                              SOUND_VOICE_TRICKY_OW,
+                              SOUND_VOICE_TRICKY_OW2,
+                              SOUND_VOICE_CONKER_YEHAHA,
+                              SOUND_VOICE_TIMBER_WOW,
+                              SOUND_WHOOSH2,
+                              SOUND_NONE,
+                              SOUND_NONE };
 
 /*******************************/
 
@@ -47,17 +45,12 @@ s8 gTrickyStartBoost;
 
 /******************************/
 
-enum TrickyAnimations {
-    ANIM_TRICKY_IDLE,
-    ANIM_TRICKY_RUN,
-    ANIM_TRICKY_WALK,
-    ANIM_TRICKY_DAMAGE
-};
+enum TrickyAnimations { ANIM_TRICKY_IDLE, ANIM_TRICKY_RUN, ANIM_TRICKY_WALK, ANIM_TRICKY_DAMAGE };
 
 /**
  * Overrides some basic racer properties that are either not needed or intended to work differently.
  * Also frees the engine sound data, since it won't be used.
-*/
+ */
 void racer_special_init(Object *object, Object_Racer *racer) {
     object->interactObj->flags = INTERACT_FLAGS_SOLID | INTERACT_FLAGS_UNK_0004;
     object->interactObj->unk11 = 0;
@@ -73,8 +66,9 @@ void racer_special_init(Object *object, Object_Racer *racer) {
 
 /**
  * Top level function for updating the Tricky vehicle as seen in the Dino Domain boss.
-*/
-void update_tricky(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *racer, u32 *input, u32 *buttonsPressed, s32 *startTimer) {
+ */
+void update_tricky(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *racer, u32 *input, u32 *buttonsPressed,
+                   s32 *startTimer) {
     s16 animID;
     s16 animFrame;
     s16 tempHeadAngle;
@@ -113,7 +107,7 @@ void update_tricky(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
             }
         }
     }
-    
+
     func_8004F7F4(updateRate, updateRateF, obj, racer);
     *startTimer = tempStartTimer;
     racer->lateral_velocity = 0.0f;
@@ -173,7 +167,7 @@ void update_tricky(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
     }
     func_800AFC3C(obj, updateRate);
     fade_when_near_camera(obj, racer, 120);
-    switch( obj->segment.object.animationID) {
+    switch (obj->segment.object.animationID) {
         case ANIM_TRICKY_RUN:
             headAngleRange = 0x2500;
             break;
@@ -209,7 +203,8 @@ void update_tricky(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
         }
         func_8006F140(1);
     }
-    if (obj == firstRacerObj->interactObj->obj && firstRacerObj->interactObj->flags & INTERACT_FLAGS_PUSHING && obj->segment.object.animationID == ANIM_TRICKY_RUN) {
+    if (obj == firstRacerObj->interactObj->obj && firstRacerObj->interactObj->flags & INTERACT_FLAGS_PUSHING &&
+        obj->segment.object.animationID == ANIM_TRICKY_RUN) {
         racer->attackType = ATTACK_SQUISHED;
     }
     if (racer->raceFinished != FALSE) {
@@ -222,7 +217,7 @@ void update_tricky(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
 
 /**
  * Set the sound ID offset for a given boss clip.
-*/
+ */
 void set_boss_voice_clip_offset(u16 *soundID) {
     gBossSoundIDOffset = soundID;
 }
@@ -238,7 +233,7 @@ void func_8005CA84(f32 x, f32 y, f32 z, s32 offset) {
 
 /**
  * Add a random amount to offset, then play a random voice clip within that range.
-*/
+ */
 void play_random_boss_sound(s32 offset) {
     s8 randomOffset = get_random_number_from_range(0, 1);
     if (offset == 0) {
@@ -275,11 +270,12 @@ void func_8005CB68(Object_Racer *racer, s8 *arg1) {
         ASSET_LEVELNAME_LASTBIT,
         ASSET_LEVELNAME_LASTBITB
     */
-    asset = (s8 *) get_misc_asset(ASSET_MISC_68); //8 bytes - 2F 31 30 32 2A 38 3F 40 - LevelIds for the world animations?
-    miscAsset68Byte5 = asset[5]; //0x38 - 56 - ASSET_LEVELNAME_PARTYSEQUENCE?
-    miscAsset68Byte6 = asset[6]; //0x3F - 63 - ASSET_LEVELNAME_LASTBIT?
-    miscAsset68Byte7 = asset[7]; //0x40 - 64 - ASSET_LEVELNAME_LASTBITB?
-    asset = (s8 *) get_misc_asset(ASSET_MISC_67); //20 bytes - course id's array with world id index?
+    asset =
+        (s8 *) get_misc_asset(ASSET_MISC_68); // 8 bytes - 2F 31 30 32 2A 38 3F 40 - LevelIds for the world animations?
+    miscAsset68Byte5 = asset[5];              // 0x38 - 56 - ASSET_LEVELNAME_PARTYSEQUENCE?
+    miscAsset68Byte6 = asset[6];              // 0x3F - 63 - ASSET_LEVELNAME_LASTBIT?
+    miscAsset68Byte7 = asset[7];              // 0x40 - 64 - ASSET_LEVELNAME_LASTBITB?
+    asset = (s8 *) get_misc_asset(ASSET_MISC_67); // 20 bytes - course id's array with world id index?
     for (i = 0; settings->courseId != asset[i]; i += 2) {}
     i = asset[i + 1];
     racerUnk1AC = racer->unk1AC;
@@ -304,7 +300,7 @@ void func_8005CB68(Object_Racer *racer, s8 *arg1) {
                     push_level_property_stack(i, 0, -1, 2);
                 }
             } else if (racerUnk1AC == 1) {
-                set_eeprom_settings_value(1); //Set Adventure Two Unlocked
+                set_eeprom_settings_value(1); // Set Adventure Two Unlocked
                 push_level_property_stack(SPECIAL_MAP_ID_UNK_NEG2, 0, VEHICLE_CAR, 0);
                 push_level_property_stack(miscAsset68Byte7, 0, -1, 0);
                 push_level_property_stack(miscAsset68Byte6, 0, -1, 0);
@@ -357,7 +353,8 @@ void func_8005CB68(Object_Racer *racer, s8 *arg1) {
                     }
                     if (worldBit != 0) {
                         push_level_property_stack(SPECIAL_MAP_ID_NO_LEVEL, 0, VEHICLE_CAR, 0);
-                        push_level_property_stack(ASSET_LEVELNAME_WIZPIGAMULETSEQUENCE, 0, -1, settings->wizpigAmulet - 1);
+                        push_level_property_stack(ASSET_LEVELNAME_WIZPIGAMULETSEQUENCE, 0, -1,
+                                                  settings->wizpigAmulet - 1);
                         push_level_property_stack(i, 6, -1, 6);
                     } else {
                         push_level_property_stack(SPECIAL_MAP_ID_NO_LEVEL, 0, VEHICLE_CAR, 0);

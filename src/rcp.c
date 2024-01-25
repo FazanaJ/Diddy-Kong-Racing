@@ -10,7 +10,7 @@
 #include "game.h"
 #include "printf.h"
 #include "main.h"
-//#include "lib/src/unknown_0D24D0.h"
+// #include "lib/src/unknown_0D24D0.h"
 
 /************ .data ************/
 
@@ -25,11 +25,11 @@ TextureHeader *D_800DE4C8 = 0;
 s32 gBGHeight = 240;
 
 BackgroundFunction gBackgroundDrawFunc = { NULL };
-u64 *gGfxSPTaskOutputBuffer = NULL; 
+u64 *gGfxSPTaskOutputBuffer = NULL;
 
 Gfx dRspInit[] = {
-    gsSPClearGeometryMode(G_SHADE | G_SHADING_SMOOTH | G_CULL_FRONT | G_CULL_BACK |
-                          G_FOG | G_LIGHTING | G_TEXTURE_GEN | G_TEXTURE_GEN_LINEAR | G_LOD),
+    gsSPClearGeometryMode(G_SHADE | G_SHADING_SMOOTH | G_CULL_FRONT | G_CULL_BACK | G_FOG | G_LIGHTING | G_TEXTURE_GEN |
+                          G_TEXTURE_GEN_LINEAR | G_LOD),
     gsSPTexture(0, 0, 0, 0, 0),
     gsSPSetGeometryMode(G_SHADING_SMOOTH | G_SHADE),
     gsSPClipRatio(FRUSTRATIO_3),
@@ -87,20 +87,28 @@ Gfx dScaledRectangleBaseModes[] = {
 
 Gfx dTextureRectangleScaledOpa[][2] = {
     // Bilinear Filtered texture
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_BILERP_NOPERSP, G_RM_AA_OPA_SURF, G_RM_AA_OPA_SURF2),
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_BILERP_NOPERSP, G_RM_OPA_SURF, G_RM_OPA_SURF2),
+    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_BILERP_NOPERSP, G_RM_AA_OPA_SURF,
+                     G_RM_AA_OPA_SURF2),
+    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_BILERP_NOPERSP, G_RM_OPA_SURF,
+                     G_RM_OPA_SURF2),
     // Point Sampled texture
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_POINT_NOPERSP, G_RM_AA_OPA_SURF, G_RM_AA_OPA_SURF2),
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_POINT_NOPERSP, G_RM_OPA_SURF, G_RM_OPA_SURF2)
+    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_POINT_NOPERSP, G_RM_AA_OPA_SURF,
+                     G_RM_AA_OPA_SURF2),
+    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_POINT_NOPERSP, G_RM_OPA_SURF,
+                     G_RM_OPA_SURF2)
 };
 
 Gfx dTextureRectangleScaledXlu[][2] = {
     // Bilinear Filtered texture
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_BILERP_NOPERSP, G_RM_AA_XLU_SURF, G_RM_AA_XLU_SURF2),
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_BILERP_NOPERSP, G_RM_XLU_SURF, G_RM_XLU_SURF2),
+    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_BILERP_NOPERSP, G_RM_AA_XLU_SURF,
+                     G_RM_AA_XLU_SURF2),
+    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_BILERP_NOPERSP, G_RM_XLU_SURF,
+                     G_RM_XLU_SURF2),
     // Point Sampled texture
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_POINT_NOPERSP, G_RM_AA_XLU_SURF, G_RM_AA_XLU_SURF2),
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_POINT_NOPERSP, G_RM_XLU_SURF, G_RM_XLU_SURF2)
+    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_POINT_NOPERSP, G_RM_AA_XLU_SURF,
+                     G_RM_AA_XLU_SURF2),
+    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_POINT_NOPERSP, G_RM_XLU_SURF,
+                     G_RM_XLU_SURF2)
 };
 
 /*******************************/
@@ -118,63 +126,62 @@ extern OSSched gMainSched;
 extern s32 gNumGfxTasksAtScheduler;
 
 DKR_OSTask gRdpTaskA = {
-    NULL, // next
-    0, // state
+    NULL,                                                // next
+    0,                                                   // state
     OS_SC_LAST_TASK | OS_SC_NEEDS_RDP | OS_SC_NEEDS_RSP, // flags
-    NULL, // frameBuffer
+    NULL,                                                // frameBuffer
     {
         // task
-        M_GFXTASK, // type
-        OS_TASK_DP_WAIT, // flags
-        (u64 *) rspF3DDKRBootStart, // ucode_boot
-        0, // ucode_boot_size
-        (u64 *) rspF3DDKRXbusStart, // ucode
-        0, // ucode_size
+        M_GFXTASK,                      // type
+        OS_TASK_DP_WAIT,                // flags
+        (u64 *) rspF3DDKRBootStart,     // ucode_boot
+        0,                              // ucode_boot_size
+        (u64 *) rspF3DDKRXbusStart,     // ucode
+        0,                              // ucode_size
         (u64 *) rspF3DDKRDataXbusStart, // ucode_data
-        SP_UCODE_DATA_SIZE, // ucode_data_size
-        (u64 *) gDramStack, // dram_stack
-        SP_DRAM_STACK_SIZE8, // dram_stack_size
-        NULL, // output_buff
-        0, // output_buff_size
-        0, // data_ptr
-        0, // data_size
-        (u64 *) gGfxTaskYieldData, // yield_data_ptr
-        sizeof(gGfxTaskYieldData), // yield_data_size
+        SP_UCODE_DATA_SIZE,             // ucode_data_size
+        (u64 *) gDramStack,             // dram_stack
+        SP_DRAM_STACK_SIZE8,            // dram_stack_size
+        NULL,                           // output_buff
+        0,                              // output_buff_size
+        0,                              // data_ptr
+        0,                              // data_size
+        (u64 *) gGfxTaskYieldData,      // yield_data_ptr
+        sizeof(gGfxTaskYieldData),      // yield_data_size
     },
     &gGameMesgQueue, // mesgQueue
-    NULL, // mesg
+    NULL,            // mesg
 };
 
 DKR_OSTask gRdpTaskB = {
-    NULL, // next
-    0, // state
+    NULL,                                                // next
+    0,                                                   // state
     OS_SC_LAST_TASK | OS_SC_NEEDS_RDP | OS_SC_NEEDS_RSP, // flags
-    NULL, // frameBuffer
+    NULL,                                                // frameBuffer
     {
         // task
-        M_GFXTASK, // type
-        OS_TASK_DP_WAIT, // flags
-        (u64 *) rspF3DDKRBootStart, // ucode_boot
-        0, // ucode_boot_size
-        (u64 *) rspF3DDKRXbusStart, // ucode
-        0, // ucode_size
+        M_GFXTASK,                      // type
+        OS_TASK_DP_WAIT,                // flags
+        (u64 *) rspF3DDKRBootStart,     // ucode_boot
+        0,                              // ucode_boot_size
+        (u64 *) rspF3DDKRXbusStart,     // ucode
+        0,                              // ucode_size
         (u64 *) rspF3DDKRDataXbusStart, // ucode_data
-        SP_UCODE_DATA_SIZE, // ucode_data_size
-        (u64 *) gDramStack, // dram_stack
-        SP_DRAM_STACK_SIZE8, // dram_stack_size
-        NULL, // output_buff
-        0, // output_buff_size
-        0, // data_ptr
-        0, // data_size
-        (u64 *) gGfxTaskYieldData, // yield_data_ptr
-        sizeof(gGfxTaskYieldData), // yield_data_size
+        SP_UCODE_DATA_SIZE,             // ucode_data_size
+        (u64 *) gDramStack,             // dram_stack
+        SP_DRAM_STACK_SIZE8,            // dram_stack_size
+        NULL,                           // output_buff
+        0,                              // output_buff_size
+        0,                              // data_ptr
+        0,                              // data_size
+        (u64 *) gGfxTaskYieldData,      // yield_data_ptr
+        sizeof(gGfxTaskYieldData),      // yield_data_size
     },
     &gGameMesgQueue, // mesgQueue
-    NULL, // mesg
+    NULL,            // mesg
 };
 
 DKR_OSTask *gRdpCurTask = &gRdpTaskA;
-
 
 /*******************************/
 
@@ -183,7 +190,7 @@ DKR_OSTask *gRdpCurTask = &gRdpTaskA;
  * Sends a message to the scheduler to start processing an RSP task once set up.
  * Official Name: rcpFast3d
  */
-void setup_ostask_xbus(Gfx* dlBegin, Gfx* dlEnd) {
+void setup_ostask_xbus(Gfx *dlBegin, Gfx *dlEnd) {
     DKR_OSTask *dkrtask;
 
     dkrtask = gRdpCurTask;
@@ -197,12 +204,12 @@ void setup_ostask_xbus(Gfx* dlBegin, Gfx* dlEnd) {
 }
 
 /**
- * 
+ *
  * Prepare the gfx task for the F3DDKR FIFO microcode.
  * Sends a message to the scheduler to start processing an RSP task once set up.
  * Goes unused, and is broken.
  */
-void setup_ostask_fifo(Gfx* dlBegin, Gfx* dlEnd) {
+void setup_ostask_fifo(Gfx *dlBegin, Gfx *dlEnd) {
     DKR_OSTask *dkrtask;
     u32 taskStart = 0x80680000;
     u32 taskEnd = 0x806E0000;
@@ -242,7 +249,6 @@ void wait_for_gfx_task(void) {
             gNumGfxTasksAtScheduler--;
         }
     }
-
 }
 
 /**
@@ -270,7 +276,7 @@ void set_background_fill_colour(s32 red, s32 green, s32 blue) {
  * over the colour buffer. DrawBG if set to 0 (which never happens) will completely skip
  * over clearing the colour buffer.
  * Official Name: rcpClearScreen
-*/
+ */
 void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
     s32 w;
     s32 h;
@@ -293,10 +299,10 @@ void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
     gDPPipeSync((*dList)++);
     gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, w, SEGMENT_COLOUR_BUFFER);
 
-        gBGHeight = gScreenHeight;
-    if ((gMapId == ASSET_LEVEL_CENTRALAREAHUB || gMapId == ASSET_LEVEL_WHALEBAY || gMapId == ASSET_LEVEL_PIRATELAGOON || 
-        gMapId == ASSET_LEVEL_DINODOMAINHUB || gMapId == ASSET_LEVEL_DINODOMAINTROPHYANIM || gMapId == ASSET_LEVEL_OPTIONSBACKGROUND ||
-        gMapId == ASSET_LEVEL_FRONTEND || gMapId == ASSET_LEVEL_WIZPIG2)) {
+    gBGHeight = gScreenHeight;
+    if ((gMapId == ASSET_LEVEL_CENTRALAREAHUB || gMapId == ASSET_LEVEL_WHALEBAY || gMapId == ASSET_LEVEL_PIRATELAGOON ||
+         gMapId == ASSET_LEVEL_DINODOMAINHUB || gMapId == ASSET_LEVEL_DINODOMAINTROPHYANIM ||
+         gMapId == ASSET_LEVEL_OPTIONSBACKGROUND || gMapId == ASSET_LEVEL_FRONTEND || gMapId == ASSET_LEVEL_WIZPIG2)) {
         skip = FALSE;
     } else if (gConfig.perfMode || gConfig.noCutbacks) {
         skip = FALSE;
@@ -315,10 +321,12 @@ void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
                     gDPFillRectangle((*dList)++, 0, 0, w - 1, gBGHeight - 1);
                 }
             }
-			if (copy_viewport_background_size_to_coords(0, &x1, &y1, &x2, &y2)) {
+            if (copy_viewport_background_size_to_coords(0, &x1, &y1, &x2, &y2)) {
                 gDPSetCycleType((*dList)++, G_CYC_FILL);
-                gDPSetFillColor((*dList)++, (GPACK_RGBA5551(sBackgroundPrimColourR, sBackgroundPrimColourG, sBackgroundPrimColourB, 1) << 16) | 
-                                             GPACK_RGBA5551(sBackgroundPrimColourR, sBackgroundPrimColourG, sBackgroundPrimColourB, 1));
+                gDPSetFillColor(
+                    (*dList)++,
+                    (GPACK_RGBA5551(sBackgroundPrimColourR, sBackgroundPrimColourG, sBackgroundPrimColourB, 1) << 16) |
+                        GPACK_RGBA5551(sBackgroundPrimColourR, sBackgroundPrimColourG, sBackgroundPrimColourB, 1));
                 gDPFillRectangle((*dList)++, x1, y1, x2, y2);
             }
         } else {
@@ -328,8 +336,11 @@ void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
                 gBackgroundDrawFunc.function((Gfx *) dList, mtx);
             } else {
                 if (skip == FALSE) {
-                    gDPSetFillColor((*dList)++, (GPACK_RGBA5551(sBackgroundPrimColourR, sBackgroundPrimColourG, sBackgroundPrimColourB, 1) << 16) | 
-                                                 GPACK_RGBA5551(sBackgroundPrimColourR, sBackgroundPrimColourG, sBackgroundPrimColourB, 1));
+                    gDPSetFillColor(
+                        (*dList)++,
+                        (GPACK_RGBA5551(sBackgroundPrimColourR, sBackgroundPrimColourG, sBackgroundPrimColourB, 1)
+                         << 16) |
+                            GPACK_RGBA5551(sBackgroundPrimColourR, sBackgroundPrimColourG, sBackgroundPrimColourB, 1));
                     gDPFillRectangle((*dList)++, 0, 0, w - 1, gBGHeight - 1);
                 }
             }
@@ -366,7 +377,7 @@ void setup_gfx_mesg_queues(void) {
     osCreateMesgQueue(&D_80125EC0, D_80125EF0, ARRAY_COUNT(D_80125EF0));
 }
 
-//Called after finishing a race. Sets values during single player races. Set to zero during trophy races.
+// Called after finishing a race. Sets values during single player races. Set to zero during trophy races.
 void func_80078170(TextureHeader *arg0, TextureHeader *arg1, u32 arg2) {
     D_800DE4C4 = arg0;
     D_800DE4C8 = arg1;
@@ -378,7 +389,7 @@ void func_80078170(TextureHeader *arg0, TextureHeader *arg1, u32 arg2) {
  * Seems to render the background screen after a race finishes while you're at the menu deciding what to do next.
  * https://i.imgur.com/MHbUD2a.png is an example. The left is correct, and the right is incorrect rendering.
  * Official Name: rcpMosaicClear
-*/
+ */
 void func_80078190(Gfx **dlist) {
     s32 texture1And2UpperHeight;
     s32 videoHeight;
@@ -387,16 +398,16 @@ void func_80078190(Gfx **dlist) {
     s32 upperVideoHeight;
     s32 texture1UpperWidth;
     s32 texture1UpperHeight;
-    //s32 texture2UpperHeight;
+    // s32 texture2UpperHeight;
     s32 widthAndHeight;
     s32 yPos;
     s32 var_s3;
-    s32 uly; //the y-coordinate of upper-left corner of rectangle (10.2, 0.0~1023.75)
-    s32 ulx; //the y-coordinate of upper-left corner of rectangle (10.2, 0.0~1023.75)
-    s32 lry; //the y-coordinate of lower-right corner of rectangle (10.2, 0.0~1023.75)
-    s32 lrx; //the x-coordinate of lower-right corner of rectangle (10.2, 0.0~1023.75)
-    s32 t;   //the texture coordinate t of upper-left corner of rectangle (s10.5)
-    s32 s;   //the texture coordinate s of upper-left corner of rectangle (s10.5)
+    s32 uly; // the y-coordinate of upper-left corner of rectangle (10.2, 0.0~1023.75)
+    s32 ulx; // the y-coordinate of upper-left corner of rectangle (10.2, 0.0~1023.75)
+    s32 lry; // the y-coordinate of lower-right corner of rectangle (10.2, 0.0~1023.75)
+    s32 lrx; // the x-coordinate of lower-right corner of rectangle (10.2, 0.0~1023.75)
+    s32 t;   // the texture coordinate t of upper-left corner of rectangle (s10.5)
+    s32 s;   // the texture coordinate s of upper-left corner of rectangle (s10.5)
 
     widthAndHeight = get_video_width_and_height_as_s32();
     videoWidth = GET_VIDEO_WIDTH(widthAndHeight);
@@ -434,7 +445,7 @@ void func_80078190(Gfx **dlist) {
         upperVideoHeight = videoHeight << 2;
         texture1UpperWidth = D_800DE4C4->width << 2;
         texture1UpperHeight = D_800DE4C4->height << 2;
-        //texture2UpperHeight = D_800DE4C8->height << 2;
+        // texture2UpperHeight = D_800DE4C8->height << 2;
         texture1And2UpperHeight = (D_800DE4C8->height << 2) + texture1UpperHeight;
         var_s3 = 0;
         for (yPos = 0; yPos < upperVideoHeight; yPos += texture1And2UpperHeight) {
@@ -487,7 +498,7 @@ GLOBAL_ASM("asm/non_matchings/rcp/func_80078190.s")
 /**
  * Sets the function pointer to whatever's passed through.
  * If nonzero, will override the background drawing section.
-*/
+ */
 void set_background_draw_function(void *func) {
     gBackgroundDrawFunc.ptr = func;
 }
@@ -496,8 +507,9 @@ void set_background_draw_function(void *func) {
  * Renders one or more textures directly on screen resulting from the passed image properties.
  * Texture rectangle coordinates use 10.2 precision and texture coords use 10.5 precision.
  * Typically, you do these shifts in the draw call itself, but Rare decided to do it beforehand.
-*/
-void render_textured_rectangle(Gfx **dList, DrawTexture *element, s32 xPos, s32 yPos, u8 red, u8 green, u8 blue, u8 alpha) {
+ */
+void render_textured_rectangle(Gfx **dList, DrawTexture *element, s32 xPos, s32 yPos, u8 red, u8 green, u8 blue,
+                               u8 alpha) {
     TextureHeader *tex;
     s32 i;
     s32 uly;
@@ -508,7 +520,7 @@ void render_textured_rectangle(Gfx **dList, DrawTexture *element, s32 xPos, s32 
     s32 s;
 
     gSPDisplayList((*dList)++, dTextureRectangleModes);
-    gDPSetPrimColor((*dList)++, 0, 0, red, green, blue, alpha); 
+    gDPSetPrimColor((*dList)++, 0, 0, red, green, blue, alpha);
     xPos <<= 2;
     yPos <<= 2;
     for (i = 0; (tex = element[i].texture); i++) {
@@ -535,20 +547,21 @@ void render_textured_rectangle(Gfx **dList, DrawTexture *element, s32 xPos, s32 
     gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
 }
 
-void render_texture_rectangle_scaled(Gfx **dlist, DrawTexture *element, f32 xPos, f32 yPos, f32 xScale, f32 yScale, u32 colour, s32 flags) {
+void render_texture_rectangle_scaled(Gfx **dlist, DrawTexture *element, f32 xPos, f32 yPos, f32 xScale, f32 yScale,
+                                     u32 colour, s32 flags) {
     TextureHeader *tex;
     Gfx *dmaDlist;
     s32 i;
     s32 bFlipX;
     s32 bFlipY;
-    s32 s;   //the texture coordinate s of upper-left corner of rectangle (s10.5)
-    s32 t;   //the texture coordinate t of upper-left corner of rectangle (s10.5)
-    s32 dsdx;//the change in s for each change in x (s5.10)
-    s32 dtdy;//the change in t for each change in y (s5.10)
-    s32 ulx; //the y-coordinate of upper-left corner of rectangle (10.2, 0.0~1023.75)
-    s32 uly; //the y-coordinate of upper-left corner of rectangle (10.2, 0.0~1023.75)
-    s32 lrx; //the x-coordinate of lower-right corner of rectangle (10.2, 0.0~1023.75)
-    s32 lry; //the y-coordinate of lower-right corner of rectangle (10.2, 0.0~1023.75)
+    s32 s;    // the texture coordinate s of upper-left corner of rectangle (s10.5)
+    s32 t;    // the texture coordinate t of upper-left corner of rectangle (s10.5)
+    s32 dsdx; // the change in s for each change in x (s5.10)
+    s32 dtdy; // the change in t for each change in y (s5.10)
+    s32 ulx;  // the y-coordinate of upper-left corner of rectangle (10.2, 0.0~1023.75)
+    s32 uly;  // the y-coordinate of upper-left corner of rectangle (10.2, 0.0~1023.75)
+    s32 lrx;  // the x-coordinate of lower-right corner of rectangle (10.2, 0.0~1023.75)
+    s32 lry;  // the y-coordinate of lower-right corner of rectangle (10.2, 0.0~1023.75)
     s32 xPos4x;
     s32 yPos4x;
     s32 width;
@@ -557,11 +570,11 @@ void render_texture_rectangle_scaled(Gfx **dlist, DrawTexture *element, f32 xPos
     width = gScreenWidth * 4;
     height = gScreenHeight * 4;
 
-    //If the colour is fully opaque
+    // If the colour is fully opaque
     if ((colour & 0xFF) == 0xFF) {
-        dmaDlist = dTextureRectangleScaledOpa[(u8)flags & 0xFF];
+        dmaDlist = dTextureRectangleScaledOpa[(u8) flags & 0xFF];
     } else {
-        dmaDlist = dTextureRectangleScaledXlu[(u8)flags & 0xFF];
+        dmaDlist = dTextureRectangleScaledXlu[(u8) flags & 0xFF];
     }
 
     gSPDisplayList((*dlist)++, dScaledRectangleBaseModes);

@@ -54,8 +54,9 @@ enum SmokeyAnimations {
 /**
  * Top level function for updating the "Smokey" vehicle as seen in the Dragon Forest boss stage.
  * Also controls the pteradactyl found in Dino domain, from when it had a larger role ingame.
-*/
-void update_smokey(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *racer, u32 *input, s32 *stickMag, s32 *startTimer) {
+ */
+void update_smokey(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *racer, u32 *input, s32 *stickMag,
+                   s32 *startTimer) {
     s16 animID;
     s16 animFrame;
     s16 tempHeadAngle;
@@ -67,7 +68,7 @@ void update_smokey(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
     f32 animVelocity;
     s16 stepFrame;
     Object *firstRacerObj;
-    
+
     set_boss_voice_clip_offset(gSmokeyVoiceTable);
     animID = obj->segment.object.animationID;
     animFrame = obj->segment.animFrame;
@@ -133,44 +134,43 @@ void update_smokey(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
     animVelocity = (racer->velocity * updateRateF) * 0.45f;
     if (animVelocity <= 0.0f) {
         if (animVelocity > -2.0f) {
-        animVelocity = -2.0f;
+            animVelocity = -2.0f;
         }
     } else if (animVelocity < 2.0f) {
         animVelocity = 2.0f;
     }
     switch (obj->segment.object.animationID) {
-    case 0:
-        racer->unk1CD = 0;
-        racer->animationSpeed += 1.0f * updateRateF;
-        break;
-    case 1:
-        if (racer->unk1CD == 2) {
-            racer->animationSpeed += animVelocity;
-        } else {
+        case 0:
+            racer->unk1CD = 0;
+            racer->animationSpeed += 1.0f * updateRateF;
+            break;
+        case 1:
+            if (racer->unk1CD == 2) {
+                racer->animationSpeed += animVelocity;
+            } else {
+                racer->animationSpeed -= animVelocity;
+            }
+            break;
+        case 2:
+            racer->unk1CD = 2;
             racer->animationSpeed -= animVelocity;
-        }
-        break;
-    case 2:
-        racer->unk1CD = 2;
-        racer->animationSpeed -= animVelocity;
-        break;
-    case 3:
-        if (racer->unk1CD == 4) {
-            racer->animationSpeed -= 2.0f * updateRateF;
-        }
-        else {
+            break;
+        case 3:
+            if (racer->unk1CD == 4) {
+                racer->animationSpeed -= 2.0f * updateRateF;
+            } else {
+                racer->animationSpeed += 2.0f * updateRateF;
+            }
+            break;
+        case 4:
+            racer->unk1CD = 4;
             racer->animationSpeed += 2.0f * updateRateF;
-        }
-        break;
-    case 4:
-        racer->unk1CD = 4;
-        racer->animationSpeed += 2.0f * updateRateF;
-        break;
-    case 5:
-        racer->animationSpeed += 2.0f * updateRateF;
-        break;
-    default:
-        break;
+            break;
+        case 5:
+            racer->animationSpeed += 2.0f * updateRateF;
+            break;
+        default:
+            break;
     }
     while (diffX <= racer->animationSpeed) {
         racer->animationSpeed -= diffX;
@@ -212,7 +212,8 @@ void update_smokey(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
                 obj->segment.object.animationID = ANIM_SMOKEY_RUN;
                 racer->animationSpeed = 0.0f;
             }
-            if (obj->segment.object.animationID == ANIM_SMOKEY_FLY && racer->groundedWheels && racer->velocity > -6.0f) {
+            if (obj->segment.object.animationID == ANIM_SMOKEY_FLY && racer->groundedWheels &&
+                racer->velocity > -6.0f) {
                 obj->segment.object.animationID = ANIM_SMOKEY_LAND;
                 racer->animationSpeed = (objModel->animations[obj->segment.object.animationID].unk4 * 16) - 17;
             }
@@ -229,7 +230,8 @@ void update_smokey(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
             stepFrame = 3;
         }
         if (animFrame == stepFrame && stepFrame + 1 == obj->segment.animFrame >> 4) {
-            play_sound_at_position(SOUND_UNK_223, obj->segment.trans.x_position, obj->segment.trans.y_position, obj->segment.trans.z_position, 4, NULL);
+            play_sound_at_position(SOUND_UNK_223, obj->segment.trans.x_position, obj->segment.trans.y_position,
+                                   obj->segment.trans.z_position, 4, NULL);
         }
     }
     if (racer->vehicleIDPrev == VEHICLE_SMOKEY && racer->playerIndex == PLAYER_COMPUTER && func_80023568()) {
@@ -262,7 +264,8 @@ void update_smokey(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
         }
     }
     racer = (Object_Racer *) firstRacerObj->unk64;
-    if (obj == firstRacerObj->interactObj->obj && firstRacerObj->interactObj->flags & INTERACT_FLAGS_PUSHING && obj->segment.object.animationID == ANIM_SMOKEY_RUN) {
+    if (obj == firstRacerObj->interactObj->obj && firstRacerObj->interactObj->flags & INTERACT_FLAGS_PUSHING &&
+        obj->segment.object.animationID == ANIM_SMOKEY_RUN) {
         racer->attackType = ATTACK_SQUISHED;
     }
     if (racer->raceFinished != FALSE) {
@@ -278,7 +281,7 @@ extern u8 benchState;
 /**
  * Compare distance to any boss hazard triggers found throughout the course.
  * When close enough to one, spawn a hazard, set by the caller of the function.
-*/
+ */
 void spawn_boss_hazard(Object *obj, Object_Racer *racer, f32 offset, s32 objectID, s32 soundID) {
     Object **objList;
     s32 objListID;
@@ -305,11 +308,11 @@ void spawn_boss_hazard(Object *obj, Object_Racer *racer, f32 offset, s32 objectI
     spawnObj.x = obj->segment.trans.x_position - (racer->ox1 * offset);
     spawnObj.y = obj->segment.trans.y_position - (racer->oy1 * offset);
     spawnObj.z = obj->segment.trans.z_position - (racer->oz1 * offset);
-    
+
     for (i = 0; i < objListCount; i++) {
         tempObj = objList[i];
         if (tempObj->behaviorId == BHV_BOSS_HAZARD_TRIGGER) {
-            entry = tempObj->segment.level_entry; 
+            entry = tempObj->segment.level_entry;
             if ((s8) entry->animation.z_rotation == racer->lap + 1 || (s8) entry->animation.z_rotation == 0) {
                 diffX = tempObj->segment.trans.x_position - obj->segment.trans.x_position;
                 diffY = tempObj->segment.trans.y_position - obj->segment.trans.y_position;
@@ -327,7 +330,9 @@ void spawn_boss_hazard(Object *obj, Object_Racer *racer, f32 offset, s32 objectI
                             newObj->properties.racer.unk0 = tempObj;
                             newObj->properties.racer.unk4 = (s8) entry->animation.y_rotation * 60;
                             newObj->segment.animFrame = get_random_number_from_range(0, 255);
-                            play_sound_at_position(soundID, newObj->segment.trans.x_position, newObj->segment.trans.y_position, newObj->segment.trans.z_position, 4, NULL);
+                            play_sound_at_position(soundID, newObj->segment.trans.x_position,
+                                                   newObj->segment.trans.y_position, newObj->segment.trans.z_position,
+                                                   4, NULL);
                         }
                     }
                 } else {

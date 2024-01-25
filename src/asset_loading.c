@@ -3,7 +3,7 @@
 
 #include "asset_loading.h"
 
-//#include "assets.h"
+// #include "assets.h"
 #include "macros.h"
 #include "ultra64.h"
 #include "main.h"
@@ -28,7 +28,7 @@ extern u8 __ASSETS_LUT_START[], __ASSETS_LUT_END[]; // __ASSETS_LUT_START = 0xEC
  * This will send messages when DMA reads are finished.
  * After, allocate space and load the asset table into RAM.
  * Official Name: piInit
-*/
+ */
 void init_PI_mesg_queue(void) {
     u32 assetTableSize;
     osCreateMesgQueue(&gPIMesgQueue, gPIMesgBuf, ARRAY_COUNT(gPIMesgBuf));
@@ -60,7 +60,7 @@ u32 *load_asset_section_from_rom(u32 assetIndex) {
     if (out == 0) {
         return 0;
     }
-    dmacopy((u32) (start + __ASSETS_LUT_END), (u32)out, size);
+    dmacopy((u32) (start + __ASSETS_LUT_END), (u32) out, size);
     return out;
 }
 
@@ -135,7 +135,8 @@ void dmacopy(u32 romOffset, u32 ramAddress, s32 numBytes) {
         if (numBytes < numBytesToDMA) {
             numBytesToDMA = numBytes;
         }
-        osPiStartDma(&gAssetsDmaIoMesg, OS_MESG_PRI_NORMAL, OS_READ, romOffset, (u32 *) ramAddress, numBytesToDMA, &gDmaMesgQueue);
+        osPiStartDma(&gAssetsDmaIoMesg, OS_MESG_PRI_NORMAL, OS_READ, romOffset, (u32 *) ramAddress, numBytesToDMA,
+                     &gDmaMesgQueue);
         osRecvMesg(&gDmaMesgQueue, &dmaMesg, OS_MESG_BLOCK);
         numBytes -= numBytesToDMA;
         romOffset += numBytesToDMA;

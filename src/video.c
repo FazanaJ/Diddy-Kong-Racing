@@ -17,7 +17,7 @@ u16 *gVideoDepthBuffer = NULL;
 
 /************ .bss ************/
 
-s32 gVideoRefreshRate; //Official Name: viFramesPerSecond
+s32 gVideoRefreshRate; // Official Name: viFramesPerSecond
 f32 gVideoAspectRatio;
 f32 gVideoHeightRatio;
 OSViMode gTvViMode;
@@ -30,10 +30,10 @@ s32 gVideoFrontFbIndex;
 s32 gVideoCurrFbIndex;
 s32 gVideoModeIndex;
 s32 sBlackScreenTimer;
-u16 *gVideoCurrFramebuffer; //Official Name: currentScreen
-u16 *gVideoLastFramebuffer; //Official Name: otherScreen
+u16 *gVideoCurrFramebuffer; // Official Name: currentScreen
+u16 *gVideoLastFramebuffer; // Official Name: otherScreen
 u16 *gVideoCurrDepthBuffer;
-u16 *gVideoLastDepthBuffer; //Official Name: otherZbuf
+u16 *gVideoLastDepthBuffer; // Official Name: otherZbuf
 u8 gFrameBufferIndex = 0;
 s32 gVideoHasReadyFrame;
 OSScClient gVideoSched;
@@ -56,8 +56,6 @@ void init_video(s32 videoModeIndex) {
     gVideoRefreshRate = REFRESH_60HZ;
     gVideoAspectRatio = ASPECT_RATIO_NTSC;
     gVideoHeightRatio = HEIGHT_RATIO_NTSC;
-
-    
 
     gVideoSkipNextRate = TRUE;
     set_video_mode_index(videoModeIndex);
@@ -121,33 +119,35 @@ void change_vi(OSViMode *mode, int width, int height) {
             addX = 24;
         }
         mode->comRegs.width = width;
-        mode->comRegs.xScale = ((width + addX)*512)/320;
+        mode->comRegs.xScale = ((width + addX) * 512) / 320;
         // Y Scale
-        mode->fldRegs[0].yScale = (((height + 16 - (addPAL * 2))*1024)/240);
-        mode->fldRegs[1].yScale = (((height + 16 - (addPAL * 2))*1024)/240);
+        mode->fldRegs[0].yScale = (((height + 16 - (addPAL * 2)) * 1024) / 240);
+        mode->fldRegs[1].yScale = (((height + 16 - (addPAL * 2)) * 1024) / 240);
         // X Centre
-        mode->fldRegs[0].origin = width*2;
-        mode->fldRegs[1].origin = width*4;
+        mode->fldRegs[0].origin = width * 2;
+        mode->fldRegs[1].origin = width * 4;
 
-        mode->comRegs.hStart = (428-304 + (gConfig.screenPosX * 2)) << 16 | (428+304 + (gConfig.screenPosX * 2));
-        mode->fldRegs[0].vStart = (277-height + (gConfig.screenPosY * 2)) << 16 | (271+height + (gConfig.screenPosY * 2));
-        mode->fldRegs[1].vStart = (277-height + (gConfig.screenPosY * 2)) << 16 | (271+height + (gConfig.screenPosY * 2));
+        mode->comRegs.hStart = (428 - 304 + (gConfig.screenPosX * 2)) << 16 | (428 + 304 + (gConfig.screenPosX * 2));
+        mode->fldRegs[0].vStart =
+            (277 - height + (gConfig.screenPosY * 2)) << 16 | (271 + height + (gConfig.screenPosY * 2));
+        mode->fldRegs[1].vStart =
+            (277 - height + (gConfig.screenPosY * 2)) << 16 | (271 + height + (gConfig.screenPosY * 2));
     } else if (height == 240) {
         mode->comRegs.width = width;
-        mode->comRegs.xScale = (width*512)/320;
-        mode->fldRegs[0].origin = width*2;
-        mode->fldRegs[1].origin = width*4;
-        mode->fldRegs[0].yScale = ((height*1024)/240);
-        mode->fldRegs[1].yScale = ((height*1024)/240);
+        mode->comRegs.xScale = (width * 512) / 320;
+        mode->fldRegs[0].origin = width * 2;
+        mode->fldRegs[1].origin = width * 4;
+        mode->fldRegs[0].yScale = ((height * 1024) / 240);
+        mode->fldRegs[1].yScale = ((height * 1024) / 240);
     } else {
         mode->comRegs.width = width;
-        mode->comRegs.xScale = (width*512)/320;
+        mode->comRegs.xScale = (width * 512) / 320;
         mode->comRegs.ctrl |= 0x40;
-        mode->fldRegs[0].origin = width*2;
-        mode->fldRegs[1].origin = width*4;
-        mode->fldRegs[0].yScale = 0x2000000|((height*1024)/240);
-        mode->fldRegs[1].yScale = 0x2000000|((height*1024)/240);
-        mode->fldRegs[0].vStart = mode->fldRegs[1].vStart-0x20002;
+        mode->fldRegs[0].origin = width * 2;
+        mode->fldRegs[1].origin = width * 4;
+        mode->fldRegs[0].yScale = 0x2000000 | ((height * 1024) / 240);
+        mode->fldRegs[1].yScale = 0x2000000 | ((height * 1024) / 240);
+        mode->fldRegs[0].vStart = mode->fldRegs[1].vStart - 0x20002;
     }
     gVideoAspectRatio = ((f32) width / (f32) height);
     reset_perspective_matrix();
@@ -168,8 +168,8 @@ void set_dither_filter(void) {
  * Most of these go unused, as the value is always 1.
  */
 void init_vi_settings(void) {
-	change_vi(&gGlobalVI, SCREEN_WIDTH, SCREEN_HEIGHT);
-	osViSetMode(&gGlobalVI);
+    change_vi(&gGlobalVI, SCREEN_WIDTH, SCREEN_HEIGHT);
+    osViSetMode(&gGlobalVI);
     gScreenWidth = SCREEN_WIDTH;
     gScreenHeight = SCREEN_HEIGHT;
     set_dither_filter();
@@ -197,12 +197,12 @@ void init_framebuffer(s32 index) {
     }
 #endif
     gVideoFramebuffers[index] = allocate_from_main_pool_safe((width * SCREEN_HEIGHT * 2) + 0x30, MEMP_FRAMEBUFFERS);
-    gVideoFramebuffers[index] = (u16 *)(((s32)gVideoFramebuffers[index] + 0x3F) & ~0x3F);
+    gVideoFramebuffers[index] = (u16 *) (((s32) gVideoFramebuffers[index] + 0x3F) & ~0x3F);
     fbAddr = gVideoFramebuffers[index];
     fbAddr[100] = 0xBEEF;
     if (gVideoDepthBuffer == NULL) {
         gVideoDepthBuffer = allocate_from_main_pool_safe((width * SCREEN_HEIGHT * 2) + 0x30, MEMP_FRAMEBUFFERS);
-        gVideoDepthBuffer = (u16 *)(((s32)gVideoDepthBuffer + 0x3F) & ~0x3F);
+        gVideoDepthBuffer = (u16 *) (((s32) gVideoDepthBuffer + 0x3F) & ~0x3F);
         fbAddr = gVideoDepthBuffer;
         fbAddr[100] = 0xBEEF;
     }
@@ -213,7 +213,7 @@ void swap_framebuffers(void);
 /**
  * Read the framebuffer and check to see if the magic number written is still there.
  * Ideally, it should've been written over, so it being there still means framebuffer emulation is off.
-*/
+ */
 void detect_framebuffer(void) {
     u16 *fbAddr;
     fbAddr = gVideoCurrFramebuffer;
@@ -254,7 +254,7 @@ void swap_framebuffer_when_ready(void) {
     }
 }
 
-void swap_framebuffers(void) {        
+void swap_framebuffers(void) {
     gVideoLastFramebuffer = gVideoFramebuffers[(gVideoCurrFbIndex + (NUM_FRAMEBUFFERS - 1)) % NUM_FRAMEBUFFERS];
     gVideoCurrFbIndex++;
     if (gVideoCurrFbIndex >= NUM_FRAMEBUFFERS) {
@@ -264,5 +264,4 @@ void swap_framebuffers(void) {
 
     gVideoLastDepthBuffer = gVideoDepthBuffer;
     gVideoCurrDepthBuffer = gVideoDepthBuffer;
-
 }
