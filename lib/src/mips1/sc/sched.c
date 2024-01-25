@@ -31,11 +31,11 @@ static void __scTaskComplete(OSSched *sc, OSScTask *t) {
 
 static void __scExec(OSSched *sc, OSScTask *t) {
     if (t->list.t.type == M_AUDTASK) {
-        osWritebackDCacheAll();
         puppyprint_update_rsp(RSP_AUDIO_START);
     } else {
         puppyprint_update_rsp(RSP_GFX_START);
     }
+    osWritebackDCacheAll();
 
     t->state &= ~(OS_SC_YIELD | OS_SC_YIELDED);
     osSpTaskLoad(&t->list);
