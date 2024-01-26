@@ -164,7 +164,7 @@ void set_dialogue_font(s32 dialogueBoxID, s32 font);
 void set_current_dialogue_background_colour(s32 dialogueBoxID, s32 red, s32 green, s32 blue, s32 alpha);
 void set_current_text_colour(s32 dialogueBoxID, s32 red, s32 green, s32 blue, s32 alpha, s32 opacity);
 void set_current_text_background_colour(s32 dialogueBoxID, s32 red, s32 green, s32 blue, s32 alpha);
-void move_dialogue_box_to_front(s32 dialogueBoxID, DialogueBox *box);
+void move_dialogue_box_to_front(s32 dialogueBoxID, DialogueBox *dialogueBox);
 void assign_dialogue_box_id(s32 dialogueBoxID);
 void open_dialogue_box(s32 dialogueBoxID);
 void close_dialogue_box(s32 dialogueBoxID);

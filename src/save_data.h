@@ -62,7 +62,7 @@ size_t strlen(const char *str);
 
 u8 func_80072250(s32 arg0);
 void func_80072298(u8 arg0);
-s32 func_800722E8(s16 arg0);
+s32 func_800722E8(s16 controllerIndex);
 void func_80072708(void);
 s32 get_game_data_file_size(void);
 s32 get_time_data_file_size(void);
