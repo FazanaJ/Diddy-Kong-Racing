@@ -12,7 +12,7 @@
 /************ .bss ************/
 
 #ifndef _ALIGN16
-#define _ALIGN16(a) (((u32) (a) & ~0xF) + 0x10)
+#define _ALIGN16(a) (((u32) (a) & ~0x7) + 0x8)
 #endif
 
 MemoryPool gMemoryPools[4]; // Only two are used.
@@ -85,7 +85,7 @@ MemoryPoolSlot *new_memory_pool(MemoryPoolSlot *slots, s32 poolSize, s32 numSlot
     }
     firstSlot = &gMemoryPools[poolCount].slots[0];
     slots += numSlots;
-    if ((s32) slots & 0xF) {
+    if ((s32) slots & 0x7) {
         firstSlot->data = (u8 *) _ALIGN16(slots);
     } else {
         firstSlot->data = (u8 *) slots;
@@ -134,7 +134,7 @@ MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag
         return NULL;
     }
     currIndex = -1;
-    if (size & 0xF) {
+    if (size & 0x7) {
         size = _ALIGN16(size);
     }
     slots = pool->slots;
@@ -183,7 +183,7 @@ void *allocate_at_address_in_main_pool(s32 size, u8 *address, u32 colorTag) {
     if ((gMemoryPools[0].curNumSlots + 1) == gMemoryPools[0].maxNumSlots) {
         enable_interrupts(flags);
     } else {
-        if (size & 0xF) {
+        if (size & 0x7) {
             size = _ALIGN16(size);
         }
         slots = gMemoryPools[0].slots;
