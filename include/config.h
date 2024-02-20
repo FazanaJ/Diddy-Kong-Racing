@@ -27,6 +27,7 @@
 //#define FORCE_4MB_MEMORY                    // Pretend the expansion pak is not installed.
 //#define CRASH_SCREEN_TEST                   // Intentionally crash the game to test the crash screen.
 #define DETAILED_CRASH                        // Enables more crash screen details
+#define SKIP_NEW_GAME                         // Skips the new game cutscene.
 
 #ifdef PUPPYPRINT_DEBUG // Add some extra draw commands, so debug text onscreen won't overcap the normal limit.
 #define GFX_ADD 1500

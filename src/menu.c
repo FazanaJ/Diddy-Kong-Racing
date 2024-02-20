@@ -8303,9 +8303,11 @@ s32 menu_file_select_loop(s32 updateRate) {
             if (gIsInAdventureTwo) {
                 settings->cutsceneFlags |= CUTSCENE_ADVENTURE_TWO;
             }
+#ifndef SKIP_NEW_GAME
             func_8009ABD8((s8 *) get_misc_asset(ASSET_MISC_25), 0, gNumberOfActivePlayers, 0, 0, NULL);
             menu_init(MENU_NEWGAME_CINEMATIC);
             return MENU_RESULT_CONTINUE;
+#endif
         }
         if (settings->cutsceneFlags & CUTSCENE_ADVENTURE_TWO) {
             gIsInAdventureTwo = TRUE;
