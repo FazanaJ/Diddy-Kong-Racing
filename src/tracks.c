@@ -2229,6 +2229,11 @@ void render_object_shadow(Gfx **dList, Object *obj, ShadowData *shadow) {
     s32 alpha;
     profiler_begin_timer();
 
+    if (gConfig.perfMode && (obj->segment.trans.flags & OBJ_FLAGS_SHADOW_ONLY) == FALSE && 
+        (obj->behaviorId != BHV_RACER || obj->unk64->racer.playerIndex == PLAYER_COMPUTER)) {
+        return;
+    }
+
     if (obj->segment.header->shadowGroup) {
         if (shadow->meshStart != -1) {
             D_8011B0CC = gShadowHeapFlip;
@@ -2376,6 +2381,10 @@ void update_shadows(s32 group, s32 waterGroup, s32 updateRate) {
         shadow = obj->shadow;
         objIndex += 1;
         if ((obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED)) {
+            continue;
+        }
+        if (group != SHADOW_SCENERY && gConfig.perfMode && 
+           (obj->behaviorId != BHV_RACER || obj->unk64->racer.playerIndex == PLAYER_COMPUTER)) {
             continue;
         }
         if (shadow != NULL && shadow->scale > 0.0f && group == objHeader->shadowGroup) {

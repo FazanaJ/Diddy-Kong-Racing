@@ -322,11 +322,16 @@ void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
                 }
             }
             if (copy_viewport_background_size_to_coords(0, &x1, &y1, &x2, &y2)) {
+                s32 bgR, bgG, bgB;
+                LevelHeader *h = get_current_level_header();
                 gDPSetCycleType((*dList)++, G_CYC_FILL);
+                bgR = (h->BGColourBottomR + h->BGColourTopR) / 2;
+                bgG = (h->BGColourBottomG + h->BGColourTopG) / 2;
+                bgB = (h->BGColourBottomB + h->BGColourTopB) / 2;
                 gDPSetFillColor(
                     (*dList)++,
-                    (GPACK_RGBA5551(sBackgroundPrimColourR, sBackgroundPrimColourG, sBackgroundPrimColourB, 1) << 16) |
-                        GPACK_RGBA5551(sBackgroundPrimColourR, sBackgroundPrimColourG, sBackgroundPrimColourB, 1));
+                    (GPACK_RGBA5551(bgR, bgG, bgB, 1) << 16) |
+                        GPACK_RGBA5551(bgR, bgG, bgB, 1));
                 gDPFillRectangle((*dList)++, x1, y1, x2, y2);
             }
         } else {
@@ -336,11 +341,16 @@ void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
                 gBackgroundDrawFunc.function((Gfx *) dList, mtx);
             } else {
                 if (skip == FALSE) {
+                    s32 bgR, bgG, bgB;
+                    LevelHeader *h = get_current_level_header();
+                    bgR = (h->BGColourBottomR + h->BGColourTopR) / 2;
+                    bgG = (h->BGColourBottomG + h->BGColourTopG) / 2;
+                    bgB = (h->BGColourBottomB + h->BGColourTopB) / 2;
                     gDPSetFillColor(
                         (*dList)++,
-                        (GPACK_RGBA5551(sBackgroundPrimColourR, sBackgroundPrimColourG, sBackgroundPrimColourB, 1)
+                        (GPACK_RGBA5551(bgR, bgG, bgB, 1)
                          << 16) |
-                            GPACK_RGBA5551(sBackgroundPrimColourR, sBackgroundPrimColourG, sBackgroundPrimColourB, 1));
+                            GPACK_RGBA5551(bgR, bgG, bgB, 1));
                     gDPFillRectangle((*dList)++, 0, 0, w - 1, gBGHeight - 1);
                 }
             }
