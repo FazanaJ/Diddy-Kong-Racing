@@ -48,6 +48,7 @@ static void __scExec(OSSched *sc, OSScTask *t) {
 
     if (t->state & OS_SC_NEEDS_RDP) {
         sc->curRDPTask = t;
+        IO_WRITE(DPC_STATUS_REG, DPC_CLR_CLOCK_CTR | DPC_CLR_CMD_CTR | DPC_CLR_PIPE_CTR | DPC_CLR_TMEM_CTR);
     }
 }
 

@@ -40,6 +40,7 @@ enum DebugPages {
     PAGE_MINIMAL,
     PAGE_OVERVIEW,
     PAGE_BREAKDOWN,
+    PAGE_RCP,
     PAGE_OBJECTS,
     PAGE_MEMORY,
     PAGE_AUDIO,
@@ -53,6 +54,7 @@ enum DebugPages {
     "Minimal", \
     "Overview", \
     "Breakdown", \
+    "RCP", \
     "Objects", \
     "Memory", \
     "Audio", \
@@ -118,10 +120,12 @@ enum TrackTimers {
 
     PP_RSP_GFX,
     PP_RSP_AUD,
+    PP_RSP_YLD,
 
     PP_RDP_BUS,
     PP_RDP_BUF,
     PP_RDP_TMM,
+    PP_RDP_CLK,
 
     PP_TIMES_TOTAL
 };
@@ -232,6 +236,7 @@ struct PuppyPrint {
     PPTimer coreTimers[PP_MAIN_TIMES_TOTAL]; // Large collection of timers for various things.
     PPTimer audTime; // Normalised total for audio processing time.
     PPTimer gameTime; // Normalised total for game processing time.
+    PPTimer gameYield; // Normalised total for game yield time.
     ObjectHeader *objHeaders[NUM_OBJECT_PRINTS]; // Stored to be able to access their names.
     u32 threadTimes[NUM_THREAD_ITERATIONS][NUM_THREAD_TIMERS]; // Timers for individual threads.
     u16 objTimers[NUM_OBJECT_PRINTS][NUM_PERF_ITERATIONS + 2]; // Timers for individual object IDs
