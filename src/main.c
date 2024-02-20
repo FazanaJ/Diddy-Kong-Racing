@@ -12,6 +12,7 @@
 #include "printf.h"
 #include "particles.h"
 #include "objects.h"
+#include "math_util.h"
 
 /************ .bss ************/
 
@@ -411,6 +412,7 @@ void profiler_reset_objects(void) {
 
 void profiler_reset_values(void) {
     s32 i;
+    u32 flags = disable_interrupts();
     for (i = 0; i < PP_RDP_BUS; i++) {
         gPuppyPrint.timers[i][PERF_AGGREGATE] -= gPuppyPrint.timers[i][perfIteration];
         gPuppyPrint.timers[i][perfIteration] = 0;
@@ -418,6 +420,7 @@ void profiler_reset_values(void) {
     profiler_reset_objects();
     gPuppyPrint.textureLoads = 0;
     puppyprint_input();
+    enable_interrupts(flags);
 }
 
 void profiler_add_obj(u32 objID, u32 time, ObjectHeader *header) {
@@ -1044,6 +1047,7 @@ void puppyprint_calculate_average_times(void) {
     s32 j;
     u32 highTime = 0;
     u32 lowTime = 0xFFFFFFFF;
+    u32 flags = disable_interrupts();
 
     gPuppyPrint.updateTimer += sLogicUpdateRate;
     if (gPuppyPrint.updateTimer >= 4) {
@@ -1114,6 +1118,7 @@ void puppyprint_calculate_average_times(void) {
         }
     }
     gPuppyPrint.shouldUpdate = FALSE;
+    enable_interrupts(flags);
 }
 
 void puppyprint_update_rsp(u8 flags) {
