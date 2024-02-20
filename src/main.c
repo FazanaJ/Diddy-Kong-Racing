@@ -260,6 +260,7 @@ u8 perfIteration = 0;
 f32 gFPS = 0;
 u8 gWidescreen = 0;
 s32 sTriCount = 0;
+s32 sRectCount = 0;
 s32 sVtxCount = 0;
 s32 prevTime = 0;
 u32 sTimerTemp = 0;
@@ -583,7 +584,7 @@ void puppyprint_render_rcp(void) {
     puppyprintf(textBytes, "CPU");
     draw_text(&gCurrDisplayList, gScreenWidth - 50, y, textBytes, ALIGN_TOP_CENTER);
     puppyprintf(textBytes, "Thread 3:");
-    draw_text(&gCurrDisplayList, gScreenWidth - 96, y += 14, textBytes, ALIGN_TOP_LEFT);
+    draw_text(&gCurrDisplayList, gScreenWidth - 96, y += 12, textBytes, ALIGN_TOP_LEFT);
     puppyprintf(textBytes, "%d", gPuppyPrint.gameTime[PERF_TOTAL]);
     draw_text(&gCurrDisplayList, gScreenWidth - 38, y, textBytes, ALIGN_TOP_LEFT);
     puppyprintf(textBytes, "Thread 4:");
@@ -591,7 +592,7 @@ void puppyprint_render_rcp(void) {
     puppyprintf(textBytes, "%d", gPuppyPrint.audTime[PERF_TOTAL]);
     draw_text(&gCurrDisplayList, gScreenWidth - 38, y, textBytes, ALIGN_TOP_LEFT);
     puppyprintf(textBytes, "Yield 3:");
-    draw_text(&gCurrDisplayList, gScreenWidth - 96, y += 14, textBytes, ALIGN_TOP_LEFT);
+    draw_text(&gCurrDisplayList, gScreenWidth - 96, y += 10, textBytes, ALIGN_TOP_LEFT);
     puppyprintf(textBytes, "%d", gPuppyPrint.gameYield[PERF_TOTAL]);
     draw_text(&gCurrDisplayList, gScreenWidth - 38, y, textBytes, ALIGN_TOP_LEFT);
 
@@ -622,7 +623,6 @@ void puppyprint_render_rcp(void) {
     puppyprintf(textBytes, "%d", gPuppyPrint.timers[PP_RDP_CLK][PERF_TOTAL] - gPuppyPrint.timers[PP_RDP_BUS][PERF_TOTAL]);
     draw_text(&gCurrDisplayList, gScreenWidth - 38, y, textBytes, ALIGN_TOP_LEFT);
 
-    
     puppyprintf(textBytes, "RSP");
     draw_text(&gCurrDisplayList, gScreenWidth - 50, y += 14, textBytes, ALIGN_TOP_CENTER);
     puppyprintf(textBytes, "Graphics:");
@@ -636,6 +636,14 @@ void puppyprint_render_rcp(void) {
     puppyprintf(textBytes, "Yield:");
     draw_text(&gCurrDisplayList, gScreenWidth - 96, y += 10, textBytes, ALIGN_TOP_LEFT);
     puppyprintf(textBytes, "%d", gPuppyPrint.timers[PP_RSP_YLD][PERF_TOTAL]);
+    draw_text(&gCurrDisplayList, gScreenWidth - 38, y, textBytes, ALIGN_TOP_LEFT);
+    puppyprintf(textBytes, "Triangles:");
+    draw_text(&gCurrDisplayList, gScreenWidth - 96, y += 10, textBytes, ALIGN_TOP_LEFT);
+    puppyprintf(textBytes, "%d", sTriCount);
+    draw_text(&gCurrDisplayList, gScreenWidth - 38, y, textBytes, ALIGN_TOP_LEFT);
+    puppyprintf(textBytes, "Rects:");
+    draw_text(&gCurrDisplayList, gScreenWidth - 96, y += 10, textBytes, ALIGN_TOP_LEFT);
+    puppyprintf(textBytes, "%d", sRectCount);
     draw_text(&gCurrDisplayList, gScreenWidth - 38, y, textBytes, ALIGN_TOP_LEFT);
 
 }
@@ -1166,6 +1174,7 @@ void puppyprint_update_rsp(u8 flags) {
 void count_triangles_in_dlist(u8 *dlist, u8 *dlistEnd) {
     s32 triCount = 0;
     s32 vtxCount = 0;
+    s32 rectCount = 0;
     while (dlist < dlistEnd) {
         switch (dlist[0]) {
             case G_TRIN: // TRIN
@@ -1174,16 +1183,22 @@ void count_triangles_in_dlist(u8 *dlist, u8 *dlistEnd) {
             case G_VTX:
                 vtxCount += (dlist[1] >> 4) + 1;
                 break;
+            case G_TEXRECT:
+            case G_TEXRECTFLIP:
+            case G_FILLRECT:
+                rectCount++;
+                break;
         }
         dlist += sizeof(Gfx);
     }
     sTriCount = triCount;
+    sRectCount = rectCount;
     sVtxCount = vtxCount;
 }
 
 void count_triangles(u8 *dlist, u8 *dlistEnd) {
     sTimerTemp++;
-    if ((sTimerTemp % 16) == 0) {
+    if ((sTimerTemp % 8) == 0) {
         count_triangles_in_dlist(dlist, dlistEnd);
     }
 }
