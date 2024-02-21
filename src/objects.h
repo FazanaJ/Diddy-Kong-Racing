@@ -326,6 +326,7 @@ typedef struct Asset20 {
 #define CIC_ID 6103
 extern s32 osCicId; // Used for an Anti-Piracy check in render_3d_model
 extern ObjectHeader *(*gLoadedObjectHeaders)[304];
+extern u8 gUpdateLight;
 
 Object *func_8000BF44(s32 arg0);
 void allocate_object_pools(void);

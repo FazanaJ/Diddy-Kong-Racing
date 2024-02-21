@@ -394,8 +394,6 @@ void obj_init_audio(Object *obj, LevelObjectEntry_Audio *entry);
 void obj_init_bombexplosion(Object *obj, LevelObjectEntry_BombExplosion *entry);
 void obj_init_scenery(Object *obj, LevelObjectEntry_Scenery *entry);
 void handle_rocket_projectile(Object *obj, s32 updateRate);
-void character_select_shading(Object *obj);
-void obj_init_char_select(Object *obj);
 
 //Non Matching
 void calc_env_mapping_for_object(ObjectModel *, s16, s16, s16);

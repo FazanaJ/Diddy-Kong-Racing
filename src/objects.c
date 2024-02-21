@@ -62,6 +62,7 @@ s8 D_800DC73C = 0;
 s8 D_800DC740 = 0;
 s8 gSwapLeadPlayer = FALSE;
 s8 D_800DC748 = 0;
+u8 gUpdateLight = TRUE;
 s32 D_800DC74C[2] = { 0, 0 }; // Have a feeling these are both the same array.
 s32 D_800DC754[2] = { 0, 0 };
 Object *gShieldEffectObject = NULL;
@@ -2722,12 +2723,14 @@ void render_3d_model(Gfx **dList, Object *obj) {
                     flags = FALSE;
                 }
                 obj->unk44 = (Vertex *) obj68->unk4[obj68->animationTaskNum];
-                if (obj->behaviorId == BHV_UNK_3F) { // 63 = stopwatchicon, stopwatchhand
-                    calc_dyn_light_and_env_map_for_object(objModel, obj, 0, gCurrentLightIntensity);
-                } else if (flags) {
-                    calc_dyn_light_and_env_map_for_object(objModel, obj, -1, gCurrentLightIntensity);
-                } else {
-                    func_800245F0(objModel, obj, gCurrentLightIntensity);
+                if (gUpdateLight) {
+                    if (obj->behaviorId == BHV_UNK_3F) { // 63 = stopwatchicon, stopwatchhand
+                        calc_dyn_light_and_env_map_for_object(objModel, obj, 0, gCurrentLightIntensity);
+                    } else if (flags) {
+                        calc_dyn_light_and_env_map_for_object(objModel, obj, -1, gCurrentLightIntensity);
+                    } else {
+                        func_800245F0(objModel, obj, gCurrentLightIntensity);
+                    }
                 }
             }
             if ((racerObj != NULL) && (racerObj->playerIndex == PLAYER_COMPUTER) &&
@@ -6296,9 +6299,6 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
         case BHV_LEVEL_NAME:
             obj_init_levelname(obj, (LevelObjectEntry_LevelName *) entry);
             break;
-        case BHV_CHARACTER_SELECT:
-            obj_init_char_select(obj);
-            break;
     }
     set_crash_object(NULL, CRASH_OBJ_NONE);
 }
@@ -6550,7 +6550,6 @@ void run_object_loop_func(Object *obj, s32 updateRate) {
             break;
         case BHV_CHARACTER_SELECT:
             obj_loop_char_select(obj, updateRate);
-            character_select_shading(obj);
             break;
         case BHV_TRIGGER:
             obj_loop_trigger(obj, updateRate);

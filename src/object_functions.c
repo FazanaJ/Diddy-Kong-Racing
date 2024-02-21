@@ -1996,24 +1996,6 @@ void obj_loop_snowball(Object *obj, s32 updateRate) {
     func_8001F460(obj, updateRate, obj);
 }
 
-void obj_init_char_select(Object *obj) {
-    Object_CharacterFlag *chr = (Object_CharacterFlag *) obj->unk64;
-
-    chr->shadeTimer = 5;
-}
-
-void character_select_shading(Object *obj) {
-    Object_CharacterFlag *chr = (Object_CharacterFlag *) obj->unk64;
-
-    if (chr->shadeTimer > 0) {
-        chr->shadeTimer--;
-    }
-    if (chr->shadeTimer == 0) {
-        // In hindsight this was pretty stupid. I mean of COURSE it's gonna cause a memory leak.
-        // obj->unk68[obj->segment.object.modelIndex]->objModel->unk40 = NULL;
-    }
-}
-
 void obj_loop_char_select(Object *charSelectObj, s32 updateRate) {
     s32 i2;
     s32 i;

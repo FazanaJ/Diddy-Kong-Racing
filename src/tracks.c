@@ -171,8 +171,10 @@ RenderNodeTrack *gRenderNodeTail;
 RenderListTrack *gMateriallistHead;
 RenderListTrack *gMateriallistTail;
 u8 sShowAll = FALSE;
+s8 sNewSceneTimer = 0;
 void *gSorterHeap;
 u32 gSorterPos;
+Vec3f sPrevCamPos[4];
 
 /******************************/
 
@@ -228,6 +230,8 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     if (gWaveBlockCount) {
         func_800B82B4(gCurrentLevelModel, gCurrentLevelHeader2, i);
     }
+
+    sNewSceneTimer = 10;
 
     set_active_viewports_and_max(numberOfPlayers);
     spawn_skydome(skybox);
@@ -322,7 +326,15 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
     s32 posX;
     s32 posY;
     s32 j;
+    ObjectSegment *cam;
     profiler_begin_timer();
+
+    if (sNewSceneTimer > 0) {
+        sNewSceneTimer -= updateRate;
+        if (sNewSceneTimer < 0) {
+            sNewSceneTimer = 0;
+        }
+    }
 
     gSceneCurrDisplayList = *dList;
     gSceneCurrMatrix = *mtx;
@@ -398,6 +410,16 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
         apply_fog(dList, gSceneCurrentPlayerID);
         gDPPipeSync((*dList)++);
         set_active_camera(gSceneCurrentPlayerID);
+        cam = get_active_camera_segment();
+        if (sNewSceneTimer != 0 || cam->trans.x_position != sPrevCamPos[j].x || 
+        cam->trans.y_position != sPrevCamPos[j].y || cam->trans.z_position != sPrevCamPos[j].z) {
+            sPrevCamPos[j].x = cam->trans.x_position;
+            sPrevCamPos[j].y = cam->trans.y_position;
+            sPrevCamPos[j].z = cam->trans.z_position;
+            gUpdateLight = TRUE;
+        } else {
+            gUpdateLight = FALSE;
+        }
         func_80066CDC(dList, &gSceneCurrMatrix);
         func_8002A31C();
         // Show detailed skydome in single player.
