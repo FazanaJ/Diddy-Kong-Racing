@@ -145,8 +145,6 @@ ByteColour gHudMinimapColours[40] = {
 
 u32 gHudColour = COLOUR_RGBA32(255, 255, 255, 254);
 
-f32 D_800E2838 = 0.0f;
-
 // Unused?
 s32 D_800E283C[5] = { 0x06FFFFFF, 0x000FFFFF, 0x06000000, 0x0014FFFF, 0x00000000 };
 
@@ -1429,6 +1427,12 @@ void render_speedometer(Object *obj, UNUSED s32 updateRate) {
     f32 vel;
     Object_Racer *racer;
     s32 opacity;
+    s32 height;
+    s32 x, y;
+    s32 r, g, b, a;
+    f32 tempVel;
+    static s32 time = 0;
+    char textBytes[8];
 
     if (gNumActivePlayers == 1) {
         if (!gCutsceneCameraActive) {
@@ -1442,9 +1446,24 @@ void render_speedometer(Object *obj, UNUSED s32 updateRate) {
                     vel = sqrtf((obj->segment.x_velocity * obj->segment.x_velocity) +
                                 (obj->segment.z_velocity * obj->segment.z_velocity));
                 }
-                if (D_800E2838 < vel) {
-                    D_800E2838 = vel;
-                }
+
+                height = gScreenHeight - 20;
+                x = gScreenWidth - 64 + D_80126D24 + D_80126D28;
+                time += updateRate * 5000;
+                r = (coss_f(time) + 1) * 127;
+                g = (coss_f((time) + (0x10000 / 3)) + 1) * 127;
+                b = (coss_f((time) - (0x10000 / 3)) + 1) * 127;
+                tempVel = vel - 15.0f;
+                CLAMP(tempVel, 0.0f, 10.0f);
+                a = (tempVel / 10.0f) * 127.0f;
+                y = (a / 48) * coss_f(time * 4);
+                
+                set_text_font(ASSET_FONTS_FUNFONT);
+                set_text_colour(r, g, b, a, 255);
+                set_text_background_colour(0, 0, 0, 0);
+                puppyprintf(textBytes, "%02d MPH", (s32) (vel * 4.0f));
+                draw_text(&gHUDCurrDisplayList, x, height + y, textBytes, ALIGN_MIDDLE_RIGHT);
+
                 vel *= 4.0f;
                 if (racer->drift_direction != 0 && racer->vehicleID == VEHICLE_CAR) {
                     vel += 7.0f;

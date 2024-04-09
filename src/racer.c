@@ -3394,7 +3394,7 @@ void handle_racer_head_turning(Object *obj, Object_Racer *racer, UNUSED s32 upda
  * The character's head will start to face forward.
  */
 void slowly_reset_head_angle(Object_Racer *racer) {
-    racer->headAngleTarget -= racer->headAngleTarget >> 3;
+    racer->headAngleTarget -= (racer->headAngleTarget >> 2) * sLogicUpdateRate;
     if (racer->headAngleTarget > -10 && racer->headAngleTarget < 10) {
         racer->headAngleTarget = 0;
     }
