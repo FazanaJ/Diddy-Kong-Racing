@@ -1438,7 +1438,7 @@ void render_speedometer(Object *obj, UNUSED s32 updateRate) {
         if (!gCutsceneCameraActive) {
             racer = (Object_Racer *) obj->unk64;
             if (racer->raceFinished == FALSE) {
-                if (racer->vehicleID == VEHICLE_PLANE) {
+                if (racer->vehicleID != VEHICLE_CAR && racer->vehicleID != VEHICLE_HOVERCRAFT) {
                     vel = sqrtf((obj->segment.x_velocity * obj->segment.x_velocity) +
                                 (obj->segment.y_velocity * obj->segment.y_velocity) +
                                 (obj->segment.z_velocity * obj->segment.z_velocity));
