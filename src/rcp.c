@@ -199,7 +199,7 @@ void setup_ostask_xbus(Gfx *dlBegin, Gfx *dlEnd) {
     dkrtask->task.ucode_boot_size = (s32) (rspF3DDKRDramStart - rspF3DDKRBootStart);
     dkrtask->frameBuffer = gVideoCurrFramebuffer;
 
-    osScSubmitGfxTask(&gMainSched, (void *) dkrtask);
+    osScSubmitTask(&gMainSched, (void *) dkrtask);
     gRdpCurTask = (DKR_OSTask *) ((u32) gRdpCurTask ^ (u32) &gRdpTaskA ^ (u32) &gRdpTaskB);
 }
 
@@ -229,7 +229,7 @@ void setup_ostask_fifo(Gfx *dlBegin, Gfx *dlEnd) {
     dkrtask->task.output_buff_size = (u64 *) taskEnd;
     dkrtask->frameBuffer = gVideoCurrFramebuffer;
 
-    osScSubmitGfxTask(&gMainSched, (void *) dkrtask);
+    osScSubmitTask(&gMainSched, (void *) dkrtask);
     gRdpCurTask = (DKR_OSTask *) ((u32) gRdpCurTask ^ (u32) &gRdpTaskA ^ (u32) &gRdpTaskB);
 }
 

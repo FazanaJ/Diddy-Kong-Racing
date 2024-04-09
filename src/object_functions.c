@@ -1286,6 +1286,10 @@ void obj_loop_stopwatchman(Object *obj, s32 updateRate) {
                 tt->animFrameF -= (tt->forwardVel * 2.0f * updateRateF);
             } else {
                 obj->properties.npc.action = TT_MODE_TURN_TOWARDS_PLAYER;
+                //func_8003FC44(racerObj->segment.trans.x_position, racerObj->segment.trans.y_position - 10.0f, racerObj->segment.trans.z_position, 44, SOUND_EXPLOSION, 1.0f, 1);
+                //racerObj->segment.trans.scale = 0.0001f;
+                //racer_play_sound(racerObj, SOUND_VOICE_BANJO_WOAH);
+                //racerObj->segment.trans.flags |= OBJ_FLAGS_INVISIBLE;
             }
             move_object(obj, obj->segment.x_velocity * updateRateF, obj->segment.y_velocity * updateRateF,
                         obj->segment.z_velocity * updateRateF);
@@ -1913,6 +1917,8 @@ void obj_loop_wizpigship(Object *wizShipObj, s32 updateRate) {
     }
 }
 
+extern Gfx *gCurrDisplayList;
+
 void obj_loop_vehicleanim(Object *obj, s32 updateRate) {
     Object_60_800380F8 *obj60;
     Object *someObj;
@@ -1920,6 +1926,19 @@ void obj_loop_vehicleanim(Object *obj, s32 updateRate) {
 #ifdef CRASH_SCREEN_TEST
     if (++obj->properties.common.unk0 >= 30) {
         puppyprint_assert("Test Successful?");
+    }
+#endif
+#ifdef RDP_CRASH_TEST
+    if (++obj->properties.common.unk0 >= 30) {
+        gDPSetCycleType(gCurrDisplayList++, G_CYC_FILL);
+        gDPSetRenderMode(gCurrDisplayList++, G_RM_ZB_CLD_SURF, G_RM_ZB_CLD_SURF2);
+        gDPFillRectangle(gCurrDisplayList++, 0, 0, 64, 64);
+    }
+#endif
+#ifdef RSP_CRASH_TEST
+    if (++obj->properties.common.unk0 >= 30) {
+        gSPVertexDKR(gCurrDisplayList++, 50, 90, 120);
+        gSPPolygon(gCurrDisplayList++, 50, 90, 1);
     }
 #endif
 

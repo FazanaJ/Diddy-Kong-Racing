@@ -142,10 +142,11 @@ typedef struct RenderNodeTrack {
     Vertex *vtx;
     TextureHeader *material;
     u32 flags;
+    s32 texOffset;
     s16 triCount;
     s16 vtxCount;
-    u16 texOffset;
     s16 primAlpha;
+    s16 pad;
     struct RenderNodeTrack *next;
     struct RenderNodeTrack *prev;
 } RenderNodeTrack;

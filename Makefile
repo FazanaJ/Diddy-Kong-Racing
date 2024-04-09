@@ -307,7 +307,7 @@ $(GCC_SAFE_FILES): CFLAGS := -c -DNDEBUG -DAVOID_UB -Os $(INCLUDE_CFLAGS) $(DEF_
     -mips3 \
     -mlong32 \
     -funsafe-math-optimizations \
-    -finline-functions-called-once \
+    -fno-inline-functions \
     -fno-merge-constants \
     -fno-strict-aliasing \
     -fno-zero-initialized-in-bss \

@@ -1446,7 +1446,7 @@ void render_speedometer(Object *obj, UNUSED s32 updateRate) {
                     D_800E2838 = vel;
                 }
                 vel *= 4.0f;
-                if (racer->drift_direction != 0) {
+                if (racer->drift_direction != 0 && racer->vehicleID == VEHICLE_CAR) {
                     vel += 7.0f;
                 }
                 if (vel > 100.0f) {

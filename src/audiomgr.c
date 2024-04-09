@@ -349,7 +349,7 @@ static u32 __amHandleFrameMsg(AudioInfo *info, AudioInfo *lastInfo) {
     t->list.t.yield_data_size = 0;
     t->unk6C = 1;
 
-    osScSubmitAudTask(gAudioSched, t);
+    osScSubmitTask(gAudioSched, t);
 
     curAcmdList ^= 1; /* swap which acmd list you use each frame */
 

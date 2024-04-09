@@ -26,6 +26,8 @@
 //#define DISABLE_AUDIO                       // Disable all ingame audio, and prevent the RSP from working on audio tasks.
 //#define FORCE_4MB_MEMORY                    // Pretend the expansion pak is not installed.
 //#define CRASH_SCREEN_TEST                   // Intentionally crash the game to test the crash screen.
+//#define RDP_CRASH_TEST                      // Intentionally send a bad displaylist to the RDP to test the RDP crash.
+//#define RSP_CRASH_TEST                      // Intentionally send a bad displaylist to the RSP to test the RSP crash.
 #define DETAILED_CRASH                        // Enables more crash screen details
 #define SKIP_NEW_GAME                         // Skips the new game cutscene.
 

@@ -11,6 +11,11 @@
 #include "game.h"
 #include "lib/src/os/osint.h"
 
+#ifdef PUPPYPRINT_DEBUG
+u32 sRDPCount;
+u32 sRSPCount;
+#endif
+
 static void __scTaskComplete(OSSched *sc, OSScTask *t) {
     if (t->list.t.type == M_GFXTASK) {
         if (sc->retraceCount > gConfig.frameCap && sc->scheduledFB == NULL) {
@@ -83,6 +88,14 @@ static void __scHandlePrenmi(OSSched *sc) {
 static void __scHandleRetrace(OSSched *sc) {
     UNUSED s32 i;
 	sc->retraceCount++;
+#ifdef PUPPYPRINT_DEBUG
+    if (sc->curRSPTask && sRSPCount++ > 30) {
+        puppyprint_assert("RSP has crashed.");
+    }
+    if (sc->curRDPTask && sRDPCount++ > 30) {
+        puppyprint_assert("RDP has crashed.");
+    }
+#endif
     if (sc->retraceCount > gConfig.frameCap && sc->scheduledFB && osViGetCurrentFramebuffer() == sc->scheduledFB) {
         if (sc->queuedFB) {
             sc->scheduledFB = sc->queuedFB;
@@ -122,13 +135,13 @@ static void __scHandleRetrace(OSSched *sc) {
     if (gSchedStack[THREAD5_STACK / sizeof(u64) - 1] != gSchedStack[0]) {
         puppyprint_assert("Thread 5 Stack overflow");
     }
-    for (i = 0; i < 4; i++) {
+    /*for (i = 0; i < 4; i++) {
         gPokeThread[i]++;
         if (gPokeThread[i] > 250000) {
             s32 threadNums[] = {3, 4, 5, 30};
             puppyprint_assert("Thread %d unresponsive", threadNums[i]);
         }
-    }
+    }*/
 #endif
 }
 
@@ -147,6 +160,9 @@ static void __scHandleRSP(OSSched *sc) {
     } else {
         t->state &= ~OS_SC_NEEDS_RSP;
         if ((t->state & OS_SC_RCP_MASK) == 0) {
+#ifdef PUPPYPRINT_DEBUG
+        sRSPCount = 0;
+#endif
             __scTaskComplete(sc, t);
         }
     }
@@ -162,6 +178,9 @@ static void __scHandleRDP(OSSched *sc) {
     update_rdp_profiling();
 
     if ((t->state & OS_SC_RCP_MASK) == 0) {
+#ifdef PUPPYPRINT_DEBUG
+        sRDPCount = 0;
+#endif
         __scTaskComplete(sc, t);
     }
 
@@ -182,32 +201,28 @@ static void __scMain(void *arg) {
 //-- Public functions ---------------------------------------------------------/
 //----------------------------------------------------------------------------/
 
-void osScSubmitAudTask(OSSched *sc, OSScTask *t) {
+void osScSubmitTask(OSSched *sc, OSScTask *t) {
     OSPri prevpri = osGetThreadPri(0);
     osSetThreadPri(0, OS_SC_PRIORITY + 1);
 
-    t->state = OS_SC_NEEDS_RSP;
-    sc->nextAudTask = t;
-    __scTryDispatch(sc);
-
-    osSetThreadPri(0, prevpri);
-}
-
-void osScSubmitGfxTask(OSSched *sc, OSScTask *t) {
-    OSPri prevpri = osGetThreadPri(0);
-    osSetThreadPri(0, OS_SC_PRIORITY + 1);
-
-    t->state = OS_SC_NEEDS_RSP | OS_SC_NEEDS_RDP;
-
-    if (sc->curRSPTask == NULL && sc->curRDPTask == NULL && sc->queuedFB == NULL) {
-        __scExec(sc, t);
+    if (t->list.t.type == M_AUDTASK) {
+        t->state = OS_SC_NEEDS_RSP;
+        sc->nextAudTask = t;
     } else {
-        if (sc->nextGfxTask == NULL) {
-            sc->nextGfxTask = t;
+        t->state = OS_SC_NEEDS_RSP | OS_SC_NEEDS_RDP;
+
+        if (sc->curRSPTask == NULL && sc->curRDPTask == NULL && sc->queuedFB == NULL) {
+            __scExec(sc, t);
         } else {
-            sc->nextGfxTask2 = t;
+            if (sc->nextGfxTask == NULL) {
+                sc->nextGfxTask = t;
+            } else {
+                sc->nextGfxTask2 = t;
+            }
         }
     }
+
+    __scTryDispatch(sc);
 
     osSetThreadPri(0, prevpri);
 }
@@ -240,6 +255,11 @@ void osCreateScheduler(OSSched *sc, void *stack, OSPri priority, UNUSED u8 mode,
     sc->prenmiMsg.type  = OS_SC_PRE_NMI_MSG;
     sc->audioFlip       = 0;
     sc->retraceCount    = 0;
+
+#ifdef PUPPYPRINT_DEBUG
+    sRDPCount = 0;
+    sRSPCount = 0;
+#endif
 
     osCreateViManager(OS_PRIORITY_VIMGR);
     osViSetMode(&osViModeNtscLan1);

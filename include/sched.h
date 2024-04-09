@@ -107,7 +107,6 @@ extern OSViMode osViModeTable[];
 
 void osCreateScheduler(OSSched *sc, void *stack, OSPri priority, u8 mode, u8 numFields);
 void osScAddClient(OSSched *sc, OSScClient *c, OSMesgQueue *msgQ, u8 id);
-void osScSubmitAudTask(OSSched *sc, OSScTask *t);
-void osScSubmitGfxTask(OSSched *sc, OSScTask *t);
+void osScSubmitTask(OSSched *sc, OSScTask *t);
 
 #endif

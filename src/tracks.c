@@ -1340,9 +1340,10 @@ void render_level_segment(Gfx **dList, s32 segmentId, s32 nonOpaque) {
 #ifdef PUPPYPRINT_DEBUG
             if (sShowAll) {
                 load_and_set_texture(dList, texture, batchFlags, texOffset);
-                batchFlags = TRUE;
                 if (texture == NULL) {
                     batchFlags = FALSE;
+                } else {
+                    batchFlags = TRUE;
                 }
                 gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(vertices), numberVertices, 0);
                 gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(triangles), numberTriangles, batchFlags);
