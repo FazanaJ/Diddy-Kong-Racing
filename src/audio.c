@@ -689,6 +689,9 @@ void sound_play(u16 soundID, s32 *soundMask) {
         }
         return;
     }
+    if (soundID >= NUM_SOUND_IDS) {
+        puppyprint_assert("Invalid sound ID: %X", soundID);
+    }
     pitch = gSoundTable[soundID].pitch / 100.0f;
     if (soundMask != NULL) {
         func_80004668(gSoundBank->bankArray[0], soundBite, gSoundTable[soundID].unk8, (SoundMask *) soundMask);

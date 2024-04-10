@@ -22,6 +22,7 @@ struct ConfigOptions {
     s8 dedither;
     s8 noCutbacks;
     s8 perfMode;
+    s8 sameStats;
 };
 
 extern struct ConfigOptions gConfig;

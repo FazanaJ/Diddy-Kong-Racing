@@ -147,7 +147,6 @@ f32 *gCurrentRacerMiscAssetPtr;
 f32 *D_8011D568;
 f32 gCurrentRacerWeightStat;
 f32 gCurrentRacerHandlingStat;
-f32 gCurrentRacerUnusedMiscAsset11; // Set, but never read
 f32 gRacerMagnetVelX;
 f32 gRacerMagnetVelZ;
 u8 D_8011D580;
@@ -2184,6 +2183,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
     CheckpointNode *checkpointNode;
     s32 playerID;
     f32 stretch;
+    s32 charID;
     s32 i;
     struct LevelObjectEntryCommon newObject;
     set_crash_object(obj, CRASH_OBJ_UPDATE);
@@ -2194,6 +2194,10 @@ void update_player_racer(Object *obj, s32 updateRate) {
     updateRateF = updateRate;
     tempRacer = (Object_Racer *) obj->unk64;
     updateRateF *= gTimeDilation[tempRacer->characterId];
+    if (gConfig.sameStats && tempRacer->playerIndex != PLAYER_COMPUTER) {
+        charID = tempRacer->characterId;
+        tempRacer->characterId = 8;
+    }
     // Cap all of the velocities on the different axes.
     // Unfortunately, Rareware didn't appear to use a clamp macro here, which would've saved a lot of real estate.
     if (obj->segment.x_velocity > 50.0f) {
@@ -2284,8 +2288,6 @@ void update_player_racer(Object *obj, s32 updateRate) {
         }
         gCurrentRacerMiscAssetPtr = (f32 *) get_misc_asset(ASSET_MISC_RACER_HANDLING);
         gCurrentRacerHandlingStat = gCurrentRacerMiscAssetPtr[tempRacer->characterId];
-        gCurrentRacerMiscAssetPtr = (f32 *) get_misc_asset(ASSET_MISC_RACER_UNUSED_11);
-        gCurrentRacerUnusedMiscAsset11 = gCurrentRacerMiscAssetPtr[tempRacer->characterId];
         if (tempRacer->unk1FE == 3) {
             gCurrentRacerWeightStat *= (f32) tempRacer->unk1FF / 256.0f;
         }
@@ -2703,6 +2705,9 @@ void update_player_racer(Object *obj, s32 updateRate) {
         if (tempRacer->countLap < tempRacer->lap) {
             tempRacer->countLap = tempRacer->lap;
         }
+    }
+    if (gConfig.sameStats && tempRacer->playerIndex != PLAYER_COMPUTER) {
+        tempRacer->characterId = charID;
     }
 }
 
@@ -3127,7 +3132,7 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
             racer->lateral_velocity +=
                 ((racer->velocity * gCurrentStickX) / miscAsset[racer->characterId]) * (updateRateF / 2.0f);
             if (racer->playerIndex == PLAYER_COMPUTER) {
-                racer->lateral_velocity *= 0.9f;
+                racer->lateral_velocity -= (racer->lateral_velocity * 0.05f) * updateRateF;
             }
         }
     }
@@ -6031,8 +6036,6 @@ void update_AI_racer(Object *obj, Object_Racer *racer, s32 updateRate, f32 updat
     }
     gCurrentRacerMiscAssetPtr = (f32 *) get_misc_asset(ASSET_MISC_RACER_HANDLING);
     gCurrentRacerHandlingStat = gCurrentRacerMiscAssetPtr[racer->characterId];
-    gCurrentRacerMiscAssetPtr = (f32 *) get_misc_asset(ASSET_MISC_RACER_UNUSED_11);
-    gCurrentRacerUnusedMiscAsset11 = gCurrentRacerMiscAssetPtr[racer->characterId];
     xPos = obj->segment.trans.x_position;
     yPos = obj->segment.trans.y_position;
     zPos = obj->segment.trans.z_position;

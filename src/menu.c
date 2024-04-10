@@ -9894,6 +9894,7 @@ ConfigOptionEntry gOptionMenu[] = {
     { "Frame Cap", &gConfig.frameCap, OPT_PAL, 8, 0, 3, NULL },
     { "MP Cutbacks", &gConfig.noCutbacks, OPT_NO_EMU, 1, 0, 1, NULL },
     { "Perf Mode", &gConfig.perfMode, OPT_NO_EMU, 0, 0, 1, NULL },
+    { "Same Stats", &gConfig.sameStats, OPT_NONE, 0, 0, 1, NULL },
 };
 
 #define OPTIONSIZE (sizeof(gOptionMenu) / sizeof(ConfigOptionEntry))
