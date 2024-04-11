@@ -174,8 +174,7 @@ LOADER_FLAGS = -vwf
 
 N64CRC = $(TOOLS_DIR)/n64crc
 FIXCHECKSUMS = python3 $(TOOLS_DIR)/python/calc_func_checksums.py $(VERSION)
-COMPRESS = $(TOOLS_DIR)/dkr_assets_tool -fc
-BUILDER = $(TOOLS_DIR)/dkr_assets_tool -b $(VERSION) ./assets
+BUILDER = $(TOOLS_DIR)/dkr_assets_tool  -dkrv $(VERSION) build
 FLIPS = $(TOOLS_DIR)/flips
 
 LIB_DIRS := lib
