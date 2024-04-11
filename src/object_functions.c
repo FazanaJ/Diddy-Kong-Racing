@@ -5494,10 +5494,6 @@ void obj_init_butterfly(Object *butterflyObj, LevelObjectEntry_Butterfly *butter
         butterfly->triangles[i].uv2.u = D_800DCAA8[i].uv2.u & uMask;
         butterfly->triangles[i].uv2.v = D_800DCAA8[i].uv2.v & vMask;
     }
-
-    if (gConfig.perfMode) {
-        free_object(butterflyObj);
-    }
 }
 
 GLOBAL_ASM("asm/non_matchings/object_functions/obj_loop_butterfly.s")
@@ -5602,12 +5598,6 @@ void obj_init_frog(Object *obj, LevelObjectEntry_Frog *entry) {
     obj64->hopStartZ = obj->segment.trans.z_position;
     obj64->squishCooldown = 0;
     obj64->scaleY = 1.0f;
-
-    if (gConfig.perfMode) {
-        free_object(obj);
-        obj->segment.object.modelIndex = 1;
-        return;
-    }
 
     if (obj64->drumstick) {
         obj->segment.object.modelIndex = 1;

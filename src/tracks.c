@@ -187,6 +187,9 @@ void set_scene_viewport_num(s32 numPorts) {
     gScenePlayerViewports = numPorts;
 }
 
+extern Object **gObjPtrList; // Not sure about the number of elements
+extern s32 gObjectCount;
+
 /**
  * Initialises the level.
  * Allocates RAM to load generate the level geometry, spawn objects and generate shadows.
@@ -194,6 +197,8 @@ void set_scene_viewport_num(s32 numPorts) {
 void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, u32 entranceId, u32 collectables,
                 u32 arg6) {
     s32 i;
+    Object *curObj;
+    s32 tajFlags;
 
     gCurrentLevelHeader2 = gCurrentLevelHeader;
     D_8011B0F8 = FALSE;
@@ -241,6 +246,21 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     func_8000C8F8(arg6, 0);
     func_8000C8F8(collectables, 1);
     gScenePlayerViewports = numberOfPlayers;
+    if (gConfig.perfMode) {
+        for (i = 0; i < gObjectCount; i++) {
+            curObj = gObjPtrList[i];
+            tajFlags = curObj->segment.header->flags;
+            if (tajFlags & 0x40) {
+                free_object(curObj);
+            }
+        }
+    }
+    if (gConfig.perfMode == FALSE && gConfig.noCutbacks) {
+        for (i = 0; i < gObjectCount; i++) {
+            curObj = gObjPtrList[i];
+            curObj->segment.header->flags &= ~0x40;
+        }
+    }
     func_8000CC7C(vehicle, entranceId, numberOfPlayers);
     func_8000B020(72, 64);
 
@@ -352,9 +372,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
         func_800B9C18(tempUpdateRate);
         profiler_add(PP_WAVES, first2);
     }
-    if (gMapId != ASSET_LEVEL_CHARACTERSELECT) {
-        update_shadows(SHADOW_ACTORS, SHADOW_ACTORS, updateRate);
-    }
+    update_shadows(SHADOW_ACTORS, SHADOW_ACTORS, updateRate);
     for (i = 0; i < 7; i++) {
         if ((s32) gCurrentLevelHeader2->unk74[i] != -1) {
             update_colour_cycle(gCurrentLevelHeader2->unk74[i], tempUpdateRate);

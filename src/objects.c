@@ -1133,7 +1133,7 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
             tajFlags = curObj->segment.header->flags;
             if ((tajFlags & 0x20) && (gIsTimeTrial)) {
                 free_object(curObj);
-            } else if (tajFlags & 0x40 && ((numPlayers >= 2 && !gConfig.noCutbacks) || gConfig.perfMode)) {
+            } else if (tajFlags & 0x40 && numPlayers >= 2 && !gConfig.noCutbacks) {
                 free_object(curObj);
             }
         }
