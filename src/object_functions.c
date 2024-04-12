@@ -4063,7 +4063,7 @@ void obj_loop_treasuresucker(Object *obj, s32 updateRate) {
         }
         if (doSpawnObj) {
             spawnObj.x = racerObj->segment.trans.x_position;
-            spawnObj.y = (s16) racerObj->segment.trans.y_position + 10;
+            spawnObj.y = racerObj->segment.trans.y_position + 10.0f;
             spawnObj.z = racerObj->segment.trans.z_position;
             spawnObj.size = 8;
             spawnObj.objectID = BHV_SNOWBALL_2;
@@ -4071,7 +4071,7 @@ void obj_loop_treasuresucker(Object *obj, s32 updateRate) {
             if (newObj != NULL) {
                 newObj->segment.level_entry = NULL;
                 newObj->segment.y_velocity = 10.0f;
-                scale = (newObj->segment.y_velocity * 2) / 0.5f;
+                scale = (newObj->segment.y_velocity * 2.0f) / 0.5f;
                 newObj->segment.x_velocity =
                     (obj->segment.trans.x_position - racerObj->segment.trans.x_position) / scale;
                 newObj->segment.z_velocity =

@@ -3732,8 +3732,7 @@ void func_80016748(Object *obj0, Object *obj1) {
                     obj0Interact->distance = 0;
                     obj1Interact->distance = 0;
                     radius = (temp - distance) / distance;
-                    distance = 2; // Needed
-                    radius /= distance;
+                    radius /= 2.0f;
                     xDiff *= radius;
                     yDiff *= radius;
                     zDiff *= radius;

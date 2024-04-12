@@ -2162,6 +2162,44 @@ void obj_init_racer(Object *obj, LevelObjectEntry_Racer *racer) {
     tempRacer->lightFlags = 0;
 }
 
+void lightthing(void) {
+    static Object *light = NULL;
+    static sel = 0;
+    s32 *cur = NULL;
+    s32 buttons = get_buttons_pressed_from_player(0);
+
+    render_printf("Current: %d\n", sel);
+
+    if (buttons & U_JPAD) {
+        Object *racer = get_racer_object(0);
+        LevelObjectEntry_RgbaLight entry;
+        bzero(&entry, sizeof(LevelObjectEntry_RgbaLight));
+
+        entry.unkE = 10;
+        entry.unkA = 255;
+        entry.unkB = 0;
+        entry.unkC = 0;
+        entry.unkD = 255;
+
+        entry.common.objectID = (100);
+        entry.common.size = ((((100) & 0x100) & 0xFFFF) >> 1) | 8;
+        entry.common.x = racer->segment.trans.x_position;
+        entry.common.y = racer->segment.trans.y_position;
+        entry.common.z = racer->segment.trans.z_position;
+        light = spawn_object(&entry, 1);
+    }
+
+    if (buttons & L_TRIG) {
+        sel--;
+    }
+
+    if (buttons & R_TRIG) {
+        sel++;
+    }
+
+
+}
+
 /**
  * Main function for handling everything related to the player controlled racer object.
  * Branches off into a different function if the player becomes computer controlled. (Finishing a race)
@@ -2187,6 +2225,8 @@ void update_player_racer(Object *obj, s32 updateRate) {
     s32 i;
     struct LevelObjectEntryCommon newObject;
     set_crash_object(obj, CRASH_OBJ_UPDATE);
+
+    lightthing();
 
     gNumViewports = gNumberOfViewports + 1;
     gCurrentSurfaceType = SURFACE_DEFAULT;
