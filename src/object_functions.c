@@ -3564,14 +3564,14 @@ void obj_loop_door(Object *doorObj, s32 updateRate) {
             } else if (door->unk14[1] == -1) {
                 temp = doorObj->segment.trans.y_rotation - doorObj->properties.common.unk0;
             }
-            temp >>= 3;
-            if (temp > 0x200) {
-                temp = 0x200;
+            temp >>= 2;
+            if (temp > 0x100) {
+                temp = 0x100;
             }
-            if (temp < -0x200) {
-                temp = -0x200;
+            if (temp < -0x100) {
+                temp = -0x100;
             }
-            doorObj->segment.trans.y_rotation -= temp;
+            doorObj->segment.trans.y_rotation -= temp * updateRate;
             if (temp != 0) {
                 temp2 = 1;
             }
