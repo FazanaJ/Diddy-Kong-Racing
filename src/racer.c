@@ -2164,7 +2164,7 @@ void obj_init_racer(Object *obj, LevelObjectEntry_Racer *racer) {
 
 void lightthing(void) {
     static Object *light = NULL;
-    static sel = 0;
+    static sel = 130;
     s32 *cur = NULL;
     s32 buttons = get_buttons_pressed_from_player(0);
 
@@ -2181,11 +2181,7 @@ void lightthing(void) {
         entry.unkC = 0;
         entry.unkD = 255;
 
-        entry.common.objectID = (100);
-        entry.common.size = ((((100) & 0x100) & 0xFFFF) >> 1) | 8;
-        entry.common.x = racer->segment.trans.x_position;
-        entry.common.y = racer->segment.trans.y_position;
-        entry.common.z = racer->segment.trans.z_position;
+        NEW_OBJECT_ENTRY(entry.common, sel, 8, racer->segment.trans.x_position, racer->segment.trans.y_position, racer->segment.trans.z_position);
         light = spawn_object(&entry, 1);
     }
 

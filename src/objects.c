@@ -2125,6 +2125,8 @@ void func_80010994(s32 updateRate) {
     }
     tempVal = gObjectCount;
     for (i = gObjectListStart; i < tempVal; i++) {
+        s32 rip;
+        profiler_begin_timer();
         obj = gObjPtrList[i];
         if (!(obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED)) {
             if ((obj->behaviorId != BHV_LIGHT_RGBA) && (obj->behaviorId != BHV_WEAPON) &&
@@ -2148,6 +2150,14 @@ void func_80010994(s32 updateRate) {
                         func_80014090(obj, updateRate, obj->segment.header);
                     }
                 }
+                if (obj->segment.level_entry) {
+                    rip = (obj->segment.level_entry->aiNode.common.size & 0x80) << 1;
+                } else {
+                    rip = 16;
+                }
+                if (obj->behaviorId != BHV_RACER) {
+                    profiler_add_obj(obj->unk4A & ~rip, first, obj->segment.header);
+                }
             }
         }
     }
@@ -2155,7 +2165,15 @@ void func_80010994(s32 updateRate) {
     gPuppyPrint.mainTimerPoints[0][PP_RACER] = osGetCount();
 #endif
     for (i = 0; i < gNumRacers; i++) {
+        s32 rip;
+        profiler_begin_timer();
         update_player_racer((*gRacers)[i], updateRate);
+        if ((*gRacers)[i]->segment.level_entry) {
+            rip = ((*gRacers)[i]->segment.level_entry->aiNode.common.size & 0x80) << 1;
+        } else {
+            rip = 16;
+        }
+        profiler_add_obj((*gRacers)[i]->unk4A & ~rip, first, (*gRacers)[i]->segment.header);
     }
     if (gCurrentLevelHeader->race_type == 0) {
         for (i = 0; i < gNumRacers; i++) {
@@ -6663,7 +6681,6 @@ void run_object_loop_func(Object *obj, s32 updateRate) {
             break;
     }
     set_crash_object(NULL, CRASH_OBJ_NONE);
-    profiler_add_obj(obj->behaviorId, first, obj->segment.header);
 }
 
 s16 *func_80024594(s32 *currentCount, s32 *maxCount) {
