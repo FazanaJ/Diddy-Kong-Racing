@@ -2167,6 +2167,7 @@ void lightthing(void) {
     static sel = 130;
     s32 *cur = NULL;
     s32 buttons = get_buttons_pressed_from_player(0);
+    return;
 
     render_printf("Current: %d\n", sel);
 
