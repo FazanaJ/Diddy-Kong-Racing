@@ -105,8 +105,8 @@ s8 D_800DCDB0[16][2] = {
     { 0x02, 0xFA }, { 0x02, 0xFE }, { 0x08, 0xF8 }, { 0x03, 0xFD },
 };
 
-f32 gTimeDilation[10];
-s16 gTimeDilationTimer[10];
+f32 gTimeDilation[NUMBER_OF_CHARACTERS];
+s16 gTimeDilationTimer[NUMBER_OF_CHARACTERS];
 
 // Checksum count for obj_loop_goldenballoon
 s32 gObjLoopGoldenBalloonChecksum = 0xA597;
@@ -2176,13 +2176,22 @@ void lightthing(void) {
         LevelObjectEntry_RgbaLight entry;
         bzero(&entry, sizeof(LevelObjectEntry_RgbaLight));
 
+        entry.unk8 = 1 | (1 << 8);
         entry.unkE = 10;
         entry.unkA = 255;
         entry.unkB = 0;
         entry.unkC = 0;
         entry.unkD = 255;
+        entry.unkE = 1;
+        entry.unk10 = 1;
+        entry.unk12 = 1;
+        entry.unk14 = 1;
+        entry.unk16 = 1;
+        entry.unk18 = 1;
+        entry.unk1A = 1;
+        entry.unk1C = 1;
 
-        NEW_OBJECT_ENTRY(entry.common, sel, 8, racer->segment.trans.x_position, racer->segment.trans.y_position, racer->segment.trans.z_position);
+        NEW_OBJECT_ENTRY(entry.common, ASSET_OBJECT_ID_RGBALIGHT, 8, racer->segment.trans.x_position, racer->segment.trans.y_position, racer->segment.trans.z_position);
         light = spawn_object(&entry, 1);
     }
 

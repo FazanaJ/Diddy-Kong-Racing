@@ -1,0 +1,12 @@
+{
+    "files": {
+        "order": [
+            "ASSET_OBJECT_CUSTOMCHARACTER"
+        ],
+        "sections": {
+            "ASSET_OBJECT_CUSTOMCHARACTER": {
+                "filename": "CustomSelect.json"
+            }
+        }
+    }
+}
