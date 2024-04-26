@@ -85,8 +85,8 @@ void audio_init(OSSched *sc) {
     u32 seqfSize;
     audioMgrConfig audConfig;
 
-    gBssSectionStart = allocate_from_main_pool_safe(AUDIO_HEAP_SIZE, MEMP_AUDIO_POOL);
-    alHeapInit(&gALHeap, gBssSectionStart, AUDIO_HEAP_SIZE);
+    //gBssSectionStart = allocate_from_main_pool_safe(AUDIO_HEAP_SIZE, MEMP_AUDIO_POOL);
+    //alHeapInit(&gALHeap, gBssSectionStart, AUDIO_HEAP_SIZE);
 
     addrPtr = (s32 *) load_asset_section_from_rom(ASSET_AUDIO_TABLE);
     gSoundBank =

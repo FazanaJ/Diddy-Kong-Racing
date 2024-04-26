@@ -110,6 +110,9 @@ BUILD_DIR = build/$(VERSION)
 ##################### Compiler Options #######################
 
 # Check if a binutils package is installed on the system.
+#ifeq ($(shell type mips-n64-ld >/dev/null 2>/dev/null; echo $$?), 0)
+#  CROSS := mips-n64-
+#else ifeq ($(shell type mips-linux-gnu-ld >/dev/null 2>/dev/null; echo $$?), 0)
 ifeq ($(shell type mips-linux-gnu-ld >/dev/null 2>/dev/null; echo $$?), 0)
   CROSS := mips-linux-gnu-
 else ifeq ($(shell type mips64-linux-gnu-ld >/dev/null 2>/dev/null; echo $$?), 0)

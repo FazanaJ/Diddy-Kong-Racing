@@ -5,7 +5,14 @@
 #include "macros.h"
 
 void *alHeapDBAlloc(UNUSED u8 *file, UNUSED s32 line, ALHeap *hp, s32 num, s32 size) {
-    s32 bytes;
+    
+    u8 *ptr = (u8 *) allocate_from_main_pool((size * num) + 0xF, MEMP_AUDIO_POOL);
+    if ((s32) ptr & 0xF) {
+        ptr = (u8 *) (((s32) ptr + 0xF) & ~0xF);
+    }
+
+    return ptr;
+    /*s32 bytes;
     u8 *ptr = 0;
 
     bytes = (num*size + AL_CACHE_ALIGN) & ~AL_CACHE_ALIGN;
@@ -16,5 +23,5 @@ void *alHeapDBAlloc(UNUSED u8 *file, UNUSED s32 line, ALHeap *hp, s32 num, s32 s
     } else {
     }
 
-    return ptr;
+    return ptr;*/
 }
