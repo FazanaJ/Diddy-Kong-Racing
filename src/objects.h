@@ -9,6 +9,11 @@
 #include "camera.h"
 #include "lights.h"
 
+#define MAX_CHECKPOINTS 60
+#define OBJECT_POOL_SIZE 0x15800
+#define OBJECT_SPAWN_HEAP_SIZE 0x800
+#define OBJECT_SLOT_COUNT 512
+#define ASSET_OBJECT_HEADER_TABLE_LENGTH 304 // This isn't important, but it's the number of object headers
 
 #define NEW_OBJECT_ENTRY(entryVar, entryId, entrySize, xPos, yPos, zPos) { \
     entryVar.x = (xPos);                                                   \

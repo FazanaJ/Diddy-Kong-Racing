@@ -166,7 +166,7 @@ void *allocate_from_pool_containing_slots(MemoryPoolSlot *slots, s32 size) {
     s32 i;
     for (i = gNumberOfMemoryPools; i != 0; i--) {
         if (slots == gMemoryPools[i].slots) {
-            return allocate_from_memory_pool(i, size, 0);
+            return allocate_from_memory_pool(i, size, MEMP_OBJECTS);
         }
     }
     return (void *) NULL;

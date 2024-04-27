@@ -14028,18 +14028,6 @@ s32 trophy_race_cabinet_menu_loop(void) {
 }
 
 /**
- * Blank function called when a dialogue box is opened.
- */
-void dialogue_open_stub(void) {
-}
-
-/**
- * Blank function called when a dialogue box is closed.
- */
-void dialogue_close_stub(void) {
-}
-
-/**
  * Renders a textbox with a displaylist.
  * Return value goes completely unused.
  */

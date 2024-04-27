@@ -451,8 +451,6 @@ void set_menu_id_if_option_equal(s32 IDToCheck, s32 IDToSet);
 s32 taj_menu_loop(void);
 s32 dialogue_race_defeat(void);
 s32 trophy_race_cabinet_menu_loop(void);
-void dialogue_open_stub(void);
-void dialogue_close_stub(void);
 f32 func_8009E9B0(DialogueBoxBackground *arg0, Gfx **dlist, MatrixS **mat, Vertex **verts);
 u64 *get_eeprom_settings_pointer(void);
 s32 set_eeprom_settings_value(u64 valueToSet);

@@ -32,12 +32,6 @@
 #include "audio_vehicle.h"
 #include "vehicle_misc.h"
 
-#define MAX_CHECKPOINTS 60
-#define OBJECT_POOL_SIZE 0x15800
-#define OBJECT_SPAWN_HEAP_SIZE 0x800
-#define OBJECT_SLOT_COUNT 512
-#define ASSET_OBJECT_HEADER_TABLE_LENGTH 304 // This isn't important, but it's the number of object headers
-
 /************ .data ************/
 
 FadeTransition D_800DC6F0 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_BLACK, 30, 15);
@@ -6468,7 +6462,6 @@ s32 obj_init_property_flags(s32 behaviorId) {
  * One big switch statement for whichever object.
  */
 void run_object_loop_func(Object *obj, s32 updateRate) {
-    profiler_begin_timer();
     set_crash_object(obj, CRASH_OBJ_UPDATE);
     switch (obj->behaviorId) {
         case BHV_SCENERY:
