@@ -14,7 +14,7 @@
 
 #ifdef PUPPYPRINT_DEBUG
 
-s32 D_800E2EF0 = 0;
+s32 D_800E2EF0 = FALSE;
 
 // Char width is (v - u) + 1
 TexFontCoords gDebugFontCoords[3][32] = {
@@ -448,25 +448,28 @@ const char D_800E8C5C[] = "(nil)";
 /************ .bss ************/
 
 TextureHeader *gTexture[3];
-u16 D_80127CAC;
-u16 D_80127CAE;
+u16 gDebugTextX;
+u16 gDebugTextY;
 u16 D_80127CB0;
 u16 D_80127CB2;
 s32 D_80127CB4;
-s32 D_80127CB8;
-s32 D_80127CBC;
-s32 D_80127CC0;
-s32 D_80127CC4;
-s32 D_80127CC8;
+s32 gDebugTextOn;
+s32 gDebugBoundsX1;
+s32 gDebugBoundsX2;
+s32 gDebugBoundsY1;
+s32 gDebugBoundsY2;
 s32 gDebugFontTexture;
-u16 D_80127CD0;
-u16 D_80127CD2;
-s32 D_80127CD4;
+u16 gDebugScreenWidth;
+u16 gDebugScreenHeight;
+UNUSED s32 D_80127CD4;
 char gDebugPrintBufferStart[0x900];
 char *gDebugPrintBufferEnd;
 
 /******************************/
 
+/**
+ * Standard C Library function that converts integers to strings.
+ */
 char *_itoa(u64 n, char *outBuffer, u32 radix, s32 useUpperCase) {
     char *alphabet;
     char *buffer;
@@ -481,18 +484,22 @@ char *_itoa(u64 n, char *outBuffer, u32 radix, s32 useUpperCase) {
 }
 
 // Official Name: sprintfSetSpacingCodes
-void func_800B4A08(s32 arg0) {
-    D_800E2EF0 = arg0;
+void func_800B4A08(s32 setting) {
+    D_800E2EF0 = setting;
 }
 
 // Official Name: vsprintf
 GLOBAL_ASM("asm/non_matchings/printf/vsprintf.s")
 
-void diPrintfInit(void) {
+/**
+ * Load the font textures for the debug text, then set the buffer to the beginning.
+ * Official Name: diPrintfInit
+ */
+void debug_text_init(void) {
     set_texture_colour_tag(MEMP_TEXT);
-    gTexture[0] = load_texture(0);
-    gTexture[1] = load_texture(1);
-    gTexture[2] = load_texture(2);
+    gTexture[0] = load_texture(ASSET_TEX2D_SMALLFONT_0);
+    gTexture[1] = load_texture(ASSET_TEX2D_SMALLFONT_1);
+    gTexture[2] = load_texture(ASSET_TEX2D_SMALLFONT_2);
     gDebugPrintBufferEnd = gDebugPrintBufferStart;
     set_texture_colour_tag(MEMP_MISC_TEXTURES);
 }
@@ -505,9 +512,9 @@ s32 render_printf(const char *format, ...) {
     if ((gDebugPrintBufferEnd - gDebugPrintBufferStart) > 0x800) {
         return -1;
     }
-    func_800B4A08(1);
+    func_800B4A08(TRUE);
     written = vsprintf(gDebugPrintBufferEnd, format, args);
-    func_800B4A08(0);
+    func_800B4A08(FALSE);
     if (written > 0) {
         gDebugPrintBufferEnd = &gDebugPrintBufferEnd[written] + 1;
     }
@@ -519,32 +526,32 @@ s32 render_printf(const char *format, ...) {
  * Soft-clear the buffer afterwards by setting the endpoint to the start point.
  * Official Name: diPrintfAll
  */
-void print_debug_strings(Gfx **dList) {
+void debug_text_print(Gfx **dList) {
     char *buffer;
 
     init_rdp_and_framebuffer(dList);
-    D_80127CD2 = gScreenHeight;
-    D_80127CD0 = gScreenWidth;
-    gDPSetScissor((*dList)++, 0, 0, 0, D_80127CD0, D_80127CD2);
-    func_800B6E50();
+    gDebugScreenHeight = gScreenHeight;
+    gDebugScreenWidth = gScreenWidth;
+    gDPSetScissor((*dList)++, 0, 0, 0, gDebugScreenWidth, gDebugScreenHeight);
+    debug_text_bounds();
     gSPDisplayList((*dList)++, dDebugFontSettings);
     buffer = (char *) gDebugPrintBufferStart;
-    func_800B6EE0();
+    debug_text_origin();
     gDebugFontTexture = -1;
     D_80127CB4 = 0;
-    D_80127CB0 = D_80127CAC;
-    D_80127CB2 = D_80127CAE;
+    D_80127CB0 = gDebugTextX;
+    D_80127CB2 = gDebugTextY;
     while ((s32) buffer != (s32) gDebugPrintBufferEnd) {
-        D_80127CB8 = FALSE;
+        gDebugTextOn = FALSE;
         buffer += func_800B653C(dList, buffer);
     }
-    func_800B695C(dList, (u16) D_80127CB0, (u16) D_80127CB2, D_80127CAC, D_80127CAE + 10);
+    debug_text_background(dList, D_80127CB0, D_80127CB2, gDebugTextX, gDebugTextY + 10);
     buffer = (char *) gDebugPrintBufferStart;
-    func_800B6EE0();
+    debug_text_origin();
     gDebugFontTexture = -1;
     D_80127CB4 = 0;
     while ((s32) buffer != (s32) gDebugPrintBufferEnd) {
-        D_80127CB8 = TRUE;
+        gDebugTextOn = TRUE;
         buffer += func_800B653C(dList, buffer);
     }
     gDebugPrintBufferEnd = gDebugPrintBufferStart;
@@ -574,7 +581,10 @@ void set_render_printf_position(u16 x, u16 y){ RENDER_PRINTF_CMD_SET_POSITION(x,
 
 GLOBAL_ASM("asm/non_matchings/printf/func_800B653C.s")
 
-    void func_800B695C(Gfx **dList, u32 ulx, u32 uly, u32 lrx, u32 lry) {
+/**
+ * Render the background for the debug text.
+ */
+void debug_text_background(Gfx **dList, u32 ulx, u32 uly, u32 lrx, u32 lry) {
     if (!((ulx == lrx) | (uly == lry))) {
         if (ulx >= 2) {
             ulx -= 2;
@@ -585,77 +595,90 @@ GLOBAL_ASM("asm/non_matchings/printf/func_800B653C.s")
     }
 }
 
-// Loads a font texture and returns the width of the character given.
-s32 func_800B69FC(Gfx **dList, s32 asciiVal) {
+/**
+ * Renders a character onscreen at the current debug text position.
+ * If necessary, load the correct font texture.
+ * Return the width of the char that was just printed.
+ */
+s32 debug_text_character(Gfx **dList, s32 asciiVal) {
     s32 fontCharWidth;
     s32 fontCharU;
 
-    if (asciiVal < 0x40) {
+    if (asciiVal < '@') {
         // Character is a symbol or number and not a letter
         if (gDebugFontTexture != 0) {
-            if (D_80127CB8) {
+            if (gDebugTextOn) {
                 gDPLoadTextureBlock((*dList)++, OS_PHYSICAL_TO_K0(gTexture[0] + 1), G_IM_FMT_IA, G_IM_SIZ_8b, 192, 11,
                                     0, 2, 2, 0, 0, 0, 0);
             }
             gDebugFontTexture = 0;
         }
-        asciiVal -= 0x21;
-    } else if (asciiVal < 0x60) {
+        asciiVal -= '!';
+    } else if (asciiVal < '`') {
         // Character is a upper case letter
         if (gDebugFontTexture != 1) {
-            if (D_80127CB8) {
+            if (gDebugTextOn) {
                 gDPLoadTextureBlock((*dList)++, OS_PHYSICAL_TO_K0(gTexture[1] + 1), G_IM_FMT_IA, G_IM_SIZ_8b, 248, 11,
                                     0, 2, 2, 0, 0, 0, 0);
             }
             gDebugFontTexture = 1;
         }
-        asciiVal -= 0x40;
-    } else if (asciiVal < 0x80) {
+        asciiVal -= '@';
+    } else if (asciiVal <= 0x7F) {
         // Character is a lower case letter
         if (gDebugFontTexture != 2) {
-            if (D_80127CB8) {
+            if (gDebugTextOn) {
                 gDPLoadTextureBlock((*dList)++, OS_PHYSICAL_TO_K0(gTexture[2] + 1), G_IM_FMT_IA, G_IM_SIZ_8b, 192, 11,
                                     0, 2, 2, 0, 0, 0, 0);
             }
             gDebugFontTexture = 2;
         }
-        asciiVal -= 0x60;
+        asciiVal -= '`';
     }
     fontCharU = gDebugFontCoords[gDebugFontTexture][asciiVal].u;
     fontCharWidth = (gDebugFontCoords[gDebugFontTexture][asciiVal].v - fontCharU) + 1;
-    if (D_80127CB8) {
+    if (gDebugTextOn) {
         gDPSetCombineMode((*dList)++, DKR_CC_UNK12, DKR_CC_UNK12);
-        gSPTextureRectangle((*dList)++, (D_80127CAC << 2), (D_80127CAE << 2), ((D_80127CAC + fontCharWidth) << 2),
-                            ((D_80127CAE + 10) << 2), 0, (fontCharU << 5), 0, 1024, 1024);
+        gSPTextureRectangle((*dList)++, (gDebugTextX << 2), (gDebugTextY << 2), ((gDebugTextX + fontCharWidth) << 2),
+                            ((gDebugTextY + 10) << 2), 0, (fontCharU << 5), 0, 1024, 1024);
     }
     return fontCharWidth;
 }
 
-void func_800B6E50(void) {
-    if (D_80127CD0 <= 320) {
-        D_80127CBC = 16;
-        D_80127CC0 = D_80127CD0 - 16;
+/**
+ * Sets the upper and lower boundaries of the debug text.
+ */
+void debug_text_bounds(void) {
+    if (gDebugScreenWidth <= 320) {
+        gDebugBoundsX1 = 16;
+        gDebugBoundsX2 = gDebugScreenWidth - 16;
     } else {
-        D_80127CBC = 32;
-        D_80127CC0 = D_80127CD0 - 32;
+        gDebugBoundsX1 = 32;
+        gDebugBoundsX2 = gDebugScreenWidth - 32;
     }
-    if (D_80127CD2 <= 240) {
-        D_80127CC4 = 16;
-        D_80127CC8 = D_80127CD2 - 16;
+    if (gDebugScreenHeight <= 240) {
+        gDebugBoundsY1 = 16;
+        gDebugBoundsY2 = gDebugScreenHeight - 16;
     } else {
-        D_80127CC4 = 32;
-        D_80127CC8 = D_80127CD2 - 32;
+        gDebugBoundsY1 = 32;
+        gDebugBoundsY2 = gDebugScreenHeight - 32;
     }
 }
 
-void func_800B6EE0(void) {
-    D_80127CAC = D_80127CBC;
-    D_80127CAE = D_80127CC4;
+/**
+ * Sets the print position of the text back to top left.
+ */
+void debug_text_origin(void) {
+    gDebugTextX = gDebugBoundsX1;
+    gDebugTextY = gDebugBoundsY1;
 }
 
-void func_800B6F04(void) {
-    D_80127CAC = D_80127CBC;
-    D_80127CAE += 11;
+/**
+ * Moves the print position of the text down one line.
+ */
+void debug_text_newline(void) {
+    gDebugTextX = gDebugBoundsX1;
+    gDebugTextY += 11;
 }
 
 #endif

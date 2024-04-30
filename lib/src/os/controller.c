@@ -23,7 +23,6 @@ OSMesgQueue __osEepromTimerQ;
 OSMesg __osEepromTimerMsg;
 s32 D_8012CDD4[2]; //Padding? Maybe osClockRate should be declared here?
 ALIGNED16 OSPifRam __osPfsPifRam;
-
 extern OSTime osClockRate;
 
 s32 osContInit(OSMesgQueue *mq, u8 *bitpattern, OSContStatus *data) {

@@ -148,7 +148,7 @@ void thread3_main(UNUSED void *unused) {
 
             case OS_SC_PRE_NMI_MSG:
                 gNMIMesgBuf = TRUE;
-                func_80072708();
+                rumble_kill();
                 audioStopThread();
                 stop_thread30();
                 IO_WRITE(SP_STATUS_REG, SP_SET_HALT | SP_CLR_INTR_BREAK | SP_CLR_YIELD | SP_CLR_YIELDED |
@@ -157,7 +157,7 @@ void thread3_main(UNUSED void *unused) {
                 osDpSetStatus(DPC_SET_XBUS_DMEM_DMA | DPC_CLR_FREEZE | DPC_CLR_FLUSH | DPC_CLR_TMEM_CTR |
                               DPC_CLR_PIPE_CTR | DPC_CLR_CMD_CTR | DPC_CLR_CMD_CTR);
                 while (1) {
-                    ;
+                    ; // Infinite loop
                 }
                 break;
         }
@@ -214,7 +214,7 @@ void init_game(void) {
     tex_init_textures();
     allocate_object_model_pools();
     allocate_object_pools();
-    diPrintfInit();
+    debug_text_init();
     allocate_ghost_data();
     init_particle_assets();
     init_weather();
@@ -336,7 +336,7 @@ void main_game_loop(void) {
 #endif
 
     sound_update_queue(sLogicUpdateRate);
-    print_debug_strings(&gCurrDisplayList);
+    debug_text_print(&gCurrDisplayList);
     render_dialogue_boxes(&gCurrDisplayList, &gGameCurrMatrix, &gGameCurrVertexList);
     close_dialogue_box(4);
     assign_dialogue_box_id(4);
@@ -444,7 +444,7 @@ void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     osSetTime(0);
     sPrevTime = 0;
     set_free_queue_state(2);
-    func_80072298(1);
+    rumble_init(TRUE);
     puppyprint_log("Level [%s] loaded in %2.3fs.", get_level_name(levelId),
                    (f64) (OS_CYCLES_TO_USEC(osGetCount() - profiler_get_timer()) / 1000000.0f));
 }
@@ -1503,22 +1503,26 @@ void default_alloc_displaylist_heap(void) {
     gCurrNumHudVertsPerPlayer = gNumHudVertsPerPlayer[numberOfPlayers];
 }
 
-void func_8006F140(s32 arg0) {
+/**
+ * Set a delayed level trigger and a transition.
+ * Once the timer hits zero, the level will change.
+ */
+void level_transition_begin(s32 type) {
     if (gLevelLoadTimer == 0) {
         gLevelLoadTimer = 40;
         gLevelLoadType = 0;
-        if (arg0 == 1) { // FADE_BARNDOOR_HORIZONTAL?
+        if (type == 1) { // FADE_BARNDOOR_HORIZONTAL?
             transition_begin(&gLevelFadeOutTransition);
         }
-        if (arg0 == 3) { // FADE_CIRCLE?
+        if (type == 3) { // FADE_CIRCLE?
             gLevelLoadTimer = 282;
             transition_begin(&D_800DD424);
         }
-        if (arg0 == 4) { // FADE_WAVES?
+        if (type == 4) { // FADE_WAVES?
             gLevelLoadTimer = 360;
             transition_begin(&D_800DD424);
         }
-        if (arg0 == 0) { // FADE_FULLSCREEN?
+        if (type == 0) { // FADE_FULLSCREEN?
             gLevelLoadTimer = 2;
         }
     }
