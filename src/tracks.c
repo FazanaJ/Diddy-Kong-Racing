@@ -242,7 +242,7 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     spawn_skydome(skybox);
     D_8011B110 = 0;
     D_8011B114 = 0x10000;
-    func_80011390();
+    path_enable();
     func_8000C8F8(arg6, 0);
     func_8000C8F8(collectables, 1);
     gScenePlayerViewports = numberOfPlayers;
@@ -398,7 +398,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
     if (get_filtered_cheats() & CHEAT_MIRRORED_TRACKS) {
         flip = TRUE;
     }
-#ifndef NO_ANTIPIRACY
+#ifdef ANTI_TAMPER
     // Antipiracy measure
     if (IO_READ(0x200) != 0xAC290000) {
         flip = TRUE;
@@ -470,7 +470,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
             process_weather(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, &gSceneCurrTriList, tempUpdateRate);
         }
         profiler_add(PP_WEATHER, first);
-        func_800AD030(get_active_camera_segment());
+        lensflare_override(get_active_camera_segment());
         func_800ACA20(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, get_active_camera_segment());
 #ifdef PUPPYPRINT_DEBUG
         if (gPuppyPrint.showCvg) {
@@ -504,7 +504,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
             gDPPipeSync((*dList)++);
             initialise_player_viewport_vars(dList, updateRate);
             set_weather_limits(-1, -512);
-            func_800AD030(get_active_camera_segment());
+            lensflare_override(get_active_camera_segment());
             func_800ACA20(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, get_active_camera_segment());
             set_text_font(FONT_COLOURFUL);
             posX = (gScreenWidth / 2) + 10;
@@ -787,8 +787,10 @@ void animate_level_textures(s32 updateRate) {
 void spawn_skydome(s32 objectID) {
     LevelObjectEntryCommon spawnObject;
 
+#ifdef ANTI_TAMPER
     // Antipiracy measure
-    // compare_balloon_checksums();
+    compare_balloon_checksums();
+#endif
     if (objectID == -1) {
         gSkydomeSegment = NULL;
         return;
@@ -1724,7 +1726,7 @@ s32 check_if_in_draw_range(Object *obj) {
                 obj64 = obj->unk64;
                 obj->segment.object.opacity = ((obj64->racer.transparency + 1) * alpha) >> 8;
                 break;
-            case BHV_UNK_3A: // Ghost Object?
+            case BHV_TIMETRIAL_GHOST: // Ghost Object?
                 obj64 = obj->unk64;
                 obj->segment.object.opacity = obj64->racer.transparency;
                 break;

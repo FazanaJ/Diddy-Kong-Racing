@@ -17,7 +17,7 @@
  * 2 player has a single horizontal line, while 3 and 4 player splits the screen into quadrants.
  * 3 player will completely fill in where player 4 would normally be.
  */
-void render_borders_for_multiplayer(Gfx **dlist) {
+void divider_draw(Gfx **dList) {
     u32 width, height;
     LevelHeader *levelHeader;
     s32 x1;
@@ -31,18 +31,18 @@ void render_borders_for_multiplayer(Gfx **dlist) {
     height = gScreenHeight;
     heightHalf = height / 2;
     widthHalf = width / 2;
-    gDPSetCycleType((*dlist)++, G_CYC_FILL);
-    gDPSetFillColor((*dlist)++, GPACK_RGBA5551(0, 0, 0, 1) << 16 | GPACK_RGBA5551(0, 0, 0, 1)); // Black fill color
+    gDPSetCycleType((*dList)++, G_CYC_FILL);
+    gDPSetFillColor((*dList)++, GPACK_RGBA5551(0, 0, 0, 1) << 16 | GPACK_RGBA5551(0, 0, 0, 1)); // Black fill color
     switch (gNumberOfViewports) {
         case VIEWPORTS_COUNT_3_PLAYERS:
             levelHeader = gCurrentLevelHeader;
             // Draw black square in the bottom-right corner.
             if (gHudToggleSettings[gHUDNumPlayers] || levelHeader->race_type & RACETYPE_CHALLENGE) {
-                gDPFillRectangle((*dlist)++, widthHalf + 2, heightHalf + 2, width, height);
+                gDPFillRectangle((*dList)++, widthHalf + 2, heightHalf + 2, width, height);
             }
             // There is no break statement here. This is intentional.
         case VIEWPORTS_COUNT_4_PLAYERS:
-            gDPFillRectangle((*dlist)++, widthHalf - 2, 0, widthHalf + 2, height);
+            gDPFillRectangle((*dList)++, widthHalf - 2, 0, widthHalf + 2, height);
             // Fallthrough
         case VIEWPORTS_COUNT_2_PLAYERS:
             x1 = 0;
@@ -51,5 +51,43 @@ void render_borders_for_multiplayer(Gfx **dlist) {
             y2 = heightHalf + 2;
             break;
     }
-    gDPFillRectangle((*dlist)++, x1, y1, x2, y2);
+    gDPFillRectangle((*dList)++, x1, y1, x2, y2);
+}
+
+/**
+ * Draws the multiplayer borders again, but fully invisible using the XLU render mode.
+ * The effect here is that it will strip coverage for anything beneath, eliminating pixel bleed.
+ */
+void divider_clear_coverage(Gfx **dList) {
+    u32 screenSize;
+    u32 screenWidth;
+    u32 screenHeight;
+    u32 height;
+    u32 width;
+    u32 tempX;
+    u32 tempY;
+
+    screenSize = get_video_width_and_height_as_s32();
+    screenHeight = GET_VIDEO_HEIGHT(screenSize);
+    screenWidth = GET_VIDEO_WIDTH(screenSize);
+    height = (screenHeight / 128) << 1 << 1;
+    width = (screenWidth / 256) << 1 << 1;
+    gDPSetCycleType((*dList)++, G_CYC_1CYCLE);
+    gDPSetCombineMode((*dList)++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
+    gDPSetRenderMode((*dList)++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
+    gDPSetPrimColor((*dList)++, 0, 0, 0, 0, 0, 0);
+    switch (get_viewport_count()) {
+        case VIEWPORTS_COUNT_2_PLAYERS:
+            tempY = (screenHeight / 2) - (height / 2);
+            gDPFillRectangle((*dList)++, 0, tempY, screenWidth, tempY + height);
+            break;
+        case VIEWPORTS_COUNT_3_PLAYERS:
+        case VIEWPORTS_COUNT_4_PLAYERS:
+            tempY = (screenHeight / 2) - (height / 2);
+            tempX = (screenWidth / 2) - (width / 2);
+            gDPFillRectangle((*dList)++, 0, tempY, screenWidth, tempY + height);
+            tempX += 0; // Fakematch
+            gDPFillRectangle((*dList)++, tempX, 0, tempX + width, screenHeight);
+            break;
+    }
 }

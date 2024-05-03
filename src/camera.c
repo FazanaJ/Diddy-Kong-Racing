@@ -132,7 +132,7 @@ void camera_init(void) {
     gSpriteAnimOff = FALSE;
     D_80120D18 = 0;
     gAdjustViewportHeight = 0;
-#ifndef NO_ANTIPIRACY
+#ifdef ANTI_TAMPER
     gAntiPiracyViewport = 0;
 
     WAIT_ON_IOBUSY(stat);
@@ -845,7 +845,7 @@ void func_8006807C(Gfx **dlist, MatrixS **mtx) {
 void viewport_rsp_set(Gfx **dlist, s32 width, s32 height, s32 posX, s32 posY) {
     s32 tempWidth = (get_filtered_cheats() & CHEAT_MIRRORED_TRACKS) ? -width : width;
     Vp *vp;
-#ifndef NO_ANTIPIRACY
+#ifdef ANTI_TAMPER
     // Antipiracy measure. Flips the screen upside down.
     if (gAntiPiracyViewport) {
         height = -height;

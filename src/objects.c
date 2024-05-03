@@ -34,8 +34,8 @@
 
 /************ .data ************/
 
-FadeTransition D_800DC6F0 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_BLACK, 30, 15);
-FadeTransition D_800DC6F8 = FADE_TRANSITION(FADE_CIRCLE, FADE_FLAG_NONE, FADE_COLOR_BLACK, 30, 15);
+FadeTransition gTajChallengeTransition = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_BLACK, 30, 15);
+FadeTransition gBalloonCutsceneTransition = FADE_TRANSITION(FADE_CIRCLE, FADE_FLAG_NONE, FADE_COLOR_BLACK, 30, 15);
 
 s32 D_800DC700 = 0;
 s32 D_800DC704 = 0; // Currently unknown, might be a different type.
@@ -43,13 +43,13 @@ s16 D_800DC708 = 0;
 s32 D_800DC70C = 0; // Currently unknown, might be a different type.
 s16 D_800DC710 = 1;
 s32 D_800DC714 = 0; // Currently unknown, might be a different type.
-Object *gGhostObj = NULL;
+Object *gGhostObjStaff = NULL;
 s8 D_800DC71C = 0;
 s32 gObjectTexAnim = FALSE;
-s16 D_800DC724 = 0x2A30;
-s16 D_800DC728 = -1;
-s16 D_800DC72C = 0;
-u8 gHasGhostToSave = 0;
+s16 gTimeTrialTime = 0x2A30;
+s16 gTimeTrialVehicle = -1;
+s16 gTimeTrialCharacter = 0;
+u8 gHasGhostToSave = FALSE;
 u8 gTimeTrialStaffGhost = FALSE;
 u8 gBeatStaffGhost = FALSE;
 s8 D_800DC73C = 0;
@@ -161,8 +161,8 @@ u32 gMagnetColours[3] = {
     COLOUR_RGBA32(16, 64, 255, 0), // Level 2
     COLOUR_RGBA32(16, 255, 64, 0), // Level 3
 };
-FadeTransition D_800DC858 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_BLACK, 40, 0xFFFF);
-FadeTransition D_800DC860 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_BLACK, 40, 0);
+FadeTransition gRaceEndFade = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_BLACK, 40, -1);
+FadeTransition gRaceEndTransition = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_BLACK, 40, 0);
 
 /*******************************/
 
@@ -182,8 +182,8 @@ s8 D_8011AD26;
 f32 D_8011AD28;
 s32 D_8011AD2C;
 f32 gCurrentLightIntensity;
-Object *D_8011AD34;
-s32 D_8011AD38; // D_8011AD38 is ultimately set by func_80074B34, and is almost definitely SIDeviceStatus
+Object *gGhostObjPlayer;
+s32 gTimeTrialContPak; // gTimeTrialContPak is ultimately set by func_80074B34, and is almost definitely SIDeviceStatus
 s8 D_8011AD3C;
 s8 D_8011AD3D;
 s8 D_8011AD3E;
@@ -194,10 +194,10 @@ s16 gTransformPosX;
 s16 gTransformPosY;
 s16 gTransformPosZ;
 s16 gTransformAngleY;
-s16 D_8011AD4E;
-s8 D_8011AD50;
+s16 gRaceEndTimer;
+s8 gRaceEndStage;
 s8 gNumRacersSaved;
-s8 D_8011AD52;
+UNUSED s8 unused_D_8011AD52;
 s8 D_8011AD53;
 s32 D_8011AD54;
 Object *(*gSpawnObjectHeap)[sizeof(Object)];
@@ -212,7 +212,7 @@ Gfx *D_8011AD78[10];
 s32 gAssetsMiscTableLength;
 s16 D_8011ADA4;
 f32 gObjectUpdateRateF;
-s32 D_8011ADAC;
+s32 gPathUpdateOff;
 s32 gEventCountdown;
 s32 D_8011ADB4;
 s32 gEventStartTimer;
@@ -222,9 +222,9 @@ s8 gFirstTimeFinish;
 s8 D_8011ADC5;
 u32 gBalloonCutsceneTimer;
 s8 (*D_8011ADCC)[8];
-f32 D_8011ADD0;
+f32 gObjectOffsetY;
 s8 D_8011ADD4;
-s8 D_8011ADD5;
+s8 gOverrideDoors;
 Object *D_8011ADD8[10]; // Array of OverRidePos objects
 s8 D_8011AE00;          // Number of OverRidePos objects in D_8011ADD8
 s8 D_8011AE01;          // A boolean? I've seen it either as 0 or 1
@@ -248,8 +248,8 @@ s16 gCutsceneID;
 s16 D_8011AE7C;
 s8 D_8011AE7E;
 s16 gTTGhostTimeToBeat;
-s16 D_8011AE82;         // Current Vehicle being used in track?
-s16 gMapDefaultVehicle; // Vehicle enum
+s16 gPrevTimeTrialVehicle; // Current Vehicle being used in track?
+s16 gMapDefaultVehicle;    // Vehicle enum
 s32 D_8011AE88;
 Gfx *gObjectCurrDisplayList;
 MatrixS *gObjectCurrMatrix;
@@ -267,8 +267,8 @@ CheckpointNode *gTrackCheckpoints; // Array of structs, unknown number of member
 s32 gNumberOfCheckpoints;
 s32 D_8011AED4;
 s16 gTajChallengeType;
-Object *(*gCameraObjList)[20]; // Camera objects with a maximum of 20
-s32 gCameraObjCount;           // The number of camera objects in the above list
+Object *(*gCameraObjList)[CAMCONTROL_COUNT]; // Camera objects with a maximum of 20
+s32 gCameraObjCount;                         // The number of camera objects in the above list
 Object *(*gRacers)[NUM_RACERS_1P + 2];
 // Similar to gRacers, but sorts the pointer by the players' current position in the race.
 Object **gRacersByPosition;
@@ -278,15 +278,15 @@ s32 gNumRacers;
 u8 gTimeTrialEnabled;
 u8 gIsTimeTrial;
 s8 gIsTajChallenge;
-s8 D_8011AEF7;
-s8 D_8011AEF8;
-s32 D_8011AEFC;
+s8 gTajRaceInit;
+s8 gChallengePrevMusic;
+s32 gChallengePrevInstruments;
 s8 D_8011AF00;
-Object *(*D_8011AF04)[128];
-s32 D_8011AF08[2];
-s32 D_8011AF10[2];
-f32 D_8011AF18[4];
-s32 D_8011AF28;
+Object *(*gAINodes)[AINODE_COUNT];
+s32 gAINodeTail[2];
+s32 gInitAINodes;
+s32 D_8011AF14;
+f32 gElevationHeights[5];
 s32 D_8011AF2C;
 ShadeProperties *gWorldShading; // Effectively unused.
 s32 D_8011AF34;
@@ -311,7 +311,7 @@ u8 D_8011B078[3];
 u8 D_8011B07B[1];
 s32 D_8011B080[7];
 
-extern s16 D_8011D5AC;
+extern s16 gGhostMapID;
 
 /******************************/
 
@@ -388,9 +388,9 @@ void func_8000BADC(s32 updateRate) {
     for (i = 0; i < gNumRacers; i++) {
         updateRateF = (f32) updateRate;
         racer = &(*gRacers)[i]->unk64->racer;
-        asset20Part = &asset20[racer->unk2];
+        asset20Part = &asset20[racer->racerIndex];
         if (racer->shieldTimer != 0) {
-            D_8011B010[racer->unk2] += updateRate;
+            D_8011B010[racer->racerIndex] += updateRate;
         }
         asset20Part->unk72 += updateRate;
         if (racer->boostTimer != 0) {
@@ -441,9 +441,9 @@ void func_8000BADC(s32 updateRate) {
             }
         }
         if ((asset20Part->unk70 > 0) || (asset20Part->unk74 > 0.0f)) {
-            func_8000B750((*gRacers)[i], racer->unk2, racer->vehicleIDPrev, racer->boostType, 0);
+            func_8000B750((*gRacers)[i], racer->racerIndex, racer->vehicleIDPrev, racer->boostType, 0);
         }
-        temp = racer->unk2 << 2;
+        temp = racer->racerIndex << 2;
         D_8011B078[temp + 1] += updateRate;
         D_8011B078[temp + 2] += updateRate;
         if (racer->magnetTimer != 0) {
@@ -485,16 +485,16 @@ void allocate_object_pools(void) {
     set_world_shading(0.67f, 0.33f, 0, -0x2000, 0);
     gObjectMemoryPool = (Object *) new_sub_memory_pool(OBJECT_POOL_SIZE, OBJECT_SLOT_COUNT);
     gParticlePtrList = allocate_from_main_pool_safe(sizeof(uintptr_t) * 200, MEMP_PARTICLES);
-    D_8011AE6C = allocate_from_main_pool_safe(0x50, MEMP_OBJECTS);
-    D_8011AE74 = allocate_from_main_pool_safe(0x200, MEMP_OBJECTS);
+    D_8011AE6C = allocate_from_main_pool_safe(sizeof(uintptr_t) * 20, MEMP_OBJECTS);
+    D_8011AE74 = allocate_from_main_pool_safe(sizeof(uintptr_t) * 128, MEMP_OBJECTS);
     gTrackCheckpoints = allocate_from_main_pool_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, MEMP_OBJECTS);
     gCameraObjList = allocate_from_main_pool_safe(sizeof(uintptr_t *) * 20, MEMP_OBJECTS);
     gRacers = allocate_from_main_pool_safe(sizeof(uintptr_t) * 10, MEMP_OBJECTS);
     gRacersByPort = allocate_from_main_pool_safe(sizeof(uintptr_t) * 10, MEMP_OBJECTS);
     gRacersByPosition = allocate_from_main_pool_safe(sizeof(uintptr_t) * 10, MEMP_OBJECTS);
-    D_8011AF04 = allocate_from_main_pool_safe(0x200, MEMP_OBJECTS);
+    gAINodes = allocate_from_main_pool_safe(sizeof(uintptr_t) * AINODE_COUNT, MEMP_OBJECTS);
     D_8011ADCC = allocate_from_main_pool_safe(8, MEMP_OBJECTS);
-    D_8011AFF4 = allocate_from_main_pool_safe(0x400, MEMP_OBJECTS);
+    D_8011AFF4 = allocate_from_main_pool_safe(sizeof(unk800179D0) * 16, MEMP_OBJECTS);
     gAssetColourTag = MEMP_OBJECTS;
     gAssetsLvlObjTranslationTable = (s16 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE);
     gAssetsLvlObjTranslationTableLength = (get_size_of_asset_section(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE) >> 1) - 1;
@@ -586,8 +586,8 @@ void clear_object_pointers(void) {
     D_8011AD22[0] = 0;
     D_8011AD22[1] = 0;
 
-    for (i = 0; i < 128; i++) {
-        (*D_8011AF04)[i] = 0;
+    for (i = 0; i < AINODE_COUNT; i++) {
+        (*gAINodes)[i] = NULL;
     }
     for (i = 0; i < 8; i++) {
         (*D_8011ADCC)[i] = 0;
@@ -596,8 +596,8 @@ void clear_object_pointers(void) {
         D_8011AFF4[i].unk0 = 0;
     }
 
-    D_8011AF08[0] = 0xFF;
-    D_8011AF08[1] = 0xFF;
+    gAINodeTail[0] = 0xFF;
+    gAINodeTail[1] = 0xFF;
     gObjectCount = 0;
     gObjectListStart = 0;
     gParticleCount = 0;
@@ -608,12 +608,12 @@ void clear_object_pointers(void) {
     D_8011AE7C = 0;
     gTransformTimer = 0;
     gIsTajChallenge = FALSE;
-    D_8011AEF7 = 0;
+    gTajRaceInit = 0;
     D_8011AF60[0] = 0;
     D_8011AE00 = 0;
     D_8011AE01 = 1;
     D_8011AD53 = 0;
-    D_8011ADD5 = FALSE;
+    gOverrideDoors = FALSE;
 }
 
 /**
@@ -622,7 +622,7 @@ void clear_object_pointers(void) {
  */
 void free_all_objects(void) {
     s32 i, len;
-    free_tt_ghost_data();
+    timetrial_free_staff_ghost();
     D_800DC748 = 0;
     if (D_800DC71C) {
         rumble_init(TRUE);
@@ -761,13 +761,13 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
         D_8011AE98[arg1] = (u8 *) (D_8011AEB0[arg1] + 4);
         D_8011AE70 = 0;
         D_8011ADC0 = 1;
-        if (D_8011ADAC == 0) {
+        if (gPathUpdateOff == FALSE) {
             gParticlePtrList_flush();
             func_80017E98();
-            func_8001BC54();
+            spectate_update();
             func_8001E93C();
         }
-        D_8011ADAC = 1;
+        gPathUpdateOff = TRUE;
     }
 }
 
@@ -807,6 +807,7 @@ s32 func_8000CC20(Object *obj) {
 }
 
 #ifdef NON_EQUIVALENT
+// track_init_racers
 void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
     s32 numPlayers; // sp144
     enum GameMode gameMode;
@@ -864,7 +865,7 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
     gameMode = get_game_mode();
     settings = get_settings();
     miscAsset16 = (s8 *) get_misc_asset(3);
-    D_8011AE82 = D_8011ADC5;
+    gPrevTimeTrialVehicle = D_8011ADC5;
     tajFlags = settings->courseFlagsPtr[settings->courseId];
     if (!(tajFlags & 1)) { // Check if the player has not visited the course yet.
         settings->courseFlagsPtr[settings->courseId] = tajFlags | 1;
@@ -882,12 +883,12 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
         curObj = gObjPtrList[i2];
         if (!(curObj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED)) {
             if (curObj->behaviorId == BHV_SETUP_POINT) {
-                if (arg1 == (u32) curObj->properties.setupPoint.unk4) {
-                    if (curObj->properties.setupPoint.unk0 < 8) {
-                        spF4[curObj->properties.setupPoint.unk0] = curObj->segment.trans.x_position;
-                        spD4[curObj->properties.setupPoint.unk0] = curObj->segment.trans.y_position;
-                        spB4[curObj->properties.setupPoint.unk0] = curObj->segment.trans.z_position;
-                        sp94[curObj->properties.setupPoint.unk0] = curObj->segment.trans.y_rotation;
+                if (arg1 == (u32) curObj->properties.setupPoint.entranceID) {
+                    if (curObj->properties.setupPoint.racerIndex < 8) {
+                        spF4[curObj->properties.setupPoint.racerIndex] = curObj->segment.trans.x_position;
+                        spD4[curObj->properties.setupPoint.racerIndex] = curObj->segment.trans.y_position;
+                        spB4[curObj->properties.setupPoint.racerIndex] = curObj->segment.trans.z_position;
+                        sp94[curObj->properties.setupPoint.racerIndex] = curObj->segment.trans.y_rotation;
                     }
                     tempVehicle = curObj->segment.level_entry->setupPoint.vehicle;
                     if (tempVehicle != -1) {
@@ -898,7 +899,7 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
         }
     }
     D_8011ADC5 = vehicle;
-    D_8011AE82 = D_8011ADC5;
+    gPrevTimeTrialVehicle = D_8011ADC5;
     numPlayers = arg2 + 1;
     gNumRacers = 8;
     D_800DC740 = 0;
@@ -1075,7 +1076,7 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
             if (tempVehicle < VEHICLE_CAR || tempVehicle > VEHICLE_PLANE) {
                 curRacer->unk1CB = 0;
             }
-            curRacer->unk2 = var_s4;
+            curRacer->racerIndex = var_s4;
             curRacer->characterId = settings->racers[var_s4].character;
             if (D_8011AD3C == 2) {
                 curRacer->characterId = D_800DC840[i6];
@@ -1133,18 +1134,18 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
             }
         }
     }
-    gGhostObj = 0;
-    free_tt_ghost_data();
-    D_8011AD38 = -1;
+    gGhostObjStaff = 0;
+    timetrial_free_staff_ghost();
+    gTimeTrialContPak = -1;
     if ((gIsTimeTrial) && (numPlayers == 1)) {
-        func_80059944();
-        D_8011AD38 = func_8001B668(0);
+        timetrial_reset_player_ghost();
+        gTimeTrialContPak = timetrial_init_player_ghost(0);
         gHasGhostToSave = 0;
-        if (D_800DC728 >= 5) {
-            D_800DC728 = 0;
+        if (gTimeTrialVehicle >= 5) {
+            gTimeTrialVehicle = 0;
         }
-        if (func_8001B288() != 0) {
-            objectId = D_800DC7A8[(D_800DC728 * 10) + D_800DC72C];
+        if (timetrial_valid_player_ghost() != 0) {
+            objectId = D_800DC7A8[(gTimeTrialVehicle * 10) + gTimeTrialCharacter];
             entry->common.size = ((objectId & 0x100) >> 1) | 0x10;
             entry->common.objectID = objectId;
             entry->common.x = spF4[0];
@@ -1153,13 +1154,13 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
             entry->unkC = sp94[0];
             newRacerObj = spawn_object((LevelObjectEntryCommon *) entry, 1);
             newRacerObj->segment.level_entry = NULL;
-            newRacerObj->behaviorId = BHV_UNK_3A;
+            newRacerObj->behaviorId = BHV_TIMETRIAL_GHOST;
             newRacerObj->shadow->scale = 0.01f;
             newRacerObj->interactObj->flags = 0;
-            D_8011AD34 = newRacerObj;
+            gGhostObjPlayer = newRacerObj;
             newRacerObj->unk64->racer.transparency = 0x60;
         }
-        if (func_8001B4FC(get_current_map_id()) != 0) {
+        if (timetrial_init_staff_ghost(get_current_map_id()) != 0) {
             objectId = D_800DC7B8[gMapDefaultVehicle * 10];
             entry->common.size = ((objectId & 0x100) >> 1) | 0x10;
             entry->common.objectID = objectId;
@@ -1169,10 +1170,10 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
             entry->unkC = sp94[0];
             newRacerObj = spawn_object((LevelObjectEntryCommon *) entry, 1);
             newRacerObj->segment.level_entry = NULL;
-            newRacerObj->behaviorId = BHV_UNK_3A;
+            newRacerObj->behaviorId = BHV_TIMETRIAL_GHOST;
             newRacerObj->shadow->scale = 0.01f;
             newRacerObj->interactObj->flags = 0;
-            gGhostObj = newRacerObj;
+            gGhostObjStaff = newRacerObj;
             newRacerObj->unk64->racer.transparency = 0x60;
         }
     }
@@ -1219,7 +1220,7 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
             }
         }
     }
-    D_8011AD4E = 0;
+    gRaceEndTimer = 0;
     D_8011ADB4 = 0;
     set_next_taj_challenge_menu(0);
     if (settings->worldId == WORLD_CENTRAL_AREA) {
@@ -1268,8 +1269,8 @@ GLOBAL_ASM("asm/non_matchings/objects/func_8000CC7C.s")
  * Categorises multiple different controller pak messages into one for fewer cases.
  */
 s32 get_contpak_error(void) {
-    // D_8011AD38 is likely an SIDeviceStatus value, but not 100% sure yet.
-    switch (D_8011AD38) {
+    // gTimeTrialContPak is likely an SIDeviceStatus value, but not 100% sure yet.
+    switch (gTimeTrialContPak) {
         case CONTROLLER_PAK_NOT_FOUND:
             return CONTPAK_ERROR_MISSING;
         case CONTROLLER_PAK_RUMBLE_PAK_FOUND:
@@ -1283,7 +1284,7 @@ s32 get_contpak_error(void) {
         case CONTROLLER_PAK_GOOD:
         case CONTROLLER_PAK_CHANGED:
         case CONTROLLER_PAK_SWITCH_TO_RUMBLE:
-            return func_80059E20();
+            return timetrial_ghost_full();
         default:
             return CONTPAK_ERROR_NONE;
     }
@@ -1398,7 +1399,7 @@ void transform_player_vehicle(void) {
     racer = &player->unk64->racer;
     racer->vehicleID = gOverworldVehicle;
     racer->vehicleIDPrev = gOverworldVehicle;
-    racer->unk2 = 0;
+    racer->racerIndex = 0;
     racer->characterId = settings->racers[PLAYER_ONE].character;
     racer->playerIndex = 0;
     racer->vehicleSound = 0;
@@ -1666,8 +1667,8 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 arg1) {
         curObj->unk60 = (Object_60 *) address;
         address += 0xC;
     }
-    if (curObj->segment.header->unk57 > 0) {
-        address = (u32 *) ((uintptr_t) address + func_8000FAC4(curObj, (Object_6C *) address));
+    if (curObj->segment.header->particleCount > 0) {
+        address = (u32 *) ((uintptr_t) address + obj_init_emitter(curObj, (ParticleEmitter *) address));
     }
     sizeOfobj = (uintptr_t) address - (uintptr_t) curObj;
     if (curObj->segment.header->numLightSources > 0) {
@@ -1725,8 +1726,9 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 arg1) {
     if (newObj->unk60 != NULL) {
         newObj->unk60 = (Object_60 *) (((uintptr_t) newObj + (uintptr_t) newObj->unk60) - (uintptr_t) gSpawnObjectHeap);
     }
-    if (newObj->segment.header->unk57 > 0) {
-        newObj->unk6C = (Object_6C *) (((uintptr_t) newObj + (uintptr_t) newObj->unk6C) - (uintptr_t) gSpawnObjectHeap);
+    if (newObj->segment.header->particleCount > 0) {
+        newObj->particleEmitter = (ParticleEmitter *) (((uintptr_t) newObj + (uintptr_t) newObj->particleEmitter) -
+                                                       (uintptr_t) gSpawnObjectHeap);
     }
     if (newObj->segment.header->numLightSources > 0) {
         newObj->lightData =
@@ -1875,23 +1877,23 @@ s32 func_8000F99C(Object *obj) {
     return FALSE;
 }
 
-s32 func_8000FAC4(Object *obj, Object_6C *arg1) {
+s32 obj_init_emitter(Object *obj, ParticleEmitter *emitter) {
     ObjHeaderParticleEntry *particleDataEntry;
     s32 i;
 
-    obj->unk6C = arg1;
+    obj->particleEmitter = emitter;
     particleDataEntry = obj->segment.header->objectParticles;
-    for (i = 0; i < obj->segment.header->unk57; i++) {
+    for (i = 0; i < obj->segment.header->particleCount; i++) {
         if ((particleDataEntry[i].upper & 0xFFFF0000) == 0xFFFF0000) {
-            partInitTrigger((Particle *) &obj->unk6C[i], (particleDataEntry[i].upper >> 8) & 0xFF,
+            partInitTrigger((Particle *) &obj->particleEmitter[i].unk0, (particleDataEntry[i].upper >> 8) & 0xFF,
                             particleDataEntry[i].upper & 0xFF);
         } else {
-            func_800AF29C((Particle *) &obj->unk6C[i], (particleDataEntry[i].upper >> 0x18) & 0xFF,
+            func_800AF29C((Particle *) &obj->particleEmitter[i].unk0, (particleDataEntry[i].upper >> 0x18) & 0xFF,
                           (particleDataEntry[i].upper >> 0x10) & 0xFF, particleDataEntry[i].upper & 0xFFFF,
                           (particleDataEntry[i].lower >> 0x10) & 0xFFFF, particleDataEntry[i].lower & 0xFFFF);
         }
     }
-    return ((obj->segment.header->unk57 << 5) + 3) & ~3;
+    return ((obj->segment.header->particleCount * sizeof(ParticleEmitter)) + 3) & ~3;
 }
 
 /**
@@ -2075,6 +2077,7 @@ GLOBAL_ASM("asm/non_matchings/objects/func_800101AC.s")
 
 #ifdef NON_MATCHING
 // Minor regalloc diffs
+// obj_update
 void func_80010994(s32 updateRate) {
     s32 i;
     s32 tempVal;
@@ -2208,35 +2211,35 @@ void func_80010994(s32 updateRate) {
                 func_80032C7C(obj);
             }
         }
-    }
-    func_8001E6EC(0);
-    if (D_8011AEF7 != 0) {
-        func_80022948();
-    }
-    if (D_8011ADAC == 0) {
-        gParticlePtrList_flush();
-        func_80017E98();
-        func_8001BC54();
-        func_8001E93C();
-    }
-    if (gNumRacers != 0) {
-        if (D_8011AD4E == 0) {
-            func_80019808(updateRate);
-        } else {
-            func_8001A8F4(updateRate);
+        func_8001E6EC(0);
+        if (gTajRaceInit != 0) {
+            mode_init_taj_race();
+        }
+        if (gPathUpdateOff == FALSE) {
+            gParticlePtrList_flush();
+            func_80017E98();
+            spectate_update();
+            func_8001E93C();
+        }
+        if (gNumRacers != 0) {
+            if (gRaceEndTimer == 0) {
+                func_80019808(updateRate);
+            } else {
+                race_transition_adventure(updateRate);
+            }
         }
     }
     // This is just a temporary hack to prevent counter factor 1 crashing the emulator.
     if (gPlatform & CONSOLE || gPlatform & CF_2 || gMapId != ASSET_LEVEL_CENTRALAREAHUB) {
         func_80008438(gRacersByPort, gNumRacers, updateRate);
-    }
-    D_8011ADAC = 1;
-    gObjectUpdateRateF = (f32) updateRate;
-    D_8011AD24[0] = 0;
-    D_8011AD53 = 0;
-    transform_player_vehicle();
-    try_close_dialogue_box();
-    func_800179D0();
+        gPathUpdateOff = TRUE;
+        gObjectUpdateRateF = (f32) updateRate;
+        D_8011AD24[0] = 0;
+        D_8011AD53 = 0;
+        transform_player_vehicle();
+        try_close_dialogue_box();
+        func_800179D0();
+    } while (0); // FAKEMATCH
     if (D_8011AF00 == 1) {
         if ((gEventCountdown == 0x50) && (gCutsceneID == 0)) {
             sp54 = 0;
@@ -2306,10 +2309,10 @@ void func_80011264(ObjectModel *model, Object *obj) {
     if (model->unk50 > 0) {
         batch = &model->batches[0];
         door = &obj->unk64->door;
-        current = ((door->unk10 / 10) - 1) << 2;
+        current = ((door->balloonCount / 10) - 1) << 2;
         if (model->textures[batch->textureIndex].texture) {} // fakematch
         if (1) {                                             // fakematch
-            remaining = ((door->unk10 % 10) << 2);
+            remaining = ((door->balloonCount % 10) << 2);
         }
         for (i = 0; i < model->numberOfBatches; i++, batch++) {
             if (batch->flags & 0x10000) {
@@ -2336,19 +2339,24 @@ UNUSED void do_nothing_func_80011364(UNUSED s32 unused) {
 }
 
 /**
- * Return the opposite of D_8011ADAC's value
+ * Return true if paths are intended to be updated.
+ * The variable they use here is backwards in terms of use.
+ * Yes means no, no means yes.
  */
-UNUSED s32 is_not_D_8011ADAC(void) {
-    // Ever hear of return !D_8011ADAC?
-    if (D_8011ADAC) {
+UNUSED s32 path_update_check(void) {
+    // Ever hear of return !gPathUpdateOff?
+    if (gPathUpdateOff) {
         return FALSE;
     } else {
         return TRUE;
     }
 }
 
-void func_80011390(void) {
-    D_8011ADAC = 0;
+/**
+ * Signal to the game that checkpoints should be updated.
+ */
+void path_enable(void) {
+    gPathUpdateOff = FALSE;
 }
 
 extern s32 benchState;
@@ -2956,7 +2964,7 @@ void render_object(Gfx **dList, MatrixS **mtx, Vertex **verts, Object *obj) {
 void object_do_player_tumble(Object *this) {
     Object_Racer *sp_20;
     f32 tmp_f2;
-    f32 sp_1c;
+    f32 offsetY;
     f32 tmp_f0;
     f32 temp;
 
@@ -2966,20 +2974,20 @@ void object_do_player_tumble(Object *this) {
         this->segment.trans.y_rotation += sp_20->y_rotation_offset;
         this->segment.trans.x_rotation += sp_20->x_rotation_offset;
         this->segment.trans.z_rotation += sp_20->z_rotation_offset;
-        sp_1c = 0.0f;
+        offsetY = 0.0f;
         if (sp_20->vehicleIDPrev < VEHICLE_TRICKY) {
 
-            sp_1c = coss_f(sp_20->z_rotation_offset);
-            tmp_f2 = sp_1c;
+            offsetY = coss_f(sp_20->z_rotation_offset);
+            tmp_f2 = offsetY;
             tmp_f0 = coss_f(sp_20->x_rotation_offset - sp_20->unk166) * tmp_f2;
 
             tmp_f0 = (tmp_f0 < 0.0f) ? 0.0f : tmp_f0 * tmp_f0;
 
             temp = (1.0f - tmp_f0) * 24.0f + sp_20->unkD0;
-            sp_1c = temp;
+            offsetY = temp;
         }
-        this->segment.trans.y_position = this->segment.trans.y_position + sp_1c;
-        D_8011ADD0 = sp_1c;
+        this->segment.trans.y_position = this->segment.trans.y_position + offsetY;
+        gObjectOffsetY = offsetY;
     }
 }
 
@@ -2992,7 +3000,7 @@ void object_undo_player_tumble(Object *obj) {
         obj->segment.trans.y_rotation -= racer->y_rotation_offset;
         obj->segment.trans.x_rotation -= racer->x_rotation_offset;
         obj->segment.trans.z_rotation -= racer->z_rotation_offset;
-        obj->segment.trans.y_position -= D_8011ADD0;
+        obj->segment.trans.y_position -= gObjectOffsetY;
     }
 }
 
@@ -3034,7 +3042,7 @@ void func_80012F94(Object *obj) {
                 var_t0 = 0;
                 batchNum = 0;
             } else {
-                if (obj->behaviorId == BHV_UNK_3A) { // Ghost Object?
+                if (obj->behaviorId == BHV_TIMETRIAL_GHOST) { // Ghost Object?
                     var_t0 = 1;
                     batchNum = 0;
                 } else {
@@ -3226,7 +3234,7 @@ void render_racer_shield(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *o
     struct RacerShieldGfx *shield;
     s32 shieldType;
     s32 vehicleID;
-    s32 var_a2;
+    s32 racerIndex;
     f32 scale;
     f32 shear;
 
@@ -3234,25 +3242,25 @@ void render_racer_shield(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *o
     if (racer->shieldTimer > 0 && gShieldEffectObject != NULL) {
         gObjectCurrMatrix = *mtx;
         gObjectCurrVertexList = *vtxList;
-        var_a2 = racer->unk2;
-        if (var_a2 > 10) {
-            var_a2 = 0;
+        racerIndex = racer->racerIndex;
+        if (racerIndex > 10) {
+            racerIndex = 0;
         }
         vehicleID = racer->vehicleID;
         if (vehicleID >= NUMBER_OF_PLAYER_VEHICLES) {
             vehicleID = VEHICLE_CAR;
         }
         shield = ((struct RacerShieldGfx *) get_misc_asset(ASSET_MISC_SHIELD_DATA));
-        vehicleID = (vehicleID * 10) + var_a2;
+        vehicleID = (vehicleID * 10) + racerIndex;
         shield = shield + vehicleID;
         gShieldEffectObject->segment.trans.x_position = shield->x_position;
         gShieldEffectObject->segment.trans.y_position = shield->y_position;
         gShieldEffectObject->segment.trans.z_position = shield->z_position;
-        gShieldEffectObject->segment.trans.y_position += shield->y_offset * sins_f(D_8011B010[var_a2] * 0x200);
-        shear = (coss_f(D_8011B010[var_a2] * 0x400) * 0.05f) + 0.95f;
+        gShieldEffectObject->segment.trans.y_position += shield->y_offset * sins_f(D_8011B010[racerIndex] * 0x200);
+        shear = (coss_f(D_8011B010[racerIndex] * 0x400) * 0.05f) + 0.95f;
         gShieldEffectObject->segment.trans.scale = shield->scale * shear;
         shear = shear * shield->turnSpeed;
-        gShieldEffectObject->segment.trans.y_rotation = D_8011B010[var_a2] * 0x800;
+        gShieldEffectObject->segment.trans.y_rotation = D_8011B010[racerIndex] * 0x800;
         gShieldEffectObject->segment.trans.x_rotation = 0x800;
         gShieldEffectObject->segment.trans.z_rotation = 0;
         shieldType = racer->shieldType;
@@ -3300,7 +3308,7 @@ void render_racer_magnet(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *o
     f32 shear;
 
     racer = (Object_Racer *) obj->unk64;
-    var_t0 = racer->unk2 * 4;
+    var_t0 = racer->racerIndex * 4;
     if (D_8011B07B[var_t0]) {
         if (gMagnetEffectObject != NULL) {
             gObjectCurrMatrix = *mtx;
@@ -3311,7 +3319,7 @@ void render_racer_magnet(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *o
                 vehicleID = VEHICLE_CAR;
             }
             magnet = &magnet[vehicleID * 5];
-            var_t0 = racer->unk2;
+            var_t0 = racer->racerIndex;
             if (var_t0 > 10) {
                 var_t0 = 0;
             }
@@ -3658,7 +3666,7 @@ void func_80016500(Object *obj, Object_Racer *racer) {
     sinAngle = sins_f(-angle);
     racer->lateral_velocity = (obj->segment.x_velocity * cosAngle) + (obj->segment.z_velocity * sinAngle);
     racer->velocity = (-obj->segment.x_velocity * sinAngle) + (obj->segment.z_velocity * cosAngle);
-    if (racer->playerIndex != -1) {
+    if (racer->playerIndex != PLAYER_COMPUTER) {
         angle = (startVelocity - racer->velocity) * 14.0f;
         if (angle < 0) {
             angle = -angle;
@@ -3737,9 +3745,9 @@ void func_80016748(Object *obj0, Object *obj1) {
                 zDiff -= obj0->segment.trans.z_position;
                 distance = sqrtf((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff));
                 temp += obj1Interact->hitboxRadius;
-                if ((distance < temp) && (distance > 0.0f)) {
-                    obj0Interact->flags |= 8;
-                    obj1Interact->flags |= 8;
+                if (distance < temp && distance > 0.0f) {
+                    obj0Interact->flags |= INTERACT_FLAGS_PUSHING;
+                    obj1Interact->flags |= INTERACT_FLAGS_PUSHING;
                     obj0Interact->obj = obj1;
                     obj1Interact->obj = obj0;
                     obj0Interact->distance = 0;
@@ -3789,24 +3797,27 @@ void func_80016BC4(Object *obj) {
     }
 }
 
-Object *func_80016C68(f32 x, f32 y, f32 z, f32 maxDistCheck, s32 dontCheckYAxis) {
-    f32 yDiff;
-    f32 zDiff;
-    f32 xDiff;
+/**
+ * Find the first butterfly node within range and return a pointer to it.
+ */
+Object *obj_butterfly_node(f32 x, f32 y, f32 z, f32 maxDistCheck, s32 dontCheckYAxis) {
+    f32 diffY;
+    f32 diffZ;
+    f32 diffX;
     f32 distance;
     s32 i;
     Object *curObj;
 
     for (i = 0; i < gObjectCount; i++) {
         curObj = gObjPtrList[i];
-        if (!(curObj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && (curObj->behaviorId == BHV_ANIMATED_OBJECT_3)) {
-            xDiff = curObj->segment.trans.x_position - x;
-            zDiff = curObj->segment.trans.z_position - z;
+        if (!(curObj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && curObj->behaviorId == BHV_ANIMATED_OBJECT_3) {
+            diffX = curObj->segment.trans.x_position - x;
+            diffZ = curObj->segment.trans.z_position - z;
             if (!dontCheckYAxis) {
-                yDiff = curObj->segment.trans.y_position - y;
-                distance = sqrtf((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff));
+                diffY = curObj->segment.trans.y_position - y;
+                distance = sqrtf((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ));
             } else {
-                distance = sqrtf((xDiff * xDiff) + (zDiff * zDiff));
+                distance = sqrtf((diffX * diffX) + (diffZ * diffZ));
             }
             if (distance < maxDistCheck) {
                 return curObj;
@@ -3816,7 +3827,12 @@ Object *func_80016C68(f32 x, f32 y, f32 z, f32 maxDistCheck, s32 dontCheckYAxis)
     return NULL;
 }
 
-s32 func_80016DE8(f32 x, f32 y, f32 z, f32 radius, s32 is2dCheck, Object **arg5) {
+/**
+ * Compare distance between itself and every racer.
+ * Any racer within the radius is sorted from nearest to furthest.
+ * Returns the number of racers within the radius.
+ */
+s32 obj_dist_racer(f32 x, f32 y, f32 z, f32 radius, s32 is2dCheck, Object **sortObj) {
     f32 distances[8];
     s32 i;
     s32 j;
@@ -3834,7 +3850,7 @@ s32 func_80016DE8(f32 x, f32 y, f32 z, f32 radius, s32 is2dCheck, Object **arg5)
         for (i = 0; i < gNumRacers; i++) {
             racerObj = (*gRacers)[i];
             racer = &racerObj->unk64->racer;
-            if ((racer->playerIndex >= 0) && (racer->playerIndex < 4)) {
+            if (racer->playerIndex >= 0 && racer->playerIndex < 4) {
                 if (is2dCheck) {
                     xDiff = racerObj->segment.trans.x_position - x;
                     zDiff = racerObj->segment.trans.z_position - z;
@@ -3847,7 +3863,7 @@ s32 func_80016DE8(f32 x, f32 y, f32 z, f32 radius, s32 is2dCheck, Object **arg5)
                 }
                 if (yDiff < radius) {
                     distances[result] = yDiff;
-                    arg5[result] = (*gRacers)[i];
+                    sortObj[result] = (*gRacers)[i];
                     result++;
                 }
             }
@@ -3857,11 +3873,11 @@ s32 func_80016DE8(f32 x, f32 y, f32 z, f32 radius, s32 is2dCheck, Object **arg5)
                 for (j = 0; j < i; j++) {
                     if (distances[j + 1] < distances[j]) {
                         swapf = distances[j];
-                        swapObj = arg5[j];
+                        swapObj = sortObj[j];
                         distances[j] = distances[j + 1];
-                        arg5[j] = arg5[j + 1];
+                        sortObj[j] = sortObj[j + 1];
                         distances[j + 1] = swapf;
-                        arg5[j + 1] = swapObj;
+                        sortObj[j + 1] = swapObj;
                     }
                 }
             }
@@ -3961,7 +3977,7 @@ GLOBAL_ASM("asm/non_matchings/objects/func_80017A18.s")
  */
 void set_taj_challenge_type(s32 vehicleID) {
     gTajChallengeType = vehicleID;
-    D_8011ADAC = 0;
+    gPathUpdateOff = FALSE;
 }
 
 GLOBAL_ASM("asm/non_matchings/objects/func_80017E98.s")
@@ -4073,13 +4089,22 @@ s8 set_course_finish_flags(Settings *settings) {
     return gFirstTimeFinish;
 }
 
-void func_8001A8D4(s32 arg0) {
-    D_8011AD4E = 300;
-    D_8011AD50 = 0;
-    D_8011AD52 = arg0;
+/**
+ * Sets the countdown ready for the level to fade out.
+ * Begins the timer that exits the level in 5 seconds.
+ */
+void race_finish_adventure(UNUSED s32 unusedArg) {
+    gRaceEndTimer = 300;
+    gRaceEndStage = 0;
+    unused_D_8011AD52 = unusedArg;
 }
 
-void func_8001A8F4(s32 updateRate) {
+/**
+ * Begins counting down, once it reaches 0, start stopping all the race behaviours.
+ * This function is also where the Taj Balloon cutscene is also handled.
+ * After that's done, write to save and send the player back to the hub.
+ */
+void race_transition_adventure(s32 updateRate) {
     s32 i;
     Object_Racer *racer;
     Object *prevPort0Racer;
@@ -4089,16 +4114,16 @@ void func_8001A8F4(s32 updateRate) {
     u32 cutsceneTimerLimit;
 
     set_pause_lockout_timer(1);
-    sp30 = D_8011AD4E;
-    D_8011AD4E -= updateRate;
-    if (D_8011AD4E <= 0) {
-        D_8011AD4E = -1;
+    sp30 = gRaceEndTimer;
+    gRaceEndTimer -= updateRate;
+    if (gRaceEndTimer <= 0) {
+        gRaceEndTimer = -1;
     }
-    if (sp30 > 50 && D_8011AD4E <= 50) {
-        transition_begin(&D_800DC858);
+    if (sp30 > 50 && gRaceEndTimer <= 50) {
+        transition_begin(&gRaceEndFade);
     }
     sp30 = 0;
-    if (D_8011AD50 == 0 && D_8011AD4E == -1) {
+    if (gRaceEndStage == 0 && gRaceEndTimer == -1) {
         for (i = 0; i < gNumRacers; i++) {
             racer = &(*gRacers)[i]->unk64->racer;
             racer->magnetTargetObj = NULL;
@@ -4106,7 +4131,7 @@ void func_8001A8F4(s32 updateRate) {
                 sp30 = i;
             }
             if (racer->magnetSoundMask != NULL) {
-                func_8000488C(racer->magnetSoundMask);
+                sound_stop(racer->magnetSoundMask);
             }
             if (racer->shieldSoundMask != NULL) {
                 func_800096F8(racer->shieldSoundMask);
@@ -4134,10 +4159,10 @@ void func_8001A8F4(s32 updateRate) {
             }
         }
         gNumRacersSaved = gNumRacers;
-        D_8011AD50 = 1;
+        gRaceEndStage = 1;
     }
-    if (D_8011AD50 == 1) {
-        hud_visibility(0);
+    if (gRaceEndStage == 1) {
+        hud_visibility(FALSE);
         gNumRacersSaved--;
         if (gNumRacersSaved > 0) {
             i = 0;
@@ -4154,25 +4179,25 @@ void func_8001A8F4(s32 updateRate) {
             gNumRacers--;
 
         } else {
-            D_8011AD50 = 2;
+            gRaceEndStage = 2;
         }
     }
-    if (D_8011AD50 == 2) {
+    if (gRaceEndStage == 2) {
         prevPort0Racer = (*gRacers)[0];
         racer = &prevPort0Racer->unk64->racer;
         func_800230D0(prevPort0Racer, racer);
         racer->raceFinished = FALSE;
-        D_8011AD50 = 3;
+        gRaceEndStage = 3;
         func_8001E45C(CUTSCENE_ID_UNK_A);
         gBalloonCutsceneTimer = 0;
         func_8001E93C();
     }
-    if (D_8011AD50 == 3) {
-        transition_begin(&D_800DC860);
-        D_8011AD50 = 4;
+    if (gRaceEndStage == 3) {
+        transition_begin(&gRaceEndTransition);
+        gRaceEndStage = 4;
         set_anti_aliasing(TRUE);
     }
-    if (D_8011AD50 == 4) {
+    if (gRaceEndStage == 4) {
         set_anti_aliasing(TRUE);
         disable_racer_input();
         if (!(get_current_level_race_type() & RACETYPE_CHALLENGE_BATTLE)) {
@@ -4191,17 +4216,20 @@ void func_8001A8F4(s32 updateRate) {
         }
         if (func_800214C4() != 0 || (i != 0 && check_fadeout_transition() == 0)) {
             if (i != 0) {
-                transition_begin(&D_800DC6F8);
+                transition_begin(&gBalloonCutsceneTransition);
             }
             level_transition_begin(2);
-            D_8011AD50 = 5;
+            gRaceEndStage = 5;
             settings->cutsceneFlags |= 0x40000;
         }
     }
 }
 
-s16 func_8001AE44(void) {
-    return D_8011AD4E;
+/**
+ * Returns the race finish timer.
+ */
+s16 race_finish_timer(void) {
+    return gRaceEndTimer;
 }
 
 /**
@@ -4211,12 +4239,17 @@ u32 get_balloon_cutscene_timer(void) {
     return gBalloonCutsceneTimer;
 }
 
-void func_8001AE64(void) {
+/**
+ * Checks if the fastest lap or the race time is faster than the current record.
+ * Save those if they are, and if the staff ghost is not enabled, enable it for the next attempt.
+ * The staff ghost comparison is also called here.
+ */
+void race_finish_time_trial(void) {
     s32 bestCourseTime;
     s32 bestRacerTime;
     s32 i;
     s32 courseTime;
-    s32 temp;
+    s32 vehicleID;
     s32 curRacerLapTime;
     s32 j;
     Object_Racer *curRacer;
@@ -4234,62 +4267,63 @@ void func_8001AE64(void) {
     bestRacer = &gRacersByPosition[0]->unk64->racer;
     for (i = 0; i < gNumRacers; i++) {
         curRacer = &gRacersByPosition[i]->unk64->racer;
-        if (curRacer->unk2 >= 0) {
-            if (curRacer->unk2 < get_number_of_active_players()) {
-                settings->racers[curRacer->unk2].best_times = 0;
-                temp = curRacer->vehicleIDPrev;
-                if ((temp >= 0) && (temp < 3)) {
+        if (curRacer->racerIndex >= 0) {
+            if (curRacer->racerIndex < get_number_of_active_players()) {
+                settings->racers[curRacer->racerIndex].best_times = 0;
+                vehicleID = curRacer->vehicleIDPrev;
+                if (vehicleID >= VEHICLE_CAR && vehicleID < NUMBER_OF_PLAYER_VEHICLES) {
                     courseTime = 0;
                     for (j = 0; j < levelHeader->laps && j < 5; j++) {
-                        settings->racers[curRacer->unk2].lap_times[j] = curRacer->lap_times[j];
+                        settings->racers[curRacer->racerIndex].lap_times[j] = curRacer->lap_times[j];
                         curRacerLapTime = curRacer->lap_times[j];
                         courseTime += curRacerLapTime;
                         if (curRacerLapTime < bestRacerTime) {
                             settings->unk115[1] = j;
-                            settings->unk115[0] = curRacer->unk2;
+                            settings->unk115[0] = curRacer->racerIndex;
                             bestRacerTime = curRacerLapTime;
                         }
                     }
-                    settings->racers[curRacer->unk2].course_time = courseTime;
+                    settings->racers[curRacer->racerIndex].course_time = courseTime;
                     if (courseTime < bestCourseTime) {
                         bestCourseTime = courseTime;
-                        settings->timeTrialRacer = curRacer->unk2;
+                        settings->timeTrialRacer = curRacer->racerIndex;
                         bestRacer = curRacer;
                     }
                 }
             }
         }
     }
-    settings->display_times = 0;
+    settings->display_times = FALSE;
     if (gIsTimeTrial) {
-        temp = D_8011AE82;
-        if ((temp >= 3) || (temp < 0)) {
-            temp = 0;
+        vehicleID = gPrevTimeTrialVehicle;
+        if (vehicleID >= NUMBER_OF_PLAYER_VEHICLES || vehicleID < VEHICLE_CAR) {
+            vehicleID = VEHICLE_CAR;
         }
-        settings->display_times = 1;
-        if ((settings->unk115[0] == 0)) {
-            if ((settings->flapTimesPtr[temp][settings->courseId] == 0) ||
-                (bestRacerTime < settings->flapTimesPtr[temp][settings->courseId])) {
-                settings->flapTimesPtr[temp][settings->courseId] = bestRacerTime;
+        settings->display_times = TRUE;
+        if (settings->unk115[0] == 0) {
+            if ((settings->flapTimesPtr[vehicleID][settings->courseId] == NULL) ||
+                (bestRacerTime < settings->flapTimesPtr[vehicleID][settings->courseId])) {
+                settings->flapTimesPtr[vehicleID][settings->courseId] = bestRacerTime;
                 settings->racers[settings->unk115[0]].best_times |= 1 << settings->unk115[1];
             }
         }
-        if ((settings->timeTrialRacer == 0)) {
-            if ((settings->courseTimesPtr[temp][settings->courseId] == 0) ||
-                (bestCourseTime < settings->courseTimesPtr[temp][settings->courseId])) {
-                settings->courseTimesPtr[temp][settings->courseId] = bestCourseTime;
+        if (settings->timeTrialRacer == 0) {
+            if ((settings->courseTimesPtr[vehicleID][settings->courseId] == NULL) ||
+                (bestCourseTime < settings->courseTimesPtr[vehicleID][settings->courseId])) {
+                settings->courseTimesPtr[vehicleID][settings->courseId] = bestCourseTime;
                 settings->racers[settings->timeTrialRacer].best_times |= 0x80;
             }
         }
-        if (((!temp) && (!temp)) && (!temp)) {} // Fakematch
+        if (((!vehicleID) && (!vehicleID)) && (!vehicleID)) {} // Fakematch
         if (settings->timeTrialRacer == 0) {
-            if ((bestCourseTime < 10800) && ((temp != D_800DC728) || ((func_800599A8() != get_current_map_id())) ||
-                                             (bestCourseTime < D_800DC724))) {
-                D_800DC724 = bestCourseTime;
-                D_800DC728 = D_8011AE82;
-                D_800DC72C = settings->racers[0].character;
-                func_80059984(get_current_map_id());
-                gHasGhostToSave = 1;
+            if (bestCourseTime < 10800 &&
+                (vehicleID != gTimeTrialVehicle || timetrial_map_id() != get_current_map_id() ||
+                 bestCourseTime < gTimeTrialTime)) {
+                gTimeTrialTime = bestCourseTime;
+                gTimeTrialVehicle = gPrevTimeTrialVehicle;
+                gTimeTrialCharacter = settings->racers[0].character;
+                timetrial_swap_player_ghost(get_current_map_id());
+                gHasGhostToSave = TRUE;
             }
             if (bestCourseTime < gTTGhostTimeToBeat) {
                 if (gTimeTrialStaffGhost) {
@@ -4304,20 +4338,26 @@ void func_8001AE64(void) {
     }
 }
 
-s32 func_8001B288(void) {
-    if (func_800599A8() != gMapId) {
-        return 0;
+/**
+ * Returns true if the player ghost data is valid for playback.
+ */
+s32 timetrial_valid_player_ghost(void) {
+    if (timetrial_map_id() != gMapId) {
+        return FALSE;
     } else {
-        if (D_800DC728 != D_8011AE82) {
-            return 0;
+        if (gTimeTrialVehicle != gPrevTimeTrialVehicle) {
+            return FALSE;
         } else {
-            return 1;
+            return TRUE;
         }
     }
 }
 
-Object *func_8001B2E0(void) {
-    return D_8011AD34;
+/**
+ * Return the player ghost object.
+ */
+Object *timetrial_player_ghost(void) {
+    return gGhostObjPlayer;
 }
 
 /**
@@ -4326,7 +4366,7 @@ when TT is on. It looks like it checks some ghost data makes sure you've got a g
 with the default vehicle,
 Returns 0 if TT ghost was loaded successfully.
 */
-s32 func_8001B2F0(s32 mapId) {
+s32 timetrial_load_staff_ghost(s32 mapId) {
     TTGhostTable *ghostTable;
     TTGhostTable *prevGhostTable;
     s32 ret;
@@ -4360,8 +4400,8 @@ s32 func_8001B2F0(s32 mapId) {
 /**
  * Return true if this object is the time trial ghost.
  */
-s32 is_time_trial_ghost(Object *obj) {
-    return obj == gGhostObj;
+s32 timetrial_staff_ghost_check(Object *obj) {
+    return obj == gGhostObjStaff;
 }
 
 /**
@@ -4373,8 +4413,8 @@ void tt_ghost_beaten(s32 arg0, s16 *playerId) {
     s32 trackIdCount;
     s8 *mainTrackIds;
 
-    gGhostObj = NULL;
-    free_tt_ghost_data();
+    gGhostObjStaff = NULL;
+    timetrial_free_staff_ghost();
     gTimeTrialStaffGhost = FALSE;
     mainTrackIds = (s8 *) get_misc_asset(ASSET_MISC_MAIN_TRACKS_IDS);
     trackIdCount = 0;
@@ -4402,26 +4442,31 @@ void tt_ghost_beaten(s32 arg0, s16 *playerId) {
     play_time_trial_end_message(playerId);
 }
 
-u8 func_8001B4FC(s32 trackId) {
+/**
+ * Compare if the course record is enough to unlock the staff ghost.
+ * Also check if the ghost tiself has been beaten.
+ * Store both results and return if there should be a ghost.
+ */
+u8 timetrial_init_staff_ghost(s32 trackId) {
     s32 i;
     s8 *mainTrackIds;
-    u16 *temp_v0;
+    u16 *staffTime;
     Settings *settings;
 
     gBeatStaffGhost = FALSE;
     gTimeTrialStaffGhost = FALSE;
     settings = get_settings();
-    if (get_map_default_vehicle(trackId) == (Vehicle) D_8011AE82) {
+    if (get_map_default_vehicle(trackId) == (Vehicle) gPrevTimeTrialVehicle) {
         mainTrackIds = (s8 *) get_misc_asset(ASSET_MISC_MAIN_TRACKS_IDS);
-        temp_v0 = (u16 *) get_misc_asset(ASSET_MISC_24);
+        staffTime = (u16 *) get_misc_asset(ASSET_MISC_GHOST_UNLOCK_TIMES);
         for (i = 0; mainTrackIds[i] != -1 && trackId != mainTrackIds[i]; i++) {}
         if (mainTrackIds[i] != -1) {
-            if (temp_v0[i] >= settings->courseTimesPtr[D_8011AE82][trackId]) {
+            if (staffTime[i] >= settings->courseTimesPtr[gPrevTimeTrialVehicle][trackId]) {
                 // Check if TT has been beaten?
                 if (!(get_eeprom_settings() & ((1 << 4) << i))) {
                     gBeatStaffGhost = TRUE;
                 }
-                if (func_8001B2F0(trackId) == 0) {
+                if (timetrial_load_staff_ghost(trackId) == 0) {
                     gTimeTrialStaffGhost = TRUE;
                 }
             }
@@ -4431,40 +4476,50 @@ u8 func_8001B4FC(s32 trackId) {
 }
 
 /**
- * Return the time trial ghost object.
+ * Return the time trial staff ghost object.
  */
-Object *get_time_trial_ghost(void) {
-    return gGhostObj;
+Object *timetrial_ghost_staff(void) {
+    return gGhostObjStaff;
 }
 
 /**
  * Return true if the tt ghost is unbeaten for this track.
  */
-s32 unbeaten_staff_time(void) {
+s32 timetrial_staff_unbeaten(void) {
     return gBeatStaffGhost == FALSE;
 }
 
-s32 func_8001B668(s32 arg0) {
-    u16 sp2E;
-    s16 sp2C;
-    s32 temp_v0;
-    s32 mapId;
+/**
+ * Calls a function to start loading the player ghost data from the controller pak.
+ * Returns the controller pak status. 0 means good.
+ */
+s32 timetrial_init_player_ghost(s32 playerID) {
+    s16 characterID;
+    s16 time;
+    s32 cpakStatus;
+    s32 ghostMapID;
 
-    mapId = func_800599A8();
-    if ((gMapId != mapId) || (D_800DC728 != D_8011AE82)) {
-        temp_v0 = func_800599B8(arg0, gMapId, D_8011AE82, &sp2E, &sp2C);
-        if (temp_v0 == 0) {
-            D_800DC728 = D_8011AE82;
-            D_800DC72C = sp2E;
-            D_800DC724 = sp2C;
+    ghostMapID = timetrial_map_id();
+    if (gMapId != ghostMapID || gTimeTrialVehicle != gPrevTimeTrialVehicle) {
+        cpakStatus =
+            timetrial_load_player_ghost(playerID, gMapId, gPrevTimeTrialVehicle, &characterID, &time);
+        if (cpakStatus == CONTROLLER_PAK_GOOD) {
+            gTimeTrialVehicle = gPrevTimeTrialVehicle;
+            gTimeTrialCharacter = characterID;
+            gTimeTrialTime = time;
         }
-        return temp_v0;
+        return cpakStatus;
     }
-    return func_800599B8(arg0, gMapId, D_8011AE82, NULL, NULL);
+    return timetrial_load_player_ghost(playerID, gMapId, gPrevTimeTrialVehicle, NULL, NULL);
 }
 
-SIDeviceStatus func_8001B738(s32 controllerIndex) {
-    return func_80059B7C(controllerIndex, func_800599A8(), D_800DC728, D_800DC72C, D_800DC724);
+/**
+ * Call a function to write the ghost data to the controller pak.
+ * Returns the controller pak status. 0 is good.
+ */
+SIDeviceStatus timetrial_save_player_ghost(s32 controllerIndex) {
+    return timetrial_write_player_ghost(controllerIndex, timetrial_map_id(), gTimeTrialVehicle, gTimeTrialCharacter,
+                                        gTimeTrialTime);
 }
 
 /**
@@ -4478,7 +4533,7 @@ u8 has_ghost_to_save(void) {
  * Resets the variables used for ghost data saving.
  */
 void set_ghost_none(void) {
-    D_8011D5AC = -1;
+    gGhostMapID = -1;
     gHasGhostToSave = FALSE;
 }
 
@@ -4613,7 +4668,10 @@ Object *get_racer_object_by_port(s32 index) {
     return gRacersByPort[index];
 }
 
-void func_8001BC54(void) {
+/**
+ * Loop through every existing spectate camera and sort them by index.
+ */
+void spectate_update(void) {
     Object *objPtr;
     Object *temp;
     s32 continueLoop;
@@ -4624,7 +4682,7 @@ void func_8001BC54(void) {
         objPtr = gObjPtrList[i];
         if (!(objPtr->segment.trans.flags & OBJ_FLAGS_DEACTIVATED)) {
             if (objPtr->behaviorId == BHV_CAMERA_CONTROL) {
-                if (gCameraObjCount < 20) {
+                if (gCameraObjCount < CAMCONTROL_COUNT) {
                     (*gCameraObjList)[gCameraObjCount] = objPtr;
                     gCameraObjCount++;
                 }
@@ -4637,7 +4695,7 @@ void func_8001BC54(void) {
         for (i = 0; i < gCameraObjCount - 1; i++) {
             objPtr = (*gCameraObjList)[i + 1];
             temp = (*gCameraObjList)[i];
-            if (temp->properties.common.unk0 > objPtr->properties.common.unk0) {
+            if (temp->properties.camControl.cameraID > objPtr->properties.camControl.cameraID) {
                 (*gCameraObjList)[i] = (*gCameraObjList)[i + 1];
                 (*gCameraObjList)[i + 1] = temp;
                 continueLoop = FALSE;
@@ -4646,7 +4704,7 @@ void func_8001BC54(void) {
     } while (!continueLoop);
 }
 
-Object *get_camera_object(s32 cameraIndex) {
+Object *spectate_object(s32 cameraIndex) {
     if (cameraIndex < 0 || cameraIndex >= gCameraObjCount) {
         return NULL;
     }
@@ -4657,7 +4715,7 @@ Object *get_camera_object(s32 cameraIndex) {
  * Take the current camera passed through the function and compare distances between the next and previous camera.
  * Set the camera to be whichever's closest to the object.
  */
-Object *find_nearest_spectate_camera(Object *obj, s32 *cameraId) {
+Object *spectate_nearest(Object *obj, s32 *cameraId) {
     Object *nextCamera;
     Object *prevCamera;
     Object *currCamera;
@@ -4712,161 +4770,179 @@ Object *find_nearest_spectate_camera(Object *obj, s32 *cameraId) {
     return currCamera;
 }
 
-void func_8001BF20(void) {
+/**
+ * Take every existing AI node and find each neighbouring node.
+ * Afterwards, sort them by height so the game can generate elevation thresholds.
+ */
+void ainode_update(void) {
     LevelObjectEntry_AiNode *aiNodeEntry;
     Object *obj;
-    s16 sp186;
+    s16 nodeCount;
     Object *nextAiNodeObj;
-    f32 xDiff;
-    f32 zDiff;
-    f32 yDiff;
+    f32 diffX;
+    f32 diffZ;
+    f32 diffY;
     s32 i;
     s32 j;
     s8 index;  // Must be an s8
     u8 index2; // Must be an u8
     s16 swap;
     Object_AiNode *aiNodeObj64;
-    s8 spE4[128];
-    s8 sp64[128];
+    s8 nodeIDs[AINODE_COUNT];
+    s8 elevations[AINODE_COUNT];
 
-    if (D_8011AF10[0] != 0) {
-        D_8011AF10[0] = 0;
-        for (i = 0; i < 128; i++) {
-            (*D_8011AF04)[i] = 0;
-        }
-        sp186 = 0;
-        for (i = 0; i < gObjectCount; i++) {
-            obj = gObjPtrList[i];
-            if (!(obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && (obj->behaviorId == BHV_AINODE)) {
-                aiNodeEntry = &obj->segment.level_entry->aiNode;
-                index2 = aiNodeEntry->unk9;
-                if (!(index2 & 128)) {
-                    (*D_8011AF04)[index2] = obj;
-                    spE4[sp186] = aiNodeEntry->unk9;
-                    sp64[sp186] = aiNodeEntry->unkE & 3;
-                    sp186++;
-                }
+    if (gInitAINodes == FALSE) {
+        return;
+    }
+    gInitAINodes = FALSE;
+    for (i = 0; i < AINODE_COUNT; i++) {
+        (*gAINodes)[i] = NULL;
+    }
+    nodeCount = 0;
+    // Store each existing node ID in the temporary vars.
+    for (i = 0; i < gObjectCount; i++) {
+        obj = gObjPtrList[i];
+        if (!(obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && obj->behaviorId == BHV_AINODE) {
+            aiNodeEntry = &obj->segment.level_entry->aiNode;
+            index2 = aiNodeEntry->nodeID;
+            if (!(index2 & AINODE_COUNT)) {
+                (*gAINodes)[index2] = obj;
+                nodeIDs[nodeCount] = aiNodeEntry->nodeID;
+                elevations[nodeCount] = aiNodeEntry->elevation & 3;
+                nodeCount++;
             }
-        }
-        if (sp186 != 0) {
-            for (i = 0; i < 128; i++) {
-                obj = (*D_8011AF04)[i];
-                if (obj != NULL) {
-                    aiNodeObj64 = (Object_AiNode *) obj->unk64;
-                    aiNodeEntry = &obj->segment.level_entry->aiNode;
-                    for (j = 0; j < 4; j++) {
-                        index2 = aiNodeEntry->unkA[j];
-                        if (!(index2 & 128)) {
-                            nextAiNodeObj = (*D_8011AF04)[index2];
-                            aiNodeObj64->nodeObj[j] = nextAiNodeObj;
-                            if (nextAiNodeObj == NULL) {
-                                aiNodeEntry->unkA[j] = -1;
-                            } else {
-                                xDiff = obj->segment.trans.x_position - nextAiNodeObj->segment.trans.x_position;
-                                yDiff = obj->segment.trans.y_position - nextAiNodeObj->segment.trans.y_position;
-                                zDiff = obj->segment.trans.z_position - nextAiNodeObj->segment.trans.z_position;
-                                aiNodeObj64->distToNode[j] = sqrtf((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff));
-                            }
-                        }
-                    }
-                }
-            }
-
-            do {
-                j = TRUE;
-                for (i = 0; i < (sp186 - 1); i++) {
-                    if ((*D_8011AF04)[spE4[i + 1]]->segment.trans.y_position <
-                        (*D_8011AF04)[spE4[i]]->segment.trans.y_position) {
-                        swap = spE4[i];
-                        spE4[i] = spE4[i + 1];
-                        spE4[i + 1] = swap;
-                        swap = sp64[i];
-                        sp64[i] = sp64[i + 1];
-                        sp64[i + 1] = swap;
-                        j = FALSE;
-                    }
-                }
-            } while (!j); // Keep doing this until no more swaps are needed.
-
-            if (1) {} // Fakematch
-
-            for (i = 0; i < 5; i++) {
-                D_8011AF18[i] = -20000.0f;
-            }
-
-            index = sp64[0];
-            for (i = 0; i < (sp186 - 1);) {
-                while ((i < (sp186 - 1)) && (index >= sp64[i])) {
-                    i++;
-                }
-                if (index < sp64[i]) {
-                    index = sp64[i];
-                    D_8011AF18[index] = (f32) ((f64) ((*D_8011AF04)[spE4[i]]->segment.trans.y_position +
-                                                      (*D_8011AF04)[spE4[i - 1]]->segment.trans.y_position) *
-                                               0.5);
-                } else {
-                    i = sp186;
-                }
-            }
-            D_8011AF18[0] = -10000.0f;
-
-            D_8011AF18[4] = -D_8011AF18[0];
         }
     }
+    if (nodeCount == 0) {
+        return;
+    }
+    // Find and set each neighbouring node and distance for each existing node.
+    for (i = 0; i < AINODE_COUNT; i++) {
+        obj = (*gAINodes)[i];
+        if (obj != NULL) {
+            aiNodeObj64 = (Object_AiNode *) obj->unk64;
+            aiNodeEntry = &obj->segment.level_entry->aiNode;
+            for (j = 0; j < 4; j++) {
+                index2 = aiNodeEntry->adjacent[j];
+                if (!(index2 & AINODE_COUNT)) {
+                    nextAiNodeObj = (*gAINodes)[index2];
+                    aiNodeObj64->nodeObj[j] = nextAiNodeObj;
+                    if (nextAiNodeObj == NULL) {
+                        aiNodeEntry->adjacent[j] = -1;
+                    } else {
+                        diffX = obj->segment.trans.x_position - nextAiNodeObj->segment.trans.x_position;
+                        diffY = obj->segment.trans.y_position - nextAiNodeObj->segment.trans.y_position;
+                        diffZ = obj->segment.trans.z_position - nextAiNodeObj->segment.trans.z_position;
+                        aiNodeObj64->distToNode[j] = sqrtf((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ));
+                    }
+                }
+            }
+        }
+    }
+    // Sort them by height
+    do {
+        j = TRUE;
+        for (i = 0; i < nodeCount - 1; i++) {
+            if ((*gAINodes)[nodeIDs[i + 1]]->segment.trans.y_position <
+                (*gAINodes)[nodeIDs[i]]->segment.trans.y_position) {
+                swap = nodeIDs[i];
+                nodeIDs[i] = nodeIDs[i + 1];
+                nodeIDs[i + 1] = swap;
+                swap = elevations[i];
+                elevations[i] = elevations[i + 1];
+                elevations[i + 1] = swap;
+                j = FALSE;
+            }
+        }
+    } while (!j); // Keep doing this until no more swaps are needed.
+
+    if (1) {} // Fakematch
+
+    for (i = 0; i < 5; i++) {
+        gElevationHeights[i] = -20000.0f;
+    }
+
+    index = elevations[0];
+    for (i = 0; i < nodeCount - 1;) {
+        while (i < nodeCount - 1 && index >= elevations[i]) {
+            i++;
+        }
+        if (index < elevations[i]) {
+            index = elevations[i];
+            gElevationHeights[index] = ((*gAINodes)[nodeIDs[i]]->segment.trans.y_position +
+                                        (*gAINodes)[nodeIDs[i - 1]]->segment.trans.y_position) *
+                                       0.5f;
+        } else {
+            i = nodeCount;
+        }
+    }
+    gElevationHeights[0] = -10000.0f;
+    gElevationHeights[4] = -gElevationHeights[0];
 }
 
-s16 func_8001C418(f32 yPos) {
+/**
+ * Compare heights against the thresholds.
+ * Elevation level is set based on position.
+ */
+s16 obj_elevation(f32 yPos) {
     s16 i = 0;
-    s16 out = 0;
+    s16 elevation = 0;
     for (; i < 4; i++) {
-        if ((D_8011AF18[i] != -20000.0f) && (D_8011AF18[i] < yPos)) {
-            out = i;
+        if (gElevationHeights[i] != -20000.0f && gElevationHeights[i] < yPos) {
+            elevation = i;
         }
     }
-    return out;
+    return elevation;
 }
 
-s32 func_8001C48C(Object *obj) {
+/**
+ * Loop through the AI Node list and add this new object to the list if it does not already exist.
+ */
+s32 ainode_register(Object *obj) {
     s32 i;
-    for (i = 0; i < 128; i++) {
-        if ((*D_8011AF04)[i] == 0) {
-            (*D_8011AF04)[i] = obj;
+    for (i = 0; i < AINODE_COUNT; i++) {
+        if ((*gAINodes)[i] == NULL) {
+            (*gAINodes)[i] = obj;
             return i;
         }
     }
     return -1;
 }
 
-s32 func_8001C524(f32 diffX, f32 diffY, f32 diffZ, s32 someFlag) {
-    s32 sp64;
+/**
+ * Search through each AI node and find the one closest to the coordinates given.
+ * Can choose to include or ignore elevation.
+ */
+s32 ainode_find_nearest(f32 diffX, f32 diffY, f32 diffZ, s32 useElevation) {
+    s32 elevation;
     f32 len;
     f32 x;
     f32 z;
     f32 y;
     f32 dist;
-    s32 var_a0;
+    s32 findDist;
     s32 numSteps;
     s32 result;
     ObjectSegment *segment;
-    LevelObjectEntry_TTDoor *levelObj;
+    LevelObjectEntry_AiNode *levelObj;
 
-    if (someFlag) {
-        sp64 = func_8001C418(diffY);
+    if (useElevation) {
+        elevation = obj_elevation(diffY);
     }
-    dist = (f32) 50000.0;
+    dist = 50000.0;
     result = 0xFF;
-    for (numSteps = 0; numSteps != 128; numSteps++) {
-        segment = (ObjectSegment *) (*D_8011AF04)[numSteps];
+    for (numSteps = 0; numSteps != AINODE_COUNT; numSteps++) {
+        segment = (ObjectSegment *) (*gAINodes)[numSteps];
         if (segment) {
-            levelObj = &((segment->level_entry)->ttDoor);
-            var_a0 = 1;
-            if (someFlag && (sp64 != levelObj->doorID)) {
-                var_a0 = 0;
+            levelObj = &((segment->level_entry)->aiNode);
+            findDist = TRUE;
+            if (useElevation && elevation != levelObj->elevation) {
+                findDist = FALSE;
             }
-            if ((someFlag == 2) && (levelObj->angleY != 3)) {
-                var_a0 = 0;
+            if (useElevation == 2 && levelObj->unk8 != 3) {
+                findDist = FALSE;
             }
-            if (var_a0) {
+            if (findDist) {
                 x = segment->trans.x_position - diffX;
                 y = segment->trans.y_position - diffY;
                 z = segment->trans.z_position - diffZ;
@@ -4884,45 +4960,35 @@ s32 func_8001C524(f32 diffX, f32 diffY, f32 diffZ, s32 someFlag) {
 GLOBAL_ASM("asm/non_matchings/objects/func_8001C6C4.s")
 
 #ifdef NON_MATCHING
-typedef struct LevelObjectEntry_Unknown8001CC48 {
-    LevelObjectEntryCommon common;
-    u8 pad8[2];
-    u8 unkA[4];
-} LevelObjectEntry_Unknown8001CC48;
-
-typedef struct Object_Unknown8001CC48 {
-    s8 pad0[0x18];
-    s8 unk18[4];
-} Object_Unknown8001CC48;
-
-s32 func_8001CC48(s32 arg0, s32 arg1, s32 arg2) {
-    LevelObjectEntry_Unknown8001CC48 *entry;
+// ainode_find_next
+s32 func_8001CC48(s32 nodeCurrent, s32 arg1, s32 direction) {
+    LevelObjectEntry_AiNode *entry;
     Object *someObj;
-    Object_Unknown8001CC48 *someObj64;
+    Object_AiNode *someObj64;
     s32 someCount;
     s32 i;
     s32 someIndex;
     s32 test;
 
-    if ((arg0 < -1) || (arg0 >= 128)) {
-        return 255;
+    if ((nodeCurrent < -1) || (nodeCurrent >= AINODE_COUNT)) {
+        return NODE_NONE;
     }
-    someObj = (*D_8011AF04)[arg0];
+    someObj = (*gAINodes)[nodeCurrent];
     if (someObj == NULL) {
-        return 255;
+        return NODE_NONE;
     }
-    entry = (LevelObjectEntry_Unknown8001CC48 *) someObj->segment.level_entry;
-    someObj64 = (Object_Unknown8001CC48 *) someObj->unk64;
-    test = arg2 & 3;
+    entry = (LevelObjectEntry_AiNode *) someObj->segment.level_entry;
+    someObj64 = (Object_AiNode *) someObj->unk64;
+    test = direction & 3;
 
     // Swapping these messes up the registers.
     someCount = 0;
-    someIndex = (someObj64->unk18[test] + 1) & 3;
+    someIndex = (someObj64->directions[test] + 1) & 3;
 
     for (i = 0; i < 4; i++) {
-        if (entry->unkA[someIndex] != 255) {
-            if (entry->unkA[someIndex] != arg1) {
-                someObj64->unk18[test] = someIndex;
+        if (entry->adjacent[someIndex] != NODE_NONE) {
+            if (entry->adjacent[someIndex] != arg1) {
+                someObj64->directions[test] = someIndex;
                 i = 4;
                 someCount++;
             }
@@ -4930,9 +4996,9 @@ s32 func_8001CC48(s32 arg0, s32 arg1, s32 arg2) {
         someIndex = (someIndex + 1) & 3;
     }
     if (someCount == 0) {
-        return 255;
+        return NODE_NONE;
     }
-    return entry->unkA[someObj64->unk18[test]];
+    return entry->adjacent[someObj64->directions[test]];
 }
 #else
 GLOBAL_ASM("asm/non_matchings/objects/func_8001CC48.s")
@@ -4954,33 +5020,33 @@ s16 func_8001CD28(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     s32 var_ra;
     Object_AiNode *aiNode;
     Object *aiNodeObj;
-    s32 sp154[128];
-    s8 spD4[128];
-    s8 sp54[128];
+    s32 sp154[AINODE_COUNT];
+    s8 spD4[AINODE_COUNT];
+    s8 sp54[AINODE_COUNT];
 
     // Only matches with do {} while?
     i = 0;
     do {
         sp154[i] = 0;
         i++;
-    } while (i < 128);
+    } while (i < AINODE_COUNT);
 
-    aiNodeObj = (*D_8011AF04)[arg0];
+    aiNodeObj = (*gAINodes)[arg0];
     aiNode = (Object_AiNode *) aiNodeObj->unk64;
     aiNodeEntry = &aiNodeObj->segment.level_entry->aiNode;
     var_t1 = 0;
     var_ra = 0;
-    result = 0xFF;
+    result = NODE_NONE;
     var_s3 = 0;
     someBool = 1;
     var_s5 = 0;
     do {
         for (i = 0; i < 4; i++) {
             if (aiNode->nodeObj[i] != 0) {
-                temp2 = aiNodeEntry->unkA[i];
+                temp2 = aiNodeEntry->adjacent[i];
                 temp = 1;
-                if (((arg0 == aiNodeEntry->unk9) && (temp2 == arg2)) ||
-                    ((arg2 == aiNodeEntry->unk9) && (temp2 == arg0))) {
+                if (((arg0 == aiNodeEntry->nodeID) && (temp2 == arg2)) ||
+                    ((arg2 == aiNodeEntry->nodeID) && (temp2 == arg0))) {
                     temp = 0;
                     if (var_s5 != 0) {
                         temp = 1;
@@ -5014,8 +5080,8 @@ s16 func_8001CD28(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
 
                     sp36C = var_t1 - 1;
 
-                    sp54[sp36C] = (someBool) ? aiNodeEntry->unkA[i] : var_s3;
-                    spD4[sp36C] = aiNodeEntry->unkA[i];
+                    sp54[sp36C] = (someBool) ? aiNodeEntry->adjacent[i] : var_s3;
+                    spD4[sp36C] = aiNodeEntry->adjacent[i];
 
                     while ((sp36C > 0) && (sp154[spD4[sp36C - 1]] < sp154[spD4[sp36C]])) {
                         temp = spD4[sp36C];
@@ -5032,14 +5098,14 @@ s16 func_8001CD28(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
 
         if (var_t1 > 0) {
             var_t1--;
-            aiNodeObj = (*D_8011AF04)[spD4[var_t1]];
+            aiNodeObj = (*gAINodes)[spD4[var_t1]];
             aiNodeEntry = &aiNodeObj->segment.level_entry->aiNode;
             var_s3 = sp54[var_t1];
-            var_ra = sp154[aiNodeEntry->unk9];
+            var_ra = sp154[aiNodeEntry->nodeID];
             aiNode = &aiNodeObj->unk64->ai_node;
             someBool = 0;
             if (arg1 & 0x100) {
-                if ((arg1 & 0x7F) == spD4[var_t1]) {
+                if ((arg1 & AINODE_COUNT) == spD4[var_t1]) {
                     result = var_s3;
                 }
             } else if (arg1 == aiNodeEntry->unk8) {
@@ -5049,15 +5115,15 @@ s16 func_8001CD28(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
                 result = var_s3;
             }
         }
-    } while ((result == 0xFF) && (var_t1 > 0));
+    } while ((result == NODE_NONE) && (var_t1 > 0));
 
     if (result != 0xFF) {
-        aiNodeObj = (*D_8011AF04)[arg0];
+        aiNodeObj = (*gAINodes)[arg0];
         aiNodeEntry = &aiNodeObj->segment.level_entry->aiNode;
         aiNode = &aiNodeObj->unk64->ai_node;
-        for (i = 0; (i < 4) && (result != aiNodeEntry->unkA[i]); i++) {}
+        for (i = 0; (i < 4) && (result != aiNodeEntry->adjacent[i]); i++) {}
         if (i < 4) {
-            aiNode->unk18[arg3] = i;
+            aiNode->directions[arg3] = i;
         }
     }
     return result;
@@ -5066,22 +5132,31 @@ s16 func_8001CD28(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
 GLOBAL_ASM("asm/non_matchings/objects/func_8001CD28.s")
 #endif
 
-void func_8001D1AC(void) {
-    D_8011AF10[0] = 1;
+/**
+ * Signal that AI nodes exist, so the game knows to initialise them.
+ */
+void ainode_enable(void) {
+    gInitAINodes = TRUE;
 }
 
-void func_8001D1BC(s32 arg0) {
-    if (arg0 != D_8011AF08[0]) {
-        D_8011AF08[1] = D_8011AF08[0];
-        D_8011AF08[0] = arg0;
+/**
+ * If the node ID is new, set the tail ID to it.
+ */
+void ainode_tail_set(s32 nodeID) {
+    if (nodeID != gAINodeTail[0]) {
+        gAINodeTail[1] = gAINodeTail[0];
+        gAINodeTail[0] = nodeID;
     }
 }
 
-Object *func_8001D214(s32 arg0) {
-    if (arg0 >= 0 && arg0 < 0x80) {
-        return D_8011AF04[0][arg0];
+/**
+ * Return the AI node assigned to the given ID.
+ */
+Object *ainode_get(s32 nodeID) {
+    if (nodeID >= 0 && nodeID < AINODE_COUNT) {
+        return gAINodes[0][nodeID];
     }
-    return 0;
+    return NULL;
 }
 
 /**
@@ -5209,20 +5284,23 @@ void func_8001E344(s32 arg0) {
     }
 }
 
-void func_8001E36C(s32 arg0, f32 *arg1, f32 *arg2, f32 *arg3) {
+/**
+ * When the sound timer hits the correct value, write the objects position to the arguments.
+ */
+void obj_bridge_pos(s32 timing, f32 *x, f32 *y, f32 *z) {
     s32 i;
     Object *current_obj;
-    *arg1 = -32000.0f;
-    *arg2 = -32000.0f;
-    *arg3 = -32000.0f;
+    *x = -32000.0f;
+    *y = -32000.0f;
+    *z = -32000.0f;
     for (i = 0; i < gObjectCount; i++) {
         current_obj = gObjPtrList[i];
 
         if (current_obj != NULL && !(current_obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) &&
-            current_obj->behaviorId == BHV_RAMP_SWITCH && current_obj->properties.common.unk0 == arg0) {
-            *arg1 = current_obj->segment.trans.x_position;
-            *arg2 = current_obj->segment.trans.y_position;
-            *arg3 = current_obj->segment.trans.z_position;
+            current_obj->behaviorId == BHV_RAMP_SWITCH && current_obj->properties.common.unk0 == timing) {
+            *x = current_obj->segment.trans.x_position;
+            *y = current_obj->segment.trans.y_position;
+            *z = current_obj->segment.trans.z_position;
         }
     }
 }
@@ -5230,21 +5308,21 @@ void func_8001E36C(s32 arg0, f32 *arg1, f32 *arg2, f32 *arg3) {
 /**
  * Return the index of the currently active cutscene.
  */
-s16 get_cutscene_id(void) {
+s16 cutscene_id(void) {
     return gCutsceneID;
 }
 
 /**
  * Set the current cutscene index.
  */
-void set_cutscene_id(s32 cutsceneID) {
+void cutscene_id_set(s32 cutsceneID) {
     gCutsceneID = cutsceneID;
 }
 
 void func_8001E45C(s32 cutsceneID) {
     if (cutsceneID != gCutsceneID) {
         gCutsceneID = cutsceneID;
-        D_8011ADAC = 0;
+        gPathUpdateOff = FALSE;
         D_8011AE7E = 1;
         if (get_game_mode() == GAMEMODE_MENU) {
             gDrawFrameTimer = 2;
@@ -5330,14 +5408,14 @@ void func_8001EE74(void) {
         }
         if (D_8011AD26 || animation->channel != 20) {
             if (obj->unk64 != NULL) {
-                func_8001EFA4(obj, (Object *) obj->unk64);
+                obj_init_animcamera(obj, (Object *) obj->unk64);
             }
         }
     }
     D_8011AD26 = FALSE;
 }
 
-void func_8001EFA4(Object *arg0, Object *animObj) {
+void obj_init_animcamera(Object *arg0, Object *animObj) {
     LevelObjectEntry_Animation *animEntry;
     Object_Animation *anim;
     f32 scale;
@@ -5352,10 +5430,10 @@ void func_8001EFA4(Object *arg0, Object *animObj) {
     animObj->segment.trans.scale = animObj->segment.header->scale * scale;
     animObj->properties.common.unk0 = 0;
     animObj->properties.common.unk4 = 0;
-    if ((animEntry->unk22 >= 2) && (animEntry->unk22 < 10)) {
+    if (animEntry->unk22 >= 2 && animEntry->unk22 < 10) {
         animObj->properties.common.unk0 = animEntry->unk22 - 1;
     }
-    if ((animEntry->unk22 >= 10) && (animEntry->unk22 < 18)) {
+    if (animEntry->unk22 >= 10 && animEntry->unk22 < 18) {
         animObj->properties.common.unk0 = animEntry->unk22 - 9;
     }
     animObj->segment.trans.x_position = arg0->segment.trans.x_position;
@@ -5367,8 +5445,8 @@ void func_8001EFA4(Object *arg0, Object *animObj) {
     anim->unk26 = 0;
     anim->unk3D = animEntry->channel;
     anim->unk28 = animEntry->actorIndex;
-    anim->unk8 = animEntry->nodeSpeed * 0.1f;
-    anim->unk2A = normalise_time(animEntry->animationStartDelay);
+    anim->unk8 = (f32) animEntry->nodeSpeed * 0.1f;
+    anim->startDelay = normalise_time(animEntry->animationStartDelay);
     animObj->segment.object.animationID = animEntry->objAnimIndex;
     animObj->segment.animFrame = animEntry->unk16;
     anim->z = animEntry->objAnimSpeed;
@@ -5384,8 +5462,8 @@ void func_8001EFA4(Object *arg0, Object *animObj) {
     anim->unk2D = 0;
     anim->unk4 = 0;
     anim->unk0 = 0;
-    arg0->unk6C = NULL;
-    anim->unk36 = normalise_time(animEntry->pauseFrameCount);
+    arg0->particleEmitter = NULL;
+    anim->pauseCounter = normalise_time(animEntry->pauseFrameCount);
     anim->unk3A = animEntry->specialHide;
     if (animEntry->unk13 >= 0) {
         anim->unk2F = animEntry->unk13;
@@ -5398,9 +5476,9 @@ void func_8001EFA4(Object *arg0, Object *animObj) {
     anim->unk3C = animEntry->fadeAlpha;
     anim->unk42 = 0xFF;
     if (anim->unk18 != NULL) {
-        func_8000488C(anim->unk18);
+        sound_stop(anim->unk18);
     }
-    anim->unk18 = 0;
+    anim->unk18 = NULL;
     anim->unk43 = animEntry->unk30;
     anim->unk1C = arg0;
     anim->unk45 = 0;
@@ -5419,7 +5497,7 @@ void func_8001F23C(Object *obj, LevelObjectEntry_Animation *animEntry) {
     obj->unk64 = (Object_64 *) spawn_object((LevelObjectEntryCommon *) &newObjEntry, 1);
     newObj = (Object *) obj->unk64;
     // (newObj->behaviorId == BHV_DINO_WHALE) is Dinosaur1, Dinosaur2, Dinosaur3, Whale, and Dinoisle
-    if ((obj->unk64 != NULL) && (newObj->behaviorId == BHV_DINO_WHALE) && (gTimeTrialEnabled)) {
+    if (obj->unk64 != NULL && newObj->behaviorId == BHV_DINO_WHALE && gTimeTrialEnabled) {
         free_object(newObj);
         obj->unk64 = NULL;
         newObj = NULL;
@@ -5427,7 +5505,7 @@ void func_8001F23C(Object *obj, LevelObjectEntry_Animation *animEntry) {
     camera = (Object_AnimCamera *) newObj;
     if (camera != NULL) {
         camera->unk3C = 0;
-        func_8001EFA4(obj, newObj);
+        obj_init_animcamera(obj, newObj);
         if (newObj->segment.header->behaviorId == BHV_CAMERA_ANIMATION) {
             camera = &newObj->unk64->anim_camera;
             camera->unk44 = D_8011AD3E;
@@ -5439,10 +5517,10 @@ void func_8001F23C(Object *obj, LevelObjectEntry_Animation *animEntry) {
                 newObj = spawn_object(&newObjEntry, 1);
                 if (newObj != NULL) {
                     newObj->segment.level_entry = NULL;
-                    func_8001EFA4(obj, newObj);
+                    obj_init_animcamera(obj, newObj);
                     camera = &newObj->unk64->anim_camera;
                     i++;
-                    camera->unk30 = i;
+                    camera->cameraID = i;
                     camera->unk44 = D_8011AD3E;
                 }
             }
@@ -5488,9 +5566,9 @@ GLOBAL_ASM("asm/non_matchings/objects/func_8001F460.s")
 s32 func_800210CC(s8 arg0) {
     if (arg0 >= D_8011AD3D) {
         D_8011AD3D = arg0;
-        return 1;
+        return TRUE;
     }
-    return 0;
+    return FALSE;
 }
 
 void func_80021104(Object *obj, Object_Animation *animObj, LevelObjectEntry_Animation *entry) {
@@ -5503,7 +5581,7 @@ void func_80021104(Object *obj, Object_Animation *animObj, LevelObjectEntry_Anim
         D_8011AD3E++;
     }
     if (entry->unk22 == 18) {
-        set_active_camera(animObj->unk30);
+        set_active_camera(animObj->cameraID);
         seg = get_active_camera_segment_no_cutscenes();
         animObjTrans->x_position = seg->trans.x_position;
         animObjTrans->y_position = seg->trans.y_position;
@@ -5607,7 +5685,7 @@ s8 func_800214E4(Object *obj, s32 updateRate) {
         for (i = 0; (i < D_8011AE78 && animObj->unk28 != D_8011AE74[i]->properties.common.unk4); i++) {
             if (FALSE) {} // FAKEMATCH
         }
-        func_8001EFA4(D_8011AE74[i], obj);
+        obj_init_animcamera(D_8011AE74[i], obj);
         return 1;
     }
     return 0;
@@ -5685,7 +5763,7 @@ f32 func_800228B0(f32 *arg0, u32 arg1, f32 arg2, f32 *arg3) {
 void init_racer_for_challenge(s32 vehicleID) {
     Object_Racer *racer;
 
-    D_8011AEF7 = 3;
+    gTajRaceInit = 3;
     racer = &get_racer_object(PLAYER_ONE)->unk64->racer;
     racer->courseCheckpoint = 0;
     racer->checkpoint = 0;
@@ -5695,7 +5773,11 @@ void init_racer_for_challenge(s32 vehicleID) {
     set_pause_lockout_timer(10);
 }
 
-void func_80022948(void) {
+/**
+ * Initialise the relevant variables related to races.
+ * These are usually done on level load, but Taj challenges don't reset the level.
+ */
+void mode_init_taj_race(void) {
     CheckpointNode *checkpointNode;
     UNUSED s32 pad;
     s32 j;
@@ -5709,12 +5791,12 @@ void func_80022948(void) {
     UNUSED s32 pad2[7];
     f32 sp2C;
 
-    D_8011AEF7 -= 1;
-    if (D_8011AEF7 == 0) {
+    gTajRaceInit -= 1;
+    if (gTajRaceInit == 0) {
         levelHeader = get_current_level_header();
-        D_8011AEF8 = levelHeader->music;
-        D_8011AEFC = levelHeader->instruments;
-        levelHeader->music = 0x1D;
+        gChallengePrevMusic = levelHeader->music;
+        gChallengePrevInstruments = levelHeader->instruments;
+        levelHeader->music = SEQUENCE_TAJS_RACES;
         levelHeader->instruments = 0xFFFF;
         racerObj = get_racer_object(PLAYER_ONE);
         racer = &racerObj->unk64->racer;
@@ -5736,7 +5818,7 @@ void func_80022948(void) {
         D_8011ADB4 = 0;
         D_8011ADC0 = 1;
         levelHeader->laps = 3;
-        levelHeader->race_type = 0;
+        levelHeader->race_type = RACETYPE_DEFAULT;
         func_8009F034();
         for (i = 0; i < ARRAY_COUNT(racer->lap_times); i++) {
             racer->lap_times[i] = 0; // Must be a single line.
@@ -5764,7 +5846,7 @@ void func_80022948(void) {
         i = 0; // Fakematch
         racer->vehicleID = VEHICLE_CARPET;
         racer->vehicleIDPrev = racer->vehicleID;
-        racer->unk2 = 1;
+        racer->racerIndex = 1;
         racer->characterId = settings->racers[0].character;
         racer->stretch_height_cap = 1.0f;
         racer->stretch_height = 1.0f;
@@ -5779,35 +5861,42 @@ void func_80022948(void) {
             }
         }
         set_pause_lockout_timer(20);
-        transition_begin(&D_800DC6F0);
+        transition_begin(&gTajChallengeTransition);
     }
 }
 
-void func_80022CFC(s32 arg0, f32 x, f32 y, f32 z) {
-    s32 index;
-    unk80022CFC_1 *obj;
+/**
+ * Finds which golden balloon should be moved, and move it onto Taj's current position.
+ * Sets opacity to 0, so the balloon with smoothly fade in.
+ */
+void obj_taj_create_balloon(s32 blockID, f32 x, f32 y, f32 z) {
+    s32 i;
+    Object *obj;
     Settings *settings = get_settings();
 
-    for (index = 0; index < gObjectCount; index += 1) {
-        obj = ((unk80022CFC_1 *) gObjPtrList[index]);
-        if (obj->unk48 == 0x4D) {
-            if (obj->unk3C != NULL) {
-                if (obj->unk3C->unkA > 0) {
-                    if ((settings->tajFlags != 0) && (settings->tajFlags & (1 << (obj->unk3C->unkA + 2)))) {
-                        obj->unkC = x;
-                        obj->unk10 = y + 10.0f;
-                        obj->unk14 = z;
-                        obj->unk2E = arg0;
-                        obj->unk78 = 0;
-                        obj->unk39 = 0;
-                    }
-                }
+    for (i = 0; i < gObjectCount; i++) {
+        obj = gObjPtrList[i];
+        if (obj->behaviorId == BHV_GOLDEN_BALLOON && obj->segment.level_entry != NULL &&
+            obj->segment.level_entry->goldenBalloon.challengeID > 0) {
+            if (settings->tajFlags &&
+                settings->tajFlags & (1 << (obj->segment.level_entry->goldenBalloon.challengeID + 2))) {
+                obj->segment.trans.x_position = x;
+                obj->segment.trans.y_position = y + 10.0f;
+                obj->segment.trans.z_position = z;
+                obj->segment.object.segmentID = blockID;
+                obj->properties.common.unk0 = 0;
+                obj->segment.object.opacity = 0;
             }
         }
     }
 }
 
-void func_80022E18(s32 arg0) {
+/**
+ * Revert changes set by the game when starting the Taj challenge.
+ * This includes the music set, as well as the extra racer spawned.
+ * Has a different response depending on whether the challenge was aborted or finished.
+ */
+void mode_end_taj_race(s32 reason) {
     s32 flags;
     s32 i;
     Object_Racer *racer;
@@ -5816,9 +5905,9 @@ void func_80022E18(s32 arg0) {
     LevelHeader *levelHeader;
 
     levelHeader = get_current_level_header();
-    levelHeader->race_type = 5;
-    levelHeader->music = D_8011AEF8;
-    levelHeader->instruments = D_8011AEFC;
+    levelHeader->race_type = RACETYPE_HUBWORLD;
+    levelHeader->music = gChallengePrevMusic;
+    levelHeader->instruments = gChallengePrevInstruments;
     minimap_opacity_set(1);
 
     // Only works with do {} while?
@@ -5837,16 +5926,16 @@ void func_80022E18(s32 arg0) {
     gNumRacers = 1;
     for (i = gObjectListStart; i < gObjectCount; i++) {
         if (!(gObjPtrList[i]->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) &&
-            (gObjPtrList[i]->behaviorId == BHV_PARK_WARDEN)) {
+            gObjPtrList[i]->behaviorId == BHV_PARK_WARDEN) {
             obj = gObjPtrList[i];
         }
     }
     racer = &(*gRacers)[0]->unk64->racer;
-    if (racer->unk15C != NULL) {
-        free_object(racer->unk15C);
-        racer->unk15C = NULL;
+    if (racer->challengeMarker != NULL) {
+        free_object(racer->challengeMarker);
+        racer->challengeMarker = NULL;
     }
-    if (arg0 == 0) {
+    if (reason == CHALLENGE_END_FINISH) {
         if (racer->finishPosition == 1) {
             settings = get_settings();
             flags = racer->vehicleID;
@@ -5861,24 +5950,24 @@ void func_80022E18(s32 arg0) {
         } else {
             set_next_taj_challenge_menu(4);
         }
-        obj->properties.common.unk0 = 0x1F;
+        obj->properties.common.unk0 = 31;
         set_taj_status(2);
     } else {
         music_change_on();
         music_stop();
         set_next_taj_challenge_menu(0);
-        func_80008168();
-        if (arg0 == 2) {
+        audioline_on();
+        if (reason == CHALLENGE_END_OOB) {
             set_current_text(ASSET_GAME_TEXT_0);
         }
         gEventCountdown = 0;
         gEventStartTimer = 0;
-        obj->properties.common.unk0 = 0x14;
+        obj->properties.common.unk0 = 20;
     }
     music_change_on();
     hud_audio_init();
     start_level_music(1.0f);
-    gIsTajChallenge = 0;
+    gIsTajChallenge = FALSE;
 }
 
 GLOBAL_ASM("asm/non_matchings/objects/func_800230D0.s")
@@ -5932,12 +6021,18 @@ s32 func_80023568(void) {
     return 0;
 }
 
-s8 func_800235C0(void) {
-    return D_8011ADD5;
+/**
+ * Return whether doors can be forced open.
+ */
+s8 obj_door_override(void) {
+    return gOverrideDoors;
 }
 
-void func_800235D0(s32 arg0) {
-    D_8011ADD5 = arg0;
+/**
+ * Set a value that decides whether doors can be forced open.
+ */
+void obj_door_open(s32 setting) {
+    gOverrideDoors = setting;
 }
 
 /**
@@ -5955,7 +6050,7 @@ s32 get_object_property_size(Object *obj, Object_64 *obj64) {
             break;
         case BHV_DOOR:
         case BHV_TT_DOOR:
-            ret = sizeof(Object_TTDoor);
+            ret = sizeof(Object_Door);
             break;
         case BHV_EXIT:
             ret = sizeof(Object_Exit);
@@ -6214,8 +6309,8 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
         case BHV_ZIPPER_AIR:
             obj_init_airzippers_waterzippers(obj, (LevelObjectEntry_AirZippers_WaterZippers *) entry);
             break;
-        case BHV_UNK_3A:
-            obj_init_unknown58(obj, (LevelObjectEntry_Unknown58 *) entry);
+        case BHV_TIMETRIAL_GHOST:
+            obj_init_timetrialghost(obj, (LevelObjectEntry_TimeTrial_Ghost *) entry);
             break;
         case BHV_WAVE_GENERATOR:
             obj_init_wavegenerator(obj, (LevelObjectEntry_WaveGenerator *) entry, param);
@@ -6572,8 +6667,8 @@ void run_object_loop_func(Object *obj, s32 updateRate) {
         case BHV_ZIPPER_AIR:
             obj_loop_airzippers_waterzippers(obj, updateRate);
             break;
-        case BHV_UNK_3A:
-            obj_loop_unknown58(obj, updateRate);
+        case BHV_TIMETRIAL_GHOST:
+            obj_loop_timetrialghost(obj, updateRate);
             break;
         case BHV_WAVE_POWER:
             obj_loop_wavepower(obj);

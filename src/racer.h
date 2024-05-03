@@ -7,6 +7,7 @@
 #include "save_data.h"
 
 #define SEGMENT_NONE -1 // If the level in question does not use segmentation.
+#define GHOST_STAFF 2
 
 extern f32 gTimeDilation[];
 extern s16 gTimeDilationTimer[];
@@ -33,6 +34,13 @@ typedef enum BoostSound {
     BOOST_SOUND_UNK3,
     BOOST_SOUND_UNK4
 } BoostSound;
+
+typedef enum ObjectElevation {
+    ELEVATION_LOW,
+    ELEVATION_NORMAL,
+    ELEVATION_HIGH,
+    ELEVATION_HIGHEST
+} ObjectElevation;
 
 // boost types suffixed with _FAST are the ones you get from releasing the throttle.
 typedef enum BoostType {
@@ -183,14 +191,14 @@ void handle_base_steering(Object_Racer *racer, s32 updateRate, f32 updateRateF);
 void second_racer_camera_update(Object *obj, Object_Racer *racer, s32 mode, f32 updateRateF);
 void get_timestamp_from_frames(s32 frameCount, s32 *minutes, s32 *seconds, s32 *hundredths);
 void allocate_ghost_data(void);
-void func_80059944(void);
-void func_80059984(s32 arg0);
-s32 func_800599A8(void);
-s32 func_800599B8(s32 arg0, s32 mapId, s16 arg2, u16 *arg3, s16 *arg4);
+void timetrial_reset_player_ghost(void);
+void timetrial_swap_player_ghost(s32 mapID);
+s32 timetrial_map_id(void);
+s32 timetrial_load_player_ghost(s32 controllerID, s32 mapId, s16 arg2, s16 *characterID, s16 *time);
 s32 load_tt_ghost(s32 ghostOffset, s32 size, s16 *outTime);
-void free_tt_ghost_data(void);
-SIDeviceStatus func_80059B7C(s32 controllerIndex, s32 mapId, s16 arg2, s16 arg3, s16 arg4);
-s16 func_80059E20(void);
+void timetrial_free_staff_ghost(void);
+SIDeviceStatus timetrial_write_player_ghost(s32 controllerIndex, s32 mapId, s16 arg2, s16 arg3, s16 arg4);
+s16 timetrial_ghost_full(void);
 void disable_racer_input(void);
 void compare_balloon_checksums(void);
 void antipiracy_modify_surface_traction_table(void);
@@ -229,7 +237,7 @@ void handle_racer_items(Object *obj, Object_Racer *racer, s32 updateRate);
 void drop_bananas(Object *obj, Object_Racer *racer, s32 number);
 void update_player_racer(Object *obj, s32 updateRate);
 void func_80045128(Object **racerObjs);
-void func_80059BF0(Object *obj, s32 updateRate);
+void timetrial_ghost_write(Object *obj, s32 updateRate);
 
 //Non Matching
 s32 set_ghost_position_and_rotation(Object *obj);

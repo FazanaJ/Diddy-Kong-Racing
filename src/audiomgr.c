@@ -163,7 +163,7 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
     }
     /* last buffer already linked, but still needs buffer */
     dmaBuffs[i].ptr = alHeapAlloc(c->heap, 1, DMA_BUFFER_LENGTH);
-#ifndef NO_ANTIPIRACY
+#ifdef ANTI_TAMPER
     // Antipiracy measure
     gAntiPiracyCRCStart = DMA_BUFFER_LENGTH;
     checksum = (s32) &func_80019808 - gAntiPiracyCRCStart;
@@ -305,9 +305,9 @@ static u32 __amHandleFrameMsg(AudioInfo *info, AudioInfo *lastInfo) {
         outputDataPointer = lastInfo->data;
         frameSamples = lastInfo->frameSamples << 2;
         osAiSetNextBuffer(outputDataPointer, frameSamples);
-#ifndef NO_ANTIPIRACY
+#ifdef ANTI_TAMPER
         // Antipiracy measure
-        if (gAntiPiracyAudioFreq != 0) {
+        if (gAntiPiracyAudioFreq) {
             osAiSetFrequency(get_random_number_from_range(0, 10000) + OUTPUT_RATE);
         }
 #endif

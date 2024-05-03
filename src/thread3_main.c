@@ -195,7 +195,7 @@ void init_game(void) {
 
     init_main_memory_pool();
     init_rzip(); // Initialise gzip decompression related things
-#ifndef NO_ANTIPIRACY
+#ifdef ANTI_TAMPER
     sAntiPiracyTriggered = TRUE;
     if (check_imem_validity()) {
         sAntiPiracyTriggered = FALSE;
@@ -206,6 +206,13 @@ void init_game(void) {
 
     osCreateScheduler(&gMainSched, &gSchedStack[THREAD5_STACK / sizeof(u64)], OS_SC_PRIORITY, (u8) 0, 1);
     init_video(VIDEO_MODE_LOWRES_LPN);
+#ifdef ANTI_TAMPER
+    // Antipiracy measure.
+    gDmemInvalid = FALSE;
+    if (check_dmem_validity() == FALSE) {
+        gDmemInvalid = TRUE;
+    }
+#endif
     init_PI_mesg_queue();
     setup_gfx_mesg_queues();
     audio_init(&gMainSched);
@@ -440,7 +447,7 @@ void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, gGameCurrentCutscene);
     init_hud(gNumberOfViewports);
     func_800AE728(8, 0x10, 0x96, 0x64, 0x32, 0);
-    func_8001BF20();
+    ainode_update();
     osSetTime(0);
     sPrevTime = 0;
     set_free_queue_state(2);
@@ -499,7 +506,7 @@ void ingame_logic_loop(s32 updateRate) {
         }
         sound_play(soundID, NULL);
     }*/
-#ifndef NO_ANTIPIRACY
+#ifdef ANTI_TAMPER
     // Spam the start button, making the game unplayable because it's constantly paused.
     if (sAntiPiracyTriggered) {
         buttonPressedInputs |= START_BUTTON;
@@ -527,7 +534,7 @@ void ingame_logic_loop(s32 updateRate) {
         gIsPaused = FALSE;
     }
     gParticlePtrList_flush();
-    func_8001BF20();
+    ainode_update();
 #ifdef PUPPYPRINT_DEBUG
     gPuppyPrint.mainTimerPoints[0][PP_LEVELGFX] = osGetCount();
 #endif
@@ -578,12 +585,12 @@ void ingame_logic_loop(s32 updateRate) {
         }
     }
     process_onscreen_textbox(updateRate);
-    i = func_800C3400();
+    i = textbox_visible();
     if (i != 0) {
         if (i == 2) {
             gIsPaused = TRUE;
         }
-        if (func_800C3400() != 2) {
+        if (textbox_visible() != 2) {
             gIsPaused = FALSE;
             n_alSeqpDelete();
         }
@@ -624,7 +631,7 @@ void ingame_logic_loop(s32 updateRate) {
                 gIsPaused = FALSE;
                 break;
             case 6:
-                func_80022E18(1);
+                mode_end_taj_race(CHALLENGE_END_QUIT);
                 gIsPaused = FALSE;
                 break;
             case 3:
@@ -637,8 +644,9 @@ void ingame_logic_loop(s32 updateRate) {
         }
     }
     init_rdp_and_framebuffer(&gCurrDisplayList);
-    render_borders_for_multiplayer(&gCurrDisplayList);
+    divider_draw(&gCurrDisplayList);
     render_minimap_and_misc_hud(&gCurrDisplayList, &gGameCurrMatrix, &gGameCurrVertexList, updateRate);
+    divider_clear_coverage(&gCurrDisplayList);
     if (gFutureFunLandLevelTarget) {
         if (func_800214C4() != 0) {
             gPlayableMapId = ASSET_LEVEL_FUTUREFUNLANDHUB;
@@ -935,7 +943,7 @@ void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, cutsceneId);
     init_hud(gNumberOfViewports);
     func_800AE728(4, 4, 0x6E, 0x30, 0x20, 0);
-    func_8001BF20();
+    ainode_update();
     osSetTime(0);
     sPrevTime = 0;
     set_free_queue_state(2);
@@ -971,7 +979,7 @@ void update_menu_scene(s32 updateRate) {
         update_time_dialation(updateRate);
         func_80010994(updateRate);
         gParticlePtrList_flush();
-        func_8001BF20();
+        ainode_update();
 #ifdef PUPPYPRINT_DEBUG
         gPuppyPrint.mainTimerPoints[0][PP_LEVELGFX] = osGetCount();
 #endif
@@ -981,7 +989,8 @@ void update_menu_scene(s32 updateRate) {
 #endif
         process_onscreen_textbox(updateRate);
         init_rdp_and_framebuffer(&gCurrDisplayList);
-        render_borders_for_multiplayer(&gCurrDisplayList);
+        divider_draw(&gCurrDisplayList);
+        divider_clear_coverage(&gCurrDisplayList);
     }
 }
 
@@ -1643,7 +1652,7 @@ s32 is_controller_missing(void) {
     }
 }
 
-#ifndef NO_ANTIPIRACY
+#ifdef ANTI_TAMPER
 /**
  * Ran on boot, will make sure the CIC chip (CIC6103) is to spec. Will return true if it's all good, otherwise it
  * returns false. The intention of this function, is an attempt to check that the cartridge is a legitimate copy. A

@@ -26,7 +26,7 @@ u16 gUsedMasks = 0;
 
 /************ .bss ************/
 
-extern s8 D_8011AC18;
+extern s8 gAudioLinesOff;
 extern SoundData *D_80119C40;
 extern unk80119C58 D_80119C58[];
 extern unk8011A6D8 D_8011A6D8[];
@@ -58,13 +58,19 @@ void func_80008040(void) {
 GLOBAL_ASM("asm/non_matchings/audio_spatial/func_80008040.s")
 #endif
 
-void func_80008140(void) {
+/**
+ * Stop any playing jingles, then block audio lines from playing anymore.
+ */
+void audioline_off(void) {
     music_jingle_stop();
-    D_8011AC18 = 1;
+    gAudioLinesOff = TRUE;
 }
 
-void func_80008168(void) {
-    D_8011AC18 = 0;
+/**
+ * Allow audio lines to play jingles.
+ */
+void audioline_on(void) {
+    gAudioLinesOff = FALSE;
 }
 
 #ifdef NON_EQUIVALENT
@@ -84,7 +90,7 @@ void func_80008174(void) {
     for (i = 0; i < gUsedMasks; i++) {
         gSoundMaskHeapUsed[i]->unk12 = 0;
         if (gSoundMaskHeapUsed[i]->unk18 != NULL) {
-            func_8000488C(gSoundMaskHeapUsed[i]->unk18);
+            sound_stop(gSoundMaskHeapUsed[i]->unk18);
         }
     }
     gUsedMasks = 0;
@@ -93,7 +99,7 @@ void func_80008174(void) {
         D_80119C58[i].soundID = 0;
         if (D_80119C58[i].unk178 != 0) {
             if (D_80119C58[i].unk0.unk0_02 == 0) {
-                func_8000488C(D_80119C58[i].unk178);
+                sound_stop(D_80119C58[i].unk178);
             } else if (D_80119C58[i].unk0.unk0_02 == 1) {
                 music_jingle_stop();
             }
@@ -115,7 +121,7 @@ void func_80008174(void) {
         // }
     }
 
-    D_8011AC18 = 0;
+    gAudioLinesOff = 0;
 }
 #else
 GLOBAL_ASM("asm/non_matchings/audio_spatial/func_80008174.s")
@@ -452,7 +458,7 @@ GLOBAL_ASM("asm/non_matchings/audio_spatial/func_8000A184.s")
 void func_8000A2E8(s32 arg0) {
     if (gUsedMasks != 0) {
         if (gSoundMaskHeapUsed[arg0]->unk18 != 0) {
-            func_8000488C(gSoundMaskHeapUsed[arg0]->unk18);
+            sound_stop(gSoundMaskHeapUsed[arg0]->unk18);
         }
         if (gSoundMaskHeapUsed[arg0]->soundMask != NULL) {
             *gSoundMaskHeapUsed[arg0]->soundMask = NULL;

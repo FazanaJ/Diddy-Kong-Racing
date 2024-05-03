@@ -57,7 +57,7 @@ void allocate_object_model_pools(void) {
     D_8011D640 = 0;
     gAssetColourTag = COLOUR_TAG_GREY;
 
-#ifndef NO_ANTIPIRACY
+#ifdef ANTI_TAMPER
     // Antipiracy measure
     checksum = 0;
     for (i = 0; i < gTrackRenderFuncLength; i++) {

@@ -159,12 +159,12 @@ s16 gDialogueCameraAngle;
 s8 gEggChallengeFlags[4];
 s8 D_8011D58C[4];
 GhostNode *gGhostData[3];
-s8 D_8011D59C;
-s8 D_8011D59D;
-s16 D_8011D59E;
-s16 D_8011D5A0[3]; // gTTGhostNodeCount?
-s16 D_8011D5A8[2];
-s16 D_8011D5AC; // Previous MapId?
+s8 gCurrentGhostIndex;
+s8 gPrevGhostNodeIndex;
+s16 gGhostNodeDelay;
+s16 gGhostNodeCount[3];
+s16 gGhostNodeFull[2];
+s16 gGhostMapID; // Previous MapId?
 s8 gRacerWaveCount;
 s8 D_8011D5AF;
 WaterProperties **gRacerCurrentWave;
@@ -219,7 +219,7 @@ void func_80042D20(Object *obj, Object_Racer *racer, s32 updateRate) {
     } else {
         racer->unk1C6 = 0;
     }
-    if (func_8001AE44() != 0) {
+    if (race_finish_timer() != 0) {
         gCurrentRacerInput |= A_BUTTON;
     } else {
         index = 0;
@@ -306,7 +306,7 @@ void func_80042D20(Object *obj, Object_Racer *racer, s32 updateRate) {
             if ((f32) (s16) ((racer->aiSkill - 2) << 2) <= 300.0f - D_8011D544) {
                 gCurrentRacerInput |= A_BUTTON;
             }
-            miscAsset4 = (u8 *) get_misc_asset(ASSET_MISC_12);
+            miscAsset4 = (u8 *) get_misc_asset(ASSET_MISC_BALLOON_DATA);
             if (racer->balloon_level < 3) {
                 balloonType = miscAsset4[racer->balloon_type * 3 + racer->balloon_level];
             } else {
@@ -553,7 +553,7 @@ void increment_ai_behaviour_chances(Object *obj, Object_Racer *racer, s32 update
     } else {
         sBalloonLevelAI = 0;
     }
-    test = (s8 *) get_misc_asset(ASSET_MISC_12);
+    test = (s8 *) get_misc_asset(ASSET_MISC_BALLOON_DATA);
     if ((gCurrentButtonsReleased & Z_TRIG) && racer->balloon_quantity) {
         if (racer->balloon_level < 3) {
             balloonType = test[racer->balloon_type * 3 + racer->balloon_level];
@@ -623,7 +623,7 @@ void racer_AI_pathing_inputs(Object *obj, Object_Racer *racer, s32 updateRate) {
                 racer->unk1CA = (racer->unk1CA + 1) & 3;
             } else if (raceType == RACETYPE_CHALLENGE_BATTLE || raceType == RACETYPE_CHALLENGE_BANANAS) {
                 if (racer->unk1CE != 0xFF) {
-                    racer->unk154 = func_8001D214(racer->unk1CE);
+                    racer->unk154 = ainode_get(racer->unk1CE);
                 }
             }
         }
@@ -726,7 +726,7 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
 
     sp67 = 0;
     if (racer->playerIndex >= PLAYER_ONE && gNumViewports < 2) {
-        obj->unk74 |= 0x100;
+        obj->particleEmitFlags |= 0x100;
     }
 
     D_8011D550 = 0;
@@ -1014,7 +1014,7 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
                 }
             } else if (racer->approachTarget == 0) {
                 racer_play_sound(obj, SOUND_UNK_AF);
-                obj->unk74 |= 0x30;
+                obj->particleEmitFlags |= 0x30;
             }
             temp_f2 = racer->trickType - 5.0f;
             if ((temp_f2 > 0.0f) && (racer->approachTarget == 0)) {
@@ -1277,7 +1277,7 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
     if (((racer->buoyancy > 0.0) && (racer->unk1FB == 0)) && (obj->segment.y_velocity > 4.0)) {
         obj->segment.y_velocity = 4.0f;
     }
-    if (gNumViewports < 2 && obj->segment.header->unk57 >= 9) {
+    if (gNumViewports < 2 && obj->segment.header->particleCount >= 9) {
         if ((gCurrentRacerInput & (A_BUTTON | R_TRIG)) == (A_BUTTON | R_TRIG) &&
             (gCurrentStickX < -30 || gCurrentStickX > 30)) {
             func_800B4668(obj, 8, updateRate << 10, 0x80);
@@ -1292,13 +1292,13 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
                       (obj->segment.z_velocity * obj->segment.z_velocity);
             if (temp_f2 > 16.0f) {
                 if (temp_f2 < 80.0f) {
-                    obj->unk74 |= 0x8 | 0x4;
+                    obj->particleEmitFlags |= 0x8 | 0x4;
                 }
                 if (temp_f2 > 28.0f) {
-                    obj->unk74 |= 3;
+                    obj->particleEmitFlags |= 3;
                 }
                 if ((gNumViewports == 1) && (temp_f2 > 10.25f)) {
-                    obj->unk74 |= 0x40;
+                    obj->particleEmitFlags |= 0x40;
                 }
             }
         } else {
@@ -1308,25 +1308,25 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
                 var_f2 = racer->velocity;
             }
             if (var_f2 > 4.0f) {
-                obj->unk74 |= 0xC;
+                obj->particleEmitFlags |= 0xC;
             }
         }
     }
     if (gCurrentPlayerIndex != PLAYER_COMPUTER && racer->boostTimer == 0 && gNumViewports < 2) {
-        asset20 = &((Asset20 *) get_misc_asset(ASSET_MISC_20))[racer->unk2];
+        asset20 = &((Asset20 *) get_misc_asset(ASSET_MISC_20))[racer->racerIndex];
         i = ((racer->boostType & EMPOWER_BOOST) >> 2) + 10;
         if (i > 10) {
-            if ((asset20->unk70 > 0) || (asset20->unk74 > 0.0)) {
-                obj->unk74 |= 1 << i;
+            if (asset20->unk70 > 0 || asset20->unk74 > 0.0) {
+                obj->particleEmitFlags |= 1 << i;
             }
-        } else if ((asset20->unk70 == 2) && (asset20->unk74 < 0.5)) {
-            obj->unk74 |= 1 << i;
+        } else if (asset20->unk70 == 2 && asset20->unk74 < 0.5) {
+            obj->particleEmitFlags |= 1 << i;
         } else if (asset20->unk70 < 2 && asset20->unk74 > 0.0f) {
-            obj->unk74 |= 1 << i;
+            obj->particleEmitFlags |= 1 << i;
         }
     }
     if (racer->unk201 == 0) {
-        obj->unk74 = 0;
+        obj->particleEmitFlags = OBJ_EMIT_OFF;
     } else {
         obj->segment.y_velocity += updateRate * gCurrentRacerWeightStat;
         func_800AF714(obj, updateRate);
@@ -2289,7 +2289,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
     if (tempRacer->unk1F6 < 0) {
         tempRacer->unk1F6 = 0;
     }
-    obj->unk74 = 0;
+    obj->particleEmitFlags = OBJ_EMIT_OFF;
     if (tempRacer->unk201 > 0) {
         tempRacer->unk201 -= updateRate;
     } else {
@@ -2538,7 +2538,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
         }
         if (tempRacer->magnetTimer == 0) {
             if (tempRacer->magnetSoundMask) {
-                func_8000488C(tempRacer->magnetSoundMask);
+                sound_stop(tempRacer->magnetSoundMask);
                 tempRacer->magnetSoundMask = NULL;
             }
         }
@@ -2586,28 +2586,34 @@ void update_player_racer(Object *obj, s32 updateRate) {
             if (is_taj_challenge()) {
                 if (gCurrentPlayerIndex != PLAYER_COMPUTER) {
                     checkpointNode = find_next_checkpoint_node(tempRacer->checkpoint, tempRacer->unk1C8);
-                    if (!tempRacer->unk15C) {
+                    if (!tempRacer->challengeMarker) {
                         newObject.x = 0;
                         newObject.y = 0;
                         newObject.z = 0;
                         newObject.objectID = ASSET_OBJECT_ID_CHECKARROW;
                         newObject.size = 8;
-                        tempRacer->unk15C = spawn_object(&newObject, 1);
-                        if (tempRacer->unk15C) {
-                            tempRacer->unk15C->segment.level_entry = NULL;
-                            tempRacer->unk15C->segment.object.opacity = 128;
+                        tempRacer->challengeMarker = spawn_object(&newObject, 1);
+                        if (tempRacer->challengeMarker) {
+                            tempRacer->challengeMarker->segment.level_entry = NULL;
+                            tempRacer->challengeMarker->segment.object.opacity = 128;
                         }
                     }
-                    if (tempRacer->unk15C) {
-                        tempRacer->unk15C->segment.trans.x_position = checkpointNode->obj->segment.trans.x_position;
-                        tempRacer->unk15C->segment.trans.y_position = checkpointNode->obj->segment.trans.y_position;
+                    if (tempRacer->challengeMarker) {
+                        tempRacer->challengeMarker->segment.trans.x_position =
+                            checkpointNode->obj->segment.trans.x_position;
+                        tempRacer->challengeMarker->segment.trans.y_position =
+                            checkpointNode->obj->segment.trans.y_position;
                         if (tempRacer->vehicleID == VEHICLE_CAR) {
-                            tempRacer->unk15C->segment.trans.y_position -= 30.0f;
+                            tempRacer->challengeMarker->segment.trans.y_position -= 30.0f;
                         }
-                        tempRacer->unk15C->segment.trans.z_position = checkpointNode->obj->segment.trans.z_position;
-                        tempRacer->unk15C->segment.trans.y_rotation = checkpointNode->obj->segment.trans.y_rotation;
-                        tempRacer->unk15C->segment.trans.x_rotation = checkpointNode->obj->segment.trans.x_rotation;
-                        tempRacer->unk15C->segment.object.segmentID = checkpointNode->obj->segment.object.segmentID;
+                        tempRacer->challengeMarker->segment.trans.z_position =
+                            checkpointNode->obj->segment.trans.z_position;
+                        tempRacer->challengeMarker->segment.trans.y_rotation =
+                            checkpointNode->obj->segment.trans.y_rotation;
+                        tempRacer->challengeMarker->segment.trans.x_rotation =
+                            checkpointNode->obj->segment.trans.x_rotation;
+                        tempRacer->challengeMarker->segment.object.segmentID =
+                            checkpointNode->obj->segment.object.segmentID;
                     }
                 }
             }
@@ -2622,11 +2628,11 @@ void update_player_racer(Object *obj, s32 updateRate) {
             tempRacer->unk1A8 = tempVar;
         }
         if (is_taj_challenge()) {
-            if (tempRacer->unk15C) {
-                tempRacer->unk15C->segment.animFrame += 8 * updateRate;
+            if (tempRacer->challengeMarker) {
+                tempRacer->challengeMarker->segment.animFrame += 8 * updateRate;
             }
             if (tempRacer->unk1BA > 400 || tempRacer->unk1BA < -400) {
-                func_80022E18(2);
+                mode_end_taj_race(CHALLENGE_END_OOB);
             }
         }
         func_80018CE0(obj, xTemp, yTemp, zTemp, updateRate);
@@ -2662,11 +2668,15 @@ void update_player_racer(Object *obj, s32 updateRate) {
 
         tempVar = ((tempRacer->headAngleTarget - tempRacer->headAngle) * updateRate) >> 3;
         CLAMP(tempVar, -0x800, 0x800);
+#ifdef ANTI_TAMPER
         if (gAntiPiracyHeadroll) {
             tempRacer->headAngle += gAntiPiracyHeadroll;
         } else {
             tempRacer->headAngle += tempVar;
         }
+#else
+        tempRacer->headAngle += tempVar;
+#endif
         if ((gCurrentButtonsPressed & R_TRIG) && tempRacer->tapTimerR) {
             tempRacer->tappedR = TRUE;
             tempRacer->tapTimerR = 0;
@@ -2701,7 +2711,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
                                           obj->segment.trans.y_position, obj->segment.trans.z_position);
         }
         if (is_in_time_trial() && tempRacer->playerIndex == PLAYER_ONE && gRaceStartTimer == 0) {
-            func_80059BF0(obj, updateRate);
+            timetrial_ghost_write(obj, updateRate);
         }
         if (tempRacer->soundMask) {
             update_spatial_audio_position(tempRacer->soundMask, obj->segment.trans.x_position,
@@ -2744,9 +2754,9 @@ void update_player_racer(Object *obj, s32 updateRate) {
             }
         }
         if (header->race_type & RACETYPE_CHALLENGE && header->race_type != RACETYPE_CHALLENGE_EGGS) {
-            tempRacer->unk212 = func_8001C418(obj->segment.trans.y_position);
+            tempRacer->elevation = obj_elevation(obj->segment.trans.y_position);
         } else {
-            tempRacer->unk212 = 0;
+            tempRacer->elevation = ELEVATION_LOW;
         }
         if (tempRacer->countLap < tempRacer->lap) {
             tempRacer->countLap = tempRacer->lap;
@@ -2955,11 +2965,11 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
         if (gCurrentPlayerIndex >= PLAYER_ONE) {
             if (gNumViewports < FOUR_PLAYERS) {
                 if (racer->drift_direction > 0) {
-                    obj->unk74 |= 0x1000 | 0x400;
+                    obj->particleEmitFlags |= 0x1000 | 0x400;
                 } else if (racer->drift_direction < 0) {
-                    obj->unk74 |= 0x2000 | 0x800;
+                    obj->particleEmitFlags |= 0x2000 | 0x800;
                 } else {
-                    obj->unk74 |= 0x2000 | 0x1000;
+                    obj->particleEmitFlags |= 0x2000 | 0x1000;
                 }
             } else {
                 sp58 = 1;
@@ -2986,7 +2996,7 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
         gCurrentStickY = -70;
         sp60 = TRUE;
         if (gNumViewports < FOUR_PLAYERS) {
-            obj->unk74 |= 0x2000 | 0x1000 | 0x800 | 0x400;
+            obj->particleEmitFlags |= 0x2000 | 0x1000 | 0x800 | 0x400;
         } else {
             sp58 = 1;
         }
@@ -3011,9 +3021,9 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
     if (racer->drift_direction != 0 && gCurrentPlayerIndex >= PLAYER_ONE) {
         if (gNumViewports < FOUR_PLAYERS) {
             if (racer->drift_direction > 0) {
-                obj->unk74 |= 0x1000 | 0x400;
+                obj->particleEmitFlags |= 0x1000 | 0x400;
             } else {
-                obj->unk74 |= 0x2000 | 0x800;
+                obj->particleEmitFlags |= 0x2000 | 0x800;
             }
         } else {
             sp58 = 1;
@@ -3059,9 +3069,9 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
             rumble_set(racer->playerIndex, RUMBLE_TYPE_0);
         }
         if (racer->y_rotation_vel < 0) {
-            obj->unk74 |= 0x1000 | 0x400;
+            obj->particleEmitFlags |= 0x1000 | 0x400;
         } else {
-            obj->unk74 |= 0x2000 | 0x800;
+            obj->particleEmitFlags |= 0x2000 | 0x800;
         }
         if (racer->drift_direction != 0 || racer->drifting != 0 || racer->unk1FB != 0) {
             if (racer->unk10 == 0) {
@@ -3072,19 +3082,19 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
                               obj->segment.trans.z_position);
             }
             if (racer->unk14) {
-                func_8000488C(racer->unk14);
+                sound_stop(racer->unk14);
             }
         } else {
             if (racer->unk10) {
-                func_8000488C(racer->unk10);
+                sound_stop(racer->unk10);
             }
         }
     } else {
         if (racer->unk10) {
-            func_8000488C(racer->unk10);
+            sound_stop(racer->unk10);
         }
         if (racer->unk14) {
-            func_8000488C(racer->unk14);
+            sound_stop(racer->unk14);
         }
     }
     // Velocity of steering input
@@ -3234,18 +3244,18 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
     if (gNumberOfViewports < THREE_PLAYERS) {
         if ((sp60 && racer->velocity < -2.0f) || sp58 || racer->unk1FB != 0) {
             if (racer->wheel_surfaces[2] < SURFACE_NONE) {
-                obj->unk74 |= gSurfaceFlagTable[racer->wheel_surfaces[2]];
+                obj->particleEmitFlags |= gSurfaceFlagTable[racer->wheel_surfaces[2]];
             }
             if (racer->wheel_surfaces[3] < SURFACE_NONE) {
-                obj->unk74 |= gSurfaceFlagTable[racer->wheel_surfaces[3]] * 2;
+                obj->particleEmitFlags |= gSurfaceFlagTable[racer->wheel_surfaces[3]] * 2;
             }
         }
         if (racer->velocity < -2.0f) {
             if (racer->wheel_surfaces[2] < SURFACE_NONE) {
-                obj->unk74 |= gSurfaceFlagTable4P[racer->wheel_surfaces[2]];
+                obj->particleEmitFlags |= gSurfaceFlagTable4P[racer->wheel_surfaces[2]];
             }
             if (racer->wheel_surfaces[3] < SURFACE_NONE) {
-                obj->unk74 |= gSurfaceFlagTable4P[racer->wheel_surfaces[3]] * 2;
+                obj->particleEmitFlags |= gSurfaceFlagTable4P[racer->wheel_surfaces[3]] * 2;
             }
         }
     }
@@ -3256,7 +3266,7 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
         sound_play(soundID, &racer->unk18);
     }
     if (racer->unk18 != NULL && (soundID == SOUND_NONE || racer->velocity > -2.0f)) {
-        func_8000488C(racer->unk18);
+        sound_stop(racer->unk18);
     }
     // Apply a bobbing effect when on grass and sand.
     if (racer->velocity < -2.0f && sp68 >= 4) {
@@ -3483,7 +3493,7 @@ void func_8005250C(Object *obj, Object_Racer *racer, s32 updateRate) {
 
     angleVel = 0;
     if (racer->balloon_quantity > 0) {
-        balloonAsset = (s8 *) get_misc_asset(ASSET_MISC_12);
+        balloonAsset = (s8 *) get_misc_asset(ASSET_MISC_BALLOON_DATA);
 
         angleVel = balloonAsset[(racer->balloon_type * 10) + (racer->balloon_level * 2)];
     }
@@ -3496,9 +3506,9 @@ void func_8005250C(Object *obj, Object_Racer *racer, s32 updateRate) {
     if (racer->unk1F3 & 8) {
         if (gNumViewports < 3) {
             if (gCurrentPlayerIndex >= PLAYER_ONE) {
-                obj->unk74 |= 0x100000;
+                obj->particleEmitFlags |= 0x100000;
             } else {
-                obj->unk74 |= 0x80000;
+                obj->particleEmitFlags |= 0x80000;
             }
         }
         racer->unk1F2 = 4;
@@ -3657,13 +3667,13 @@ void racer_spinout_car(Object *obj, Object_Racer *racer, s32 updateRate, f32 upd
     angleVel = racer->y_rotation_vel;
     if (gCurrentPlayerIndex > PLAYER_COMPUTER) {
         if (gNumViewports < VIEWPORTS_COUNT_4_PLAYERS) {
-            obj->unk74 |= 0x4FC00;
+            obj->particleEmitFlags |= 0x4FC00;
         } else {
             if (racer->wheel_surfaces[2] < SURFACE_NONE) {
-                obj->unk74 |= 1 << (racer->wheel_surfaces[2] * 2);
+                obj->particleEmitFlags |= 1 << (racer->wheel_surfaces[2] * 2);
             }
             if (racer->wheel_surfaces[3] < SURFACE_NONE) {
-                obj->unk74 |= 2 << (racer->wheel_surfaces[3] * 2);
+                obj->particleEmitFlags |= 2 << (racer->wheel_surfaces[3] * 2);
             }
         }
     }
@@ -3717,13 +3727,13 @@ void update_car_velocity_offground(Object *obj, Object_Racer *racer, s32 updateR
         racer->x_rotation_vel += (angle >> 3); //!@Delta
     }
     if (racer->unk18) {
-        func_8000488C((void *) racer->unk18);
+        sound_stop((void *) racer->unk18);
     }
     if (racer->unk10) {
-        func_8000488C((void *) racer->unk10);
+        sound_stop((void *) racer->unk10);
     }
     if (racer->unk14) {
-        func_8000488C((void *) racer->unk14);
+        sound_stop((void *) racer->unk14);
     }
     if (racer->unk1FE == 1 || racer->unk1FE == 3) {
         racer->unk1E8 = racer->steerAngle;
@@ -3791,7 +3801,7 @@ void update_car_velocity_offground(Object *obj, Object_Racer *racer, s32 updateR
         canSteer = TRUE;
     }
     if (canSteer) {
-        obj->unk74 = 0;
+        obj->particleEmitFlags = OBJ_EMIT_OFF;
         racer->drift_direction = 0;
         racer->unk10C -= (racer->unk10C * updateRate) >> 4;
         gCurrentCarSteerVel = 0;
@@ -3825,7 +3835,7 @@ void update_car_velocity_offground(Object *obj, Object_Racer *racer, s32 updateR
         }
         racer->trickType = steerAngle;
     }
-    obj->unk74 = 0;
+    obj->particleEmitFlags = OBJ_EMIT_OFF;
 }
 
 /**
@@ -4099,7 +4109,7 @@ void update_onscreen_AI_racer(Object *obj, Object_Racer *racer, s32 updateRate, 
         func_80054FD0(obj, racer, updateRate);
     }
     if (!racer->unk201) {
-        obj->unk74 = 0;
+        obj->particleEmitFlags = OBJ_EMIT_OFF;
     } else if (racer->vehicleID < VEHICLE_TRICKY) {
         func_800AF714(obj, updateRate);
     }
@@ -4225,10 +4235,10 @@ void update_car_velocity_ground(Object *obj, Object_Racer *racer, s32 updateRate
     }
     if (gNumberOfViewports < 2 && sp38 && racer->velocity < -2.0f) {
         if (racer->wheel_surfaces[2] < SURFACE_NONE) {
-            obj->unk74 |= 1 << (racer->wheel_surfaces[2] * 2);
+            obj->particleEmitFlags |= 1 << (racer->wheel_surfaces[2] * 2);
         }
         if (racer->wheel_surfaces[3] < SURFACE_NONE) {
-            obj->unk74 |= 2 << (racer->wheel_surfaces[3] * 2);
+            obj->particleEmitFlags |= 2 << (racer->wheel_surfaces[3] * 2);
         }
     }
     vel = racer->velocity;
@@ -4472,7 +4482,7 @@ void handle_racer_items(Object *obj, Object_Racer *racer, UNUSED s32 updateRate)
                 play_char_horn_sound(obj, racer);
             }
         } else {
-            miscAsset = (s8 *) get_misc_asset(ASSET_MISC_12);
+            miscAsset = (s8 *) get_misc_asset(ASSET_MISC_BALLOON_DATA);
             weaponID = miscAsset[(racer->balloon_type * 10) + (racer->balloon_level * 2)];
             if (miscAsset[(racer->balloon_type * 10) + (racer->balloon_level * 2)] == WEAPON_NONE) {
                 racer->balloon_quantity = 0;
@@ -4692,7 +4702,7 @@ void handle_racer_items(Object *obj, Object_Racer *racer, UNUSED s32 updateRate)
                                                    NULL);
                         } else {
                             if (racer->weaponSoundMask) {
-                                func_8000488C(racer->weaponSoundMask);
+                                sound_stop(racer->weaponSoundMask);
                             }
                             sound_play_spatial(soundID, obj->segment.trans.x_position, obj->segment.trans.y_position,
                                                obj->segment.trans.z_position, (s32 **) &racer->weaponSoundMask);
@@ -5009,7 +5019,7 @@ void drop_bananas(Object *obj, Object_Racer *racer, s32 number) {
                     if (bananaObj != NULL) {
                         bananaObj->segment.level_entry = NULL;
                         banana = (Object_Banana *) bananaObj->unk64;
-                        banana->unk9 = racer->vehicleID;
+                        banana->droppedVehicleID = racer->vehicleID;
                         bananaObj->segment.x_velocity = racer->ox1 * 2;
                         bananaObj->segment.y_velocity = (0.0f - racer->oy1) + 5.0f;
                         bananaObj->segment.z_velocity = racer->oz1 * 2;
@@ -5022,7 +5032,7 @@ void drop_bananas(Object *obj, Object_Racer *racer, s32 number) {
                             bananaObj->segment.y_velocity -= racer->oy3 * variance;
                             bananaObj->segment.z_velocity -= (racer->oz3 - racer->oz1) * variance;
                         }
-                        bananaObj->properties.banana.unk0 = 1;
+                        bananaObj->properties.banana.status = BANANA_DROPPED;
                     }
                 }
                 number--;
@@ -5447,7 +5457,7 @@ void update_camera_finish_race(UNUSED f32 updateRate, Object *obj, Object_Racer 
     f32 distance;
 
     cameraID = racer->spectateCamID;
-    cam = find_nearest_spectate_camera(obj, &cameraID);
+    cam = spectate_nearest(obj, &cameraID);
     if (cam == NULL) {
         gCameraObject->mode = CAMERA_FINISH_CHALLENGE;
         return;
@@ -5690,7 +5700,7 @@ void get_timestamp_from_frames(s32 frameCount, s32 *minutes, s32 *seconds, s32 *
 void alloc_ghost_pool(void) {
     if (is_time_trial_enabled()) {
         gGhostData[0] = allocate_from_main_pool_safe(
-            (sizeof(GhostNode) + sizeof(GhostDataFrame)) * MAX_NUMBER_OF_GHOST_NODES, MEMP_GHOST_DATA);
+            (sizeof(GhostNode) * 2) * MAX_NUMBER_OF_GHOST_NODES, MEMP_GHOST_DATA);
         gGhostData[1] = ((GhostNode *) gGhostData[0] + MAX_NUMBER_OF_GHOST_NODES);
     }
 }
@@ -5709,69 +5719,85 @@ void free_ghost_pool(void) {
  * The path node pool is globally loaded, despite only being used in time trial.
  */
 void allocate_ghost_data(void) {
+    // Allocate two sets of ghost data. One for the current playing ghost, and one for the new ghost being written.
     gGhostData[0] = NULL;
     gGhostData[1] = NULL;
     gGhostData[2] = NULL; // T.T. Ghost
-    D_8011D5A0[0] = 0;
-    D_8011D5A0[1] = 0;
-    D_8011D5A0[2] = 0;
-    D_8011D5A8[0] = CONTPAK_ERROR_NONE;
-    D_8011D5A8[1] = CONTPAK_ERROR_NONE;
-    D_8011D59D = 0;
-    D_8011D5AC = -1;
-}
-
-void func_80059944(void) {
-    D_8011D59C = D_8011D59D;
-    D_8011D5A0[D_8011D59C] = 0;
-    D_8011D5A8[D_8011D59C] = CONTPAK_ERROR_NONE;
-    D_8011D59E = 0;
-}
-
-void func_80059984(s32 arg0) {
-    D_8011D59D = ((D_8011D59C + 1) & 1);
-    D_8011D5AC = arg0;
-}
-// get_previous_map_id?
-s32 func_800599A8(void) {
-    return D_8011D5AC;
-}
-
-s32 func_800599B8(s32 arg0, s32 mapId, s16 arg2, u16 *arg3, s16 *arg4) {
-    s32 temp_v0;
-    s32 temp_t8;
-    s16 sp2E;
-
-    temp_t8 = (D_8011D59C + 1) & 1;
-    temp_v0 = func_80074B34(arg0, mapId, arg2, (u16 *) arg3, arg4, &sp2E, (GhostHeader *) gGhostData[temp_t8]);
-    if (arg3 != 0) {
-        if (temp_v0 == 0) {
-            D_8011D5A0[temp_t8] = sp2E;
-            D_8011D5AC = mapId;
-        } else {
-            D_8011D5AC = -1;
-        }
-    }
-
-    return temp_v0;
+    gGhostNodeCount[0] = 0;
+    gGhostNodeCount[1] = 0;
+    gGhostNodeCount[GHOST_STAFF] = 0;
+    gGhostNodeFull[0] = FALSE;
+    gGhostNodeFull[1] = FALSE;
+    gPrevGhostNodeIndex = 0;
+    gGhostMapID = -1;
 }
 
 /**
- * Loads T.T. ghost node data into gGhostData[2].
+ * Reset all the player ghost playback variables to default.
+ * Also set the ghost index.
+ */
+void timetrial_reset_player_ghost(void) {
+    gCurrentGhostIndex = gPrevGhostNodeIndex;
+    gGhostNodeCount[gCurrentGhostIndex] = 0;
+    gGhostNodeFull[gCurrentGhostIndex] = FALSE;
+    gGhostNodeDelay = 0;
+}
+
+/**
+ * Swap player ghost index and set the new saved map ID.
+ */
+void timetrial_swap_player_ghost(s32 mapID) {
+    gPrevGhostNodeIndex = (gCurrentGhostIndex + 1) & 1;
+    gGhostMapID = mapID;
+}
+
+/**
+ * Return the current map ID associated with the time trial ghost.
+ */
+s32 timetrial_map_id(void) {
+    return gGhostMapID;
+}
+
+/**
+ * Attempt to load the player ghost data from the controller pak.
+ * Returns the controller pak status when done.
+ */
+s32 timetrial_load_player_ghost(s32 controllerID, s32 mapId, s16 arg2, s16 *characterID, s16 *time) {
+    s32 cpakStatus;
+    s32 nodeID;
+    s16 nodeCount;
+
+    nodeID = (gCurrentGhostIndex + 1) & 1;
+    cpakStatus = func_80074B34(controllerID, mapId, arg2, (u16 *) characterID, time, &nodeCount,
+                               (GhostHeader *) gGhostData[nodeID]);
+    if (characterID) {
+        if (cpakStatus == CONTROLLER_PAK_GOOD) {
+            gGhostNodeCount[nodeID] = nodeCount;
+            gGhostMapID = mapId;
+        } else {
+            gGhostMapID = -1;
+        }
+    }
+
+    return cpakStatus;
+}
+
+/**
+ * Loads T.T. ghost node data into gGhostData[GHOST_STAFF].
  * Returns 0 if successful, or 1 if an error occured.
  */
 s32 load_tt_ghost(s32 ghostOffset, s32 size, s16 *outTime) {
     GhostHeader *ghost = allocate_from_main_pool_safe(size, MEMP_GHOST_DATA);
     if (ghost != NULL) {
         load_asset_to_address(ASSET_TTGHOSTS, (u32) ghost, ghostOffset, size);
-        if (gGhostData[2] != NULL) {
-            free_from_memory_pool(gGhostData[2]);
+        if (gGhostData[GHOST_STAFF] != NULL) {
+            free_from_memory_pool(gGhostData[GHOST_STAFF]);
         }
-        gGhostData[2] = allocate_from_main_pool_safe(size - sizeof(GhostHeader), MEMP_GHOST_DATA);
-        if (gGhostData[2] != NULL) {
+        gGhostData[GHOST_STAFF] = allocate_from_main_pool_safe(size - sizeof(GhostHeader), MEMP_GHOST_DATA);
+        if (gGhostData[GHOST_STAFF] != NULL) {
             *outTime = ghost->time;
-            D_8011D5A0[2] = ghost->nodeCount;
-            bcopy((u8 *) ghost + 8, gGhostData[2], size - sizeof(GhostHeader));
+            gGhostNodeCount[GHOST_STAFF] = ghost->nodeCount;
+            bcopy((u8 *) ghost + 8, gGhostData[GHOST_STAFF], size - sizeof(GhostHeader));
             free_from_memory_pool(ghost);
             return 0;
         }
@@ -5780,19 +5806,30 @@ s32 load_tt_ghost(s32 ghostOffset, s32 size, s16 *outTime) {
     return 1;
 }
 
-void free_tt_ghost_data(void) {
-    if (gGhostData[2] != NULL) {
-        free_from_memory_pool(gGhostData[2]);
+/**
+ * Free the staff ghost from memory if it exists.
+ */
+void timetrial_free_staff_ghost(void) {
+    if (gGhostData[GHOST_STAFF] != NULL) {
+        free_from_memory_pool(gGhostData[GHOST_STAFF]);
     }
-    gGhostData[2] = NULL;
+    gGhostData[GHOST_STAFF] = NULL;
 }
 
-SIDeviceStatus func_80059B7C(s32 controllerIndex, s32 mapId, s16 arg2, s16 arg3, s16 arg4) {
-    return func_80075000(controllerIndex, (s16) mapId, arg2, arg3, arg4, D_8011D5A0[D_8011D59C],
-                         (GhostHeader *) gGhostData[D_8011D59C]);
+/**
+ * Calls a function that attempts to write the player ghost data to the controller pak.
+ * Returns the controller pak status when finished.
+ */
+SIDeviceStatus timetrial_write_player_ghost(s32 controllerIndex, s32 mapId, s16 arg2, s16 arg3, s16 arg4) {
+    return func_80075000(controllerIndex, (s16) mapId, arg2, arg3, arg4, gGhostNodeCount[gCurrentGhostIndex],
+                         (GhostHeader *) gGhostData[gCurrentGhostIndex]);
 }
 
-void func_80059BF0(Object *obj, s32 updateRate) {
+/**
+ * Write down the current position and rotation every half second to the ghost node data.
+ * Returns early if the ghost node data is full.
+ */
+void timetrial_ghost_write(Object *obj, s32 updateRate) {
     f32 yOffset;
     Object_Racer *racer;
     GhostNode *ghostNode;
@@ -5803,34 +5840,38 @@ void func_80059BF0(Object *obj, s32 updateRate) {
         yOffset *= 0.5f;
     }
     yOffset = 17.0f - (yOffset * 17.0f);
-    D_8011D59E -= updateRate;
-    if (D_8011D59E > 0) {
+    gGhostNodeDelay -= updateRate;
+    if (gGhostNodeDelay > 0) {
         return;
     }
-    while (D_8011D59E <= 0) {
-        D_8011D59E += 30;
-        if (D_8011D5A0[D_8011D59C] >= 360) {
+    while (gGhostNodeDelay <= 0) {
+        gGhostNodeDelay += 30;
+        if (gGhostNodeCount[gCurrentGhostIndex] >= 360) {
             if (!is_postrace_viewport_active()) {
-                D_8011D5A8[D_8011D59C] = CONTPAK_ERROR_UNKNOWN;
+                gGhostNodeFull[gCurrentGhostIndex] = TRUE;
             }
             return;
         }
-        ghostNode = gGhostData[D_8011D59C] + D_8011D5A0[D_8011D59C];
+        ghostNode = gGhostData[gCurrentGhostIndex] + gGhostNodeCount[gCurrentGhostIndex];
         ghostNode->x = obj->segment.trans.x_position;
         ghostNode->y = obj->segment.trans.y_position + yOffset;
         ghostNode->z = obj->segment.trans.z_position;
         ghostNode->yRotation = obj->segment.trans.y_rotation + racer->y_rotation_offset;
         ghostNode->xRotation = obj->segment.trans.x_rotation + racer->x_rotation_offset;
         ghostNode->zRotation = obj->segment.trans.z_rotation + racer->z_rotation_offset;
-        D_8011D5A0[D_8011D59C]++;
+        gGhostNodeCount[gCurrentGhostIndex]++;
     }
 }
 
-s16 func_80059E20(void) {
-    return D_8011D5A8[D_8011D59C];
+/**
+ * Returns true if the time trial ghost has reached its size limit.
+ */
+s16 timetrial_ghost_full(void) {
+    return gGhostNodeFull[gCurrentGhostIndex];
 }
 
 #ifdef NON_EQUIVALENT
+// timetrial_ghost_read
 s32 set_ghost_position_and_rotation(Object *obj) {
     f32 vectorX[3];
     f32 vectorY[3];
@@ -5849,8 +5890,8 @@ s32 set_ghost_position_and_rotation(Object *obj) {
     s32 rot;
     s32 i;
 
-    ghostDataIndex = (D_8011D59C + 1) & 1;
-    if (is_time_trial_ghost(obj)) {
+    ghostDataIndex = (gCurrentGhostIndex + 1) & 1;
+    if (timetrial_staff_ghost_check(obj)) {
         ghostDataIndex = 2;
     }
 
@@ -5860,11 +5901,11 @@ s32 set_ghost_position_and_rotation(Object *obj) {
     }
     commonUnk0s32 = commonUnk0f32; // Truncate the float to an integer?
 
-    ghostNodeCount = D_8011D5A0[ghostDataIndex];
+    ghostNodeCount = gGhostNodeCount[ghostDataIndex];
     if (commonUnk0s32 >= (ghostNodeCount - 2)) {
         return FALSE;
     }
-    if (ghostDataIndex != 2 && get_current_map_id() != D_8011D5AC) {
+    if (ghostDataIndex != 2 && get_current_map_id() != gGhostMapID) {
         return FALSE;
     }
     ghostData = gGhostData[ghostDataIndex];
@@ -5933,7 +5974,7 @@ s32 set_ghost_position_and_rotation(Object *obj) {
     }
     obj->segment.trans.z_rotation = rot + (s32) (rotDiff * catmullX);
 
-    obj->unk74 = 0;
+    obj->particleEmitFlags = OBJ_EMIT_OFF;
     obj->segment.object.segmentID = get_level_segment_index_from_position(
         obj->segment.trans.x_position, obj->segment.trans.y_position, obj->segment.trans.z_position);
     if (ghostNodeCount == (commonUnk0s32 + 3)) {
@@ -5958,6 +5999,7 @@ void disable_racer_input(void) {
     gRacerInputBlocked = TRUE;
 }
 
+#ifdef ANTI_TAMPER
 /**
  * Antipiracy function that loops over an address of a function a number of times.
  * It compares the number it gets to a generated checksum to determine if the game has been tampered with at all.
@@ -5975,6 +6017,7 @@ void compare_balloon_checksums(void) {
         gAntiPiracyHeadroll = 0x800;
     }
 }
+#endif
 
 /**
  * When you enter a door, take control away from the player.
@@ -6285,7 +6328,7 @@ void update_AI_racer(Object *obj, Object_Racer *racer, s32 updateRate, f32 updat
     }
     if (racer->magnetTimer == 0) {
         if (racer->magnetSoundMask != NULL) {
-            func_8000488C(racer->magnetSoundMask);
+            sound_stop(racer->magnetSoundMask);
             racer->magnetSoundMask = NULL;
         }
     }
@@ -6313,11 +6356,15 @@ void update_AI_racer(Object *obj, Object_Racer *racer, s32 updateRate, f32 updat
     }
     var_t2 = ((racer->headAngleTarget - racer->headAngle) * updateRate) >> 3;
     CLAMP(var_t2, -0x800, 0x800)
+#ifdef ANTI_TAMPER
     if (gAntiPiracyHeadroll) {
         racer->headAngle += gAntiPiracyHeadroll;
     } else {
         racer->headAngle += var_t2;
     }
+#else
+    racer->headAngle += var_t2;
+#endif
     if (racer->shieldTimer > 0) {
         if (racer->shieldTimer > 60) {
             if (racer->shieldSoundMask) {
@@ -6604,7 +6651,7 @@ void func_8005B818(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
         racer->unkFC.x = obj->segment.trans.x_position;
         racer->unkFC.y = obj->segment.trans.y_position;
         racer->unkFC.z = obj->segment.trans.z_position;
-        obj->unk74 = 0;
+        obj->particleEmitFlags = OBJ_EMIT_OFF;
         func_800AF714(obj, updateRate);
     }
 }
@@ -6612,7 +6659,7 @@ void func_8005B818(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
 GLOBAL_ASM("asm/non_matchings/racer/func_8005B818.s")
 #endif
 
-#ifndef NO_ANTIPIRACY
+#ifdef ANTI_TAMPER
 // This gets called if an anti-piracy checksum fails in allocate_object_model_pools.
 /**
  * Triggered upon failure of an anti-tamper test. Sets the first index of the surface speed
