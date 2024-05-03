@@ -2211,35 +2211,35 @@ void func_80010994(s32 updateRate) {
                 func_80032C7C(obj);
             }
         }
-        func_8001E6EC(0);
-        if (gTajRaceInit != 0) {
-            mode_init_taj_race();
-        }
-        if (gPathUpdateOff == FALSE) {
-            gParticlePtrList_flush();
-            func_80017E98();
-            spectate_update();
-            func_8001E93C();
-        }
-        if (gNumRacers != 0) {
-            if (gRaceEndTimer == 0) {
-                func_80019808(updateRate);
-            } else {
-                race_transition_adventure(updateRate);
-            }
+    }
+    func_8001E6EC(0);
+    if (gTajRaceInit != 0) {
+        mode_init_taj_race();
+    }
+    if (gPathUpdateOff == FALSE) {
+        gParticlePtrList_flush();
+        func_80017E98();
+        spectate_update();
+        func_8001E93C();
+    }
+    if (gNumRacers != 0) {
+        if (gRaceEndTimer == 0) {
+            func_80019808(updateRate);
+        } else {
+            race_transition_adventure(updateRate);
         }
     }
     // This is just a temporary hack to prevent counter factor 1 crashing the emulator.
     if (gPlatform & CONSOLE || gPlatform & CF_2 || gMapId != ASSET_LEVEL_CENTRALAREAHUB) {
         func_80008438(gRacersByPort, gNumRacers, updateRate);
-        gPathUpdateOff = TRUE;
-        gObjectUpdateRateF = (f32) updateRate;
-        D_8011AD24[0] = 0;
-        D_8011AD53 = 0;
-        transform_player_vehicle();
-        try_close_dialogue_box();
-        func_800179D0();
-    } while (0); // FAKEMATCH
+    }
+    gPathUpdateOff = TRUE;
+    gObjectUpdateRateF = (f32) updateRate;
+    D_8011AD24[0] = 0;
+    D_8011AD53 = 0;
+    transform_player_vehicle();
+    try_close_dialogue_box();
+    func_800179D0();
     if (D_8011AF00 == 1) {
         if ((gEventCountdown == 0x50) && (gCutsceneID == 0)) {
             sp54 = 0;
