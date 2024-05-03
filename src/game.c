@@ -90,7 +90,7 @@ void init_level_globals(void) {
     s32 i;
     s32 size;
     u8 *header;
-#ifndef NO_ANTIPIRACY
+#ifdef ANTI_TAMPER
     s32 checksumCount;
     s32 j;
 #endif

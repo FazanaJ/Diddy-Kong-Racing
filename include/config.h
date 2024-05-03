@@ -7,7 +7,6 @@
 #define SKIP_MENU 3
 
 /* ------------------------Standard----------------------- */
-#define NO_ANTIPIRACY // Disable all the anti tamperment measures in the ROM
 #define SKIP_WARNING_SCREEN // Remove the pak warning screen.
 #define NUM_RACERS_1P 8                     // Default is 8
 #define NUM_RACERS_2P 6                     // Default is 6

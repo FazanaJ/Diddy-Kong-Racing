@@ -110,7 +110,7 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
     u32 *assetAudioTable;
     s32 *asset8;
     s32 assetSize;
-#ifndef NO_ANTIPIRACY
+#ifdef ANTI_TAMPER
     s32 checksum;
     u8 *crc_region_start;
     u8 *crc_region;

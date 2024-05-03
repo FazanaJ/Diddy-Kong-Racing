@@ -2838,7 +2838,7 @@ void render_3d_model(Gfx **dList, Object *obj) {
                         if (alpha < 255) {
                             flags |= RENDER_SEMI_TRANSPARENT;
                         }
-#ifndef NO_ANTIPIRACY
+#ifdef ANTI_TAMPER
                         cicFailed = FALSE;
                         // Anti-Piracy check
                         if (osCicId != CIC_ID) {
