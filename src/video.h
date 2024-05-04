@@ -70,14 +70,14 @@ extern u8 gNumFrameBuffers;
 extern u8 gExpansionPak;
 extern s32 gVideoRefreshRate;
 extern f32 gVideoAspectRatio;
-extern u16 *gVideoDepthBuffer;
-extern u16 *gVideoCurrFramebuffer; //Official Name: currentScreen
-extern u16 *gVideoLastFramebuffer; //Official Name: otherScreen
-extern u16 *gVideoCurrDepthBuffer;
-extern u16 *gVideoLastDepthBuffer; //Official Name: otherZbuf
+extern u32 *gVideoDepthBuffer;
+extern u32 *gVideoCurrFramebuffer; //Official Name: currentScreen
+extern u32 *gVideoLastFramebuffer; //Official Name: otherScreen
+extern u32 *gVideoCurrDepthBuffer;
+extern u32 *gVideoLastDepthBuffer; //Official Name: otherZbuf
 extern s32 D_800DE774;
 extern s8  D_800DE778;
-extern u16 *gVideoFramebuffers[];
+extern u32 *gVideoFramebuffers[];
 extern u16 gScreenWidth;
 extern u16 gScreenHeight;
 extern OSViMode gGlobalVI;
@@ -85,7 +85,7 @@ extern u8 gUseExpansionMemory;
 extern s32 gBootTimer;
 extern s32 gVideoSkipNextRate;
 
-extern OSViMode osViModeNtscLpn1, osViModePalLpn1, osViModeMpalLpn1, osViModePalLan1, osViModeNtscLan1, osViModeMpalLan1;
+extern OSViMode osViModeNtscLpn1, osViModePalLpn1, osViModeMpalLpn1, osViModePalLan1, osViModeNtscLan1, osViModeNtscLan2, osViModeMpalLan1;
 
 /* Size: 0x08 bytes */
 typedef struct VideoModeResolution {
@@ -94,6 +94,7 @@ typedef struct VideoModeResolution {
 } VideoModeResolution;
 
 extern VideoModeResolution gVideoModeResolutions[8];
+extern u8 gBitDepth;
 
 void init_video(s32 videoModeIndex);
 void set_video_mode_index(s32 videoModeIndex);

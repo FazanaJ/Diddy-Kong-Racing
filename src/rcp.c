@@ -293,11 +293,11 @@ void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
     gDPPipeSync((*dList)++);
     gDPSetScissor((*dList)++, 0, 0, 0, w, h);
     gDPSetCycleType((*dList)++, G_CYC_FILL);
-    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, w, SEGMENT_DEPTH_BUFFER);
+    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, gBitDepth, w, SEGMENT_DEPTH_BUFFER);
     gDPSetFillColor((*dList)++, GPACK_RGBA5551(255, 255, 255, 0) << 16 | GPACK_RGBA5551(255, 255, 255, 0));
     gDPFillRectangle((*dList)++, 0, 0, w - 1, h - 1);
     gDPPipeSync((*dList)++);
-    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, w, SEGMENT_COLOUR_BUFFER);
+    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, gBitDepth, w, SEGMENT_COLOUR_BUFFER);
 
     gBGHeight = gScreenHeight;
     if ((gMapId == ASSET_LEVEL_CENTRALAREAHUB || gMapId == ASSET_LEVEL_WHALEBAY || gMapId == ASSET_LEVEL_PIRATELAGOON ||
@@ -366,7 +366,7 @@ void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
  * afterwards, calls the draw command that initialises all the rendermodes, ready for use.
  */
 void init_rdp_and_framebuffer(Gfx **dList) {
-    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, gScreenWidth, SEGMENT_COLOUR_BUFFER);
+    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, gBitDepth, gScreenWidth, SEGMENT_COLOUR_BUFFER);
     gDPSetDepthImage((*dList)++, SEGMENT_DEPTH_BUFFER);
     gSPDisplayList((*dList)++, dRdpInit);
 }

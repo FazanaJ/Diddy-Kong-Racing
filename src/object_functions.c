@@ -2220,14 +2220,6 @@ void obj_loop_smoke(Object *obj, s32 updateRate) {
     }
 }
 
-void obj_loop_unknown25(Object *obj, s32 updateRate) {
-    obj->segment.animFrame += updateRate * 8;
-    if (obj->segment.animFrame > 255) {
-        free_object(obj);
-        obj->segment.animFrame = 255;
-    }
-}
-
 void obj_loop_wardensmoke(Object *obj, s32 updateRate) {
     f32 updateRateF;
 
@@ -2292,9 +2284,13 @@ void obj_init_teleport(Object *obj, UNUSED LevelObjectEntry_Teleport *entry) {
     obj->interactObj->unk11 = 0;
     obj->interactObj->hitboxRadius = 15;
     obj->interactObj->pushForce = 0;
+#ifndef OPEN_ALL_DOORS
     if (get_settings()->cutsceneFlags & CUTSCENE_LIGHTHOUSE_ROCKET) {
         obj->properties.lighthouse.active = TRUE;
     }
+#else
+    obj->properties.lighthouse.active = TRUE;
+#endif
 }
 
 /**

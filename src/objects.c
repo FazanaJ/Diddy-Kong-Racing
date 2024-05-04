@@ -6566,9 +6566,6 @@ void run_object_loop_func(Object *obj, s32 updateRate) {
         case BHV_SMOKE:
             obj_loop_smoke(obj, updateRate);
             break;
-        case BHV_UNK_19:
-            obj_loop_unknown25(obj, updateRate);
-            break;
         case BHV_BOMB_EXPLOSION:
             obj_loop_bombexplosion(obj, updateRate);
             break;

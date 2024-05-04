@@ -11,7 +11,7 @@
 
 /************ .data ************/
 
-u16 *gVideoDepthBuffer = NULL;
+u32 *gVideoDepthBuffer = NULL;
 
 /*******************************/
 
@@ -23,22 +23,22 @@ f32 gVideoHeightRatio;
 OSViMode gTvViMode;
 s32 gVideoFbWidths[NUM_FRAMEBUFFERS];
 s32 gVideoFbHeights[NUM_FRAMEBUFFERS];
-u16 *gVideoFramebuffers[NUM_FRAMEBUFFERS];
+u32 *gVideoFramebuffers[NUM_FRAMEBUFFERS];
 s32 gVideoWriteFbIndex;
 s32 gVideoReadyFbIndex;
 s32 gVideoFrontFbIndex;
 s32 gVideoCurrFbIndex;
-s32 gVideoModeIndex;
 s32 sBlackScreenTimer;
-u16 *gVideoCurrFramebuffer; // Official Name: currentScreen
-u16 *gVideoLastFramebuffer; // Official Name: otherScreen
-u16 *gVideoCurrDepthBuffer;
-u16 *gVideoLastDepthBuffer; // Official Name: otherZbuf
+u32 *gVideoCurrFramebuffer; // Official Name: currentScreen
+u32 *gVideoLastFramebuffer; // Official Name: otherScreen
+u32 *gVideoCurrDepthBuffer;
+u32 *gVideoLastDepthBuffer; // Official Name: otherZbuf
 u8 gFrameBufferIndex = 0;
 s32 gVideoHasReadyFrame;
 OSScClient gVideoSched;
 u8 gExpansionPak = FALSE;
 u8 gUseExpansionMemory = FALSE;
+u8 gBitDepth = G_IM_SIZ_16b;
 u16 gScreenWidth = SCREEN_WIDTH;
 u16 gScreenHeight;
 s32 gVideoSkipNextRate = FALSE;
@@ -58,7 +58,6 @@ void init_video(s32 videoModeIndex) {
     gVideoHeightRatio = HEIGHT_RATIO_NTSC;
 
     gVideoSkipNextRate = TRUE;
-    set_video_mode_index(videoModeIndex);
     // I run this even with an expansion pak just to use up the memory.
     // Means I don't run into any issues if I test without a pak that just happened to work with.
     if (SCREEN_WIDTH * SCREEN_HEIGHT <= 320 * 240) {
@@ -70,14 +69,14 @@ void init_video(s32 videoModeIndex) {
 // If Enforced 4MB is on, move framebuffers to expansion memory
 #if EXPANSION_PAK_SUPPORT == 0 && !defined(FORCE_4MB_MEMORY)
     if (gExpansionPak) {
-        u16 *fbAddr;
+        u32 *fbAddr;
         for (i = 0; i < NUM_FRAMEBUFFERS; i++) {
-            gVideoFramebuffers[i] = (u16 *) (0x80500000 + (i * 0x100000));
+            gVideoFramebuffers[i] = (u32 *) (0x80500000 + (i * 0x100000));
             fbAddr = gVideoFramebuffers[i];
             // Write this as part of framebuffer emulation detection.
             fbAddr[100] = 0xBEEF;
         }
-        gVideoDepthBuffer = (u16 *) 0x80400000;
+        gVideoDepthBuffer = (u32 *) 0x80400000;
         fbAddr = gVideoDepthBuffer;
         fbAddr[100] = 0xBEEF;
     }
@@ -87,13 +86,6 @@ void init_video(s32 videoModeIndex) {
     init_vi_settings();
     sBlackScreenTimer = 12;
     osViBlack(TRUE);
-}
-
-/**
- * Set the current video mode to the id specified.
- */
-void set_video_mode_index(s32 videoModeIndex) {
-    gVideoModeIndex = videoModeIndex;
 }
 
 /**
@@ -110,7 +102,19 @@ OSViMode gGlobalVI;
 void change_vi(OSViMode *mode, int width, int height) {
     s32 addPAL = 0;
     s32 addX = 16;
-    gGlobalVI = osViModeNtscLan1;
+    s32 mul;
+    if (osTvType == TV_TYPE_PAL) {
+        gGlobalVI = osViModePalLan1;
+        mul = 1;
+    } else {
+        if (gBitDepth == G_IM_SIZ_16b) {
+            gGlobalVI = osViModeNtscLan1;
+            mul = 1;
+        } else {
+            gGlobalVI = osViModeNtscLan2;
+            mul = 2;
+        }
+    }
 
     if (height < 240) {
         if (width == SCREEN_WIDTH_16_10) {
@@ -124,7 +128,7 @@ void change_vi(OSViMode *mode, int width, int height) {
         mode->fldRegs[0].yScale = (((height + 16 - (addPAL * 2)) * 1024) / 240);
         mode->fldRegs[1].yScale = (((height + 16 - (addPAL * 2)) * 1024) / 240);
         // X Centre
-        mode->fldRegs[0].origin = width * 2;
+        mode->fldRegs[0].origin = (width * 2) * mul;
         mode->fldRegs[1].origin = width * 4;
 
         mode->comRegs.hStart = (428 - 304 + (gConfig.screenPosX * 2)) << 16 | (428 + 304 + (gConfig.screenPosX * 2));
@@ -135,7 +139,7 @@ void change_vi(OSViMode *mode, int width, int height) {
     } else if (height == 240) {
         mode->comRegs.width = width;
         mode->comRegs.xScale = (width * 512) / 320;
-        mode->fldRegs[0].origin = width * 2;
+        mode->fldRegs[0].origin = (width * 2) * mul;
         mode->fldRegs[1].origin = width * 4;
         mode->fldRegs[0].yScale = ((height * 1024) / 240);
         mode->fldRegs[1].yScale = ((height * 1024) / 240);
@@ -143,7 +147,7 @@ void change_vi(OSViMode *mode, int width, int height) {
         mode->comRegs.width = width;
         mode->comRegs.xScale = (width * 512) / 320;
         mode->comRegs.ctrl |= 0x40;
-        mode->fldRegs[0].origin = width * 2;
+        mode->fldRegs[0].origin = (width * 2) * mul;
         mode->fldRegs[1].origin = width * 4;
         mode->fldRegs[0].yScale = 0x2000000 | ((height * 1024) / 240);
         mode->fldRegs[1].yScale = 0x2000000 | ((height * 1024) / 240);
@@ -181,7 +185,7 @@ void init_vi_settings(void) {
  */
 void init_framebuffer(s32 index) {
     s32 width = SCREEN_WIDTH;
-    u16 *fbAddr;
+    u32 *fbAddr;
     if (gVideoFramebuffers[index] != 0) {
         memory_slot_exists((u8 *) gVideoFramebuffers[index]); // Effectively unused.
         free_from_memory_pool(gVideoFramebuffers[index]);
@@ -197,12 +201,12 @@ void init_framebuffer(s32 index) {
     }
 #endif
     gVideoFramebuffers[index] = allocate_from_main_pool_safe((width * SCREEN_HEIGHT * 2) + 0x40, MEMP_FRAMEBUFFERS);
-    gVideoFramebuffers[index] = (u16 *) (((s32) gVideoFramebuffers[index] + 0x3F) & ~0x3F);
+    gVideoFramebuffers[index] = (u32 *) (((s32) gVideoFramebuffers[index] + 0x3F) & ~0x3F);
     fbAddr = gVideoFramebuffers[index];
     fbAddr[100] = 0xBEEF;
     if (gVideoDepthBuffer == NULL) {
         gVideoDepthBuffer = allocate_from_main_pool_safe((width * SCREEN_HEIGHT * 2) + 0x40, MEMP_FRAMEBUFFERS);
-        gVideoDepthBuffer = (u16 *) (((s32) gVideoDepthBuffer + 0x3F) & ~0x3F);
+        gVideoDepthBuffer = (u32 *) (((s32) gVideoDepthBuffer + 0x3F) & ~0x3F);
         fbAddr = gVideoDepthBuffer;
         fbAddr[100] = 0xBEEF;
     }
@@ -215,7 +219,7 @@ void swap_framebuffers(void);
  * Ideally, it should've been written over, so it being there still means framebuffer emulation is off.
  */
 void detect_framebuffer(void) {
-    u16 *fbAddr;
+    u32 *fbAddr;
     fbAddr = gVideoCurrFramebuffer;
     if (fbAddr[100] != 0xBEEF) {
         gPlatform |= FBE;
