@@ -1689,16 +1689,20 @@ s32 check_if_in_draw_range(Object *obj) {
     s32 i;
     Object_64 *obj64;
     f32 accum;
-    s32 temp2;
+    f32 temp2;
     f32 dist;
+    f32 origDist;
 
     if (!(obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED)) {
         alpha = 255;
-        viewDistance = obj->segment.header->drawDistance * obj->segment.header->drawDistance;
         if (obj->segment.header->drawDistance) {
-            if (gScenePlayerViewports == 3) {
+            viewDistance = obj->segment.header->drawDistance;
+            if (gScenePlayerViewports == 3 || gConfig.perfMode) {
                 viewDistance *= 0.5f;
             }
+
+            fadeDist = viewDistance;
+            viewDistance *= viewDistance;
 
             dist = get_distance_to_active_camera(obj->segment.trans.x_position, obj->segment.trans.y_position,
                                                  obj->segment.trans.z_position);
@@ -1707,11 +1711,12 @@ s32 check_if_in_draw_range(Object *obj) {
                 return FALSE;
             }
 
-            fadeDist = viewDistance * 0.8f;
+
+            fadeDist *= 0.8f;
             fadeDist *= fadeDist;
             if (fadeDist < dist) {
                 temp2 = viewDistance - fadeDist;
-                temp2 *= 2;
+                //temp2 *= 2;
                 if (temp2 > 0) {
                     fadeDist = dist - fadeDist;
                     alpha = ((f32) (1.0f - (fadeDist / temp2)) * 255.0f);

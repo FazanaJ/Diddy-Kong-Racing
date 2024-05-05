@@ -393,7 +393,8 @@ void main_game_loop(void) {
 #endif
     if (gDrawFrameTimer == 2) {
         framebufferSize = SCREEN_WIDTH * SCREEN_HEIGHT * 2;
-        bcopy(gVideoCurrFramebuffer, gVideoLastFramebuffer, (s32) gVideoCurrFramebuffer + framebufferSize);
+        // Todo: fix
+        //bcopy(gVideoCurrFramebuffer, gVideoLastFramebuffer, (s32) gVideoCurrFramebuffer + framebufferSize);
     }
 
     swap_framebuffer_when_ready();
@@ -1553,8 +1554,12 @@ void begin_trophy_race_teleport(void) {
  */
 void begin_lighthouse_rocket_cutscene(void) {
     if (gLevelLoadTimer == 0) {
+#ifdef OPEN_ALL_DOORS
+        if (!(gSettingsPtr->cutsceneFlags & CUTSCENE_LIGHTHOUSE_ROCKET)) {
+#else
         if ((gSettingsPtr->trophies & 0xFF) == 0xFF && !(gSettingsPtr->cutsceneFlags & CUTSCENE_LIGHTHOUSE_ROCKET) &&
             gSettingsPtr->bosses & 1) {
+#endif
             gSettingsPtr->cutsceneFlags |= CUTSCENE_LIGHTHOUSE_ROCKET;
             transition_begin(&gLevelFadeOutTransition);
             gLevelLoadTimer = 40;
