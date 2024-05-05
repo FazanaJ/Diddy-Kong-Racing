@@ -103,8 +103,16 @@ MatrixS gProjectionMatrixS;
 Matrix gCurrentModelMatrixF;
 Matrix gCurrentModelMatrixS;
 s16 gViewportScissor[4];
+f32 gSpriteWidth;
 
 /******************************/
+
+void reset_perspective_matrix(void) {
+    guPerspectiveF(gPerspectiveMatrixF, &perspNorm, CAMERA_DEFAULT_FOV, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR,
+                   CAMERA_SCALE);
+    f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gProjectionMatrixS);
+    gSpriteWidth = ((4.0f / 3.0f) / gVideoAspectRatio);
+}
 
 extern s32 D_B0000578;
 /**
@@ -142,16 +150,8 @@ void camera_init(void) {
         gAntiPiracyViewport = TRUE;
     }
 #endif
-    guPerspectiveF(gPerspectiveMatrixF, &perspNorm, CAMERA_DEFAULT_FOV, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR,
-                   CAMERA_SCALE);
-    f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gProjectionMatrixS);
+    reset_perspective_matrix();
     gCurCamFOV = CAMERA_DEFAULT_FOV;
-}
-
-void reset_perspective_matrix(void) {
-    guPerspectiveF(gPerspectiveMatrixF, &perspNorm, CAMERA_DEFAULT_FOV, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR,
-                   CAMERA_SCALE);
-    f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gProjectionMatrixS);
 }
 
 void func_80066060(s32 cameraID, s32 zoomLevel) {
@@ -998,7 +998,7 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
         textureFrame = obj->segment.animFrame;
         gModelMatrixStackPos++;
         f32_matrix_from_rotation_and_scale((f32(*)[4]) gModelMatrixF[gModelMatrixStackPos], angleDiff,
-                                           obj->segment.trans.scale, gVideoAspectRatio);
+                                           obj->segment.trans.scale * gSpriteWidth, gVideoAspectRatio);
         f32_matrix_to_s16_matrix(gModelMatrixF[gModelMatrixStackPos], *mtx);
         gModelMatrixS[gModelMatrixStackPos] = *mtx;
         gSPMatrix((*dlist)++, OS_PHYSICAL_TO_K0((*mtx)++), G_MTX_DKR_INDEX_2);

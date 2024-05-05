@@ -47,7 +47,7 @@ void puppyprint_assert(char *str, ...) {
         va_end(arguments);
         return;
     }
-    memcpy(gAssertString, textBytes, sizeof(textBytes));
+    bcopy(textBytes, gAssertString, sizeof(textBytes));
     va_end(arguments);
     *(volatile int *) 0 = 0;
 }
@@ -394,7 +394,7 @@ void draw_crash_screen(OSThread *thread) {
         return;
     }
 
-    memcpy(gCrashScreen.framebuffer, gVideoLastFramebuffer, (gScreenWidth * gScreenHeight) * 2);
+    bcopy(gVideoLastFramebuffer, gCrashScreen.framebuffer, (gScreenWidth * gScreenHeight) * 2);
 
     sCrashX = (SCREEN_WIDTH - 270) / 2;
     sCrashY = (SCREEN_HEIGHT - 205) / 2;
@@ -462,7 +462,7 @@ void thread2_crash_screen(UNUSED void *arg) {
         sCrashPage = CRASH_PAGE_ASSERT;
     }
     sCrashUpdate = TRUE;
-    memcpy(gVideoLastFramebuffer, gVideoCurrFramebuffer, (gScreenWidth * gScreenHeight) * 2);
+    bcopy(gVideoCurrFramebuffer, gVideoLastFramebuffer, (gScreenWidth * gScreenHeight) * 2);
     if (thread->id == 4) { // Audio thread crashed, so go top prio.
         gCrashScreen.thread.priority = 255;
     } else {

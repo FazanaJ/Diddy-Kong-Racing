@@ -502,9 +502,6 @@ void lensflare_override_add(Object *obj) {
     if (gLensFlareOverrideObjs < WEATHER_OVERRIDE_COUNT) {
         gLensFlareSwitches[gLensFlareOverrideObjs] = obj;
         gLensFlareOverrideObjs++;
-    } else {
-        stubbed_printf("\nMaximum limit of %d lens flare switches, per level, has been exceeded.",
-                       WEATHER_OVERRIDE_COUNT);
     }
 }
 

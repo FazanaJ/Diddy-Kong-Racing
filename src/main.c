@@ -825,10 +825,6 @@ void render_profiler(void) {
     }
 }
 
-static inline char *write_to_buf(char *buffer, const char *data, size_t size) {
-    return (char *) memcpy(buffer, data, size) + size;
-}
-
 void puppyprint_log(const char *str, ...) {
     s32 i;
     char textBytes[127];
@@ -836,7 +832,7 @@ void puppyprint_log(const char *str, ...) {
 
     bzero(textBytes, sizeof(textBytes));
     va_start(arguments, str);
-    if ((_Printf(write_to_buf, textBytes, str, arguments)) <= 0) {
+    if ((_Printf(proutSprintf, textBytes, str, arguments)) <= 0) {
         va_end(arguments);
         return;
     }
@@ -844,9 +840,9 @@ void puppyprint_log(const char *str, ...) {
     osSyncPrintf(textBytes);
 #endif
     for (i = 0; i < (NUM_LOG_LINES - 1); i++) {
-        memcpy(gPuppyPrint.logText[i], gPuppyPrint.logText[i + 1], 127);
+        bcopy(gPuppyPrint.logText[i + 1], gPuppyPrint.logText[i], 127);
     }
-    memcpy(gPuppyPrint.logText[NUM_LOG_LINES - 1], textBytes, 127);
+    bcopy(textBytes, gPuppyPrint.logText[NUM_LOG_LINES - 1], 127);
     va_end(arguments);
 }
 

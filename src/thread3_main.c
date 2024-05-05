@@ -393,7 +393,7 @@ void main_game_loop(void) {
 #endif
     if (gDrawFrameTimer == 2) {
         framebufferSize = SCREEN_WIDTH * SCREEN_HEIGHT * 2;
-        memcpy(gVideoLastFramebuffer, gVideoCurrFramebuffer, (s32) gVideoCurrFramebuffer + framebufferSize);
+        bcopy(gVideoCurrFramebuffer, gVideoLastFramebuffer, (s32) gVideoCurrFramebuffer + framebufferSize);
     }
 
     swap_framebuffer_when_ready();

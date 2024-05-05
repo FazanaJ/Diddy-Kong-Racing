@@ -4,6 +4,7 @@
 #include "macros.h"
 #include "reset.h"
 #include "PR/os_internal.h"
+#include "libultra_internal.h"
 #include "libc/string.h" // for memcpy
 #include "types.h"
 #include "memory.h" // for RAM_END
@@ -92,9 +93,9 @@ void reset(void) {
     osInvalICacheCopy = (void *) ((u8 *) resetFunc - SIZEOF_osInvalICache);
     osInvalDCacheCopy = (void *) ((u8 *) osInvalICacheCopy - SIZEOF_osInvalDCache);
 
-    memcpy(resetFunc, reset_start, resetFuncSize);
-    memcpy(osInvalICacheCopy, osInvalICache, SIZEOF_osInvalICache);
-    memcpy(osInvalDCacheCopy, osInvalDCache, SIZEOF_osInvalDCache);
+    bcopy(reset_start, resetFunc, resetFuncSize);
+    bcopy(osInvalICache, osInvalICacheCopy, SIZEOF_osInvalICache);
+    bcopy(osInvalDCache, osInvalDCacheCopy, SIZEOF_osInvalDCache);
 
     // Invalidate all of ICache and writeback all the dcache back into RDRAM.
     osInvalICache((void *) 0x80000400, 0x4000);

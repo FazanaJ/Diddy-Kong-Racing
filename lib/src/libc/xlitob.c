@@ -2,6 +2,7 @@
 /* The comment below is needed for this file to be picked up by generate_ld */
 /* RAM_POS: 0x800D6700 */
 
+#include "libultra_internal.h"
 #include "macros.h"
 #include "xprintf.h"
 #include "stdlib.h"
@@ -48,7 +49,7 @@ void _Litob(printf_struct *args, char type) {
 
     args->part2_len = BUFF_LEN - i;
 
-    memcpy(args->buff, buff + i, args->part2_len);
+    bcopy(buff + i, args->buff, args->part2_len);
 
     if (args->part2_len < args->precision) {
         args->num_leading_zeros = args->precision - args->part2_len;

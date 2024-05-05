@@ -20,7 +20,6 @@ https://github.com/buu342/N64-UNFLoader
 #include <libdragon.h>
 #endif
 
-extern s8 *memcpy(s8 *dest, s8 *src, size_t count);
 extern s32 osPiRawWriteIo(u32 devAddr, u32 data);
 
 #ifndef ALIGN
@@ -647,7 +646,7 @@ void usb_read(u8 *buffer, int nbytes) {
         }
 
         // Copy from the USB buffer to the supplied buffer
-        memcpy((s8 *) buffer + read, usb_buffer + copystart, block);
+        bcopy(usb_buffer + copystart, (s8 *) buffer + read, block);
 
         // Increment/decrement all our counters
         read += block;
@@ -915,7 +914,7 @@ static void usb_64drive_write(int datatype, s8 *data, int size) {
         u32 block = MIN(left, BUFFER_SIZE);
 
         // Copy data to PI DMA aligned buffer
-        memcpy(usb_buffer, data, block);
+        bcopy(data, usb_buffer, block);
 
         // Pad the buffer with zeroes if it wasn't 4 byte aligned
         while (block % 4) {
@@ -1089,7 +1088,7 @@ static void usb_everdrive_write(int datatype, s8 *data, int size) {
         }
 
         // Copy the data to the next available spots in the global buffer
-        memcpy(usb_buffer + offset, (s8 *) ((char *) data + read), block);
+        bcopy((s8 *) ((char *) data + read), usb_buffer + offset, block);
 
         // Restart the loop to write the CMP signal if we've finished
         if (!wrotecmp && read + block >= size) {
@@ -1305,7 +1304,7 @@ static void usb_sc64_write(int datatype, s8 *data, int size) {
         u32 block = MIN(left, BUFFER_SIZE);
 
         // Copy data to PI DMA aligned buffer
-        memcpy(usb_buffer, data, block);
+        bcopy(data, usb_buffer, block);
 
         // Copy block of data from RDRAM to SDRAM
         usb_dma_write(usb_buffer, pi_address, ALIGN(block, 2));
