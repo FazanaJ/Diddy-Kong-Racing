@@ -5,38 +5,30 @@
 #include "libultra_internal.h"
 #include "osint.h"
 
-void osDestroyThread(OSThread *t) {
+void osDestroyThread(void) {
     register u32 saveMask;
     register OSThread *pred;
     register OSThread *succ;
 
-	saveMask = __osDisableInt();
+    saveMask = __osDisableInt();
 
-	if (t == NULL) {
-        t = __osRunningThread;
-    } else if (t->state != OS_STATE_STOPPED) {
-        __osDequeueThread(t->queue, t);
-    }
 
-    if (__osActiveQueue == t) {
+    if (__osActiveQueue == __osRunningThread) {
         __osActiveQueue = __osActiveQueue->tlnext;
     } else {
         pred = __osActiveQueue;
-		succ = pred->tlnext;
-        while (succ != NULL) {
-            if (succ == t) {
-                pred->tlnext = t->tlnext;
+        while (pred->priority != -1) {
+            succ = pred->tlnext;
+            if (succ == __osRunningThread) {
+                pred->tlnext = __osRunningThread->tlnext;
                 break;
             }
-
             pred = succ;
-            succ = pred->tlnext;
         }
     }
 
-    if (t == __osRunningThread) {
         __osDispatchThread();
-    }
 
     __osRestoreInt(saveMask);
 }
+

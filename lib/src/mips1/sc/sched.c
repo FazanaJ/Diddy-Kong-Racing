@@ -203,7 +203,7 @@ static void __scMain(void *arg) {
 
 void osScSubmitTask(OSSched *sc, OSScTask *t) {
     OSPri prevpri = osGetThreadPri(0);
-    osSetThreadPri(0, OS_SC_PRIORITY + 1);
+    osSetThreadPri(OS_SC_PRIORITY + 1);
 
     if (t->list.t.type == M_AUDTASK) {
         t->state = OS_SC_NEEDS_RSP;
@@ -224,7 +224,7 @@ void osScSubmitTask(OSSched *sc, OSScTask *t) {
 
     __scTryDispatch(sc);
 
-    osSetThreadPri(0, prevpri);
+    osSetThreadPri(prevpri);
 }
 
 void osScAddClient(OSSched *sc, UNUSED OSScClient *c, OSMesgQueue *msgQ, u8 id) {

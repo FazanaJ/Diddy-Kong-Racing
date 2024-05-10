@@ -225,7 +225,7 @@ void thread1_main(UNUSED void *unused) {
         gThread3Stack[THREAD3_STACK / sizeof(u64)] = 0;
         gThread3Stack[0] = 0;
         osStartThread(&gThread3);
-        osSetThreadPri(NULL, OS_PRIORITY_IDLE);
+        osSetThreadPri(OS_PRIORITY_IDLE);
 #ifdef EXPANSION_PAK_REQUIRED
     }
 #endif

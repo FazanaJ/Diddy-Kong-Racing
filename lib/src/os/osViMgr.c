@@ -44,7 +44,7 @@ void osCreateViManager(OSPri pri) {
         myPri = osGetThreadPri(NULL);
         if (myPri < pri) {
             oldPri = myPri;
-            osSetThreadPri(NULL, pri);
+            osSetThreadPri(pri);
         }
         savedMask = __osDisableInt();
         __osViDevMgr.active = 1;
@@ -59,7 +59,7 @@ void osCreateViManager(OSPri pri) {
         osStartThread(&viThread);
         __osRestoreInt(savedMask);
         if (oldPri != -1) {
-            osSetThreadPri(0, oldPri);
+            osSetThreadPri(oldPri);
         }
     }
 }

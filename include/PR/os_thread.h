@@ -68,7 +68,7 @@ void osCreateThread(OSThread *thread, OSId id, void (*entry)(void *),
     void *arg, void *sp, OSPri pri);
 OSId osGetThreadId(OSThread *thread);
 OSPri osGetThreadPri(OSThread *thread);
-void osSetThreadPri(OSThread *thread, OSPri pri);
+void osSetThreadPri(OSPri pri);
 void osStartThread(OSThread *thread);
 void osStopThread(OSThread *thread);
 

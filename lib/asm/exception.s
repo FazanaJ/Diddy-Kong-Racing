@@ -14,4 +14,3 @@
 .include "lib/asm/exception/__osEnqueueThread.s"
 .include "lib/asm/exception/__osPopThread.s"
 .include "lib/asm/exception/__osDispatchThread.s"
-.include "lib/asm/exception/__osCleanupThread.s"

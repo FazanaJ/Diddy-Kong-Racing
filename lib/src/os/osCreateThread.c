@@ -5,7 +5,7 @@
 #include "PR/R4300.h"
 
 extern OSThread *__osActiveQueue;
-void __osCleanupThread(void);
+void osDestroyThread(void);
 
 void osCreateThread(OSThread *t, OSId id, void (*entry)(void *), void *arg, void *sp, OSPri p) {
     register u32 saveMask;
@@ -17,7 +17,7 @@ void osCreateThread(OSThread *t, OSId id, void (*entry)(void *), void *arg, void
     t->context.pc = (u32)entry;
     t->context.a0 = (u64)arg;
     t->context.sp = (u64)sp - 16;
-    t->context.ra = (u64)__osCleanupThread;
+    t->context.ra = (u64) osDestroyThread;
     mask = OS_IM_ALL;
     t->context.sr = SR_IMASK | SR_EXL | SR_IE;
     t->context.rcp = (mask & RCP_IMASK) >> RCP_IMASKSHIFT;

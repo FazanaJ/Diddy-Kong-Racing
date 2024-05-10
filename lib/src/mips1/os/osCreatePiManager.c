@@ -29,7 +29,7 @@ void osCreatePiManager(OSPri pri, OSMesgQueue *cmdQ, OSMesg *cmdBuf, s32 cmdMsgC
         myPri = osGetThreadPri(NULL);
         if (myPri < pri) {
             oldPri = myPri;
-            osSetThreadPri(NULL, pri);
+            osSetThreadPri(pri);
         }
         savedMask = __osDisableInt();
         __osPiDevMgr.active = 1;
@@ -44,7 +44,7 @@ void osCreatePiManager(OSPri pri, OSMesgQueue *cmdQ, OSMesg *cmdBuf, s32 cmdMsgC
         osStartThread(&piThread);
         __osRestoreInt(savedMask);
         if (oldPri != -1) {
-            osSetThreadPri(NULL, oldPri);
+            osSetThreadPri(oldPri);
         }
     }
 }

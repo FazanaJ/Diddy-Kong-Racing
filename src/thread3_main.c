@@ -122,6 +122,9 @@ s32 gNMIMesgBuf; // Official Name: resetPressed
 
 /******************************/
 
+extern u32 gMemUsed[16];
+extern u8 gMemUsedCounter;
+
 /**
  * Main looping function for the main thread.
  * Official Name: mainThread
@@ -340,6 +343,19 @@ void main_game_loop(void) {
 #ifdef SHOW_USB_INFO
     render_usb_info();
 #endif
+#endif
+
+#ifdef PUPPYPRINT_DEBUG
+    /*if (gMemUsed[0]) {
+        s32 i;
+        for (i = 0; i < 16; i++) {
+            if (gMemUsed[i]) {
+                render_printf("Memcopy Used: %X\n", 0x80000000 + (gMemUsed[i]&0x7FFFFF));
+                gMemUsed[i] = 0;
+            }
+        }
+        gMemUsedCounter = 0;
+    }*/
 #endif
 
     sound_update_queue(sLogicUpdateRate);
