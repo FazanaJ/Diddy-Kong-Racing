@@ -235,7 +235,9 @@ void thread1_main(UNUSED void *unused) {
 s32 _Printf(outfun prout, char *dst, const char *fmt, va_list args);
 
 static char *proutSprintf(char *dst, const char *src, size_t count) {
-    return (char *) memcpy((u8 *) dst, (u8 *) src, count) + count;
+    char *ret = dst;
+    bcopy((char *) src, dst, count);
+    return ret + count;
 }
 
 int puppyprintf(char *dst, const char *fmt, ...) {

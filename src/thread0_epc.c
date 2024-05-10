@@ -33,8 +33,12 @@ u8 sCrashUpdate;
 char gAssertString[127];
 char *sObjectStrings[] = { "INIT", "LOOP", "DRAW" };
 
+extern s32 gVideoCurrFbIndex;
+
 static inline char *write_to_buf(char *buffer, const char *data, size_t size) {
-    return (char *) (memcpy(buffer, data, size) + size);
+    char *ret = buffer;
+    bcopy((char *) data, buffer, size);
+    return ret + size;
 }
 
 void puppyprint_assert(char *str, ...) {
@@ -272,7 +276,7 @@ char *sGPRegisterNames[] = {
     "at", "v0", "v1", "v2", "a0", "a1", "a2",
     "a3", "t0", "t1", "t2", "t3", "t4", "t5",
     "t6", "t7", "s0", "s1", "s2", "s3", "s4",
-    "s5", "s6", "s7", "t8", "t9", "gp", "sp",
+    "s5", "s6", "s7", "t8", "t9",
 };
 
 void crash_page_registers(OSThread *thread) {
@@ -293,33 +297,28 @@ void crash_page_registers(OSThread *thread) {
 #ifdef DETAILED_CRASH
     crash_screen_print(sCrashX + 10, sCrashY + 15, "PC:%08XH   SR:%08XH   GP:%08XH", (u32) tc->pc, (u32) tc->sr, (u32) tc->gp);
     crash_screen_print(sCrashX + 10, sCrashY + 25, "VA:%08XH   RA:%08XH   SP:%08XH", (u32) tc->badvaddr, (u32) tc->ra, (u32) tc->sp);
-    if (cause != 15) {
-        u64 *reg = (u64 *) tc;
-        y = sCrashY - sCrashScroll + 40;
-        for (i = 0; i < 28; i++) {
-            if (y < sCrashY + 40 || y > gScreenHeight - 30) {
-                y += 10;
-                continue;
-            }
-            crash_screen_print(sCrashX + 10, y, "%s:     %d", sGPRegisterNames[i], (u32) reg[i]);
-            crash_screen_print(sCrashX + 150, y, "0x%X", (u32) reg[i]);
+    u64 *reg = (u64 *) tc;
+    y = sCrashY - sCrashScroll + 40;
+    for (i = 0; i < 26; i++) {
+        if (y < sCrashY + 40 || y > gScreenHeight - 30) {
             y += 10;
+            continue;
         }
-        sCrashMaxScroll = 120;
-    } else {
-        f32 *reg = (f32 *) &tc->fp0;
-        y = sCrashY - sCrashScroll + 40;
-        for (i = 0; i < 32; i += 2) {
-            if (y < sCrashY + 40 || y > gScreenHeight - 30) {
-                y += 10;
-                continue;
-            }
-            crash_screen_print_float_reg(sCrashX + 30, y, i, (f64 *) (f32 *) &reg[i]);
-            crash_screen_print_float_reg(sCrashX + 160, y, i + 1, (f64 *) (f32 *) &reg[i + 1]);
-            y += 10;
-        }
-        sCrashMaxScroll = 0;
+        crash_screen_print(sCrashX + 10, y, "%s:     %d", sGPRegisterNames[i], (u32) reg[i]);
+        crash_screen_print(sCrashX + 150, y, "0x%X", (u32) reg[i]);
+        y += 10;
     }
+    f32 *reg2 = (f32 *) &tc->fp0;
+    for (i = 0; i < 32; i += 2) {
+        if (y < sCrashY + 40 || y > gScreenHeight - 30) {
+            y += 10;
+            continue;
+        }
+        crash_screen_print_float_reg(sCrashX + 30, y, i, (f64 *) (f32 *) &reg2[i]);
+        crash_screen_print_float_reg(sCrashX + 160, y, i + 1, (f64 *) (f32 *) &reg2[i + 1]);
+        y += 10;
+    }
+    sCrashMaxScroll = 260;
 #else
     crash_screen_print(sCrashX + 10, sCrashY + 15, "PC:%08XH   SR:%08XH   VA:%08XH", tc->pc, tc->sr, tc->badvaddr);
     crash_screen_print(sCrashX + 10, sCrashY + 30, "AT:%08XH   V0:%08XH   V1:%08XH", (u32) tc->at, (u32) tc->v0,
@@ -408,6 +407,21 @@ void crash_page_assert(void) {
     }
 }
 
+extern OSThread *__osFaultedThread;
+
+OSThread *get_crashed_thread(void) {
+    OSThread *thread;
+
+    thread = __osFaultedThread;
+    while (thread->priority != -1) {
+        if (thread->priority > OS_PRIORITY_IDLE && thread->priority < OS_PRIORITY_APPMAX && (thread->flags & 3) != 0) {
+            return thread;
+        }
+        thread = thread->tlnext;
+    }
+    return NULL;
+}
+
 #ifdef DETAILED_CRASH
 void crash_screen_input(void) {
     s32 i;
@@ -427,6 +441,15 @@ void crash_screen_input(void) {
                 sCrashPage = 0;
             }
             sCrashUpdate = TRUE;
+        }
+        if (sCrashUpdate && sCrashPage == CRASH_PAGE_REGISTERS) {
+            s32 cause;
+            OSThread *thread = get_crashed_thread();
+            __OSThreadContext *tc = &thread->context;
+            cause = (tc->cause >> 2) & 0x1F;
+            if (cause == 15) {
+                sCrashScroll = 260;
+            }
         }
         if (sCrashPage == CRASH_PAGE_REGISTERS) {
             if (get_buttons_pressed_from_player(i) & U_JPAD) {
@@ -457,7 +480,7 @@ void draw_crash_screen(OSThread *thread) {
         return;
     }
 
-    bcopy(gVideoLastFramebuffer, gCrashScreen.framebuffer, (gScreenWidth * gScreenHeight) * 2);
+    bcopy(gVideoCurrDepthBuffer, gCrashScreen.framebuffer, (gScreenWidth * gScreenHeight) * 2);
 
     sCrashX = (SCREEN_WIDTH - 270) / 2;
     sCrashY = (SCREEN_HEIGHT - 205) / 2;
@@ -485,22 +508,11 @@ void draw_crash_screen(OSThread *thread) {
     osViBlack(FALSE);
     change_vi(&gGlobalVI, SCREEN_WIDTH, SCREEN_HEIGHT);
     osViSwapBuffer(gCrashScreen.framebuffer);
-    sCrashUpdate = FALSE;
-}
-
-extern OSThread *__osFaultedThread;
-
-OSThread *get_crashed_thread(void) {
-    OSThread *thread;
-
-    thread = __osFaultedThread;
-    while (thread->priority != -1) {
-        if (thread->priority > OS_PRIORITY_IDLE && thread->priority < OS_PRIORITY_APPMAX && (thread->flags & 3) != 0) {
-            return thread;
-        }
-        thread = thread->tlnext;
+    gVideoCurrFbIndex ^= 1;
+    if (gVideoCurrFramebuffer) {
+        gCrashScreen.framebuffer = (u16 *) gVideoFramebuffers[gVideoCurrFbIndex];
     }
-    return NULL;
+    sCrashUpdate = FALSE;
 }
 
 extern OSThread gThread3;
@@ -517,15 +529,16 @@ void thread2_crash_screen(UNUSED void *arg) {
     do {
         osRecvMesg(&gCrashScreen.mesgQueue, &mesg, 1);
         if (gVideoCurrFramebuffer) {
-            gCrashScreen.framebuffer = (u16 *) gVideoCurrFramebuffer;
+            gCrashScreen.framebuffer = (u16 *) gVideoFramebuffers[gVideoCurrFbIndex];
         }
+        gVideoCurrFbIndex = 0;
         thread = get_crashed_thread();
     } while (thread == NULL);
     if (gAssert) {
         sCrashPage = CRASH_PAGE_ASSERT;
     }
     sCrashUpdate = TRUE;
-    bcopy(gVideoCurrFramebuffer, gVideoLastFramebuffer, (gScreenWidth * gScreenHeight) * 2);
+    bcopy(gVideoCurrFramebuffer, gVideoCurrDepthBuffer, (gScreenWidth * gScreenHeight) * 2);
     if (thread->id == 4) { // Audio thread crashed, so go top prio.
         gCrashScreen.thread.priority = 255;
     } else {

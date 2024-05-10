@@ -93,15 +93,15 @@ glabel _Ldtob
 /* 0D7C54 800D7054 8FB900D0 */   lw    $t9, 0xd0($sp)
 /* 0D7C58 800D7058 3C05800F */  lui   $a1, %hi(Ldtob_NaN) # $a1, 0x800f
 /* 0D7C5C 800D705C 10000003 */  b     .L800D706C
-/* 0D7C60 800D7060 24A598A8 */   addiu $a1, %lo(Ldtob_NaN) # addiu $a1, $a1, -0x6758
+/* 0D7C60 800D7060 24A598A8 */   addiu $a0, %lo(Ldtob_NaN) # addiu $a1, $a1, -0x6758
 .L800D7064:
-/* 0D7C64 800D7064 3C05800F */  lui   $a1, %hi(Ldtob_Inf) # $a1, 0x800f
-/* 0D7C68 800D7068 24A598AC */  addiu $a1, %lo(Ldtob_Inf) # addiu $a1, $a1, -0x6754
+/* 0D7C64 800D7064 3C05800F */  lui   $a0, %hi(Ldtob_Inf) # $a1, 0x800f
+/* 0D7C68 800D7068 24A598AC */  addiu $a0, %lo(Ldtob_Inf) # addiu $a1, $a1, -0x6754
 .L800D706C:
 /* 0D7C6C 800D706C 240F0003 */  li    $t7, 3
 /* 0D7C70 800D7070 AF2F0014 */  sw    $t7, 0x14($t9)
-/* 0D7C74 800D7074 8F240008 */  lw    $a0, 8($t9)
-/* 0D7C78 800D7078 0C03385C */  jal   memcpy
+/* 0D7C74 800D7074 8F240008 */  lw    $a1, 8($t9)
+/* 0D7C78 800D7078 0C03385C */  jal   bcopy
 /* 0D7C7C 800D707C 24060003 */   li    $a2, 3
 /* 0D7C80 800D7080 100000ED */  b     .L800D7438
 /* 0D7C84 800D7084 8FBF003C */   lw    $ra, 0x3c($sp)
