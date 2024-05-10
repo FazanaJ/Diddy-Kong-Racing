@@ -233,7 +233,7 @@ void init_game(void) {
     load_fonts();
     init_controller_paks();
     func_80081218(); // init_save_data
-    create_and_start_thread30();
+    //create_and_start_thread30();
 #ifdef ENABLE_USB
     init_usb_thread();
 #endif
@@ -1008,6 +1008,7 @@ void update_menu_scene(s32 updateRate) {
         init_rdp_and_framebuffer(&gCurrDisplayList);
         divider_draw(&gCurrDisplayList);
         divider_clear_coverage(&gCurrDisplayList);
+        stop_thread30();
     }
 }
 

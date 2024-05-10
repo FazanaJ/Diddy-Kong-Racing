@@ -24,10 +24,10 @@ u8 leoDiskStack[16]; // technically should have a OS_LEO_STACKSIZE or something.
 OSThread gThread30;
 OSMesgQueue gThread30MesgQueue;
 OSMesg gThread30Message[2];
+u8 gThread30Active;
 
 // Currently defined in osViMgr.c
-// There are a few stacks defined next to each other. Maybe they are in their own separate file?
-extern u64 gThread30Stack[THREAD30_STACK / sizeof(u64)];
+u8 *gThread30Stack;
 
 /*****************************/
 
@@ -35,9 +35,16 @@ extern u64 gThread30Stack[THREAD30_STACK / sizeof(u64)];
  * Initalizes and starts thread30()
  */
 void create_and_start_thread30(void) {
+    if (gThread30Active) {
+        return;
+    }
+    gThread30Stack = (u8 *) allocate_from_main_pool(THREAD30_STACK + 0x20, MEMP_MISC);
+    gThread30Stack = (u8 *) (((s32) gThread30Stack + 0x1F) & ~0x1F);
+    bzero(gThread30Stack, THREAD30_STACK);
     osCreateMesgQueue(&gThread30MesgQueue, &gThread30Message[0], ARRAY_COUNT(gThread30Message));
-    osCreateThread(&gThread30, 30, &thread30_track_loading, NULL, &gThread30Stack[THREAD30_STACK / sizeof(u64)], 8);
+    osCreateThread(&gThread30, 30, &thread30_track_loading, NULL, gThread30Stack + THREAD30_STACK, 8);
     osStartThread(&gThread30);
+    gThread30Active = TRUE;
 }
 
 /**
@@ -45,7 +52,12 @@ void create_and_start_thread30(void) {
  * Official Name: amStop
  */
 void stop_thread30(void) {
+    if (gThread30Active == FALSE) {
+        return;
+    }
     osStopThread(&gThread30);
+    free_from_memory_pool(gThread30Stack);
+    gThread30Active = FALSE;
 }
 
 /**
@@ -79,6 +91,7 @@ s32 set_level_to_load_in_background(s32 levelId, s32 cutsceneId) {
         gThread30LevelIdToLoad = levelId;
         gThread30CutsceneIdToLoad = cutsceneId;
         gThread30NeedToLoadLevel = TRUE;
+        create_and_start_thread30();
         return TRUE;
     }
     return FALSE;
