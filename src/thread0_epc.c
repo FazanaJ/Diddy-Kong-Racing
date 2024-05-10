@@ -26,6 +26,7 @@ u16 sCrashY;
 Object *sCrashObjID;
 s16 sCrashObjAct;
 s16 sCrashScroll;
+s16 sCrashMaxScroll;
 u8 gAssert;
 u8 sCrashPage;
 u8 sCrashUpdate;
@@ -267,9 +268,18 @@ void crash_screen_print_fpcsr(u32 fpcsr) {
     }
 }
 
+char *sGPRegisterNames[] = {
+    "at", "v0", "v1", "v2", "a0", "a1", "a2",
+    "a3", "t0", "t1", "t2", "t3", "t4", "t5",
+    "t6", "t7", "s0", "s1", "s2", "s3", "s4",
+    "s5", "s6", "s7", "t8", "t9", "gp", "sp",
+};
+
 void crash_page_registers(OSThread *thread) {
     s32 cause;
     __OSThreadContext *tc = &thread->context;
+    s32 i;
+    s32 y;
 
     cause = (tc->cause >> 2) & 0x1F;
     if (cause == 23) { // EXC_WATCH
@@ -279,7 +289,40 @@ void crash_page_registers(OSThread *thread) {
     }
     crash_screen_draw_rect(sCrashX, sCrashY, 270, 205);
     crash_screen_print(sCrashX + 10, sCrashY + 5, "THREAD:%d  (%s)", thread->id, gCauseDesc[cause]);
+
+#ifdef DETAILED_CRASH
+    crash_screen_print(sCrashX + 10, sCrashY + 15, "PC:%08XH   SR:%08XH   GP:%08XH", (u32) tc->pc, (u32) tc->sr, (u32) tc->gp);
+    crash_screen_print(sCrashX + 10, sCrashY + 25, "VA:%08XH   RA:%08XH   SP:%08XH", (u32) tc->badvaddr, (u32) tc->ra, (u32) tc->sp);
+    if (cause != 15) {
+        u64 *reg = (u64 *) tc;
+        y = sCrashY - sCrashScroll + 40;
+        for (i = 0; i < 28; i++) {
+            if (y < sCrashY + 40 || y > gScreenHeight - 30) {
+                y += 10;
+                continue;
+            }
+            crash_screen_print(sCrashX + 10, y, "%s:     %d", sGPRegisterNames[i], (u32) reg[i]);
+            crash_screen_print(sCrashX + 150, y, "0x%X", (u32) reg[i]);
+            y += 10;
+        }
+        sCrashMaxScroll = 120;
+    } else {
+        f32 *reg = (f32 *) &tc->fp0;
+        y = sCrashY - sCrashScroll + 40;
+        for (i = 0; i < 32; i += 2) {
+            if (y < sCrashY + 40 || y > gScreenHeight - 30) {
+                y += 10;
+                continue;
+            }
+            crash_screen_print_float_reg(sCrashX + 30, y, i, (f64 *) (f32 *) &reg[i]);
+            crash_screen_print_float_reg(sCrashX + 160, y, i + 1, (f64 *) (f32 *) &reg[i + 1]);
+            y += 10;
+        }
+        sCrashMaxScroll = 0;
+    }
+#else
     crash_screen_print(sCrashX + 10, sCrashY + 15, "PC:%08XH   SR:%08XH   VA:%08XH", tc->pc, tc->sr, tc->badvaddr);
+    crash_screen_print(sCrashX + 10, sCrashY + 30, "AT:%08XH   V0:%08XH   V1:%08XH", (u32) tc->at, (u32) tc->v0,
     crash_screen_print(sCrashX + 10, sCrashY + 30, "AT:%08XH   V0:%08XH   V1:%08XH", (u32) tc->at, (u32) tc->v0,
                        (u32) tc->v1);
     crash_screen_print(sCrashX + 10, sCrashY + 40, "A0:%08XH   A1:%08XH   A2:%08XH", (u32) tc->a0, (u32) tc->a1,
@@ -298,7 +341,7 @@ void crash_page_registers(OSThread *thread) {
                        (u32) tc->t8);
     crash_screen_print(sCrashX + 10, sCrashY + 110, "T9:%08XH   GP:%08XH   SP:%08XH", (u32) tc->t9, (u32) tc->gp,
                        (u32) tc->sp);
-    crash_screen_print(sCrashX + 10, sCrashY + 120, "S8:%08XH   RA:%08XH", (u32) tc->s8, (u32) tc->ra);
+    crash_screen_print(sCrashX + 10, sCrashY + 120, "S8:%08XH", (u32) tc->s8);
     crash_screen_print_fpcsr(tc->fpcsr);
     crash_screen_print_float_reg(sCrashX + 10, sCrashY + 145, 0, &tc->fp0.f.f_even);
     crash_screen_print_float_reg(sCrashX + 100, sCrashY + 145, 2, &tc->fp2.f.f_even);
@@ -316,6 +359,7 @@ void crash_page_registers(OSThread *thread) {
     crash_screen_print_float_reg(sCrashX + 100, sCrashY + 185, 26, &tc->fp26.f.f_even);
     crash_screen_print_float_reg(sCrashX + 190, sCrashY + 185, 28, &tc->fp28.f.f_even);
     crash_screen_print_float_reg(sCrashX + 10, sCrashY + 195, 30, &tc->fp30.f.f_even);
+#endif
 }
 
 #ifdef DETAILED_CRASH
@@ -367,20 +411,39 @@ void crash_page_assert(void) {
 #ifdef DETAILED_CRASH
 void crash_screen_input(void) {
     s32 i;
+    s32 prevScroll = sCrashScroll;
     for (i = 0; i < 4; i++) {
         if (get_buttons_pressed_from_player(i) & (Z_TRIG | L_TRIG)) {
             sCrashPage--;
+            sCrashScroll = 0;
             if (sCrashPage == 255) {
                 sCrashPage = CRASH_PAGE_COUNT - 1;
             }
             sCrashUpdate = TRUE;
         } else if (get_buttons_pressed_from_player(i) & R_TRIG) {
             sCrashPage++;
+            sCrashScroll = 0;
             if (sCrashPage >= CRASH_PAGE_COUNT) {
                 sCrashPage = 0;
             }
             sCrashUpdate = TRUE;
         }
+        if (sCrashPage == CRASH_PAGE_REGISTERS) {
+            if (get_buttons_pressed_from_player(i) & U_JPAD) {
+                sCrashScroll -= 10;
+                if (sCrashScroll < 0) {
+                    sCrashScroll = 0;
+                }
+            } else if (get_buttons_pressed_from_player(i) & D_JPAD) {
+                sCrashScroll += 10;
+                if (sCrashScroll > sCrashMaxScroll) {
+                    sCrashScroll = sCrashMaxScroll;
+                }
+            }
+        }
+    }
+    if (prevScroll != sCrashScroll) {
+        sCrashUpdate = TRUE;
     }
 }
 #endif

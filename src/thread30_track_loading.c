@@ -38,8 +38,8 @@ void create_and_start_thread30(void) {
     if (gThread30Active) {
         return;
     }
-    gThread30Stack = (u8 *) allocate_from_main_pool(THREAD30_STACK + 0x20, MEMP_MISC);
-    gThread30Stack = (u8 *) (((s32) gThread30Stack + 0x1F) & ~0x1F);
+    gThread30Stack = (u8 *) allocate_from_main_pool(THREAD30_STACK + 0x10, MEMP_MISC);
+    gThread30Stack = (u8 *) (((s32) gThread30Stack + 0xF) & ~0xF);
     bzero(gThread30Stack, THREAD30_STACK);
     osCreateMesgQueue(&gThread30MesgQueue, &gThread30Message[0], ARRAY_COUNT(gThread30Message));
     osCreateThread(&gThread30, 30, &thread30_track_loading, NULL, gThread30Stack + THREAD30_STACK, 8);
