@@ -447,8 +447,8 @@ void render_hud(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Object *obj, s3
                     }
                     gRaceStartShowHudStep += 1;
                 }
-                gDPPipeSync(gHUDCurrDisplayList++);
                 init_rsp(&gHUDCurrDisplayList);
+                gDPPipeSync(gHUDCurrDisplayList++);
                 init_rdp_and_framebuffer(&gHUDCurrDisplayList);
                 gBlockedRenderFlags &= ~RENDER_ALL;
                 gBlockedRenderFlags |= RENDER_Z_COMPARE;

@@ -3926,10 +3926,10 @@ s32 menu_logo_screen_loop(s32 updateRate) {
         }
         if (opacity != 0) {
             set_text_colour(255, 255, 0, 255, opacity);
-            draw_text(&sMenuCurrDisplayList, 159, yOffset + 212, gRareCopyrightString, ALIGN_MIDDLE_CENTER);
-            draw_text(&sMenuCurrDisplayList, 161, yOffset + 212, gRareCopyrightString, ALIGN_MIDDLE_CENTER);
-            draw_text(&sMenuCurrDisplayList, POS_CENTRED, yOffset + 211, gRareCopyrightString, ALIGN_MIDDLE_CENTER);
-            draw_text(&sMenuCurrDisplayList, POS_CENTRED, yOffset + 213, gRareCopyrightString, ALIGN_MIDDLE_CENTER);
+            draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2) - 1, yOffset + 212, gRareCopyrightString, ALIGN_MIDDLE_CENTER);
+            draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2) + 1, yOffset + 212, gRareCopyrightString, ALIGN_MIDDLE_CENTER);
+            draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), yOffset + 211, gRareCopyrightString, ALIGN_MIDDLE_CENTER);
+            draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), yOffset + 213, gRareCopyrightString, ALIGN_MIDDLE_CENTER);
         }
         yOffsetShadow = yOffset + 212;
         if (sBootScreenTimer > 8.0f) {
@@ -3938,7 +3938,7 @@ s32 menu_logo_screen_loop(s32 updateRate) {
             opacity = 0xFF;
         }
         set_text_colour(0xFF, 0xFF, 0xFF, 0xFF, opacity);
-        draw_text(&sMenuCurrDisplayList, POS_CENTRED, yOffsetShadow, gRareCopyrightString, ALIGN_MIDDLE_CENTER);
+        draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), yOffsetShadow, gRareCopyrightString, ALIGN_MIDDLE_CENTER);
     }
     return MENU_RESULT_CONTINUE;
 }
@@ -4144,7 +4144,7 @@ void render_title_screen(UNUSED s32 updateRate, f32 updateRateF) {
                     alpha = 0;
                 }
                 set_text_colour(255, 255, 255, alpha, sMenuGuiOpacity);
-                draw_text(&sMenuCurrDisplayList, POS_CENTRED, posY, gTitleMenuStrings[i], ALIGN_MIDDLE_CENTER);
+                draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), posY, gTitleMenuStrings[i], ALIGN_MIDDLE_CENTER);
                 posY += 16;
                 i++;
             }
@@ -4395,7 +4395,7 @@ void render_options_menu_ui(UNUSED s32 updateRate) {
             alpha = 0;
         }
         set_text_colour(255, 255, 255, alpha, 255);
-        draw_text(&sMenuCurrDisplayList, POS_CENTRED, yPos, gOptionMenuStrings[optionMenuTextIndex],
+        draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), yPos, gOptionMenuStrings[optionMenuTextIndex],
                   ALIGN_MIDDLE_CENTER);
 
         optionMenuTextIndex++;
@@ -4918,7 +4918,7 @@ void func_80085B9C(UNUSED s32 updateRate) {
     s32 drawOk;
     s32 drawDialogueBox;
 
-    videoWidth = GET_VIDEO_WIDTH(get_video_width_and_height_as_s32());
+    videoWidth = gScreenWidth;
     var_s3 = FALSE;
     drawTexturedRectangle = FALSE;
     drawPleaseWait = FALSE;
@@ -4977,14 +4977,14 @@ void func_80085B9C(UNUSED s32 updateRate) {
         var_s2 = (s32) D_80126BDC;
         temp = var_s2;
         sp5C = 80 - (s32) ((D_80126BDC - var_s2) * 164.0f);
-        var_s1 = sp5C;
+        var_s1 = sp5C + ((gScreenWidth - 320) / 2);
         while (var_s1 < videoWidth && temp < D_80126A08) {
             func_800853D0(&D_80126A0C[temp], var_s1, 64);
             var_s1 += 164;
             temp++;
         }
         temp = var_s2;
-        var_s1 = sp5C;
+        var_s1 = sp5C + ((gScreenWidth - 320) / 2);
         while ((var_s1 > 0) && (temp > 0)) {
             temp--;
             var_s1 -= 164;
@@ -4996,14 +4996,14 @@ void func_80085B9C(UNUSED s32 updateRate) {
         var_s2 = (s32) D_80126BEC;
         temp = var_s2;
         sp5C = 80 - (s32) ((D_80126BEC - (f32) var_s2) * 164.0f);
-        var_s1 = sp5C;
+        var_s1 = sp5C + ((gScreenWidth - 320) / 2);
         while (var_s1 < videoWidth && temp < D_80126A00) {
             func_800853D0(&D_80126A04[temp], var_s1, 144);
             var_s1 += 164;
             temp++;
         }
         temp = var_s2;
-        var_s1 = sp5C;
+        var_s1 = sp5C + ((gScreenWidth - 320) / 2);
         while (var_s1 > 0 && temp > 0) {
             temp--;
             var_s1 -= 164;
@@ -5014,10 +5014,10 @@ void func_80085B9C(UNUSED s32 updateRate) {
     set_text_font(2);
     set_text_colour(255, 255, 255, 0, 255);
     if (drawOk) {
-        draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF, 128, (char *) D_800E8208, ALIGN_MIDDLE_CENTER); // "OK?"
+        draw_text(&sMenuCurrDisplayList, gScreenWidth / 2, 128, (char *) D_800E8208, ALIGN_MIDDLE_CENTER); // "OK?"
     }
     if (drawPleaseWait) {
-        draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF, 128, gMenuText[ASSET_MENU_TEXT_PLEASEWAIT],
+        draw_text(&sMenuCurrDisplayList, gScreenWidth / 2, 128, gMenuText[ASSET_MENU_TEXT_PLEASEWAIT],
                   ALIGN_MIDDLE_CENTER);
     }
     if (drawDialogueBox) {
@@ -5385,8 +5385,8 @@ void func_800871D8(SIDeviceStatus deviceStatus) {
     D_80126A78 = D_80126A74 - 1;
 
     assign_dialogue_box_id(7);
-    set_current_dialogue_box_coords(7, 40, SCREEN_HEIGHT_HALF - (((k * 16) + 44) >> 1), 280,
-                                    (((k * 16) + 44) >> 1) + SCREEN_HEIGHT_HALF);
+    set_current_dialogue_box_coords(7, 40, (gScreenWidth / 2) - (((k * 16) + 44) >> 1), 280,
+                                    (((k * 16) + 44) >> 1) + (gScreenHeight / 2));
     set_current_dialogue_background_colour(7, 0, 0, 0, 160);
     set_current_text_background_colour(7, 0, 0, 0, 0);
     set_dialogue_font(7, 2);
@@ -6365,20 +6365,21 @@ void render_magic_codes_ui(UNUSED s32 updateRate) {
     UNUSED s32 pad[2];
 
     set_text_background_colour(0, 0, 0, 0);
+    set_current_dialogue_box_coords(7, (gScreenWidth / 2) - 110, 50, (gScreenWidth / 2) + 110, 132);
     render_dialogue_box(&sMenuCurrDisplayList, NULL, NULL, 7);
     set_text_font(ASSET_FONTS_BIGFONT);
     set_text_colour(0, 0, 0, 255, 128);
-    draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF + 1, 35, gMenuText[ASSET_MENU_TEXT_MAGICCODES],
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2) + 1, 35, gMenuText[ASSET_MENU_TEXT_MAGICCODES],
               ALIGN_MIDDLE_CENTER); // "MAGIC CODES"
     set_text_colour(255, 255, 255, 0, 255);
-    draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF, 32, gMenuText[ASSET_MENU_TEXT_MAGICCODES],
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), 32, gMenuText[ASSET_MENU_TEXT_MAGICCODES],
               ALIGN_MIDDLE_CENTER); // "MAGIC CODES"
     temp = 'A';
     set_text_font(ASSET_FONTS_FUNFONT);
     set_text_colour(255, 255, 255, 0, 255);
     // Draw the input table
     for (i = 0, yPos = 60; i < 4; i++, yPos += 22) {
-        for (j = 0, xPos = 64; j < 7; j++, xPos += 32) {
+        for (j = 0, xPos = 64 + ((gScreenWidth - 320) / 2); j < 7; j++, xPos += 32) {
             if (gOptionsMenuItemIndex == 5 && j == gCheatInputCurrentColumn && i == gCheatInputCurrentRow) {
                 alpha2 = gOptionBlinkTimer * 8;
                 if (alpha2 >= 256) {
@@ -6423,7 +6424,7 @@ void render_magic_codes_ui(UNUSED s32 updateRate) {
             alpha = alpha2;
         }
         set_text_colour(255, 255, 255, alpha, 255);
-        draw_text(&sMenuCurrDisplayList, POS_CENTRED, temp, gMagicCodeMenuStrings[i], ALIGN_MIDDLE_CENTER);
+        draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), temp, gMagicCodeMenuStrings[i], ALIGN_MIDDLE_CENTER);
         i++;
         temp += yPos;
     }
@@ -6432,23 +6433,23 @@ void render_magic_codes_ui(UNUSED s32 updateRate) {
     set_text_background_colour(0, 0, 128, 128);
     if (gOptionsMenuItemIndex == 4) {
         if (D_80126C4C == -1) {
-            draw_text(&sMenuCurrDisplayList, POS_CENTRED, 144, gMenuText[ASSET_MENU_TEXT_BADCODE],
+            draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), 144, gMenuText[ASSET_MENU_TEXT_BADCODE],
                       ALIGN_MIDDLE_CENTER); //"Sorry, the code was incorrect"
         } else {
             // Draw cheat code name.
             cheatData = (*gCheatsAssetData) + 1;
-            draw_text(&sMenuCurrDisplayList, POS_CENTRED, 144,
+            draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), 144,
                       &((char *) (*gCheatsAssetData))[cheatData[D_80126C4C + 1]], ALIGN_MIDDLE_CENTER);
         }
     } else if (5 == gOptionsMenuItemIndex) {
-        draw_text(&sMenuCurrDisplayList, POS_CENTRED, 144, D_80126C58, ALIGN_MIDDLE_CENTER);
+        draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), 144, D_80126C58, ALIGN_MIDDLE_CENTER);
     } else if (gOptionsMenuItemIndex == 6) {
-        draw_text(&sMenuCurrDisplayList, POS_CENTRED, 144, gMenuText[ASSET_MENU_TEXT_ALLCODESDELETED],
+        draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), 144, gMenuText[ASSET_MENU_TEXT_ALLCODESDELETED],
                   ALIGN_MIDDLE_CENTER); //"All cheats have been deleted"
     }
     if (gMenuOptionCount != 0) {
         if (osTvType == TV_TYPE_PAL) {
-            temp = SCREEN_HEIGHT_HALF + 14;
+            temp = (SCREEN_HEIGHT_HALF) + 14;
         } else {
             temp = SCREEN_HEIGHT_HALF;
         }
@@ -6764,10 +6765,10 @@ void render_magic_codes_list_menu_text(UNUSED s32 updateRate) {
     set_text_background_colour(0, 0, 0, 0);
     set_text_font(ASSET_FONTS_BIGFONT);
     set_text_colour(0, 0, 0, 255, 128);
-    draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF + 1, 35, gMenuText[ASSET_MENU_TEXT_MAGICCODESLIST],
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2) + 1, 35, gMenuText[ASSET_MENU_TEXT_MAGICCODESLIST],
               ALIGN_MIDDLE_CENTER); // MAGIC CODES LIST
     set_text_colour(255, 255, 255, 0, 255);
-    draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF, 32, gMenuText[ASSET_MENU_TEXT_MAGICCODESLIST],
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), 32, gMenuText[ASSET_MENU_TEXT_MAGICCODESLIST],
               ALIGN_MIDDLE_CENTER); // MAGIC CODES LIST
 
     for (i = 0, code = 1, numOfUnlockedCheats = 0; i < 32; i++, code <<= 1) {
@@ -6788,12 +6789,12 @@ void render_magic_codes_list_menu_text(UNUSED s32 updateRate) {
         if (i == gOptionsMenuItemIndex) {
             set_text_colour(255, 255, 255, alpha, 255);
         }
-        draw_text(&sMenuCurrDisplayList, 48, yPos, (char *) (*gCheatsAssetData) + cheatData[(D_80126C80[i] << 1) + 1],
+        draw_text(&sMenuCurrDisplayList, 48 + ((gScreenWidth - 320) / 2), yPos, (char *) (*gCheatsAssetData) + cheatData[(D_80126C80[i] << 1) + 1],
                   ALIGN_TOP_LEFT);
         if ((1 << D_80126C80[i]) & gActiveMagicCodes) {
-            draw_text(&sMenuCurrDisplayList, 256, yPos, gMenuText[ASSET_MENU_TEXT_ON], ALIGN_TOP_LEFT); // ON
+            draw_text(&sMenuCurrDisplayList, 256 + ((gScreenWidth - 320) / 2), yPos, gMenuText[ASSET_MENU_TEXT_ON], ALIGN_TOP_LEFT); // ON
         } else {
-            draw_text(&sMenuCurrDisplayList, 256, yPos, gMenuText[ASSET_MENU_TEXT_OFF], ALIGN_TOP_LEFT); // OFF
+            draw_text(&sMenuCurrDisplayList, 256 + ((gScreenWidth - 320) / 2), yPos, gMenuText[ASSET_MENU_TEXT_OFF], ALIGN_TOP_LEFT); // OFF
         }
         if (i == gOptionsMenuItemIndex) {
             set_text_colour(255, 255, 255, 0, 255);
@@ -6803,7 +6804,7 @@ void render_magic_codes_list_menu_text(UNUSED s32 updateRate) {
         if (numOfUnlockedCheats == gOptionsMenuItemIndex) {
             set_text_colour(255, 255, 255, alpha, 255);
         }
-        draw_text(&sMenuCurrDisplayList, POS_CENTRED, yPos, gMenuText[ASSET_MENU_TEXT_RETURN],
+        draw_text(&sMenuCurrDisplayList, gScreenWidth / 2, yPos, gMenuText[ASSET_MENU_TEXT_RETURN],
                   ALIGN_TOP_CENTER); // RETURN
         return;
     }
@@ -9261,7 +9262,7 @@ void render_track_select_setup_ui(UNUSED s32 updateRate) {
         set_text_font(ASSET_FONTS_BIGFONT);
         set_text_colour(192, 192, 255, 0, sMenuGuiOpacity);
         set_text_background_colour(0, 0, 0, 0);
-        draw_text(&sMenuCurrDisplayList, POS_CENTRED, 43, (char *) i, ALIGN_MIDDLE_CENTER); // Draw track name?
+        draw_text(&sMenuCurrDisplayList, gScreenWidth / 2, 43, (char *) i, ALIGN_MIDDLE_CENTER); // Draw track name?
         sp84 = gOptionBlinkTimer * 8;
         if (sp84 >= 256) {
             sp84 = 511 - sp84;
@@ -9278,7 +9279,7 @@ void render_track_select_setup_ui(UNUSED s32 updateRate) {
             } else {
                 temp2 += 12;
             }
-            func_80080580(&sMenuCurrDisplayList, -(temp2 >> 1), SCREEN_HEIGHT_HALF - gTracksMenuAdventureButton.y,
+            func_80080580(&sMenuCurrDisplayList, -(temp2 >> 1) + ((gScreenWidth - 320) / 2), (gScreenHeight / 2) - gTracksMenuAdventureButton.y,
                           temp2, gTracksMenuAdventureButton.height, gTracksMenuAdventureButton.borderWidth,
                           gTracksMenuAdventureButton.borderHeight, sMenuGuiOpacity + COLOUR_RGBA32(176, 224, 192, 0),
                           gMenuObjects[67]);
@@ -9298,7 +9299,7 @@ void render_track_select_setup_ui(UNUSED s32 updateRate) {
                         set_text_colour(255, 255, 255, k, sMenuGuiOpacity);
                     }
                     // gMenuText[146] = "ADVENTURE", gMenuText[147] = "ADVENTURE TWO"
-                    draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF + 1 - j, i,
+                    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2) + 1 - j, i,
                               gMenuText[ASSET_MENU_TEXT_ADVENTURE2 + temp], ALIGN_MIDDLE_CENTER);
                 }
             }
@@ -9306,37 +9307,37 @@ void render_track_select_setup_ui(UNUSED s32 updateRate) {
         if (D_801269C8 < 4) {
             set_text_font(ASSET_FONTS_FUNFONT);
             set_text_colour(255, 64, 64, 96, sMenuGuiOpacity);
-            draw_text(&sMenuCurrDisplayList, 56, 72 + regionOffset, gMenuText[ASSET_MENU_TEXT_BESTTIME],
+            draw_text(&sMenuCurrDisplayList, 56 + ((gScreenWidth - 320) / 2), 72 + regionOffset, gMenuText[ASSET_MENU_TEXT_BESTTIME],
                       ALIGN_MIDDLE_LEFT); // "BEST TIME"
-            draw_text(&sMenuCurrDisplayList, 56, 92 + regionOffset, gMenuText[ASSET_MENU_TEXT_BESTLAP],
+            draw_text(&sMenuCurrDisplayList, 56 + ((gScreenWidth - 320) / 2), 92 + regionOffset, gMenuText[ASSET_MENU_TEXT_BESTLAP],
                       ALIGN_MIDDLE_LEFT); // "BEST LAP"
             set_text_colour(255, 128, 255, 96, sMenuGuiOpacity);
             decompress_filename_string(settings->courseInitialsPtr[gPlayerSelectVehicle[0]][gTrackIdForPreview],
                                        filename.buffer, 3);
-            draw_text(&sMenuCurrDisplayList, 250, regionOffset + 72, filename.buffer, ALIGN_MIDDLE_CENTER);
+            draw_text(&sMenuCurrDisplayList, 250 + ((gScreenWidth - 320) / 2), regionOffset + 72, filename.buffer, ALIGN_MIDDLE_CENTER);
             decompress_filename_string(settings->flapInitialsPtr[gPlayerSelectVehicle[0]][gTrackIdForPreview],
                                        filename.buffer, 3);
-            draw_text(&sMenuCurrDisplayList, 250, regionOffset + 92, filename.buffer, ALIGN_MIDDLE_CENTER);
-            show_timestamp(settings->courseTimesPtr[gPlayerSelectVehicle[PLAYER_ONE]][gTrackIdForPreview], 22, 53, 128,
+            draw_text(&sMenuCurrDisplayList, 250 + ((gScreenWidth - 320) / 2), regionOffset + 92, filename.buffer, ALIGN_MIDDLE_CENTER);
+            show_timestamp(settings->courseTimesPtr[gPlayerSelectVehicle[PLAYER_ONE]][gTrackIdForPreview], 22 + ((gScreenWidth - 320) / 2), 53, 128,
                            255, 255, FONT_COLOURFUL);
-            show_timestamp(settings->flapTimesPtr[gPlayerSelectVehicle[PLAYER_ONE]][gTrackIdForPreview], 22, 33, 255,
+            show_timestamp(settings->flapTimesPtr[gPlayerSelectVehicle[PLAYER_ONE]][gTrackIdForPreview], 22 + ((gScreenWidth - 320) / 2), 33, 255,
                            192, 255, FONT_COLOURFUL);
             if (gMenuOptionCount != -1) {
                 if (gNumberOfActivePlayers == 1) {
-                    set_current_dialogue_box_coords(7, 134, regionOffset + 112, 186, regionOffset + 137);
+                    set_current_dialogue_box_coords(7, 134 + ((gScreenWidth - 320) / 2), regionOffset + 112, 186, regionOffset + 137);
                     render_dialogue_box(&sMenuCurrDisplayList, NULL, NULL, 7);
                     if (gMenuOptionCount <= 0) {
-                        render_textured_rectangle(&sMenuCurrDisplayList, gRaceSelectionVehicleTitleTexture, 136,
+                        render_textured_rectangle(&sMenuCurrDisplayList, gRaceSelectionVehicleTitleTexture, 136 + ((gScreenWidth - 320) / 2),
                                                   regionOffset + 114, 255, 255, 255, sMenuGuiOpacity);
                     } else {
-                        render_textured_rectangle(&sMenuCurrDisplayList, gRaceSelectionTTTitleTexture, 136,
+                        render_textured_rectangle(&sMenuCurrDisplayList, gRaceSelectionTTTitleTexture, 136 + ((gScreenWidth - 320) / 2),
                                                   regionOffset + 114, 255, 255, 255, sMenuGuiOpacity);
                         for (k = 0, y = regionOffset + 151; k < 2; k++, y += 24) {
                             if (k == gTracksMenuTimeTrialHighlightIndex) {
-                                render_textured_rectangle(&sMenuCurrDisplayList, gTrackSelectTTImage[k * 3 + 1], 104, y,
+                                render_textured_rectangle(&sMenuCurrDisplayList, gTrackSelectTTImage[k * 3 + 1], 104 + ((gScreenWidth - 320) / 2), y,
                                                           255, 255, 255, sMenuGuiOpacity);
                             } else {
-                                render_textured_rectangle(&sMenuCurrDisplayList, gTrackSelectTTImage[k * 3 + 2], 104, y,
+                                render_textured_rectangle(&sMenuCurrDisplayList, gTrackSelectTTImage[k * 3 + 2], 104 + ((gScreenWidth - 320) / 2), y,
                                                           255, 255, 255, sMenuGuiOpacity);
                             }
                         }
@@ -9348,14 +9349,14 @@ void render_track_select_setup_ui(UNUSED s32 updateRate) {
                     for (k = 0; (k < y) ^ 0; k++) {
                         if ((gNumberOfActivePlayers == 1 && k == gMenuOptionCount) ||
                             (gNumberOfActivePlayers > 1 && D_801269C4[k] == 0)) {
-                            set_current_dialogue_box_coords(7, gTracksMenuPlayerNamePositions[j] - 2,
+                            set_current_dialogue_box_coords(7, gTracksMenuPlayerNamePositions[j] - 2 + ((gScreenWidth - 320) / 2),
                                                             gTracksMenuPlayerNamePositions[j + 1] + regionOffset - 2,
-                                                            gTracksMenuPlayerNamePositions[j] + 50,
+                                                            gTracksMenuPlayerNamePositions[j] + 50 + ((gScreenWidth - 320) / 2),
                                                             gTracksMenuPlayerNamePositions[j + 1] + regionOffset + 23);
                             render_dialogue_box(&sMenuCurrDisplayList, NULL, NULL, 7);
                         }
                         render_textured_rectangle(
-                            &sMenuCurrDisplayList, gTrackSelectPlayerImage[k], gTracksMenuPlayerNamePositions[j],
+                            &sMenuCurrDisplayList, gTrackSelectPlayerImage[k], gTracksMenuPlayerNamePositions[j] + ((gScreenWidth - 320) / 2),
                             gTracksMenuPlayerNamePositions[j + 1] + regionOffset, 255, 255, 255, sMenuGuiOpacity);
                         j += 2;
                     }
@@ -9369,17 +9370,17 @@ void render_track_select_setup_ui(UNUSED s32 updateRate) {
                                 if (k == gPlayerSelectVehicle[temp2]) {
                                     // Highlighted
                                     render_textured_rectangle(&sMenuCurrDisplayList, gRaceSelectionImages[(k * 3) + 1],
-                                                              gTracksMenuVehicleNamePositions[j + temp2], y, 255, 255,
+                                                              gTracksMenuVehicleNamePositions[j + temp2] + ((gScreenWidth - 320) / 2), y, 255, 255,
                                                               255, sMenuGuiOpacity);
                                 } else if (settings->courseFlagsPtr[gTrackIdForPreview] & 2) {
                                     // Not highlighted
                                     render_textured_rectangle(&sMenuCurrDisplayList, gRaceSelectionImages[(k * 3) + 2],
-                                                              gTracksMenuVehicleNamePositions[j + temp2], y, 255, 255,
+                                                              gTracksMenuVehicleNamePositions[j + temp2] + ((gScreenWidth - 320) / 2), y, 255, 255,
                                                               255, sMenuGuiOpacity);
                                 } else {
                                     // Not available (Ghosted out)
                                     render_textured_rectangle(&sMenuCurrDisplayList, gRaceSelectionImages[(k * 3) + 2],
-                                                              gTracksMenuVehicleNamePositions[j + temp2], y, 255, 255,
+                                                              gTracksMenuVehicleNamePositions[j + temp2] + ((gScreenWidth - 320) / 2), y, 255, 255,
                                                               255, (sMenuGuiOpacity / 2));
                                 }
                             }
@@ -9395,19 +9396,19 @@ void render_track_select_setup_ui(UNUSED s32 updateRate) {
                     if (gMenuOptionCount == 0) {
                         // Draw vehicle image for one player
                         render_textured_rectangle(&sMenuCurrDisplayList,
-                                                  gRaceSelectionImages[gPlayerSelectVehicle[PLAYER_ONE] * 3], 149, y,
+                                                  gRaceSelectionImages[gPlayerSelectVehicle[PLAYER_ONE] * 3], 149 + ((gScreenWidth - 320) / 2), y,
                                                   255, 255, 255, sMenuGuiOpacity);
                     } else {
                         // Draw T.T. image for one player
                         render_textured_rectangle(&sMenuCurrDisplayList,
-                                                  gTrackSelectTTImage[gTracksMenuTimeTrialHighlightIndex * 3], 149,
+                                                  gTrackSelectTTImage[gTracksMenuTimeTrialHighlightIndex * 3], 149 + ((gScreenWidth - 320) / 2),
                                                   regionOffset + 139, 255, 255, 255, sMenuGuiOpacity);
                     }
                 }
                 if (gNumberOfActivePlayers == 2 && !sp74) {
                     // Draw vehicle image for first player
                     render_textured_rectangle(&sMenuCurrDisplayList,
-                                              gRaceSelectionImages[gPlayerSelectVehicle[PLAYER_ONE] * 3], 79, y, 255,
+                                              gRaceSelectionImages[gPlayerSelectVehicle[PLAYER_ONE] * 3], 79 + ((gScreenWidth - 320) / 2), y, 255,
                                               255, 255, sMenuGuiOpacity);
                     y = regionOffset + 139;
                     if (gPlayerSelectVehicle[PLAYER_TWO] == 2) {
@@ -9415,7 +9416,7 @@ void render_track_select_setup_ui(UNUSED s32 updateRate) {
                     }
                     // Draw vehicle image for second player
                     render_textured_rectangle(&sMenuCurrDisplayList,
-                                              gRaceSelectionImages[gPlayerSelectVehicle[PLAYER_TWO] * 3], 176, y, 255,
+                                              gRaceSelectionImages[gPlayerSelectVehicle[PLAYER_TWO] * 3], 176 + ((gScreenWidth - 320) / 2), y, 255,
                                               255, 255, sMenuGuiOpacity);
                 }
                 reset_render_settings(&sMenuCurrDisplayList);
@@ -9512,7 +9513,7 @@ void render_track_select_setup_ui(UNUSED s32 updateRate) {
                 if (D_801269C8 >= 4) {
                     regionOffset += 24;
                 }
-                draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF, regionOffset + 172, (char *) D_800E823C /* "OK?" */,
+                draw_text(&sMenuCurrDisplayList, gScreenWidth / 2, regionOffset + 172, (char *) D_800E823C /* "OK?" */,
                           ALIGN_MIDDLE_CENTER);
             }
         }
@@ -10028,7 +10029,7 @@ void func_80093D40(UNUSED s32 updateRate) {
     s32 y;
     s32 alpha;
 
-    for (i = 0, x = SCREEN_WIDTH_HALF; i < gMenuOptionCap; i++) {
+    for (i = 0, x = (320 / 2); i < gMenuOptionCap; i++) {
         textWidth = get_text_width(gMenuOptionText[i], 0, 0) + 8;
         if (x < textWidth) {
             x = textWidth;
@@ -10044,7 +10045,7 @@ void func_80093D40(UNUSED s32 updateRate) {
     assign_dialogue_box_id(7);
     halfTemp = temp >> 1;
     halfX = x >> 1;
-    set_current_dialogue_box_coords(7, SCREEN_WIDTH_HALF - halfX, y - halfTemp, halfX + 160, halfTemp + y);
+    set_current_dialogue_box_coords(7, (gScreenWidth / 2) - halfX, y - halfTemp, halfX + (gScreenWidth / 2), halfTemp + y);
     colour = &gPlayerPauseBgColour[get_player_id(gLastPlayerWhoPaused)];
     set_current_dialogue_background_colour(7, colour->r, colour->g, colour->b, colour->a);
     set_dialogue_font(7, ASSET_FONTS_FUNFONT);
@@ -10621,7 +10622,7 @@ void func_80094D28(UNUSED s32 updateRate) {
             if (osTvType == TV_TYPE_PAL) {
                 temp = 218;
             }
-            set_current_dialogue_box_coords(7, 0, temp - viewportULY - viewportULX - 4, SCREEN_WIDTH,
+            set_current_dialogue_box_coords(7, 0, temp - viewportULY - viewportULX - 4, gScreenWidth,
                                             temp + viewportULY + viewportULX + 4);
             set_current_dialogue_background_colour(7, 64, 64, 255, 0);
             set_current_text_colour(7, 255, 0, 255, 64, 255);
@@ -13995,7 +13996,7 @@ s32 trophy_race_cabinet_menu_loop(void) {
     s32 currentOption;
     s32 buttonsPressed;
 
-    set_current_dialogue_box_coords(1, 24, 16, 184, SCREEN_HEIGHT_HALF);
+    set_current_dialogue_box_coords(1, 24, 16, 184, gScreenHeight / 2);
     set_dialogue_font(1, ASSET_FONTS_FUNFONT);
     currentOption = 0;
     buttonsPressed = get_buttons_pressed_from_player(PLAYER_ONE);

@@ -529,8 +529,8 @@ void render_textured_rectangle(Gfx **dList, DrawTexture *element, s32 xPos, s32 
     s32 t;
     s32 s;
 
-    gSPDisplayList((*dList)++, dTextureRectangleModes);
     gDPSetPrimColor((*dList)++, 0, 0, red, green, blue, alpha);
+    gSPDisplayList((*dList)++, dTextureRectangleModes);
     xPos <<= 2;
     yPos <<= 2;
     for (i = 0; (tex = element[i].texture); i++) {
@@ -553,8 +553,8 @@ void render_textured_rectangle(Gfx **dList, DrawTexture *element, s32 xPos, s32 
             gSPTextureRectangle((*dList)++, ulx, uly, lrx, lry, G_TX_RENDERTILE, s, t, 1024, 1024);
         }
     }
-    gDPPipeSync((*dList)++);
     gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
+    gDPPipeSync((*dList)++);
 }
 
 void render_texture_rectangle_scaled(Gfx **dlist, DrawTexture *element, f32 xPos, f32 yPos, f32 xScale, f32 yScale,

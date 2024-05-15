@@ -452,10 +452,10 @@ void profiler_snapshot(s32 eventID) {
 #define TEXT_OFFSET 10
 
 void draw_blank_box(s32 x1, s32 y1, s32 x2, s32 y2, u32 colour) {
-    gDPSetCombineMode(gCurrDisplayList++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
     gDPSetPrimColor(gCurrDisplayList++, 0, 0, (colour << 24) & 0xFF, (colour << 16) & 0xFF, (colour << 8) & 0xFF,
                     (colour) & 0xFF);
     gDPPipeSync(gCurrDisplayList++);
+    gDPSetCombineMode(gCurrDisplayList++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
     if (x1 < 0) {
         x1 = 0;
     }

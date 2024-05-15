@@ -720,7 +720,6 @@ void load_blinking_lights_texture(Gfx **dlist, TextureHeader *texture_list, s32 
     gSPSetGeometryMode((*dlist)++, G_FOG);
     gForceFlags = TRUE;
     gCurrentRenderFlags = RENDER_NONE;
-    gDPTileSync((*dlist)++);
     gDkrDmaDisplayList((*dlist)++, OS_PHYSICAL_TO_K0(dRenderSettingsBlinkingLights[0]),
                        numberOfGfxCommands(dRenderSettingsBlinkingLights[0]));
 }
@@ -1175,7 +1174,6 @@ void build_tex_display_list(TextureHeader *tex, Gfx *dlist) {
     gDPLoadSync(dlist++);
     gDPLoadBlock(dlist++, G_TX_LOADTILE, 0, 0,
                  (((width) * (height) + get_tile_bytes(1, siz)) >> get_tile_bytes(2, siz)) - 1, dxt);
-    gDPTileSync(dlist++);
     gDPSetTile(dlist++, fmt, siz, (((width) *get_tile_bytes(0, siz)) + 7) >> 3, 0, G_TX_RENDERTILE, pal, cmt, maskt, 0,
                cms, masks, 0);
     gDPSetTileSize(dlist++, G_TX_RENDERTILE, 0, 0, ((width) -1) << G_TEXTURE_IMAGE_FRAC,

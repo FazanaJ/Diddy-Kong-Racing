@@ -421,8 +421,8 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
 
         box->xpos = xpos - box->textOffsetX;
         box->ypos = ypos - box->textOffsetY;
-        gDPPipeSync((*dList)++);
         if (box != gDialogueBoxBackground) {
+            gDPPipeSync((*dList)++);
             viewport_scissor(dList);
         }
         reset_render_settings(dList);

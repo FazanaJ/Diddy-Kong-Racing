@@ -186,6 +186,7 @@ void init_config(void) {
         gConfig.dedither = TRUE;
         gConfig.perfMode = FALSE;
     }
+    refresh_screen_res();
     //gConfig.perfMode = TRUE;
 }
 
