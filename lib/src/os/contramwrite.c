@@ -8,15 +8,39 @@
 static void __osPackRamWriteData(int channel, u16 address, u8 *buffer);
 
 s32 __osContRamWrite(OSMesgQueue *mq, int channel, u16 address, u8 *buffer, int force) {
-    s32 ret;
+    s32 ret = 0;
     int i;
     u8 *ptr;
     __OSContRamReadFormat ramreadformat;
     int retry;
 
+    if (__osBbIsBb) {
+        if ((force != TRUE) && (address < PFS_LABEL_AREA) && (address != 0)) {
+            return 0;
+        }
+
+        __osSiGetAccess();
+
+        if (__osBbPakAddress[channel] != 0) {
+            if (__osBbPakSize - 0x20 >= address * 0x20) {
+                int i = 0;
+
+                for (i = 0; i < 0x20; i++) {
+                    *(u8*)(__osBbPakAddress[channel] + address * 0x20 + i) = buffer[i];
+                }
+            }
+        } else {
+            ret = 1;
+        }
+
+        __osSiRelAccess();
+        return ret;
+    }
+
     ret = 0;
     ptr = (u8 *)&__osPfsPifRam;
     retry = 2;
+    
     if (force != 1 && address < 7 && address != 0)
         return 0;
     __osSiGetAccess();

@@ -327,5 +327,6 @@ int puppyprintf(char *dst, const char *fmt, ...);
 void crash_screen_init(void);
 void get_platform(void);
 void puppyprint_assert(char *str, ...);
+u32 osGetMemSize(void);
 
 #endif

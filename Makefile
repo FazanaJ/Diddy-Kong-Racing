@@ -129,6 +129,15 @@ endif
   CROSS := ./tools/binutils/mips64-elf-
 endif
 
+define PAD_TO_NEXT_16KB
+  size=$$(stat -c%s $1 2>/dev/null); \
+  block_size=16384; \
+  pad_size=$$((block_size - (size % block_size))); \
+  if [ $$pad_size -ne $$block_size ]; then \
+    dd if=/dev/zero bs=1 count=$$pad_size >> $1 2>/dev/null; \
+  fi
+endef
+
 AS = $(CROSS)as
 CC := tools/ido-static-recomp/build/5.3/out/cc
 LD = $(CROSS)ld
@@ -194,7 +203,7 @@ C_FILES := $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c))
 
 # Object files
 O_FILES := $(foreach file,$(S_FILES),$(BUILD_DIR)/$(file:.s=.o)) \
-           $(foreach file,$(C_FILES),$(BUILD_DIR)/$(file:.c=.o))
+		   $(foreach file,$(C_FILES),$(BUILD_DIR)/$(file:.c=.o))
 
 # Automatic dependency files
 DEP_FILES := $(O_FILES:.o=.d) $(BUILD_DIR)/$(LD_SCRIPT).d
@@ -275,47 +284,47 @@ include gcc_safe_files.mk
 $(GCC_SAFE_FILES): CC := $(CROSS)gcc
 
 $(GCC_SAFE_FILES): CFLAGS := -c -DNDEBUG -DAVOID_UB -Ofast $(INCLUDE_CFLAGS) $(DEF_INC_CFLAGS) \
-    -EB \
-    -march=vr4300 \
-    -mabi=32 \
-    -mfix4300 \
-    -mno-check-zero-division \
-    -mno-abicalls \
-    -mgp32 \
-    -mfp32 \
-    -mhard-float \
-    -ffreestanding \
-    -fno-builtin \
-    -fno-common \
-    -mno-long-calls \
-    -ffast-math \
-    -funsafe-math-optimizations \
-    -fno-merge-constants \
-    -fno-strict-aliasing \
-    -fno-zero-initialized-in-bss \
+	-EB \
+	-march=vr4300 \
+	-mabi=32 \
+	-mfix4300 \
+	-mno-check-zero-division \
+	-mno-abicalls \
+	-mgp32 \
+	-mfp32 \
+	-mhard-float \
+	-ffreestanding \
+	-fno-builtin \
+	-fno-common \
+	-mno-long-calls \
+	-ffast-math \
+	-funsafe-math-optimizations \
+	-fno-merge-constants \
+	-fno-strict-aliasing \
+	-fno-zero-initialized-in-bss \
 	-fsingle-precision-constant \
-    -funsigned-char \
-    -fwrapv \
-    -falign-functions=32 \
-    -Wall \
-    -Werror \
-    -Wno-address \
-    -Wno-aggressive-loop-optimizations \
-    -Wno-array-bounds \
-    -Wno-int-in-bool-context \
-    -Wno-int-to-pointer-cast \
-    -Wno-maybe-uninitialized \
-    -Wno-misleading-indentation \
-    -Wno-missing-braces \
-    -Wno-multichar \
-    -Wno-pointer-sign \
-    -Wno-pointer-to-int-cast \
-    -Wno-tautological-compare \
-    -Wno-uninitialized \
-    -Wno-unused-but-set-variable \
-    -Wno-unused-value \
-    -Wno-unused-variable \
-    -G 0
+	-funsigned-char \
+	-fwrapv \
+	-falign-functions=32 \
+	-Wall \
+	-Werror \
+	-Wno-address \
+	-Wno-aggressive-loop-optimizations \
+	-Wno-array-bounds \
+	-Wno-int-in-bool-context \
+	-Wno-int-to-pointer-cast \
+	-Wno-maybe-uninitialized \
+	-Wno-misleading-indentation \
+	-Wno-missing-braces \
+	-Wno-multichar \
+	-Wno-pointer-sign \
+	-Wno-pointer-to-int-cast \
+	-Wno-tautological-compare \
+	-Wno-uninitialized \
+	-Wno-unused-but-set-variable \
+	-Wno-unused-value \
+	-Wno-unused-variable \
+	-G 0
 
 ######################## Targets #############################
 
@@ -428,7 +437,8 @@ $(BUILD_DIR)/$(TARGET).elf: $(O_FILES) $(BUILD_DIR)/$(LD_SCRIPT) | $(ALL_ASSETS_
 
 $(BUILD_DIR)/$(TARGET).bin: $(BUILD_DIR)/$(TARGET).elf | $(ALL_ASSETS_BUILT)
 	$(call print,Making .bin:,$<,$@)
-	$(V)$(OBJCOPY) $< $@ -O binary
+	$(CROSS)objcopy --output-target=binary $< $@
+	$(call PAD_TO_NEXT_16KB, $@)
 
 $(BUILD_DIR)/$(TARGET).z64: $(BUILD_DIR)/$(TARGET).bin | $(ALL_ASSETS_BUILT)
 	$(call print,Making final z64 ROM:,$<,$@)

@@ -14709,7 +14709,11 @@ void record_fps(void) {
         benchCPU = 0;
         benchRSP = 0;
         benchRDP = 0;
-        benchLastTime += 46882325;
+        if (__osBbIsBb) {
+            benchLastTime += 70323487;
+        } else {
+            benchLastTime += 46882325;
+        }
     }
 }
 

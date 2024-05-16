@@ -59,7 +59,6 @@ void divider_draw(Gfx **dList) {
  * The effect here is that it will strip coverage for anything beneath, eliminating pixel bleed.
  */
 void divider_clear_coverage(Gfx **dList) {
-    u32 screenSize;
     u32 screenWidth;
     u32 screenHeight;
     u32 height;
@@ -67,9 +66,8 @@ void divider_clear_coverage(Gfx **dList) {
     u32 tempX;
     u32 tempY;
 
-    screenSize = get_video_width_and_height_as_s32();
-    screenHeight = GET_VIDEO_HEIGHT(screenSize);
-    screenWidth = GET_VIDEO_WIDTH(screenSize);
+    screenHeight = gScreenHeight;
+    screenWidth = gScreenWidth;
     height = (screenHeight / 128) << 1 << 1;
     width = (screenWidth / 256) << 1 << 1;
     gDPSetCycleType((*dList)++, G_CYC_1CYCLE);

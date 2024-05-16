@@ -51,4 +51,16 @@ extern void *         osPhysicalToVirtual(u32);
 #define    OS_PHYSICAL_TO_K0(x)    (void *)(((u32)(x)+0x80000000))
 #define    OS_PHYSICAL_TO_K1(x)    (void *)(((u32)(x)+0xa0000000))
 
+extern u32 __osBbEepromAddress;
+extern u32 __osBbEepromSize;
+extern u32 __osBbSramAddress;
+extern u32 __osBbSramSize;
+extern u32 __osBbFlashAddress;
+extern u32 __osBbFlashSize;
+extern u32 __osBbPakAddress[4];
+extern u32 __osBbPakSize;
+extern u32 __osBbIsBb;
+extern u32 __osBbHackFlags;
+extern u32 osMemSize;
+
 #endif

@@ -7,7 +7,7 @@
 
 static void __osPackRamReadData(int channel, u16 address);
 s32 __osContRamRead(OSMesgQueue *mq, int channel, u16 address, u8 *buffer) {
-    s32 ret;
+    s32 ret = 0;
     int i;
     u8 *ptr;
     __OSContRamReadFormat ramreadformat;
@@ -15,6 +15,28 @@ s32 __osContRamRead(OSMesgQueue *mq, int channel, u16 address, u8 *buffer) {
     ret = 0;
     ptr = (u8 *)&__osPfsPifRam;
     retry = 2;
+
+    if (__osBbIsBb) {
+        __osSiGetAccess();
+
+        ret = 0;
+        if (__osBbPakAddress[channel] != 0) {
+            if (__osBbPakSize - 0x20 >= address * 0x20) {
+                int i;
+
+                for (i = 0; i < 0x20; i++) {
+                    buffer[i] = *(u8*)(__osBbPakAddress[channel] + address * 0x20 + i);
+                }
+            }
+        } else {
+            ret = 1;
+        }
+
+        __osSiRelAccess();
+
+        return ret;
+    }
+
     __osSiGetAccess();
     __osContLastCmd = CONT_CMD_READ_MEMPACK;
     __osPackRamReadData(channel, address);

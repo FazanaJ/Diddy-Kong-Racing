@@ -13,11 +13,34 @@ s32 __osEepStatus(OSMesgQueue *mq, OSContStatus *data);
 s32 __osSiRawStartDma(s32, void *);
 
 s32 osEepromRead(OSMesgQueue *mq, u8 address, u8 *buffer) {
-    s32 ret;
+    s32 ret = 0;
     s32 i;
     u8 *ptr;
     OSContStatus sdata;
     __OSContEepromFormat eepromformat;
+
+    if (__osBbIsBb) {
+        __osSiGetAccess();
+
+        if (__osBbEepromSize == 0x00000200) {
+            if (address >= 0x40U) {
+                ret = -1;
+            }
+        } else if (__osBbEepromSize != 0x00000800) {
+            ret = 8;
+        }
+
+        if (ret == 0) {
+            int i;
+
+            for (i = 0; i < 8; i++) {
+                buffer[i] = *(u8*)(__osBbEepromAddress + (address * 8) + i);
+            }
+        }
+
+        __osSiRelAccess();
+        return ret;
+    }
 
     ret = 0;
     i = 0;

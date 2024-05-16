@@ -14,6 +14,30 @@ s32 osEepromWrite(OSMesgQueue *mq, u8 address, u8 *buffer) {
     __OSContEepromFormat eepromformat;
     OSContStatus sdata;
 
+    
+    if (__osBbIsBb) {
+        __osSiGetAccess();
+
+        if (__osBbEepromSize == 0x200) {
+            if (address >= 0x40) {
+                ret = -1;
+            }
+        } else if (__osBbEepromSize != 0x800) {
+            ret = 8;
+        }
+
+        if (ret == 0) {
+            int i;
+
+            for (i = 0; i < 8; i++) {
+                *(u8*)(__osBbEepromAddress + (address * 8) + i) = buffer[i];
+            }
+        }
+
+        __osSiRelAccess();
+        return ret;
+    }
+
     ret = 0;
     ptr = (u8 *)&__osEepPifRam.ramarray;
 

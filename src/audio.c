@@ -509,11 +509,18 @@ u8 music_is_playing(void) {
  */
 f32 music_animation_fraction(void) {
     f32 tmp;
+    f32 divisor;
     u32 cnt = osGetCount();
-    if ((u32) audioPrevCount < cnt) {
-        gMusicAnimationTick += (f32) (cnt - audioPrevCount) / 46875.0f;
+
+    if (__osBbIsBb) {
+        divisor = 0.666667f;
     } else {
-        gMusicAnimationTick += (f32) ((cnt - audioPrevCount) - 1) / 46875.0f;
+        divisor = 1.0f;
+    }
+    if ((u32) audioPrevCount < cnt) {
+        gMusicAnimationTick += ((f32) (cnt - audioPrevCount) / 46875.0f) * divisor;
+    } else {
+        gMusicAnimationTick += ((f32) ((cnt - audioPrevCount) - 1) / 46875.0f) * divisor;
     }
     if (gMusicPlaying == FALSE) {
         sMusicTempo = 182;

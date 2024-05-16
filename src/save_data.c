@@ -210,6 +210,10 @@ void rumble_update(s32 updateRate) {
     u8 controllerToCheck;
     u8 pfsBitPattern;
 
+    if (__osBbIsBb) {
+        return;
+    }
+
     if (gRumbleIdle != 0 || gRumbleKillTimer != 0) {
         gRumbleDetectionTimer += updateRate;
         if (gRumbleDetectionTimer > 120) {
@@ -1597,7 +1601,7 @@ SIDeviceStatus get_si_device_status(s32 controllerIndex) {
     s32 bytes_not_used;
     s32 i;
 
-    if (sControllerMesgQueue->validCount == 0) {
+    if (sControllerMesgQueue->validCount == 0 && __osBbIsBb == FALSE) {
         if (osMotorInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex) == 0) {
             return CONTROLLER_PAK_RUMBLE_PAK_FOUND;
         }
@@ -1615,12 +1619,12 @@ SIDeviceStatus get_si_device_status(s32 controllerIndex) {
         if (ret == PFS_ERR_INVALID) {
             ret = osPfsInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex);
         }
-        if (ret == PFS_ERR_ID_FATAL) {
+        if (ret == PFS_ERR_ID_FATAL && __osBbIsBb == FALSE) {
             if (osMotorInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex) == 0) {
                 return CONTROLLER_PAK_RUMBLE_PAK_FOUND;
             }
         }
-        if (ret == PFS_ERR_NEW_PACK) {
+        if (ret == PFS_ERR_NEW_PACK && __osBbIsBb == FALSE) {
             if ((osPfsInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex) == PFS_ERR_ID_FATAL) &&
                 (osMotorInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex) == 0)) {
                 return CONTROLLER_PAK_RUMBLE_PAK_FOUND;

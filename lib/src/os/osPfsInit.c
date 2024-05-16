@@ -32,6 +32,13 @@ s32 __osPfsGetStatus(OSMesgQueue *queue, int channel) {
     OSMesg dummy;
     u8 pattern;
     OSContStatus data[MAXCONTROLLERS];
+
+    if (__osBbIsBb) {
+        if (__osBbPakAddress[channel] != 0) {
+        return 0;
+        }
+        return PFS_ERR_NOPACK;
+    }
 	
 	ret = 0;
     __osPfsRequestData(0);

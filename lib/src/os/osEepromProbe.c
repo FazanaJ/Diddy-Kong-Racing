@@ -10,6 +10,17 @@ s32 osEepromProbe(OSMesgQueue *mq) {
     s32 ret = 0;
     OSContStatus sdata;
 
+    if (__osBbIsBb) {
+        __osSiGetAccess();
+        if (__osBbEepromSize == 0x200) {
+            ret = EEPROM_TYPE_4K;
+        } else if (__osBbEepromSize == 0x800) {
+            ret = EEPROM_TYPE_16K;
+        }
+        __osSiRelAccess();
+        return ret;
+    }
+
     __osSiGetAccess();
     ret = __osEepStatus(mq, &sdata);
     if (ret == 0 && (sdata.type & CONT_EEPROM) != 0) {

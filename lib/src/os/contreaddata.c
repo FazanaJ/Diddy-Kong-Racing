@@ -8,6 +8,9 @@
 #include "siint.h"
 
 static void __osPackReadData(void);
+
+#define CONT_CMD_CHANNEL_RESET 0xFD
+
 s32 osContStartReadData(OSMesgQueue *mq) {
     s32 ret;
     int i;
@@ -28,7 +31,11 @@ s32 osContStartReadData(OSMesgQueue *mq) {
 	__osContPifRam.pifstatus = CONT_CMD_REQUEST_STATUS;
     ret = __osSiRawStartDma(OS_READ, &__osContPifRam);
 
-    __osContLastCmd = CONT_CMD_READ_BUTTON;
+    if (__osBbIsBb) {
+        __osContLastCmd = CONT_CMD_CHANNEL_RESET;
+    } else {
+        __osContLastCmd = CONT_CMD_READ_BUTTON;
+    }
     __osSiRelAccess();
     return ret;
 }
@@ -45,6 +52,17 @@ void osContGetReadData(OSContPad *data) {
             data->button = readformat.button;
             data->stick_x = readformat.stick_x;
             data->stick_y = readformat.stick_y;
+        }
+    }
+
+    if (__osBbIsBb) {
+        if (__osBbIsBb && __osBbHackFlags != 0) {
+            OSContPad tmp;
+            data -= __osMaxControllers;
+
+            tmp = data[0];
+            data[0] = data[__osBbHackFlags];
+            data[__osBbHackFlags] = tmp;
         }
     }
 }

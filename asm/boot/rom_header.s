@@ -6,7 +6,7 @@
 # header
 .byte  0x80, 0x37, 0x12, 0x40 # PI BSD Domain 1 register
 .word  0x0000000F # clock rate setting
-.word  0x80100400 # entry point
+.word  0x80000400 # entry point
 .word  0x00001447 # release
 .word  0x53D440E7 # checksum1
 .word  0x7519B011 # checksum2

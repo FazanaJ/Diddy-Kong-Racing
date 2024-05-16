@@ -236,7 +236,9 @@ void init_game(void) {
     func_80081218(); // init_save_data
     //create_and_start_thread30();
 #ifdef ENABLE_USB
-    init_usb_thread();
+    if (__osBbIsBb == FALSE) {
+        init_usb_thread();
+    }
 #endif
     osCreateMesgQueue(&gGameMesgQueue, gGameMesgBuf, 3);
     osScAddClient(&gMainSched, (OSScClient *) gNMISched, &gGameMesgQueue, OS_SC_ID_VIDEO);
@@ -266,20 +268,32 @@ u32 sPrevTime = 0;
 u32 sDeltaTime = 0;
 s32 sTotalTime = 0;
 
+extern u32 __osBbEepromAddress;
+extern u32 __osBbEepromSize;
+extern u32 __osBbPakAddress[4];
+extern u32 __osBbPakSize;
+extern u32 __osBbIsBb;
+
 /**
  * The main gameplay loop.
  * Contains all game logic, audio and graphics processing.
  */
 void main_game_loop(void) {
     s32 framebufferSize;
+    f32 divisor;
 #ifdef PUPPYPRINT_DEBUG
     profiler_reset_values();
     profiler_snapshot(THREAD4_START);
 #endif
 
+    if (__osBbIsBb) {
+        divisor = 0.666667f;
+    } else {
+        divisor = 1.0f;
 #ifdef ENABLE_USB
-    tick_usb_thread();
+        tick_usb_thread();
 #endif
+    }
 
     if (gVideoSkipNextRate) {
         sLogicUpdateRate = LOGIC_60FPS;
@@ -290,14 +304,14 @@ void main_game_loop(void) {
     } else {
         sDeltaTime = osGetCount() - sPrevTime;
         sPrevTime = osGetCount();
-        sLogicUpdateRateF = (f32) sDeltaTime / (f32) OS_USEC_TO_CYCLES(16666);
+        sLogicUpdateRateF = (f32) sDeltaTime / (f32) (OS_USEC_TO_CYCLES(16666) * divisor);
         if (sLogicUpdateRateF <= 0.0001f) {
             sLogicUpdateRateF = 0.0001f;
         }
         if (osTvType == TV_TYPE_PAL) {
             sLogicUpdateRateF *= 1.2f;
         }
-        sTotalTime += OS_CYCLES_TO_USEC(sDeltaTime);
+        sTotalTime += (OS_CYCLES_TO_USEC(sDeltaTime) * divisor);
         sTotalTime -= 16666;
         sLogicUpdateRate = LOGIC_60FPS;
         while (sTotalTime > 16666) {
