@@ -284,6 +284,8 @@ void crash_page_registers(OSThread *thread) {
     __OSThreadContext *tc = &thread->context;
     s32 i;
     s32 y;
+    u64 *reg;
+    f32 *reg2;
 
     cause = (tc->cause >> 2) & 0x1F;
     if (cause == 23) { // EXC_WATCH
@@ -297,7 +299,7 @@ void crash_page_registers(OSThread *thread) {
 #ifdef DETAILED_CRASH
     crash_screen_print(sCrashX + 10, sCrashY + 15, "PC:%08XH   SR:%08XH   GP:%08XH", (u32) tc->pc, (u32) tc->sr, (u32) tc->gp);
     crash_screen_print(sCrashX + 10, sCrashY + 25, "VA:%08XH   RA:%08XH   SP:%08XH", (u32) tc->badvaddr, (u32) tc->ra, (u32) tc->sp);
-    u64 *reg = (u64 *) tc;
+    reg = (u64 *) tc;
     y = sCrashY - sCrashScroll + 40;
     for (i = 0; i < 26; i++) {
         if (y < sCrashY + 40 || y > gScreenHeight - 30) {
@@ -308,7 +310,7 @@ void crash_page_registers(OSThread *thread) {
         crash_screen_print(sCrashX + 150, y, "0x%X", (u32) reg[i]);
         y += 10;
     }
-    f32 *reg2 = (f32 *) &tc->fp0;
+    reg2 = (f32 *) &tc->fp0;
     for (i = 0; i < 32; i += 2) {
         if (y < sCrashY + 40 || y > gScreenHeight - 30) {
             y += 10;

@@ -268,11 +268,6 @@ u32 sPrevTime = 0;
 u32 sDeltaTime = 0;
 s32 sTotalTime = 0;
 
-extern u32 __osBbEepromAddress;
-extern u32 __osBbEepromSize;
-extern u32 __osBbPakAddress[4];
-extern u32 __osBbPakSize;
-extern u32 __osBbIsBb;
 
 /**
  * The main gameplay loop.

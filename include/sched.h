@@ -98,7 +98,6 @@ typedef struct {
   void        *queuedFB;
   u8          audioFlip;
   u8          retraceCount;
-  u8          doAudio;
 } OSSched;
 
 extern OSViMode osViModeTable[];

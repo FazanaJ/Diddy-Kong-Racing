@@ -296,8 +296,8 @@ u8 curFrameTimeIndex = 0;
 void calculate_and_update_fps(void) {
     u32 newTime = osGetCount();
     u32 oldTime = frameTimes[curFrameTimeIndex];
-    frameTimes[curFrameTimeIndex] = newTime;
     f32 divisor;
+    frameTimes[curFrameTimeIndex] = newTime;
 
     if (__osBbIsBb) {
         divisor = 0.666667f;

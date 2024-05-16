@@ -62,7 +62,6 @@ static void __scTryDispatch(OSSched *sc) {
         if (sc->nextAudTask) {
             OSScTask *t = sc->nextAudTask;
             sc->nextAudTask = NULL;
-            sc->doAudio = 0;
             __scExec(sc, t);
         } else if ((sc->curRDPTask == NULL || sc->curRDPTask == sc->nextGfxTask) && sc->queuedFB == NULL) {
             OSScTask *t = sc->nextGfxTask;
@@ -113,12 +112,6 @@ static void __scHandleRetrace(OSSched *sc) {
         osSendMesg(sc->audmq, &sc->retraceMsg, OS_MESG_NOBLOCK);
 
         if (sc->nextAudTask) {
-#ifdef DISABLE_AUDIO
-            sc->doAudio = 0;
-#else
-            sc->doAudio = 1;
-#endif
-
             if (sc->curRSPTask && sc->curRSPTask->list.t.type == M_GFXTASK) {
                 puppyprint_update_rsp(RSP_GFX_PAUSED);
                 sc->curRSPTask->state |= OS_SC_YIELD;
@@ -161,7 +154,7 @@ static void __scHandleRSP(OSSched *sc) {
         t->state &= ~OS_SC_NEEDS_RSP;
         if ((t->state & OS_SC_RCP_MASK) == 0) {
 #ifdef PUPPYPRINT_DEBUG
-        sRSPCount = 0;
+            sRSPCount = 0;
 #endif
             __scTaskComplete(sc, t);
         }
@@ -262,7 +255,6 @@ void osCreateScheduler(OSSched *sc, void *stack, OSPri priority, UNUSED u8 mode,
 #endif
 
     osCreateViManager(OS_PRIORITY_VIMGR);
-    osViSetMode(&osViModeNtscLan1);
     osViBlack(TRUE);
     osCreateMesgQueue(&sc->interruptQ, sc->intBuf, OS_SC_MAX_MESGS);
     osCreateMesgQueue(&sc->cmdQ, sc->cmdMsgBuf, OS_SC_MAX_MESGS);
