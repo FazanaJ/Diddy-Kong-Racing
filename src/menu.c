@@ -3877,11 +3877,11 @@ void menu_logos_screen_init(void) {
     sBootScreenTimer = 16.0f;
     set_background_fill_colour(0, 0, 0);
     if (osTvType == TV_TYPE_PAL) {
-        viewport_menu_set(0, 0, 38, SCREEN_WIDTH, SCREEN_HEIGHT - 16);
-        set_viewport_properties(0, SCREEN_WIDTH, SCREEN_HEIGHT_PAL);
+        viewport_menu_set(0, 0, 38, gScreenWidth, gScreenHeight - 16);
+        set_viewport_properties(0, gScreenWidth, SCREEN_HEIGHT_PAL);
     } else {
-        viewport_menu_set(0, 0, 40, SCREEN_WIDTH, SCREEN_HEIGHT - 44);
-        set_viewport_properties(0, SCREEN_WIDTH, SCREEN_HEIGHT);
+        viewport_menu_set(0, 0, 40, gScreenWidth, gScreenHeight - 44);
+        set_viewport_properties(0, gScreenWidth, gScreenHeight);
     }
     copy_viewports_to_stack(); // Init viewports
     camEnableUserView(0, 1);
@@ -8863,9 +8863,9 @@ void render_track_select(s32 x, s32 y, char *hubName, char *trackName, s32 rectO
             set_kerning(TRUE);
         }
         set_text_colour(0, 0, 0, 255, opacity / 2);
-        draw_text(&sMenuCurrDisplayList, 161, (yTemp - sp6C) - 85, hubName, ALIGN_MIDDLE_CENTER);
+        draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2) + 1, (yTemp - sp6C) - 85, hubName, ALIGN_MIDDLE_CENTER);
         set_text_colour(255, 255, 255, 0, opacity);
-        draw_text(&sMenuCurrDisplayList, 160, (yTemp - sp6C) - 88, hubName, ALIGN_MIDDLE_CENTER);
+        draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2) - 1, (yTemp - sp6C) - 88, hubName, ALIGN_MIDDLE_CENTER);
         D_801269F0 = hubName;
         set_kerning(0);
     }
@@ -8947,7 +8947,7 @@ void func_8008FF1C(UNUSED s32 updateRate) {
         } else {
             maxTrackY = 4;
         }
-        trackSelectX = (gTrackSelectX / 320);
+        trackSelectX = (gTrackSelectX / (320));
         temp = (gTrackSelectY / -gTrackSelectViewportY);
         trackY = temp - 1;
         startIndex = -1;
@@ -8973,7 +8973,7 @@ void func_8008FF1C(UNUSED s32 updateRate) {
                     } else {
                         cur->trackName = (char *) gQMarkPtr;
                     }
-                    cur->xOff = ((trackX * 320) - gTrackSelectX);
+                    cur->xOff = ((trackX * 320) - gTrackSelectX) + ((gScreenWidth - 320) / 2);
                     cur->yOff = ((-trackY * gTrackSelectViewportY) - gTrackSelectY);
                     cur->opacity = 0xFF;
                     if ((trackX == gSelectedTrackX) && (trackY == gSelectedTrackY)) {
@@ -9072,13 +9072,13 @@ void func_800904E8(s32 updateRate) {
             set_level_default_vehicle(get_map_default_vehicle(gTrackIdForPreview));
         }
     }
-    x1 = ((gSelectedTrackX * SCREEN_WIDTH) - gTrackSelectX) + SCREEN_WIDTH_FLOAT_HALF - 80.0f;
-    x2 = x1 + SCREEN_WIDTH_HALF;
+    x1 = ((gSelectedTrackX * 320) - gTrackSelectX) + (gScreenWidth / 2) - 80.0f;
+    x2 = x1 + (SCREEN_WIDTH_HALF);
     y1 = gTrackSelectViewPortHalfY - ((gSelectedTrackY * -gTrackSelectViewportY) - gTrackSelectY) -
          (gTrackSelectViewportY >> 2);
     y2 = y1 + gTrackSelectViewPortHalfY;
     viewport_menu_set(0, x1, y1, x2, y2);
-    copy_viewport_background_size_to_coords(0, &x1, &y1, &x2, &y2);
+    //copy_viewport_background_size_to_coords(0, &x1, &y1, &x2, &y2);
     camEnableUserView(0, 0);
 }
 
@@ -9104,7 +9104,7 @@ void func_80090918(s32 updateRate) {
         if (var_t1 > 20) {
             var_t1 = 20;
         }
-        var_t2 = 160;
+        var_t2 = gScreenWidth / 2;
         var_t0 = gTrackSelectViewPortHalfY;
         if (var_t1 < 20) {
             var_t2 += (D_801269E8 - gTrackSelectX);
@@ -9112,7 +9112,7 @@ void func_80090918(s32 updateRate) {
         }
         var_t3 = (((var_t1 + 20) * gTrackSelectViewPortHalfY) / 40) + var_t0;
         var_a2 = var_t0 - (((var_t1 + 20) * gTrackSelectViewPortHalfY) / 40);
-        viewport_menu_set(0, (var_t2 - (var_t1 * 4)) - 80, var_a2, (var_t1 * 4) + var_t2 + 80, var_t3);
+        viewport_menu_set(0, (var_t2 - (var_t1 * 4)) - (80), var_a2, (var_t1 * 4) + var_t2 + 80, var_t3);
         gMenuImageStack[4].unk8 = (f32) (sMenuImageProperties[4].unk8 * (1.0f + ((f32) var_t1 / 20.0f)));
         gMenuImageStack[6].unk8 = (f32) (sMenuImageProperties[6].unk8 * (1.0f + ((f32) var_t1 / 20.0f)));
         gMenuImageStack[5].unk8 = (f32) (sMenuImageProperties[5].unk8 * (1.0f + ((f32) var_t1 / 20.0f)));
@@ -12716,11 +12716,11 @@ void menu_credits_init(void) {
     D_80126BE0 = 0;
     set_background_fill_colour(0, 0, 0);
     if (osTvType == TV_TYPE_PAL) {
-        viewport_menu_set(0, 0, 38, SCREEN_WIDTH, 224);
-        set_viewport_properties(0, SCREEN_WIDTH, SCREEN_HEIGHT_PAL);
+        viewport_menu_set(0, 0, 38, gScreenWidth, gScreenHeight - 24);
+        set_viewport_properties(0, gScreenWidth, SCREEN_HEIGHT_PAL);
     } else {
-        viewport_menu_set(0, 0, 40, SCREEN_WIDTH, 196);
-        set_viewport_properties(0, SCREEN_WIDTH, SCREEN_HEIGHT);
+        viewport_menu_set(0, 0, 40, gScreenWidth, gScreenHeight - 44);
+        set_viewport_properties(0, gScreenWidth, gScreenHeight);
     }
     copy_viewports_to_stack();
     camEnableUserView(0, 1);
