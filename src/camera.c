@@ -75,6 +75,8 @@ u8 gCameraZoomLevels[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 /************ .bss ************/
 
+f32 gSpriteWidth;
+s16 gViewportScissor[4];
 ObjectSegment gCameraSegment[8];
 s32 gNumberOfViewports;
 s32 gActiveCameraID;
@@ -99,11 +101,9 @@ Matrix gPerspectiveMatrixF;
 Matrix gViewMatrixF;
 Matrix gCameraMatrixF;
 Matrix gProjectionMatrixF;
-MatrixS gProjectionMatrixS;
+ALIGNED16 MatrixS gProjectionMatrixS;
 Matrix gCurrentModelMatrixF;
 Matrix gCurrentModelMatrixS;
-s16 gViewportScissor[4];
-f32 gSpriteWidth;
 
 /******************************/
 
@@ -948,7 +948,7 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
         tanX = -sins(arctan2_f(sp44, diffZ)) >> 8;
         if (diffZ < 0.0f) {
             diffZ = -diffZ;
-            tanX ^= 1;
+            tanX  = 1 - tanX;
             tanY = -tanY;
         }
         angleDiff = arctan2_f(diffY, diffZ);

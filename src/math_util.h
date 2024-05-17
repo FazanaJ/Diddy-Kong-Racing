@@ -24,7 +24,7 @@
 
 #define	ABS(d)		((d) > 0) ? (d) : -(d)
 
-s16 arctan2_f(f32 y, f32 x);
+u16 arctan2_f(f32 y, f32 x);
 f32 coss_f(s16 angle);
 f32 sins_f(s16 angle);
 s32 coss(s16 angle);
