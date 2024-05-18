@@ -26,7 +26,7 @@ void osCreatePiManager(OSPri pri, OSMesgQueue *cmdQ, OSMesg *cmdBuf, s32 cmdMsgC
             __osPiCreateAccessQueue();
         osSetEventMesg(OS_EVENT_PI, &piEventQueue, (OSMesg)0x22222222);
         oldPri = -1;
-        myPri = osGetThreadPri(NULL);
+        myPri = __osRunningThread->priority;
         if (myPri < pri) {
             oldPri = myPri;
             osSetThreadPri(pri);

@@ -5303,6 +5303,7 @@ void obj_init_audioline(Object *obj, LevelObjectEntry_AudioLine *entry) {
     audioline_ambient_create(audLine->unk0, audLine->soundID, entry->common.x, entry->common.y, entry->common.z,
                              audLine->unkF, audLine->unkE, audLine->unk10, audLine->unk12, audLine->unk4,
                              audLine->unk11, audLine->lineID, audLine->unkD);
+    sound_reverb_set(TRUE);
     free_object(obj);
 }
 
@@ -5312,6 +5313,7 @@ void obj_init_audioreverb(Object *obj, LevelObjectEntry_AudioReverb *entry) {
     reverb->lineID = entry->lineID;
     reverb->unk5 = entry->unkA;
     func_80009968(entry->common.x, entry->common.y, entry->common.z, reverb->unk2, reverb->lineID, reverb->unk5);
+    sound_reverb_set(TRUE);
     free_object(obj);
 }
 

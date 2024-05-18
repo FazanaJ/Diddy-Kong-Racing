@@ -116,7 +116,6 @@ typedef u32 OSYieldResult;
 /* Functions */
 
 void osSpTaskLoad(OSTask *task);
-void osSpTaskYield(void);
 OSYieldResult osSpTaskYielded(OSTask *task);
 
 #endif

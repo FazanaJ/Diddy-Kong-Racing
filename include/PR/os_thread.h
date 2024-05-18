@@ -61,13 +61,13 @@ typedef struct OSThread_s
     /*0x20*/ __OSThreadContext context;
 } OSThread;
 
+extern OSThread *__osRunningThread;
 
 /* Functions */
 
 void osCreateThread(OSThread *thread, OSId id, void (*entry)(void *),
     void *arg, void *sp, OSPri pri);
 OSId osGetThreadId(OSThread *thread);
-OSPri osGetThreadPri(OSThread *thread);
 void osSetThreadPri(OSPri pri);
 void osStartThread(OSThread *thread);
 void osStopThread(OSThread *thread);

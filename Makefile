@@ -283,7 +283,7 @@ include gcc_safe_files.mk
 
 $(GCC_SAFE_FILES): CC := $(CROSS)gcc
 
-$(GCC_SAFE_FILES): CFLAGS := -c -DNDEBUG -DAVOID_UB -Ofast $(INCLUDE_CFLAGS) $(DEF_INC_CFLAGS) \
+$(GCC_SAFE_FILES): CFLAGS := -c -DNDEBUG -DAVOID_UB -O2 $(INCLUDE_CFLAGS) $(DEF_INC_CFLAGS) \
 	-EB \
 	-march=vr4300 \
 	-mabi=32 \

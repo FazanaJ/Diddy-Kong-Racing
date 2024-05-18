@@ -46,6 +46,7 @@ typedef u8 TriangleList;
 
 #if defined(__sgi)
 #define stubbed_printf
+#define inline
 #else
 #define stubbed_printf(...)
 #define sqrtf(f) __builtin_sqrtf(f)

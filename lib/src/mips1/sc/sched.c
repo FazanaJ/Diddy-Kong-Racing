@@ -115,7 +115,7 @@ static void __scHandleRetrace(OSSched *sc) {
             if (sc->curRSPTask && sc->curRSPTask->list.t.type == M_GFXTASK) {
                 puppyprint_update_rsp(RSP_GFX_PAUSED);
                 sc->curRSPTask->state |= OS_SC_YIELD;
-                osSpTaskYield();
+                IO_WRITE(SP_STATUS_REG, SPSTATUS_SET_SIGNAL0);
             }
         }
     }
@@ -195,7 +195,7 @@ static void __scMain(void *arg) {
 //----------------------------------------------------------------------------/
 
 void osScSubmitTask(OSSched *sc, OSScTask *t) {
-    OSPri prevpri = osGetThreadPri(0);
+    OSPri prevpri = __osRunningThread->priority;
     osSetThreadPri(OS_SC_PRIORITY + 1);
 
     if (t->list.t.type == M_AUDTASK) {

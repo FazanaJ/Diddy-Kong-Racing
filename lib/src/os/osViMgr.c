@@ -40,7 +40,7 @@ void osCreateViManager(OSPri pri) {
         osSetEventMesg(OS_EVENT_VI, &viEventQueue, &viRetraceMsg);
         osSetEventMesg(OS_EVENT_COUNTER, &viEventQueue, &viCounterMsg);
         oldPri = -1;
-        myPri = osGetThreadPri(NULL);
+        myPri = __osRunningThread->priority;
         if (myPri < pri) {
             oldPri = myPri;
             osSetThreadPri(pri);

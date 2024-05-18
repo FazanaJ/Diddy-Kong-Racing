@@ -300,7 +300,7 @@ void calculate_and_update_fps(void) {
     frameTimes[curFrameTimeIndex] = newTime;
 
     if (__osBbIsBb) {
-        divisor = 0.666667f;
+        divisor = IQUE_DIVISOR;
     } else {
         divisor = 1.0f;
     }
@@ -986,7 +986,7 @@ void calculate_individual_thread_timers(void) {
     f32 divisor;
 
     if (__osBbIsBb) {
-        divisor = 0.666667f;
+        divisor = IQUE_DIVISOR;
     } else {
         divisor = 1.0f;
     }
@@ -1087,7 +1087,7 @@ void puppyprint_calculate_average_times(void) {
     }
 
     if (__osBbIsBb) {
-        divisor = 0.666667f;
+        divisor = IQUE_DIVISOR;
     } else {
         divisor = 1.0f;
     }

@@ -19,8 +19,13 @@ typedef struct OSTimer_s {
 
 /* Functions */
 
+extern OSTime __osCurrentTime;
+
+static inline void osSetTime(OSTime time) {
+    __osCurrentTime = time;
+}
+
 OSTime osGetTime(void);
-void osSetTime(OSTime time);
 s32 osSetTimer(OSTimer *t, OSTime value, OSTime interval, OSMesgQueue *mq, OSMesg msg);
 
 #endif

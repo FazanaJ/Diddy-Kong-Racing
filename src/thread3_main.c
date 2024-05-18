@@ -157,7 +157,7 @@ void thread3_main(UNUSED void *unused) {
                 IO_WRITE(SP_STATUS_REG, SP_SET_HALT | SP_CLR_INTR_BREAK | SP_CLR_YIELD | SP_CLR_YIELDED |
                                             SP_CLR_TASKDONE | SP_CLR_RSPSIGNAL | SP_CLR_CPUSIGNAL | SP_CLR_SIG5 |
                                             SP_CLR_SIG6 | SP_CLR_SIG7);
-                osDpSetStatus(DPC_SET_XBUS_DMEM_DMA | DPC_CLR_FREEZE | DPC_CLR_FLUSH | DPC_CLR_TMEM_CTR |
+                IO_WRITE(DPC_STATUS_REG, DPC_SET_XBUS_DMEM_DMA | DPC_CLR_FREEZE | DPC_CLR_FLUSH | DPC_CLR_TMEM_CTR |
                               DPC_CLR_PIPE_CTR | DPC_CLR_CMD_CTR | DPC_CLR_CMD_CTR);
                 while (1) {
                     ; // Infinite loop
@@ -282,7 +282,7 @@ void main_game_loop(void) {
 #endif
 
     if (__osBbIsBb) {
-        divisor = 0.666667f;
+        divisor = IQUE_DIVISOR;
     } else {
         divisor = 1.0f;
 #ifdef ENABLE_USB
@@ -356,7 +356,7 @@ void main_game_loop(void) {
 #endif
 
 #ifdef PUPPYPRINT_DEBUG
-    /*if (gMemUsed[0]) {
+    if (gMemUsed[0]) {
         s32 i;
         for (i = 0; i < 16; i++) {
             if (gMemUsed[i]) {
@@ -365,7 +365,7 @@ void main_game_loop(void) {
             }
         }
         gMemUsedCounter = 0;
-    }*/
+    }
 #endif
 
     sound_update_queue(sLogicUpdateRate);

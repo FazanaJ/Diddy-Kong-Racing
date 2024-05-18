@@ -16,6 +16,8 @@
 #define	OS_CPU_COUNTER		(OS_CLOCK_RATE*3/4)
 #define OS_CYCLES_TO_USEC(c)	(((u32)(c)*(1000000/15625))/(OS_CPU_COUNTER/15625))
 
+#define IQUE_DIVISOR 0.6510416667f
+
 extern u8 gAssert;
 extern char gAssertString[127];
 extern u64 gThread3Stack[THREAD3_STACK / sizeof(u64)];

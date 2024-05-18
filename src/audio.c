@@ -513,7 +513,7 @@ f32 music_animation_fraction(void) {
     u32 cnt = osGetCount();
 
     if (__osBbIsBb) {
-        divisor = 0.666667f;
+        divisor = IQUE_DIVISOR;
     } else {
         divisor = 1.0f;
     }
