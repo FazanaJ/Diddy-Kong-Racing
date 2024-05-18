@@ -66,6 +66,8 @@ extern "C" {
 #define EEP16K_MAXBLOCKS	256
 #define EEPROM_BLOCK_SIZE	8
 
+#define CONT_RANGE_ERROR -1
+
 
 #if defined(_LANGUAGE_C) || defined(_LANGUAGE_C_PLUS_PLUS)
 

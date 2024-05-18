@@ -4543,16 +4543,10 @@ void menu_audio_options_init(void) {
     func_8007FFEC(2);
     gMusicVolumeSliderValue = music_volume_config();
     gSfxVolumeSliderValue = sfxVolumeSlider;
-    if (gActiveMagicCodes & CHEAT_MUSIC_MENU) { // Check if "JUKEBOX" cheat is active
-        gAudioMenuStrings[6].unkC = gMusicTestString;
-        gAudioMenuStrings[3].unk2 = 212;
-        music_voicelimit_set(32);
-        gMenuOptionCount = 5;
-    } else {
-        gAudioMenuStrings[6].unkC = NULL;
-        gAudioMenuStrings[3].unk2 = 192;
-        gMenuOptionCount = 4;
-    }
+    gAudioMenuStrings[6].unkC = gMusicTestString;
+    gAudioMenuStrings[3].unk2 = 212;
+    music_voicelimit_set(32);
+    gMenuOptionCount = 5;
     load_font(ASSET_FONTS_BIGFONT);
 }
 
