@@ -105,15 +105,16 @@ void change_vi(OSViMode *mode, int width, int height) {
     s32 mul;
     if (osTvType == TV_TYPE_PAL) {
         gGlobalVI = osViModePalLan1;
+    } else {
+        gGlobalVI = osViModeNtscLan1;
+    }
+
+    if (gBitDepth == G_IM_SIZ_16b) {
         mul = 1;
     } else {
-        if (gBitDepth == G_IM_SIZ_16b) {
-            gGlobalVI = osViModeNtscLan1;
-            mul = 1;
-        } else {
-            gGlobalVI = osViModeNtscLan2;
-            mul = 2;
-        }
+        mul = 2;
+        mode->comRegs.ctrl &= ~VI_CTRL_ANTIALIAS_MODE_1 | VI_CTRL_TYPE_16;
+        mode->comRegs.ctrl |= VI_CTRL_TYPE_32;
     }
 
     if (height < 240) {
