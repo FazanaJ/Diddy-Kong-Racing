@@ -664,6 +664,13 @@ ObjectHeader *load_object_header(s32 index) {
     address = allocate_from_pool_containing_slots((MemoryPoolSlot *) gObjectMemoryPool, size);
     if (address != NULL) {
         load_asset_to_address(ASSET_OBJECTS, (u32) address, assetOffset, size);
+        if (gConfig.perfMode && address->flags & 0x40) {
+            free_from_memory_pool(address);
+            return NULL;
+        }
+        if (gConfig.noCutbacks) {
+            address->flags &= ~0x40;
+        }
         address->unk24 = (ObjectHeader24 *) ((uintptr_t) address + (uintptr_t) address->unk24);
         address->objectParticles =
             (ObjHeaderParticleEntry *) ((uintptr_t) address + (uintptr_t) address->objectParticles);

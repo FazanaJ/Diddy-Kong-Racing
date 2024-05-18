@@ -740,7 +740,7 @@ void puppyprint_render_objects(void) {
 void puppyprint_render_log(void) {
     s32 i;
     s32 y;
-    s32 sineTime = 224 + (sinf(sTimerTemp * 25.0f) * 32.0f);
+    s32 sineTime = 224 + (sins_f(sTimerTemp * 2500.0f) * 32.0f);
     s32 firstDraw = TRUE;
     draw_blank_box(0, 0, gScreenWidth, gScreenHeight, 0x00000064);
     set_text_font(ASSET_FONTS_SMALLFONT);
@@ -784,7 +784,7 @@ void render_page_menu(void) {
     char textBytes[16];
     s32 i;
     s32 y;
-    s32 sineTime = 192 + (sinf(sTimerTemp * 50.0f) * 64.0f);
+    s32 sineTime = 192 + (sins_f(sTimerTemp * 5000.0f) * 64.0f);
     draw_blank_box(TEXT_OFFSET - 2, 56, 112, 108 + 2, 0x0000007F);
     set_text_font(ASSET_FONTS_SMALLFONT);
     set_text_background_colour(0, 0, 0, 0);

@@ -84,7 +84,7 @@ s32 gViewportCap;
 ObjectTransform gCameraTransform;
 s32 gMatrixType;
 s32 gSpriteAnimOff;
-f32 gCurCamFOV;
+f32 gCurCamFOV = CAMERA_DEFAULT_FOV;
 s8 gCutsceneCameraActive;
 s8 gAdjustViewportHeight;
 u16 perspNorm;
@@ -107,9 +107,47 @@ Matrix gCurrentModelMatrixS;
 
 /******************************/
 
+static inline void guMtxIdentF(float mf[4][4]) {
+    int r, c;
+    for (r = 0; r < 4; r++) {
+        for (c = 0; c < 4; c++) {
+            if (r == c) {
+                mf[r][c] = 1.0f;
+            } else {
+                mf[r][c] = 0.0f;
+            }
+        }
+    }
+}
+
+static inline void guPerspectiveF(Matrix mf, u16 *perspNorm, s32 fovy, float aspect, float near, float far) {
+    float cot;
+
+    guMtxIdentF(mf);
+
+    fovy *= 91;
+    cot = coss_f(fovy)/sins_f(fovy);
+
+    mf[0][0] = cot / aspect;
+    mf[1][1] = cot;
+    mf[2][2] = (near + far) / (near - far);
+    mf[2][3] = -1;
+    mf[3][2] = (2.0f * near * far) / (near - far);
+    mf[3][3] = 0;
+
+    if (perspNorm != (u16 *) NULL) {
+        if (near+far<=2.0f) {
+            *perspNorm = (u16) 0xFFFF;
+        } else {
+            *perspNorm = (u16) ((2 * 65536)/((s32)(near+far)));
+        if (*perspNorm<=0)
+            *perspNorm = (u16) 0x0001;
+        }
+    }
+}
+
 void reset_perspective_matrix(void) {
-    guPerspectiveF(gPerspectiveMatrixF, &perspNorm, CAMERA_DEFAULT_FOV, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR,
-                   CAMERA_SCALE);
+    guPerspectiveF(gPerspectiveMatrixF, &perspNorm, gCurCamFOV, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR);
     f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gProjectionMatrixS);
     gSpriteWidth = ((4.0f / 3.0f) / gVideoAspectRatio);
 }
@@ -150,8 +188,8 @@ void camera_init(void) {
         gAntiPiracyViewport = TRUE;
     }
 #endif
-    reset_perspective_matrix();
     gCurCamFOV = CAMERA_DEFAULT_FOV;
+    reset_perspective_matrix();
 }
 
 void func_80066060(s32 cameraID, s32 zoomLevel) {
@@ -186,9 +224,7 @@ void func_800660D0(void) {
 void update_camera_fov(f32 camFieldOfView) {
     if (CAMERA_MIN_FOV < camFieldOfView && camFieldOfView < CAMERA_MAX_FOV && camFieldOfView != gCurCamFOV) {
         gCurCamFOV = camFieldOfView;
-        guPerspectiveF(gPerspectiveMatrixF, &perspNorm, camFieldOfView, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR,
-                       CAMERA_SCALE);
-        f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gProjectionMatrixS);
+        reset_perspective_matrix();
     }
 }
 

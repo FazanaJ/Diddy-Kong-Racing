@@ -246,21 +246,6 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     func_8000C8F8(arg6, 0);
     func_8000C8F8(collectables, 1);
     gScenePlayerViewports = numberOfPlayers;
-    if (gConfig.perfMode) {
-        for (i = 0; i < gObjectCount; i++) {
-            curObj = gObjPtrList[i];
-            tajFlags = curObj->segment.header->flags;
-            if (tajFlags & 0x40) {
-                free_object(curObj);
-            }
-        }
-    }
-    if (gConfig.perfMode == FALSE && gConfig.noCutbacks) {
-        for (i = 0; i < gObjectCount; i++) {
-            curObj = gObjPtrList[i];
-            curObj->segment.header->flags &= ~0x40;
-        }
-    }
     func_8000CC7C(vehicle, entranceId, numberOfPlayers);
     func_8000B020(72, 64);
 
