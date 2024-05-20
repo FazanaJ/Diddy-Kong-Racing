@@ -186,7 +186,9 @@ static void __scMain(void *arg) {
 
     while (1) {
         osRecvMesg(&sc->interruptQ, (OSMesg *)&msg, OS_MESG_BLOCK);
+        profiler_snapshot(THREAD5_START);
         msg(sc);
+        profiler_snapshot(THREAD5_END);
     }
 }
 

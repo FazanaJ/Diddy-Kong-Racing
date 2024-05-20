@@ -9879,12 +9879,12 @@ enum ConfigOptionFlags {
 };
 
 ConfigOptionEntry gOptionMenu[] = {
-    { "Screen", &gConfig.screenMode, OPT_EX_PAK, 5, 0, 3, refresh_screen_res },
+    { "Screen", &gConfig.screenMode, OPT_EX_PAK, 5, 0, 5, refresh_screen_res },
     { "Screen X", &gConfig.screenPosX, OPT_NO_EMU | OPT_NUMBER | OPT_240, 0, -8, 8, refresh_screen_res },
     { "Screen Y", &gConfig.screenPosY, OPT_NO_EMU | OPT_NUMBER | OPT_240, 0, -8, 8, refresh_screen_res },
     { "Anti Aliasing", &gConfig.antiAliasing, OPT_NO_EMU, 2, -1, 1, NULL },
     { "Dedither", &gConfig.dedither, OPT_NO_EMU, 0, 0, 1, set_dither_filter },
-    { "Frame Cap", &gConfig.frameCap, OPT_PAL, 9, 0, 3, NULL },
+    { "Frame Cap", &gConfig.frameCap, OPT_PAL, 11, 0, 3, NULL },
     { "MP Cutbacks", &gConfig.noCutbacks, OPT_NO_EMU, 1, 0, 1, NULL },
     { "Perf Mode", &gConfig.perfMode, OPT_NO_EMU, 0, 0, 1, NULL },
     { "Same Stats", &gConfig.sameStats, OPT_NONE, 0, 0, 1, NULL },
@@ -9895,8 +9895,8 @@ ConfigOptionEntry gOptionMenu[] = {
 char gPauseOptionText[] = "Options";
 char gPauseOptionStack[OPTIONSIZE][40];
 char gPauseOptStrings[][8] = {
-    { "Off" }, { "On" }, { "Off" }, { "Fast" }, { "Fancy" }, { "4:3" }, { "16:10" }, { "16:9" }, { "highres" },
-    { "60" },  { "30" }, { "20" },  { "15" },   { "50" },    { "25" },  { "18" },    { "14" },
+    { "Off" }, { "On" }, { "Off" }, { "Fast" }, { "Fancy" }, { "4:3" }, { "16:10" }, { "16:9" }, { "400x300" },
+    { "480x360" }, { "560x420" }, { "60" },  { "30" }, { "20" },  { "15" },   { "50" },    { "25" },  { "18" },    { "14" },
 };
 u8 gPauseSubmenu = 0;
 u8 gPauseOptionScroll;
@@ -9937,8 +9937,16 @@ void refresh_screen_res(void) {
             gScreenHeight = SCREEN_HEIGHT;
             break;
         case 3:
-            gScreenWidth = 540;
+            gScreenWidth = 400;
+            gScreenHeight = 300;
+            break;
+        case 4:
+            gScreenWidth = 480;
             gScreenHeight = 360;
+            break;
+        case 5:
+            gScreenWidth = 560;
+            gScreenHeight = 420;
             break;
     }
 #endif

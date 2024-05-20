@@ -223,7 +223,7 @@ enum PPProfilerEvent {
 #define NUM_PERF_ITERATIONS 32
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS
 #define PERF_TOTAL NUM_PERF_ITERATIONS + 1
-#define NUM_THREAD_ITERATIONS 8
+#define NUM_THREAD_ITERATIONS 12
 #define NUM_LOG_LINES 32
 typedef u32 PPTimer[NUM_PERF_ITERATIONS + 2];
 
@@ -238,6 +238,7 @@ struct PuppyPrint {
     PPTimer coreTimers[PP_MAIN_TIMES_TOTAL]; // Large collection of timers for various things.
     PPTimer audTime; // Normalised total for audio processing time.
     PPTimer gameTime; // Normalised total for game processing time.
+    PPTimer schedTime; // Normalised total for scheduler processing time.
     PPTimer gameYield; // Normalised total for game yield time.
     ObjectHeader *objHeaders[NUM_OBJECT_PRINTS]; // Stored to be able to access their names.
     u32 threadTimes[NUM_THREAD_ITERATIONS][NUM_THREAD_TIMERS]; // Timers for individual threads.

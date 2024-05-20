@@ -610,6 +610,10 @@ void puppyprint_render_rcp(void) {
     draw_text(&gCurrDisplayList, gScreenWidth - 96, y += 10, textBytes, ALIGN_TOP_LEFT);
     puppyprintf(textBytes, "%d", gPuppyPrint.audTime[PERF_TOTAL]);
     draw_text(&gCurrDisplayList, gScreenWidth - 38, y, textBytes, ALIGN_TOP_LEFT);
+    puppyprintf(textBytes, "Thread 5:");
+    draw_text(&gCurrDisplayList, gScreenWidth - 96, y += 10, textBytes, ALIGN_TOP_LEFT);
+    puppyprintf(textBytes, "%d", gPuppyPrint.schedTime[PERF_TOTAL]);
+    draw_text(&gCurrDisplayList, gScreenWidth - 38, y, textBytes, ALIGN_TOP_LEFT);
     puppyprintf(textBytes, "Yield 3:");
     draw_text(&gCurrDisplayList, gScreenWidth - 96, y += 10, textBytes, ALIGN_TOP_LEFT);
     puppyprintf(textBytes, "%d", gPuppyPrint.gameYield[PERF_TOTAL]);
@@ -985,29 +989,21 @@ void calculate_individual_thread_timers(void) {
     u32 offsetTime;
     f32 divisor;
 
-    if (__osBbIsBb) {
-        divisor = IQUE_DIVISOR;
-    } else {
-        divisor = 1.0f;
+    highTime = 0;
+    for (j = 0; j < gPuppyPrint.threadIteration[THREAD5_START / 2]; j ++) {
+        highTime += gPuppyPrint.threadTimes[gPuppyPrint.threadIteration[j]][THREAD5_END] - gPuppyPrint.threadTimes[gPuppyPrint.threadIteration[j]][THREAD5_START];
     }
+    gPuppyPrint.schedTime[PERF_AGGREGATE] -= gPuppyPrint.schedTime[perfIteration];
+    gPuppyPrint.schedTime[perfIteration] = MIN(highTime, (s32) (OS_USEC_TO_CYCLES(99999)));
+    gPuppyPrint.schedTime[PERF_AGGREGATE] += gPuppyPrint.schedTime[perfIteration];
 
     // Audio thread is basically top prio, so no need to do any further shenanigans
     highTime = 0;
-    lowTime = 0xFFFFFFFF;
-    for (i = THREAD3_START; i <= THREAD3_END; i++) {
-        for (j = 0; j < gPuppyPrint.threadIteration[i / 2]; j++) {
-            // If an iteration crosses over mid read, the low time could be zero, which would ruin this whole gig.
-            if (gPuppyPrint.threadTimes[gPuppyPrint.threadIteration[j]][i] < lowTime &&
-                gPuppyPrint.threadTimes[gPuppyPrint.threadIteration[j]][i] != 0) {
-                lowTime = gPuppyPrint.threadTimes[gPuppyPrint.threadIteration[j]][i];
-            }
-            if (gPuppyPrint.threadTimes[gPuppyPrint.threadIteration[j]][i] > highTime) {
-                highTime = gPuppyPrint.threadTimes[gPuppyPrint.threadIteration[j]][i];
-            }
-        }
+    for (j = 0; j < gPuppyPrint.threadIteration[THREAD3_START / 2]; j ++) {
+        highTime += gPuppyPrint.threadTimes[gPuppyPrint.threadIteration[j]][THREAD3_END] - gPuppyPrint.threadTimes[gPuppyPrint.threadIteration[j]][THREAD3_START];
     }
     gPuppyPrint.audTime[PERF_AGGREGATE] -= gPuppyPrint.audTime[perfIteration];
-    gPuppyPrint.audTime[perfIteration] = MIN(highTime - lowTime, (s32) (OS_USEC_TO_CYCLES(99999) * divisor));
+    gPuppyPrint.audTime[perfIteration] = MIN(highTime, (s32) (OS_USEC_TO_CYCLES(99999)));
     gPuppyPrint.audTime[PERF_AGGREGATE] += gPuppyPrint.audTime[perfIteration];
     // Game thread, unfortunately, does not. We have to take the times of the audio too, so we can offset the values for
     // accuracy.
@@ -1028,18 +1024,22 @@ void calculate_individual_thread_timers(void) {
         }
     }
     gPuppyPrint.gameTime[PERF_AGGREGATE] -= gPuppyPrint.gameTime[perfIteration];
-    gPuppyPrint.gameTime[perfIteration] = MIN(highTime - lowTime - offsetTime, (s32) (OS_USEC_TO_CYCLES(99999) * divisor));
+    gPuppyPrint.gameTime[perfIteration] = MIN(highTime - lowTime - offsetTime, (s32) (OS_USEC_TO_CYCLES(99999)));
     gPuppyPrint.gameTime[PERF_AGGREGATE] += gPuppyPrint.gameTime[perfIteration];
 
     gPuppyPrint.gameYield[PERF_AGGREGATE] -= gPuppyPrint.gameYield[perfIteration];
-    gPuppyPrint.gameYield[perfIteration] = MIN(offsetTime, (s32) (OS_USEC_TO_CYCLES(99999) * divisor));
+    gPuppyPrint.gameYield[perfIteration] = MIN(offsetTime, (s32) (OS_USEC_TO_CYCLES(99999)));
     gPuppyPrint.gameYield[PERF_AGGREGATE] += gPuppyPrint.gameYield[perfIteration];
     if (gPuppyPrint.shouldUpdate) {
-        gPuppyPrint.audTime[PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.audTime[PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
-        gPuppyPrint.gameTime[PERF_TOTAL] =
-            OS_CYCLES_TO_USEC(gPuppyPrint.gameTime[PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
-        gPuppyPrint.gameYield[PERF_TOTAL] =
-            OS_CYCLES_TO_USEC(gPuppyPrint.gameYield[PERF_AGGREGATE]) / NUM_PERF_ITERATIONS;
+        if (__osBbIsBb) {
+            divisor = IQUE_DIVISOR;
+        } else {
+            divisor = 1.0f;
+        }
+        gPuppyPrint.schedTime[PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.schedTime[PERF_AGGREGATE] * divisor) / NUM_PERF_ITERATIONS;
+        gPuppyPrint.audTime[PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.audTime[PERF_AGGREGATE] * divisor) / NUM_PERF_ITERATIONS;
+        gPuppyPrint.gameTime[PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.gameTime[PERF_AGGREGATE] * divisor) / NUM_PERF_ITERATIONS;
+        gPuppyPrint.gameYield[PERF_TOTAL] = OS_CYCLES_TO_USEC(gPuppyPrint.gameYield[PERF_AGGREGATE] * divisor) / NUM_PERF_ITERATIONS;
     }
 }
 
@@ -1109,13 +1109,13 @@ void puppyprint_calculate_average_times(void) {
             gPuppyPrint.objTimers[i][PERF_TOTAL] = ((gPuppyPrint.objTimers[i][PERF_AGGREGATE]) * divisor) / NUM_PERF_ITERATIONS;
         }
         gPuppyPrint.timers[PP_RDP_BUF][PERF_TOTAL] =
-            (gPuppyPrint.timers[PP_RDP_BUF][PERF_AGGREGATE] * 10) / ((625 * NUM_PERF_ITERATIONS) / divisor);
+            (gPuppyPrint.timers[PP_RDP_BUF][PERF_AGGREGATE] * 10) / ((625 * NUM_PERF_ITERATIONS) * divisor);
         gPuppyPrint.timers[PP_RDP_BUS][PERF_TOTAL] =
-            (gPuppyPrint.timers[PP_RDP_BUS][PERF_AGGREGATE] * 10) / ((625 * NUM_PERF_ITERATIONS) / divisor);
+            (gPuppyPrint.timers[PP_RDP_BUS][PERF_AGGREGATE] * 10) / ((625 * NUM_PERF_ITERATIONS) * divisor);
         gPuppyPrint.timers[PP_RDP_TMM][PERF_TOTAL] =
-            (gPuppyPrint.timers[PP_RDP_TMM][PERF_AGGREGATE] * 10) / ((625 * NUM_PERF_ITERATIONS) / divisor);
+            (gPuppyPrint.timers[PP_RDP_TMM][PERF_AGGREGATE] * 10) / ((625 * NUM_PERF_ITERATIONS) * divisor);
         gPuppyPrint.timers[PP_RDP_CLK][PERF_TOTAL] =
-            (gPuppyPrint.timers[PP_RDP_CLK][PERF_AGGREGATE] * 10) / ((625 * NUM_PERF_ITERATIONS) / divisor);
+            (gPuppyPrint.timers[PP_RDP_CLK][PERF_AGGREGATE] * 10) / ((625 * NUM_PERF_ITERATIONS) * divisor);
         gPuppyPrint.rspTime = gPuppyPrint.timers[PP_RSP_AUD][PERF_TOTAL] + gPuppyPrint.timers[PP_RSP_GFX][PERF_TOTAL];
         gPuppyPrint.rdpTime = gPuppyPrint.timers[PP_RDP_CLK][PERF_TOTAL];
     }
