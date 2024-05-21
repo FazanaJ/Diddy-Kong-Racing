@@ -62,11 +62,11 @@ void debug_text_newline(void);
 s32 func_800B653C(Gfx**, char*);
 int vsprintf(char *s, const char *fmt, ...);
 #else
+#define debug_text_init()
+#define debug_text_print(x)
 #define set_render_printf_colour(red, green, blue, alpha)
 #define set_render_printf_background_colour(red, green, blue, alpha)
 #define set_render_printf_position(x, y)
-#define diPrintfInit()
-#define print_debug_strings(dList)
 #ifdef __sgi
 #define render_printf
 #else

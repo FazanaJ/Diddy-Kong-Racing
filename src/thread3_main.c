@@ -256,6 +256,7 @@ void init_game(void) {
     get_platform();
     init_config();
     load_game_text_table();
+    puppyprint_log("Game booted in %2.3fs.", (f64) ((f32)(osGetCount()) / 46875000.0f));
 
     osSetTime(0);
 }

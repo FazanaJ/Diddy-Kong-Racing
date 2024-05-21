@@ -326,16 +326,8 @@ $(GCC_SAFE_FILES): CFLAGS := -c -DNDEBUG -DAVOID_UB -O2 $(INCLUDE_CFLAGS) $(DEF_
 	-Wno-unused-variable \
 	-G 0
 
-$(BUILD_DIR)/src/memory.o: CFLAGS += -Ofast
 $(BUILD_DIR)/src/main.o: CFLAGS += -Os
-$(BUILD_DIR)/src/camera.o: CFLAGS += -Os
-$(BUILD_DIR)/src/video.o: CFLAGS += -Os
-$(BUILD_DIR)/src/dkr_usb.o: CFLAGS += -Os
-$(BUILD_DIR)/src/reset.o: CFLAGS += -Os
-$(BUILD_DIR)/src/usb.o: CFLAGS += -Os
-$(BUILD_DIR)/src/gzip.o: CFLAGS += -Ofast
-$(BUILD_DIR)/src/audiomgr.o: CFLAGS += -Os
-$(BUILD_DIR)/src/asset_loading.o: CFLAGS += -Ofast
+$(BUILD_DIR)/lib/src/mips1/sc/sched.o: CFLAGS += -Ofast
 
 ######################## Targets #############################
 
