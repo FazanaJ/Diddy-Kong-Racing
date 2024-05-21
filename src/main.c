@@ -1116,13 +1116,13 @@ void puppyprint_calculate_average_times(void) {
             gPuppyPrint.objTimers[i][PERF_TOTAL] = ((gPuppyPrint.objTimers[i][PERF_AGGREGATE]) * divisor) / NUM_PERF_ITERATIONS;
         }
         gPuppyPrint.timers[PP_RDP_BUF][PERF_TOTAL] =
-            (gPuppyPrint.timers[PP_RDP_BUF][PERF_AGGREGATE] * 10) / ((625 * NUM_PERF_ITERATIONS) * divisor);
+            ((gPuppyPrint.timers[PP_RDP_BUF][PERF_AGGREGATE] * 10) / (625 * NUM_PERF_ITERATIONS)) * divisor;
         gPuppyPrint.timers[PP_RDP_BUS][PERF_TOTAL] =
-            (gPuppyPrint.timers[PP_RDP_BUS][PERF_AGGREGATE] * 10) / ((625 * NUM_PERF_ITERATIONS) * divisor);
+            ((gPuppyPrint.timers[PP_RDP_BUS][PERF_AGGREGATE] * 10) / (625 * NUM_PERF_ITERATIONS)) * divisor;
         gPuppyPrint.timers[PP_RDP_TMM][PERF_TOTAL] =
-            (gPuppyPrint.timers[PP_RDP_TMM][PERF_AGGREGATE] * 10) / ((625 * NUM_PERF_ITERATIONS) * divisor);
+            ((gPuppyPrint.timers[PP_RDP_TMM][PERF_AGGREGATE] * 10) / (625 * NUM_PERF_ITERATIONS)) * divisor;
         gPuppyPrint.timers[PP_RDP_CLK][PERF_TOTAL] =
-            (gPuppyPrint.timers[PP_RDP_CLK][PERF_AGGREGATE] * 10) / ((625 * NUM_PERF_ITERATIONS) * divisor);
+            ((gPuppyPrint.timers[PP_RDP_CLK][PERF_AGGREGATE] * 10) / (625 * NUM_PERF_ITERATIONS)) * divisor;
         gPuppyPrint.rspTime = gPuppyPrint.timers[PP_RSP_AUD][PERF_TOTAL] + gPuppyPrint.timers[PP_RSP_GFX][PERF_TOTAL];
         gPuppyPrint.rdpTime = gPuppyPrint.timers[PP_RDP_CLK][PERF_TOTAL];
     }
