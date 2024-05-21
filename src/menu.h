@@ -334,6 +334,7 @@ typedef struct TrackRenderDetails {
 
 extern s32 gShowControllerPakMenu;
 extern u8 *__ROM_END;
+extern s32 gOpacityDecayTimer;
 
 s32 get_random_number_from_range(s32, s32); // No file to pull from yet.
 

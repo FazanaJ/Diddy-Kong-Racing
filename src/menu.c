@@ -9054,7 +9054,7 @@ void func_800904E8(s32 updateRate) {
         gTrackSelectX += (D_801269E8 - gTrackSelectX) * 0.1f;
         gTrackSelectY += (D_801269EC - gTrackSelectY) * 0.1f;
     }
-    if (gOpacityDecayTimer == 32 && get_thread30_level_id_to_load() == 0) {
+    if (get_thread30_level_id_to_load() == 0) {
         if (gTrackIdForPreview == D_801263D0) {
             gSelectedTrackX = D_801269C8;
             gSelectedTrackY = D_801269CC;
