@@ -122,7 +122,6 @@ enum TrackTimers {
 
     PP_RSP_GFX,
     PP_RSP_AUD,
-    PP_RSP_YLD,
 
     PP_RDP_BUS,
     PP_RDP_BUF,
@@ -220,7 +219,7 @@ enum PPProfilerEvent {
 #ifdef PUPPYPRINT_DEBUG
 
 #define NUM_OBJECT_PRINTS (ASSET_OBJECT_MIDICHSET + 1)
-#define NUM_PERF_ITERATIONS 32
+#define NUM_PERF_ITERATIONS 30
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS
 #define PERF_TOTAL NUM_PERF_ITERATIONS + 1
 #define NUM_THREAD_ITERATIONS 12
@@ -231,8 +230,7 @@ struct PuppyPrint {
     PPTimer cpuTime; // Sum of multiple CPU timings, and what will be displayed.
     u32 rspTime; // Sum of multiple RSP timings, and publicly shamed on the street.
     u32 rdpTime; // Sum of multiple RDP timings, and hung by its entrails for all to see.
-    u32 rspPauseTime; // Buffer that keeps track of the halt time of the Gfx task.
-    u32 rspGfxBufTime; // Buffer that keeps track of the current Gfx task.
+    u32 rspGfx[2][8];
     u32 rspAudioBufTime; // Buffer that keeps track of the current Audio task.
     PPTimer timers[PP_TIMES_TOTAL]; // Large collection of timers for various things.
     PPTimer coreTimers[PP_MAIN_TIMES_TOTAL]; // Large collection of timers for various things.
@@ -257,6 +255,10 @@ struct PuppyPrint {
     u8 showCol;
     u8 updateTimer;
     u8 shouldUpdate;
+    u8 rspGfxIter;
+    u8 rspAudIter;
+    u8 rspYldIter;
+    u8 rspYield;
     s8 menuOption; // Current option in the page menu.
     char logText[NUM_LOG_LINES][127];
 };

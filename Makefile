@@ -287,7 +287,6 @@ $(GCC_SAFE_FILES): CFLAGS := -c -DNDEBUG -DAVOID_UB -O2 $(INCLUDE_CFLAGS) $(DEF_
 	-EB \
 	-march=vr4300 \
 	-mabi=32 \
-	-mfix4300 \
 	-mno-check-zero-division \
 	-mno-abicalls \
 	-mgp32 \

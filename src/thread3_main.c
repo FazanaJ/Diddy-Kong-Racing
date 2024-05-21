@@ -413,8 +413,9 @@ void main_game_loop(void) {
     calculate_and_update_fps();
     puppyprint_calculate_average_times();
     perfIteration++;
-    if (perfIteration == NUM_PERF_ITERATIONS - 1) {
+    if (perfIteration == NUM_PERF_ITERATIONS) {
         perfIteration = 0;
+        gPuppyPrint.rspYield = 0;
     }
     gPuppyPrint.mainTimerPoints[1][PP_PROFILER_CALC] = osGetCount();
 #endif

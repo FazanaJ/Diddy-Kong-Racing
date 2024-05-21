@@ -9894,9 +9894,26 @@ ConfigOptionEntry gOptionMenu[] = {
 
 char gPauseOptionText[] = "Options";
 char gPauseOptionStack[OPTIONSIZE][40];
-char gPauseOptStrings[][8] = {
-    { "Off" }, { "On" }, { "Off" }, { "Fast" }, { "Fancy" }, { "4:3" }, { "16:10" }, { "16:9" }, { "400x300" },
-    { "480x360" }, { "560x420" }, { "60" },  { "30" }, { "20" },  { "15" },   { "50" },    { "25" },  { "18" },    { "14" },
+char *gPauseOptStrings[][2] = {
+    { "Off", "Off"}, 
+    { "On", "On"}, 
+    { "Off", "Off"}, 
+    { "Fast", "Fast"}, 
+    { "Fancy", "Fancy"}, 
+    { "4:3", "4:3"}, 
+    { "16:10", "16:10"}, 
+    { "16:9", "16:9"}, 
+    { "400x300", "400x300" },
+    { "480x360", "480x360" }, 
+    { "560x420", "560x420" }, 
+    { "60", "60" },  
+    { "30", "30" }, 
+    { "20", "20" },  
+    { "15", "15" },   
+    { "50", "15" },
+    { "25", "25" },
+    { "18", "18" },
+    { "14", "14" },
 };
 u8 gPauseSubmenu = 0;
 u8 gPauseOptionScroll;
@@ -10116,7 +10133,7 @@ void func_80093D40(UNUSED s32 updateRate) {
                     puppyprintf(gPauseOptionStack[i], "%s: %d", gOptionMenu[i].name, *gOptionMenu[i].option);
                 } else {
                     puppyprintf(gPauseOptionStack[i], "%s: %s", gOptionMenu[i].name,
-                                gPauseOptStrings[*gOptionMenu[i].option + stringOffset]);
+                                gPauseOptStrings[*gOptionMenu[i].option + stringOffset][0]);
                 }
                 render_dialogue_text(7, POS_CENTRED, halfTemp + 8 + y - (gPauseOptionScroll * 16), gPauseOptionStack[i],
                                      1, 12);

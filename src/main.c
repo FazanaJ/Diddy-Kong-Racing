@@ -456,7 +456,7 @@ void profiler_add_obj(u32 objID, u32 time, ObjectHeader *header) {
 
 void profiler_snapshot(s32 eventID) {
     u32 snapshot = gPuppyPrint.threadIteration[eventID / 2];
-    if (snapshot > NUM_THREAD_ITERATIONS - 1) {
+    if (snapshot >= NUM_THREAD_ITERATIONS - 1) {
         snapshot = NUM_THREAD_ITERATIONS - 1;
     }
     gPuppyPrint.threadTimes[snapshot][eventID] = osGetCount();
@@ -658,7 +658,7 @@ void puppyprint_render_rcp(void) {
     draw_text(&gCurrDisplayList, gScreenWidth - 38, y, textBytes, ALIGN_TOP_LEFT);
     puppyprintf(textBytes, "Yield:");
     draw_text(&gCurrDisplayList, gScreenWidth - 96, y += 10, textBytes, ALIGN_TOP_LEFT);
-    puppyprintf(textBytes, "%d", gPuppyPrint.timers[PP_RSP_YLD][PERF_TOTAL]);
+    puppyprintf(textBytes, "%d", (s32) ((f32) gPuppyPrint.rspYield * ((f32) 30 / (f32) NUM_PERF_ITERATIONS)));
     draw_text(&gCurrDisplayList, gScreenWidth - 38, y, textBytes, ALIGN_TOP_LEFT);
     puppyprintf(textBytes, "Triangles:");
     draw_text(&gCurrDisplayList, gScreenWidth - 96, y += 10, textBytes, ALIGN_TOP_LEFT);
@@ -1075,8 +1075,8 @@ void calculate_core_timers(void) {
 void puppyprint_calculate_average_times(void) {
     s32 i;
     s32 j;
-    u32 highTime = 0;
-    u32 lowTime = 0xFFFFFFFF;
+    u32 highTime;
+    u32 lowTime;
     u32 flags = disable_interrupts();
     f32 divisor;
 
@@ -1091,14 +1091,21 @@ void puppyprint_calculate_average_times(void) {
     } else {
         divisor = 1.0f;
     }
+    
+    highTime = 0;
+    for (i = 0; i < gPuppyPrint.rspGfxIter; i++) {
+        highTime += gPuppyPrint.rspGfx[1][i] - gPuppyPrint.rspGfx[0][i];
+    }
+    gPuppyPrint.timers[PP_RSP_GFX][PERF_AGGREGATE] -= gPuppyPrint.timers[PP_RSP_GFX][perfIteration];
+    gPuppyPrint.timers[PP_RSP_GFX][perfIteration] = MIN(highTime, OS_USEC_TO_CYCLES(99999));
+    gPuppyPrint.timers[PP_RSP_GFX][PERF_AGGREGATE] += gPuppyPrint.timers[PP_RSP_GFX][perfIteration];
+    gPuppyPrint.rspGfxIter = 0;
 
     if (gPuppyPrint.shouldUpdate) {
         gPuppyPrint.timers[PP_RSP_AUD][PERF_TOTAL] =
             (OS_CYCLES_TO_USEC(gPuppyPrint.timers[PP_RSP_AUD][PERF_AGGREGATE]) * divisor) / NUM_PERF_ITERATIONS;
         gPuppyPrint.timers[PP_RSP_GFX][PERF_TOTAL] =
             (OS_CYCLES_TO_USEC(gPuppyPrint.timers[PP_RSP_GFX][PERF_AGGREGATE]) * divisor) / NUM_PERF_ITERATIONS;
-        gPuppyPrint.timers[PP_RSP_YLD][PERF_TOTAL] =
-            (OS_CYCLES_TO_USEC(gPuppyPrint.timers[PP_RSP_YLD][PERF_AGGREGATE]) * divisor) / NUM_PERF_ITERATIONS;
 
         for (i = 1; i < PP_RDP_BUS; i++) {
             gPuppyPrint.timers[i][PERF_TOTAL] =
@@ -1119,6 +1126,8 @@ void puppyprint_calculate_average_times(void) {
         gPuppyPrint.rspTime = gPuppyPrint.timers[PP_RSP_AUD][PERF_TOTAL] + gPuppyPrint.timers[PP_RSP_GFX][PERF_TOTAL];
         gPuppyPrint.rdpTime = gPuppyPrint.timers[PP_RDP_CLK][PERF_TOTAL];
     }
+    highTime = 0;
+    lowTime = 0xFFFFFFFF;
     // Find the earliest snapshot and the latest snapshot.
     for (i = 0; i < NUM_THREAD_TIMERS; i++) {
         for (j = 0; j < gPuppyPrint.threadIteration[i / 2]; j++) {
@@ -1159,39 +1168,27 @@ void puppyprint_calculate_average_times(void) {
 }
 
 void puppyprint_update_rsp(u8 flags) {
+    u32 time = osGetCount();
     switch (flags) {
         case RSP_GFX_START:
-            gPuppyPrint.rspGfxBufTime = (u32) osGetCount();
-            gPuppyPrint.rspPauseTime = 0;
-            gPuppyPrint.timers[PP_RSP_YLD][PERF_AGGREGATE] -= gPuppyPrint.timers[PP_RSP_YLD][perfIteration];
-            gPuppyPrint.timers[PP_RSP_YLD][PERF_AGGREGATE] = 0;
+            gPuppyPrint.rspGfx[0][gPuppyPrint.rspGfxIter] = time;
             break;
         case RSP_AUDIO_START:
-            gPuppyPrint.rspAudioBufTime = (u32) osGetCount();
+            gPuppyPrint.rspAudioBufTime = time;
             break;
         case RSP_GFX_PAUSED:
-            gPuppyPrint.rspPauseTime = (u32) osGetCount();
+            gPuppyPrint.rspGfx[1][gPuppyPrint.rspGfxIter++] = time;
+            gPuppyPrint.rspYield++;
             break;
         case RSP_GFX_RESUME:
-            gPuppyPrint.rspPauseTime = (u32) osGetCount() - gPuppyPrint.rspPauseTime;
-            gPuppyPrint.timers[PP_RSP_YLD][perfIteration] += gPuppyPrint.rspPauseTime;
-            if (gPuppyPrint.timers[PP_RSP_YLD][perfIteration] > OS_USEC_TO_CYCLES(99999)) {
-                gPuppyPrint.timers[PP_RSP_YLD][perfIteration] = OS_USEC_TO_CYCLES(99999);
-            }
-            gPuppyPrint.timers[PP_RSP_YLD][PERF_AGGREGATE] += gPuppyPrint.timers[PP_RSP_YLD][perfIteration];
+            gPuppyPrint.rspGfx[0][gPuppyPrint.rspGfxIter] = time;
             break;
         case RSP_GFX_FINISHED:
-            gPuppyPrint.timers[PP_RSP_GFX][PERF_AGGREGATE] -= gPuppyPrint.timers[PP_RSP_GFX][perfIteration];
-            gPuppyPrint.timers[PP_RSP_GFX][perfIteration] =
-                (u32) (osGetCount() - gPuppyPrint.rspGfxBufTime) - gPuppyPrint.rspPauseTime;
-            if (gPuppyPrint.timers[PP_RSP_GFX][perfIteration] > OS_USEC_TO_CYCLES(99999)) {
-                gPuppyPrint.timers[PP_RSP_GFX][perfIteration] = OS_USEC_TO_CYCLES(99999);
-            }
-            gPuppyPrint.timers[PP_RSP_GFX][PERF_AGGREGATE] += gPuppyPrint.timers[PP_RSP_GFX][perfIteration];
+            gPuppyPrint.rspGfx[1][gPuppyPrint.rspGfxIter++] = time;
             break;
         case RSP_AUDIO_FINISHED:
             gPuppyPrint.timers[PP_RSP_AUD][PERF_AGGREGATE] -= gPuppyPrint.timers[PP_RSP_AUD][perfIteration];
-            gPuppyPrint.timers[PP_RSP_AUD][perfIteration] = (u32) osGetCount() - gPuppyPrint.rspAudioBufTime;
+            gPuppyPrint.timers[PP_RSP_AUD][perfIteration] = time - gPuppyPrint.rspAudioBufTime;
             if (gPuppyPrint.timers[PP_RSP_AUD][perfIteration] > OS_USEC_TO_CYCLES(99999)) {
                 gPuppyPrint.timers[PP_RSP_AUD][perfIteration] = OS_USEC_TO_CYCLES(99999);
             }
