@@ -822,14 +822,20 @@ s32 write_time_data_to_controller_pak(s32 controllerIndex, Settings *arg1) {
 s32 read_save_file(s32 saveFileNum, Settings *settings) {
     s32 startingAddress;
     u64 *saveData;
-    s32 address;
+    UNUSED s32 address;
     s32 blocks;
-    s32 block;
+    UNUSED s32 block;
     s32 ret;
 
+#if EEP4K || EEP16K
     if (osEepromProbe(&sSIMesgQueue) == 0) {
         return -1;
     }
+#elif SRAM
+    if (nuPiInitSram() == 0) {
+        return -1;
+    }
+#endif
     switch (saveFileNum) {
         case 0:
             startingAddress = 0;
@@ -846,9 +852,13 @@ s32 read_save_file(s32 saveFileNum, Settings *settings) {
     }
     blocks = 5;
     saveData = allocate_from_main_pool_safe(blocks * sizeof(u64), MEMP_MISC);
+#if EEP4K || EEP16K
     for (block = 0, address = startingAddress; block < blocks; block++, address++) {
         osEepromRead(&sSIMesgQueue, address, (u8 *) &saveData[block]);
     }
+#elif SRAM
+    nuPiReadWriteSram(startingAddress * sizeof(u64), (u8 *) &saveData[0], blocks * sizeof(u64), OS_READ);
+#endif
     populate_settings_from_save_data(settings, (u8 *) saveData);
     free_from_memory_pool(saveData);
     ret = settings->newGame;
@@ -866,50 +876,62 @@ void erase_save_file(s32 saveFileNum, Settings *settings) {
     s32 blockSize;
     s32 levelCount;
     s32 worldCount;
-    s32 address;
+    UNUSED s32 address;
     s32 i;
 
-    if (osEepromProbe(&sSIMesgQueue) != 0) {
-        get_number_of_levels_and_worlds(&levelCount, &worldCount);
-        for (i = 0; i < levelCount; i++) {
-            settings->courseFlagsPtr[i] = 0;
-        }
-        for (i = 0; i < worldCount; i++) {
-            settings->balloonsPtr[i] = 0;
-        }
-        settings->trophies = 0;
-        settings->bosses = 0;
-        settings->tajFlags = 0;
-        settings->cutsceneFlags = 0;
-        settings->newGame = TRUE;
-        switch (saveFileNum) {
-            case 0:
-                startingAddress = 0;
-                break;
-            case 1:
-                startingAddress = 5;
-                break;
-            case 2:
-                startingAddress = 10;
-                break;
-            default:
-                startingAddress = 10;
-                break;
-        }
-        blockSize = 5;
-        alloc = allocate_from_main_pool_safe(blockSize * sizeof(u64), MEMP_MISC);
-        saveData = (u8 *) alloc;
-        // Blank out the data before writing it.
-        for (i = 0; i < blockSize * (s32) sizeof(u64); i++) {
-            saveData[i] = 0xFF;
-        } // Must be one line
-        if (!is_reset_pressed()) {
-            for (i = 0, address = startingAddress; i < blockSize; i++, address++) {
-                osEepromWrite(&sSIMesgQueue, address, (u8 *) &alloc[i]);
-            }
-        }
-        free_from_memory_pool(alloc);
+#if EEP4K || EEP16K
+    if (osEepromProbe(&sSIMesgQueue) == 0) {
+        return;
     }
+#elif SRAM
+    if (nuPiInitSram() == 0) {
+        return;
+    }
+#endif
+
+    get_number_of_levels_and_worlds(&levelCount, &worldCount);
+    for (i = 0; i < levelCount; i++) {
+        settings->courseFlagsPtr[i] = 0;
+    }
+    for (i = 0; i < worldCount; i++) {
+        settings->balloonsPtr[i] = 0;
+    }
+    settings->trophies = 0;
+    settings->bosses = 0;
+    settings->tajFlags = 0;
+    settings->cutsceneFlags = 0;
+    settings->newGame = TRUE;
+    switch (saveFileNum) {
+        case 0:
+            startingAddress = 0;
+            break;
+        case 1:
+            startingAddress = 5;
+            break;
+        case 2:
+            startingAddress = 10;
+            break;
+        default:
+            startingAddress = 10;
+            break;
+    }
+    blockSize = 5;
+    alloc = allocate_from_main_pool_safe(blockSize * sizeof(u64), MEMP_MISC);
+    saveData = (u8 *) alloc;
+    // Blank out the data before writing it.
+    for (i = 0; i < blockSize * (s32) sizeof(u64); i++) {
+        saveData[i] = 0xFF;
+    } // Must be one line
+    if (!is_reset_pressed()) {
+#if EEP4K || EEP16K
+        for (i = 0, address = startingAddress; i < blockSize; i++, address++) {
+            osEepromWrite(&sSIMesgQueue, address, (u8 *) &alloc[i]);
+        }
+#elif SRAM
+        nuPiReadWriteSram(startingAddress * sizeof(u64), (u8 *) &alloc[0], 5 * sizeof(u64), OS_WRITE);
+#endif
+    }
+    free_from_memory_pool(alloc);
 }
 
 /**
@@ -922,13 +944,19 @@ void erase_save_file(s32 saveFileNum, Settings *settings) {
 s32 write_save_data(s32 saveFileNum, Settings *settings) {
     s32 startingAddress;
     u64 *alloc;
-    s32 address;
+    UNUSED s32 address;
     s32 blocks;
-    s32 i;
+    UNUSED s32 i;
 
+#if EEP4K || EEP16K
     if (osEepromProbe(&sSIMesgQueue) == 0) {
         return -1;
     }
+#elif SRAM
+    if (nuPiInitSram() == 0) {
+        return -1;
+    }
+#endif
 
     switch (saveFileNum) {
         case 0:
@@ -950,9 +978,13 @@ s32 write_save_data(s32 saveFileNum, Settings *settings) {
     func_800732E8(settings, (u8 *) alloc);
 
     if (!is_reset_pressed()) {
+#if EEP4K || EEP16K
         for (i = 0, address = startingAddress; i < blocks; i++, address++) {
             osEepromWrite(&sSIMesgQueue, address, (u8 *) &alloc[i]);
         }
+#elif SRAM
+        nuPiReadWriteSram(startingAddress * sizeof(u64), (u8 *) &alloc[0], 5 * sizeof(u64), OS_WRITE);
+#endif
     }
 
     free_from_memory_pool(alloc);
@@ -969,27 +1001,41 @@ s32 write_save_data(s32 saveFileNum, Settings *settings) {
  */
 s32 read_eeprom_data(Settings *settings, u8 flags) {
     u64 *alloc;
-    s32 i;
+    UNUSED s32 i;
 
+#if EEP4K || EEP16K
     if (osEepromProbe(&sSIMesgQueue) == 0) {
         return -1;
     }
+#elif SRAM
+    if (nuPiInitSram() == 0) {
+        return -1;
+    }
+#endif
 
     alloc = allocate_from_main_pool_safe(0x200, MEMP_MISC);
 
     if (flags & SAVE_DATA_FLAG_READ_FLAP_TIMES) {
+#if EEP4K || EEP16K
         s32 blocks = 24;
         for (i = 0; i < blocks; i++) {
             osEepromRead(&sSIMesgQueue, i + 0x10, (u8 *) &alloc[i]);
         }
+#elif SRAM
+    nuPiReadWriteSram(0x10 * sizeof(u64), (u8 *) &alloc[0], 24 * sizeof(u64), OS_READ);
+#endif
         func_80073588(settings, (u8 *) alloc, SAVE_DATA_FLAG_READ_FLAP_TIMES);
     }
 
     if (flags & SAVE_DATA_FLAG_READ_COURSE_TIMES) {
+#if EEP4K || EEP16K
         s32 blocks = 24;
         for (i = 0; i < blocks; i++) {
             osEepromRead(&sSIMesgQueue, i + 0x28, (u8 *) (&alloc[24] + i));
         }
+#elif SRAM
+    nuPiReadWriteSram(0x28 * sizeof(u64), (u8 *) &alloc[24], 24 * sizeof(u64), OS_READ);
+#endif
         func_80073588(settings, (u8 *) alloc, SAVE_DATA_FLAG_READ_COURSE_TIMES);
     }
 
@@ -1007,31 +1053,45 @@ s32 read_eeprom_data(Settings *settings, u8 flags) {
  */
 s32 write_eeprom_data(Settings *settings, u8 flags) {
     u64 *alloc;
-    s32 i;
+    UNUSED s32 i;
 
+#if EEP4K || EEP16K
     if (osEepromProbe(&sSIMesgQueue) == 0) {
         return -1;
     }
+#elif SRAM
+    if (nuPiInitSram() == 0) {
+        return -1;
+    }
+#endif
 
     alloc = allocate_from_main_pool_safe(0x200, MEMP_MISC);
 
     func_800738A4(settings, (u8 *) alloc);
 
     if (flags & SAVE_DATA_FLAG_READ_FLAP_TIMES) {
-        s32 size = 24;
         if (!is_reset_pressed()) {
+#if EEP4K || EEP16K
+            s32 size = 24;
             for (i = 0; i != size; i++) {
                 osEepromWrite(&sSIMesgQueue, i + 16, (u8 *) &alloc[i]);
             }
+#elif SRAM
+            nuPiReadWriteSram(16 * sizeof(u64), (u8 *) &alloc[0], 24 * sizeof(u64), OS_WRITE);
+#endif
         }
     }
 
     if (flags & SAVE_DATA_FLAG_READ_COURSE_TIMES) {
-        s32 size = 24;
         if (!is_reset_pressed()) {
+#if EEP4K || EEP16K
+            s32 size = 24;
             for (i = 0; i != size; i++) {
                 osEepromWrite(&sSIMesgQueue, i + 40, (u8 *) (&alloc[24] + i));
             }
+#elif SRAM
+            nuPiReadWriteSram(40 * sizeof(u64), (u8 *) &alloc[24], 24 * sizeof(u64), OS_WRITE);
+#endif
         }
     }
 
@@ -1063,11 +1123,21 @@ s32 read_eeprom_settings(u64 *eepromSettings) {
     s32 temp;
     s32 sp20;
 
+#if EEP4K || EEP16K
     if (osEepromProbe(&sSIMesgQueue) == 0) {
         return -1;
     }
+#elif SRAM
+    if (nuPiInitSram() == 0) {
+        return -1;
+    }
+#endif
 
+#if EEP4K || EEP16K
     osEepromRead(&sSIMesgQueue, 0xF, (u8 *) eepromSettings);
+#elif SRAM
+    nuPiReadWriteSram(0xF * sizeof(u64), (u8 *) eepromSettings, 1 * sizeof(u64), OS_READ);
+#endif
     sp20 = calculate_eeprom_settings_checksum(*eepromSettings);
     temp = *eepromSettings >> 56;
     if (sp20 != temp) {
@@ -1088,14 +1158,24 @@ s32 read_eeprom_settings(u64 *eepromSettings) {
  * Address (0xF * sizeof(u64)) = 0x78 - 0x80 of the actual save data file
  */
 s32 write_eeprom_settings(u64 *eepromSettings) {
+#if EEP4K || EEP16K
     if (osEepromProbe(&sSIMesgQueue) == 0) {
         return -1;
     }
+#elif SRAM
+    if (nuPiInitSram() == 0) {
+        return -1;
+    }
+#endif
     *eepromSettings <<= 8;
     *eepromSettings >>= 8;
     *eepromSettings |= (s64) (calculate_eeprom_settings_checksum(*eepromSettings)) << 56;
     if (is_reset_pressed() == 0) {
+#if EEP4K || EEP16K
         osEepromWrite(&sSIMesgQueue, 0xF, (u8 *) eepromSettings);
+#elif SRAM
+        nuPiReadWriteSram(0xF * sizeof(u64), eepromSettings, 1 * sizeof(u64), OS_WRITE);
+#endif
     }
     return 1;
 }

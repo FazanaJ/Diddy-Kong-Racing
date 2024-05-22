@@ -145,4 +145,7 @@ SIDeviceStatus func_80075000(s32 controllerIndex, s16 levelId, s16 vehicleId, s1
                              s16 ghostNodeCount, GhostHeader *ghostData);
 s32 func_800753D8(s32 controllerIndex, s32 arg1);
 
+int nuPiInitSram(void);
+int nuPiReadWriteSram(u32 addr, void* buf_ptr, u32 size, s32 flag);
+
 #endif
