@@ -482,7 +482,7 @@ void draw_crash_screen(OSThread *thread) {
         return;
     }
 
-    bcopy(gVideoCurrDepthBuffer, gCrashScreen.framebuffer, (gScreenWidth * gScreenHeight) * 2);
+    wcopy(gVideoCurrDepthBuffer, gCrashScreen.framebuffer, (gScreenWidth * gScreenHeight) * 2);
 
     sCrashX = (SCREEN_WIDTH - 270) / 2;
     sCrashY = (SCREEN_HEIGHT - 205) / 2;
@@ -540,7 +540,7 @@ void thread2_crash_screen(UNUSED void *arg) {
         sCrashPage = CRASH_PAGE_ASSERT;
     }
     sCrashUpdate = TRUE;
-    bcopy(gVideoCurrFramebuffer, gVideoCurrDepthBuffer, (gScreenWidth * gScreenHeight) * 2);
+    wcopy(gVideoCurrFramebuffer, gVideoCurrDepthBuffer, (gScreenWidth * gScreenHeight) * 2);
     if (thread->id == 4) { // Audio thread crashed, so go top prio.
         gCrashScreen.thread.priority = 255;
     } else {

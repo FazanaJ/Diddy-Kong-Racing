@@ -94,8 +94,8 @@ void reset(void) {
     osInvalDCacheCopy = (void *) ((u8 *) osInvalICacheCopy - SIZEOF_osInvalDCache);
 
     bcopy(reset_start, resetFunc, resetFuncSize);
-    bcopy(osInvalICache, osInvalICacheCopy, SIZEOF_osInvalICache);
-    bcopy(osInvalDCache, osInvalDCacheCopy, SIZEOF_osInvalDCache);
+    wcopy(osInvalICache, osInvalICacheCopy, SIZEOF_osInvalICache);
+    wcopy(osInvalDCache, osInvalDCacheCopy, SIZEOF_osInvalDCache);
 
     // Invalidate all of ICache and writeback all the dcache back into RDRAM.
     osInvalICache((void *) 0x80000400, 0x4000);

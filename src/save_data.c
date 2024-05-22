@@ -1199,7 +1199,7 @@ void func_80074AA8(GhostHeader *ghostHeader, s16 characterID, s16 time, s16 node
     ghostHeader->unk3 = 0;
     ghostHeader->time = time;
     ghostHeader->nodeCount = nodeCount;
-    bcopy(dest, (u8 *) ghostHeader + 8, nodeCount * sizeof(GhostNode));
+    wcopy(dest, (u8 *) ghostHeader + 8, nodeCount * sizeof(GhostNode));
     ghostHeader->checksum = calculate_ghost_header_checksum(ghostHeader);
 }
 

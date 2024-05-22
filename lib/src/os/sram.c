@@ -110,9 +110,9 @@ int nuPiReadWriteSram(u32 addr, void* buf_ptr, u32 size, s32 flag) {
             }
 
             if (flag == OS_READ) {
-                bcopy((u32 *) (__osBbSramAddress + addr), buf_ptr, size);
+                wcopy((u32 *) (__osBbSramAddress + addr), buf_ptr, size);
             } else {
-                bcopy(buf_ptr, (u32 *) (__osBbSramAddress + addr), size);
+                wcopy(buf_ptr, (u32 *) (__osBbSramAddress + addr), size);
             }
 
             __osPiRelAccess();

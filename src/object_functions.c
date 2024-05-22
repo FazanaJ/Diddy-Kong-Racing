@@ -256,8 +256,8 @@ void obj_loop_fireball_octoweapon(Object *obj, s32 updateRate) {
             diff = -10.0f;
         }
         obj->segment.z_velocity += (diff - obj->segment.z_velocity) * 0.125f * updateRateF;
-        if (sqrtf((obj->segment.x_velocity * obj->segment.x_velocity) +
-                  (obj->segment.z_velocity * obj->segment.z_velocity)) > 0.5f) {
+        if (((obj->segment.x_velocity * obj->segment.x_velocity) +
+                  (obj->segment.z_velocity * obj->segment.z_velocity)) > 0.5f * 0.5f) {
             obj->segment.trans.y_rotation = arctan2_f(obj->segment.x_velocity, obj->segment.z_velocity);
             obj->segment.trans.x_rotation -= updateRate * 0x200;
         }

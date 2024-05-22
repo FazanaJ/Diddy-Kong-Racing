@@ -3737,7 +3737,7 @@ void func_80016748(Object *obj0, Object *obj1) {
         xDiff = obj0->segment.trans.x_position - obj1->segment.trans.x_position;
         yDiff = obj0->segment.trans.y_position - obj1->segment.trans.y_position;
         zDiff = obj0->segment.trans.z_position - obj1->segment.trans.z_position;
-        if (!((objModel->unk3C + 50.0f) < sqrtf((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff)))) {
+        if (!((objModel->unk3C + 50.0f) * (objModel->unk3C + 50.0f) < ((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff)))) {
             obj0Interact = obj0->interactObj;
             obj1Interact = obj1->interactObj;
             object_transform_to_matrix((float(*)[4]) obj1TransformMtx, &obj1->segment.trans);
@@ -3750,9 +3750,10 @@ void func_80016748(Object *obj0, Object *obj1) {
                 xDiff -= obj0->segment.trans.x_position;
                 yDiff -= obj0->segment.trans.y_position;
                 zDiff -= obj0->segment.trans.z_position;
-                distance = sqrtf((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff));
+                distance = ((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff));
                 temp += obj1Interact->hitboxRadius;
                 if (distance < temp && distance > 0.0f) {
+                    distance = sqrtf(distance);
                     obj0Interact->flags |= INTERACT_FLAGS_PUSHING;
                     obj1Interact->flags |= INTERACT_FLAGS_PUSHING;
                     obj0Interact->obj = obj1;

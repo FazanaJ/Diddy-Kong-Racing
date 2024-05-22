@@ -82,5 +82,5 @@ void __osViSwapContext() {
     __osViNext = __osViCurr;
     __osViCurr = vc;
     //*__osViNext = *__osViCurr;
-    bcopy(__osViCurr, __osViNext, sizeof(__OSViContext));
+    wcopy(__osViCurr, __osViNext, sizeof(__OSViContext));
 }

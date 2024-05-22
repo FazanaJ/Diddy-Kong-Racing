@@ -5797,7 +5797,7 @@ s32 load_tt_ghost(s32 ghostOffset, s32 size, s16 *outTime) {
         if (gGhostData[GHOST_STAFF] != NULL) {
             *outTime = ghost->time;
             gGhostNodeCount[GHOST_STAFF] = ghost->nodeCount;
-            bcopy((u8 *) ghost + 8, gGhostData[GHOST_STAFF], size - sizeof(GhostHeader));
+            wcopy((u8 *) ghost + 8, gGhostData[GHOST_STAFF], size - sizeof(GhostHeader));
             free_from_memory_pool(ghost);
             return 0;
         }
