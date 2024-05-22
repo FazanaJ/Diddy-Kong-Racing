@@ -6,6 +6,7 @@
 #include "controller.h"
 #include "siint.h"
 
+#if defined(EEP4K) || defined(EEP16K)
 extern u8 __osContLastCmd;
 extern OSPifRam __osEepPifRam;
 s32 __osEepromRead16K;
@@ -122,3 +123,4 @@ void __osPackEepReadData(u8 address) {
     ptr += sizeof(__OSContEepromFormat);
     ptr[0] = CONT_CMD_END;
 }
+#endif

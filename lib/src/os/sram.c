@@ -1,20 +1,10 @@
 /* The comment below is needed for this file to be picked up by generate_ld */
 /* RAM_POS: 0x800D1EF0 */
 
-/*======================================================================*/
-/*		NuSYS							*/
-/*		nupisraminit.c						*/
-/*									*/
-/*		Copyright (C) 1997, NINTENDO Co,Ltd.			*/
-/*									*/
-/*----------------------------------------------------------------------*/
-/* Ver 1.2	98/07/4		Created by Kensaku Ohki(SLANP)		*/
-/*----------------------------------------------------------------------*/
-/* $Id: nupiinitsram.c,v 1.2 1998/07/11 11:22:46 ohki Exp $	*/
-/*======================================================================*/
 #include <ultra64.h>
 #include "piint.h"
 #include "src/main.h"
+#include "siint.h"
 
 #define SRAM_START_ADDR         0x08000000
 #define SRAM_SIZE               0x8000
@@ -24,9 +14,11 @@
 #define SRAM_REL_DURATION       0x2
 #define PI_DOMAIN2              1
 
+#if SRAM
 OSPiHandle*		nuPiSramHandle;
 static OSPiHandle	SramHandle;
 OSPiHandle* __osPiTable = NULL;
+u8 sSramInit = FALSE;
 
 static inline s32 osEPiLinkHandle(OSPiHandle* EPiHandle) {
     u32 saveMask = __osDisableInt();
@@ -62,15 +54,23 @@ static inline s32 osEPiStartDma(OSPiHandle* pihandle, OSIoMesg* mb, s32 directio
     return ret;
 }
 
-/*----------------------------------------------------------------------*/
-/*	nuPiSramInit  - Initialization of handle for SRAM		*/
-/*	Initialize handle for SRAM					*/
-/*	IN:	None							*/
-/*	RET:	If detected, return 1, otherwise 0							*/
-/*----------------------------------------------------------------------*/
 int nuPiInitSram(void) {
+    if (sSramInit) {
+        return 2;
+    }
+
+    if (__osBbIsBb) {
+        __osPiGetAccess();
+        if (__osBbSramSize != 0x8000) {
+            return 0;
+        }
+        __osPiRelAccess();
+        sSramInit = TRUE;
+        return 1;
+    }
+
     if (SramHandle.baseAddress == PHYS_TO_K1(SRAM_START_ADDR)) {
-	    return 2;
+	    return 0;
     }
     
     /* Fill basic information */
@@ -92,23 +92,34 @@ int nuPiInitSram(void) {
     /* Put the SramHandle onto PiTable*/
     osEPiLinkHandle(&SramHandle);
     nuPiSramHandle = &SramHandle;
+    sSramInit = TRUE;
 	return 1;
 }
 
-extern OSPiHandle*		nuPiSramHandle;
-/*----------------------------------------------------------------------*/
-/*	nuPiReadWriteSram  - DMA transfers data to and from SRAM.	*/
-/*	The message queue is a local variable so it can be used         */
-/*     between threads.                                                 */
-/*	IN:	addr	      SRAM address. 				*/
-/*		buf_ptr	RDRAM address. 					*/
-/*		size	      Transfer size. 				*/
-/*	RET:	None							*/
-/*----------------------------------------------------------------------*/
 int nuPiReadWriteSram(u32 addr, void* buf_ptr, u32 size, s32 flag) {  
     OSIoMesg	dmaIoMesgBuf;
     OSMesgQueue dmaMesgQ;
     OSMesg	dmaMesgBuf;
+
+    if (__osBbIsBb) {
+        __osPiGetAccess();
+
+        if (__osBbSramSize == 0x8000) {
+            if (addr >= 0x8000) {
+                return -1;
+            }
+
+        if (flag == OS_READ) {
+            bcopy((u32 *) (__osBbSramAddress + addr), buf_ptr, size);
+        } else {
+            bcopy(buf_ptr, (u32 *) (__osBbSramAddress + addr), size);
+        }
+
+        __osPiRelAccess();
+        return 0;
+        }
+        return -1;
+    }
 
     /* Create the message queue. */
     osCreateMesgQueue(&dmaMesgQ, &dmaMesgBuf, 1);
@@ -120,11 +131,11 @@ int nuPiReadWriteSram(u32 addr, void* buf_ptr, u32 size, s32 flag) {
     dmaIoMesgBuf.size         = size;
 
     if(flag == OS_READ){
-	/* Make CPU cache invalid */
-	osInvalDCache((void*)buf_ptr, (s32)size);
+	    /* Make CPU cache invalid */
+	    osInvalDCache((void*)buf_ptr, (s32)size);
     } else {
-	/* Write back */
-	osWritebackDCache((void*)buf_ptr, (s32)size);
+        /* Write back */
+        osWritebackDCache((void*)buf_ptr, (s32)size);
     }
     osEPiStartDma(nuPiSramHandle, &dmaIoMesgBuf, flag);
 
@@ -132,3 +143,4 @@ int nuPiReadWriteSram(u32 addr, void* buf_ptr, u32 size, s32 flag) {
     (void)osRecvMesg(&dmaMesgQ, &dmaMesgBuf, OS_MESG_BLOCK);
     return 0;
 }
+#endif

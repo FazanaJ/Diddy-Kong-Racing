@@ -4,6 +4,7 @@
 #include "libultra_internal.h"
 #include "siint.h"
 
+#if defined(EEP4K) || defined(EEP16K)
 s32 __osEepStatus(OSMesgQueue *mq, OSContStatus *data);
 extern s32 __osEepromRead16K;
 
@@ -47,3 +48,4 @@ s32 osEepromProbe(OSMesgQueue *mq) {
     __osSiRelAccess();
     return ret;
 }
+#endif

@@ -6,6 +6,7 @@
 #include "controller.h"
 #include "siint.h"
 
+#if defined(EEP4K) || defined(EEP16K)
 void __osPackEepWriteData(u8 address, u8 *buffer);
 extern s32 __osEepromRead16K;
 s32 osEepromWrite(OSMesgQueue *mq, u8 address, u8 *buffer) {
@@ -176,3 +177,4 @@ s32 __osEepStatus(OSMesgQueue *mq, OSContStatus *data) {
 
     return 0;
 }
+#endif
