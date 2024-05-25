@@ -18,9 +18,6 @@
 
 s32 _Printf(outfun prout, char *dst, const char *fmt, va_list args);
 
-#ifndef CRASH_SCREEN_H
-#define CRASH_SCREEN_H
-
 u16 sCrashX;
 u16 sCrashY;
 Object *sCrashObjID;
@@ -571,6 +568,4 @@ void set_crash_object(Object *objectID, s32 act) {
     sCrashObjID = objectID;
     sCrashObjAct = act;
 }
-#endif
-
 #endif

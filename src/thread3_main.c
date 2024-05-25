@@ -525,16 +525,6 @@ void ingame_logic_loop(s32 updateRate) {
         buttonPressedInputs |= get_buttons_pressed_from_player(i);
     }
 
-    /*if (get_buttons_pressed_from_player(0) & L_TRIG && !(get_buttons_held_from_player(0) & U_JPAD)) {
-        s32 soundID;
-        gHideHUD ^= 1;
-        if (gHideHUD == 0) {
-            soundID = SOUND_TING_HIGH;
-        } else {
-            soundID = SOUND_TING_LOW;
-        }
-        sound_play(soundID, NULL);
-    }*/
 #ifdef ANTI_TAMPER
     // Spam the start button, making the game unplayable because it's constantly paused.
     if (sAntiPiracyTriggered) {

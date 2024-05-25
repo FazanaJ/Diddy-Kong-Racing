@@ -87,7 +87,7 @@ void tick_thread30(void) {
  */
 s32 set_level_to_load_in_background(s32 levelId, s32 cutsceneId) {
     if (!gThread30NeedToLoadLevel) {
-        gThread30LoadDelay = 4;
+        gThread30LoadDelay = 1;
         gOpacityDecayTimer  = 32;
         gThread30LevelIdToLoad = levelId;
         gThread30CutsceneIdToLoad = cutsceneId;
