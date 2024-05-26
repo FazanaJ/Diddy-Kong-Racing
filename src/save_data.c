@@ -651,7 +651,7 @@ SIDeviceStatus get_file_extension(s32 controllerIndex, s32 fileType, char *fileE
             if (fileNames[fileNum] == NULL) {
                 continue;
             }
-            if (fileType == SAVE_FILE_TYPE_GAME_DATA) {
+            if (fileType == SAVE_FILE_TYPE_CPAK_SAVE) {
                 if ((bcmp((u8 *) fileNames[fileNum], (char *) sDKRacingAdv1, strlen((char *) sDKRacingAdv2)) != 0)) {
                     continue;
                 }
@@ -960,16 +960,16 @@ s32 write_save_data(s32 saveFileNum, Settings *settings) {
 
     switch (saveFileNum) {
         case 0:
-            startingAddress = 0;
+            startingAddress = 0x00 / sizeof(u64);
             break;
         case 1:
-            startingAddress = 5;
+            startingAddress = 0x28 / sizeof(u64);
             break;
         case 2:
-            startingAddress = 10;
+            startingAddress = 0x50 / sizeof(u64);
             break;
         default:
-            startingAddress = 10;
+            startingAddress = 0x50 / sizeof(u64);
             break;
     }
 
@@ -1013,28 +1013,28 @@ s32 read_eeprom_data(Settings *settings, u8 flags) {
     }
 #endif
 
-    alloc = allocate_from_main_pool_safe(0x200, MEMP_MISC);
+    alloc = allocate_from_main_pool_safe(SAVE_SIZE, MEMP_MISC);
 
     if (flags & SAVE_DATA_FLAG_READ_FLAP_TIMES) {
 #if EEP4K || EEP16K
-        s32 blocks = 24;
+        s32 blocks = EEP_FLAP_SIZE;
         for (i = 0; i < blocks; i++) {
-            osEepromRead(&sSIMesgQueue, i + 0x10, (u8 *) &alloc[i]);
+            osEepromRead(&sSIMesgQueue, i + EEP_FLAP_OFFSET, (u8 *) &alloc[i]);
         }
 #elif SRAM
-    nuPiReadWriteSram(0x10 * sizeof(u64), (u8 *) &alloc[0], 24 * sizeof(u64), OS_READ);
+    nuPiReadWriteSram(0x10 * sizeof(u64), (u8 *) &alloc[0], EEP_FLAP_SIZE * sizeof(u64), OS_READ);
 #endif
         func_80073588(settings, (u8 *) alloc, SAVE_DATA_FLAG_READ_FLAP_TIMES);
     }
 
     if (flags & SAVE_DATA_FLAG_READ_COURSE_TIMES) {
 #if EEP4K || EEP16K
-        s32 blocks = 24;
+        s32 blocks = EEP_COURSE_RECORD_SIZE;
         for (i = 0; i < blocks; i++) {
-            osEepromRead(&sSIMesgQueue, i + 0x28, (u8 *) (&alloc[24] + i));
+            osEepromRead(&sSIMesgQueue, i + EEP_COURSE_TIME_OFFSET, (u8 *) (&alloc[EEP_FLAP_SIZE] + i));
         }
 #elif SRAM
-    nuPiReadWriteSram(0x28 * sizeof(u64), (u8 *) &alloc[24], 24 * sizeof(u64), OS_READ);
+    nuPiReadWriteSram(0x28 * sizeof(u64), (u8 *) &alloc[EEP_FLAP_SIZE], EEP_COURSE_RECORD_SIZE * sizeof(u64), OS_READ);
 #endif
         func_80073588(settings, (u8 *) alloc, SAVE_DATA_FLAG_READ_COURSE_TIMES);
     }
@@ -1065,19 +1065,19 @@ s32 write_eeprom_data(Settings *settings, u8 flags) {
     }
 #endif
 
-    alloc = allocate_from_main_pool_safe(0x200, MEMP_MISC);
+    alloc = allocate_from_main_pool_safe(SAVE_SIZE, MEMP_MISC);
 
     func_800738A4(settings, (u8 *) alloc);
 
     if (flags & SAVE_DATA_FLAG_READ_FLAP_TIMES) {
         if (!is_reset_pressed()) {
 #if EEP4K || EEP16K
-            s32 size = 24;
+            s32 size = EEP_FLAP_SIZE;
             for (i = 0; i != size; i++) {
-                osEepromWrite(&sSIMesgQueue, i + 16, (u8 *) &alloc[i]);
+                osEepromWrite(&sSIMesgQueue, i + EEP_FLAP_OFFSET, (u8 *) &alloc[i]);
             }
 #elif SRAM
-            nuPiReadWriteSram(16 * sizeof(u64), (u8 *) &alloc[0], 24 * sizeof(u64), OS_WRITE);
+            nuPiReadWriteSram(EEP_FLAP_OFFSET * sizeof(u64), (u8 *) &alloc[0], EEP_FLAP_SIZE * sizeof(u64), OS_WRITE);
 #endif
         }
     }
@@ -1085,12 +1085,12 @@ s32 write_eeprom_data(Settings *settings, u8 flags) {
     if (flags & SAVE_DATA_FLAG_READ_COURSE_TIMES) {
         if (!is_reset_pressed()) {
 #if EEP4K || EEP16K
-            s32 size = 24;
+            s32 size = EEP_COURSE_RECORD_SIZE;
             for (i = 0; i != size; i++) {
-                osEepromWrite(&sSIMesgQueue, i + 40, (u8 *) (&alloc[24] + i));
+                osEepromWrite(&sSIMesgQueue, i + EEP_COURSE_TIME_OFFSET, (u8 *) (&alloc[EEP_FLAP_SIZE] + i));
             }
 #elif SRAM
-            nuPiReadWriteSram(40 * sizeof(u64), (u8 *) &alloc[24], 24 * sizeof(u64), OS_WRITE);
+            nuPiReadWriteSram(EEP_COURSE_TIME_OFFSET * sizeof(u64), (u8 *) &alloc[24], EEP_FLAP_SIZE * sizeof(u64), OS_WRITE);
 #endif
         }
     }
@@ -1203,7 +1203,7 @@ void func_80074AA8(GhostHeader *ghostHeader, s16 characterID, s16 time, s16 node
     ghostHeader->checksum = calculate_ghost_header_checksum(ghostHeader);
 }
 
-// Seems to only be called when used as an argument for func_800860A8. Effectively just returns 0x6700
+// Seems to only be called when used as an argument for savemenu_check_space. Effectively just returns 0x6700
 s32 get_ghost_data_file_size(void) {
     int x = 0x1100;
     return (&x)[0] * 6 + 0x100;
@@ -1395,7 +1395,7 @@ SIDeviceStatus func_80074EB8(s32 controllerIndex, s16 arg1, s16 arg2, s16 ghostC
     GhostHeader *ghost;
 
     fileSize = 0x1100 * 6;
-    temp_v0_3 = allocate_from_main_pool_safe(fileSize + 0x200, COLOUR_TAG_BLACK);
+    temp_v0_3 = allocate_from_main_pool_safe(fileSize + SAVE_SIZE, COLOUR_TAG_BLACK);
     *((s32 *) temp_v0_3) = GHSS;
     ghost = (GhostHeader *) (temp_v0_3 + 4);
     // temp_v0_3->unk0 = GHSS;
@@ -1624,7 +1624,7 @@ s32 func_800753D8(s32 controllerIndex, s32 arg1) {
 GLOBAL_ASM("asm/non_matchings/save_data/func_800753D8.s")
 #endif
 
-SIDeviceStatus func_800756D4(s32 controllerIndex, u8 *arg1, u8 *arg2, u8 *arg3, s16 *arg4) {
+SIDeviceStatus func_800756D4(s32 controllerIndex, u8 *levelIDs, u8 *vehicleIDs, u8 *characterIDs, s16 *checksumIDs) {
     s32 i;
     u8 *fileData;
     s32 ret; // sp64
@@ -1639,11 +1639,11 @@ SIDeviceStatus func_800756D4(s32 controllerIndex, u8 *arg1, u8 *arg2, u8 *arg3, 
         return ret;
     }
     for (i = 0; i < 6; i++) {
-        arg1[i] = 0xFF;
-        arg4[i] = 0;
-        temp_v0_2 = arg4[i];
-        arg3[i] = temp_v0_2;
-        arg2[i] = temp_v0_2;
+        levelIDs[i] = 0xFF;
+        checksumIDs[i] = 0;
+        temp_v0_2 = checksumIDs[i];
+        characterIDs[i] = temp_v0_2;
+        vehicleIDs[i] = temp_v0_2;
     }
     ret = get_file_number(controllerIndex, "DKRACING-GHOSTS", "", &fileNumber);
     if (ret == CONTROLLER_PAK_GOOD) {
@@ -1659,10 +1659,10 @@ SIDeviceStatus func_800756D4(s32 controllerIndex, u8 *arg1, u8 *arg2, u8 *arg3, 
                             ret = CONTROLLER_PAK_BAD_DATA;
                             break;
                         } else {
-                            arg1[i] = var_s1[i].unk0.levelID;
-                            arg2[i] = var_s1[i].unk0.vehicleID;
-                            arg3[i] = fileData[var_s1[i].unk2 + 2];
-                            arg4[i] = ((GhostHeaderAlt *) &fileData[var_s1[i].unk2] + 1)->checksum;
+                            levelIDs[i] = var_s1[i].unk0.levelID;
+                            vehicleIDs[i] = var_s1[i].unk0.vehicleID;
+                            characterIDs[i] = fileData[var_s1[i].unk2 + 2];
+                            checksumIDs[i] = ((GhostHeaderAlt *) &fileData[var_s1[i].unk2] + 1)->checksum;
                         }
                     }
                 }
@@ -1904,7 +1904,7 @@ s32 get_controller_pak_file_list(s32 controllerIndex, s32 maxNumOfFilesToGet, ch
         font_codes_to_string((char *) &state.game_name, (char *) fileNames[i], PFS_FILE_NAME_LEN);
         font_codes_to_string((char *) &state.ext_name, (char *) fileExtensions[i], PFS_FILE_EXT_LEN);
         fileSizes[i] = state.file_size;
-        fileTypes[i] = SAVE_FILE_TYPE_UNKNOWN;
+        fileTypes[i] = SAVE_FILE_TYPE_CPAK_OTHER;
 
         if ((state.game_code == gameCode) && (state.company_code == COMPANY_CODE)) {
             fileTypes[i] = get_file_type(controllerIndex, i);
@@ -2169,8 +2169,10 @@ SIDeviceStatus write_controller_pak_file(s32 controllerIndex, s32 fileNumber, ch
     return ret;
 }
 
-// Get File size for given controller's Control Pak
-/* Official name: packFileSize */
+/**
+ * Get File size for given controller's Control Pak
+ * Official name: packFileSize
+ */
 SIDeviceStatus get_file_size(s32 controllerIndex, s32 fileNum, s32 *fileSize) {
     OSPfsState state;
 
@@ -2182,7 +2184,9 @@ SIDeviceStatus get_file_size(s32 controllerIndex, s32 fileNum, s32 *fileSize) {
     return CONTROLLER_PAK_BAD_DATA;
 }
 
-// Converts N64 Font codes used in controller pak file names, into C ASCII a coded string
+/**
+ * Converts N64 Font codes used in controller pak file names, into C ASCII a coded string
+ */
 char *font_codes_to_string(char *inString, char *outString, s32 stringLength) {
     s32 index = *inString;
     char *ret = outString;
@@ -2215,7 +2219,9 @@ char *font_codes_to_string(char *inString, char *outString, s32 stringLength) {
     return ret;
 }
 
-// Converts a C ASCII string into N64 Font codes for controller pak file names
+/**
+ * Converts a C ASCII string into N64 Font codes for controller pak file names
+ */
 char *string_to_font_codes(char *inString, char *outString, s32 stringLength) {
     s32 i;
     char currentChar;
@@ -2253,21 +2259,21 @@ SaveFileType get_file_type(s32 controllerIndex, s32 fileNum) {
     s32 *data;
     s32 ret;
 
-    ret = SAVE_FILE_TYPE_UNKNOWN;
+    ret = SAVE_FILE_TYPE_CPAK_OTHER;
     data = allocate_from_main_pool_safe(0x100, MEMP_MISC);
     if (read_data_from_controller_pak(controllerIndex, fileNum, (u8 *) data, 0x100) == CONTROLLER_PAK_GOOD) {
         switch (*data) {
             case GAMD:
-                ret = SAVE_FILE_TYPE_GAME_DATA;
+                ret = SAVE_FILE_TYPE_CPAK_SAVE;
                 break;
             case TIMD:
-                ret = SAVE_FILE_TYPE_TIME_DATA;
+                ret = SAVE_FILE_TYPE_CPAK_TIMES;
                 break;
             case GHSS:
-                ret = SAVE_FILE_TYPE_GHOST_DATA;
+                ret = SAVE_FILE_TYPE_CPAK_GHOST;
                 break;
             default:
-                ret = SAVE_FILE_TYPE_UNKNOWN;
+                ret = SAVE_FILE_TYPE_CPAK_OTHER;
                 break;
         }
     }

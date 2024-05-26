@@ -658,10 +658,10 @@ void *render_dialogue_text(s32 dialogueBoxID, s32 posX, s32 posY, char *text, s3
 }
 
 /**
- * Unused function that moved a dialogue box ID to the front of the list.
+ * Clear all strings from this dialogue box ID.
  * Official Name: fontWindowFlushStrings
  */
-void assign_dialogue_box_id(s32 dialogueBoxID) {
+void dialogue_clear(s32 dialogueBoxID) {
     DialogueBoxBackground *dialogueBox;
     DialogueBox *dialogueTextBox, *dialogueTextBoxTemp;
 
@@ -688,7 +688,7 @@ void open_dialogue_box(s32 dialogueBoxID) {
  * Mark the selected dialogue box as closed
  * Official Name: fontWindowDisable
  */
-void close_dialogue_box(s32 dialogueBoxID) {
+void dialogue_close(s32 dialogueBoxID) {
     gDialogueBoxBackground[dialogueBoxID].flags &= DIALOGUE_BOX_CLOSED;
 }
 
@@ -843,7 +843,7 @@ void render_dialogue_box(Gfx **dlist, MatrixS **mat, Vertex **verts, s32 dialogu
             sDialogueBoxIsOpen = TRUE;
         }
         sDialogueBoxCloseTimer = 2;
-        func_8009E9B0(dialogueBox, dlist, mat, verts);
+        dialogue_ortho(dialogueBox, dlist, mat, verts);
     }
     // Set and render the text portions of the dialogue box.
     dialogueTextBox = dialogueBox->textBox;

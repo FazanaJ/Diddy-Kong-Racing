@@ -32,7 +32,6 @@ u32 disable_interrupts(void) {
         return __osDisableInt();
     }
 }
-
 void enable_interrupts(u32 flags) {
     if (gIntDisFlag) {
         __osRestoreInt(flags);
