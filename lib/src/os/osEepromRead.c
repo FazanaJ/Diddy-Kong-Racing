@@ -23,25 +23,28 @@ s32 osEepromRead(OSMesgQueue *mq, u8 address, u8 *buffer) {
     __OSContEepromFormat eepromformat;
 
     if (__osBbIsBb) {
-        __osSiGetAccess();
 
-        if (__osBbEepromSize == 0x00000200) {
-            if (address >= 0x40U) {
+        if (__osBbEepromSize == 0x200) {
+            if (address >= 0x200 / sizeof(u64)) {
                 ret = -1;
             }
-        } else if (__osBbEepromSize != 0x00000800) {
+        } else if (__osBbEepromSize != 0x800) {
             ret = 8;
+            if (address >= 0x800 / sizeof(u64)) {
+                ret = -1;
+            }
         }
 
         if (ret == 0) {
             int i;
 
+            __osSiGetAccess();
             for (i = 0; i < 8; i++) {
                 buffer[i] = *(u8*)(__osBbEepromAddress + (address * 8) + i);
             }
+            __osSiRelAccess();
         }
 
-        __osSiRelAccess();
         return ret;
     }
 

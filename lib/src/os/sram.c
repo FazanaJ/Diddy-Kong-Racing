@@ -102,20 +102,20 @@ int nuPiReadWriteSram(u32 addr, void* buf_ptr, u32 size, s32 flag) {
     OSMesg	dmaMesgBuf;
 
     if (__osBbIsBb) {
-        __osPiGetAccess();
 
         if (__osBbSramSize == 0x8000) {
             if (addr >= 0x8000) {
                 return -1;
             }
 
+            __osPiGetAccess();
             if (flag == OS_READ) {
                 wcopy((u32 *) (__osBbSramAddress + addr), buf_ptr, size);
             } else {
                 wcopy(buf_ptr, (u32 *) (__osBbSramAddress + addr), size);
             }
-
             __osPiRelAccess();
+            
             return 0;
         }
         return -1;
