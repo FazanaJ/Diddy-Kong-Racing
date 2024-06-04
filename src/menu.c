@@ -3810,6 +3810,8 @@ void savemenu_render_element(SaveFileData *file, s32 x, s32 y) {
     }
 }
 
+u32 gFreePages[4];
+
 /**
  * Render all of the save option elements onscreen.
  * If it's still loading, render the wait text.
@@ -3827,6 +3829,8 @@ void savemenu_render(UNUSED s32 updateRate) {
     s32 drawPleaseWait;
     s32 drawOk;
     s32 drawDialogueBox;
+    s32 freeNotes;
+    char textBytes[16];
 
     videoWidth = gScreenWidth;
     drawUpperElements = FALSE;
@@ -3883,22 +3887,46 @@ void savemenu_render(UNUSED s32 updateRate) {
         }
     }
 
+    if (drawPleaseWait == 0 && get_contpak_error() == CONTROLLER_PAK_GOOD) {
+        puppyprintf(textBytes, "Pages Free: %d", gFreePages[0] / 256);
+        set_text_font(FONT_COLOURFUL);
+        draw_text(&sMenuCurrDisplayList, gScreenWidth / 2, gScreenHeight - 16, textBytes, ALIGN_TOP_CENTER);
+    }
+
     if (drawUpperElements) {
         scroll = (s32) gSavemenuScrollSource;
         temp = scroll;
         offsetX = 80 - (s32) ((gSavemenuScrollSource - scroll) * 164.0f);
         x = offsetX + ((gScreenWidth - 320) / 2);
         while (x < videoWidth && temp < gSaveMenuOptionCountUpper) {
+            s32 filesize;
             savemenu_render_element(&gSavemenuFilesSource[temp], x, 64);
+            filesize = gSavemenuFilesSource[temp].fileSize / 256;
+            if ((u32) filesize <= 123) {
+                puppyprintf(textBytes, "Pages: %d", filesize);
+                set_text_colour(0, 0, 0, 255, 255);
+                draw_text(&sMenuCurrDisplayList, x + 128 + 1, 72 + 1, textBytes, ALIGN_TOP_CENTER);
+                set_text_colour(255, 255, 255, 255, 255);
+                draw_text(&sMenuCurrDisplayList, x + 128, 72, textBytes, ALIGN_TOP_CENTER);
+            }
             x += 164;
             temp++;
         }
         temp = scroll;
         x = offsetX + ((gScreenWidth - 320) / 2);
         while ((x > 0) && (temp > 0)) {
+            s32 filesize;
             temp--;
             x -= 164;
             savemenu_render_element(&gSavemenuFilesSource[temp], x, 64);
+            filesize = gSavemenuFilesSource[temp].fileSize / 256;
+            if ((u32) filesize <= 123) {
+                puppyprintf(textBytes, "Pages: %d", filesize);
+                set_text_colour(0, 0, 0, 255, 255);
+                draw_text(&sMenuCurrDisplayList, x + 128 + 1, 72 + 1, textBytes, ALIGN_TOP_CENTER);
+                set_text_colour(255, 255, 255, 255, 255);
+                draw_text(&sMenuCurrDisplayList, x + 128, 72, textBytes, ALIGN_TOP_CENTER);
+            }
         }
     }
 
@@ -4453,6 +4481,8 @@ s32 func_80087734(s32 buttonsPressed, s32 yAxis) {
     s32 i;
     s32 temp;
 
+    render_printf("balls");
+
     temp = gOptionBlinkTimer * 8;
     if (temp > 255) {
         temp = 511 - temp;
@@ -4585,6 +4615,7 @@ s32 menu_save_options_loop(s32 updateRate) {
     s32 i;
     s32 yAxis;
     s32 xAxis;
+    s32 freeNotes;
 
     gOptionBlinkTimer = (gOptionBlinkTimer + updateRate) & 0x3F;
     if (gMenuDelay != 0) {
@@ -4637,6 +4668,10 @@ s32 menu_save_options_loop(s32 updateRate) {
                 gSaveMenuOptionSource = 0;
                 gSavemenuScrollSource = 0.0f;
                 result = savemenu_load_sources();
+                get_free_space(0, &gFreePages[0], &freeNotes);
+                get_free_space(1, &gFreePages[1], &freeNotes);
+                get_free_space(2, &gFreePages[2], &freeNotes);
+                get_free_space(3, &gFreePages[3], &freeNotes);
                 if (result != CONTROLLER_PAK_GOOD) {
                     savemenu_render_error(result);
                 } else {
