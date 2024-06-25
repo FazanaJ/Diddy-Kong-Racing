@@ -20,7 +20,6 @@ u32 *gVideoDepthBuffer = NULL;
 s32 gVideoRefreshRate; // Official Name: viFramesPerSecond
 f32 gVideoAspectRatio;
 f32 gVideoHeightRatio;
-OSViMode gTvViMode;
 s32 gVideoFbWidths[NUM_FRAMEBUFFERS];
 s32 gVideoFbHeights[NUM_FRAMEBUFFERS];
 u32 *gVideoFramebuffers[NUM_FRAMEBUFFERS];
@@ -33,16 +32,15 @@ u32 *gVideoCurrFramebuffer; // Official Name: currentScreen
 u32 *gVideoLastFramebuffer; // Official Name: otherScreen
 u32 *gVideoCurrDepthBuffer;
 u32 *gVideoLastDepthBuffer; // Official Name: otherZbuf
-u8 gFrameBufferIndex = 0;
 s32 gVideoHasReadyFrame;
 OSScClient gVideoSched;
 u8 gExpansionPak = FALSE;
 u8 gUseExpansionMemory = FALSE;
 u8 gBitDepth = G_IM_SIZ_16b;
+u8 gVideoSkipNextRate = FALSE;
+s8 gBootTimer = 8;
 u16 gScreenWidth = SCREEN_WIDTH;
 u16 gScreenHeight;
-s32 gVideoSkipNextRate = FALSE;
-s32 gBootTimer = 8;
 
 /******************************/
 
@@ -101,7 +99,7 @@ OSViMode gGlobalVI;
 
 void change_vi(OSViMode *mode, int width, int height) {
     s32 addPAL = 0;
-    s32 addX = 16;
+    s32 addX = 0;
     s32 mul;
     if (osTvType == TV_TYPE_PAL) {
         gGlobalVI = osViModePalLan1;
@@ -110,9 +108,9 @@ void change_vi(OSViMode *mode, int width, int height) {
     }
 
     if (gBitDepth == G_IM_SIZ_16b) {
-        mul = 1;
-    } else {
         mul = 2;
+    } else {
+        mul = 4;
         mode->comRegs.ctrl &= ~VI_CTRL_ANTIALIAS_MODE_1 | VI_CTRL_TYPE_16;
         mode->comRegs.ctrl |= VI_CTRL_TYPE_32;
     }
@@ -122,15 +120,12 @@ void change_vi(OSViMode *mode, int width, int height) {
             addX = 20;
         } else if (width == SCREEN_WIDTH_WIDE) {
             addX = 24;
+        } else {
+            addX = 16;
         }
-        mode->comRegs.width = width;
-        mode->comRegs.xScale = ((width + addX) * 512) / 320;
         // Y Scale
         mode->fldRegs[0].yScale = (((height + 16 - (addPAL * 2)) * 1024) / 240);
         mode->fldRegs[1].yScale = (((height + 16 - (addPAL * 2)) * 1024) / 240);
-        // X Centre
-        mode->fldRegs[0].origin = (width * 2) * mul;
-        mode->fldRegs[1].origin = width * 4;
 
         mode->comRegs.hStart = (428 - 304 + (gConfig.screenPosX * 2)) << 16 | (428 + 304 + (gConfig.screenPosX * 2));
         mode->fldRegs[0].vStart =
@@ -138,22 +133,18 @@ void change_vi(OSViMode *mode, int width, int height) {
         mode->fldRegs[1].vStart =
             (277 - height + (gConfig.screenPosY * 2)) << 16 | (271 + height + (gConfig.screenPosY * 2));
     } else if (height == 240) {
-        mode->comRegs.width = width;
-        mode->comRegs.xScale = (width * 512) / 320;
-        mode->fldRegs[0].origin = (width * 2) * mul;
-        mode->fldRegs[1].origin = width * 4;
         mode->fldRegs[0].yScale = ((height * 1024) / 240);
         mode->fldRegs[1].yScale = ((height * 1024) / 240);
     } else {
-        mode->comRegs.width = width;
-        mode->comRegs.xScale = (width * 512) / 320;
         mode->comRegs.ctrl |= 0x40;
-        mode->fldRegs[0].origin = (width * 2) * mul;
-        mode->fldRegs[1].origin = width * 4;
         mode->fldRegs[0].yScale = 0x2000000 | ((height * 1024) / 240);
         mode->fldRegs[1].yScale = 0x2000000 | ((height * 1024) / 240);
         mode->fldRegs[0].vStart = mode->fldRegs[1].vStart - 0x20002;
     }
+    mode->comRegs.width = width;
+    mode->comRegs.xScale = ((width + addX) * 512) / 320;
+    mode->fldRegs[0].origin = width * mul;
+    mode->fldRegs[1].origin = width * 4;
     gVideoAspectRatio = ((f32) width / (f32) height);
     reset_perspective_matrix();
 }
