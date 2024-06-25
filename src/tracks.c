@@ -456,7 +456,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
         }
         profiler_add(PP_WEATHER, first);
         lensflare_override(get_active_camera_segment());
-        func_800ACA20(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, get_active_camera_segment());
+        lensflare_render(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, get_active_camera_segment());
 #ifdef PUPPYPRINT_DEBUG
         if (gPuppyPrint.showCvg) {
             puppyprint_render_coverage(dList);
@@ -490,7 +490,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
             initialise_player_viewport_vars(dList, updateRate);
             set_weather_limits(-1, -512);
             lensflare_override(get_active_camera_segment());
-            func_800ACA20(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, get_active_camera_segment());
+            lensflare_render(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, get_active_camera_segment());
             set_text_font(FONT_COLOURFUL);
             posX = (gScreenWidth / 2) + 10;
             posY = (gScreenHeight / 2) + 5;

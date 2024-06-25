@@ -30,6 +30,8 @@
 #define COLOUR_TAG_ORANGE 0xFF7F7FFF
 // Controller Pak
 #define COLOUR_TAG_BLACK 0x000000FF
+// Weather
+#define COLOUR_TAG_LIGHT_ORANGE 0xFFAA55FF
 
 enum MemoryTags {
     MEMP_OVERALL,
