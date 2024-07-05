@@ -10,11 +10,11 @@
 extern u8 __osContLastCmd;
 extern OSPifRam __osEepPifRam;
 s32 __osEepromRead16K;
-void __osPackEepReadData(u8 address);
+void __osPackEepReadData(s32 address);
 s32 __osEepStatus(OSMesgQueue *mq, OSContStatus *data);
 s32 __osSiRawStartDma(s32, void *);
 
-s32 osEepromRead(OSMesgQueue *mq, u8 address, u8 *buffer) {
+s32 osEepromRead(OSMesgQueue *mq, s32 address, u8 *buffer) {
     s32 ret = 0;
     s32 i;
     s32 type;
@@ -106,7 +106,7 @@ s32 osEepromRead(OSMesgQueue *mq, u8 address, u8 *buffer) {
     return ret;
 }
 
-void __osPackEepReadData(u8 address) {
+void __osPackEepReadData(s32 address) {
     u8* ptr = (u8*)&__osEepPifRam.ramarray;
     __OSContEepromFormat eepromformat;
     int i;

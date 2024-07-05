@@ -451,7 +451,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
         profiler_reset_timer();
         set_weather_limits(-1, -512);
         // Show weather effects in single player.
-        if (gCurrentLevelHeader2->weatherEnable > 0 && numViewports < 2 && !gConfig.perfMode) {
+        if (((gCurrentLevelHeader2->weatherEnable > 0 && numViewports < 2) || gConfig.noCutbacks) && !gConfig.perfMode) {
             process_weather(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, &gSceneCurrTriList, tempUpdateRate);
         }
         profiler_add(PP_WEATHER, first);

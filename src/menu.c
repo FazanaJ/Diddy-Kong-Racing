@@ -3829,7 +3829,6 @@ void savemenu_render(UNUSED s32 updateRate) {
     s32 drawPleaseWait;
     s32 drawOk;
     s32 drawDialogueBox;
-    s32 freeNotes;
     char textBytes[16];
 
     videoWidth = gScreenWidth;

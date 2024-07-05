@@ -7,9 +7,9 @@
 #include "siint.h"
 
 #if defined(EEP4K) || defined(EEP16K)
-void __osPackEepWriteData(u8 address, u8 *buffer);
+void __osPackEepWriteData(s32 address, u8 *buffer);
 extern s32 __osEepromRead16K;
-s32 osEepromWrite(OSMesgQueue *mq, u8 address, u8 *buffer) {
+s32 osEepromWrite(OSMesgQueue *mq, s32 address, u8 *buffer) {
     s32 ret = 0;
     u8 *ptr;
     __OSContEepromFormat eepromformat;
@@ -96,7 +96,7 @@ s32 osEepromWrite(OSMesgQueue *mq, u8 address, u8 *buffer) {
     return ret;
 }
 
-void __osPackEepWriteData(u8 address, u8 *buffer) {
+void __osPackEepWriteData(s32 address, u8 *buffer) {
     u8* ptr = (u8*)&__osEepPifRam.ramarray;
     __OSContEepromFormat eepromformat;
     int i;

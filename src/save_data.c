@@ -829,7 +829,7 @@ s32 save_detect(void) {
 void save_readwrite(u64 *data, u32 offset, u32 size, s32 type) {
     u32 i;
     u32 addr;
-    s32 (*func)(OSMesgQueue *, u8 address, u8 *buffer);
+    s32 (*func)(OSMesgQueue *, s32 address, u8 *buffer);
 #if EEP4K || EEP16K
     if (type == OS_READ) {
         func = osEepromRead;

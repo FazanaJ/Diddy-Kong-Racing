@@ -629,9 +629,9 @@ void lensflare_render(Gfx **dList, MatrixS **mats, Vertex **verts, ObjectSegment
                 trans.y_rotation = 0;
                 trans.x_rotation = 0;
                 trans.z_rotation = 0;
-                pos[1].x = (pos[1].x * (0, (2 * magnitude))) - gLensFlarePos.x;
-                pos[1].y = (pos[1].y * (0, (2 * magnitude))) - gLensFlarePos.y;
-                pos[1].z = (pos[1].z * (0, (2 * magnitude))) - gLensFlarePos.z;
+                pos[1].x = (pos[1].x * (2 * magnitude)) - gLensFlarePos.x;
+                pos[1].y = (pos[1].y * (2 * magnitude)) - gLensFlarePos.y;
+                pos[1].z = (pos[1].z * (2 * magnitude)) - gLensFlarePos.z;
                 for (i = 0; i < 3; i++) {
                     if (i == 0) {
                         lensFlareData = gLensFlareLarge;
@@ -662,7 +662,7 @@ void lensflare_render(Gfx **dList, MatrixS **mats, Vertex **verts, ObjectSegment
                     }
                     if (i == 1) {
                         pep = (((pos[1].x * gLensFlarePos.x) + (pos[1].y * gLensFlarePos.y)) +
-                               (pos[1].z * ((0, gLensFlarePos.z)))) *
+                               (pos[1].z * gLensFlarePos.z)) *
                               2;
                         pos[1].x = (pep * gLensFlarePos.x) - pos[1].x;
                         pos[1].y = (pep * gLensFlarePos.y) - pos[1].y;

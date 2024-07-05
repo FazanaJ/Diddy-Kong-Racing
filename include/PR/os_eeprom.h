@@ -94,10 +94,10 @@ extern "C" {
 /* EEPROM interface */
 
 extern s32 osEepromProbe(OSMesgQueue *mq);
-extern s32 osEepromRead(OSMesgQueue *mq, u8 address, u8 *buffer);
-extern s32 osEepromWrite(OSMesgQueue *mq, u8 address, u8 *buffer);
-extern s32 osEepromLongRead(OSMesgQueue *mq, u8 address, u8 *buffer, int nbytes);
-extern s32 osEepromLongWrite(OSMesgQueue *mq, u8 address, u8 *buffer, int nbytes);
+extern s32 osEepromRead(OSMesgQueue *mq, s32 address, u8 *buffer);
+extern s32 osEepromWrite(OSMesgQueue *mq, s32 address, u8 *buffer);
+extern s32 osEepromLongRead(OSMesgQueue *mq, s32 address, u8 *buffer, int nbytes);
+extern s32 osEepromLongWrite(OSMesgQueue *mq, s32 address, u8 *buffer, int nbytes);
 
 
 #endif  /* defined(_LANGUAGE_C) || defined(_LANGUAGE_C_PLUS_PLUS) */
