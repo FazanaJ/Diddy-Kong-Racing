@@ -1116,7 +1116,7 @@ s32 func_80074B34(s32 controllerIndex, s16 levelId, s16 vehicleId, u16 *ghostCha
     }
     pakStatus = get_file_number(controllerIndex, "DKRACING-GHOSTS", "", &fileNumber);
     if (pakStatus == CONTROLLER_PAK_GOOD) {
-        cPakFile = allocate_from_main_pool_safe(GHSS_SIZE, COLOUR_TAG_BLACK);
+        cPakFile = allocate_from_main_pool_safe(GHSS_SIZE, MEMP_GHOST_DATA);
         if (!(pfs[controllerIndex].status & 1)) {
             osPfsInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex);
         }
@@ -1146,7 +1146,7 @@ s32 func_80074B34(s32 controllerIndex, s16 levelId, s16 vehicleId, u16 *ghostCha
         free_from_memory_pool(cPakFile);
         if (ghostSize != 0) {
             if (ghostCharacterId != NULL) {
-                cPakFile = allocate_from_main_pool_safe(allocateSpace + GHSS_SIZE, COLOUR_TAG_BLACK);
+                cPakFile = allocate_from_main_pool_safe(allocateSpace + GHSS_SIZE, MEMP_GHOST_DATA);
                 if (osPfsReadWriteFile(&pfs[controllerIndex], fileNumber, PFS_READ, ghostSize, allocateSpace,
                                        AS_BYTES(cPakFile)) == 0) {
                     // Hmm... The ghost data struct might not be quite right here...
@@ -1157,7 +1157,6 @@ s32 func_80074B34(s32 controllerIndex, s16 levelId, s16 vehicleId, u16 *ghostCha
                         bcopy(cPakFile->data + 1, ghostData, *ghostNodeCount * sizeof(GhostNode));
                         pakStatus = CONTROLLER_PAK_GOOD;
                     } else {
-                        stubbed_printf("warning: corrupt ghost\n");
                         pakStatus = CONTROLLER_PAK_BAD_DATA;
                     }
                 } else {
@@ -1282,7 +1281,7 @@ SIDeviceStatus func_80075000(s32 controllerIndex, s16 levelId, s16 vehicleId, s1
             start_reading_controller_data(controllerIndex);
             return pakStatus;
         } else {
-            fileData = allocate_from_main_pool_safe(fileSize + GHSS_SIZE, COLOUR_TAG_BLACK);
+            fileData = allocate_from_main_pool_safe(fileSize + GHSS_SIZE, MEMP_GHOST_DATA);
             pakStatus = read_data_from_controller_pak(controllerIndex, fileNumber, AS_BYTES(fileData), fileSize);
             start_reading_controller_data(controllerIndex);
             if (pakStatus != CONTROLLER_PAK_GOOD) {
@@ -1319,7 +1318,7 @@ SIDeviceStatus func_80075000(s32 controllerIndex, s16 levelId, s16 vehicleId, s1
                         pakStatus = CONTROLLER_PAK_NO_ROOM_FOR_GHOSTS;
                     } else {
                         sp58 = ghostSize - (ghostFileData[ghostIndex + 1].unk2 - ghostFileData[ghostIndex].unk2);
-                        fileDataToWrite = allocate_from_main_pool_safe(fileSize + GHSS_SIZE, COLOUR_TAG_BLACK);
+                        fileDataToWrite = allocate_from_main_pool_safe(fileSize + GHSS_SIZE, MEMP_GHOST_DATA);
                         fileDataToWrite->signature = GHSS;
                         sp70 = &fileDataToWrite->data[0];
                         fileDataToWrite->data[6].unk0 = 0xFF;
@@ -1376,14 +1375,14 @@ s32 func_800753D8(s32 controllerIndex, s32 worldId) {
             start_reading_controller_data(controllerIndex);
             return pakStatus;
         }
-        data = allocate_from_main_pool_safe(fileSize + GHSS_SIZE, COLOUR_TAG_BLACK);
+        data = allocate_from_main_pool_safe(fileSize + GHSS_SIZE, MEMP_GHOST_DATA);
         pakStatus = read_data_from_controller_pak(controllerIndex, fileNumber, (u8 *) data, fileSize);
         start_reading_controller_data(controllerIndex);
         if (pakStatus == CONTROLLER_PAK_GOOD) {
             if (data->signature == GHSS) {
                 tempData = data->data;
                 sizeDiff = tempData[worldId].unk2 - tempData[worldId + 1].unk2;
-                data2 = allocate_from_main_pool_safe(fileSize + GHSS_SIZE, COLOUR_TAG_BLACK);
+                data2 = allocate_from_main_pool_safe(fileSize + GHSS_SIZE, MEMP_GHOST_DATA);
                 bcopy(data, data2, tempData[worldId].unk2); // Copy data into data2
 
                 if (worldId != WORLD_FUTURE_FUN_LAND) {

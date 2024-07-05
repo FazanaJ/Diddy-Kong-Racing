@@ -12808,9 +12808,6 @@ void menu_asset_load(s32 assetID) {
             gMenuAssetActive[i] = FALSE;
         }
     }
-    if (((!assetID) && (!assetID)) && (!assetID)) {
-        stubbed_printf("loadFrontEndItem() - Item no %d out of range 0-%d\n", assetID, sizeof(gMenuAssetActive));
-    } // Fakematch
     if (!gMenuAssetActive[assetID]) {
         i = (*gAssetsMenuElementIds)[assetID];
 

@@ -20,12 +20,10 @@
 /************ .data ************/
 
 SnowGfxData gWeatherPresets[3] = {
-    { 0, 0x40, (TextureHeader *) 0, 0xFE000000, 0xFE000000, 0xFE000000, 0x03FFFFFF, 0x03FFFFFF, 0x03FFFFFF, 4, 4, 8,
+    { 0, 0x40, (TextureHeader *) 0, 0xFE000000, 0xFE000000, 0xFE000000, 0x03FFFFFF, 0x03FFFFFF, 0x03FFFFFF, 6, 6, 12,
       8 }, // Snow
-    { 0, 0x100, (TextureHeader *) 1, 0xFE000000, 0xFE000000, 0xFE000000, 0x03FFFFFF, 0x03FFFFFF, 0x03FFFFFF, 4, 4, 8,
+    { 0, 0x100, (TextureHeader *) 1, 0xFE000000, 0xFE000000, 0xFE000000, 0x03FFFFFF, 0x03FFFFFF, 0x03FFFFFF, 6, 6, 12,
       8 }, // Rain
-    { 0, 0x08, (TextureHeader *) 2, 0xFE000000, 0xFE000000, 0xFE000000, 0x03FFFFFF, 0x03FFFFFF, 0x03FFFFFF, 4, 4, 8,
-      8 }, // Unused, game crashes with this.
 };
 
 SnowPosData *gSnowPhysics = NULL;
@@ -158,8 +156,8 @@ void weather_init(void) {
     gSnowPhysics = NULL;
     gSnowDensity = 0;
     gSnowVertOffset = 6;
-    gSnowVertOffset <<= 2;
-    gSnowTriCount = gSnowVertOffset >> 1; // One triangle per two verts
+    gSnowVertOffset *= 3;
+    gSnowTriCount = gSnowVertOffset / 3;
     gSnowVertexData[0] = 0;
     gSnowVertexData[1] = 0;
     gSnowTriangles = 0;
@@ -238,8 +236,8 @@ void weather_free(void) {
  * Afterwards, allocate and set the defaults for snow model data.
  */
 void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s32 intensity, s32 opacity) {
-    s16 width;
-    s16 height;
+    s32 width;
+    s32 height;
     s32 numOfElements;
     s32 allocSize;
     s32 i;
@@ -271,7 +269,7 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
         return;
     }
     pos = (Vec3i *) allocate_from_main_pool_safe(gWeatherPresets[weatherType].size * (sizeof(Vec3i)),
-                                                 COLOUR_TAG_LIGHT_ORANGE);
+                                                 MEMP_WEATHER);
     gSnowGfx.pos = pos;
     gSnowGfx.size = gWeatherPresets[weatherType].size;
     gSnowGfx.offsetX = gWeatherPresets[weatherType].offsetX;
@@ -289,9 +287,9 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
     }
     numOfElements = density;
     gSnowDensity = numOfElements;
-    gSnowTriIndices = (s16 *) allocate_from_main_pool_safe(numOfElements * (sizeof(s16)), COLOUR_TAG_LIGHT_ORANGE);
+    gSnowTriIndices = (s16 *) allocate_from_main_pool_safe(numOfElements * (sizeof(s16)), MEMP_WEATHER);
     gSnowPhysics =
-        (SnowPosData *) allocate_from_main_pool_safe(numOfElements * (sizeof(SnowPosData)), COLOUR_TAG_LIGHT_ORANGE);
+        (SnowPosData *) allocate_from_main_pool_safe(numOfElements * (sizeof(SnowPosData)), MEMP_WEATHER);
     for (i = 0; i < gSnowDensity; i++) {
         gSnowPhysics[i].x_position = get_random_number_from_range(0, gSnowGfx.radiusX);
         gSnowPhysics[i].y_position = get_random_number_from_range(0, gSnowGfx.radiusY);
@@ -302,11 +300,11 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
         gSnowPhysics[i].index = get_random_number_from_range(0, gSnowGfx.size - 1);
     }
 
-    numOfElements = numOfElements * 4;
+    numOfElements = numOfElements * 3;
     allocSize = sizeof(Vertex);
     allocSize *= numOfElements;
-    gSnowVertexData[0] = allocate_from_main_pool_safe(allocSize, COLOUR_TAG_LIGHT_ORANGE);
-    gSnowVertexData[1] = allocate_from_main_pool_safe(allocSize, COLOUR_TAG_LIGHT_ORANGE);
+    gSnowVertexData[0] = allocate_from_main_pool_safe(allocSize, MEMP_WEATHER);
+    gSnowVertexData[1] = allocate_from_main_pool_safe(allocSize, MEMP_WEATHER);
     for (j = 0; j < 2; j++) {
         gSnowVerts = gSnowVertexData[j];
         for (i = 0; i < numOfElements; i++) {
@@ -320,28 +318,18 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
     width = (gSnowGfx.texture->width << 5) - 1;
     height = (gSnowGfx.texture->height << 5) - 1;
     gSnowTriangles =
-        (Triangle *) allocate_from_main_pool_safe(gSnowTriCount * (sizeof(Triangle)), COLOUR_TAG_LIGHT_ORANGE);
-    for (i = 0; i < gSnowTriCount; i += 2) {
+        (Triangle *) allocate_from_main_pool_safe(gSnowTriCount * (sizeof(Triangle)), MEMP_WEATHER);
+    for (i = 0; i < gSnowTriCount; i++) {
         gSnowTriangles[i].flags = 0;
-        gSnowTriangles[i].vi0 = (i << 1) + 3;
-        gSnowTriangles[i].uv0.u = 0;
-        gSnowTriangles[i].uv0.v = height;
-        gSnowTriangles[i].vi1 = (i << 1) + 1;
+        gSnowTriangles[i].vi0 = (i * 3) + 2;
+        gSnowTriangles[i].uv0.u = width / 2;
+        gSnowTriangles[i].uv0.v = height * 1.5f;
+        gSnowTriangles[i].vi1 = (i * 3) + 1;
         gSnowTriangles[i].uv1.u = width;
         gSnowTriangles[i].uv1.v = 0;
-        gSnowTriangles[i].vi2 = (i << 1) + 0;
-        gSnowTriangles[i].uv2.u = 0;
+        gSnowTriangles[i].vi2 = (i * 3) + 0;
+        gSnowTriangles[i].uv2.u = -width / 4;
         gSnowTriangles[i].uv2.v = 0;
-        gSnowTriangles[i + 1].flags = 0;
-        gSnowTriangles[i + 1].vi0 = (i << 1) + 3;
-        gSnowTriangles[i + 1].uv0.u = 0;
-        gSnowTriangles[i + 1].uv0.v = height;
-        gSnowTriangles[i + 1].vi1 = (i << 1) + 2;
-        gSnowTriangles[i + 1].uv1.u = width;
-        gSnowTriangles[i + 1].uv1.v = height;
-        gSnowTriangles[i + 1].vi2 = (i << 1) + 1;
-        gSnowTriangles[i + 1].uv2.u = width;
-        gSnowTriangles[i + 1].uv2.v = 0;
     }
 
     gSnowVertexFlip = 0;
@@ -506,15 +494,12 @@ void snow_vertices(void) {
             verts[1].x = pos[0] + gSnowGfx.vertOffsetW;
             verts[1].y = pos[1] + gSnowGfx.vertOffsetH;
             verts[1].z = pos[2];
-            verts[2].x = pos[0] + gSnowGfx.vertOffsetW;
+            verts[2].x = pos[0];
             verts[2].y = pos[1] - gSnowGfx.vertOffsetH;
             verts[2].z = pos[2];
-            verts[3].x = pos[0] - gSnowGfx.vertOffsetW;
-            verts[3].y = pos[1] - gSnowGfx.vertOffsetH;
-            verts[3].z = pos[2];
-            verts += 4;
-            gSnowVertCount += 4;
-            gSnowTriIndices[gSnowVertCount >> 2] = i;
+            verts += 3;
+            gSnowVertCount += 3;
+            gSnowTriIndices[gSnowVertCount / 3] = i;
         }
     }
 }
@@ -528,12 +513,12 @@ void snow_render(void) {
     u32 vtx;
 
     if (gSnowGfx.texture != NULL) {
-        gSnowVertOffset = 4;
-        gSnowTriCount = 2;
-        if (gSnowVertCount >= 4) {
+        gSnowVertOffset = 3;
+        gSnowTriCount = 1;
+        if (gSnowVertCount >= 3) {
             i = 0;
             mtx = (u32) &gProjectionMatrixS;
-            gSPMatrix(gCurrWeatherDisplayList++, OS_PHYSICAL_TO_K0(mtx ^ 0), G_MTX_DKR_INDEX_0);
+            gSPMatrix(gCurrWeatherDisplayList++, OS_PHYSICAL_TO_K0(mtx), G_MTX_DKR_INDEX_0);
             gDkrInsertMatrix(gCurrWeatherDisplayList++, G_MTX_DKR_INDEX_0, 0);
             load_and_set_texture_no_offset(&gCurrWeatherDisplayList, gSnowGfx.texture, RENDER_Z_COMPARE);
             while (i + gSnowVertOffset < gSnowVertCount) {
@@ -544,7 +529,7 @@ void snow_render(void) {
             }
             vtx = (u32) &gSnowVerts[i];
             gSPVertexDKR(gCurrWeatherDisplayList++, OS_PHYSICAL_TO_K0(vtx), (gSnowVertCount - i), 0);
-            gSPPolygon(gCurrWeatherDisplayList++, OS_PHYSICAL_TO_K0(gSnowTriangles), ((s32) (gSnowVertCount - i) >> 1),
+            gSPPolygon(gCurrWeatherDisplayList++, OS_PHYSICAL_TO_K0(gSnowTriangles), ((s32) (gSnowVertCount - i) / 3),
                        1);
         }
     }

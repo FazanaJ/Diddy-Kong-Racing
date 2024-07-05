@@ -385,7 +385,6 @@ void set_active_camera(s32 num) {
     if (num >= 0 && num < 4) {
         gActiveCameraID = num;
     } else {
-        stubbed_printf("Camera Error: Illegal player no!\n");
         gActiveCameraID = 0;
     }
 }
@@ -974,10 +973,6 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
     s32 textureFrame;
     profiler_begin_timer();
 
-    if (obj == NULL) {
-        stubbed_printf("\nCam do 2D sprite called with NULL pointer!");
-    }
-
     result = TRUE;
     if (flags & RENDER_VEHICLE_PART) {
         diffX = gModelMatrixViewX[gCameraMatrixPos] - obj->segment.trans.x_position;
@@ -1001,7 +996,6 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
         angleDiff = (angleDiff * tanX) >> 8;
         textureFrame = (tanY >> 7) & 0xFF;
         if (textureFrame > 127) {
-            stubbed_printf("CamDo2DSprite FrameNo Overflow !!!\n");
             textureFrame = 255 - textureFrame;
             angleDiff += 0x8000;
             result = FALSE;
