@@ -228,12 +228,12 @@ void init_game(void) {
     debug_text_init();
     allocate_ghost_data();
     init_particle_assets();
-    init_weather();
+    weather_init();
     calc_and_alloc_heap_for_settings();
     default_alloc_displaylist_heap();
     load_fonts();
     init_controller_paks();
-    func_80081218(); // init_save_data
+    init_save_data();
     //create_and_start_thread30();
 #ifdef ENABLE_USB
     if (__osBbIsBb == FALSE) {

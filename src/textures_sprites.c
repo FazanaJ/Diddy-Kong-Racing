@@ -1366,21 +1366,23 @@ void update_pulsating_light_data(PulsatingLightData *data, s32 timeDelta) {
     }
 }
 
-#ifdef NON_EQUIVALENT
 void func_8007F594(Gfx **dlist, u32 index, u32 primitiveColor, u32 environmentColor) {
-    Gfx *tempDlist = D_800DF3A8;
+    Gfx *gfxTemp;
+    Gfx *tempDlist;
+    u32 tempIndex;
 
-    if (index >= 2) {
-        index = 2;
+    tempDlist = D_800DF3A8;
+    tempIndex = index;
+
+    if (tempIndex >= 2) {
+        tempIndex = 2;
         tempDlist = D_800DF3D8;
     }
 
-    // There are issues with the structure, but this should be equivalent functionality-wise.
-    gSPDisplayList((*dlist)++, tempDlist);
-    gDkrDmaDisplayList((*dlist)++, OS_PHYSICAL_TO_K0(D_800DF410[index]), numberOfGfxCommands(D_800DF410[0]));
-    gDPSetPrimColorRGBA((*dlist)++, primitiveColor);
-    gDPSetEnvColorRGBA((*dlist)++, environmentColor);
+    gfxTemp = *dlist;
+    gSPDisplayList(gfxTemp++, tempDlist);
+    gDkrDmaDisplayList(gfxTemp++, OS_PHYSICAL_TO_K0(D_800DF410[tempIndex]), numberOfGfxCommands(D_800DF410[0]));
+    gDPSetPrimColorRGBA(gfxTemp++, primitiveColor);
+    gDPSetEnvColorRGBA(gfxTemp++, environmentColor);
+    *dlist = gfxTemp;
 }
-#else
-GLOBAL_ASM("asm/non_matchings/textures_sprites/func_8007F594.s")
-#endif

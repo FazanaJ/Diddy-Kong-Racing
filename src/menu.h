@@ -399,7 +399,7 @@ typedef struct MenuColour {
 // Unknown Size
 typedef struct unk80126A80 {
     u8 pad0[0x13];
-    s8 unk13;
+    s8 highlight;
 } unk80126A80;
 
 /* Size: 0x10 bytes */
@@ -644,7 +644,7 @@ void menu_element_render(s32 elementID);
 void menu_input(void);
 SIDeviceStatus savemenu_load_sources(void);
 void menu_asset_load(s32 arg0);
-s32 func_80087734(s32 buttonsPressed, s32 yAxis);
+s32 savemenu_input_message(s32 buttonsPressed, s32 yAxis);
 void savemenu_render_element(SaveFileData *arg0, s32 x, s32 y);
 void trackmenu_render_2D(s32 x, s32 y, char *hubName, char *trackName, s32 rectOpacity, s32 imageId, s32 copyViewPort, DrawTexture *arg7, s32 arg8);
 void pausemenu_render(UNUSED s32 updateRate);
@@ -682,8 +682,7 @@ s32 menu_credits_loop(s32 updateRate);
 void func_8007FFEC(s32 arg0);
 SIDeviceStatus func_80087F14(s32 *controllerIndex, s32 arg1);
 void set_gIntDisFlag(s8 setting);
-s32 func_800998E0(s32 arg0);
-void func_80081218(void);
+void init_save_data(void);
 void func_80080580(Gfx **dlist, s32 startX, s32 startY, s32 width, s32 height, s32 borderWidth, s32 borderHeight, s32 colour, TextureHeader *tex);
 void fileselect_input_copy(s32 updateRate);
 

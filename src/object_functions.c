@@ -5501,7 +5501,7 @@ void obj_loop_weather(Object *obj, UNUSED s32 updateRate) {
         dist = obj->properties.distance.radius;
         entry = (LevelObjectEntry_Weather *) obj->segment.level_entry;
         if ((diffX * diffX) + (diffZ * diffZ) <= dist) {
-            changeWeather(entry->unkA * 256, entry->unkC * 256, entry->unkE * 256, entry->unk10 * 257,
+            weather_set(entry->unkA * 256, entry->unkC * 256, entry->unkE * 256, entry->unk10 * 257,
                           entry->unk11 * 257, entry->unk12);
         }
     }
