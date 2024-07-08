@@ -48,7 +48,7 @@ extern TextureHeader *gMosaicTex2;
 extern s32 gChequerBGEnabled;
 
 extern s32 gfxBufCounter;
-extern s32 gBGHeight;
+extern s16 gBGHeight;
 
 extern u64 *gGfxSPTaskOutputBuffer;
 

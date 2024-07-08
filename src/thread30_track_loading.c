@@ -9,10 +9,10 @@
 
 /************ .data ************/
 
-s32 gThread30NeedToLoadLevel = FALSE;
-s32 gThread30LevelIdToLoad = -1;
-s32 gThread30CutsceneIdToLoad = -1;
-s32 gThread30LoadDelay = 0;
+u8 gThread30NeedToLoadLevel = FALSE;
+s16 gThread30LevelIdToLoad = -1;
+s16 gThread30CutsceneIdToLoad = -1;
+s16 gThread30LoadDelay = 0;
 
 /*******************************/
 

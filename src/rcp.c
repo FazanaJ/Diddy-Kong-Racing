@@ -19,10 +19,10 @@ u8 sBackgroundPrimColourG = 0;
 u8 sBackgroundPrimColourB = 0;
 s32 sBackgroundFillColour = GPACK_RGBA5551(0, 0, 0, 1) | (GPACK_RGBA5551(0, 0, 0, 1) << 16);
 
-u32 gMosaicShiftX = 64;
+s16 gMosaicShiftX = 64;
 TextureHeader *gMosaicTex1 = NULL;
 TextureHeader *gMosaicTex2 = NULL;
-s32 gBGHeight = 240;
+s16 gBGHeight = 240;
 
 BackgroundFunction gBackgroundDrawFunc = { NULL };
 u64 *gGfxSPTaskOutputBuffer = NULL;

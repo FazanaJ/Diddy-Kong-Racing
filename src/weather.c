@@ -19,7 +19,7 @@
 
 /************ .data ************/
 
-SnowGfxData gWeatherPresets[3] = {
+SnowGfxData gWeatherPresets[2] = {
     { 0, 0x40, (TextureHeader *) 0, 0xFE000000, 0xFE000000, 0xFE000000, 0x03FFFFFF, 0x03FFFFFF, 0x03FFFFFF, 6, 6, 12,
       8 }, // Snow
     { 0, 0x100, (TextureHeader *) 1, 0xFE000000, 0xFE000000, 0xFE000000, 0x03FFFFFF, 0x03FFFFFF, 0x03FFFFFF, 6, 6, 12,
@@ -30,12 +30,11 @@ SnowPosData *gSnowPhysics = NULL;
 SnowGfxData gSnowGfx = { NULL, 0, NULL, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 Vertex *gSnowVerts = NULL;
-s32 gSnowVertCount = 0;
 Triangle *gSnowTriangles = NULL;
 s16 *gSnowTriIndices = NULL;
 Vertex *gSnowVertexData[2] = { NULL, NULL };
 s32 *gWeatherAssetTable = NULL;   // List of Ids
-s32 gWeatherAssetTableLength = 0; // Set, but never read.
+s16 gSnowVertCount = 0;
 
 Gfx dLensFlare[] = {
     gsDPPipeSync(),
@@ -115,7 +114,6 @@ s32 gLightningTimer = 0;
 s32 gThunderTimer = 0;
 s32 gRainSplashDelay = 0;
 Sprite *gRainSplashGfx = NULL;
-s32 gRainVertexFlip = 0;
 SoundMask *gWeatherSoundMask = NULL;
 
 FadeTransition gThunderTransition = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_INVERT, FADE_COLOR_WHITE, 5, 2);
@@ -124,13 +122,14 @@ FadeTransition gThunderTransition = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_I
 
 /************ .bss ************/
 
-s32 gSnowDensity;
-s32 gSnowParticleCount;
 WeatherData gWeather;
 SnowLimits gSnowPlane; // Uses negative values, so all distances will be checked in reverse.
-s32 gSnowVertOffset;
-s32 gSnowTriCount;
-s32 gSnowVertexFlip;
+s16 gSnowVertOffset;
+s16 gSnowTriCount;
+s16 gSnowDensity;
+s16 gSnowParticleCount;
+u8 gSnowVertexFlip;
+u8 gRainVertexFlip;
 Gfx *gCurrWeatherDisplayList;
 MatrixS *gCurrWeatherMatrix;
 Vertex *gCurrWeatherVertexList;
@@ -170,10 +169,6 @@ void weather_init(void) {
         gAssetColourTag = MEMP_WEATHER;
         gWeatherAssetTable = (s32 *) load_asset_section_from_rom(ASSET_WEATHER_PARTICLES);
         gAssetColourTag = COLOUR_TAG_GREY;
-        gWeatherAssetTableLength = 0;
-        while ((s32) gWeatherAssetTable[gWeatherAssetTableLength] != -1) {
-            gWeatherAssetTableLength++;
-        }
     }
     gSnowVertexFlip = 0;
 }
@@ -240,6 +235,8 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
     s32 height;
     s32 numOfElements;
     s32 allocSize;
+    s32 widthHalf;
+    s32 widthQuart;
     s32 i;
     s32 j;
     Vec3i *pos;
@@ -316,19 +313,21 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
     }
 
     width = (gSnowGfx.texture->width << 5) - 1;
-    height = (gSnowGfx.texture->height << 5) - 1;
+    height = ((gSnowGfx.texture->height << 5) - 1) * 1.5f;
+    widthHalf = width / 2;
+    widthQuart = width / 4;
     gSnowTriangles =
         (Triangle *) allocate_from_main_pool_safe(gSnowTriCount * (sizeof(Triangle)), MEMP_WEATHER);
     for (i = 0; i < gSnowTriCount; i++) {
         gSnowTriangles[i].flags = 0;
         gSnowTriangles[i].vi0 = (i * 3) + 2;
-        gSnowTriangles[i].uv0.u = width / 2;
-        gSnowTriangles[i].uv0.v = height * 1.5f;
+        gSnowTriangles[i].uv0.u = widthHalf;
+        gSnowTriangles[i].uv0.v = height;
         gSnowTriangles[i].vi1 = (i * 3) + 1;
         gSnowTriangles[i].uv1.u = width;
         gSnowTriangles[i].uv1.v = 0;
         gSnowTriangles[i].vi2 = (i * 3) + 0;
-        gSnowTriangles[i].uv2.u = -width / 4;
+        gSnowTriangles[i].uv2.u = -widthQuart;
         gSnowTriangles[i].uv2.v = 0;
     }
 
@@ -466,7 +465,7 @@ void snow_update(s32 updateRate) {
  * This starts from the camera position then
  */
 void snow_vertices(void) {
-    s16 pos[3];
+    s32 pos[3];
     f32 posF[3];
     s32 i;
     Vertex *verts;
@@ -499,7 +498,7 @@ void snow_vertices(void) {
             verts[2].z = pos[2];
             verts += 3;
             gSnowVertCount += 3;
-            gSnowTriIndices[gSnowVertCount / 3] = i;
+            gSnowTriIndices[i] = i;
         }
     }
 }

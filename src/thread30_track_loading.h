@@ -3,7 +3,7 @@
 
 #include "types.h"
 
-extern s32 gThread30NeedToLoadLevel;
+extern u8 gThread30NeedToLoadLevel;
 extern u8 gThread30Active;
 
 void create_and_start_thread30(void);
