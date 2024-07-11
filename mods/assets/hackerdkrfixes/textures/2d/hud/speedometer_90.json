@@ -1,0 +1,14 @@
+{
+    "compressed": true,
+    "flags": {
+        "wrap-s": "Wrap",
+        "wrap-t": "Wrap"
+    },
+    "format": "RGBA16",
+    "images": [
+        "speedometer_90.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "type": "Texture",
+    "write-size": true
+}

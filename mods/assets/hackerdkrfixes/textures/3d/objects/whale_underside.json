@@ -1,0 +1,15 @@
+{
+    "compressed": true,
+    "flags": {
+        "wrap-s": "Wrap",
+        "wrap-t": "Clamp"
+    },
+    "flipped-image": true,
+    "format": "I4",
+    "images": [
+        "whale_underside.png"
+    ],
+    "render-mode": "OPAQUE",
+    "type": "Texture",
+    "write-size": true
+}

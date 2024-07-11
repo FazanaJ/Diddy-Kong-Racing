@@ -1,0 +1,15 @@
+{
+    "compressed": true,
+    "flags": {
+        "wrap-s": "Wrap",
+        "wrap-t": "Clamp"
+    },
+    "flipped-image": true,
+    "format": "IA8",
+    "images": [
+        "finish_line_tape2.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "type": "Texture",
+    "write-size": true
+}

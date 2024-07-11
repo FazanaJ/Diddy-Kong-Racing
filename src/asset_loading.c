@@ -72,6 +72,7 @@ u32 *load_asset_section_from_rom(u32 assetIndex) {
 s32 load_asset_to_address(u32 assetIndex, u32 address, s32 assetOffset, s32 size) {
     u32 *index;
     s32 start;
+    profiler_begin_timer();
 
     if (size == 0 || gAssetsLookupTable[0] < assetIndex) {
         return 0;
@@ -81,6 +82,7 @@ s32 load_asset_to_address(u32 assetIndex, u32 address, s32 assetOffset, s32 size
     index = assetIndex + gAssetsLookupTable;
     start = *index + assetOffset;
     dmacopy((u32) (start + __ASSETS_LUT_END), address, size);
+    puppyprint_load_snapshot(PP_LOAD_DMA, profiler_get_timer());
     return size;
 }
 

@@ -773,6 +773,57 @@ void puppyprint_render_log(void) {
     }
 }
 
+void puppyprint_load_snapshot(s32 type, s32 time) {
+    time = osGetCount() - time;
+    if (gPuppyPrint.loading) {
+        gPuppyPrint.loadTimes[type] += time;
+        if (type == PP_LOAD_TOTAL) {
+            gPuppyPrint.loading = FALSE;
+        }
+    }
+}
+
+void puppyprint_reset_load(void) {
+    gPuppyPrint.loading = TRUE;
+    bzero(&gPuppyPrint.loadTimes, sizeof(gPuppyPrint.loadTimes));
+}
+
+void puppyprint_render_load(void) {
+    char textBytes[48];
+    s32 y;
+
+    puppyprint_render_minimal();
+    y = 8;
+    draw_blank_box(gScreenWidth - 144, 0, gScreenWidth, gScreenHeight, 0x00000064);
+    gDPPipeSync(gCurrDisplayList++);
+    set_text_font(ASSET_FONTS_SMALLFONT);
+    set_text_colour(255, 255, 255, 255, 255);
+    set_text_background_colour(0, 0, 0, 0);
+    set_kerning(FALSE);
+
+    gPuppyPrint.loadTimes[PP_LOAD_ETC] = gPuppyPrint.loadTimes[PP_LOAD_TOTAL] - (gPuppyPrint.loadTimes[PP_LOAD_DMA] + 
+    gPuppyPrint.loadTimes[PP_LOAD_DECOMPRESS] + gPuppyPrint.loadTimes[PP_LOAD_MALLOC] + gPuppyPrint.loadTimes[PP_LOAD_OBJECTS]);
+
+    puppyprintf(textBytes, "Total: %2.3fs", (f64) (f32)(gPuppyPrint.loadTimes[PP_LOAD_TOTAL] / 46875000.0f));
+    draw_text(&gCurrDisplayList, gScreenWidth - 72, y + 10, textBytes, ALIGN_TOP_CENTER);
+    y += 12;
+    puppyprintf(textBytes, "DMA: %2.3fs", (f64) (f32)(gPuppyPrint.loadTimes[PP_LOAD_DMA] / 46875000.0f));
+    draw_text(&gCurrDisplayList, gScreenWidth - 72, y + 10, textBytes, ALIGN_TOP_CENTER);
+    y += 12;
+    puppyprintf(textBytes, "Decompress: %2.3fs", (f64) (f32)(gPuppyPrint.loadTimes[PP_LOAD_DECOMPRESS] / 46875000.0f));
+    draw_text(&gCurrDisplayList, gScreenWidth - 72, y + 10, textBytes, ALIGN_TOP_CENTER);
+    y += 12;
+    puppyprintf(textBytes, "Alloc: %2.3fs", (f64) (f32)(gPuppyPrint.loadTimes[PP_LOAD_MALLOC] / 46875000.0f));
+    draw_text(&gCurrDisplayList, gScreenWidth - 72, y + 10, textBytes, ALIGN_TOP_CENTER);
+    y += 12;
+    puppyprintf(textBytes, "Objects: %2.3fs", (f64) (f32)(gPuppyPrint.loadTimes[PP_LOAD_OBJECTS] / 46875000.0f));
+    draw_text(&gCurrDisplayList, gScreenWidth - 72, y + 10, textBytes, ALIGN_TOP_CENTER);
+    y += 12;
+    puppyprintf(textBytes, "Etc: %2.3fs", (f64) (f32)(gPuppyPrint.loadTimes[PP_LOAD_ETC] / 46875000.0f));
+    draw_text(&gCurrDisplayList, gScreenWidth - 72, y + 10, textBytes, ALIGN_TOP_CENTER);
+    y += 12;
+}
+
 void puppyprint_render_coverage(Gfx **dList) {
     gSPClearGeometryMode((*dList)++, G_ZBUFFER);
     gDPPipeSync((*dList)++);
@@ -838,6 +889,9 @@ void render_profiler(void) {
             break;
         case PAGE_LOG:
             puppyprint_render_log();
+            break;
+        case PAGE_LOAD:
+            puppyprint_render_load();
             break;
         case PAGE_COVERAGE:
             break;

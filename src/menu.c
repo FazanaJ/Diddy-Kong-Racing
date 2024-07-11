@@ -9107,7 +9107,7 @@ ConfigOptionEntry gOptionMenu[] = {
     { "Screen", &gConfig.screenMode, OPT_EX_PAK, 5, 0, 5, refresh_screen_res },
     { "Screen X", &gConfig.screenPosX, OPT_NO_EMU | OPT_NUMBER | OPT_240, 0, -8, 8, refresh_screen_res },
     { "Screen Y", &gConfig.screenPosY, OPT_NO_EMU | OPT_NUMBER | OPT_240, 0, -8, 8, refresh_screen_res },
-    { "Anti Aliasing", &gConfig.antiAliasing, OPT_NO_EMU, 2, -1, 1, NULL },
+    { "Anti Aliasing", &gConfig.antiAliasing, OPT_NO_EMU, 2, -1, 1, set_dither_filter },
     { "Dedither", &gConfig.dedither, OPT_NO_EMU, 0, 0, 1, set_dither_filter },
     { "Frame Cap", &gConfig.frameCap, OPT_PAL, 11, 0, 3, NULL },
     { "MP Cutbacks", &gConfig.noCutbacks, OPT_NO_EMU, 1, 0, 1, NULL },

@@ -13,7 +13,7 @@ BuildTexture::BuildTexture(DkrAssetsSettings &settings, BuildInfo &info) : _sett
     int numberOfTextures = _info.srcFile->length_of_array("/images");
     std::string format = _info.srcFile->get_string_uppercase("/format", DEFAULT_TEXTURE_FORMAT);
     
-    bool isCompressed = _info.srcFile->get_bool("/compressed");
+    bool isCompressed = true; // Why wouldn't we want everything compressed?
     bool isFlipped = _info.srcFile->get_bool("/flipped-image", false);
     int frameAdvanceDelay = std::round(_info.srcFile->get_float("/frame-advance-delay", 0) * TEXTURE_FPS);
     std::string renderMode = _info.srcFile->get_string("/render-mode", "OPAQUE");

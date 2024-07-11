@@ -1,0 +1,18 @@
+{
+    "compressed": true,
+    "flags": {
+        "anti-aliased": true,
+        "cutout": true,
+        "interlaced": true,
+        "wrap-s": "Clamp",
+        "wrap-t": "Clamp"
+    },
+    "format": "IA8",
+    "images": [
+        "snowflake2.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "sprite-x": 15,
+    "sprite-y": 2,
+    "type": "Texture"
+}

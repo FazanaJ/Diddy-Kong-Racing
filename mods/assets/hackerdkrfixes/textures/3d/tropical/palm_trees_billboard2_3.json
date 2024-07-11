@@ -1,0 +1,16 @@
+{
+    "compressed": true,
+    "flags": {
+        "cutout": true,
+        "wrap-s": "Clamp",
+        "wrap-t": "Clamp"
+    },
+    "flipped-image": true,
+    "format": "RGBA16",
+    "images": [
+        "palm_trees_billboard2_3.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "type": "Texture",
+    "write-size": true
+}

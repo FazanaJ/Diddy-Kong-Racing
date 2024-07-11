@@ -1,0 +1,17 @@
+{
+    "compressed": true,
+    "flags": {
+        "cutout": true,
+        "interlaced": true,
+        "wrap-s": "Clamp",
+        "wrap-t": "Clamp"
+    },
+    "format": "RGBA16",
+    "images": [
+        "balloon_shield_1.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "sprite-x": 17,
+    "sprite-y": 27,
+    "type": "Texture"
+}

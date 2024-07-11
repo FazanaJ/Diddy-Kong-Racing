@@ -1,0 +1,23 @@
+{
+    "compressed": true,
+    "flags": {
+        "wrap-s": "Wrap",
+        "wrap-t": "Wrap"
+    },
+    "flipped-image": true,
+    "format": "RGBA16",
+    "frame-advance-delay": 2.133,
+    "images": [
+        "zipper_0.png",
+        "zipper_1.png",
+        "zipper_2.png",
+        "zipper_3.png",
+        "zipper_4.png",
+        "zipper_5.png",
+        "zipper_6.png",
+        "zipper_7.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "type": "Texture",
+    "write-size": true
+}

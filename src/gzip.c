@@ -57,11 +57,13 @@ s32 get_asset_uncompressed_size(s32 assetIndex, s32 assetOffset) {
  * Official name: rzipUncompress
  */
 u8 *gzip_inflate(u8 *compressedInput, u8 *decompressedOutput) {
+    profiler_begin_timer();
     gzip_inflate_input = compressedInput + 5; // The compression header is 5 bytes.
     gzip_inflate_output = decompressedOutput;
     gzip_num_bits = 0;
     gzip_bit_buffer = 0;
     while (gzip_inflate_block() != 0) {} // Keep calling gzip_inflate_block() until it returns 0.
+    puppyprint_load_snapshot(PP_LOAD_DECOMPRESS, profiler_get_timer());
     return decompressedOutput;
 }
 

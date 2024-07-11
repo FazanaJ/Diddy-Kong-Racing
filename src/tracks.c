@@ -171,10 +171,8 @@ RenderNodeTrack *gRenderNodeTail;
 RenderListTrack *gMateriallistHead;
 RenderListTrack *gMateriallistTail;
 u8 sShowAll = FALSE;
-s8 sNewSceneTimer = 0;
 void *gSorterHeap;
 u32 gSorterPos;
-Vec3f sPrevCamPos[4];
 
 /******************************/
 
@@ -199,6 +197,8 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     s32 i;
     Object *curObj;
     s32 tajFlags;
+    u32 loadTime;
+    profiler_begin_timer();
 
     gCurrentLevelHeader2 = gCurrentLevelHeader;
     D_8011B0F8 = FALSE;
@@ -235,10 +235,10 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     if (gWaveBlockCount) {
         func_800B82B4(gCurrentLevelModel, gCurrentLevelHeader2, i);
     }
-
-    sNewSceneTimer = 10;
-
+    
     set_active_viewports_and_max(numberOfPlayers);
+    loadTime = gPuppyPrint.loadTimes[PP_LOAD_DMA] + gPuppyPrint.loadTimes[PP_LOAD_DECOMPRESS] + gPuppyPrint.loadTimes[PP_LOAD_MALLOC];
+    profiler_reset_timer();
     spawn_skydome(skybox);
     D_8011B110 = 0;
     D_8011B114 = 0x10000;
@@ -248,6 +248,11 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     gScenePlayerViewports = numberOfPlayers;
     func_8000CC7C(vehicle, entranceId, numberOfPlayers);
     func_8000B020(72, 64);
+#ifdef PUPPYPRINT_DEBUG
+    puppyprint_load_snapshot(PP_LOAD_OBJECTS, profiler_get_timer());
+    loadTime = (gPuppyPrint.loadTimes[PP_LOAD_DMA] + gPuppyPrint.loadTimes[PP_LOAD_DECOMPRESS] + gPuppyPrint.loadTimes[PP_LOAD_MALLOC]) - loadTime;
+    gPuppyPrint.loadTimes[PP_LOAD_OBJECTS] -= loadTime;
+#endif
 
     if (geometry == 0 && entranceId == 0) {
         transition_begin(&gCircleFadeToBlack);
@@ -334,13 +339,6 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
     ObjectSegment *cam;
     profiler_begin_timer();
 
-    if (sNewSceneTimer > 0) {
-        sNewSceneTimer -= updateRate;
-        if (sNewSceneTimer < 0) {
-            sNewSceneTimer = 0;
-        }
-    }
-
     gSceneCurrDisplayList = *dList;
     gSceneCurrMatrix = *mtx;
     gSceneCurrVertexList = *vtx;
@@ -414,15 +412,6 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
         gDPPipeSync((*dList)++);
         set_active_camera(gSceneCurrentPlayerID);
         cam = get_active_camera_segment();
-        if (sNewSceneTimer != 0 || cam->trans.x_position != sPrevCamPos[j].x || 
-        cam->trans.y_position != sPrevCamPos[j].y || cam->trans.z_position != sPrevCamPos[j].z) {
-            sPrevCamPos[j].x = cam->trans.x_position;
-            sPrevCamPos[j].y = cam->trans.y_position;
-            sPrevCamPos[j].z = cam->trans.z_position;
-            gUpdateLight = TRUE;
-        } else {
-            gUpdateLight = FALSE;
-        }
         func_80066CDC(dList, &gSceneCurrMatrix);
         func_8002A31C();
         // Show detailed skydome in single player.
@@ -919,7 +908,7 @@ void draw_gradient_background(Gfx **dList) {
  */
 void render_skydome(Gfx **dList) {
     ObjectSegment *cam;
-    s32 prevRender = gIsObjectRender;
+    s32 prevAAMode;
     profiler_begin_timer();
     if (gSkydomeSegment == NULL) {
         return;
@@ -934,9 +923,10 @@ void render_skydome(Gfx **dList) {
 
     matrix_world_origin(dList, &gSceneCurrMatrix);
     if (gSceneRenderSkyDome) {
-        gIsObjectRender = 2;
+        prevAAMode = gConfig.antiAliasing;
+        gConfig.antiAliasing = -1;
         render_object(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, gSkydomeSegment);
-        gIsObjectRender = prevRender;
+        gConfig.antiAliasing = prevAAMode;
     }
     profiler_add(PP_BACKGROUND, first);
 }
@@ -1037,6 +1027,7 @@ void render_level_geometry_and_objects(Gfx **dList) {
     u8 segmentIds[LEVEL_SEGMENT_MAX];
     u8 objectsVisible[LEVEL_SEGMENT_MAX];
     s32 visible;
+    s32 prevAAMode;
     Object *obj;
 
     func_80012C30();
@@ -1061,6 +1052,11 @@ void render_level_geometry_and_objects(Gfx **dList) {
 
     objectsVisible[0] = TRUE;
 
+    prevAAMode = gConfig.antiAliasing;
+    if (gConfig.perfMode) {
+        gConfig.antiAliasing = -1;
+    }
+
     if (gDrawLevelSegments) {
         for (i = 0; i < numberOfSegments; i++) {
             render_level_segment(dList, segmentIds[i], FALSE); // Render opaque segments
@@ -1077,7 +1073,11 @@ void render_level_geometry_and_objects(Gfx **dList) {
 #ifdef PUPPYPRINT_DEBUG
     gPuppyPrint.mainTimerPoints[0][PP_OBJGFX] = osGetCount();
 #endif
-    gIsObjectRender = TRUE;
+    if (gConfig.perfMode) {
+        gConfig.antiAliasing = -1;
+    } else if (prevAAMode == 0) { // Fast AA, override AA to true to give objects full AA.
+        gConfig.antiAliasing = 1;
+    }
     sort_objects_by_dist(sp160, objCount - 1);
     visibleFlags = OBJ_FLAGS_INVIS_PLAYER1 << (gActiveCameraID & 1);
 
@@ -1134,7 +1134,9 @@ void render_level_geometry_and_objects(Gfx **dList) {
 #ifdef PUPPYPRINT_DEBUG
     gPuppyPrint.mainTimerPoints[1][PP_OBJGFX] = osGetCount();
 #endif
-    gIsObjectRender = FALSE;
+    if (gConfig.perfMode == FALSE) {
+        gConfig.antiAliasing = prevAAMode;
+    }
     if (gDrawLevelSegments) {
         for (i = numberOfSegments - 1; i >= 0; i--) {
             render_level_segment(dList, segmentIds[i], TRUE); // Render transparent segments
@@ -1143,7 +1145,9 @@ void render_level_geometry_and_objects(Gfx **dList) {
     }
     if (gWaveBlockCount != 0) {
         profiler_begin_timer();
+        gConfig.antiAliasing = -1;
         func_800BA8E4(dList, &gSceneCurrMatrix, gActiveCameraID);
+        gConfig.antiAliasing = prevAAMode;
         profiler_add(PP_WAVES, first);
     }
 
@@ -1199,6 +1203,9 @@ void render_level_geometry_and_objects(Gfx **dList) {
         profiler_add(PP_VOID, first3);
     }
 
+    if (gConfig.perfMode) {
+        gConfig.antiAliasing = prevAAMode;
+    }
 #ifdef PUPPYPRINT_DEBUG
     gPuppyPrint.mainTimerPoints[1][PP_PARTICLEGFX] = osGetCount();
 #endif
@@ -1311,8 +1318,11 @@ void render_level_segment(Gfx **dList, s32 segmentId, s32 nonOpaque) {
         if (nonOpaque) {
             renderBatch = (renderBatch + 1) & 1;
         }
-        if (sp78 && batchFlags & BATCH_FLAGS_WATER) {
-            renderBatch = FALSE;
+        if (batchFlags & BATCH_FLAGS_WATER) {
+            batchFlags &= ~RENDER_ANTI_ALIASING;
+            if (sp78) {
+                renderBatch = FALSE;
+            }
         }
         if (!renderBatch) {
             continue;

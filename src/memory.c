@@ -147,12 +147,14 @@ MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag
     s32 flags;
     s32 nextIndex;
     s32 currIndex;
+    profiler_begin_timer();
 
     flags = disable_interrupts();
     pool = &gMemoryPools[poolIndex];
     if ((pool->curNumSlots + 1) == (*pool).maxNumSlots) {
         enable_interrupts(flags);
         puppyprint_assert("Out of slots (%X)", colourTag);
+        puppyprint_load_snapshot(PP_LOAD_MALLOC, profiler_get_timer());
         return NULL;
     }
     currIndex = -1;
@@ -168,6 +170,7 @@ MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag
             if (curSlot->size >= size && curSlot->size < slotSize) {
                 slotSize = curSlot->size;
                 currIndex = nextIndex;
+                break;
             }
         }
         nextIndex = curSlot->nextIndex;
@@ -175,11 +178,14 @@ MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag
     if (currIndex != -1) {
         allocate_memory_pool_slot(poolIndex, (s32) currIndex, size, 1, 0, colourTag);
         enable_interrupts(flags);
+        puppyprint_load_snapshot(PP_LOAD_MALLOC, profiler_get_timer());
         return (MemoryPoolSlot *) (slots + currIndex)->data;
     }
     enable_interrupts(flags);
 
     puppyprint_assert("Out of memory (%X)", colourTag);
+    
+    puppyprint_load_snapshot(PP_LOAD_MALLOC, profiler_get_timer());
     return NULL;
 }
 

@@ -470,6 +470,7 @@ void load_next_ingame_level(s32 numPlayers, s32 trackID, Vehicle vehicle) {
  */
 void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicleId) {
     profiler_begin_timer();
+    puppyprint_reset_load();
     alloc_displaylist_heap(numberOfPlayers);
     set_free_queue_state(0);
     camera_init();
@@ -481,8 +482,9 @@ void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     sPrevTime = 0;
     set_free_queue_state(2);
     rumble_init(TRUE);
+    puppyprint_load_snapshot(PP_LOAD_TOTAL, profiler_get_timer());
     puppyprint_log("Level [%s] loaded in %2.3fs.", get_level_name(levelId),
-                   (f64) (f32)((osGetCount() - profiler_get_timer()) / 46875000.0f));
+                   (f64) (f32)(gPuppyPrint.loadTimes[PP_LOAD_TOTAL] / 46875000.0f));
 }
 
 /**
@@ -961,6 +963,7 @@ Vehicle get_level_default_vehicle(void) {
  */
 void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicleId, s32 cutsceneId) {
     profiler_begin_timer();
+    puppyprint_reset_load();
     set_free_queue_state(0);
     camera_init();
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, cutsceneId);
@@ -970,9 +973,10 @@ void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     osSetTime(0);
     sPrevTime = 0;
     set_free_queue_state(2);
+    puppyprint_load_snapshot(PP_LOAD_TOTAL, profiler_get_timer());
     if (gBootTimer == 0) {
         puppyprint_log("Level [%s] (Menu) loaded in %2.3fs.", get_level_name(levelId),
-                       (f64) (f32)((osGetCount() - profiler_get_timer()) / 46875000.0f));
+                       (f64) (f32)(gPuppyPrint.loadTimes[PP_LOAD_TOTAL] / 46875000.0f));
     }
 }
 

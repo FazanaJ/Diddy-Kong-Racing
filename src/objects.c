@@ -56,7 +56,6 @@ s8 D_800DC73C = 0;
 s8 D_800DC740 = 0;
 s8 gSwapLeadPlayer = FALSE;
 s8 D_800DC748 = 0;
-u8 gUpdateLight = TRUE;
 s32 D_800DC74C[2] = { 0, 0 }; // Have a feeling these are both the same array.
 s32 D_800DC754[2] = { 0, 0 };
 Object *gShieldEffectObject = NULL;
@@ -2751,14 +2750,12 @@ void render_3d_model(Gfx **dList, Object *obj) {
                     flags = FALSE;
                 }
                 obj->unk44 = (Vertex *) obj68->unk4[obj68->animationTaskNum];
-                if (gUpdateLight) {
-                    if (obj->behaviorId == BHV_UNK_3F) { // 63 = stopwatchicon, stopwatchhand
-                        calc_dyn_light_and_env_map_for_object(objModel, obj, 0, gCurrentLightIntensity);
-                    } else if (flags) {
-                        calc_dyn_light_and_env_map_for_object(objModel, obj, -1, gCurrentLightIntensity);
-                    } else {
-                        func_800245F0(objModel, obj, gCurrentLightIntensity);
-                    }
+                if (obj->behaviorId == BHV_UNK_3F) { // 63 = stopwatchicon, stopwatchhand
+                    calc_dyn_light_and_env_map_for_object(objModel, obj, 0, gCurrentLightIntensity);
+                } else if (flags) {
+                    calc_dyn_light_and_env_map_for_object(objModel, obj, -1, gCurrentLightIntensity);
+                } else {
+                    func_800245F0(objModel, obj, gCurrentLightIntensity);
                 }
             }
             if ((racerObj != NULL) && (racerObj->playerIndex == PLAYER_COMPUTER) &&

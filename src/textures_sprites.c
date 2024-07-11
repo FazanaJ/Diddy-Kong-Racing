@@ -568,7 +568,7 @@ void load_and_set_texture(Gfx **dlist, TextureHeader *texhead, s32 flags, s32 te
                 : (flags & (RENDER_VTX_ALPHA | RENDER_DECAL | RENDER_Z_UPDATE | RENDER_CUTOUT | RENDER_FOG_ACTIVE |
                             RENDER_SEMI_TRANSPARENT | RENDER_Z_COMPARE | RENDER_ANTI_ALIASING));
     flags &= ~gBlockedRenderFlags;
-    if (gConfig.antiAliasing == -1 || gConfig.perfMode) {
+    if (gConfig.antiAliasing == -1) {
         flags &= ~RENDER_ANTI_ALIASING;
     }
     flags = (flags & RENDER_VTX_ALPHA) ? flags & ~RENDER_FOG_ACTIVE : flags & ~RENDER_Z_UPDATE;
@@ -641,31 +641,7 @@ void load_and_set_texture(Gfx **dlist, TextureHeader *texhead, s32 flags, s32 te
             dlID = dRenderSettingsVtxAlpha[dlIndex];
             goto draw;
         }
-        if (gConfig.perfMode) {
-            dlIndex = 0;
-        } else {
-#ifdef PUPPYPRINT_DEBUG
-            dlIndex = gConfig.antiAliasing + 1;
-            if (!gPuppyPrint.showCvg) {
-                if (gIsObjectRender && gConfig.antiAliasing == 0) {
-                    if (gIsObjectRender != 2) {
-                        dlIndex++;
-                    } else {
-                        dlIndex = 0;
-                    }
-                }
-            }
-#else
-            dlIndex = gConfig.antiAliasing + 1;
-            if (gIsObjectRender && gConfig.antiAliasing == 0) {
-                if (gIsObjectRender != 2) {
-                    dlIndex++;
-                } else {
-                    dlIndex = 0;
-                }
-            }
-#endif
-        }
+        dlIndex = gConfig.antiAliasing + 1;
         if (flags & RENDER_Z_COMPARE) {
             dlIndex += 3;
         }
@@ -1004,14 +980,12 @@ GLOBAL_ASM("asm/non_matchings/textures_sprites/func_8007CDC0.s")
 s32 get_tile_bytes(s32 type, s32 siz) {
     if (type == 0) {
         switch (siz) {
-            case G_IM_SIZ_4b:
-                return G_IM_SIZ_4b_TILE_BYTES;
             case G_IM_SIZ_8b:
-                return G_IM_SIZ_8b_TILE_BYTES;
+                return 0;
             case G_IM_SIZ_16b:
-                return G_IM_SIZ_16b_TILE_BYTES;
+                return 1;
             case G_IM_SIZ_32b:
-                return G_IM_SIZ_32b_TILE_BYTES;
+                return 1;
         }
     } else if (type == 1) {
         switch (siz) {
@@ -1037,8 +1011,6 @@ s32 get_tile_bytes(s32 type, s32 siz) {
         }
     } else if (type == 3) {
         switch (siz) {
-            case G_IM_SIZ_4b:
-                return G_IM_SIZ_4b_BYTES;
             case G_IM_SIZ_8b:
                 return G_IM_SIZ_8b_BYTES;
             case G_IM_SIZ_16b:
@@ -1066,6 +1038,7 @@ void build_tex_display_list(TextureHeader *tex, Gfx *dlist) {
     s32 siz;
     s32 fmt;
     s32 dxt;
+    s32 shiftWidth;
     s32 firstSiz;
 
     tex->cmd = (s32 *) dlist;
@@ -1160,7 +1133,11 @@ void build_tex_display_list(TextureHeader *tex, Gfx *dlist) {
     if (tex->flags & RENDER_LINE_SWAP) {
         dxt = 0;
     } else {
-        dxt = CALC_DXT(width, get_tile_bytes(3, siz));
+        if (siz == G_IM_SIZ_4b) {
+            dxt = CALC_DXT_4b(width);
+        } else {
+            dxt = CALC_DXT(width, get_tile_bytes(3, siz));
+        }
     }
 
     if (siz == G_IM_SIZ_32b) {
@@ -1169,15 +1146,18 @@ void build_tex_display_list(TextureHeader *tex, Gfx *dlist) {
         firstSiz = G_IM_SIZ_16b;
     }
 
+    if (siz == G_IM_SIZ_4b) {
+        shiftWidth = (width) >> 1;
+    } else {
+        shiftWidth = (width) << get_tile_bytes(0, siz);
+    }
+
     gDPSetTextureImage(dlist++, fmt, firstSiz, 1, OS_PHYSICAL_TO_K0(tex + 1));
     gDPSetTile(dlist++, fmt, firstSiz, 0, 0, G_TX_LOADTILE, 0, cmt, maskt, 0, cms, masks, 0);
     gDPLoadSync(dlist++);
-    gDPLoadBlock(dlist++, G_TX_LOADTILE, 0, 0,
-                 (((width) * (height) + get_tile_bytes(1, siz)) >> get_tile_bytes(2, siz)) - 1, dxt);
-    gDPSetTile(dlist++, fmt, siz, (((width) *get_tile_bytes(0, siz)) + 7) >> 3, 0, G_TX_RENDERTILE, pal, cmt, maskt, 0,
-               cms, masks, 0);
-    gDPSetTileSize(dlist++, G_TX_RENDERTILE, 0, 0, ((width) -1) << G_TEXTURE_IMAGE_FRAC,
-                   ((height) -1) << G_TEXTURE_IMAGE_FRAC);
+    gDPLoadBlock(dlist++, G_TX_LOADTILE, 0, 0, ((width * height + get_tile_bytes(1, siz)) >> get_tile_bytes(2, siz)) - 1, dxt);
+    gDPSetTile(dlist++, fmt, siz, (shiftWidth + 7) >> 3, 0, G_TX_RENDERTILE, pal, cmt, maskt, 0, cms, masks, 0);
+    gDPSetTileSize(dlist++, G_TX_RENDERTILE, 0, 0, (width - 1) << G_TEXTURE_IMAGE_FRAC, (height -1) << G_TEXTURE_IMAGE_FRAC);
     tex->numberOfCommands = ((s32) ((u8 *) dlist) - (s32) ((u8 *) tex->cmd)) >> 3;
 }
 

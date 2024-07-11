@@ -19,8 +19,6 @@
     gsDPSetOtherMode(cycleMode, DKR_OML_COMMON | renderMode1 | renderMode2), \
 }
 
-extern s32 gIsObjectRender;
-
 /**
  * Diddy Kong Racing sets up many of the rendermode tables with a certain pattern.
  * First two entries are combine mode.

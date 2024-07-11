@@ -1,0 +1,16 @@
+{
+    "compressed": true,
+    "flags": {
+        "cutout": true,
+        "wrap-s": "Wrap",
+        "wrap-t": "Clamp"
+    },
+    "flipped-image": true,
+    "format": "RGBA16",
+    "images": [
+        "finish_line_chequered_red_and_white.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "type": "Texture",
+    "write-size": true
+}

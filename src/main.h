@@ -47,6 +47,7 @@ enum DebugPages {
     PAGE_MEMORY,
     PAGE_AUDIO,
     PAGE_LOG,
+    PAGE_LOAD,
     PAGE_COVERAGE,
 
     PAGE_COUNT
@@ -60,7 +61,8 @@ enum DebugPages {
     "Objects", \
     "Memory", \
     "Audio", \
-    "Logging\t", \
+    "Logging", \
+    "Load times", \
     "Coverage"
 
 enum rspFlags {
@@ -144,6 +146,16 @@ enum PPProfilerEvent {
     THREAD30_END,
 
     NUM_THREAD_TIMERS
+};
+
+enum PPLoadNames {
+    PP_LOAD_DMA,
+    PP_LOAD_DECOMPRESS,
+    PP_LOAD_MALLOC,
+    PP_LOAD_OBJECTS,
+    PP_LOAD_ETC,
+    
+    PP_LOAD_TOTAL
 };
 
 #define PP_STRINGS \
@@ -232,6 +244,7 @@ struct PuppyPrint {
     u32 rdpTime; // Sum of multiple RDP timings, and hung by its entrails for all to see.
     u32 rspGfx[2][8];
     u32 rspAudioBufTime; // Buffer that keeps track of the current Audio task.
+    u32 loadTimes[PP_LOAD_TOTAL + 1];
     PPTimer timers[PP_TIMES_TOTAL]; // Large collection of timers for various things.
     PPTimer coreTimers[PP_MAIN_TIMES_TOTAL]; // Large collection of timers for various things.
     PPTimer audTime; // Normalised total for audio processing time.
@@ -251,6 +264,7 @@ struct PuppyPrint {
     u8 enabled; // Show the profiler
     u8 menuOpen; // Whether the page menu's open
     u8 page; // Current viewed page.
+    u8 loading;
     u8 showCvg;
     u8 showCol;
     u8 updateTimer;
@@ -280,6 +294,8 @@ void puppyprint_log(const char *str, ...);
 void puppyprint_render_coverage(Gfx **dList);
 void profiler_reset_objects(void);
 void calculate_ram_total(s32 poolIndex, u32 colourTag);
+void puppyprint_reset_load(void);
+void puppyprint_load_snapshot(s32 type, s32 time);
 s32 find_thread_interrupt_offset(u32 lowTime, u32 highTime);
 #define profiler_begin_timer() u32 first = osGetCount();
 #define profiler_begin_timer2() u32 first2 = osGetCount();
@@ -302,6 +318,12 @@ extern u8 sPrevLoadTimer;
 extern u8 gShowHiddenGeometry;
 extern u8 gShowHiddenObjects;
 extern u32 gPokeThread[4];
+extern u32 gLoadDmaTime;
+extern u32 gLoadDecompressTime;
+extern u32 gLoadAllocTime;
+extern u32 gLoadObjectTime;
+extern u32 gLoadEtcTime;
+extern u32 gLoadTotalTime;
 #else
 
 #define update_rdp_profiling()
@@ -322,6 +344,8 @@ extern u32 gPokeThread[4];
 #define profiler_offset(x, y)
 #define profiler_reset_objects(x)
 #define calculate_ram_total(x, y)
+#define puppyprint_reset_load()
+#define puppyprint_load_snapshot(type, time)
 #ifdef __sgi
 #define puppyprint_log
 #else
