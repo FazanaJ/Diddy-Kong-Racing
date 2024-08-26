@@ -976,6 +976,11 @@ typedef struct Object_Animation {
   /* 0x5C */ s32 unk5C;
 } Object_Animation;
 
+typedef struct Object_Animation2 {
+  /* 0x00 */ u8 pad0[6];
+  /* 0x06 */ s16 flags;
+} Object_Animation2;
+
 typedef struct Object_OverridePos {
   /* 0x00 */ f32 x;
   /* 0x04 */ f32 y;
@@ -1609,13 +1614,13 @@ typedef struct Object_CharacterSelect {
     s8 pad42;
     s8 unk43;
 } Object_CharacterSelect;
-
 typedef struct Object_64 {
     union {
         Object_Laser laser;
         Object_TrophyCabinet trophy_cabinet;
         Object_Animator animator;
         Object_Animation animation;
+        Object_Animation2 animation2;
         Object_WeaponBalloon weapon_balloon;
         Object_Weapon weapon;
         Object_Butterfly butterfly;
@@ -1656,6 +1661,7 @@ typedef struct Object_64 {
         Object_8001E89C_64 obj8001E89C_64;
         Object_CharacterSelect characterSelect;
         Object_AiNode ai_node;
+        Object_OverridePos override_pos;
     };
 } Object_64;
 
