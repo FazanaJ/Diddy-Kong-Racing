@@ -1994,6 +1994,8 @@ void func_8002C0C4(s32 modelId) {
     s32 temp;
     LevelModel *mdl;
     s32 levelSize = 0;
+    u16 texTable[128];
+    s32 numTextures;
 
     set_texture_colour_tag(MEMP_LEVEL_TEXTURES);
     D_8011D370 = allocate_from_main_pool_safe(0x7D0, MEMP_LEVEL_MODELS);
@@ -2044,9 +2046,10 @@ void func_8002C0C4(s32 modelId) {
         LOCAL_OFFSET_TO_RAM_ADDRESS(TriangleBatchInfo *, gCurrentLevelModel->segments[k].batches);
         LOCAL_OFFSET_TO_RAM_ADDRESS(u16 *, gCurrentLevelModel->segments[k].unk14);
     }
+    numTextures = 0;
+    // I moved the texture loading to happen after the big temp heap is freed. Seemed safer to me.
     for (k = 0; k < gCurrentLevelModel->numberOfTextures; k++) {
-        gCurrentLevelModel->textures[k].texture =
-            load_texture(((s32) gCurrentLevelModel->textures[k].texture) | 0x8000);
+        texTable[numTextures++] = (u32) gCurrentLevelModel->textures[k].texture;
     }
     j = (s32) gCurrentLevelModel + gCurrentLevelModel->modelSize;
     for (k = 0; k < gCurrentLevelModel->numberOfSegments; k++) {
@@ -2065,6 +2068,9 @@ void func_8002C0C4(s32 modelId) {
     free_from_memory_pool(gTrackModelHeap);
     allocate_at_address_in_main_pool(temp_s4, (u8 *) gTrackModelHeap, MEMP_LEVEL_MODELS);
     set_free_queue_state(2);
+    for (k = 0; k < numTextures; k++) {
+        gCurrentLevelModel->textures[k].texture = load_texture(texTable[k] | 0x8000);
+    }
     minimap_init(gCurrentLevelModel);
 
     for (i = 0; i < gCurrentLevelModel->numberOfSegments; i++) {

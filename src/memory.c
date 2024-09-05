@@ -183,7 +183,7 @@ MemoryPoolSlot *allocate_from_memory_pool(s32 poolIndex, s32 size, u32 colourTag
     }
     enable_interrupts(flags);
 
-    puppyprint_assert("Out of memory (%X)", colourTag);
+    puppyprint_assert("Out of memory (%X %s)", colourTag, sPuppyprintMemColours[colourTag]);
     
     puppyprint_load_snapshot(PP_LOAD_MALLOC, profiler_get_timer());
     return NULL;
