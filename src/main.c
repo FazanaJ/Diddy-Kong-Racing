@@ -517,14 +517,6 @@ void puppyprint_render_minimal(void) {
     draw_text(&gCurrDisplayList, 112 - 4, 40, textBytes, ALIGN_TOP_RIGHT);
 }
 
-#ifdef EXPANSION_PAK_REQUIRED
-#define TOTALRAM 0x800000
-#elif EXPANSION_PAK_SUPPORT == 1
-#define TOTALRAM osGetMemSize()
-#else
-#define TOTALRAM 0x400000
-#endif
-
 void puppyprint_render_overview(void) {
     char textBytes[32];
     s32 i;

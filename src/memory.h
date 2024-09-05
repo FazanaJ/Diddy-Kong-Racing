@@ -62,6 +62,7 @@ enum MemoryTags {
     MEMP_AUDIO_BANK,
     MEMP_SEQUENCE,
     MEMP_MISCASSET,
+    MEMP_TEMP,
 
     MEMP_TOTAL
 };

@@ -20,9 +20,9 @@
 /************ .data ************/
 
 SnowGfxData gWeatherPresets[2] = {
-    { 0, 0x40, (TextureHeader *) 0, 0xFE000000, 0xFE000000, 0xFE000000, 0x03FFFFFF, 0x03FFFFFF, 0x03FFFFFF, 6, 6, 12,
+    { 0, 0x40, { WEATHER_SNOW }, 0xFE000000, 0xFE000000, 0xFE000000, 0x03FFFFFF, 0x03FFFFFF, 0x03FFFFFF, 6, 6, 12,
       8 }, // Snow
-    { 0, 0x100, (TextureHeader *) 1, 0xFE000000, 0xFE000000, 0xFE000000, 0x03FFFFFF, 0x03FFFFFF, 0x03FFFFFF, 6, 6, 12,
+    { 0, 0x100, { WEATHER_RAIN }, 0xFE000000, 0xFE000000, 0xFE000000, 0x03FFFFFF, 0x03FFFFFF, 0x03FFFFFF, 6, 6, 12,
       8 }, // Rain
 };
 

@@ -324,7 +324,7 @@ void func_8000B020(s32 numberOfVertices, s32 numberOfTriangles) {
     s32 i;
 
     D_800DC754[0] =
-        (s32) allocate_from_main_pool_safe(((numberOfTriangles * 16) + (numberOfVertices * 10)) * 2, COLOUR_TAG_BLUE);
+        (s32) allocate_from_main_pool_safe(((numberOfTriangles * 16) + (numberOfVertices * 10)) * 2, MEMP_MISC);
     D_800DC754[1] = D_800DC754[0] + (numberOfTriangles * 16);
     D_800DC74C[0] = D_800DC754[1] + (numberOfTriangles * 16);
     D_800DC74C[1] = D_800DC74C[0] + (numberOfVertices * 10);

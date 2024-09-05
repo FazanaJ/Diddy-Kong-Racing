@@ -315,7 +315,7 @@ $(GCC_SAFE_FILES): CFLAGS := -c -DNDEBUG -DAVOID_UB -O2 $(INCLUDE_CFLAGS) $(DEF_
 	-fsingle-precision-constant \
 	-funsigned-char \
 	-fwrapv \
-	-falign-functions=32 \
+	-falign-functions=16 \
 	-Wall \
 	-Werror \
 	-Wno-address \

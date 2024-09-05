@@ -2017,7 +2017,7 @@ void func_8002C0C4(s32 modelId) {
 
     levelSize = get_asset_uncompressed_size(ASSET_LEVEL_MODELS, gLevelModelTable[modelId]);
     levelSize = MIN(levelSize * 3, LEVEL_MODEL_MAX_SIZE);
-    gTrackModelHeap = allocate_from_main_pool_safe(LEVEL_MODEL_MAX_SIZE, MEMP_LEVEL_MODELS);
+    gTrackModelHeap = allocate_from_main_pool_safe(LEVEL_MODEL_MAX_SIZE, MEMP_TEMP);
     gCurrentLevelModel = gTrackModelHeap;
 
     // temp = compressedRamAddr

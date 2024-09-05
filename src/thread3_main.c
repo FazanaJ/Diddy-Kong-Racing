@@ -304,9 +304,6 @@ void main_game_loop(void) {
         if (sLogicUpdateRateF <= 0.0001f) {
             sLogicUpdateRateF = 0.0001f;
         }
-        if (osTvType == TV_TYPE_PAL) {
-            sLogicUpdateRateF *= 1.2f;
-        }
         sTotalTime += (OS_CYCLES_TO_USEC(sDeltaTime) * divisor);
         sTotalTime -= 16666;
         sLogicUpdateRate = LOGIC_60FPS;

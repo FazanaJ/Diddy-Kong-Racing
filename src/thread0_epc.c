@@ -406,6 +406,32 @@ void crash_page_assert(void) {
     }
 }
 
+void crash_page_memory(void) {
+    s32 i;
+    s32 y;
+    calculate_ram_print_order();
+    crash_screen_draw_rect(sCrashX, sCrashY, 270, 205);
+    crash_screen_print(sCrashX + 10, sCrashY + 5, "Free: 0x%06X (%2.2f%%)", TOTALRAM - gPuppyPrint.ramPools[MEMP_OVERALL] - gPuppyPrint.ramPools[MEMP_CODE],
+                (f64) (((f32) (TOTALRAM - gPuppyPrint.ramPools[MEMP_OVERALL] - gPuppyPrint.ramPools[MEMP_CODE]) / (f32) TOTALRAM) * 100.0f));
+    
+    sCrashMaxScroll = -((gScreenHeight - 24));
+    y = sCrashY + 5 - sCrashScroll;
+    for (i = 1; i < MEMP_TOTAL + 12; i++) {
+        if (gPuppyPrint.ramPools[sRAMPrintOrder[i]] == 0) {
+            continue;
+        }
+        sCrashMaxScroll += 10;
+        if (y < 24 || y > gScreenHeight - 16) {
+            y += 10;
+            continue;
+        }
+        crash_screen_print(sCrashX + 10, y, sPuppyprintMemColours[sRAMPrintOrder[i]]);
+        crash_screen_print(sCrashX + 120, y, "0x%X (%2.2f%%)", gPuppyPrint.ramPools[sRAMPrintOrder[i]],
+        (f64) (((f32) gPuppyPrint.ramPools[sRAMPrintOrder[i]] / (f32) TOTALRAM) * 100.0f));
+        y += 10;
+    }
+}
+
 extern OSThread *__osFaultedThread;
 
 OSThread *get_crashed_thread(void) {
@@ -450,7 +476,19 @@ void crash_screen_input(void) {
                 sCrashScroll = 260;
             }
         }
-        if (sCrashPage == CRASH_PAGE_REGISTERS) {
+        if (sCrashPage == CRASH_PAGE_MEMORY) {
+            if (get_buttons_pressed_from_player(i) & U_JPAD) {
+                sCrashScroll -= 10;
+                if (sCrashScroll < 0) {
+                    sCrashScroll = 0;
+                }
+            } else if (get_buttons_pressed_from_player(i) & D_JPAD) {
+                sCrashScroll += 10;
+                if (sCrashScroll > sCrashMaxScroll) {
+                    sCrashScroll = sCrashMaxScroll;
+                }
+            }
+        } else if (sCrashPage == CRASH_PAGE_REGISTERS) {
             if (get_buttons_pressed_from_player(i) & U_JPAD) {
                 sCrashScroll -= 10;
                 if (sCrashScroll < 0) {
@@ -498,6 +536,9 @@ void draw_crash_screen(OSThread *thread) {
 #ifdef PUPPYPRINT_DEBUG
         case CRASH_PAGE_LOG:
             crash_page_log();
+            break;
+        case CRASH_PAGE_MEMORY:
+            crash_page_memory();
             break;
 #endif
 #endif

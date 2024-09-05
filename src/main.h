@@ -8,6 +8,14 @@
 #include "structs.h"
 #include "memory.h"
 
+#ifdef EXPANSION_PAK_REQUIRED
+#define TOTALRAM 0x800000
+#elif EXPANSION_PAK_SUPPORT == 1
+#define TOTALRAM osGetMemSize()
+#else
+#define TOTALRAM 0x400000
+#endif
+
 #undef OS_CLOCK_RATE
 #undef OS_CPU_COUNTER
 #undef OS_CYCLES_TO_USEC
@@ -214,6 +222,7 @@ enum PPLoadNames {
     "Audio Banks", \
     "Sequences", \
     "Misc Asset", \
+    "Temp Mem", \
     \
     "Red", \
     "Black", \
@@ -297,6 +306,7 @@ void calculate_ram_total(s32 poolIndex, u32 colourTag);
 void puppyprint_reset_load(void);
 void puppyprint_load_snapshot(s32 type, s32 time);
 s32 find_thread_interrupt_offset(u32 lowTime, u32 highTime);
+void calculate_ram_print_order(void);
 #define profiler_begin_timer() u32 first = osGetCount();
 #define profiler_begin_timer2() u32 first2 = osGetCount();
 #define profiler_begin_timer3() u32 first3 = osGetCount();
@@ -324,6 +334,8 @@ extern u32 gLoadAllocTime;
 extern u32 gLoadObjectTime;
 extern u32 gLoadEtcTime;
 extern u32 gLoadTotalTime;
+extern u8 sRAMPrintOrder[MEMP_TOTAL + 12];
+extern char *sPuppyprintMemColours[40];
 #else
 
 #define update_rdp_profiling()
