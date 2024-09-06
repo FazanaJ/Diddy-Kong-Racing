@@ -218,7 +218,6 @@ void init_game(void) {
     }
 #endif
     init_PI_mesg_queue();
-    setup_gfx_mesg_queues();
     audio_init(&gMainSched);
     func_80008040(); // Should be very similar to allocate_object_model_pools
     sControllerStatus = init_controllers();

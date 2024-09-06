@@ -20,8 +20,6 @@
 #define TT_MENU_SAVE_GHOST        8
 #define TT_MENU_EXIT              10
 
-#define SCREEN_FIT_X(x) ((x) *(SCREEN_WIDTH_FLOAT / 320.0f))
-#define SCREEN_FIT_Y(x) ((x) *(SCREEN_HEIGHT_FLOAT / 240.0f))
 #define NUM_CHARACTERS 10
 
 #define PLAYER_MENU 4

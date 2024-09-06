@@ -817,10 +817,10 @@ u16 unused_800E03BC[8] = {
 };
 
 ButtonElement gFileSelectButtons = {
-    SCREEN_FIT_X(24),
-    SCREEN_FIT_Y(81),
-    SCREEN_FIT_X(88),
-    SCREEN_FIT_Y(64),
+    24,
+    81,
+    88,
+    64,
     4,
     4,
     GPACK_RGBA5551(64, 16, 0, 0),
@@ -928,9 +928,9 @@ ButtonTextElement gTwoPlayerRacerCountMenu = { SCREEN_WIDTH_HALF - 80,
                                                64,
                                                4,
                                                4,
-                                               { SCREEN_FIT_X(80), SCREEN_FIT_Y(20), SCREEN_FIT_X(58), SCREEN_FIT_Y(40),
-                                                 SCREEN_FIT_X(80), SCREEN_FIT_Y(40), SCREEN_FIT_X(102),
-                                                 SCREEN_FIT_Y(40) } };
+                                               { (80), (20), (58), (40),
+                                                 (80), (40), (102),
+                                                 (40) } };
 
 // Adventure 1/2 button in the track select menu.
 // Note: The first element (.x) is not actually used.
@@ -6716,6 +6716,16 @@ void gameselect_render(UNUSED s32 updateRate) {
     s32 i;
     s32 filterBlendFactor;
     s32 fade;
+    s32 pos[9];
+
+    if (gGameSelectElements) {
+        i = 0;
+        while (gGameSelectElements[i].left) {
+            pos[i] = gGameSelectElements[i].center;
+            gGameSelectElements[i].center += ((gScreenWidth - 320) / 2);
+            i++;
+        }
+    }
 
     if (gMenuDelay > -22 && gMenuDelay < 22) {
         fade = gOptionBlinkTimer * 8;
@@ -6743,6 +6753,14 @@ void gameselect_render(UNUSED s32 updateRate) {
 
         draw_menu_elements(1, gGameSelectElements, 1.0f);
         func_80080BC8(&sMenuCurrDisplayList);
+    }
+
+    if (gGameSelectElements) {
+        i = 0;
+        while (gGameSelectElements[i].left) {
+            gGameSelectElements[i].center = pos[i];
+            i++;
+        }
     }
 }
 
@@ -6936,7 +6954,7 @@ void fileselect_render(UNUSED s32 updateRate) {
 
     menu_camera_centre();
     set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
-    x = -((NUMBER_OF_SAVE_FILES * 92) / 2);
+    x = -((NUMBER_OF_SAVE_FILES * 92) / 2) + ((gScreenWidth - 320) / 2);
     for (i = 0; i < NUMBER_OF_SAVE_FILES; i++) {
         s32 saveNum = i;
         if (saveNum >= 3) {
@@ -6947,7 +6965,7 @@ void fileselect_render(UNUSED s32 updateRate) {
         } else {
             colour = COLOUR_RGBA32(106, 144, 115, 255);
         }
-        func_80080580(NULL, x, (gScreenHeight / 2) - gFileSelectButtons.y, gFileSelectButtons.width,
+        func_80080580(NULL, x, ((gScreenHeight - (gScreenHeight - 240)) / 2) - gFileSelectButtons.y, gFileSelectButtons.width,
                       gFileSelectButtons.height, gFileSelectButtons.borderWidth, gFileSelectButtons.borderHeight,
                       colour, gMenuAssets[TEXTURE_SURFACE_BUTTON_WOOD]);
         x += 92;

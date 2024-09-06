@@ -116,10 +116,6 @@ Gfx dTextureRectangleScaledXlu[][2] = {
 /************ .bss ************/
 
 u8 gDramStack[SP_DRAM_STACK_SIZE8];
-OSMesgQueue D_80125EA0;
-OSMesg D_80125EB8;
-OSMesgQueue D_80125EC0;
-OSMesg D_80125EF0[8];
 
 extern OSMesgQueue gGameMesgQueue;
 extern OSSched gMainSched;
@@ -377,14 +373,6 @@ void init_rdp_and_framebuffer(Gfx **dList) {
  */
 void init_rsp(Gfx **dList) {
     gSPDisplayList((*dList)++, dRspInit);
-}
-
-/**
- * Initialise the mesg queues for the gfx tasks, that interface with the scheduler.
- */
-void setup_gfx_mesg_queues(void) {
-    osCreateMesgQueue(&D_80125EA0, &D_80125EB8, 1);
-    osCreateMesgQueue(&D_80125EC0, D_80125EF0, ARRAY_COUNT(D_80125EF0));
 }
 
 /**

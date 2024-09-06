@@ -66,7 +66,6 @@ void set_background_prim_colour(u8 red, u8 green, u8 blue);
 void set_background_fill_colour(s32 red, s32 green, s32 blue);
 void init_rdp_and_framebuffer(Gfx **dList);
 void init_rsp(Gfx **dList);
-void setup_gfx_mesg_queues(void);
 void mosaic_init(TextureHeader *arg0, TextureHeader *arg1, u32 arg2);
 void setup_ostask_xbus(Gfx* dlBegin, Gfx* dlEnd);
 void setup_ostask_fifo(Gfx* dlBegin, Gfx* dlEnd);
