@@ -3,6 +3,7 @@
 
 #include "macros.h"
 #include "libultra_internal.h"
+#include "main.h"
 
 extern OSTimer __osBaseTimer;
 OSTimer *__osTimerList = &__osBaseTimer;

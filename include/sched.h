@@ -10,6 +10,10 @@
 #define OS_SC_PRE_NMI_MSG       4
 #define OS_SC_AUDIO_MSG         5
 #define OS_SC_MAX_MESGS         8
+#define MESG_RSP_AUD_HUNG 9
+#define MESG_RSP_GFX_HUNG 10
+#define MESG_RDP_HUNG 11
+#define MESG_TASK_FAILED 12
 
 #define OS_SC_ID_NONE   0
 #define OS_SC_ID_AUDIO  1
