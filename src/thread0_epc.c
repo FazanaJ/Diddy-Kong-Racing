@@ -15,6 +15,7 @@
 #include "string.h"
 #include "video.h"
 #include "main.h"
+#include "audiomgr.h"
 
 s32 _Printf(outfun prout, char *dst, const char *fmt, va_list args);
 
@@ -52,6 +53,21 @@ void puppyprint_assert(char *str, ...) {
     bcopy(textBytes, gAssertString, sizeof(textBytes));
     va_end(arguments);
     *(volatile int *) 0 = 0;
+}
+
+void puppyprint_assert_nonblocking(char *str, ...) {
+    char textBytes[127];
+    va_list arguments;
+    gAssert = TRUE;
+
+    bzero(textBytes, sizeof(textBytes));
+    va_start(arguments, str);
+    if ((_Printf(write_to_buf, textBytes, str, arguments)) <= 0) {
+        va_end(arguments);
+        return;
+    }
+    bcopy(textBytes, gAssertString, sizeof(textBytes));
+    va_end(arguments);
 }
 
 const char *const gCauseDesc[18] = {
@@ -164,15 +180,7 @@ const u32 gCrashScreenFont[7 * 9] = {
 
 extern u64 osClockRate;
 
-struct {
-    OSThread thread;
-    u64 stack[THREAD2_STACK / sizeof(u64)];
-    OSMesgQueue mesgQueue;
-    OSMesg mesg;
-    u16 *framebuffer;
-    u16 width;
-    u16 height;
-} gCrashScreen;
+CrashData gCrashScreen;
 
 void crash_screen_draw_rect(s32 x, s32 y, s32 w, s32 h) {
     u16 *ptr;
@@ -409,14 +417,13 @@ void crash_page_assert(void) {
 void crash_page_memory(void) {
     s32 i;
     s32 y;
-    calculate_ram_print_order();
     crash_screen_draw_rect(sCrashX, sCrashY, 270, 205);
     crash_screen_print(sCrashX + 10, sCrashY + 5, "Free: 0x%06X (%2.2f%%)", TOTALRAM - gPuppyPrint.ramPools[MEMP_OVERALL] - gPuppyPrint.ramPools[MEMP_CODE],
                 (f64) (((f32) (TOTALRAM - gPuppyPrint.ramPools[MEMP_OVERALL] - gPuppyPrint.ramPools[MEMP_CODE]) / (f32) TOTALRAM) * 100.0f));
     
     sCrashMaxScroll = -((gScreenHeight - 24));
     y = sCrashY + 5 - sCrashScroll;
-    for (i = 0; i < MEMP_TOTAL + 12; i++) {
+    for (i = 1; i < MEMP_TOTAL + 12; i++) {
         if (gPuppyPrint.ramPools[sRAMPrintOrder[i]] == 0) {
             continue;
         }
@@ -426,8 +433,8 @@ void crash_page_memory(void) {
             continue;
         }
         crash_screen_print(sCrashX + 10, y, "%02X %s", i, sPuppyprintMemColours[sRAMPrintOrder[i]]);
-        crash_screen_print(sCrashX + 160, y, "0x%X", gPuppyPrint.ramPools[sRAMPrintOrder[i]]);
-        crash_screen_print(sCrashX + 210, y, "(%2.2f%%)", (f64) (((f32) gPuppyPrint.ramPools[sRAMPrintOrder[i]] / (f32) TOTALRAM) * 100.0f));
+        crash_screen_print(sCrashX + 120, y, "0x%X (%2.2f%%)", gPuppyPrint.ramPools[sRAMPrintOrder[i]],
+        (f64) (((f32) gPuppyPrint.ramPools[sRAMPrintOrder[i]] / (f32) TOTALRAM) * 100.0f));
         y += 10;
     }
 }
@@ -517,10 +524,10 @@ void draw_crash_screen(OSThread *thread) {
         return;
     }
 
-    wcopy(gVideoCurrDepthBuffer, gCrashScreen.framebuffer, (gScreenWidth * gScreenHeight) * 2);
+    //wcopy(gVideoCurrDepthBuffer, gCrashScreen.framebuffer, (gScreenWidth * gScreenHeight) * 2);
 
-    sCrashX = (gScreenWidth - 270) / 2;
-    sCrashY = (gScreenHeight - 205) / 2;
+    sCrashX = (SCREEN_WIDTH - 270) / 2;
+    sCrashY = (SCREEN_HEIGHT - 205) / 2;
 
     switch (sCrashPage) {
         case CRASH_PAGE_REGISTERS:
@@ -546,7 +553,7 @@ void draw_crash_screen(OSThread *thread) {
 
     osWritebackDCacheAll();
     osViBlack(FALSE);
-    change_vi(&gGlobalVI, gScreenWidth, gScreenHeight);
+    change_vi(&gGlobalVI, SCREEN_WIDTH, SCREEN_HEIGHT);
     osViSwapBuffer(gCrashScreen.framebuffer);
     gVideoCurrFbIndex ^= 1;
     if (gVideoCurrFramebuffer) {
@@ -560,7 +567,7 @@ extern OSThread gThread30;
 
 void thread2_crash_screen(UNUSED void *arg) {
     OSMesg mesg;
-    OSThread *thread;
+    OSThread *thread = NULL;
 
     osSetEventMesg(OS_EVENT_CPU_BREAK, &gCrashScreen.mesgQueue, (OSMesg) 1);
     osSetEventMesg(OS_EVENT_FAULT, &gCrashScreen.mesgQueue, (OSMesg) 2);
@@ -576,6 +583,9 @@ void thread2_crash_screen(UNUSED void *arg) {
         break;
     case MESG_RDP_HUNG:
         puppyprint_assert_nonblocking("RDP stopped responding!");
+        break;
+    case MESG_TASK_FAILED:
+        puppyprint_assert_nonblocking("Sched is ded :()");
         break;
     default:
         thread = get_crashed_thread();

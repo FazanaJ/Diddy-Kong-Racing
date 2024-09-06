@@ -27,5 +27,6 @@ static inline void osSetTime(OSTime time) {
 
 OSTime osGetTime(void);
 s32 osSetTimer(OSTimer *t, OSTime value, OSTime interval, OSMesgQueue *mq, OSMesg msg);
+s32 osStopTimer(OSTimer *t);
 
 #endif
