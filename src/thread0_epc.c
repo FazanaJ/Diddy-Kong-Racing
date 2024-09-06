@@ -178,14 +178,14 @@ void crash_screen_draw_rect(s32 x, s32 y, s32 w, s32 h) {
     u16 *ptr;
     s32 i, j;
 
-    ptr = gCrashScreen.framebuffer + gCrashScreen.width * y + x;
+    ptr = gCrashScreen.framebuffer + gScreenWidth * y + x;
     for (i = 0; i < h; i++) {
         for (j = 0; j < w; j++) {
             // 0xe738 = 0b1110011100111000
             *ptr = ((*ptr & 0xe738) >> 2) | 1;
             ptr++;
         }
-        ptr += gCrashScreen.width - w;
+        ptr += gScreenWidth - w;
     }
 }
 
@@ -197,7 +197,7 @@ void crash_screen_draw_glyph(s32 x, s32 y, s32 glyph) {
     s32 i, j;
 
     data = &gCrashScreenFont[glyph / 5 * 7];
-    ptr = gCrashScreen.framebuffer + gCrashScreen.width * y + x;
+    ptr = gCrashScreen.framebuffer + gScreenWidth * y + x;
 
     for (i = 0; i < 7; i++) {
         bit = 0x80000000U >> ((glyph % 5) * 6);
@@ -210,7 +210,7 @@ void crash_screen_draw_glyph(s32 x, s32 y, s32 glyph) {
             ptr++;
             bit >>= 1;
         }
-        ptr += gCrashScreen.width - 6;
+        ptr += gScreenWidth - 6;
     }
 }
 
@@ -416,7 +416,7 @@ void crash_page_memory(void) {
     
     sCrashMaxScroll = -((gScreenHeight - 24));
     y = sCrashY + 5 - sCrashScroll;
-    for (i = 1; i < MEMP_TOTAL + 12; i++) {
+    for (i = 0; i < MEMP_TOTAL + 12; i++) {
         if (gPuppyPrint.ramPools[sRAMPrintOrder[i]] == 0) {
             continue;
         }
@@ -425,9 +425,9 @@ void crash_page_memory(void) {
             y += 10;
             continue;
         }
-        crash_screen_print(sCrashX + 10, y, sPuppyprintMemColours[sRAMPrintOrder[i]]);
-        crash_screen_print(sCrashX + 120, y, "0x%X (%2.2f%%)", gPuppyPrint.ramPools[sRAMPrintOrder[i]],
-        (f64) (((f32) gPuppyPrint.ramPools[sRAMPrintOrder[i]] / (f32) TOTALRAM) * 100.0f));
+        crash_screen_print(sCrashX + 10, y, "%02X %s", i, sPuppyprintMemColours[sRAMPrintOrder[i]]);
+        crash_screen_print(sCrashX + 160, y, "0x%X", gPuppyPrint.ramPools[sRAMPrintOrder[i]]);
+        crash_screen_print(sCrashX + 210, y, "(%2.2f%%)", (f64) (((f32) gPuppyPrint.ramPools[sRAMPrintOrder[i]] / (f32) TOTALRAM) * 100.0f));
         y += 10;
     }
 }
@@ -519,8 +519,8 @@ void draw_crash_screen(OSThread *thread) {
 
     wcopy(gVideoCurrDepthBuffer, gCrashScreen.framebuffer, (gScreenWidth * gScreenHeight) * 2);
 
-    sCrashX = (SCREEN_WIDTH - 270) / 2;
-    sCrashY = (SCREEN_HEIGHT - 205) / 2;
+    sCrashX = (gScreenWidth - 270) / 2;
+    sCrashY = (gScreenHeight - 205) / 2;
 
     switch (sCrashPage) {
         case CRASH_PAGE_REGISTERS:
@@ -546,7 +546,7 @@ void draw_crash_screen(OSThread *thread) {
 
     osWritebackDCacheAll();
     osViBlack(FALSE);
-    change_vi(&gGlobalVI, SCREEN_WIDTH, SCREEN_HEIGHT);
+    change_vi(&gGlobalVI, gScreenWidth, gScreenHeight);
     osViSwapBuffer(gCrashScreen.framebuffer);
     gVideoCurrFbIndex ^= 1;
     if (gVideoCurrFramebuffer) {
@@ -565,30 +565,46 @@ void thread2_crash_screen(UNUSED void *arg) {
     osSetEventMesg(OS_EVENT_CPU_BREAK, &gCrashScreen.mesgQueue, (OSMesg) 1);
     osSetEventMesg(OS_EVENT_FAULT, &gCrashScreen.mesgQueue, (OSMesg) 2);
 
-    gAssert = 0;
-    do {
-        osRecvMesg(&gCrashScreen.mesgQueue, &mesg, 1);
-        if (gVideoCurrFramebuffer) {
-            gCrashScreen.framebuffer = (u16 *) gVideoFramebuffers[gVideoCurrFbIndex];
-        }
-        gVideoCurrFbIndex = 0;
+    gAssert = FALSE;
+    osRecvMesg(&gCrashScreen.mesgQueue, &mesg, OS_MESG_BLOCK);
+    switch ((s32) mesg) {
+    case MESG_RSP_AUD_HUNG:
+        puppyprint_assert_nonblocking("RSP (Aud) stopped responding!");
+        break;
+    case MESG_RSP_GFX_HUNG:
+        puppyprint_assert_nonblocking("RSP (Gfx) stopped responding!");
+        break;
+    case MESG_RDP_HUNG:
+        puppyprint_assert_nonblocking("RDP stopped responding!");
+        break;
+    default:
         thread = get_crashed_thread();
-    } while (thread == NULL);
+        if (thread == NULL) {
+            puppyprint_assert_nonblocking("No thread found???");
+        } else {
+            if (thread->id == 4) { // Audio thread crashed, so go top prio.
+                gCrashScreen.thread.priority = 255;
+            } else {
+                gCrashScreen.thread.priority = 11;
+                sound_play(SOUND_VOICE_BANJO_WOAH, NULL);
+                music_play(SEQUENCE_NONE);
+            }
+        }
+        break;
+    }
+    if (gVideoCurrFramebuffer) {
+        gCrashScreen.framebuffer = (u16 *) gVideoFramebuffers[gVideoCurrFbIndex];
+    }
+    gVideoCurrFbIndex = 0;
+    osStopThread(&gThread3);
+    osStopThread(&gThread30);
     if (gAssert) {
         sCrashPage = CRASH_PAGE_ASSERT;
     }
     sCrashUpdate = TRUE;
     wcopy(gVideoCurrFramebuffer, gVideoCurrDepthBuffer, (gScreenWidth * gScreenHeight) * 2);
-    if (thread->id == 4) { // Audio thread crashed, so go top prio.
-        gCrashScreen.thread.priority = 255;
-    } else {
-        gCrashScreen.thread.priority = 11;
-        sound_play(SOUND_VOICE_BANJO_WOAH, NULL);
-        music_play(SEQUENCE_NONE);
-    }
-    osStopThread(&gThread3);
-    osStopThread(&gThread30);
-    crash_screen_sleep(80);
+    crash_screen_sleep(500);
+    calculate_ram_print_order();
     while (TRUE) {
         handle_save_data_and_read_controller(0, LOGIC_30FPS);
         draw_crash_screen(thread);
@@ -596,8 +612,6 @@ void thread2_crash_screen(UNUSED void *arg) {
 }
 
 void crash_screen_init(void) {
-    gCrashScreen.width = SCREEN_WIDTH;
-    gCrashScreen.height = SCREEN_HEIGHT;
     osCreateMesgQueue(&gCrashScreen.mesgQueue, &gCrashScreen.mesg, 1);
     osCreateThread(&gCrashScreen.thread, 2, thread2_crash_screen, NULL,
                    (u8 *) gCrashScreen.stack + sizeof(gCrashScreen.stack), 15);
