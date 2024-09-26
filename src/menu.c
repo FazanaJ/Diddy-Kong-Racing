@@ -3348,14 +3348,14 @@ s32 menu_options_loop(s32 updateRate) {
         sound_play(SOUND_SELECT2, NULL);
 
     } else if (gMenuCurIndex == 0 && analogueX != 0) {
-        switch ((u64) get_language()) {
-            case LANGUAGE_ENGLISH:
-                set_language(LANGUAGE_FRENCH);
-                break;
-            default:
-                set_language(LANGUAGE_ENGLISH);
-                break;
+        s32 lang = get_language();
+        lang += analogueX;
+        if (lang == LANGUAGE_JAPANESE) {
+            lang = LANGUAGE_ENGLISH;
+        } else if (lang == -1) {
+            lang = LANGUAGE_FRENCH;
         }
+        set_language(lang);
         sound_play(SOUND_MENU_PICK2, NULL);
     } else if (gMenuCurIndex == 1 && analogueX != 0) {
         if (sEepromSettings & 0x2000000) {
