@@ -309,12 +309,10 @@ void main_game_loop(void) {
         while (sTotalTime > 16666) {
             sTotalTime -= 16666;
             sLogicUpdateRate++;
-            if (sLogicUpdateRate == 4) {
-                sTotalTime = 0;
-            }
-            if (sLogicUpdateRate > LOGIC_12FPS) {
-                sLogicUpdateRate = LOGIC_12FPS;
-            }
+        }
+        if (sLogicUpdateRate >= LOGIC_12FPS) {
+            sTotalTime = 0;
+            sLogicUpdateRate = LOGIC_12FPS;
         }
     }
 

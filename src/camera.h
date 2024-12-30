@@ -87,7 +87,6 @@ extern s32 gModelMatrixStackPos;
 extern s16 gViewportScissor[4];
 
 void func_80066060(s32 cameraID, s32 zoomLevel);
-void set_viewport_tv_type(s8 setting);
 void func_800660C0(void);
 void func_800660D0(void);
 void update_camera_fov(f32 camFieldOfView);

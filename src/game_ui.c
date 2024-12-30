@@ -867,13 +867,8 @@ void hud_draw_eggs(Object *racerObj, s32 updateRate) {
                 gCurrentHud->challengePortrait.x += 68.0f;
             } else if (gNumActivePlayers == 2) {
                 gCurrentHud->challengePortrait.x = portraitX;
-                if (osTvType == TV_TYPE_PAL) {
-                    gCurrentHud->challengePortrait.y += 66.0f;
-                    gCurrentHud->eggChallengeIcon.y += 66.0f;
-                } else {
-                    gCurrentHud->challengePortrait.y += 55.0f;
-                    gCurrentHud->eggChallengeIcon.y += 55.0f;
-                }
+                gCurrentHud->challengePortrait.y += 55.0f;
+                gCurrentHud->eggChallengeIcon.y += 55.0f;
             }
             gCurrentHud->eggChallengeIcon.x = gCurrentHud->challengePortrait.x + diffX;
         }
@@ -1657,9 +1652,7 @@ void render_racer_bananas(Object_Racer *racer, s32 updateRate) {
         }
         if (var_v1 == 0) {
             sprite_opaque(TRUE);
-            set_viewport_tv_type(TV_TYPE_NTSC);
             func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, &gCurrentHud->bananaCountIconStatic);
-            set_viewport_tv_type(TV_TYPE_PAL);
             sprite_opaque(FALSE);
             gCurrentHud->bananaCountIconSpin.spriteOffset = var_v1;
             if (gCurrentHud->bananaCountSparkle.unk1B) {
@@ -1673,18 +1666,14 @@ void render_racer_bananas(Object_Racer *racer, s32 updateRate) {
                         gCurrentHud->bananaCountSparkle.spriteOffset++;
                     }
                 }
-                set_viewport_tv_type(TV_TYPE_NTSC);
                 func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, &gCurrentHud->bananaCountSparkle);
-                set_viewport_tv_type(TV_TYPE_PAL);
             }
         } else {
             gCurrentHud->bananaCountIconSpin.spriteOffset = var_v1 + 128;
             sprite_anim_off(FALSE);
             sprite_opaque(TRUE);
-            set_viewport_tv_type(TV_TYPE_NTSC);
             func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, &gCurrentHud->bananaCountIconSpin);
             sprite_opaque(FALSE);
-            set_viewport_tv_type(TV_TYPE_PAL);
             sprite_anim_off(TRUE);
             gCurrentHud->bananaCountIconSpin.spriteOffset -= 128;
         }
@@ -2577,14 +2566,9 @@ void render_balloon_count(UNUSED Object_Racer *racer) {
         gCurrentHud->balloonCountNumber1.spriteOffset = balloonCount % 10;
     }
     func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, &gCurrentHud->balloonCountNumber1);
-    set_viewport_tv_type(TV_TYPE_NTSC);
-    if (osTvType == TV_TYPE_PAL) {
-        sprite_opaque(TRUE);
-    }
     // gCurrentHud->balloonCountIcon.scale += 0.001f;
     func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, &gCurrentHud->balloonCountIcon);
     sprite_opaque(FALSE);
-    set_viewport_tv_type(TV_TYPE_PAL);
     func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex, &gCurrentHud->balloonCountX);
 }
 
@@ -2618,7 +2602,6 @@ void render_weapon_hud(Object *obj, s32 updateRate) {
 
     racer = (Object_Racer *) obj->unk64;
     if (racer->raceFinished == FALSE) {
-        set_viewport_tv_type(TV_TYPE_NTSC);
         temp_a0 = (racer->balloon_type * 3) + (racer->balloon_level);
         if (gCurrentHud->weaponDisplay.unk1D != racer->balloon_level) {
             if (racer->balloon_level == 0) {
@@ -2981,12 +2964,6 @@ void render_minimap_and_misc_hud(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 u
                     gCurrentHud->eggChallengeIcon.x = 221.0f;
                     gCurrentHud->eggChallengeIcon.y = 197.0f;
                     gCurrentHud->challengePortrait.y = 165.0f;
-                    if (osTvType == TV_TYPE_PAL) {
-                        gCurrentHud->challengePortrait.x -= 4.0f;
-                        gCurrentHud->eggChallengeIcon.x -= 4.0f;
-                        gCurrentHud->challengePortrait.y *= 1.1f;
-                        gCurrentHud->eggChallengeIcon.y *= 1.1f;
-                    }
                     hud_eggs_portrait(tempVar4, updateRate);
                     gHudColour = COLOUR_RGBA32(255, 255, 255, 254);
                     gCurrentHud->challengePortrait.x = position2;
@@ -3023,18 +3000,9 @@ void render_minimap_and_misc_hud(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 u
                     set_ortho_matrix_view(&gHUDCurrDisplayList, &gHUDCurrMatrix);
                     sprite_anim_off(TRUE);
                     gCurrentHud->challengePortrait.x = 225.0f;
-                    if (osTvType == TV_TYPE_PAL) {
-                        gCurrentHud->challengePortrait.y = 181.5f;
-                    } else {
-                        gCurrentHud->challengePortrait.y = 165.0f;
-                    }
-                    if (osTvType == TV_TYPE_PAL) {
-                        var_a0_5 = (66.0f - gCurrentHud->bananaCountIconStatic.x) - 4.0f;
-                        temp = -114.0f - gCurrentHud->bananaCountIconStatic.y;
-                    } else {
-                        var_a0_5 = 66.0f - gCurrentHud->bananaCountIconStatic.x;
-                        temp = -100.0f - gCurrentHud->bananaCountIconStatic.y;
-                    }
+                    gCurrentHud->challengePortrait.y = 165.0f;
+                    var_a0_5 = 66.0f - gCurrentHud->bananaCountIconStatic.x;
+                    temp = -100.0f - gCurrentHud->bananaCountIconStatic.y;
                     gCurrentHud->bananaCountIconStatic.x += var_a0_5;
                     gCurrentHud->bananaCountIconStatic.y += temp;
                     gCurrentHud->bananaCountIconSpin.x += var_a0_5;
@@ -3048,10 +3016,6 @@ void render_minimap_and_misc_hud(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 u
                     gCurrentHud->bananaCountX.x += var_a0_5;
                     gCurrentHud->bananaCountX.y -= temp;
                     gCurrentHud->challengePortrait.spriteID = curRacerObj->characterId + HUD_SPRITE_PORTRAIT;
-                    if (osTvType == TV_TYPE_PAL) {
-                        gCurrentHud->challengePortrait.x -= 4.0f;
-                        gCurrentHud->eggChallengeIcon.x -= 4.0f;
-                    }
                     D_80126CD5 = TRUE;
                     func_800AA600(&gHUDCurrDisplayList, &gHUDCurrMatrix, &gHUDCurrVertex,
                                   &gCurrentHud->challengePortrait);
@@ -3090,13 +3054,8 @@ void render_minimap_and_misc_hud(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 u
             for (sp144 = 0; sp144 < racerCount; sp144++) {
                 someRacer = (Object_Racer *) racerGroup[sp144]->unk64;
                 render_treasure_hud(someRacer);
-                if (osTvType == TV_TYPE_PAL) {
-                    gCurrentHud->challengePortrait.y += 66.0f;
-                    gCurrentHud->treasureMetre.y += 66.0f;
-                } else {
-                    gCurrentHud->challengePortrait.y += 55.0f;
-                    gCurrentHud->treasureMetre.y += 55.0f;
-                }
+                gCurrentHud->challengePortrait.y += 55.0f;
+                gCurrentHud->treasureMetre.y += 55.0f;
             }
             gCurrentHud->challengePortrait.x = temp_s0_2;
             gCurrentHud->challengePortrait.y = temp_s1_2;
@@ -3118,14 +3077,6 @@ void render_minimap_and_misc_hud(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 u
                 gCurrentHud->challengePortrait.y = 165.0f;
                 gCurrentHud->treasureMetre.x = 209.0f;
                 gCurrentHud->treasureMetre.y = 193.0f;
-                if (osTvType == TV_TYPE_PAL) {
-                    gCurrentHud->challengePortrait.x -= 4.0f;
-                    gCurrentHud->treasureMetre.x -= 4.0f;
-                    gCurrentHud->challengePortrait.y *= 1.1f;
-                    gCurrentHud->treasureMetre.y *= 1.1f;
-                    gCurrentHud->challengePortrait.y = (s32) gCurrentHud->challengePortrait.y;
-                    gCurrentHud->treasureMetre.y = (s32) gCurrentHud->treasureMetre.y;
-                }
                 render_treasure_hud(tempVar4);
                 gCurrentHud->challengePortrait.x = temp_s0_3;
                 gCurrentHud->challengePortrait.y = temp_s1_3;
@@ -3191,15 +3142,9 @@ void render_minimap_and_misc_hud(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 u
                     gMinimapScreenY = -98 - (gScreenHeight - 240);
                     break;
             }
-            if (osTvType == TV_TYPE_PAL) {
-                gMinimapScreenY *= 1.2f;
-            }
             sprite_opaque(FALSE);
             objTrans.x = gMinimapScreenX + gHudOffsetX + gHudBounceX;
             objTrans.y = gMinimapScreenY;
-            if (osTvType == TV_TYPE_PAL) {
-                objTrans.x -= 4.0f;
-            }
             objTrans.z_rotation = -someObjSeg->trans.z_rotation;
             objTrans.x_rotation = 0;
             if (get_filtered_cheats() & CHEAT_MIRRORED_TRACKS) {
@@ -3294,9 +3239,6 @@ void render_minimap_and_misc_hud(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 u
                                         gHudMinimapColours[someRacer->characterId].blue, opacity);
                     }
                     if (!(gCurrentLevelHeader->race_type & RACETYPE_CHALLENGE) || (!someRacer->raceFinished)) {
-                        if (osTvType == TV_TYPE_PAL) {
-                            gCurrentHud->minimapMarker.x -= 4.0f;
-                        }
                         if (gCurrentLevelHeader->race_type == RACETYPE_CHALLENGE_BATTLE) {
                             switch (someRacer->elevation) {
                                 case ELEVATION_LOW:

@@ -5046,9 +5046,6 @@ void weapon_trap(Object *weaponObj, s32 updateRate) {
     weaponOwner = &weapon->owner->unk64->racer;
     updateRateF = updateRate;
     weaponProperties = &weaponObj->properties.weapon;
-    if (osTvType == TV_TYPE_PAL) {
-        updateRateF *= 1.2f;
-    }
     if (weaponProperties->status == WEAPON_DROPPED) {
         intendedPos.x = weaponObj->segment.trans.x_position + (weaponObj->segment.x_velocity * updateRateF);
         intendedPos.y = weaponObj->segment.trans.y_position + (weaponObj->segment.y_velocity * updateRateF);
@@ -5962,13 +5959,8 @@ void obj_loop_levelname(Object *obj, s32 updateRate) {
             textWidth = (get_text_width(levelName, 0, 0) + 24) >> 1;
             x1 = (gScreenWidth / 2) - textWidth;
             x2 = textWidth + (gScreenWidth / 2);
-            if (osTvType == TV_TYPE_PAL) {
-                y1 = SCREEN_HEIGHT - 16;
-                y2 = SCREEN_HEIGHT - 16 + 24;
-            } else {
-                y1 = SCREEN_HEIGHT - 38;
-                y2 = SCREEN_HEIGHT - 38 + 20;
-            }
+            y1 = SCREEN_HEIGHT - 38;
+            y2 = SCREEN_HEIGHT - 38 + 20;
             dialogue_clear(4);
             set_current_dialogue_box_coords(4, x1, y1, x2, y2);
             set_current_dialogue_background_colour(4, 128, 64, 128, (properties->opacity * 160) >> 8);

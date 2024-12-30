@@ -182,7 +182,7 @@ enum PPLoadNames {
     "Water\t", \
     "Dialogue", \
     "Camera", \
-    "Matrix", \
+    "Matrix\t", \
     "BG\t", \
     "Billboards", \
     "Void\t", \

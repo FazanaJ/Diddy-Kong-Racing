@@ -86,7 +86,6 @@ s32 gMatrixType;
 s32 gSpriteAnimOff;
 f32 gCurCamFOV = CAMERA_DEFAULT_FOV;
 s8 gCutsceneCameraActive;
-s8 gAdjustViewportHeight;
 u16 perspNorm;
 s32 D_80120D18;
 s32 gModelMatrixStackPos;
@@ -177,7 +176,6 @@ void camera_init(void) {
     gNumberOfViewports = 0;
     gSpriteAnimOff = FALSE;
     D_80120D18 = 0;
-    gAdjustViewportHeight = 0;
 #ifdef ANTI_TAMPER
     gAntiPiracyViewport = 0;
 
@@ -196,16 +194,6 @@ void func_80066060(s32 cameraID, s32 zoomLevel) {
     if (cameraID >= 0 && cameraID < 4) {
         gCameraZoomLevels[cameraID] = zoomLevel;
         gCameraSegment[cameraID].object.animationID = zoomLevel;
-    }
-}
-
-/**
- * Set gAdjustViewportHeight to PAL mode if necessary, if setting is 1.
- * Otherwise, set it to 0, regardless of TV type.
- */
-void set_viewport_tv_type(s8 setting) {
-    if (osTvType == TV_TYPE_PAL) {
-        gAdjustViewportHeight = setting;
     }
 }
 
@@ -1087,7 +1075,6 @@ void render_ortho_triangle_image(Gfx **dList, MatrixS **mtx, Vertex **vtx, Objec
     s32 index;
     Vertex *temp_v1;
     Matrix aspectMtxF;
-    Matrix scaleMtxF;
 
     if (sprite != NULL) {
         temp_v1 = *vtx;
@@ -1104,15 +1091,8 @@ void render_ortho_triangle_image(Gfx **dList, MatrixS **mtx, Vertex **vtx, Objec
         gCameraTransform.x_position = 0.0f;
         gCameraTransform.y_position = 0.0f;
         gCameraTransform.z_position = 0.0f;
-        if (gAdjustViewportHeight) {
-            f32_matrix_from_scale(scaleMtxF, segment->trans.scale, segment->trans.scale, 1.0f);
-            // f32_matrix_from_scale(&scaleMtxF, segment->trans.scale);
-            f32_matrix_from_rotation_and_scale(aspectMtxF, 0, 1.0f, gVideoAspectRatio);
-            f32_matrix_mult(&aspectMtxF, &scaleMtxF, &gCurrentModelMatrixF);
-        } else {
-            f32_matrix_from_scale(gCurrentModelMatrixF, segment->trans.scale, segment->trans.scale, 1.0f);
-            // f32_matrix_from_scale(&gCurrentModelMatrixF, segment->trans.scale);
-        }
+        f32_matrix_from_scale(gCurrentModelMatrixF, segment->trans.scale, segment->trans.scale, 1.0f);
+        // f32_matrix_from_scale(&gCurrentModelMatrixF, segment->trans.scale);
         object_transform_to_matrix_2(aspectMtxF, &gCameraTransform);
         f32_matrix_mult(&gCurrentModelMatrixF, &aspectMtxF, gModelMatrixF[gModelMatrixStackPos]);
         f32_matrix_to_s16_matrix(gModelMatrixF[gModelMatrixStackPos], *mtx);

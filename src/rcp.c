@@ -32,7 +32,7 @@ Gfx dRspInit[] = {
                           G_TEXTURE_GEN_LINEAR | G_LOD),
     gsSPTexture(0, 0, 0, 0, 0),
     gsSPSetGeometryMode(G_SHADING_SMOOTH | G_SHADE),
-    gsSPClipRatio(FRUSTRATIO_3),
+    gsSPClipRatio(FRUSTRATIO_2),
     gsSPEndDisplayList(),
 };
 

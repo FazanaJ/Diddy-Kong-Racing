@@ -12,6 +12,10 @@ extern s32 sLogicUpdateRate;
 extern u8 gHideHUD;
 extern s32 gMapId;
 
+#define REGIONMODE_PAL50 0
+#define REGIONMODE_NTSC 1
+#define REGIONMODE_PAL60 2
+
 struct ConfigOptions {
     s8 antiAliasing;
     s8 screenPosX;

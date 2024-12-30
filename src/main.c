@@ -47,6 +47,7 @@ void check_cache_emulation() {
 void get_platform(void) {
     // u32 notiQue;
     gPlatform = 0;
+    char region[5];
 
     if (__osBbIsBb) {
         gPlatform = IQUE | CONSOLE;
@@ -84,7 +85,14 @@ void get_platform(void) {
             puppyprint_log("N64 Emulator detected.");
         }
     } else {
-        puppyprint_log("N64 Console detected.");
+        if (osTvType == TV_TYPE_PAL) {
+            puppyprintf(region, "PAL");
+        } else if (osTvType == TV_TYPE_NTSC) {
+            puppyprintf(region, "NTSC");
+        } else {
+            puppyprintf(region, "MPAL");
+        }
+        puppyprint_log("%s N64 Console detected.", region);
     }
     // Skip all this on console. This is emulator related info.
     if ((gPlatform & CONSOLE) == FALSE) {
@@ -97,6 +105,7 @@ void get_platform(void) {
         puppyprint_log("Counter Factor Setting: %d.", cf);
     }
 #endif
+    osTvType = TV_TYPE_NTSC; // Temporary while PAL is still broken
 }
 
 #define STEP 0x100000

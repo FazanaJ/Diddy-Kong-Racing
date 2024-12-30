@@ -813,7 +813,7 @@ void free_rain_memory(void) {
  * The game will slowly ease into the intended values.
  */
 void rain_set(s32 lightningFrequency, s32 opacity, f32 time) {
-    gRainHiddenTimer = osTvType == TV_TYPE_PAL ? 50.0f * time : 60.0f * time;
+    gRainHiddenTimer = 60.0f * time;
     gLightningFrequencyTarget = lightningFrequency;
     gLightningFrequencyStep = (gLightningFrequencyTarget - gLightningFrequency) / gRainHiddenTimer;
     gRainOpacityTarget = opacity;

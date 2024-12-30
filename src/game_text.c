@@ -63,13 +63,8 @@ void init_dialogue_text(void) {
     gCurrentTextID = 0;
     gDialogueXPos1 = 32;
     gDialogueXPos2 = 288;
-    if (osTvType == TV_TYPE_PAL) {
-        gDialogueYPos1 = 224;
-        gDialogueYPos2 = 248;
-    } else {
-        gDialogueYPos1 = SCREEN_HEIGHT - 38;
-        gDialogueYPos2 = SCREEN_HEIGHT - 18;
-    }
+    gDialogueYPos1 = SCREEN_HEIGHT - 38;
+    gDialogueYPos2 = SCREEN_HEIGHT - 18;
     clear_dialogue_box_open_flag(6);
 }
 
