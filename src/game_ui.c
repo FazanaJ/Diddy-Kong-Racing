@@ -960,7 +960,7 @@ void render_hud_battle(s32 countdown, Object *obj, s32 updateRate) {
     }
 }
 
-#ifdef NON_EQUIVALENT
+#ifdef NON_MATCHING
 void func_800A1E48(Object *racerObj, s32 updateRate) {
     f32 temp;
     s32 i;
@@ -1011,11 +1011,7 @@ void func_800A1E48(Object *racerObj, s32 updateRate) {
             if (gNumActivePlayers == 1) {
                 prevCurrHudUnk64C += 68;
             } else if (gNumActivePlayers == 2) {
-                if (osTvType == TV_TYPE_PAL) {
-                    offset += 66.0;
-                } else {
-                    offset += 55;
-                }
+                offset += 55;
             }
         }
 
@@ -2185,7 +2181,7 @@ void hud_draw_finish_misc(Object_Racer *racer) {
     }
 }
 
-#ifdef NON_EQUIVALENT
+#ifdef NON_MATCHING
 void func_800A6254(Object_Racer *racer, s32 updateRate) {
     s32 *var_a0;
     s32 var_t0;
@@ -2247,11 +2243,6 @@ void func_800A6254(Object_Racer *racer, s32 updateRate) {
                     }
                     break;
             }
-            if (osTvType == TV_TYPE_PAL) {
-                gCurrentHud->challengeFinishPosition1.unk1D -= 4;
-                gCurrentHud->raceTimeNumber.unk1D -= 4;
-                gCurrentHud->lapTimeText.unk1D -= 4;
-            }
             if (racer->finishPosition < 4) {
                 gCurrentHud->challengeFinishPosition2.spriteOffset = racer->finishPosition - 1;
             } else {
@@ -2269,18 +2260,6 @@ void func_800A6254(Object_Racer *racer, s32 updateRate) {
                     } else {
                         var_f0 = 183.0f;
                         var_f2 = 198.0f;
-                    }
-                    if (osTvType == TV_TYPE_PAL) {
-                        var_f0 *= 1.1;
-                        var_f2 *= 1.1;
-                        var_f12 -= 4.0f;
-                        var_f14 -= 4.0f;
-                        var_f0 = (s32) var_f0;
-                        var_f2 = (s32) var_f2;
-                        if (racer->playerIndex == 0) {
-                            var_f0 -= 9.0f;
-                            var_f2 -= 9.0f;
-                        }
                     }
                     gCurrentHud->raceTimeNumber.x = var_f12;
                     gCurrentHud->raceTimeNumber.y = var_f0;
@@ -2302,18 +2281,6 @@ void func_800A6254(Object_Racer *racer, s32 updateRate) {
                     } else {
                         var_f12 = 230.0f;
                         var_f14 = -70.0f;
-                    }
-                    if (osTvType == TV_TYPE_PAL) {
-                        var_f0 *= 1.1;
-                        var_f2 *= 1.1;
-                        var_f12 -= 4.0f;
-                        var_f14 -= 4.0f;
-                        var_f0 = (s32) var_f0;
-                        var_f2 = (s32) var_f2;
-                        if (racer->playerIndex < 2) {
-                            var_f0 -= 9.0f;
-                            var_f2 -= 9.0f;
-                        }
                     }
                     gCurrentHud->raceTimeNumber.x = var_f12;
                     gCurrentHud->raceTimeNumber.y = var_f0;

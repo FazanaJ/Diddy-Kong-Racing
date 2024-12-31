@@ -324,7 +324,6 @@ void main_game_loop(void) {
     gSPSegment(gCurrDisplayList++, 0, 0 + K0BASE);
     gSPSegment(gCurrDisplayList++, 1, (s32) gVideoLastFramebuffer + K0BASE);
     gSPSegment(gCurrDisplayList++, 2, (s32) gVideoLastDepthBuffer + K0BASE);
-    gSPSegment(gCurrDisplayList++, 4, (s32) gVideoLastFramebuffer - 0x500 + K0BASE);
     init_rsp(&gCurrDisplayList);
     init_rdp_and_framebuffer(&gCurrDisplayList);
     render_background(&gCurrDisplayList, (Matrix *) &gGameCurrMatrix, TRUE);
