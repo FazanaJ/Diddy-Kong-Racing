@@ -170,6 +170,7 @@ s8 D_8011D5AF;
 WaterProperties **gRacerCurrentWave;
 s32 D_8011D5B4;
 s16 D_8011D5B8;
+s8 gPowerBoosting;
 
 /******************************/
 
@@ -2391,6 +2392,10 @@ void update_player_racer(Object *obj, s32 updateRate) {
                 }
                 gCurrentStickY = clamp_joystick_y_axis(tempVar);
                 gCurrentRacerInput = get_buttons_held_from_player(tempVar);
+                if (tempRacer->boostTimer && tempRacer->boostType & EMPOWER_BOOST) {
+                    gCurrentRacerInput &= ~A_BUTTON;
+                    gPowerBoosting = TRUE;
+                }
                 gCurrentButtonsPressed = get_buttons_pressed_from_player(tempVar);
                 gCurrentButtonsReleased = get_buttons_released_from_player(tempVar);
             } else {
@@ -2400,7 +2405,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
             racer_AI_pathing_inputs(obj, tempRacer, updateRate);
         }
         // Set the value that decides whether to get an empowered boost.
-        if (!(gCurrentRacerInput & A_BUTTON)) {
+        if (!(gCurrentRacerInput & A_BUTTON) || gPowerBoosting) {
             tempRacer->throttleReleased = TRUE;
         }
         if (gCutsceneCameraActive || gRaceStartTimer == 100 || tempRacer->unk1F1 || gRacerInputBlocked ||
@@ -2764,6 +2769,9 @@ void update_player_racer(Object *obj, s32 updateRate) {
     }
     if (gConfig.sameStats && tempRacer->playerIndex != PLAYER_COMPUTER) {
         tempRacer->characterId = charID;
+    }
+    if (tempRacer->boostTimer == 0 && !(obj->particleEmitFlags & 0x20000)) {
+        gPowerBoosting = FALSE;
     }
 }
 
