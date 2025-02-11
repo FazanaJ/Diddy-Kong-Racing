@@ -55,6 +55,7 @@ s32 gRumbleDetectionTimer;
 u8 *D_801241EC;
 u32 D_801241F0;
 u32 D_801241F4;
+u8 gSaveMissing;
 
 /*******************************/
 
@@ -779,11 +780,16 @@ s32 write_time_data_to_controller_pak(s32 controllerIndex, Settings *arg1) {
 }
 
 s32 save_detect(void) {
+    s32 status;
 #if EEP4K || EEP16K
-    return osEepromProbe(&sSIMesgQueue);
+    status = osEepromProbe(&sSIMesgQueue);
+    if (status == 0) {
+        gSaveMissing = TRUE;
+    }
 #elif SRAM
-    return nuPiInitSram();
+    status = nuPiInitSram();
 #endif
+    return status;
 }
 
 void save_readwrite(u64 *data, u32 offset, u32 size, s32 type) {
@@ -812,7 +818,8 @@ s32 read_save_file(s32 saveFileNum, Settings *settings) {
     s32 ret;
 
     if (save_detect() == 0) {
-        return -1;
+        erase_save_file(saveFileNum, settings);
+        return settings->newGame;
     }
     switch (saveFileNum) {
         case 0:
@@ -850,10 +857,6 @@ void erase_save_file(s32 saveFileNum, Settings *settings) {
     s32 worldCount;
     s32 i;
 
-    if (save_detect() == 0) {
-        return;
-    }
-
     get_number_of_levels_and_worlds(&levelCount, &worldCount);
     for (i = 0; i < levelCount; i++) {
         settings->courseFlagsPtr[i] = 0;
@@ -887,7 +890,7 @@ void erase_save_file(s32 saveFileNum, Settings *settings) {
     for (i = 0; i < blockSize * (s32) sizeof(u64); i++) {
         saveData[i] = 0xFF;
     } // Must be one line
-    if (!is_reset_pressed()) {
+    if (!is_reset_pressed() && save_detect()) {
         save_readwrite(alloc, startingAddress * sizeof(u64), blockSize * sizeof(u64), OS_WRITE);
     }
     free_from_memory_pool(alloc);

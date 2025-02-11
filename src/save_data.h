@@ -114,6 +114,7 @@ typedef struct unk80075000 {
     unk80075000_body data[1];
 } unk80075000;
 
+extern u8 gSaveMissing;
 extern s8 *D_800DE440;
 extern u8 gN64FontCodes[68];
 extern s32 gRumbleKillTimer;

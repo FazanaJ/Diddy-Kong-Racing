@@ -6973,6 +6973,10 @@ void fileselect_render(UNUSED s32 updateRate) {
     set_text_font(ASSET_FONTS_FUNFONT);
     set_text_background_colour(0, 0, 0, 0);
     set_text_colour(255, 255, 255, 0, 255);
+    if (gSaveMissing) {
+        draw_text(&sMenuCurrDisplayList, gScreenWidth / 2, 48, "SAVE TYPE INCORRECT", ALIGN_TOP_CENTER);
+        draw_text(&sMenuCurrDisplayList, gScreenWidth / 2, 64, "GAME WILL NOT SAVE", ALIGN_TOP_CENTER);
+    }
     x = (gScreenWidth / 2) - ((NUMBER_OF_SAVE_FILES * 92) / 2);
     for (i = 0; i < NUMBER_OF_SAVE_FILES; i++) {
         s32 saveNum = i;

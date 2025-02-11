@@ -15,6 +15,6 @@
 .ascii "Diddy Kong Racing   " # ROM name: 20 bytes
 .word  0x00000000 # unknown
 .word  0x0000004E # cartridge
-.ascii "DY"       # cartridge ID
+.ascii "ED"       # cartridge ID
 .ascii "E"        # country
-.byte  0x00       # version
+.byte  0x10       # version
