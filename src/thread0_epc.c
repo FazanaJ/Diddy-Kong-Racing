@@ -524,7 +524,7 @@ void draw_crash_screen(OSThread *thread) {
         return;
     }
 
-    //wcopy(gVideoCurrDepthBuffer, gCrashScreen.framebuffer, (gScreenWidth * gScreenHeight) * 2);
+    wcopy(gVideoCurrDepthBuffer, gCrashScreen.framebuffer, (gScreenWidth * gScreenHeight) * 2);
 
     sCrashX = (SCREEN_WIDTH - 270) / 2;
     sCrashY = (SCREEN_HEIGHT - 205) / 2;
