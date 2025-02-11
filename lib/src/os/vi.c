@@ -19,7 +19,11 @@ void __osViInit(void) {
 	__osViNext = &vi[1];
 	__osViNext->retraceCount = 1;
 	__osViCurr->retraceCount = 1;
-	__osViNext->modep = &osViModeNtscLan1;
+	if (osTvType == TV_TYPE_PAL) {
+		__osViNext->modep = &osViModePalLan1;
+	} else {
+		__osViNext->modep = &osViModeNtscLan1;
+	}
     osViClock = VI_NTSC_CLOCK;
 	__osViNext->state = VI_STATE_BLACK;
 	__osViNext->control = __osViNext->modep->comRegs.ctrl;
