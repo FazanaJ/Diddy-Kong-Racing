@@ -274,7 +274,6 @@ s32 sTotalTime = 0;
  * Contains all game logic, audio and graphics processing.
  */
 void main_game_loop(void) {
-    s32 framebufferSize;
     f32 divisor;
 #ifdef PUPPYPRINT_DEBUG
     profiler_reset_values();
@@ -413,9 +412,7 @@ void main_game_loop(void) {
     gPuppyPrint.mainTimerPoints[1][PP_PROFILER_CALC] = osGetCount();
 #endif
     if (gDrawFrameTimer == 2) {
-        framebufferSize = SCREEN_WIDTH * SCREEN_HEIGHT * 2;
-        // Todo: fix
-        //bcopy(gVideoCurrFramebuffer, gVideoLastFramebuffer, (s32) gVideoCurrFramebuffer + framebufferSize);
+        wcopy(gVideoCurrFramebuffer, gVideoLastFramebuffer, (gScreenWidth * gScreenHeight) * 2);
     }
 
     swap_framebuffer_when_ready();
