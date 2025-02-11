@@ -496,6 +496,9 @@ ROM := $(BUILD_DIR)/$(TARGET).z64
 patch: $(ROM)
 	$(FLIPS) --create --bps ./baseroms/dkr.z64 $(ROM) $(BUILD_DIR)/$(TARGET).bps
 
+test_ares: $(ROM)
+	/Applications/ares.app/Contents/MacOS/ares "$(BUILD_DIR)/$(TARGET).z64"
+
 .PHONY: all clean distclean default diff test
 
 # Remove built-in rules, to improve performance
