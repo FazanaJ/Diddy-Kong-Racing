@@ -2236,6 +2236,11 @@ void menu_init(u32 menuId) {
         case MENU_BOOT:
             menu_boot_init();
             break;
+#ifdef EXPANSION_PAK_REQUIRED
+        case MENU_EXPANSION_ERROR:
+            menu_expansionerror_init();
+            break;
+#endif
 #ifndef SKIP_WARNING_SCREEN
         case MENU_CAUTION:
             menu_caution_init();
@@ -2321,6 +2326,11 @@ s32 menu_loop(Gfx **currDisplayList, MatrixS **currHudMat, Vertex **currHudVerts
         case MENU_BOOT:
             ret = menu_boot_loop(updateRate);
             break;
+#ifdef EXPANSION_PAK_REQUIRED
+        case MENU_EXPANSION_ERROR:
+            ret = menu_expansionerror_loop(updateRate);
+            break;
+#endif
 #ifndef SKIP_WARNING_SCREEN
         case MENU_CAUTION:
             ret = menu_caution_loop(updateRate);
@@ -4948,6 +4958,14 @@ s32 menu_boot_loop(s32 updateRate) {
 
     y = offsetY;
 
+    gDPPipeSync(sMenuCurrDisplayList++);
+    gDPSetRenderMode(sMenuCurrDisplayList++, G_RM_NOOP, G_RM_NOOP2);
+    gDPSetCycleType(sMenuCurrDisplayList++, G_CYC_FILL);
+    gDPSetFillColor(sMenuCurrDisplayList++, GPACK_RGBA5551(0, 0, 0, 255) | (GPACK_RGBA5551(0, 0, 0, 255) << 16));
+    render_fill_rectangle(&sMenuCurrDisplayList, 0, 0, gScreenWidth - 1, gScreenHeight - 1);
+    gDPPipeSync(sMenuCurrDisplayList++);
+    gDPSetCycleType(sMenuCurrDisplayList++, G_CYC_1CYCLE);
+
     switch (gBootMenuPhase) {
         case 0:
             if (gBootMenuTimer < 32) {
@@ -4988,6 +5006,16 @@ s32 menu_boot_loop(s32 updateRate) {
                                   255);
         reset_render_settings(&sMenuCurrDisplayList);
         set_text_font(FONT_SMALL);
+#ifdef EXPANSION_PAK_REQUIRED
+        if (gExpansionPak == FALSE) {
+            if (gBootMenuTimer > 80 && check_fadeout_transition() == 0) {
+                transition_begin(&sMenuTransitionFadeInFast);
+            } else if (gBootMenuTimer > 100) {
+                load_menu_with_level_background(MENU_EXPANSION_ERROR, EXPANSION_PAK_ERROR_LEVEL, 0);
+            }
+            return out;
+        }
+#else
         if (gExpansionPak) {
             draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), gScreenHeight - 40, "Expansion Pak Detected",
                       ALIGN_MIDDLE_CENTER);
@@ -4995,10 +5023,109 @@ s32 menu_boot_loop(s32 updateRate) {
             draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), gScreenHeight - 40, "Expansion Pak Missing",
                       ALIGN_MIDDLE_CENTER);
         }
+#endif
     }
 
     return out;
 }
+
+#ifdef EXPANSION_PAK_REQUIRED
+s32 sExpansionErrorTimer;
+s32 sExpansionErrorLang;
+
+void menu_expansionerror_init(void) {
+    Settings *settings;
+    load_font(FONT_LARGE);
+    load_font(FONT_COLOURFUL);
+    music_play(SEQUENCE_NO_TROPHY_FOR_YOU);
+    settings = get_settings();
+    sExpansionErrorTimer = 0;
+    sExpansionErrorLang = get_language();
+}
+
+// English, French, German
+char *sMenuExpansionErrorStrings[][3] = {
+ {"ERROR", "ERROR", "ERROR"},
+ {"THE EXPANSION PAK IS REQUIRED",  "THE EXPANSION PAK IS REQUIRED",    "THE EXPANSION PAK IS REQUIRED"},
+ {"IN ORDER TO PLAY THIS GAME.",    "IN ORDER TO PLAY THIS GAME.",      "IN ORDER TO PLAY THIS GAME."},
+ {"FIRST PLEASE POWER OFF THE",     "FIRST PLEASE POWER OFF THE",       "FIRST PLEASE POWER OFF THE"},
+ {"NINTENDO 64 CONTROL DECK",       "NINTENDO 64 CONTROL DECK",         "NINTENDO 64 CONTROL DECK"},
+ {"AND INSERT THE EXPANSION PAK.",  "AND INSERT THE EXPANSION PAK.",    "AND INSERT THE EXPANSION PAK."},
+ {"AFTERWARDS, YOU WILL BE PLAYING","AFTERWARDS, YOU WILL BE PLAYING",  "AFTERWARDS, YOU WILL BE PLAYING"},
+ {"WITH 64 BITS OF POWER!",         "WITH 64 BITS OF POWER!",           "WITH 64 BITS OF POWER!"},
+ {"ENGLISH",                        "GERMAN",                           "FRENCH"},
+};
+
+s32 menu_expansionerror_loop(s32 updateRate) {
+    s32 highlight;
+    s32 i;
+    s32 lang = sExpansionErrorLang;
+
+    set_text_font(ASSET_FONTS_BIGFONT);
+    set_text_background_colour(0, 0, 0, 0);
+    set_text_colour(0, 0, 0, 0, 127);
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2) + 1, 10 + 1, sMenuExpansionErrorStrings[0][lang], ALIGN_TOP_CENTER);
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), 10, sMenuExpansionErrorStrings[0][lang], ALIGN_TOP_CENTER);
+    
+    set_text_font(ASSET_FONTS_FUNFONT);
+    set_text_colour(0, 0, 0, 0, 127);
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2) + 1, 48 + 1, sMenuExpansionErrorStrings[1][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2) + 1, 64 + 1, sMenuExpansionErrorStrings[2][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2) + 1, 88 + 1, sMenuExpansionErrorStrings[3][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2) + 1, 104 + 1, sMenuExpansionErrorStrings[4][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2) + 1, 120 + 1, sMenuExpansionErrorStrings[5][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2) + 1, 144 + 1, sMenuExpansionErrorStrings[6][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2) + 1, 160 + 1, sMenuExpansionErrorStrings[7][lang], ALIGN_TOP_CENTER);
+
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2) + 1, 190 + 1, sMenuExpansionErrorStrings[8][lang], ALIGN_TOP_CENTER);
+
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), 48, sMenuExpansionErrorStrings[1][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), 64, sMenuExpansionErrorStrings[2][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), 88, sMenuExpansionErrorStrings[3][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), 104, sMenuExpansionErrorStrings[4][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), 120, sMenuExpansionErrorStrings[5][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), 144, sMenuExpansionErrorStrings[6][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), 160, sMenuExpansionErrorStrings[7][lang], ALIGN_TOP_CENTER);
+
+    gOptionBlinkTimer = (gOptionBlinkTimer + updateRate) & 0x3F;
+    highlight = gOptionBlinkTimer * 8;
+    if (gOptionBlinkTimer >= 32) {
+        highlight = 511 - highlight;
+    }
+
+    set_text_colour(255, 255, 255, highlight, 255);
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2), 190, sMenuExpansionErrorStrings[8][lang], ALIGN_TOP_CENTER);
+
+    for (i = 0; i < 4; i++) {
+        if (gControllersXAxisDirection[i] > 0) {
+            sExpansionErrorLang++;
+            if (sExpansionErrorLang > LANGUAGE_FRENCH) {
+                sExpansionErrorLang = LANGUAGE_ENGLISH;
+            }
+            sound_play(SOUND_MENU_PICK2, NULL);
+            break;
+        } else if (gControllersXAxisDirection[i] < 0) {
+            sExpansionErrorLang--;
+            if (sExpansionErrorLang < LANGUAGE_ENGLISH) {
+                sExpansionErrorLang = LANGUAGE_FRENCH;
+            }
+            sound_play(SOUND_MENU_PICK2, NULL);
+            break;
+        }
+    }
+
+    if (sExpansionErrorTimer < 140) {
+        sExpansionErrorTimer += updateRate;
+        if (sExpansionErrorTimer >= 140) {
+            sound_play(SOUND_VOICE_BANJO_NEGATIVE6, NULL);
+        }
+    }
+    
+    return MENU_RESULT_CONTINUE;
+}
+#endif
 
 /**
  * Free the assets associated with the boot screen.

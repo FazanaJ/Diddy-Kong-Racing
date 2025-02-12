@@ -1656,6 +1656,12 @@ void pre_intro_loop(void) {
     sBootDelayTimer++;
 #else
     sBootDelayTimer = 8;
+  #ifdef EXPANSION_PAK_REQUIRED
+    if (gExpansionPak == FALSE) {
+        load_menu_with_level_background(MENU_EXPANSION_ERROR, EXPANSION_PAK_ERROR_LEVEL, 0);
+        return;
+    }
+  #endif
 #endif
     if (sBootDelayTimer >= 8) {
         load_menu_with_level_background(BOOT_LVL, ASSET_LEVEL_OPTIONSBACKGROUND, 2);

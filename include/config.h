@@ -38,6 +38,7 @@
 
 /* -------------------------Memory------------------------ */
 //#define EXPANSION_PAK_REQUIRED              // Enable expansion pak requirement
+#define EXPANSION_PAK_ERROR_LEVEL ASSET_LEVEL_OPTIONSBACKGROUND // What level to load if the expansion pak error screen triggers.
 #define EXPANSION_PAK_SUPPORT 1               // Allow the game to use the expansion pak if it's inserted. Disabling this will move Framebuffers to expansion RAM for extra performance.
 
 #define NUM_GFX_COMMANDS        {3000 + GFX_ADD, 4000 + GFX_ADD, 5000 + GFX_ADD, 5000 + GFX_ADD} /* How many graphics commands can be ran per frame. Default is 4500, 7000, 11000, 11000 */

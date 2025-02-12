@@ -176,5 +176,6 @@ void init_level_globals(void);
 void alloc_displaylist_heap(s32 numberOfPlayers);
 void default_alloc_displaylist_heap(void);
 void menu_logic_loop(s32 updateRate);
+void gamemode_missing_expansion(void);
 
 #endif

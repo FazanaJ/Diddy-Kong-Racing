@@ -184,41 +184,6 @@ void main2(void) {
     osStartThread(&gThread1);
 }
 
-extern OSSched gMainSched;
-
-#ifdef EXPANSION_PAK_REQUIRED
-/*void draw_memory_error_screen(void) {
-    Gfx *dlist;
-    init_main_memory_pool();
-    func_800C6170();
-    func_80076BA0();
-    func_80008040(); // Should be very similar to func_8005F850
-    func_8007AC70(); // Should be very similar to func_8005F850
-    func_800B5E88();
-    osCreateScheduler(&gMainSched, 0, 13, (u8) 0, 1);
-    init_video(VIDEO_MODE_LOWRES_LPN);
-
-    dlist = gDisplayLists[0];
-    change_vi(&gGlobalVI, SCREEN_WIDTH, SCREEN_HEIGHT);
-    osViSetMode(&gGlobalVI);
-    load_font(FONT_SMALL);
-    set_text_font(FONT_SMALL);
-    draw_text(dlist++, SCREEN_WIDTH_HALF, SCREEN_HEIGHT_HALF, "Expansion Pak Required", ALIGN_MIDDLE_CENTER);
-    set_rsp_segment(&dlist, 0, 0);
-    set_rsp_segment(&dlist, 1, (s32) gVideoCurrFramebuffer);
-    set_rsp_segment(&dlist, 2, gVideoLastDepthBuffer);
-    set_rsp_segment(&dlist, 4, (s32) gVideoCurrFramebuffer - 0x500);
-    init_rsp(&dlist);
-    init_rdp_and_framebuffer(&dlist);
-    setup_ostask_xbus(gDisplayLists[0], dlist, 0);
-    gDPFullSync(dlist++);
-    gSPEndDisplayList(dlist++);
-    wait_for_gfx_task();
-    osViBlack(FALSE);
-    osViSwapBuffer(gVideoCurrFramebuffer);
-}*/
-#endif
-
 /**
  * Initialise the crash handler thread, then initialise the main game thread.
  * Reset the start and endpoint of the game thread stack, then set thread priority to zero, effectively
@@ -235,19 +200,11 @@ void thread1_main(UNUSED void *unused) {
 #ifdef PUPPYPRINT_DEBUG
     bzero(&gPuppyPrint, sizeof(gPuppyPrint));
 #endif
-#ifdef EXPANSION_PAK_REQUIRED
-    if (!gExpansionPak) {
-        //draw_memory_error_screen();
-    } else {
-#endif
-        osCreateThread(&gThread3, 3, &thread3_main, 0, &gThread3Stack[THREAD3_STACK / sizeof(u64)], 10);
-        gThread3Stack[THREAD3_STACK / sizeof(u64)] = 0;
-        gThread3Stack[0] = 0;
-        osStartThread(&gThread3);
-        osSetThreadPri(OS_PRIORITY_IDLE);
-#ifdef EXPANSION_PAK_REQUIRED
-    }
-#endif
+    osCreateThread(&gThread3, 3, &thread3_main, 0, &gThread3Stack[THREAD3_STACK / sizeof(u64)], 10);
+    gThread3Stack[THREAD3_STACK / sizeof(u64)] = 0;
+    gThread3Stack[0] = 0;
+    osStartThread(&gThread3);
+    osSetThreadPri(OS_PRIORITY_IDLE);
     while (1) {}
 }
 

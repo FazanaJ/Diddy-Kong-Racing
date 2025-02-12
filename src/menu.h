@@ -235,6 +235,7 @@ typedef enum MENU_ID {
     MENU_BOOT,
     MENU_UNUSED_27,
     MENU_CAUTION,
+    MENU_EXPANSION_ERROR,
 #ifdef PUPPYPRINT_DEBUG
     MENU_BENCHMARK
 #endif
@@ -471,6 +472,8 @@ extern s32 gOpacityDecayTimer;
 
 s32 get_random_number_from_range(s32, s32); // No file to pull from yet.
 
+void menu_expansionerror_init(void);
+s32 menu_expansionerror_loop(s32 updateRate);
 void menu_button_free(void);
 void menu_geometry_end(void);
 void reset_title_logo_scale(void);
