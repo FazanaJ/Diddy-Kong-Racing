@@ -198,8 +198,11 @@ void init_framebuffer(s32 index) {
     fbAddr = gVideoFramebuffers[index];
     fbAddr[100] = 0xBEEF;
     if (gVideoDepthBuffer == NULL) {
-        gVideoDepthBuffer = allocate_from_main_pool_safe((width * SCREEN_HEIGHT * 2) + 0x40, MEMP_FRAMEBUFFERS);
-        gVideoDepthBuffer = (u32 *) (((s32) gVideoDepthBuffer + 0x3F) & ~0x3F);
+        s32 videoSize = (width * SCREEN_HEIGHT * 2);
+        videoSize = (s32) (((s32) videoSize + 0x3F) & ~0x3F);
+        gVideoDepthBuffer = (u32 *) 0x80800000 - (videoSize);
+        //gVideoDepthBuffer = allocate_from_main_pool_safe((width * SCREEN_HEIGHT * 2) + 0x40, MEMP_FRAMEBUFFERS);
+        //gVideoDepthBuffer = (u32 *) (((s32) gVideoDepthBuffer + 0x3F) & ~0x3F);
         fbAddr = gVideoDepthBuffer;
         fbAddr[100] = 0xBEEF;
     }

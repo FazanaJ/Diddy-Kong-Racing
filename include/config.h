@@ -38,7 +38,7 @@
 
 /* -------------------------Memory------------------------ */
 //#define EXPANSION_PAK_REQUIRED              // Enable expansion pak requirement
-#define EXPANSION_PAK_SUPPORT 0               // Allow the game to use the expansion pak if it's inserted. Disabling this will move Framebuffers to expansion RAM for extra performance.
+#define EXPANSION_PAK_SUPPORT 1               // Allow the game to use the expansion pak if it's inserted. Disabling this will move Framebuffers to expansion RAM for extra performance.
 
 #define NUM_GFX_COMMANDS        {3000 + GFX_ADD, 4000 + GFX_ADD, 5000 + GFX_ADD, 5000 + GFX_ADD} /* How many graphics commands can be ran per frame. Default is 4500, 7000, 11000, 11000 */
 #define NUM_VERTICES            {200, 300, 400, 500} /* How many vertices are allowed per frame. Default is 300, 600, 850, 900 */

@@ -15,12 +15,18 @@
 #define _ALIGN16(a) (((u32) (a) & ~0x7) + 0x8)
 #endif
 
+
+#ifndef _ALIGN64
+#define _ALIGN64(a) (((u32) (a) & ~0x3F) + 0x40)
+#endif
+
 MemoryPool gMemoryPools[4]; // Only two are used.
 s32 gNumberOfMemoryPools;
 void *gFreeQueue[256];
 u8 gFreeQueueElementTimer[256];
 s32 gFreeQueueCount;
 s32 gFreeQueueTimer; // Official Name: mmDelay
+u32 *gMemPoolEnd;
 
 extern MemoryPoolSlot gMainMemoryPool;
 
@@ -34,6 +40,7 @@ extern MemoryPoolSlot gMainMemoryPool;
 void init_main_memory_pool(void) {
     u32 ramEnd;
     s32 i;
+    s32 bufferSize = (SCREEN_HEIGHT) * 2;
 
     gNumberOfMemoryPools = -1;
     if (gUseExpansionMemory) {
@@ -59,10 +66,18 @@ void init_main_memory_pool(void) {
         } else {
             ramEnd = 0x80000000 + osGetMemSize();
         }
+        bufferSize *= SCREEN_WIDTH_WIDE;
     } else {
+        bufferSize *= SCREEN_WIDTH;
         ramEnd = RAM_END;
     }
-    new_memory_pool(&gMainMemoryPool, ramEnd - (s32) (&gMainMemoryPool), MAIN_POOL_SLOT_COUNT);
+    if (bufferSize & 0x40) {
+        bufferSize = _ALIGN64(bufferSize);
+    }
+    ramEnd -= (s32) (&gMainMemoryPool);
+    ramEnd -= bufferSize;
+    gMemPoolEnd = (u32 *) 0x80000000 - (bufferSize);
+    new_memory_pool(&gMainMemoryPool, ramEnd + bufferSize, MAIN_POOL_SLOT_COUNT);
     set_free_queue_state(2);
     gFreeQueueCount = 0;
 }
@@ -508,6 +523,7 @@ void calculate_ram_total(s32 poolIndex, u32 colourTag) {
     MemoryPoolSlot *slots;
     MemoryPoolSlot *curSlot;
     s32 i;
+    s32 fbSize;
 
     switch (colourTag) {
         case COLOUR_TAG_RED:
@@ -550,6 +566,15 @@ void calculate_ram_total(s32 poolIndex, u32 colourTag) {
     slots = gMemoryPools[poolIndex].slots;
     gPuppyPrint.ramPools[MEMP_OVERALL] -= gPuppyPrint.ramPools[index];
     gPuppyPrint.ramPools[index] = 0;
+    if (colourTag == MEMP_FRAMEBUFFERS) {
+        fbSize = SCREEN_HEIGHT * 2;
+        if (gUseExpansionMemory) {
+            fbSize *= SCREEN_WIDTH_WIDE;
+        } else {
+            fbSize *= SCREEN_WIDTH;
+        }
+        gPuppyPrint.ramPools[MEMP_FRAMEBUFFERS] += fbSize;
+    }
 
     for (i = 0; i != -1; i = curSlot->nextIndex) {
         curSlot = &slots[i];
