@@ -212,7 +212,7 @@ void setup_ostask_fifo(Gfx *dlBegin, Gfx *dlEnd) {
 
 #if EXPANSION_PAK_SUPPORT || defined(FIFO_4MB)
     taskStart = (u32) gGfxSPTaskOutputBuffer;
-    taskEnd = (u32) (gGfxSPTaskOutputBuffer + (FIFO_BUFFER_SIZE));
+    taskEnd = ((u32) (gGfxSPTaskOutputBuffer) + (FIFO_BUFFER_SIZE));
 #endif
 
     dkrtask = gRdpCurTask;

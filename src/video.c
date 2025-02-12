@@ -189,7 +189,8 @@ void init_framebuffer(s32 index) {
 #endif
 #if EXPANSION_PAK_SUPPORT || defined(FIFO_4MB)
     if (gGfxSPTaskOutputBuffer == NULL) {
-        gGfxSPTaskOutputBuffer = allocate_from_main_pool_safe(FIFO_BUFFER_SIZE, MEMP_TASKBUFFER);
+        gGfxSPTaskOutputBuffer = allocate_from_main_pool_safe(FIFO_BUFFER_SIZE + 0x10, MEMP_TASKBUFFER);
+        gGfxSPTaskOutputBuffer = (u64 *) (((s32) gGfxSPTaskOutputBuffer + 0xF) & ~0xF);
     }
 #endif
     gVideoFramebuffers[index] = allocate_from_main_pool_safe((width * SCREEN_HEIGHT * 2) + 0x40, MEMP_FRAMEBUFFERS);

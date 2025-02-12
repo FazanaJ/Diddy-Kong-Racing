@@ -38,7 +38,7 @@ static void __scExec(OSSched *sc, OSScTask *t) {
     if (t->list.t.type == M_AUDTASK) {
 #ifdef PUPPYPRINT_DEBUG
         if (sTimerChecks[0] == FALSE && gPlatform & CONSOLE) {
-            osSetTimer(&sRSPAudHangTimer, OS_USEC_TO_CYCLES(200000), (OSTime) 0, &gCrashScreen.mesgQueue, (OSMesg) MESG_RSP_AUD_HUNG);
+            osSetTimer(&sRSPAudHangTimer, OS_USEC_TO_CYCLES(350000), (OSTime) 0, &gCrashScreen.mesgQueue, (OSMesg) MESG_RSP_AUD_HUNG);
             sTimerChecks[0] = TRUE;
         }
         puppyprint_update_rsp(RSP_AUDIO_START);
@@ -46,7 +46,7 @@ static void __scExec(OSSched *sc, OSScTask *t) {
     } else {
 #ifdef PUPPYPRINT_DEBUG
         if (sTimerChecks[1] == FALSE && gPlatform & CONSOLE) {
-            osSetTimer(&sRSPGfxHangTimer, OS_USEC_TO_CYCLES(200000), (OSTime) 0, &gCrashScreen.mesgQueue, (OSMesg) MESG_RSP_GFX_HUNG);
+            osSetTimer(&sRSPGfxHangTimer, OS_USEC_TO_CYCLES(300000), (OSTime) 0, &gCrashScreen.mesgQueue, (OSMesg) MESG_RSP_GFX_HUNG);
             sTimerChecks[1] = TRUE;
         }
         puppyprint_update_rsp(RSP_GFX_START);
@@ -67,7 +67,7 @@ static void __scExec(OSSched *sc, OSScTask *t) {
         sc->curRDPTask = t;
 #ifdef PUPPYPRINT_DEBUG
         if (sTimerChecks[2] == FALSE && gPlatform & CONSOLE) {
-            osSetTimer(&sRDPHangTimer, OS_USEC_TO_CYCLES(200000), (OSTime) 0, &gCrashScreen.mesgQueue, (OSMesg) MESG_RDP_HUNG);
+            osSetTimer(&sRDPHangTimer, OS_USEC_TO_CYCLES(300000), (OSTime) 0, &gCrashScreen.mesgQueue, (OSMesg) MESG_RDP_HUNG);
             sTimerChecks[2] = TRUE;
         }
         IO_WRITE(DPC_STATUS_REG, DPC_CLR_CLOCK_CTR | DPC_CLR_CMD_CTR | DPC_CLR_PIPE_CTR | DPC_CLR_TMEM_CTR);

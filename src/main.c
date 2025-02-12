@@ -187,7 +187,7 @@ void main2(void) {
 extern OSSched gMainSched;
 
 #ifdef EXPANSION_PAK_REQUIRED
-void draw_memory_error_screen(void) {
+/*void draw_memory_error_screen(void) {
     Gfx *dlist;
     init_main_memory_pool();
     func_800C6170();
@@ -195,7 +195,7 @@ void draw_memory_error_screen(void) {
     func_80008040(); // Should be very similar to func_8005F850
     func_8007AC70(); // Should be very similar to func_8005F850
     func_800B5E88();
-    osCreateScheduler(&gMainSched, 0, /*priority*/ 13, (u8) 0, 1);
+    osCreateScheduler(&gMainSched, 0, 13, (u8) 0, 1);
     init_video(VIDEO_MODE_LOWRES_LPN);
 
     dlist = gDisplayLists[0];
@@ -216,7 +216,7 @@ void draw_memory_error_screen(void) {
     wait_for_gfx_task();
     osViBlack(FALSE);
     osViSwapBuffer(gVideoCurrFramebuffer);
-}
+}*/
 #endif
 
 /**
@@ -237,7 +237,7 @@ void thread1_main(UNUSED void *unused) {
 #endif
 #ifdef EXPANSION_PAK_REQUIRED
     if (!gExpansionPak) {
-        draw_memory_error_screen();
+        //draw_memory_error_screen();
     } else {
 #endif
         osCreateThread(&gThread3, 3, &thread3_main, 0, &gThread3Stack[THREAD3_STACK / sizeof(u64)], 10);
