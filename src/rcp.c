@@ -10,6 +10,7 @@
 #include "game.h"
 #include "printf.h"
 #include "main.h"
+#include "thread30_track_loading.h"
 // #include "lib/src/unknown_0D24D0.h"
 
 /************ .data ************/
@@ -229,6 +230,8 @@ void setup_ostask_fifo(Gfx *dlBegin, Gfx *dlEnd) {
     gRdpCurTask = (DKR_OSTask *) ((u32) gRdpCurTask ^ (u32) &gRdpTaskA ^ (u32) &gRdpTaskB);
 }
 
+FadeTransition gResetTransition = FADE_TRANSITION(FADE_CIRCLE, FADE_FLAG_NONE, FADE_COLOR_BLACK, 25, -1);
+
 /**
  * Called from the main game loop, will halt until a message comes through saying the graphics task
  * has finished.
@@ -237,12 +240,21 @@ void setup_ostask_fifo(Gfx *dlBegin, Gfx *dlEnd) {
  */
 void wait_for_gfx_task(void) {
     OSMesg mesg;
+    static s32 gResetting = FALSE;
 
     while (gNumGfxTasksAtScheduler > 0) {
         osRecvMesg(&gGameMesgQueue, &mesg, OS_MESG_BLOCK);
 
         if ((s32) mesg == OS_SC_DONE_MSG) {
             gNumGfxTasksAtScheduler--;
+        } else if ((s32) mesg == OS_SC_PRE_NMI_MSG) {
+            if (gResetting == FALSE) {
+                gResetting = TRUE;
+                rumble_kill();
+                stop_thread30();
+                transition_begin(&gResetTransition);
+                puppyprint_log("Initiating reset");
+            }
         }
     }
 }
