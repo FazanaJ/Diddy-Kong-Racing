@@ -208,12 +208,15 @@ void setup_ostask_xbus(Gfx *dlBegin, Gfx *dlEnd) {
  */
 void setup_ostask_fifo(Gfx *dlBegin, Gfx *dlEnd) {
     DKR_OSTask *dkrtask;
-    u32 taskStart = 0x80680000;
-    u32 taskEnd = 0x806E0000;
+    u64 *taskStart;
+    u64 *taskEnd;
 
 #if EXPANSION_PAK_SUPPORT || defined(FIFO_4MB)
-    taskStart = (u32) gGfxSPTaskOutputBuffer;
-    taskEnd = ((u32) (gGfxSPTaskOutputBuffer) + (FIFO_BUFFER_SIZE));
+    taskStart = (u64 *) gGfxSPTaskOutputBuffer;
+    taskEnd = (u64 *) ((u8 *) gGfxSPTaskOutputBuffer + FIFO_BUFFER_SIZE);
+#else
+    taskStart = (u64 *) 0x80680000;
+    taskEnd = (u64 *) 0x806E0000;
 #endif
 
     dkrtask = gRdpCurTask;

@@ -318,8 +318,24 @@ void profiler_add(u32 time, u32 offset) {
 }
 
 void puppyprint_input(void) {
+    u32 inputHeld;
+    u32 inputPressed;
+
+    for (int i = 0; i < 4; i++) {
+        if ((inputHeld = get_buttons_held_from_player(i))) {
+            break;
+        }
+    }
+    
+    for (int i = 0; i < 4; i++) {
+        if ((inputPressed = get_buttons_pressed_from_player(i))) {
+            break;
+        }
+    }
+
+
     // Allow toggling of the profiler.
-    if (get_buttons_held_from_player(0) & U_JPAD && get_buttons_pressed_from_player(0) & L_TRIG) {
+    if (inputHeld & U_JPAD && inputPressed & L_TRIG) {
         gPuppyPrint.enabled ^= 1;
         return; // Sanitisation is healthy.
     }
@@ -328,7 +344,7 @@ void puppyprint_input(void) {
     }
 
     // Handle opening and changing page in the menu.
-    if (get_buttons_pressed_from_player(0) & L_TRIG) {
+    if (inputPressed & L_TRIG) {
         if (gPuppyPrint.menuOption != PAGE_COVERAGE) {
             gPuppyPrint.menuOpen ^= 1;
             if (gPuppyPrint.page != gPuppyPrint.menuOption) {
@@ -341,13 +357,13 @@ void puppyprint_input(void) {
     }
 
     if (gPuppyPrint.menuOpen) {
-        if (get_buttons_pressed_from_player(0) & U_JPAD) {
+        if (inputPressed & U_JPAD) {
             gPuppyPrint.menuOption--;
             if (gPuppyPrint.menuOption <= -1) {
                 gPuppyPrint.menuOption = PAGE_COUNT - 1;
                 gPuppyPrint.menuScroll = PAGE_COUNT - 5;
             }
-        } else if (get_buttons_pressed_from_player(0) & D_JPAD) {
+        } else if (inputPressed & D_JPAD) {
             gPuppyPrint.menuOption++;
             if (gPuppyPrint.menuOption >= PAGE_COUNT) {
                 gPuppyPrint.menuOption = 0;
@@ -362,12 +378,12 @@ void puppyprint_input(void) {
     } else {
         if (gPuppyPrint.page == PAGE_LOG) {
             s32 maxPrints = (gScreenHeight - 36);
-            if (get_buttons_held_from_player(0) & D_JPAD) {
+            if (inputHeld & D_JPAD) {
                 gPuppyPrint.pageScroll += sLogicUpdateRate * 2;
                 if (gPuppyPrint.pageScroll > ((NUM_LOG_LINES) * 10) - maxPrints) {
                     gPuppyPrint.pageScroll = ((NUM_LOG_LINES) * 10) - maxPrints;
                 }
-            } else if (get_buttons_held_from_player(0) & U_JPAD) {
+            } else if (inputHeld & U_JPAD) {
                 gPuppyPrint.pageScroll -= sLogicUpdateRate * 2;
                 if (gPuppyPrint.pageScroll < 0) {
                     gPuppyPrint.pageScroll = 0;
@@ -377,12 +393,12 @@ void puppyprint_input(void) {
 
         if (gPuppyPrint.page == PAGE_MEMORY) {
             s32 maxPrints = (gScreenHeight - 36);
-            if (get_buttons_held_from_player(0) & D_JPAD) {
+            if (inputHeld & D_JPAD) {
                 gPuppyPrint.pageScroll += sLogicUpdateRate * 2;
                 if (gPuppyPrint.pageScroll > (10 * (MEMP_TOTAL + 10)) - maxPrints) {
                     gPuppyPrint.pageScroll = (10 * (MEMP_TOTAL + 10)) - maxPrints;
                 }
-            } else if (get_buttons_held_from_player(0) & U_JPAD) {
+            } else if (inputHeld & U_JPAD) {
                 gPuppyPrint.pageScroll -= sLogicUpdateRate * 2;
                 if (gPuppyPrint.pageScroll < 0) {
                     gPuppyPrint.pageScroll = 0;
