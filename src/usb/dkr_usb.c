@@ -7,6 +7,11 @@
 
 #include "dkr_usb.h"
 #include "usb.h"
+#include "usb/reset.h"
+#include "string.h"
+#include "stdarg.h"
+#include "lib/src/libc/rmonPrintf.h"
+#include "lib/src/libc/xprintf.h"
 
 /*
     TODO:
@@ -29,35 +34,81 @@
 
 #define THREADUSB_STACK 0x200
 
+#define MSG_FAULT 0x10
+#define MSG_READ  0x11
+#define MSG_WRITE 0x12
+    
+#define USBERROR_NONE    0
+#define USBERROR_NOTTEXT 1
+#define USBERROR_UNKNOWN 2
+#define USBERROR_TOOMUCH 3
+#define USBERROR_CUSTOM  4
+    
+#define HASHTABLE_SIZE 7
+#define COMMAND_TOKENS 10
+#define BUFFER_SIZE    256
+
 // Copied from Thread30
 OSThread gThreadUsb;
 OSMesgQueue gThreadUsbMesgQueue;
-OSMesg gThreadUsbMessage[2];
+OSMesg gThreadUsbMessage;
 u64 gThreadUsbStack[THREADUSB_STACK / sizeof(u64)];
-
+char debug_initialized = 0;
+ALIGNED16 char debug_buffer[BUFFER_SIZE];
+u8 sUSBEnabled = FALSE;
 int usbState = -1;
 int cartType = -1;
 char textBuffer[64];
 u8 usbBuffer[512]; // UNFLoader only supports reads/writes of up to 512 bytes.
-
-#ifdef USB_HOT_RELOAD
 s32 isHotReloading = FALSE;
-#endif
 
 void threadusb_loop(UNUSED void *arg);
+
+s32 _Printf(outfun prout, char *dst, const char *fmt, va_list args);
+
+static char *proutSprintf(char *dst, const char *src, size_t count) {
+    char *ret = dst;
+    bcopy((char *) src, dst, count);
+    return ret + count;
+}
+
+void debug_printf(const char* message, ...) {
+    int len = 0;
+    usbMesg msg;
+    va_list args;
+
+    if (sUSBEnabled == FALSE) {
+        return;
+    }
+    
+    // use the internal libultra printf function to format the string
+    va_start(args, message);
+    len = _Printf(&proutSprintf, debug_buffer, message, args);
+    va_end(args);
+    
+    // Attach the '\0' if necessary
+    if (0 <= len) {
+        debug_buffer[len] = '\0';
+    }
+    
+    // Send the printf to the usb thread
+    msg.msgtype = (OSMesg) MSG_WRITE;
+    msg.datatype = DATATYPE_TEXT;
+    msg.buff = debug_buffer;
+    msg.size = len;
+    osSendMesg(&gThreadUsbMesgQueue, (OSMesg)&msg, OS_MESG_BLOCK);
+}
 
 void init_usb_thread(void) {
     usbState = usb_initialize();
     RETURN_IF_USB_NOT_VALID();
     cartType = usb_getcart();
     RETURN_IF_CART_NOT_VALID();
-
-#ifdef USB_HOT_RELOAD
+    bzero(&debug_buffer, sizeof(debug_buffer));
     isHotReloading = FALSE;
-#endif
 
     // Create USB thread.
-    osCreateMesgQueue(&gThreadUsbMesgQueue, &gThreadUsbMessage[0], 2);
+    osCreateMesgQueue(&gThreadUsbMesgQueue, &gThreadUsbMessage, 1);
     osCreateThread(&gThreadUsb, USB_THREAD_ID, &threadusb_loop, NULL, &gThreadUsbStack[THREADUSB_STACK / sizeof(u64)],
                    THREADUSB_PRIORITY);
     osStartThread(&gThreadUsb);
@@ -65,13 +116,13 @@ void init_usb_thread(void) {
 
 // Called from main thread.
 void tick_usb_thread(void) {
+    usbMesg msg;
     // Update USB thread
-    osSendMesg(&gThreadUsbMesgQueue, (OSMesg *) OS_MESG_TYPE_LOOPBACK, OS_MESG_NOBLOCK);
+    msg.msgtype = (OSMesg) OS_MESG_TYPE_LOOPBACK;
+    osSendMesg(&gThreadUsbMesgQueue, (OSMesg *) &msg, OS_MESG_NOBLOCK);
 }
 
 void dkr_usb_poll(void) {
-    RETURN_IF_USB_NOT_VALID();
-    RETURN_IF_CART_NOT_VALID();
     while (usb_poll()) {
         int header, numBytesToRead;
         UNUSED int dataType;
@@ -89,7 +140,6 @@ void dkr_usb_poll(void) {
 }
 
 #ifdef USB_HOT_RELOAD
-#include "usb/reset.h"
 
 int numBytesReadHR = 0;
 
@@ -138,12 +188,13 @@ void check_hot_reload(void) {
 #endif
 
 void threadusb_loop(UNUSED void *arg) {
-    OSMesg mesg = 0;
+    usbMesg *mesg = NULL;
+    sUSBEnabled = TRUE;
     while (TRUE) {
         // Wait for a tick signal from the main thread
-        osRecvMesg(&gThreadUsbMesgQueue, &mesg, OS_MESG_BLOCK);
-
-        // Do USB logic here
+        osRecvMesg(&gThreadUsbMesgQueue, (OSMesg *) &mesg, OS_MESG_BLOCK);
+        RETURN_IF_USB_NOT_VALID();
+        RETURN_IF_CART_NOT_VALID();
 #ifdef USB_HOT_RELOAD
         if (!isHotReloading) {
             dkr_usb_poll();
@@ -152,9 +203,18 @@ void threadusb_loop(UNUSED void *arg) {
 #else
         dkr_usb_poll();
 #endif
+        switch ((s32) mesg->msgtype) {
+        case MSG_WRITE:
+            if (usb_timedout()) {
+                usb_sendheartbeat();
+            }
+            usb_write(mesg->datatype, mesg->buff, mesg->size);
+            break;
+        }
     }
 }
 
+#ifdef SHOW_USB_INFO
 // Called from main thread.
 void render_usb_info(void) {
     set_render_printf_background_colour(0, 0, 0, 128);
@@ -173,4 +233,5 @@ void render_usb_info(void) {
     render_printf("%s\n", textBuffer);
 }
 
+#endif
 #endif

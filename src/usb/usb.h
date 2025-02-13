@@ -1,8 +1,5 @@
 #ifndef UNFL_USB_H
 #define UNFL_USB_H
-
-#include "types.h"
-#include "ultra64.h"
     
     /*********************************
              DataType macros
@@ -23,11 +20,12 @@
     #define CART_SC64      3
     
     // Data types defintions
-    #define DATATYPE_TEXT       0x01
-    #define DATATYPE_RAWBINARY  0x02
-    #define DATATYPE_HEADER     0x03
-    #define DATATYPE_SCREENSHOT 0x04
-    #define DATATYPE_HEARTBEAT  0x05
+    #define DATATYPE_TEXT        0x01
+    #define DATATYPE_RAWBINARY   0x02
+    #define DATATYPE_HEADER      0x03
+    #define DATATYPE_SCREENSHOT  0x04
+    #define DATATYPE_HEARTBEAT   0x05
+    #define DATATYPE_RDBPACKET   0x06
     
     
     /*********************************
@@ -35,16 +33,13 @@
     *********************************/
     
     // Use these to conveniently read the header from usb_poll()
-    #define USBHEADER_GETTYPE(header) ((header & 0xFF000000) >> 24)
-    #define USBHEADER_GETSIZE(header) ((header & 0x00FFFFFF))
+    #define USBHEADER_GETTYPE(header) (((header) & 0xFF000000) >> 24)
+    #define USBHEADER_GETSIZE(header) (((header) & 0x00FFFFFF))
     
     
     /*********************************
               USB Functions
     *********************************/
-    
-    extern void usb_set_debug_address(u32 newAddress);
-    extern void usb_restore_debug_address();
     
     /*==============================
         usb_initialize
@@ -52,7 +47,7 @@
         @return 1 if the USB initialization was successful, 0 if not
     ==============================*/
     
-    extern char usb_initialize();
+    extern char usb_initialize(void);
     
     
     /*==============================
@@ -61,7 +56,7 @@
         @return The CART macro that corresponds to the identified flashcart
     ==============================*/
     
-    extern char usb_getcart();
+    extern char usb_getcart(void);
     
     
     /*==============================
@@ -73,7 +68,7 @@
         @param The size of the data being sent
     ==============================*/
     
-    extern void usb_write(int datatype, const u8* data, int size);
+    extern void usb_write(int datatype, const void* data, int size);
     
     
     /*==============================
@@ -83,7 +78,7 @@
         @return The data header, or 0
     ==============================*/
     
-    extern u32 usb_poll();
+    extern unsigned long usb_poll(void);
     
     
     /*==============================
@@ -92,9 +87,10 @@
         @param The buffer to put the read data in
         @param The number of bytes to read
     ==============================*/
-
-    extern void usb_read(u8 *buffer, int nbytes);
-
+    
+    extern void usb_read(void* buffer, int size);
+    
+    
     /*==============================
         usb_skip
         Skips a USB read by the specified amount of bytes
@@ -118,7 +114,7 @@
         Purges the incoming USB data
     ==============================*/
     
-    extern void usb_purge();
+    extern void usb_purge(void);
 
 
     /*==============================
@@ -127,7 +123,7 @@
         @return 1 if the USB timed out, 0 if not
     ==============================*/
 
-    extern char usb_timedout();
+    extern char usb_timedout(void);
 
 
     /*==============================
@@ -139,6 +135,6 @@
         version.
     ==============================*/
 
-    extern void usb_sendheartbeat();
+    extern void usb_sendheartbeat(void);
 
 #endif

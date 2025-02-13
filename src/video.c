@@ -229,9 +229,9 @@ void detect_framebuffer(void) {
         gPlatform |= DBE;
     }
     if (gPlatform & FBE) {
-        puppyprint_log("Framebuffer Emulation detected.");
+        puppyprint_log("Framebuffer Emulation detected.\n");
     } else {
-        puppyprint_log("Framebuffer Emulation missing.");
+        puppyprint_log("Framebuffer Emulation missing.\n");
     }
 }
 

@@ -253,7 +253,7 @@ void wait_for_gfx_task(void) {
                 rumble_kill();
                 stop_thread30();
                 transition_begin(&gResetTransition);
-                puppyprint_log("Initiating reset");
+                puppyprint_log("Resetting N64.\n");
             }
         }
     }

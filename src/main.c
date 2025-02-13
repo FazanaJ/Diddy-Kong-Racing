@@ -13,6 +13,7 @@
 #include "particles.h"
 #include "objects.h"
 #include "math_util.h"
+#include "usb/dkr_usb.h"
 
 /************ .bss ************/
 
@@ -51,7 +52,7 @@ void get_platform(void) {
 
     if (__osBbIsBb) {
         gPlatform = IQUE | CONSOLE;
-        puppyprint_log("iQue Player detected.");
+        puppyprint_log("iQue Player detected.\n");
         return;
     }
 
@@ -78,11 +79,11 @@ void get_platform(void) {
     // Piece together a string to print out.
     if (gPlatform & EMULATOR) {
         if (gPlatform & ARES) {
-            puppyprint_log("AresN64/Simple64 Emulator detected.");
+            puppyprint_log("AresN64/Simple64 Emulator detected.\n");
         } else if (gPlatform & PJ64) {
-            puppyprint_log("Project 64 detected.");
+            puppyprint_log("Project 64 detected.\n");
         } else {
-            puppyprint_log("N64 Emulator detected.");
+            puppyprint_log("N64 Emulator detected.\n");
         }
     } else {
         if (osTvType == TV_TYPE_PAL) {
@@ -92,7 +93,7 @@ void get_platform(void) {
         } else {
             puppyprintf(region, "MPAL");
         }
-        puppyprint_log("%s N64 Console detected.", region);
+        puppyprint_log("%s N64 Console detected.\n", region);
     }
     // Skip all this on console. This is emulator related info.
     if ((gPlatform & CONSOLE) == FALSE) {
@@ -102,7 +103,7 @@ void get_platform(void) {
         } else {
             cf = 1;
         }
-        puppyprint_log("Counter Factor Setting: %d.", cf);
+        puppyprint_log("Counter Factor Setting: %d.\n", cf);
     }
 #endif
 }
@@ -147,19 +148,19 @@ void find_expansion_pak(void) {
 #ifdef FORCE_4MB_MEMORY
     gExpansionPak = FALSE;
     gUseExpansionMemory = FALSE;
-    puppyprint_log("4MB Memory Forced.");
+    puppyprint_log("4MB Memory Forced.\n");
     return;
 #endif
     if (osGetMemSize() > 0x400000) {
         gExpansionPak = TRUE;
-        puppyprint_log("Expansion Pak Detected");
+        puppyprint_log("Expansion Pak Detected\n");
 #if EXPANSION_PAK_SUPPORT == 0
         gUseExpansionMemory = FALSE;
 #else
         gUseExpansionMemory = TRUE;
 #endif
     } else {
-        puppyprint_log("Expansion Pak Missing");
+        puppyprint_log("Expansion Pak Missing\n");
         gExpansionPak = FALSE;
         gUseExpansionMemory = FALSE;
     }
@@ -861,22 +862,22 @@ void render_profiler(void) {
 
 void puppyprint_log(const char *str, ...) {
     s32 i;
+    s32 len;
     char textBytes[127];
     va_list arguments;
 
     bzero(textBytes, sizeof(textBytes));
     va_start(arguments, str);
-    if ((_Printf(proutSprintf, textBytes, str, arguments)) <= 0) {
+    if ((len = _Printf(proutSprintf, textBytes, str, arguments)) <= 0) {
         va_end(arguments);
         return;
     }
-#ifdef UNF
-    osSyncPrintf(textBytes);
-#endif
+    textBytes[len] = '\0';
+    debug_printf(textBytes);
     for (i = 0; i < (NUM_LOG_LINES - 1); i++) {
         bcopy(gPuppyPrint.logText[i + 1], gPuppyPrint.logText[i], 127);
     }
-    bcopy(textBytes, gPuppyPrint.logText[NUM_LOG_LINES - 1], 127);
+    bcopy(textBytes, gPuppyPrint.logText[NUM_LOG_LINES - 1], len + 1);
     va_end(arguments);
 }
 
