@@ -16,6 +16,8 @@
 #include "video.h"
 #include "main.h"
 #include "audiomgr.h"
+#include "memory.h"
+#include "usb/dkr_usb.h"
 
 s32 _Printf(outfun prout, char *dst, const char *fmt, va_list args);
 
@@ -406,9 +408,11 @@ void crash_page_log(void) {
 
 void crash_page_assert(void) {
     crash_screen_draw_rect(sCrashX, sCrashY, 270, 205);
+    debug_printf("----- Assert Page -----\n");
     if (gAssert) {
         crash_screen_print(sCrashX + 10, sCrashY + 5, "ASSERT TRIPPED");
         crash_screen_print(sCrashX + 10, sCrashY + 20, gAssertString);
+        debug_printf("'%s'\n\n", gAssertString);
     } else {
         crash_screen_print(sCrashX + 10, sCrashY + 5, "NO ASSERT TO REPORT");
     }
@@ -417,10 +421,13 @@ void crash_page_assert(void) {
 void crash_page_memory(void) {
     s32 i;
     s32 y;
+    debug_printf("----- RAM Page -----\n");
     crash_screen_draw_rect(sCrashX, sCrashY, 270, 205);
     crash_screen_print(sCrashX + 10, sCrashY + 5, "Free: 0x%06X (%2.2f%%)", TOTALRAM - gPuppyPrint.ramPools[MEMP_OVERALL] - gPuppyPrint.ramPools[MEMP_CODE],
                 (f64) (((f32) (TOTALRAM - gPuppyPrint.ramPools[MEMP_OVERALL] - gPuppyPrint.ramPools[MEMP_CODE]) / (f32) TOTALRAM) * 100.0f));
     
+    debug_printf("Free: 0x%06X (%2.2f%%)\n", TOTALRAM - gPuppyPrint.ramPools[MEMP_OVERALL] - gPuppyPrint.ramPools[MEMP_CODE],
+                (f64) (((f32) (TOTALRAM - gPuppyPrint.ramPools[MEMP_OVERALL] - gPuppyPrint.ramPools[MEMP_CODE]) / (f32) TOTALRAM) * 100.0f));
     sCrashMaxScroll = -((gScreenHeight - 24));
     y = sCrashY + 5 - sCrashScroll;
     for (i = 1; i < MEMP_TOTAL + 12; i++) {
@@ -432,11 +439,15 @@ void crash_page_memory(void) {
             y += 10;
             continue;
         }
+        debug_printf("%02X %s\t\t0x%X (%2.2f%%)\n", i, sPuppyprintMemColours[sRAMPrintOrder[i]], gPuppyPrint.ramPools[sRAMPrintOrder[i]],
+        (f64) (((f32) gPuppyPrint.ramPools[sRAMPrintOrder[i]] / (f32) TOTALRAM) * 100.0f));
         crash_screen_print(sCrashX + 10, y, "%02X %s", i, sPuppyprintMemColours[sRAMPrintOrder[i]]);
         crash_screen_print(sCrashX + 120, y, "0x%X (%2.2f%%)", gPuppyPrint.ramPools[sRAMPrintOrder[i]],
         (f64) (((f32) gPuppyPrint.ramPools[sRAMPrintOrder[i]] / (f32) TOTALRAM) * 100.0f));
         y += 10;
     }
+    
+    debug_printf("Press A for a detailed breakdown.\n");
 }
 
 extern OSThread *__osFaultedThread;
@@ -452,6 +463,67 @@ OSThread *get_crashed_thread(void) {
         thread = thread->tlnext;
     }
     return NULL;
+}
+
+char *sMemDumpStrings[] = {
+    "Allocated",
+    "Fixed\t"
+};
+
+void crash_ram_dump(s32 poolIndex) {
+    MemoryPoolSlot *slots;
+    MemoryPoolSlot *curSlot;
+    slots = gMemoryPools[poolIndex].slots;
+    for (s32 i = 0; i != -1; i = curSlot->nextIndex) {
+        curSlot = &slots[i];
+        if (curSlot->flags != 0) {
+            s32 index;
+            switch (curSlot->colourTag) {
+            case COLOUR_TAG_RED:
+                index = MEMP_TOTAL + 0;
+                break;
+            case COLOUR_TAG_BLACK:
+                index = MEMP_TOTAL + 1;
+                break;
+            case COLOUR_TAG_CYAN:
+                index = MEMP_TOTAL + 3;
+                break;
+            case COLOUR_TAG_GREEN:
+                index = MEMP_TOTAL + 4;
+                break;
+            case COLOUR_TAG_GREY:
+                index = MEMP_TOTAL + 5;
+                break;
+            case COLOUR_TAG_MAGENTA:
+                index = MEMP_TOTAL + 6;
+                break;
+            case COLOUR_TAG_SEMITRANS_GREY:
+                index = MEMP_TOTAL + 7;
+                break;
+            case COLOUR_TAG_WHITE:
+                index = MEMP_TOTAL + 8;
+                break;
+            case COLOUR_TAG_YELLOW:
+                index = MEMP_TOTAL + 9;
+                break;
+            case COLOUR_TAG_ORANGE:
+                index = MEMP_TOTAL + 10;
+                break;
+            default:
+                if (curSlot->colourTag > MEMP_TOTAL || curSlot->colourTag == 0) {
+                    return;
+                }
+                index = curSlot->colourTag;
+            }
+            s32 status = curSlot->flags & 2;
+            if (status) {
+                status = 1;
+            }
+            debug_printf("Pool: %x %s\t Tag: %s \t\t Size: 0x%X \t Addr: %X\n", poolIndex, sMemDumpStrings[status], sPuppyprintMemColours[index], curSlot->size, curSlot->data);
+        } else {
+            debug_printf("Pool: %x Free Slot \t\t\t\t Size: 0x%X\t Addr: %X\n", poolIndex, curSlot->size, curSlot->data);
+        }
+    }
 }
 
 #ifdef DETAILED_CRASH
@@ -493,6 +565,11 @@ void crash_screen_input(void) {
                 sCrashScroll += 10;
                 if (sCrashScroll > sCrashMaxScroll) {
                     sCrashScroll = sCrashMaxScroll;
+                }
+            }
+            if (get_buttons_pressed_from_player(i) & A_BUTTON) {
+                for (int i = 0; i < gNumberOfMemoryPools + 1; i++) {
+                    crash_ram_dump(i);
                 }
             }
         } else if (sCrashPage == CRASH_PAGE_REGISTERS) {
@@ -593,7 +670,7 @@ void thread2_crash_screen(UNUSED void *arg) {
             puppyprint_assert_nonblocking("No thread found???");
         } else {
             if (thread->id == 4) { // Audio thread crashed, so go top prio.
-                gCrashScreen.thread.priority = 255;
+                gCrashScreen.thread.priority = 120;
             } else {
                 gCrashScreen.thread.priority = 11;
                 sound_play(SOUND_VOICE_BANJO_WOAH, NULL);
@@ -612,6 +689,7 @@ void thread2_crash_screen(UNUSED void *arg) {
         sCrashPage = CRASH_PAGE_ASSERT;
     }
     sCrashUpdate = TRUE;
+    debug_printf("Game has crashed.\n\n");
     wcopy(gVideoCurrFramebuffer, gVideoCurrDepthBuffer, (gScreenWidth * gScreenHeight) * 2);
     crash_screen_sleep(500);
     calculate_ram_print_order();

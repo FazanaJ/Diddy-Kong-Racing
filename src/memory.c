@@ -64,7 +64,7 @@ void init_main_memory_pool(void) {
                 ramEnd = 0x807FC000;
             }
         } else {
-            ramEnd = 0x80000000 + osGetMemSize();
+            ramEnd = K0BASE + osGetMemSize();
         }
         bufferSize *= SCREEN_WIDTH_WIDE;
     } else {

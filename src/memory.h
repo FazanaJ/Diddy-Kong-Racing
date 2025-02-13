@@ -99,6 +99,8 @@ typedef struct unk800B7D10 {
 } unk800B7D10;
 
 extern u32 *gMemPoolEnd;
+extern MemoryPool gMemoryPools[4];
+extern s32 gNumberOfMemoryPools;
 
 void init_main_memory_pool(void);
 MemoryPoolSlot *new_sub_memory_pool(s32 poolDataSize, s32 numSlots);
