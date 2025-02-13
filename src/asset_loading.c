@@ -30,10 +30,13 @@ extern u8 __ASSETS_LUT_START[], __ASSETS_LUT_END[]; // __ASSETS_LUT_START = 0xEC
  * Official Name: piInit
  */
 void init_PI_mesg_queue(void) {
-    u32 assetTableSize;
     osCreateMesgQueue(&gPIMesgQueue, gPIMesgBuf, ARRAY_COUNT(gPIMesgBuf));
     osCreateMesgQueue(&gDmaMesgQueue, &gDmaMesg, 1);
     osCreatePiManager((OSPri) 150, &gPIMesgQueue, gPIMesgBuf, ARRAY_COUNT(gPIMesgBuf));
+}
+
+void asset_table_init(void) {
+    u32 assetTableSize;
     assetTableSize = __ASSETS_LUT_END - __ASSETS_LUT_START;
     gAssetsLookupTable = (u32 *) allocate_from_main_pool_safe(assetTableSize, MEMP_HEADERS);
     func_80071478((u8 *) gAssetsLookupTable);

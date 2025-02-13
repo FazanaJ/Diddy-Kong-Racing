@@ -204,7 +204,7 @@ void init_framebuffer(s32 index) {
     if (gVideoDepthBuffer == NULL) {
         s32 videoSize = (width * SCREEN_HEIGHT * 2);
         videoSize = (s32) (((s32) videoSize + 0x3F) & ~0x3F);
-        gVideoDepthBuffer = (u32 *) 0x80800000 - (videoSize);
+        gVideoDepthBuffer = gMemPoolEnd;
         //gVideoDepthBuffer = allocate_from_main_pool_safe((width * SCREEN_HEIGHT * 2) + 0x40, MEMP_FRAMEBUFFERS);
         //gVideoDepthBuffer = (u32 *) (((s32) gVideoDepthBuffer + 0x3F) & ~0x3F);
         fbAddr = gVideoDepthBuffer;

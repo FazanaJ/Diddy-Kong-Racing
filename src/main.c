@@ -195,6 +195,12 @@ void thread1_main(UNUSED void *unused) {
         __osBbIsBb = 0;
     }
     // thread0_create();
+    init_PI_mesg_queue();
+#ifdef ENABLE_USB
+    if (__osBbIsBb == FALSE) {
+        init_usb_thread();
+    }
+#endif
     crash_screen_init();
     find_expansion_pak();
 #ifdef PUPPYPRINT_DEBUG

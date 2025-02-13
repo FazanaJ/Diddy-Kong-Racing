@@ -74,9 +74,9 @@ void init_main_memory_pool(void) {
     if (bufferSize & 0x40) {
         bufferSize = _ALIGN64(bufferSize);
     }
+    gMemPoolEnd = (u32 *) (ramEnd - bufferSize);
     ramEnd -= (s32) (&gMainMemoryPool);
     ramEnd -= bufferSize;
-    gMemPoolEnd = (u32 *) 0x80000000 - (bufferSize);
     new_memory_pool(&gMainMemoryPool, ramEnd + bufferSize, MAIN_POOL_SLOT_COUNT);
     set_free_queue_state(2);
     gFreeQueueCount = 0;

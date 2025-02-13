@@ -203,12 +203,7 @@ void init_game(void) {
         gDmemInvalid = TRUE;
     }
 #endif
-    init_PI_mesg_queue();
-#ifdef ENABLE_USB
-    if (__osBbIsBb == FALSE) {
-        init_usb_thread();
-    }
-#endif
+    asset_table_init();
     audio_init(&gMainSched);
     func_80008040(); // Should be very similar to allocate_object_model_pools
     sControllerStatus = init_controllers();
