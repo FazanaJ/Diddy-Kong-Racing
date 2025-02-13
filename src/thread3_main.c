@@ -302,9 +302,9 @@ void main_game_loop(void) {
     gGameCurrVertexList = gVertexHeap[gSPTaskNum];
     gGameCurrTriList = gTriangleHeap[gSPTaskNum];
 
-    gSPSegment(gCurrDisplayList++, 0, 0 + K0BASE);
-    gSPSegment(gCurrDisplayList++, 1, (s32) gVideoLastFramebuffer + K0BASE);
-    gSPSegment(gCurrDisplayList++, 2, (s32) gVideoLastDepthBuffer + K0BASE);
+    gSPSegment(gCurrDisplayList++, 0, 0);
+    gSPSegment(gCurrDisplayList++, 1, (s32) gVideoLastFramebuffer);
+    gSPSegment(gCurrDisplayList++, 2, (s32) gVideoLastDepthBuffer);
     init_rsp(&gCurrDisplayList);
     init_rdp_and_framebuffer(&gCurrDisplayList);
     render_background(&gCurrDisplayList, (Matrix *) &gGameCurrMatrix, TRUE);
