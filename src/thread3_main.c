@@ -184,10 +184,10 @@ void init_config(void) {
 void init_game(void) {
 
     init_main_memory_pool();
-    init_rzip(); // Initialise gzip decompression related things
+    gzip_init();
 #ifdef ANTI_TAMPER
     sAntiPiracyTriggered = TRUE;
-    if (check_imem_validity()) {
+    if (drm_validate_imem()) {
         sAntiPiracyTriggered = FALSE;
     }
 #endif
@@ -199,7 +199,7 @@ void init_game(void) {
 #ifdef ANTI_TAMPER
     // Antipiracy measure.
     gDmemInvalid = FALSE;
-    if (check_dmem_validity() == FALSE) {
+    if (drm_validate_dmem() == FALSE) {
         gDmemInvalid = TRUE;
     }
 #endif
@@ -311,13 +311,13 @@ void main_game_loop(void) {
     gSaveDataFlags = handle_save_data_and_read_controller(gSaveDataFlags, sLogicUpdateRate);
     switch (gGameMode) {
         case GAMEMODE_INTRO: // Pre-boot screen
-            pre_intro_loop();
+            mode_intro();
             break;
         case GAMEMODE_MENU: // In a menu
-            menu_logic_loop(sLogicUpdateRate);
+            mode_menu(sLogicUpdateRate);
             break;
         case GAMEMODE_INGAME: // In game (Controlling a character)
-            ingame_logic_loop(sLogicUpdateRate);
+            mode_game(sLogicUpdateRate);
             break;
     }
 
@@ -486,7 +486,7 @@ void unload_level_game(void) {
  * The main behaviour function involving all of the ingame stuff.
  * Involves the updating of all objects and setting up the render scene.
  */
-void ingame_logic_loop(s32 updateRate) {
+void mode_game(s32 updateRate) {
     s32 buttonPressedInputs, buttonHeldInputs, i, loadContext, sp3C;
 
     loadContext = LEVEL_CONTEXT_NONE;
@@ -998,7 +998,7 @@ void update_menu_scene(s32 updateRate) {
  * Main function for handling behaviour in menus.
  * Runs the menu code, with a simplified object update and scene rendering system.
  */
-void menu_logic_loop(s32 updateRate) {
+void mode_menu(s32 updateRate) {
     s32 menuLoopResult;
     s32 temp;
     s32 playerVehicle;
@@ -1470,15 +1470,17 @@ void alloc_displaylist_heap(s32 numberOfPlayers) {
     gSPEndDisplayList(gCurrDisplayList++);
 }
 
+#ifdef ANTI_TAMPER
 /**
  * Returns FALSE if dmem doesn't begin with a -1. This is checked on every main game loop iteration.
  */
-s32 check_dmem_validity(void) {
+s32 drm_validate_dmem(void) {
     if (IO_READ(SP_DMEM_START) != -1U) {
         return FALSE;
     }
     return TRUE;
 }
+#endif
 
 /**
  * Defaults allocations for 4 players
@@ -1624,7 +1626,7 @@ void swap_lead_player(void) {
 /**
  * Give the player 8 frames to enter the CPak menu with start, then load the intro sequence.
  */
-void pre_intro_loop(void) {
+void mode_intro(void) {
     s32 i;
     s32 buttonInputs = 0;
 
@@ -1669,7 +1671,7 @@ s32 is_controller_missing(void) {
  * false read, meaning you're caught running an illegitimate copy, will force the game to pause when you enter the
  * world.
  */
-s32 check_imem_validity(void) {
+s32 drm_validate_imem(void) {
     if (IO_READ(SP_IMEM_START) != CIC_ID) {
         return FALSE;
     }

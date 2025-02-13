@@ -10,8 +10,6 @@
 #include "game_ui.h"
 #include "video.h"
 
-#define SEGMENT_DEPTH_BUFFER 0x02000000
-#define SEGMENT_COLOUR_BUFFER 0x01000000
 #define FIFO_BUFFER_SIZE 0x18000
 
 enum TextureRectangleFlags {
