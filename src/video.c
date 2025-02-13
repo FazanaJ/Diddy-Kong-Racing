@@ -51,7 +51,11 @@ u16 gScreenHeight;
  */
 void init_video(s32 videoModeIndex) {
     s32 i;
-    gVideoRefreshRate = REFRESH_60HZ;
+    if (osTvType == TV_TYPE_PAL) {
+        gVideoRefreshRate = REFRESH_50HZ;
+    } else {
+        gVideoRefreshRate = REFRESH_60HZ;
+    }
     gVideoAspectRatio = ASPECT_RATIO_NTSC;
     gVideoHeightRatio = HEIGHT_RATIO_NTSC;
 

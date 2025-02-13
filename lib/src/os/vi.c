@@ -21,10 +21,11 @@ void __osViInit(void) {
 	__osViCurr->retraceCount = 1;
 	if (osTvType == TV_TYPE_PAL) {
 		__osViNext->modep = &osViModePalLan1;
+    	osViClock = VI_PAL_CLOCK;
 	} else {
 		__osViNext->modep = &osViModeNtscLan1;
+    	osViClock = VI_NTSC_CLOCK;
 	}
-    osViClock = VI_NTSC_CLOCK;
 	__osViNext->state = VI_STATE_BLACK;
 	__osViNext->control = __osViNext->modep->comRegs.ctrl;
 	while (IO_READ(VI_CURRENT_REG) > 10); //wait for vsync?

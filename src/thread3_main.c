@@ -241,6 +241,7 @@ void init_game(void) {
     init_config();
     load_game_text_table();
     puppyprint_log("Game booted in %2.3fs.", (f64) ((f32)(osGetCount()) / 46875000.0f));
+    osTvType = TV_TYPE_NTSC; // Temporary while PAL is still broken
 
     osSetTime(0);
 }
