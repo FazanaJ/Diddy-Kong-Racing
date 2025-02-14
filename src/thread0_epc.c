@@ -465,9 +465,17 @@ OSThread *get_crashed_thread(void) {
     return NULL;
 }
 
+#if defined(DETAILED_CRASH) || defined(PUPPYPRINT_DEBUG)
+
 char *sMemDumpStrings[] = {
+    "",
     "Allocated",
-    "Fixed\t"
+    "Fixed\t",
+    "FixedAlloc",
+    "4\t",
+    "4 Allocated",
+    "4 Fixed\t",
+    "4 FixedAlloc"
 };
 
 void crash_ram_dump(s32 poolIndex) {
@@ -515,16 +523,21 @@ void crash_ram_dump(s32 poolIndex) {
                 }
                 index = curSlot->colourTag;
             }
-            s32 status = curSlot->flags & 2;
-            if (status) {
-                status = 1;
-            }
+            s32 status = curSlot->flags;
             debug_printf("Pool: %x %s\t Tag: %s \t\t Size: 0x%X \t Addr: %X\n", poolIndex, sMemDumpStrings[status], sPuppyprintMemColours[index], curSlot->size, curSlot->data);
         } else {
             debug_printf("Pool: %x Free Slot \t\t\t\t Size: 0x%X\t Addr: %X\n", poolIndex, curSlot->size, curSlot->data);
         }
     }
 }
+
+void ram_dump(void) {
+    for (int i = 0; i < gNumberOfMemoryPools + 1; i++) {
+        crash_ram_dump(i);
+    }
+}
+
+#endif
 
 #ifdef DETAILED_CRASH
 void crash_screen_input(void) {
@@ -568,9 +581,7 @@ void crash_screen_input(void) {
                 }
             }
             if (get_buttons_pressed_from_player(i) & A_BUTTON) {
-                for (int i = 0; i < gNumberOfMemoryPools + 1; i++) {
-                    crash_ram_dump(i);
-                }
+                ram_dump();
             }
         } else if (sCrashPage == CRASH_PAGE_REGISTERS) {
             if (get_buttons_pressed_from_player(i) & U_JPAD) {

@@ -39,7 +39,6 @@ void asset_table_init(void) {
     u32 assetTableSize;
     assetTableSize = __ASSETS_LUT_END - __ASSETS_LUT_START;
     gAssetsLookupTable = (u32 *) allocate_from_main_pool_safe(assetTableSize, MEMP_HEADERS);
-    func_80071478((u8 *) gAssetsLookupTable);
     dmacopy((u32) __ASSETS_LUT_START, (u32) gAssetsLookupTable, (s32) assetTableSize);
 }
 

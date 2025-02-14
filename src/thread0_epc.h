@@ -34,6 +34,8 @@ typedef struct {
 
 extern CrashData gCrashScreen;
 
+void ram_dump(void);
+
 #ifdef DETAILED_CRASH
 void set_crash_object(Object *objectID, s32 act);
 #else

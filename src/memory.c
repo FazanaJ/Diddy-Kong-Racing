@@ -324,7 +324,7 @@ void free_slot_containing_address(u8 *address) {
         slot = &slots[slotIndex];
 
         if (address == (u8 *) slot->data) {
-            if (slot->flags == 1 || slot->flags == 4) {
+            if (slot->flags) {
                 free_memory_pool_slot(poolIndex, slotIndex);
             }
             break;
@@ -340,58 +340,6 @@ void add_to_free_queue(void *dataAddress) {
     gFreeQueue[gFreeQueueCount] = dataAddress;
     gFreeQueueElementTimer[gFreeQueueCount] = gFreeQueueTimer;
     gFreeQueueCount++;
-}
-
-s32 func_80071478(u8 *address) {
-    s32 slotIndex;
-    MemoryPoolSlot *slot;
-    MemoryPool *pool;
-    s32 flags;
-
-    flags = disable_interrupts();
-    pool = &gMemoryPools[get_memory_pool_index_containing_address(address)];
-    slotIndex = 0;
-    while (slotIndex != -1) {
-        slot = slotIndex + pool->slots; // `slot = &pool->slots[slotIndex];` does not match.
-        if (address == (u8 *) slot->data) {
-            if (slot->flags == 1 || slot->flags == 4) {
-                slot->flags |= 2;
-                enable_interrupts(flags);
-                return TRUE;
-            }
-        }
-        slotIndex = slot->nextIndex;
-    }
-    enable_interrupts(flags);
-    return FALSE;
-}
-
-/**
- * Search the memory pool for the slot that's tied to the given address.
- * Return true if it's found, otherwise return false.
- */
-s32 memory_slot_exists(u8 *address) {
-    s32 slotIndex;
-    MemoryPoolSlot *slot;
-    MemoryPool *pool;
-    s32 flags;
-
-    flags = disable_interrupts();
-    pool = &gMemoryPools[get_memory_pool_index_containing_address(address)];
-    slotIndex = 0;
-    while (slotIndex != -1) {
-        slot = slotIndex + pool->slots; // `slot = &pool->slots[slotIndex];` does not match.
-        if (address == (u8 *) slot->data) {
-            if (slot->flags & 2) {
-                slot->flags ^= 2;
-                enable_interrupts(flags);
-                return TRUE;
-            }
-        }
-        slotIndex = slot->nextIndex;
-    }
-    enable_interrupts(flags);
-    return FALSE;
 }
 
 /**

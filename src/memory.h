@@ -71,11 +71,10 @@ enum MemoryTags {
 typedef struct MemoryPoolSlot {
 /* 0x00 */ u8 *data; 
 /* 0x04 */ s32 size;
-/* 0x08 */ s16 flags;
+/* 0x08 */ u8 flags;
     // 0x00 = Slot is free 
     // 0x01 = Slot is being used?
-    // 0x02 = ???
-    // 0x04 = ???
+/* 0x09 */ u8 padding;
 /* 0x0A */ s16 prevIndex;
 /* 0x0C */ s16 nextIndex;
 /* 0x0E */ s16 index;
@@ -111,8 +110,6 @@ void set_free_queue_state(s32 state);
 void free_from_memory_pool(void *data);
 void clear_free_queue(void);
 void add_to_free_queue(void *dataAddress);
-s32 func_80071478(u8 *address);
-s32 memory_slot_exists(u8 *address);
 s32 get_memory_pool_index_containing_address(u8 *address);
 u8 *align16(u8 *address);
 u8 *align8(u8 *address);

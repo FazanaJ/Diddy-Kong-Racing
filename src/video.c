@@ -182,10 +182,6 @@ void init_vi_settings(void) {
 void init_framebuffer(s32 index) {
     s32 width = SCREEN_WIDTH;
     u32 *fbAddr;
-    if (gVideoFramebuffers[index] != 0) {
-        memory_slot_exists((u8 *) gVideoFramebuffers[index]); // Effectively unused.
-        free_from_memory_pool(gVideoFramebuffers[index]);
-    }
 #if EXPANSION_PAK_SUPPORT
     if (gExpansionPak) {
         width = SCREEN_WIDTH_WIDE;
