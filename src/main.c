@@ -404,6 +404,9 @@ void puppyprint_input(void) {
                     gPuppyPrint.pageScroll = 0;
                 }
             }
+            if (inputPressed & R_JPAD) {
+                ram_dump();
+            }
         }
     }
 }
@@ -420,7 +423,7 @@ void profiler_reset_objects(void) {
 
 void profiler_reset_values(void) {
     s32 i;
-    u32 flags = disable_interrupts();
+    u32 flags = interrupts_disable();
     for (i = 0; i < PP_RDP_BUS; i++) {
         gPuppyPrint.timers[i][PERF_AGGREGATE] -= gPuppyPrint.timers[i][perfIteration];
         gPuppyPrint.timers[i][perfIteration] = 0;
@@ -428,7 +431,7 @@ void profiler_reset_values(void) {
     profiler_reset_objects();
     gPuppyPrint.textureLoads = 0;
     puppyprint_input();
-    enable_interrupts(flags);
+    interrupts_enable(flags);
 }
 
 void profiler_add_obj(u32 objID, u32 time, ObjectHeader *header) {
@@ -1111,7 +1114,7 @@ void puppyprint_calculate_average_times(void) {
     s32 j;
     u32 highTime;
     u32 lowTime;
-    u32 flags = disable_interrupts();
+    u32 flags = interrupts_disable();
     f32 divisor;
 
     gPuppyPrint.updateTimer += sLogicUpdateRate;
@@ -1198,7 +1201,7 @@ void puppyprint_calculate_average_times(void) {
         }
     }
     gPuppyPrint.shouldUpdate = FALSE;
-    enable_interrupts(flags);
+    interrupts_enable(flags);
 }
 
 void puppyprint_update_rsp(u8 flags) {

@@ -6,7 +6,7 @@
 
 void *alHeapDBAlloc(UNUSED u8 *file, UNUSED s32 line, UNUSED ALHeap *hp, s32 num, s32 size) {
     
-    u8 *ptr = (u8 *) allocate_from_main_pool((size * num) + 0xF, MEMP_AUDIO_POOL);
+    u8 *ptr = (u8 *) mempool_alloc((size * num) + 0xF, MEMP_AUDIO_POOL);
     if ((s32) ptr & 0xF) {
         ptr = (u8 *) (((s32) ptr + 0xF) & ~0xF);
     }

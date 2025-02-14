@@ -38,7 +38,7 @@ void create_and_start_thread30(void) {
     if (gThread30Active) {
         return;
     }
-    gThread30Stack = (u8 *) allocate_from_main_pool(THREAD30_STACK + 0x10, MEMP_MISC);
+    gThread30Stack = (u8 *) mempool_alloc(THREAD30_STACK + 0x10, MEMP_MISC);
     gThread30Stack = (u8 *) (((s32) gThread30Stack + 0xF) & ~0xF);
     bzero(gThread30Stack, THREAD30_STACK);
     osCreateMesgQueue(&gThread30MesgQueue, &gThread30Message[0], ARRAY_COUNT(gThread30Message));
@@ -56,7 +56,7 @@ void stop_thread30(void) {
         return;
     }
     osStopThread(&gThread30);
-    free_from_memory_pool(gThread30Stack);
+    mempool_free(gThread30Stack);
     gThread30Active = FALSE;
 }
 
