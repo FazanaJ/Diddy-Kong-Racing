@@ -539,7 +539,7 @@ void crash_ram_dump(void) {
             }
 
             if (flags == SLOT_FREE) {
-                debug_printf("Pool: %x Free Slot \t\t\t\t Size: 0x%X\t Addr: %X\n", i, slot->size, slot->data);
+                debug_printf("Pool: %x Free Slot \t\t\t\t\t Size: 0x%X\t Addr: %X\n", i, slot->size, slot->data);
             } else {
                 debug_printf("Pool: %x %s\t Tag: %s \t\t Size: 0x%X \t Addr: %X\n", i, sMemDumpStrings[flags], sPuppyprintMemColours[colourTag], slot->size, slot->data);
             }

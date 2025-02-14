@@ -197,45 +197,45 @@ enum PPLoadNames {
     "", \
     "Code", \
     "Animations", \
-    "Models", \
-    "Audio", \
+    "Models\t", \
+    "Audio\t", \
     "Obj Models", \
     "Lvl Models", \
     "Obj Textures", \
     "Lvl Textures", \
     "Etc Textures", \
     "Ghost Data", \
-    "Objects", \
-    "Headers", \
+    "Objects\t", \
+    "Headers\t", \
     "Framebuffers", \
     "Task Buffer", \
-    "Shadows", \
-    "Misc", \
+    "Shadows\t", \
+    "Misc\t", \
     "Gfx Buffers", \
     "Particles", \
-    "Menu", \
-    "Lights", \
-    "HUD", \
-    "Text", \
-    "Aud Pool", \
-    "Weather", \
+    "Menu\t", \
+    "Lights\t", \
+    "HUD\t", \
+    "Text\t", \
+    "Aud Pool\t", \
+    "Weather\t", \
     "Audio Banks", \
     "Sequences", \
     "Misc Asset", \
     "Temp Mem", \
     \
-    "Red", \
-    "Black", \
-    "Blue", \
-    "Cyan", \
-    "Green", \
-    "Grey", \
-    "Magenta", \
-    "GreyXLU", \
-    "White", \
-    "Yellow", \
-    "Orange", \
-    "GreenXLU"
+    "Red\t", \
+    "Black\t", \
+    "Blue\t", \
+    "Cyan\t", \
+    "Green\t", \
+    "Grey\t", \
+    "Magenta\t", \
+    "GreyXLU\t", \
+    "White\t", \
+    "Yellow\t", \
+    "Orange\t", \
+    "GreenXLU\t"
 
 
 #ifdef PUPPYPRINT_DEBUG
