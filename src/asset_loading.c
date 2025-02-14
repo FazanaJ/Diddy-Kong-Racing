@@ -38,7 +38,7 @@ void init_PI_mesg_queue(void) {
 void asset_table_init(void) {
     u32 assetTableSize;
     assetTableSize = __ASSETS_LUT_END - __ASSETS_LUT_START;
-    gAssetsLookupTable = (u32 *) allocate_from_main_pool_safe(assetTableSize, MEMP_HEADERS);
+    gAssetsLookupTable = (u32 *) mempool_alloc_safe(assetTableSize, MEMP_HEADERS);
     dmacopy((u32) __ASSETS_LUT_START, (u32) gAssetsLookupTable, (s32) assetTableSize);
 }
 
@@ -58,7 +58,7 @@ u32 *load_asset_section_from_rom(u32 assetIndex) {
     index = assetIndex + gAssetsLookupTable;
     start = *index;
     size = *(index + 1) - start;
-    out = (u32 *) allocate_from_main_pool_safe(size, gAssetColourTag);
+    out = (u32 *) mempool_alloc_safe(size, gAssetColourTag);
     if (out == 0) {
         return 0;
     }

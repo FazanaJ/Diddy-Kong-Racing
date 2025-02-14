@@ -49,7 +49,7 @@ u16 gScreenHeight;
  * Framebuffers are allocated at runtime.
  * Official Name: viInit
  */
-void init_video(s32 videoModeIndex) {
+void video_init(s32 videoModeIndex) {
     s32 i;
     if (osTvType == TV_TYPE_PAL) {
         gVideoRefreshRate = REFRESH_50HZ;
@@ -65,7 +65,7 @@ void init_video(s32 videoModeIndex) {
     if (SCREEN_WIDTH * SCREEN_HEIGHT <= 320 * 240) {
         for (i = 0; i < NUM_FRAMEBUFFERS; i++) {
             gVideoFramebuffers[i] = 0;
-            init_framebuffer(i);
+            fb_alloc(i);
         }
     }
 // If Enforced 4MB is on, move framebuffers to expansion memory
@@ -84,8 +84,8 @@ void init_video(s32 videoModeIndex) {
     }
 #endif
     gVideoWriteFbIndex = 0;
-    swap_framebuffers();
-    init_vi_settings();
+    fb_swap();
+    fb_init_vi();
     sBlackScreenTimer = 12;
     osViBlack(TRUE);
 }
@@ -95,7 +95,7 @@ void init_video(s32 videoModeIndex) {
  * The high 16 bits are the height of the frame, and the low 16 bits are the width.
  * Official Name: viGetCurrentSize
  */
-s32 get_video_width_and_height_as_s32(void) {
+s32 fb_size(void) {
     return (gScreenHeight << 16) | gScreenWidth;
 }
 
@@ -167,7 +167,7 @@ void set_dither_filter(void) {
  * depending on the gVideoModeIndex value.
  * Most of these go unused, as the value is always 1.
  */
-void init_vi_settings(void) {
+void fb_init_vi(void) {
     change_vi(&gGlobalVI, SCREEN_WIDTH, SCREEN_HEIGHT);
     osViSetMode(&gGlobalVI);
     gScreenWidth = SCREEN_WIDTH;
@@ -178,8 +178,10 @@ void init_vi_settings(void) {
 /**
  * Allocate the selected framebuffer index from the main pool.
  * Will also allocate the depthbuffer if it does not already exist.
+ * Framebuffers should be 64 bit aligned, but since the memory allocator
+ * already aligns by 16, it only needs 48 bits of alignment in addition.
  */
-void init_framebuffer(s32 index) {
+void fb_alloc(s32 index) {
     s32 width = SCREEN_WIDTH;
     u32 *fbAddr;
 #if EXPANSION_PAK_SUPPORT
@@ -189,11 +191,11 @@ void init_framebuffer(s32 index) {
 #endif
 #if EXPANSION_PAK_SUPPORT || defined(FIFO_4MB)
     if (gGfxSPTaskOutputBuffer == NULL) {
-        gGfxSPTaskOutputBuffer = allocate_from_main_pool_safe(FIFO_BUFFER_SIZE + 0x10, MEMP_TASKBUFFER);
+        gGfxSPTaskOutputBuffer = mempool_alloc_safe(FIFO_BUFFER_SIZE + 0x10, MEMP_TASKBUFFER);
         gGfxSPTaskOutputBuffer = (u64 *) (((s32) gGfxSPTaskOutputBuffer + 0xF) & ~0xF);
     }
 #endif
-    gVideoFramebuffers[index] = allocate_from_main_pool_safe((width * SCREEN_HEIGHT * 2) + 0x40, MEMP_FRAMEBUFFERS);
+    gVideoFramebuffers[index] = mempool_alloc_safe((width * SCREEN_HEIGHT * 2) + 0x40, MEMP_FRAMEBUFFERS);
     gVideoFramebuffers[index] = (u32 *) (((s32) gVideoFramebuffers[index] + 0x3F) & ~0x3F);
     fbAddr = gVideoFramebuffers[index];
     fbAddr[100] = 0xBEEF;
@@ -201,7 +203,7 @@ void init_framebuffer(s32 index) {
         s32 videoSize = (width * SCREEN_HEIGHT * 2);
         videoSize = (s32) (((s32) videoSize + 0x3F) & ~0x3F);
         gVideoDepthBuffer = gMemPoolEnd;
-        //gVideoDepthBuffer = allocate_from_main_pool_safe((width * SCREEN_HEIGHT * 2) + 0x40, MEMP_FRAMEBUFFERS);
+        //gVideoDepthBuffer = mempool_alloc_safe((width * SCREEN_HEIGHT * 2) + 0x40, MEMP_FRAMEBUFFERS);
         //gVideoDepthBuffer = (u32 *) (((s32) gVideoDepthBuffer + 0x3F) & ~0x3F);
         fbAddr = gVideoDepthBuffer;
         fbAddr[100] = 0xBEEF;
@@ -236,16 +238,16 @@ void detect_framebuffer(void) {
  * then update the current framebuffer index.
  * This function also has a section where it counts a timer that goes no higher
  * than an update magnitude of 2. It's only purpose is to be used as a divisor
- * in the unused function, get_video_refresh_speed.
+ * in the unused function, vi_refresh_rate.
  */
-void swap_framebuffer_when_ready(void) {
+void fb_update(void) {
     if (sBlackScreenTimer) {
         sBlackScreenTimer--;
         if (sBlackScreenTimer == 0) {
             osViBlack(FALSE);
         }
     }
-    swap_framebuffers();
+    fb_swap();
     if (gBootTimer) {
         gBootTimer--;
         if (gBootTimer == 0) {
@@ -254,7 +256,7 @@ void swap_framebuffer_when_ready(void) {
     }
 }
 
-void swap_framebuffers(void) {
+void fb_swap(void) {
     gVideoLastFramebuffer = gVideoFramebuffers[(gVideoCurrFbIndex + (NUM_FRAMEBUFFERS - 1)) % NUM_FRAMEBUFFERS];
     gVideoCurrFbIndex++;
     if (gVideoCurrFbIndex >= NUM_FRAMEBUFFERS) {

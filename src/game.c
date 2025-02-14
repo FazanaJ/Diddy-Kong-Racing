@@ -94,7 +94,7 @@ void init_level_globals(void) {
     s32 checksumCount;
     s32 j;
 #endif
-    header = allocate_from_main_pool_safe(sizeof(LevelHeader), MEMP_HEADERS);
+    header = mempool_alloc_safe(sizeof(LevelHeader), MEMP_HEADERS);
     gTempAssetTable = (s32 *) load_asset_section_from_rom(ASSET_LEVEL_HEADERS_TABLE);
     i = 0;
     while (i < 16) {
@@ -105,7 +105,7 @@ void init_level_globals(void) {
         gNumberOfLevelHeaders++;
     }
     gNumberOfLevelHeaders--;
-    gGlobalLevelTable = allocate_from_main_pool_safe(gNumberOfLevelHeaders * sizeof(LevelGlobalData), MEMP_HEADERS);
+    gGlobalLevelTable = mempool_alloc_safe(gNumberOfLevelHeaders * sizeof(LevelGlobalData), MEMP_HEADERS);
     gCurrentLevelHeader = (LevelHeader *) header;
     gNumberOfWorlds = -1;
     for (i = 0; i < gNumberOfLevelHeaders; i++) {
@@ -122,7 +122,7 @@ void init_level_globals(void) {
         gGlobalLevelTable[i].vehicles |= gCurrentLevelHeader->vehicle & 0xF;
     }
     gNumberOfWorlds++;
-    D_80121178 = allocate_from_main_pool_safe(gNumberOfWorlds, MEMP_HEADERS);
+    D_80121178 = mempool_alloc_safe(gNumberOfWorlds, MEMP_HEADERS);
     for (i = 0; i < gNumberOfWorlds; i++) {
         D_80121178[i] = -1;
     }
@@ -131,19 +131,19 @@ void init_level_globals(void) {
             D_80121178[gGlobalLevelTable[i].world] = i;
         }
     }
-    free_from_memory_pool(gTempAssetTable);
-    free_from_memory_pool(header);
+    mempool_free(gTempAssetTable);
+    mempool_free(header);
     gTempAssetTable = (s32 *) load_asset_section_from_rom(ASSET_LEVEL_NAMES_TABLE);
     for (i = 0; gTempAssetTable[i] != (-1); i++) {}
     i--;
     size = gTempAssetTable[i] - gTempAssetTable[0];
-    gLevelNames = allocate_from_main_pool_safe(i * sizeof(s32), MEMP_HEADERS);
-    gTempLevelNames = allocate_from_main_pool_safe(size, MEMP_HEADERS);
+    gLevelNames = mempool_alloc_safe(i * sizeof(s32), MEMP_HEADERS);
+    gTempLevelNames = mempool_alloc_safe(size, MEMP_HEADERS);
     load_asset_to_address(ASSET_LEVEL_NAMES, (u32) gTempLevelNames, 0, size);
     for (size = 0; size < i; size++) {
         gLevelNames[size] = (char *) &gTempLevelNames[gTempAssetTable[size]];
     }
-    free_from_memory_pool(gTempAssetTable);
+    mempool_free(gTempAssetTable);
     // Antipiracy measure
 #ifdef ANTI_TAMPER
     checksumCount = 0;
@@ -266,7 +266,7 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
 
     offset = gTempAssetTable[levelId];
     size = gTempAssetTable[levelId + 1] - offset;
-    gCurrentLevelHeader = (LevelHeader *) allocate_from_main_pool_safe(size, MEMP_HEADERS);
+    gCurrentLevelHeader = (LevelHeader *) mempool_alloc_safe(size, MEMP_HEADERS);
     load_asset_to_address(ASSET_LEVEL_HEADERS, (u32) gCurrentLevelHeader, offset, size);
     D_800DD330 = 0;
     prevLevelID = levelId;
@@ -327,14 +327,14 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
     }
     D_800DD32C = 0;
     if (prevLevelID != levelId) {
-        free_from_memory_pool(gCurrentLevelHeader);
+        mempool_free(gCurrentLevelHeader);
         offset = gTempAssetTable[levelId];
         size = gTempAssetTable[levelId + 1] - offset;
-        gCurrentLevelHeader = allocate_from_main_pool_safe(size, MEMP_HEADERS);
+        gCurrentLevelHeader = mempool_alloc_safe(size, MEMP_HEADERS);
         load_asset_to_address(ASSET_LEVEL_HEADERS, (u32) gCurrentLevelHeader, offset, size);
     }
 
-    free_from_memory_pool(gTempAssetTable);
+    mempool_free(gTempAssetTable);
     set_ai_level((s8 *) &gCurrentLevelHeader->AILevelTable);
     func_8000CBC0();
     gMapId = levelId;
@@ -466,7 +466,7 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
         init_pulsating_light_data(gCurrentLevelHeader->pulseLightData);
     }
     update_camera_fov(gCurrentLevelHeader->cameraFOV);
-    set_background_prim_colour(gCurrentLevelHeader->bgColorRed, gCurrentLevelHeader->bgColorGreen,
+    bgdraw_primcolour(gCurrentLevelHeader->bgColorRed, gCurrentLevelHeader->bgColorGreen,
                                gCurrentLevelHeader->bgColorBlue);
     gVideoSkipNextRate = TRUE;
     reset_time_dialation();
@@ -549,8 +549,8 @@ char *get_level_name(s32 levelId) {
  */
 void clear_audio_and_track(void) {
     free_ai_behaviour_table();
-    set_background_prim_colour(0, 0, 0);
-    free_from_memory_pool(gCurrentLevelHeader);
+    bgdraw_primcolour(0, 0, 0);
+    mempool_free(gCurrentLevelHeader);
     sound_stop_all();
     music_stop();
     music_jingle_stop();
@@ -615,16 +615,16 @@ void set_ai_level(s8 *aiLevelTable) {
         aiLevel = 0;
     }
     temp = gTempAssetTable[aiLevel + 1] - gTempAssetTable[aiLevel];
-    gAIBehaviourTable = allocate_from_main_pool_safe(temp, MEMP_MISC);
+    gAIBehaviourTable = mempool_alloc_safe(temp, MEMP_MISC);
     load_asset_to_address(ASSET_AI_BEHAVIOUR, (u32) gAIBehaviourTable, gTempAssetTable[aiLevel], temp);
-    free_from_memory_pool(gTempAssetTable);
+    mempool_free(gTempAssetTable);
 }
 
 /**
  * Frees the AI behaviour table from memory.
  */
 void free_ai_behaviour_table(void) {
-    free_from_memory_pool(gAIBehaviourTable);
+    mempool_free(gAIBehaviourTable);
 }
 
 /**

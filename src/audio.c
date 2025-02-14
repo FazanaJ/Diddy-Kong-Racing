@@ -85,37 +85,37 @@ void audio_init(OSSched *sc) {
     u32 seqfSize;
     audioMgrConfig audConfig;
 
-    //gBssSectionStart = allocate_from_main_pool_safe(AUDIO_HEAP_SIZE, MEMP_AUDIO_POOL);
+    //gBssSectionStart = mempool_alloc_safe(AUDIO_HEAP_SIZE, MEMP_AUDIO_POOL);
     //alHeapInit(&gALHeap, gBssSectionStart, AUDIO_HEAP_SIZE);
 
     addrPtr = (s32 *) load_asset_section_from_rom(ASSET_AUDIO_TABLE);
     gSoundBank =
-        (ALBankFile *) allocate_from_main_pool_safe(addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1], MEMP_AUDIO_BANK);
+        (ALBankFile *) mempool_alloc_safe(addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1], MEMP_AUDIO_BANK);
     load_asset_to_address(ASSET_AUDIO, (u32) gSoundBank, addrPtr[ASSET_AUDIO_1],
                           addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1]);
     alBnkfNew(gSoundBank, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_2]));
 
     gSoundTableSize = addrPtr[ASSET_AUDIO_7] - addrPtr[ASSET_AUDIO_6];
-    gSoundTable = (SoundData *) allocate_from_main_pool_safe(gSoundTableSize, MEMP_AUDIO);
+    gSoundTable = (SoundData *) mempool_alloc_safe(gSoundTableSize, MEMP_AUDIO);
     load_asset_to_address(ASSET_AUDIO, (u32) gSoundTable, addrPtr[ASSET_AUDIO_6], gSoundTableSize);
     gSoundCount = gSoundTableSize / sizeof(SoundData);
 
     gSeqSoundTableSize = addrPtr[ASSET_AUDIO_6] - addrPtr[ASSET_AUDIO_5];
-    gSeqSoundTable = (MusicData *) allocate_from_main_pool_safe(gSeqSoundTableSize, MEMP_AUDIO);
+    gSeqSoundTable = (MusicData *) mempool_alloc_safe(gSeqSoundTableSize, MEMP_AUDIO);
     load_asset_to_address(ASSET_AUDIO, (u32) gSeqSoundTable, addrPtr[ASSET_AUDIO_5], gSeqSoundTableSize);
     gSeqSoundCount = gSeqSoundTableSize / sizeof(MusicData);
 
-    gSequenceBank = (ALBankFile *) allocate_from_main_pool_safe(addrPtr[ASSET_AUDIO_0], MEMP_AUDIO_BANK);
+    gSequenceBank = (ALBankFile *) mempool_alloc_safe(addrPtr[ASSET_AUDIO_0], MEMP_AUDIO_BANK);
     load_asset_to_address(ASSET_AUDIO, (u32) gSequenceBank, 0, addrPtr[ASSET_AUDIO_0]);
     alBnkfNew(gSequenceBank, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_0]));
     gSequenceTable = (ALSeqFile *) alHeapAlloc(&gALHeap, 1, 4);
     load_asset_to_address(ASSET_AUDIO, (u32) gSequenceTable, addrPtr[ASSET_AUDIO_4], 4);
 
     seqfSize = (gSequenceTable->seqCount) * 8 + 4;
-    gSequenceTable = allocate_from_main_pool_safe(seqfSize, MEMP_AUDIO);
+    gSequenceTable = mempool_alloc_safe(seqfSize, MEMP_AUDIO);
     load_asset_to_address(ASSET_AUDIO, (u32) gSequenceTable, addrPtr[ASSET_AUDIO_4], seqfSize);
     alSeqFileNew(gSequenceTable, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_4]));
-    gSeqLengthTable = (u32 *) allocate_from_main_pool_safe((gSequenceTable->seqCount) * 4, MEMP_AUDIO);
+    gSeqLengthTable = (u32 *) mempool_alloc_safe((gSequenceTable->seqCount) * 4, MEMP_AUDIO);
 
     for (iCnt = 0; iCnt < gSequenceTable->seqCount; iCnt++) {
         gSeqLengthTable[iCnt] = gSequenceTable->seqArray[iCnt].len;
@@ -146,7 +146,7 @@ void audio_init(OSSched *sc) {
     alSndPNew(&audConfig);
     audioStartThread();
     sound_volume_change(VOLUME_NORMAL);
-    free_from_memory_pool(addrPtr);
+    mempool_free(addrPtr);
     set_sound_channel_count(10);
     gBlockMusicChange = FALSE;
     gMusicPlaying = FALSE;
@@ -832,9 +832,9 @@ void music_sequence_init(ALSeqPlayer *seqp, s32 sequence, u8 *seqID, ALCSeq *seq
 
     if ((alCSPGetState((ALCSPlayer *) seqp) == AL_STOPPED) && (*seqID != 0)) {
         if (gSequenceData[sequence]) {
-            free_from_memory_pool(gSequenceData[sequence]);
+            mempool_free(gSequenceData[sequence]);
         }
-        gSequenceData[sequence] = allocate_from_main_pool(gSeqLengthTable[*seqID], MEMP_SEQUENCE);
+        gSequenceData[sequence] = mempool_alloc(gSeqLengthTable[*seqID], MEMP_SEQUENCE);
         load_asset_to_address(ASSET_AUDIO, (u32) gSequenceData[sequence],
                               gSequenceTable->seqArray[*seqID].offset - get_rom_offset_of_asset(ASSET_AUDIO, 0),
                               (s32) gSeqLengthTable[*seqID]);

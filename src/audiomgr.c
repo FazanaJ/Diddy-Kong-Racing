@@ -144,12 +144,12 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
     if (c->fxType[0] == AL_FX_CUSTOM) {
         assetAudioTable = load_asset_section_from_rom(ASSET_AUDIO_TABLE);
         assetSize = assetAudioTable[ASSET_AUDIO_9] - assetAudioTable[ASSET_AUDIO_8];
-        asset8 = allocate_from_main_pool_safe(assetSize, MEMP_AUDIO);
+        asset8 = mempool_alloc_safe(assetSize, MEMP_AUDIO);
         load_asset_to_address(ASSET_AUDIO, (u32) asset8, assetAudioTable[ASSET_AUDIO_8], assetSize);
         c->params = asset8;
         c[1].maxVVoices = 0;
         alInit(&__am.g, c);
-        free_from_memory_pool(asset8);
+        mempool_free(asset8);
     } else {
         alInit(&__am.g, c);
     }
@@ -183,7 +183,7 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
         __am.ACMDList[i] = (Acmd *) alHeapAlloc(c->heap, 1, 0xA000); // sizeof(Acmd) * DMA_BUFFER_LENGTH * 5?
     }
 
-    asset = allocate_at_address_in_main_pool((maxFrameSize * 12), (u8 *) ((ramEnd - 0x100) - (maxFrameSize * 12)),
+    asset = mempool_alloc_fixed((maxFrameSize * 12), (u8 *) ((ramEnd - 0x100) - (maxFrameSize * 12)),
                                              MEMP_AUDIO_POOL);
 
     /**** initialize the done messages ****/

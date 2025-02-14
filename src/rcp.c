@@ -15,17 +15,17 @@
 
 /************ .data ************/
 
-u8 sBackgroundPrimColourR = 0;
-u8 sBackgroundPrimColourG = 0;
-u8 sBackgroundPrimColourB = 0;
+u8 sBGPrimColourrR = 0;
+u8 sBGPrimColourrG = 0;
+u8 sBGPrimColourrB = 0;
 s32 sBackgroundFillColour = GPACK_RGBA5551(0, 0, 0, 1) | (GPACK_RGBA5551(0, 0, 0, 1) << 16);
 
-s16 gMosaicShiftX = 64;
-TextureHeader *gMosaicTex1 = NULL;
-TextureHeader *gMosaicTex2 = NULL;
+s16 gTexBGShiftX = 64;
+TextureHeader *gTexBGTex1 = NULL;
+TextureHeader *gTexBGTex2 = NULL;
 s16 gBGHeight = 240;
 
-BackgroundFunction gBackgroundDrawFunc = { NULL };
+BackgroundFunction gBGDrawFunc = { NULL };
 u64 *gGfxSPTaskOutputBuffer = NULL;
 
 Gfx dRspInit[] = {
@@ -187,7 +187,7 @@ DKR_OSTask *gRdpCurTask = &gRdpTaskA;
  * Sends a message to the scheduler to start processing an RSP task once set up.
  * Official Name: rcpFast3d
  */
-void setup_ostask_xbus(Gfx *dlBegin, Gfx *dlEnd) {
+void gfxtask_run_xbus(Gfx *dlBegin, Gfx *dlEnd) {
     DKR_OSTask *dkrtask;
 
     dkrtask = gRdpCurTask;
@@ -206,7 +206,7 @@ void setup_ostask_xbus(Gfx *dlBegin, Gfx *dlEnd) {
  * Sends a message to the scheduler to start processing an RSP task once set up.
  * Goes unused, and is broken.
  */
-void setup_ostask_fifo(Gfx *dlBegin, Gfx *dlEnd) {
+void gfxtask_run_fifo(Gfx *dlBegin, Gfx *dlEnd) {
     DKR_OSTask *dkrtask;
     u64 *taskStart;
     u64 *taskEnd;
@@ -241,7 +241,7 @@ FadeTransition gResetTransition = FADE_TRANSITION(FADE_CIRCLE, FADE_FLAG_NONE, F
  * Alternatively, if no task is active, then it will just skip.
  * Official Name: rcpWaitDP
  */
-void wait_for_gfx_task(void) {
+void gfxtask_wait(void) {
     OSMesg mesg;
     static s32 gResetting = FALSE;
 
@@ -266,10 +266,10 @@ void wait_for_gfx_task(void) {
  * Sets the primitive colour for the cyclemode fillrect background.
  * Official name: rcpSetScreenColour
  */
-void set_background_prim_colour(u8 red, u8 green, u8 blue) {
-    sBackgroundPrimColourR = red;
-    sBackgroundPrimColourG = green;
-    sBackgroundPrimColourB = blue;
+void bgdraw_primcolour(u8 red, u8 green, u8 blue) {
+    sBGPrimColourrR = red;
+    sBGPrimColourrG = green;
+    sBGPrimColourrB = blue;
 }
 
 /**
@@ -277,7 +277,7 @@ void set_background_prim_colour(u8 red, u8 green, u8 blue) {
  * Uses RGBA5551
  * Official name: rcpSetBorderColour
  */
-void set_background_fill_colour(s32 red, s32 green, s32 blue) {
+void bgdraw_fillcolour(s32 red, s32 green, s32 blue) {
     sBackgroundFillColour = GPACK_RGBA5551(red, green, blue, 1);
     sBackgroundFillColour |= (sBackgroundFillColour << 16);
 }
@@ -288,7 +288,7 @@ void set_background_fill_colour(s32 red, s32 green, s32 blue) {
  * over clearing the colour buffer.
  * Official Name: rcpClearScreen
  */
-void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
+void bgdraw_render(Gfx **dList, Matrix *mtx, s32 drawBG) {
     s32 w;
     s32 h;
     s32 x1;
@@ -322,10 +322,10 @@ void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
 
     if (drawBG) {
         if (check_viewport_background_flag(0)) {
-            if (gMosaicTex1) {
+            if (gTexBGTex1) {
                 func_80078190(dList);
-            } else if (gBackgroundDrawFunc.ptr != NULL) {
-                gBackgroundDrawFunc.function((Gfx *) dList, mtx);
+            } else if (gBGDrawFunc.ptr != NULL) {
+                gBGDrawFunc.function((Gfx *) dList, mtx);
             } else {
                 if (skip == FALSE) {
                     gDPSetFillColor((*dList)++, sBackgroundFillColour);
@@ -346,10 +346,10 @@ void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
                 gDPFillRectangle((*dList)++, x1, y1, x2, y2);
             }
         } else {
-            if (gMosaicTex1) {
+            if (gTexBGTex1) {
                 func_80078190(dList);
-            } else if (gBackgroundDrawFunc.ptr != NULL) {
-                gBackgroundDrawFunc.function((Gfx *) dList, mtx);
+            } else if (gBGDrawFunc.ptr != NULL) {
+                gBGDrawFunc.function((Gfx *) dList, mtx);
             } else {
                 if (skip == FALSE) {
                     s32 bgR, bgG, bgB;
@@ -376,7 +376,7 @@ void render_background(Gfx **dList, Matrix *mtx, s32 drawBG) {
  * Gets the framebuffer width, then points to the start of segment 0x01 in memory.
  * afterwards, calls the draw command that initialises all the rendermodes, ready for use.
  */
-void init_rdp_and_framebuffer(Gfx **dList) {
+void rdp_init(Gfx **dList) {
     gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, gBitDepth, gScreenWidth, SEGMENT_FRAMEBUFFER << 24);
     gDPSetDepthImage((*dList)++, SEGMENT_ZBUFFER << 24);
     gSPDisplayList((*dList)++, dRdpInit);
@@ -386,7 +386,7 @@ void init_rdp_and_framebuffer(Gfx **dList) {
  * Calls the draw command that sets all the OtherModes, ready for use.
  * Official name: rcpInitSp or rcpInitDpNoSize
  */
-void init_rsp(Gfx **dList) {
+void rsp_init(Gfx **dList) {
     gSPDisplayList((*dList)++, dRspInit);
 }
 
@@ -394,12 +394,13 @@ void init_rsp(Gfx **dList) {
  * Set one or two textures for the patterned world themed background.
  * Can also apply a shift to make tiling less obvious.
  */
-void mosaic_init(TextureHeader *tex1, TextureHeader *tex2, u32 shiftX) {
-    gMosaicTex1 = tex1;
-    gMosaicTex2 = tex2;
-    gMosaicShiftX = shiftX * 4;
+void bgdraw_texture_init(TextureHeader *tex1, TextureHeader *tex2, u32 shiftX) {
+    gTexBGTex1 = tex1;
+    gTexBGTex2 = tex2;
+    gTexBGShiftX = shiftX * 4;
 }
 
+// bgdraw_texture
 #ifdef NON_EQUIVALENT
 /**
  * Seems to render the background screen after a race finishes while you're at the menu deciding what to do next.
@@ -425,17 +426,17 @@ void func_80078190(Gfx **dlist) {
     s32 t;   // the texture coordinate t of upper-left corner of rectangle (s10.5)
     s32 s;   // the texture coordinate s of upper-left corner of rectangle (s10.5)
 
-    widthAndHeight = get_video_width_and_height_as_s32();
+    widthAndHeight = fb_size();
     videoWidth = GET_VIDEO_WIDTH(widthAndHeight);
     videoHeight = GET_VIDEO_HEIGHT(widthAndHeight);
     gSPDisplayList((*dlist)++, dRaceFinishBackgroundSettings);
 
-    if (gMosaicTex2 == NULL) {
-        gDkrDmaDisplayList((*dlist)++, OS_PHYSICAL_TO_K0(gMosaicTex1->cmd), gMosaicTex1->numberOfCommands);
+    if (gTexBGTex2 == NULL) {
+        gDkrDmaDisplayList((*dlist)++, OS_PHYSICAL_TO_K0(gTexBGTex1->cmd), gTexBGTex1->numberOfCommands);
         upperVideoWidth = videoWidth << 2;
         upperVideoHeight = videoHeight << 2;
-        texture1UpperWidth = gMosaicTex1->width << 2;
-        texture1UpperHeight = gMosaicTex1->height << 2;
+        texture1UpperWidth = gTexBGTex1->width << 2;
+        texture1UpperHeight = gTexBGTex1->height << 2;
         var_s3 = 0;
         for (yPos = 0; yPos < upperVideoHeight; yPos += texture1UpperHeight) {
             uly = yPos;
@@ -453,16 +454,16 @@ void func_80078190(Gfx **dlist) {
                 }
                 ulx = lrx;
             }
-            var_s3 = (var_s3 + gMosaicShiftX) & (texture1UpperWidth - 1);
+            var_s3 = (var_s3 + gTexBGShiftX) & (texture1UpperWidth - 1);
         }
     } else {
-        gDkrDmaDisplayList((*dlist)++, OS_PHYSICAL_TO_K0(gMosaicTex1->cmd), gMosaicTex1->numberOfCommands);
+        gDkrDmaDisplayList((*dlist)++, OS_PHYSICAL_TO_K0(gTexBGTex1->cmd), gTexBGTex1->numberOfCommands);
         upperVideoWidth = videoWidth << 2;
         upperVideoHeight = videoHeight << 2;
-        texture1UpperWidth = gMosaicTex1->width << 2;
-        texture1UpperHeight = gMosaicTex1->height << 2;
-        // texture2UpperHeight = gMosaicTex2->height << 2;
-        texture1And2UpperHeight = (gMosaicTex2->height << 2) + texture1UpperHeight;
+        texture1UpperWidth = gTexBGTex1->width << 2;
+        texture1UpperHeight = gTexBGTex1->height << 2;
+        // texture2UpperHeight = gTexBGTex2->height << 2;
+        texture1And2UpperHeight = (gTexBGTex2->height << 2) + texture1UpperHeight;
         var_s3 = 0;
         for (yPos = 0; yPos < upperVideoHeight; yPos += texture1And2UpperHeight) {
             uly = yPos;
@@ -480,9 +481,9 @@ void func_80078190(Gfx **dlist) {
                 }
                 ulx = lrx;
             }
-            var_s3 = (var_s3 + gMosaicShiftX) & (texture1UpperWidth - 1);
+            var_s3 = (var_s3 + gTexBGShiftX) & (texture1UpperWidth - 1);
         }
-        gDkrDmaDisplayList((*dlist)++, OS_PHYSICAL_TO_K0(gMosaicTex2->cmd), gMosaicTex2->numberOfCommands);
+        gDkrDmaDisplayList((*dlist)++, OS_PHYSICAL_TO_K0(gTexBGTex2->cmd), gTexBGTex2->numberOfCommands);
         upperVideoWidth <<= 2;
         upperVideoHeight <<= 2;
         var_s3 = 0;
@@ -502,7 +503,7 @@ void func_80078190(Gfx **dlist) {
                 }
                 ulx = lrx;
             }
-            var_s3 = (var_s3 + gMosaicShiftX) & (texture1UpperWidth - 1);
+            var_s3 = (var_s3 + gTexBGShiftX) & (texture1UpperWidth - 1);
         }
     }
     gDPPipeSync((*dlist)++);
@@ -515,8 +516,8 @@ GLOBAL_ASM("asm/non_matchings/rcp/func_80078190.s")
  * Sets the function pointer to whatever's passed through.
  * If nonzero, will override the background drawing section.
  */
-void set_background_draw_function(void *func) {
-    gBackgroundDrawFunc.ptr = func;
+void bgdraw_set_func(void *func) {
+    gBGDrawFunc.ptr = func;
 }
 
 /**
@@ -524,8 +525,7 @@ void set_background_draw_function(void *func) {
  * Texture rectangle coordinates use 10.2 precision and texture coords use 10.5 precision.
  * Typically, you do these shifts in the draw call itself, but Rare decided to do it beforehand.
  */
-void render_textured_rectangle(Gfx **dList, DrawTexture *element, s32 xPos, s32 yPos, u8 red, u8 green, u8 blue,
-                               u8 alpha) {
+void texrect_draw(Gfx **dList, DrawTexture *element, s32 xPos, s32 yPos, u8 red, u8 green, u8 blue, u8 alpha) {
     TextureHeader *tex;
     s32 i;
     s32 uly;
@@ -563,8 +563,14 @@ void render_textured_rectangle(Gfx **dList, DrawTexture *element, s32 xPos, s32 
     gDPPipeSync((*dList)++);
 }
 
-void render_texture_rectangle_scaled(Gfx **dlist, DrawTexture *element, f32 xPos, f32 yPos, f32 xScale, f32 yScale,
-                                     u32 colour, s32 flags) {
+/**
+ * Renders one or more textures directly on screen resulting from the passed image properties.
+ * Texture rectangle coordinates use 10.2 precision and texture coords use 10.5 precision.
+ * Typically, you do these shifts in the draw call itself, but Rare decided to do it beforehand.
+ * Also applies texel shifting in order to apply scaling.
+ */
+void texrect_draw_scaled(Gfx **dlist, DrawTexture *element, f32 xPos, f32 yPos, f32 xScale, f32 yScale, u32 colour,
+                         s32 flags) {
     TextureHeader *tex;
     Gfx *dmaDlist;
     s32 i;

@@ -34,20 +34,6 @@ typedef struct DKR_OSTask {
     OSMesg mesg;
 } DKR_OSTask;
 
-extern OSMesgQueue gGfxTaskMesgQueue;
-
-extern u8 sBackgroundPrimColourR;
-extern u8 sBackgroundPrimColourG;
-extern u8 sBackgroundPrimColourB;
-extern s32 sBackgroundFillColour;
-
-extern TextureHeader *gMosaicTex1;
-extern TextureHeader *gMosaicTex2;
-extern s32 gChequerBGEnabled;
-
-extern s32 gfxBufCounter;
-extern s16 gBGHeight;
-
 extern u64 *gGfxSPTaskOutputBuffer;
 
 // Defined in dkr.ld
@@ -58,21 +44,21 @@ extern s8 rspF3DDKRDataXbusStart[];
 extern s8 rspF3DDKRFifoStart[];
 extern s8 rspF3DDKRDataFifoStart[];
 
-void wait_for_gfx_task(void);
+void gfxtask_wait(void);
 void func_80077AAC(void *bufPtr, s32 arg1, UNUSED s32 arg2);
-void set_background_prim_colour(u8 red, u8 green, u8 blue);
-void set_background_fill_colour(s32 red, s32 green, s32 blue);
-void init_rdp_and_framebuffer(Gfx **dList);
-void init_rsp(Gfx **dList);
-void mosaic_init(TextureHeader *arg0, TextureHeader *arg1, u32 arg2);
-void setup_ostask_xbus(Gfx* dlBegin, Gfx* dlEnd);
-void setup_ostask_fifo(Gfx* dlBegin, Gfx* dlEnd);
-void render_textured_rectangle(Gfx **dList, DrawTexture *element, s32 xPos, s32 yPos, u8 red, u8 green, u8 blue,
+void bgdraw_primcolour(u8 red, u8 green, u8 blue);
+void bgdraw_fillcolour(s32 red, s32 green, s32 blue);
+void rdp_init(Gfx **dList);
+void rsp_init(Gfx **dList);
+void bgdraw_texture_init(TextureHeader *arg0, TextureHeader *arg1, u32 arg2);
+void gfxtask_run_xbus(Gfx *dlBegin, Gfx *dlEnd);
+void gfxtask_run_fifo(Gfx *dlBegin, Gfx *dlEnd);
+void texrect_draw(Gfx **dList, DrawTexture *element, s32 xPos, s32 yPos, u8 red, u8 green, u8 blue,
                                u8 alpha);
-void render_chequer_background(Gfx** dList);
-void render_background(Gfx **dList, Matrix *mtx, s32 drawBG);
-void set_background_draw_function(void *func);
-void render_texture_rectangle_scaled(Gfx **dlist, DrawTexture *element, f32 xPos, f32 yPos, f32 xScale, f32 yScale, u32 colour, s32 flags);
+void bgdraw_chequer(Gfx** dList);
+void bgdraw_render(Gfx **dList, Matrix *mtx, s32 drawBG);
+void bgdraw_set_func(void *func);
+void texrect_draw_scaled(Gfx **dlist, DrawTexture *element, f32 xPos, f32 yPos, f32 xScale, f32 yScale, u32 colour, s32 flags);
 
 //Non Matching
 void func_80078190(Gfx **dlist);

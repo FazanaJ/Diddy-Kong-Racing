@@ -54,7 +54,7 @@ s32 D_8012A7D4;
  * Set the default values of dialogue and allocate memory for the active text entry.
  */
 void init_dialogue_text(void) {
-    gCurrentMessageText[0] = (char *) allocate_from_main_pool_safe(0x780, MEMP_TEXT);
+    gCurrentMessageText[0] = (char *) mempool_alloc_safe(0x780, MEMP_TEXT);
     gCurrentMessageText[1] = gCurrentMessageText[0] + 0x3C0;
     D_8012A7D4 = 0;
     gShowSubtitles = FALSE;
@@ -72,7 +72,7 @@ void init_dialogue_text(void) {
  * Close screen dialogue and free the text currently loaded into it.
  */
 void free_message_box(void) {
-    free_from_memory_pool(gCurrentMessageText[0]);
+    mempool_free(gCurrentMessageText[0]);
     gShowSubtitles = FALSE;
     dialogue_close(6);
     dialogue_clear(6);
@@ -206,7 +206,7 @@ void process_subtitles(s32 updateRate) {
  * Assign the entries to a pointer table, then calculate the number of entries.
  */
 void load_game_text_table(void) {
-    gGameTextTable[0] = (GameTextTableStruct *) allocate_from_main_pool_safe(0x800, MEMP_TEXT);
+    gGameTextTable[0] = (GameTextTableStruct *) mempool_alloc_safe(0x800, MEMP_TEXT);
     gGameTextTableEntries[0] = (char *) &gGameTextTable[0]->entries[32];
     gGameTextTableEntries[1] = &gGameTextTableEntries[0][960];
     D_8012A7A4 = 0;

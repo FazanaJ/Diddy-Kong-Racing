@@ -529,7 +529,7 @@ s32 render_printf(const char *format, ...) {
 void debug_text_print(Gfx **dList) {
     char *buffer;
 
-    init_rdp_and_framebuffer(dList);
+    rdp_init(dList);
     gDebugScreenHeight = gScreenHeight;
     gDebugScreenWidth = gScreenWidth;
     gDPSetScissor((*dList)++, 0, 0, 0, gDebugScreenWidth, gDebugScreenHeight);

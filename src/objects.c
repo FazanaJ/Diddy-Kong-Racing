@@ -324,7 +324,7 @@ void func_8000B020(s32 numberOfVertices, s32 numberOfTriangles) {
     s32 i;
 
     D_800DC754[0] =
-        (s32) allocate_from_main_pool_safe(((numberOfTriangles * 16) + (numberOfVertices * 10)) * 2, MEMP_MISC);
+        (s32) mempool_alloc_safe(((numberOfTriangles * 16) + (numberOfVertices * 10)) * 2, MEMP_MISC);
     D_800DC754[1] = D_800DC754[0] + (numberOfTriangles * 16);
     D_800DC74C[0] = D_800DC754[1] + (numberOfTriangles * 16);
     D_800DC74C[1] = D_800DC74C[0] + (numberOfVertices * 10);
@@ -385,7 +385,7 @@ void func_8000B290(void) {
 
     temp_a0 = D_800DC754[0];
     if (temp_a0 != 0) {
-        free_from_memory_pool((void *) temp_a0);
+        mempool_free((void *) temp_a0);
         D_800DC754[0] = 0;
         D_800DC754[1] = 0;
         D_800DC74C[0] = 0;
@@ -536,33 +536,33 @@ void allocate_object_pools(void) {
     s32 i;
 
     set_world_shading(0.67f, 0.33f, 0, -0x2000, 0);
-    gObjectMemoryPool = (Object *) new_sub_memory_pool(OBJECT_POOL_SIZE, OBJECT_SLOT_COUNT);
-    gParticlePtrList = allocate_from_main_pool_safe(sizeof(uintptr_t) * 200, MEMP_PARTICLES);
-    D_8011AE6C = allocate_from_main_pool_safe(sizeof(uintptr_t) * 20, MEMP_OBJECTS);
-    D_8011AE74 = allocate_from_main_pool_safe(sizeof(uintptr_t) * 128, MEMP_OBJECTS);
-    gTrackCheckpoints = allocate_from_main_pool_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, MEMP_OBJECTS);
-    gCameraObjList = allocate_from_main_pool_safe(sizeof(uintptr_t *) * 20, MEMP_OBJECTS);
-    gRacers = allocate_from_main_pool_safe(sizeof(uintptr_t) * 10, MEMP_OBJECTS);
-    gRacersByPort = allocate_from_main_pool_safe(sizeof(uintptr_t) * 10, MEMP_OBJECTS);
-    gRacersByPosition = allocate_from_main_pool_safe(sizeof(uintptr_t) * 10, MEMP_OBJECTS);
-    gAINodes = allocate_from_main_pool_safe(sizeof(uintptr_t) * AINODE_COUNT, MEMP_OBJECTS);
-    D_8011ADCC = allocate_from_main_pool_safe(8, MEMP_OBJECTS);
-    D_8011AFF4 = allocate_from_main_pool_safe(sizeof(unk800179D0) * 16, MEMP_OBJECTS);
+    gObjectMemoryPool = (Object *) mempool_new_sub(OBJECT_POOL_SIZE, OBJECT_SLOT_COUNT);
+    gParticlePtrList = mempool_alloc_safe(sizeof(uintptr_t) * 200, MEMP_PARTICLES);
+    D_8011AE6C = mempool_alloc_safe(sizeof(uintptr_t) * 20, MEMP_OBJECTS);
+    D_8011AE74 = mempool_alloc_safe(sizeof(uintptr_t) * 128, MEMP_OBJECTS);
+    gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, MEMP_OBJECTS);
+    gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * 20, MEMP_OBJECTS);
+    gRacers = mempool_alloc_safe(sizeof(uintptr_t) * 10, MEMP_OBJECTS);
+    gRacersByPort = mempool_alloc_safe(sizeof(uintptr_t) * 10, MEMP_OBJECTS);
+    gRacersByPosition = mempool_alloc_safe(sizeof(uintptr_t) * 10, MEMP_OBJECTS);
+    gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, MEMP_OBJECTS);
+    D_8011ADCC = mempool_alloc_safe(8, MEMP_OBJECTS);
+    D_8011AFF4 = mempool_alloc_safe(sizeof(unk800179D0) * 16, MEMP_OBJECTS);
     gAssetColourTag = MEMP_OBJECTS;
     gAssetsLvlObjTranslationTable = (s16 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE);
     gAssetsLvlObjTranslationTableLength = (get_size_of_asset_section(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE) >> 1) - 1;
     while (gAssetsLvlObjTranslationTable[gAssetsLvlObjTranslationTableLength] == 0) {
         gAssetsLvlObjTranslationTableLength--;
     }
-    gSpawnObjectHeap = allocate_from_main_pool_safe(sizeof(uintptr_t) * 512, MEMP_OBJECTS);
+    gSpawnObjectHeap = mempool_alloc_safe(sizeof(uintptr_t) * 512, MEMP_OBJECTS);
     gAssetsObjectHeadersTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_HEADERS_TABLE);
     gAssetsObjectHeadersTableLength = 0;
     while (-1 != gAssetsObjectHeadersTable[gAssetsObjectHeadersTableLength]) {
         gAssetsObjectHeadersTableLength++;
     }
     gAssetsObjectHeadersTableLength--;
-    gLoadedObjectHeaders = allocate_from_main_pool_safe(gAssetsObjectHeadersTableLength * 4, MEMP_HEADERS);
-    gObjectHeaderReferences = allocate_from_main_pool_safe(gAssetsObjectHeadersTableLength, MEMP_HEADERS);
+    gLoadedObjectHeaders = mempool_alloc_safe(gAssetsObjectHeadersTableLength * 4, MEMP_HEADERS);
+    gObjectHeaderReferences = mempool_alloc_safe(gAssetsObjectHeadersTableLength, MEMP_HEADERS);
 
     for (i = 0; i < gAssetsObjectHeadersTableLength; i++) {
         (*gObjectHeaderReferences)[i] = 0;
@@ -581,7 +581,7 @@ void allocate_object_pools(void) {
         &gAssetsMiscSection[gAssetsMiscTable[ASSET_MISC_MAGIC_CODES]],
         (gAssetsMiscTable[ASSET_MISC_TITLE_SCREEN_DEMO_IDS] - gAssetsMiscTable[ASSET_MISC_MAGIC_CODES]) *
             sizeof(s32 *));
-    gObjPtrList = allocate_from_main_pool_safe(sizeof(uintptr_t) * OBJECT_SLOT_COUNT, MEMP_OBJECTS);
+    gObjPtrList = mempool_alloc_safe(sizeof(uintptr_t) * OBJECT_SLOT_COUNT, MEMP_OBJECTS);
     gFirstTimeFinish = 0;
     gTimeTrialEnabled = 0;
     gIsTimeTrial = FALSE;
@@ -694,8 +694,8 @@ void free_all_objects(void) {
     gObjectCount = 0;
     gObjectListStart = 0;
     clear_object_pointers();
-    free_from_memory_pool((void *) D_8011AEB0[0]);
-    free_from_memory_pool((void *) D_8011AEB0[1]);
+    mempool_free((void *) D_8011AEB0[0]);
+    mempool_free((void *) D_8011AEB0[1]);
 }
 
 /**
@@ -714,11 +714,11 @@ ObjectHeader *load_object_header(s32 index) {
     }
     assetOffset = gAssetsObjectHeadersTable[index];
     size = gAssetsObjectHeadersTable[index + 1] - assetOffset;
-    address = allocate_from_pool_containing_slots((MemoryPoolSlot *) gObjectMemoryPool, size);
+    address = mempool_alloc_pool((MemoryPoolSlot *) gObjectMemoryPool, size);
     if (address != NULL) {
         load_asset_to_address(ASSET_OBJECTS, (u32) address, assetOffset, size);
         if (gConfig.perfMode && address->flags & 0x40) {
-            free_from_memory_pool(address);
+            mempool_free(address);
             return NULL;
         }
         if (gConfig.noCutbacks) {
@@ -746,7 +746,7 @@ void try_free_object_header(s32 index) {
     if ((*gObjectHeaderReferences)[index] != 0) {
         (*gObjectHeaderReferences)[index]--;
         if ((*gObjectHeaderReferences)[index] == 0) {
-            free_from_memory_pool((void *) (*gLoadedObjectHeaders)[index]);
+            mempool_free((void *) (*gLoadedObjectHeaders)[index]);
         }
     }
 }
@@ -787,7 +787,7 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
     }
 
     D_8011AD3E = 0;
-    mem = allocate_from_main_pool_safe(0x3000, MEMP_OBJECTS);
+    mem = mempool_alloc_safe(0x3000, MEMP_OBJECTS);
     D_8011AEB0[arg1] = mem;
     D_8011AE98[arg1] = (u8 *) (D_8011AEB0[arg1] + 4);
     D_8011AEA0[arg1] = 0;
@@ -810,7 +810,7 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
             0x20;
         load_asset_to_address(ASSET_LEVEL_OBJECT_MAPS, (u32) compressedAsset, assetOffset, assetSize);
         gzip_inflate(compressedAsset, (u8 *) mem);
-        free_from_memory_pool(objMapTable);
+        mempool_free(objMapTable);
         D_8011AE98[arg1] = (u8 *) (D_8011AEB0[arg1] + 4);
         D_8011AEA0[arg1] = *mem;
         D_8011AEC0 = arg1;
@@ -1039,7 +1039,7 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
             }
         }
     }
-    entry = allocate_from_main_pool_safe(sizeof(LevelObjectEntry_Unk8000CC7C), MEMP_OBJECTS);
+    entry = mempool_alloc_safe(sizeof(LevelObjectEntry_Unk8000CC7C), MEMP_OBJECTS);
     entry->unkC = 0;
     entry->unkA = 0;
     entry->unk8 = 0;
@@ -1316,9 +1316,9 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
         gEventCountdown = 0;
         start_level_music(1.0f);
     }
-    set_free_queue_state(0);
-    free_from_memory_pool(entry);
-    set_free_queue_state(2);
+    mempool_free_timer(0);
+    mempool_free(entry);
+    mempool_free_timer(2);
 }
 #else
 GLOBAL_ASM("asm/non_matchings/objects/func_8000CC7C.s")
@@ -1735,7 +1735,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 arg1) {
         curObj->lightData = address;
         sizeOfobj = (s32) ((uintptr_t) address + (curObj->segment.header->numLightSources * 4)) - (uintptr_t) curObj;
     }
-    newObj = allocate_from_pool_containing_slots((MemoryPoolSlot *) gObjectMemoryPool, sizeOfobj);
+    newObj = mempool_alloc_pool((MemoryPoolSlot *) gObjectMemoryPool, sizeOfobj);
     if (newObj == NULL) {
         if (D_8011AE50 != NULL) {
             free_texture((u32) D_8011AE50);
@@ -1814,7 +1814,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 arg1) {
         }
         objFreeAssets(newObj, assetCount, objType);
         try_free_object_header(var_a0);
-        free_from_memory_pool(newObj);
+        mempool_free(newObj);
         if (arg1 & 1) {
             gObjectCount--;
         }
@@ -1928,7 +1928,7 @@ s32 func_8000F99C(Object *obj) {
             if (temp_v0 != NULL) {
                 objFreeAssets(temp_v0, temp_v0->segment.header->numberOfModelIds, temp_v0->segment.header->modelType);
                 try_free_object_header(temp_v0->segment.object.unk2C);
-                free_from_memory_pool(temp_v0);
+                mempool_free(temp_v0);
             }
         }
         return TRUE;
@@ -2040,7 +2040,7 @@ Object *func_8000FD54(s32 objectHeaderIndex) {
         return NULL;
     }
     objSize = (objHeader->numberOfModelIds * 4) + 0x80;
-    object = (Object *) allocate_from_main_pool(objSize, MEMP_OBJECTS);
+    object = (Object *) mempool_alloc(objSize, MEMP_OBJECTS);
     if (object == NULL) {
         try_free_object_header(objectHeaderIndex);
         return NULL;
@@ -2082,7 +2082,7 @@ Object *func_8000FD54(s32 objectHeaderIndex) {
     if (failedToLoadModel) {
         objFreeAssets(object, numModelIds, modelType);
         try_free_object_header(objectHeaderIndex);
-        free_from_memory_pool(object);
+        mempool_free(object);
         return NULL;
     }
 
@@ -4452,7 +4452,7 @@ s32 timetrial_load_staff_ghost(s32 mapId) {
                             &gTTGhostTimeToBeat);
     }
 
-    free_from_memory_pool(ghostTable);
+    mempool_free(ghostTable);
     return ret;
 }
 

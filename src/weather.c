@@ -187,11 +187,11 @@ void weather_clip_planes(s16 near, s16 far) {
     }
 }
 
-#define FREE_MEM(mem)                   \
-    tempMem = (s32 *) mem;              \
-    if (tempMem != NULL) {              \
-        free_from_memory_pool(tempMem); \
-        mem = NULL;                     \
+#define FREE_MEM(mem)          \
+    tempMem = (s32 *) mem;     \
+    if (tempMem != NULL) {     \
+        mempool_free(tempMem); \
+        mem = NULL;            \
     }
 #define FREE_TEX(tex)          \
     tempTex = tex;             \
@@ -265,7 +265,7 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
         rain_init(intensity + 1, opacity + 1);
         return;
     }
-    pos = (Vec3i *) allocate_from_main_pool_safe(gWeatherPresets[weatherType].size * (sizeof(Vec3i)),
+    pos = (Vec3i *) mempool_alloc_safe(gWeatherPresets[weatherType].size * (sizeof(Vec3i)),
                                                  MEMP_WEATHER);
     gSnowGfx.pos = pos;
     gSnowGfx.size = gWeatherPresets[weatherType].size;
@@ -284,9 +284,9 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
     }
     numOfElements = density;
     gSnowDensity = numOfElements;
-    gSnowTriIndices = (s16 *) allocate_from_main_pool_safe(numOfElements * (sizeof(s16)), MEMP_WEATHER);
+    gSnowTriIndices = (s16 *) mempool_alloc_safe(numOfElements * (sizeof(s16)), MEMP_WEATHER);
     gSnowPhysics =
-        (SnowPosData *) allocate_from_main_pool_safe(numOfElements * (sizeof(SnowPosData)), MEMP_WEATHER);
+        (SnowPosData *) mempool_alloc_safe(numOfElements * (sizeof(SnowPosData)), MEMP_WEATHER);
     for (i = 0; i < gSnowDensity; i++) {
         gSnowPhysics[i].x_position = get_random_number_from_range(0, gSnowGfx.radiusX);
         gSnowPhysics[i].y_position = get_random_number_from_range(0, gSnowGfx.radiusY);
@@ -300,8 +300,8 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
     numOfElements = numOfElements * 3;
     allocSize = sizeof(Vertex);
     allocSize *= numOfElements;
-    gSnowVertexData[0] = allocate_from_main_pool_safe(allocSize, MEMP_WEATHER);
-    gSnowVertexData[1] = allocate_from_main_pool_safe(allocSize, MEMP_WEATHER);
+    gSnowVertexData[0] = mempool_alloc_safe(allocSize, MEMP_WEATHER);
+    gSnowVertexData[1] = mempool_alloc_safe(allocSize, MEMP_WEATHER);
     for (j = 0; j < 2; j++) {
         gSnowVerts = gSnowVertexData[j];
         for (i = 0; i < numOfElements; i++) {
@@ -317,7 +317,7 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
     widthHalf = width / 2;
     widthQuart = width / 4;
     gSnowTriangles =
-        (Triangle *) allocate_from_main_pool_safe(gSnowTriCount * (sizeof(Triangle)), MEMP_WEATHER);
+        (Triangle *) mempool_alloc_safe(gSnowTriCount * (sizeof(Triangle)), MEMP_WEATHER);
     for (i = 0; i < gSnowTriCount; i++) {
         gSnowTriangles[i].flags = 0;
         gSnowTriangles[i].vi0 = (i * 3) + 2;
@@ -684,7 +684,7 @@ void lensflare_render(Gfx **dList, MatrixS **mats, Vertex **verts, ObjectSegment
                         pos[1].z = (mag2 * gLensFlarePos.z) - pos[1].z;
                     }
                 }
-                width = get_video_width_and_height_as_s32();
+                width = fb_size();
                 height = GET_VIDEO_HEIGHT(width);
                 width = GET_VIDEO_WIDTH(width);
                 gfxTemp = (*dList);

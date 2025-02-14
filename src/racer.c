@@ -5707,7 +5707,7 @@ void get_timestamp_from_frames(s32 frameCount, s32 *minutes, s32 *seconds, s32 *
  */
 void alloc_ghost_pool(void) {
     if (is_time_trial_enabled()) {
-        gGhostData[0] = allocate_from_main_pool_safe(
+        gGhostData[0] = mempool_alloc_safe(
             (sizeof(GhostNode) * 2) * MAX_NUMBER_OF_GHOST_NODES, MEMP_GHOST_DATA);
         gGhostData[1] = ((GhostNode *) gGhostData[0] + MAX_NUMBER_OF_GHOST_NODES);
     }
@@ -5718,7 +5718,7 @@ void alloc_ghost_pool(void) {
  */
 void free_ghost_pool(void) {
     if (gGhostData[0]) {
-        free_from_memory_pool(gGhostData[0]);
+        mempool_free(gGhostData[0]);
     }
 }
 
@@ -5795,21 +5795,21 @@ s32 timetrial_load_player_ghost(s32 controllerID, s32 mapId, s16 arg2, s16 *char
  * Returns 0 if successful, or 1 if an error occured.
  */
 s32 load_tt_ghost(s32 ghostOffset, s32 size, s16 *outTime) {
-    GhostHeader *ghost = allocate_from_main_pool_safe(size, MEMP_GHOST_DATA);
+    GhostHeader *ghost = mempool_alloc_safe(size, MEMP_GHOST_DATA);
     if (ghost != NULL) {
         load_asset_to_address(ASSET_TTGHOSTS, (u32) ghost, ghostOffset, size);
         if (gGhostData[GHOST_STAFF] != NULL) {
-            free_from_memory_pool(gGhostData[GHOST_STAFF]);
+            mempool_free(gGhostData[GHOST_STAFF]);
         }
-        gGhostData[GHOST_STAFF] = allocate_from_main_pool_safe(size - sizeof(GhostHeader), MEMP_GHOST_DATA);
+        gGhostData[GHOST_STAFF] = mempool_alloc_safe(size - sizeof(GhostHeader), MEMP_GHOST_DATA);
         if (gGhostData[GHOST_STAFF] != NULL) {
             *outTime = ghost->time;
             gGhostNodeCount[GHOST_STAFF] = ghost->nodeCount;
             wcopy((u8 *) ghost + 8, gGhostData[GHOST_STAFF], size - sizeof(GhostHeader));
-            free_from_memory_pool(ghost);
+            mempool_free(ghost);
             return 0;
         }
-        free_from_memory_pool(ghost);
+        mempool_free(ghost);
     }
     return 1;
 }
@@ -5819,7 +5819,7 @@ s32 load_tt_ghost(s32 ghostOffset, s32 size, s16 *outTime) {
  */
 void timetrial_free_staff_ghost(void) {
     if (gGhostData[GHOST_STAFF] != NULL) {
-        free_from_memory_pool(gGhostData[GHOST_STAFF]);
+        mempool_free(gGhostData[GHOST_STAFF]);
     }
     gGhostData[GHOST_STAFF] = NULL;
 }
