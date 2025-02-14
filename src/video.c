@@ -184,6 +184,8 @@ void fb_init_vi(void) {
 void fb_alloc(s32 index) {
     s32 width = SCREEN_WIDTH;
     u32 *fbAddr;
+    s32 fbSize = (SCREEN_HEIGHT * 2);
+    u8 *addr;
 #if EXPANSION_PAK_SUPPORT
     if (gExpansionPak) {
         width = SCREEN_WIDTH_WIDE;
@@ -195,16 +197,30 @@ void fb_alloc(s32 index) {
         gGfxSPTaskOutputBuffer = (u64 *) (((s32) gGfxSPTaskOutputBuffer + 0xF) & ~0xF);
     }
 #endif
-    gVideoFramebuffers[index] = mempool_alloc_safe((width * SCREEN_HEIGHT * 2) + 0x40, MEMP_FRAMEBUFFERS);
+
+    fbSize *= width;
+    switch (index) {
+        case 0:
+            addr = (u8 *) 0x80200000;
+        break;
+        case 1:
+            addr = (u8 *) 0x80300000;
+        break;
+        case 2:
+            if (gUseExpansionMemory) {
+                addr = (u8 *) 0x80400000;
+            } else {
+                addr = (u8 *) (0x80300000 - (fbSize + 0x40));
+            }
+        break;
+    }
+    gVideoFramebuffers[index] = mempool_alloc_fixed(fbSize + 0x40, addr, MEMP_FRAMEBUFFERS);
     gVideoFramebuffers[index] = (u32 *) (((s32) gVideoFramebuffers[index] + 0x3F) & ~0x3F);
     fbAddr = gVideoFramebuffers[index];
     fbAddr[100] = 0xBEEF;
     if (gVideoDepthBuffer == NULL) {
-        s32 videoSize = (width * SCREEN_HEIGHT * 2);
-        videoSize = (s32) (((s32) videoSize + 0x3F) & ~0x3F);
-        gVideoDepthBuffer = gMemPoolEnd;
-        //gVideoDepthBuffer = mempool_alloc_safe((width * SCREEN_HEIGHT * 2) + 0x40, MEMP_FRAMEBUFFERS);
-        //gVideoDepthBuffer = (u32 *) (((s32) gVideoDepthBuffer + 0x3F) & ~0x3F);
+        gVideoDepthBuffer = mempool_alloc_fixed((fbSize + 0x40), (u8 *) (0x80200000 - (fbSize + 0x40)), MEMP_FRAMEBUFFERS);
+        gVideoDepthBuffer = (u32 *) (((s32) gVideoDepthBuffer + 0x3F) & ~0x3F);
         fbAddr = gVideoDepthBuffer;
         fbAddr[100] = 0xBEEF;
     }

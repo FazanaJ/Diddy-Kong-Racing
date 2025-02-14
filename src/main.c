@@ -251,7 +251,7 @@ u32 sTimerTemp = 0;
 u8 gShowHiddenGeometry = FALSE;
 u8 gShowHiddenObjects = FALSE;
 u8 sPrintOrder[PP_RSP_GFX];
-u8 sRAMPrintOrder[MEMP_TOTAL + 12];
+u8 sRAMPrintOrder[MEMP_TOTAL + 13];
 u16 sObjPrintOrder[NUM_OBJECT_PRINTS];
 struct PuppyPrint gPuppyPrint;
 char *sPuppyPrintStrings[] = { PP_STRINGS };

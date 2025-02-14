@@ -234,7 +234,8 @@ enum PPLoadNames {
     "GreyXLU", \
     "White", \
     "Yellow", \
-    "Orange"
+    "Orange", \
+    "Wtf???"
 
 
 #ifdef PUPPYPRINT_DEBUG
@@ -334,8 +335,8 @@ extern u32 gLoadAllocTime;
 extern u32 gLoadObjectTime;
 extern u32 gLoadEtcTime;
 extern u32 gLoadTotalTime;
-extern u8 sRAMPrintOrder[MEMP_TOTAL + 12];
-extern char *sPuppyprintMemColours[40];
+extern u8 sRAMPrintOrder[MEMP_TOTAL + 13];
+extern char *sPuppyprintMemColours[41];
 #else
 
 #define update_rdp_profiling()

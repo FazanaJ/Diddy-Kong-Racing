@@ -26,7 +26,6 @@ void *gFreeQueue[FREE_QUEUE_SIZE];
 u8 gFreeQueueElementTimer[FREE_QUEUE_SIZE];
 s32 gFreeQueueCount;
 s32 gFreeQueueTimer; // Official Name: mmDelay
-u32 *gMemPoolEnd;
 
 extern MemoryPoolSlot gMainMemoryPool;
 
@@ -40,7 +39,6 @@ extern MemoryPoolSlot gMainMemoryPool;
 void mempool_init_main(void) {
     u32 ramEnd;
     s32 i;
-    s32 bufferSize = (SCREEN_HEIGHT) * 2;
 
     gNumberOfMemoryPools = -1;
     if (gUseExpansionMemory) {
@@ -66,18 +64,11 @@ void mempool_init_main(void) {
         } else {
             ramEnd = K0BASE + osGetMemSize();
         }
-        bufferSize *= SCREEN_WIDTH_WIDE;
     } else {
-        bufferSize *= SCREEN_WIDTH;
         ramEnd = RAM_END;
     }
-    if (bufferSize & 0x40) {
-        bufferSize = _ALIGN64(bufferSize);
-    }
-    gMemPoolEnd = (u32 *) (ramEnd - bufferSize);
     ramEnd -= (s32) (&gMainMemoryPool);
-    ramEnd -= bufferSize;
-    mempool_init(&gMainMemoryPool, ramEnd + bufferSize, MAIN_POOL_SLOT_COUNT);
+    mempool_init(&gMainMemoryPool, ramEnd, MAIN_POOL_SLOT_COUNT);
     mempool_free_timer(2);
     gFreeQueueCount = 0;
 }
@@ -494,6 +485,9 @@ void calculate_ram_total(s32 poolIndex, u32 colourTag) {
         case COLOUR_TAG_BLACK:
             index = MEMP_TOTAL + 1;
             break;
+        case COLOUR_TAG_BLUE:
+            index = MEMP_TOTAL + 2;
+            break;
         case COLOUR_TAG_CYAN:
             index = MEMP_TOTAL + 3;
             break;
@@ -518,6 +512,9 @@ void calculate_ram_total(s32 poolIndex, u32 colourTag) {
         case COLOUR_TAG_ORANGE:
             index = MEMP_TOTAL + 10;
             break;
+        case COLOUR_TAG_SEMITRANS_GREEN:
+            index = MEMP_TOTAL + 11;
+            break;
         default:
             if (colourTag > MEMP_TOTAL || colourTag == 0) {
                 return;
@@ -528,15 +525,6 @@ void calculate_ram_total(s32 poolIndex, u32 colourTag) {
     slots = gMemoryPools[poolIndex].slots;
     gPuppyPrint.ramPools[MEMP_OVERALL] -= gPuppyPrint.ramPools[index];
     gPuppyPrint.ramPools[index] = 0;
-    if (colourTag == MEMP_FRAMEBUFFERS) {
-        fbSize = SCREEN_HEIGHT * 2;
-        if (gUseExpansionMemory) {
-            fbSize *= SCREEN_WIDTH_WIDE;
-        } else {
-            fbSize *= SCREEN_WIDTH;
-        }
-        gPuppyPrint.ramPools[MEMP_FRAMEBUFFERS] += fbSize;
-    }
 
     for (i = 0; i != -1; i = curSlot->nextIndex) {
         curSlot = &slots[i];

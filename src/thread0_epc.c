@@ -478,63 +478,84 @@ char *sMemDumpStrings[] = {
     "4 FixedAlloc"
 };
 
-void crash_ram_dump(s32 poolIndex) {
-    MemoryPoolSlot *slots;
-    MemoryPoolSlot *curSlot;
-    slots = gMemoryPools[poolIndex].slots;
-    for (s32 i = 0; i != -1; i = curSlot->nextIndex) {
-        curSlot = &slots[i];
-        if (curSlot->flags != 0) {
-            s32 index;
-            switch (curSlot->colourTag) {
+void crash_ram_dump(void) {
+    int flags;
+    int nextIndex;
+    int i;
+    s32 colourTag;
+    MemoryPoolSlot *slot;
+
+    for (i = 0; i <= gNumberOfMemoryPools; i++) {
+        stubbed_printf("Region = %d	 loc = %x	 size = %x\t", i, gMemoryPools[i].slots, gMemoryPools[i].size);
+        slot = &gMemoryPools[i].slots[0];
+        
+        do {
+            flags = slot->flags;
+            nextIndex = slot->nextIndex;
+
+            switch (slot->colourTag) {
             case COLOUR_TAG_RED:
-                index = MEMP_TOTAL + 0;
+                colourTag = MEMP_TOTAL + 0;
                 break;
             case COLOUR_TAG_BLACK:
-                index = MEMP_TOTAL + 1;
+                colourTag = MEMP_TOTAL + 1;
+                break;
+            case COLOUR_TAG_BLUE:
+                colourTag = MEMP_TOTAL + 2;
                 break;
             case COLOUR_TAG_CYAN:
-                index = MEMP_TOTAL + 3;
+                colourTag = MEMP_TOTAL + 3;
                 break;
             case COLOUR_TAG_GREEN:
-                index = MEMP_TOTAL + 4;
+                colourTag = MEMP_TOTAL + 4;
                 break;
             case COLOUR_TAG_GREY:
-                index = MEMP_TOTAL + 5;
+                colourTag = MEMP_TOTAL + 5;
                 break;
             case COLOUR_TAG_MAGENTA:
-                index = MEMP_TOTAL + 6;
+                colourTag = MEMP_TOTAL + 6;
                 break;
             case COLOUR_TAG_SEMITRANS_GREY:
-                index = MEMP_TOTAL + 7;
+                colourTag = MEMP_TOTAL + 7;
                 break;
             case COLOUR_TAG_WHITE:
-                index = MEMP_TOTAL + 8;
+                colourTag = MEMP_TOTAL + 8;
                 break;
             case COLOUR_TAG_YELLOW:
-                index = MEMP_TOTAL + 9;
+                colourTag = MEMP_TOTAL + 9;
                 break;
             case COLOUR_TAG_ORANGE:
-                index = MEMP_TOTAL + 10;
+                colourTag = MEMP_TOTAL + 10;
+                break;
+            case COLOUR_TAG_SEMITRANS_GREEN:
+                colourTag = MEMP_TOTAL + 11;
                 break;
             default:
-                if (curSlot->colourTag > MEMP_TOTAL || curSlot->colourTag == 0) {
-                    return;
+                if (flags && (slot->colourTag > MEMP_TOTAL || slot->colourTag == 0)) {
+                    debug_printf("Unknown tag: %X\n", slot->colourTag);
+                    goto skip;
                 }
-                index = curSlot->colourTag;
+                colourTag = slot->colourTag;
             }
-            s32 status = curSlot->flags;
-            debug_printf("Pool: %x %s\t Tag: %s \t\t Size: 0x%X \t Addr: %X\n", poolIndex, sMemDumpStrings[status], sPuppyprintMemColours[index], curSlot->size, curSlot->data);
-        } else {
-            debug_printf("Pool: %x Free Slot \t\t\t\t Size: 0x%X\t Addr: %X\n", poolIndex, curSlot->size, curSlot->data);
-        }
+
+            if (flags == SLOT_FREE) {
+                debug_printf("Pool: %x Free Slot \t\t\t\t Size: 0x%X\t Addr: %X\n", i, slot->size, slot->data);
+            } else {
+                debug_printf("Pool: %x %s\t Tag: %s \t\t Size: 0x%X \t Addr: %X\n", i, sMemDumpStrings[flags], sPuppyprintMemColours[colourTag], slot->size, slot->data);
+            }
+
+            skip:
+            if (nextIndex == -1) {
+                continue;
+            } else {
+                slot = &gMemoryPools[i].slots[slot->nextIndex];
+            }
+        } while (nextIndex != -1);
     }
 }
 
 void ram_dump(void) {
-    for (int i = 0; i < gNumberOfMemoryPools + 1; i++) {
-        crash_ram_dump(i);
-    }
+    crash_ram_dump();
 }
 
 #endif

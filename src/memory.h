@@ -50,6 +50,10 @@ typedef enum MempoolFlags {
 #define COLOUR_TAG_BLACK 0x000000FF
 // Weather
 #define COLOUR_TAG_LIGHT_ORANGE 0xFFAA55FF
+// ???
+#define COLOUR_TAG_SEMITRANS_GREEN 0x00FF0163
+// Blue Baby
+#define COLOUR_TAG_BLUE 0x0000FFFF
 
 enum MemoryTags {
     MEMP_OVERALL,
@@ -115,8 +119,7 @@ typedef struct StackInfo {
     u32 sp;
 } StackInfo;
 
-extern u32 *gMemPoolEnd;
-extern MemoryPool gMemoryPools[4];
+extern MemoryPool gMemoryPools[POOL_COUNT];
 extern s32 gNumberOfMemoryPools;
 
 void mempool_init_main(void);
