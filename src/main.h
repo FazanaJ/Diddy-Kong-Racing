@@ -235,7 +235,7 @@ enum PPLoadNames {
     "White", \
     "Yellow", \
     "Orange", \
-    "Wtf???"
+    "GreenXLU"
 
 
 #ifdef PUPPYPRINT_DEBUG
