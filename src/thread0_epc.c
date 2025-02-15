@@ -486,62 +486,24 @@ void crash_ram_dump(void) {
     MemoryPoolSlot *slot;
 
     for (i = 0; i <= gNumberOfMemoryPools; i++) {
-        stubbed_printf("Region = %d	 loc = %x	 size = %x\t", i, gMemoryPools[i].slots, gMemoryPools[i].size);
+        debug_printf("------------- Pool: %d\t Slots: %d/%d -------------\n", i, gMemoryPools[i].curNumSlots, gMemoryPools[i].maxNumSlots);
         slot = &gMemoryPools[i].slots[0];
         
         do {
             flags = slot->flags;
             nextIndex = slot->nextIndex;
 
-            switch (slot->colourTag) {
-            case COLOUR_TAG_RED:
-                colourTag = MEMP_TOTAL + 0;
-                break;
-            case COLOUR_TAG_BLACK:
-                colourTag = MEMP_TOTAL + 1;
-                break;
-            case COLOUR_TAG_BLUE:
-                colourTag = MEMP_TOTAL + 2;
-                break;
-            case COLOUR_TAG_CYAN:
-                colourTag = MEMP_TOTAL + 3;
-                break;
-            case COLOUR_TAG_GREEN:
-                colourTag = MEMP_TOTAL + 4;
-                break;
-            case COLOUR_TAG_GREY:
-                colourTag = MEMP_TOTAL + 5;
-                break;
-            case COLOUR_TAG_MAGENTA:
-                colourTag = MEMP_TOTAL + 6;
-                break;
-            case COLOUR_TAG_SEMITRANS_GREY:
-                colourTag = MEMP_TOTAL + 7;
-                break;
-            case COLOUR_TAG_WHITE:
-                colourTag = MEMP_TOTAL + 8;
-                break;
-            case COLOUR_TAG_YELLOW:
-                colourTag = MEMP_TOTAL + 9;
-                break;
-            case COLOUR_TAG_ORANGE:
-                colourTag = MEMP_TOTAL + 10;
-                break;
-            case COLOUR_TAG_SEMITRANS_GREEN:
-                colourTag = MEMP_TOTAL + 11;
-                break;
-            default:
-                if (flags && (slot->colourTag > MEMP_TOTAL || slot->colourTag == 0)) {
-                    debug_printf("Unknown tag: %X\n", slot->colourTag);
-                    goto skip;
-                }
-                colourTag = slot->colourTag;
+            colourTag = puppyprint_colourtag(slot->colourTag);
+            
+            if (colourTag == 0 && slot->flags) {
+                debug_printf("Unknown tag: %X\n", slot->colourTag);
+                goto skip;
             }
 
             if (flags == SLOT_FREE) {
-                debug_printf("Pool: %x Free Slot \t\t\t\t\t Size: 0x%X\t Addr: %X\n", i, slot->size, slot->data);
+                debug_printf("Pool: %d Free Slot \t\t\t\t\t Size: 0x%X\t Addr: %X\n", i, slot->size, slot->data);
             } else {
-                debug_printf("Pool: %x %s\t Tag: %s \t\t Size: 0x%X \t Addr: %X\n", i, sMemDumpStrings[flags], sPuppyprintMemColours[colourTag], slot->size, slot->data);
+                debug_printf("Pool: %d %s\t Tag: %s \t\t Size: 0x%X \t Addr: %X\n", i, sMemDumpStrings[flags], sPuppyprintMemColours[colourTag], slot->size, slot->data);
             }
 
             skip:

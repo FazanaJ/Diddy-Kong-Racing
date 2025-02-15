@@ -2134,7 +2134,7 @@ void init_save_data(void) {
     saveFileSize += sizeof(Settings);
     saveFileSize = (saveFileSize + 3) & ~3; // align to a 4-byte boundary
     
-    *gSavefileData = mempool_alloc_safe(saveFileSize * ARRAY_COUNT(gSavefileData), COLOUR_TAG_WHITE);
+    *gSavefileData = mempool_alloc_safe(saveFileSize * ARRAY_COUNT(gSavefileData), MEMP_SAVES);
 
     for (index = 0, offset = 0; index < ARRAY_COUNT(gSavefileData); index++) {
         gSavefileData[index] = (Settings *) ((u8 *) *gSavefileData + offset);
@@ -2145,7 +2145,7 @@ void init_save_data(void) {
     
     gCheatsAssetData = (u16 (*)[30]) get_misc_asset(ASSET_MISC_MAGIC_CODES);
     gNumberOfCheats = (*gCheatsAssetData)[0];
-    gMenuText = mempool_alloc_safe(1024 * sizeof(char *), COLOUR_TAG_WHITE);
+    gMenuText = mempool_alloc_safe(1024 * sizeof(char *), MEMP_SAVES);
     load_menu_text(LANGUAGE_ENGLISH);
     
     for (i = 0; i < ARRAY_COUNT(gMenuAssets); i++) { \

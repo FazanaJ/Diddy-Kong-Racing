@@ -84,7 +84,7 @@ MemoryPoolSlot *mempool_new_sub(s32 poolDataSize, s32 numSlots) {
     MemoryPoolSlot *newPool;
 
     size = poolDataSize + (numSlots * sizeof(MemoryPoolSlot));
-    slots = (MemoryPoolSlot *) mempool_alloc_safe(size, COLOUR_TAG_WHITE);
+    slots = (MemoryPoolSlot *) mempool_alloc_safe(size, MEMP_SUBPOOL);
     newPool = mempool_init(slots, size, numSlots);
     interrupts_enable(intFlags);
     return newPool;
@@ -521,6 +521,11 @@ void calculate_ram_total(s32 poolIndex, u32 colourTag) {
     MemoryPoolSlot *slots;
     MemoryPoolSlot *curSlot;
     s32 i;
+
+    if (colourTag == MEMP_SUBPOOL) {
+        gPuppyPrint.ramPools[MEMP_SUBPOOL] = 0;
+        return;
+    }
 
     index = puppyprint_colourtag(colourTag);
 

@@ -223,6 +223,8 @@ enum PPLoadNames {
     "Sequences", \
     "Misc Asset", \
     "Temp Mem", \
+    "Saves\t", \
+    "Sub Pool\t", \
     \
     "Red\t", \
     "Black\t", \
@@ -341,7 +343,7 @@ extern u32 gLoadObjectTime;
 extern u32 gLoadEtcTime;
 extern u32 gLoadTotalTime;
 extern u8 sRAMPrintOrder[MEMP_TOTAL + 13];
-extern char *sPuppyprintMemColours[41];
+extern char *sPuppyprintMemColours[43];
 #else
 
 #define update_rdp_profiling()

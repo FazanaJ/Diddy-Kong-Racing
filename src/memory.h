@@ -24,7 +24,7 @@ typedef enum MempoolFlags {
 
 #define RAM_END 0x80400000
 #define EXPANSION_RAM_END 0x80800000
-#define MAIN_POOL_SLOT_COUNT 1600
+#define MAIN_POOL_SLOT_COUNT 1200
 #define FREE_QUEUE_SIZE 256
 #define MEMSLOT_NONE -1
 
@@ -85,6 +85,8 @@ enum MemoryTags {
     MEMP_SEQUENCE,
     MEMP_MISCASSET,
     MEMP_TEMP,
+    MEMP_SAVES,
+    MEMP_SUBPOOL,
 
     MEMP_TOTAL
 };
@@ -143,5 +145,6 @@ void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag);
 u8 *align16(u8 *address);
 s32 puppyprint_colourtag(s32 colourTag);
 void *mempool_alloc_audio(MemoryPoolSlot *slots, s32 size, s32 colourTag);
+void calculate_pool_remainder(void);
 
 #endif
