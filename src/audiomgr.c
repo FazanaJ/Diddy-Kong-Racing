@@ -183,7 +183,7 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
         __am.ACMDList[i] = (Acmd *) alHeapAlloc(c->heap, 1, 0xA000); // sizeof(Acmd) * DMA_BUFFER_LENGTH * 5?
     }
 
-    asset = mempool_alloc_fixed((maxFrameSize * 12), (u8 *) ((ramEnd - 0x100) - (maxFrameSize * 12)),
+    asset = mempool_alloc_fixed((maxFrameSize * 12), (u8 *) ((ramEnd) - (maxFrameSize * 12)),
                                              MEMP_AUDIO_POOL);
 
     /**** initialize the done messages ****/

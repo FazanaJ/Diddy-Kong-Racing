@@ -179,6 +179,7 @@ extern void *gBssSectionStart;
  */
 void main2(void) {
     osInitialize();
+    osTvType = TV_TYPE_NTSC; // Temporary while PAL is still broken
     bzero(&gBssSectionStart, RAM_END - (s32) (&gBssSectionStart));
     osCreateThread(&gThread1, 1, &thread1_main, 0, &gThread3Stack[THREAD1_STACK / (sizeof(u64))], OS_PRIORITY_IDLE);
     osStartThread(&gThread1);

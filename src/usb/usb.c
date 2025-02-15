@@ -688,7 +688,7 @@ void usb_read(void* buffer, int nbytes)
         }
         
         // Copy from the USB buffer to the supplied buffer
-        memcpy((void*)(((u32)buffer)+read), usb_buffer+copystart, block);
+        wcopy(usb_buffer+copystart, (void*)(((u32)buffer)+read), block);
         
         // Increment/decrement all our counters
         read += block;
@@ -1010,7 +1010,7 @@ static void usb_64drive_write(int datatype, const void* data, int size)
         u32 block = MIN(left, BUFFER_SIZE);
 
         // Copy data to PI DMA aligned buffer
-        memcpy(usb_buffer, data, block);
+        wcopy(data, usb_buffer, block);
         
         // Pad the buffer with zeroes if it wasn't 4 byte aligned
         while (block%4)
@@ -1198,7 +1198,7 @@ static void usb_everdrive_write(int datatype, const void* data, int size)
             block = BUFFER_SIZE-offset;
             
         // Copy the data to the next available spots in the global buffer
-        memcpy(usb_buffer+offset, (void*)((char*)data+read), block);
+        wcopy((void*)((char*)data+read), usb_buffer+offset, block);
         
         // Restart the loop to write the CMP signal if we've finished
         if (!wrotecmp && read+block >= size)
@@ -1426,10 +1426,10 @@ static void usb_sc64_write(int datatype, const void* data, int size)
         u32 block = MIN(left, BUFFER_SIZE);
 
         // Copy data to PI DMA aligned buffer
-        memcpy(usb_buffer, data, block);
+        //wcopy(data, usb_buffer, block);
 
         // Copy block of data from RDRAM to SDRAM
-        usb_dma_write(usb_buffer, pi_address, ALIGN(block, 2));
+        usb_dma_write((void *)data, pi_address, ALIGN(block, 2));
 
         // Update pointers and variables
         data = (void*)(((u32)data) + block);

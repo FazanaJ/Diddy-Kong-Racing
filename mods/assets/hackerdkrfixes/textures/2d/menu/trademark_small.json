@@ -4,7 +4,7 @@
         "wrap-s": "Wrap",
         "wrap-t": "Wrap"
     },
-    "format": "IA4",
+    "format": "IA8",
     "images": [
         "trademark_small.png"
     ],
