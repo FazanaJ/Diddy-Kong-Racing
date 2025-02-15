@@ -317,6 +317,11 @@ void calculate_ram_print_order(void);
 #define profiler_get_timer() first
 #define profiler_get_timer2() first2
 #define profiler_get_timer3() first3
+#ifdef ENABLE_USB
+void debug_printf(const char* message, ...);
+#else
+#define debug_printf(...)
+#endif
 
 extern u8 perfIteration;
 extern u32 sPrevLoadTimeTotal;
@@ -361,8 +366,10 @@ extern char *sPuppyprintMemColours[41];
 #define puppyprint_load_snapshot(type, time)
 #ifdef __sgi
 #define puppyprint_log
+#define debug_printf
 #else
 #define puppyprint_log(...)
+#define debug_printf(...)
 #endif
 #endif
 int puppyprintf(char *dst, const char *fmt, ...);

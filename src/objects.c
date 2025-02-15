@@ -2186,6 +2186,9 @@ void func_80010994(s32 updateRate) {
         s32 rip;
         profiler_begin_timer();
         obj = gObjPtrList[i];
+        if (gMapId == ASSET_LEVEL_CENTRALAREAHUB) {
+            //debug_printf("%s\n", obj->segment.header->internalName);
+        }
         if (!(obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED)) {
             if ((obj->behaviorId != BHV_LIGHT_RGBA) && (obj->behaviorId != BHV_WEAPON) &&
                 (obj->behaviorId != BHV_FOG_CHANGER)) {
