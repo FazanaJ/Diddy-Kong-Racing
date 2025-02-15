@@ -210,6 +210,17 @@ void *mempool_alloc_pool(MemoryPoolSlot *slots, s32 size) {
     return (void *) NULL;
 }
 
+// Temporary while the above is used by assembly funcs
+void *mempool_alloc_audio(MemoryPoolSlot *slots, s32 size, s32 colourTag) {
+    s32 i;
+    for (i = gNumberOfMemoryPools; i != 0; i--) {
+        if (slots == gMemoryPools[i].slots) {
+            return mempool_slot_find(i, size, colourTag);
+        }
+    }
+    return (void *) NULL;
+}
+
 /**
  * Allocates memory from the main pool at a fixed address.
  * Rearranges the memory slots to place one at that address if possible.
@@ -471,56 +482,47 @@ u8 *align16(u8 *address) {
 }
 
 #ifdef PUPPYPRINT_DEBUG
+s32 puppyprint_colourtag(s32 colourTag) {
+switch (colourTag) {
+    case COLOUR_TAG_RED:
+        return MEMP_TOTAL + 0;
+    case COLOUR_TAG_BLACK:
+        return MEMP_TOTAL + 1;
+    case COLOUR_TAG_BLUE:
+        return MEMP_TOTAL + 2;
+    case COLOUR_TAG_CYAN:
+        return MEMP_TOTAL + 3;
+    case COLOUR_TAG_GREEN:
+        return MEMP_TOTAL + 4;
+    case COLOUR_TAG_GREY:
+        return MEMP_TOTAL + 5;
+    case COLOUR_TAG_MAGENTA:
+        return MEMP_TOTAL + 6;
+    case COLOUR_TAG_SEMITRANS_GREY:
+        return MEMP_TOTAL + 7;
+    case COLOUR_TAG_WHITE:
+        return MEMP_TOTAL + 8;
+    case COLOUR_TAG_YELLOW:
+        return MEMP_TOTAL + 9;
+    case COLOUR_TAG_ORANGE:
+        return MEMP_TOTAL + 10;
+    case COLOUR_TAG_SEMITRANS_GREEN:
+        return MEMP_TOTAL + 11;
+    default:
+        if (colourTag > MEMP_TOTAL || colourTag == 0) {
+            return 0;
+        }
+        return colourTag;
+    }
+}
+
 void calculate_ram_total(s32 poolIndex, u32 colourTag) {
     s32 index;
     MemoryPoolSlot *slots;
     MemoryPoolSlot *curSlot;
     s32 i;
-    s32 fbSize;
 
-    switch (colourTag) {
-        case COLOUR_TAG_RED:
-            index = MEMP_TOTAL + 0;
-            break;
-        case COLOUR_TAG_BLACK:
-            index = MEMP_TOTAL + 1;
-            break;
-        case COLOUR_TAG_BLUE:
-            index = MEMP_TOTAL + 2;
-            break;
-        case COLOUR_TAG_CYAN:
-            index = MEMP_TOTAL + 3;
-            break;
-        case COLOUR_TAG_GREEN:
-            index = MEMP_TOTAL + 4;
-            break;
-        case COLOUR_TAG_GREY:
-            index = MEMP_TOTAL + 5;
-            break;
-        case COLOUR_TAG_MAGENTA:
-            index = MEMP_TOTAL + 6;
-            break;
-        case COLOUR_TAG_SEMITRANS_GREY:
-            index = MEMP_TOTAL + 7;
-            break;
-        case COLOUR_TAG_WHITE:
-            index = MEMP_TOTAL + 8;
-            break;
-        case COLOUR_TAG_YELLOW:
-            index = MEMP_TOTAL + 9;
-            break;
-        case COLOUR_TAG_ORANGE:
-            index = MEMP_TOTAL + 10;
-            break;
-        case COLOUR_TAG_SEMITRANS_GREEN:
-            index = MEMP_TOTAL + 11;
-            break;
-        default:
-            if (colourTag > MEMP_TOTAL || colourTag == 0) {
-                return;
-            }
-            index = colourTag;
-    }
+    index = puppyprint_colourtag(colourTag);
 
     slots = gMemoryPools[poolIndex].slots;
     gPuppyPrint.ramPools[MEMP_OVERALL] -= gPuppyPrint.ramPools[index];

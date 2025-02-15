@@ -9,7 +9,7 @@
 typedef enum MemoryPools {
     POOL_MAIN,
     POOL_OBJECT,
-    POOL_UNUSED_2,
+    POOL_AUDIO,
     POOL_UNUSED_3,
 
     POOL_COUNT
@@ -141,5 +141,7 @@ void mempool_free_addr(u8 *address);
 MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag);
 void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag);
 u8 *align16(u8 *address);
+s32 puppyprint_colourtag(s32 colourTag);
+void *mempool_alloc_audio(MemoryPoolSlot *slots, s32 size, s32 colourTag);
 
 #endif

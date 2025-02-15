@@ -26,6 +26,7 @@
 #include "audio_internal.h"
 #include "audio.h"
 #include "src/memory.h"
+#include "src/audio.h"
 
 /*
  * WARNING: THE FOLLOWING CONSTANT MUST BE KEPT IN SYNC
@@ -134,8 +135,8 @@ void alFxNew(ALFx *r, ALSynConfig *c, s16 bus, UNUSED ALHeap *hp) {
     j = 0;
     r->section_count = param[j++];
     r->length 	     = param[j++];
-    r->delay = mempool_alloc_safe(sizeof(ALDelay) * r->section_count, MEMP_AUDIO);
-    r->base = mempool_alloc_safe(sizeof(s16) * r->length, MEMP_AUDIO);
+    r->delay = mempool_alloc_audio(gAudioPool, sizeof(ALDelay) * r->section_count, MEMP_AUDIO);
+    r->base = mempool_alloc_audio(gAudioPool, sizeof(s16) * r->length, MEMP_AUDIO);
     r->input = r->base;
     for ( k=0; k < r->length; k++)
 	r->base[k] = 0;
@@ -167,8 +168,8 @@ void alFxNew(ALFx *r, ALSynConfig *c, s16 bus, UNUSED ALHeap *hp) {
             d->rsgain 	 = (((f32) param[j++])/CONVERT) * LENGTH;
             d->rsval	 = 1.0f;
             d->rsdelta	 = 0.0f;
-            d->rs 	 = mempool_alloc_safe(sizeof(ALResampler), MEMP_AUDIO);
-            d->rs->state = mempool_alloc_safe(sizeof(RESAMPLE_STATE), MEMP_AUDIO);
+            d->rs 	 = mempool_alloc_audio(gAudioPool, sizeof(ALResampler), MEMP_AUDIO);
+            d->rs->state = mempool_alloc_audio(gAudioPool, sizeof(RESAMPLE_STATE), MEMP_AUDIO);
             d->rs->delta = 0.0f;
             d->rs->first = 1;
         } else {
@@ -177,8 +178,8 @@ void alFxNew(ALFx *r, ALSynConfig *c, s16 bus, UNUSED ALHeap *hp) {
             j++;
         }
         if (param[j]) {
-            d->lp = mempool_alloc_safe(sizeof(ALLowPass), MEMP_AUDIO);
-            d->lp->fstate = mempool_alloc_safe(sizeof(POLEF_STATE), MEMP_AUDIO);
+            d->lp = mempool_alloc_audio(gAudioPool, sizeof(ALLowPass), MEMP_AUDIO);
+            d->lp->fstate = mempool_alloc_audio(gAudioPool, sizeof(POLEF_STATE), MEMP_AUDIO);
             d->lp->fc = param[j++];
             init_lpfilter(d->lp);
         } else {

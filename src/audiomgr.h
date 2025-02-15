@@ -11,7 +11,7 @@
 
 #define MAX_UPDATES             32
 #define MAX_EVENTS              32
-#define AUDIO_HEAP_SIZE         0x29000
+#define AUDIO_HEAP_SIZE         0x50000
 
 #define MAX_VOICES              22
 #define EXTRA_SAMPLES           96
