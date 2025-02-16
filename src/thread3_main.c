@@ -236,7 +236,7 @@ void init_game(void) {
     get_platform();
     init_config();
     load_game_text_table();
-    puppyprint_log("Game booted in %2.3fs.\n", (f64) ((f32)(osGetCount()) / 46875000.0f));
+    puppyprint_log(LOG_INFO, "Game booted in %2.3fs.\n", (f64) ((f32)(osGetCount()) / 46875000.0f));
     osTvType = TV_TYPE_NTSC; // Temporary while PAL is still broken
 
     osSetTime(0);
@@ -455,7 +455,7 @@ void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     mempool_free_timer(2);
     rumble_init(TRUE);
     puppyprint_load_snapshot(PP_LOAD_TOTAL, profiler_get_timer());
-    puppyprint_log("Level [%s] loaded in %2.3fs.\n", get_level_name(levelId),
+    puppyprint_log(LOG_INFO, "Level [%s] loaded in %2.3fs.\n", get_level_name(levelId),
                    (f64) (f32)(gPuppyPrint.loadTimes[PP_LOAD_TOTAL] / 46875000.0f));
 }
 
@@ -947,7 +947,7 @@ void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     mempool_free_timer(2);
     puppyprint_load_snapshot(PP_LOAD_TOTAL, profiler_get_timer());
     if (gBootTimer == 0) {
-        puppyprint_log("Level [%s] (Menu) loaded in %2.3fs.\n", get_level_name(levelId),
+        puppyprint_log(LOG_INFO, "Level [%s] (Menu) loaded in %2.3fs.\n", get_level_name(levelId),
                        (f64) (f32)(gPuppyPrint.loadTimes[PP_LOAD_TOTAL] / 46875000.0f));
     }
 }

@@ -256,7 +256,7 @@ void gfxtask_wait(void) {
                 rumble_kill();
                 stop_thread30();
                 transition_begin(&gResetTransition);
-                puppyprint_log("Resetting N64.\n");
+                puppyprint_log(LOG_INFO, "Resetting N64.\n");
             }
         }
     }

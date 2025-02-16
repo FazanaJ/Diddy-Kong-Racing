@@ -52,7 +52,7 @@ void get_platform(void) {
 
     if (__osBbIsBb) {
         gPlatform = IQUE | CONSOLE;
-        puppyprint_log("iQue Player detected.\n");
+        puppyprint_log(LOG_INFO, "iQue Player detected.\n");
         return;
     }
 
@@ -79,11 +79,11 @@ void get_platform(void) {
     // Piece together a string to print out.
     if (gPlatform & EMULATOR) {
         if (gPlatform & ARES) {
-            puppyprint_log("AresN64/Simple64 Emulator detected.\n");
+            puppyprint_log(LOG_INFO, "AresN64/Simple64 Emulator detected.\n");
         } else if (gPlatform & PJ64) {
-            puppyprint_log("Project 64 detected.\n");
+            puppyprint_log(LOG_INFO, "Project 64 detected.\n");
         } else {
-            puppyprint_log("N64 Emulator detected.\n");
+            puppyprint_log(LOG_INFO, "N64 Emulator detected.\n");
         }
     } else {
         if (osTvType == TV_TYPE_PAL) {
@@ -93,7 +93,7 @@ void get_platform(void) {
         } else {
             puppyprintf(region, "MPAL");
         }
-        puppyprint_log("%s N64 Console detected.\n", region);
+        puppyprint_log(LOG_INFO, "%s N64 Console detected.\n", region);
     }
     // Skip all this on console. This is emulator related info.
     if ((gPlatform & CONSOLE) == FALSE) {
@@ -103,7 +103,7 @@ void get_platform(void) {
         } else {
             cf = 1;
         }
-        puppyprint_log("Counter Factor Setting: %d.\n", cf);
+        puppyprint_log(LOG_INFO, "Counter Factor Setting: %d.\n", cf);
     }
 #endif
 }
@@ -148,19 +148,19 @@ void find_expansion_pak(void) {
 #ifdef FORCE_4MB_MEMORY
     gExpansionPak = FALSE;
     gUseExpansionMemory = FALSE;
-    puppyprint_log("4MB Memory Forced.\n");
+    puppyprint_log(LOG_INFO, "4MB Memory Forced.\n");
     return;
 #endif
     if (osGetMemSize() > 0x400000) {
         gExpansionPak = TRUE;
-        puppyprint_log("Expansion Pak Detected\n");
+        puppyprint_log(LOG_INFO, "Expansion Pak Detected\n");
 #if EXPANSION_PAK_SUPPORT == 0
         gUseExpansionMemory = FALSE;
 #else
         gUseExpansionMemory = TRUE;
 #endif
     } else {
-        puppyprint_log("Expansion Pak Missing\n");
+        puppyprint_log(LOG_INFO, "Expansion Pak Missing\n");
         gExpansionPak = FALSE;
         gUseExpansionMemory = FALSE;
     }
@@ -206,6 +206,7 @@ void thread1_main(UNUSED void *unused) {
     find_expansion_pak();
 #ifdef PUPPYPRINT_DEBUG
     bzero(&gPuppyPrint, sizeof(gPuppyPrint));
+    gPuppyPrint.logLevel = LOG_EXTRA;
 #endif
     osCreateThread(&gThread3, 3, &thread3_main, 0, &gThread3Stack[THREAD3_STACK / sizeof(u64)], 10);
     gThread3Stack[THREAD3_STACK / sizeof(u64)] = 0;
@@ -886,8 +887,18 @@ void render_profiler(void) {
     }
 }
 
-void puppyprint_log(const char *str, ...) {
-    s32 i;
+char *gLogLevelStrings[] = {
+    "FATAL - ",
+    "ERROR - ",
+    "WARN  - ",
+    "INFO  - ",
+    "EXTRA - ",
+};
+
+void puppyprint_log(s32 logType, const char *str, ...) {
+    if (logType > gPuppyPrint.logLevel) {
+        return;
+    }
     s32 len;
     char textBytes[127];
     va_list arguments;
@@ -899,8 +910,8 @@ void puppyprint_log(const char *str, ...) {
         return;
     }
     textBytes[len] = '\0';
-    debug_printf(textBytes);
-    for (i = 0; i < (NUM_LOG_LINES - 1); i++) {
+    debug_printf("%s %s", gLogLevelStrings[logType], textBytes);
+    for (int i = 0; i < (NUM_LOG_LINES - 1); i++) {
         bcopy(gPuppyPrint.logText[i + 1], gPuppyPrint.logText[i], 127);
     }
     bcopy(textBytes, gPuppyPrint.logText[NUM_LOG_LINES - 1], len + 1);

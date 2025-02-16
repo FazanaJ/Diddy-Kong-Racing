@@ -12,6 +12,7 @@
 #include "game.h"
 #include "thread3_main.h"
 #include "controller.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -798,16 +799,21 @@ void save_readwrite(u64 *data, u32 offset, u32 size, s32 type) {
     s32 (*func)(OSMesgQueue *, s32 address, u8 *buffer);
 #if EEP4K || EEP16K
     if (type == OS_READ) {
+        puppyprint_log(LOG_EXTRA, "Reading 0x%X bytes at 0x%X from eeprom.\n", size, offset);
         func = osEepromRead;
     } else {
+        puppyprint_log(LOG_EXTRA, "Writing 0x%X bytes at 0x%X from eeprom.\n", size, offset);
         func = osEepromWrite;
     }
+    u32 first = osGetCount();
     for (i = 0, addr = offset / sizeof(u64); i < size / sizeof(u64); i++, addr++) {
         (*func)(&sSIMesgQueue, addr, (u8 *) &data[i]);
     }
 #elif SRAM
+    u32 first = osGetCount();
     nuPiReadWriteSram(offset, (u8 *) &data[0], size, type);
 #endif
+    puppyprint_log(LOG_EXTRA, "Finished (%2.3fs)\n", (f64) (f32)((osGetCount() - first) / 46875000.0f));
 }
 
 // Returns TRUE / FALSE for whether a given save file is a new game. Also populates the settings object.

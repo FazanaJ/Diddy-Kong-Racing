@@ -18,3 +18,10 @@
 .ascii "ED"       # cartridge ID
 .ascii "E"        # country
 .byte  0x10       # version
+
+# 0 - NONE
+# 1 - EEP4K
+# 2 - EEP16K
+# 3 - SRAM
+# 4 - SRAM768K
+# 5 - Flash

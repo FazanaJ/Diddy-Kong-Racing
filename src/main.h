@@ -61,6 +61,14 @@ enum DebugPages {
     PAGE_COUNT
 };
 
+enum LogLevels {
+    LOG_FATAL,
+    LOG_ERROR,
+    LOG_WARN,
+    LOG_INFO,
+    LOG_EXTRA,
+};
+
 #define PP_PAGES \
     "Minimal", \
     "Overview", \
@@ -286,6 +294,7 @@ struct PuppyPrint {
     u8 rspAudIter;
     u8 rspYldIter;
     u8 rspYield;
+    u8 logLevel;
     s8 menuOption; // Current option in the page menu.
     char logText[NUM_LOG_LINES][127];
 };
@@ -303,7 +312,7 @@ void puppyprint_calculate_average_times(void);
 void profiler_add_obj(u32 objID, u32 time, ObjectHeader *header);
 void update_rdp_profiling(void);
 void profiler_snapshot(s32 eventID);
-void puppyprint_log(const char *str, ...);
+void puppyprint_log(s32 type, const char *str, ...);
 void puppyprint_render_coverage(Gfx **dList);
 void profiler_reset_objects(void);
 void calculate_ram_total(s32 poolIndex, u32 colourTag);
@@ -379,6 +388,7 @@ int puppyprintf(char *dst, const char *fmt, ...);
 void crash_screen_init(void);
 void get_platform(void);
 void puppyprint_assert(char *str, ...);
+void puppyprint_assert_nonblocking(char *str, ...);
 u32 osGetMemSize(void);
 
 #endif
