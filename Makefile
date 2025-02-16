@@ -332,6 +332,7 @@ $(GCC_SAFE_FILES): CFLAGS := -c -DNDEBUG -DAVOID_UB -O2 $(INCLUDE_CFLAGS) $(DEF_
 	-Wall \
 	-Werror \
 	-Wno-address \
+	-Wno-unused-function \
 	-Wno-aggressive-loop-optimizations \
 	-Wno-array-bounds \
 	-Wno-int-in-bool-context \
