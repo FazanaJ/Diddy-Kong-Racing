@@ -352,7 +352,7 @@ $(GCC_SAFE_FILES): CFLAGS := -c -DNDEBUG -DAVOID_UB -O2 $(INCLUDE_CFLAGS) $(DEF_
 $(BUILD_DIR)/src/main.o: CFLAGS += -Os
 $(BUILD_DIR)/src/save_data.o: CFLAGS += -O2
 $(BUILD_DIR)/src/object_functions.o: CFLAGS += -Os
-$(BUILD_DIR)/lib/src/mips1/sc/sched.o: CFLAGS += -Ofast
+$(BUILD_DIR)/lib/src/mips1/sc/sched.o: CFLAGS += -Os
 
 ######################## Targets #############################
 

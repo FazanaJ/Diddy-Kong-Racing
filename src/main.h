@@ -269,7 +269,7 @@ struct PuppyPrint {
     u16 objTimers[NUM_OBJECT_PRINTS][NUM_PERF_ITERATIONS + 2]; // Timers for individual object IDs
     u8 objCounts[NUM_OBJECT_PRINTS]; // Tracks the number of objects of each type.
     u32 mainTimerPoints[2][PP_MAIN_TIMES_TOTAL]; // Timers for individual threads.
-    u32 ramPools[MEMP_TOTAL + 12]; // RAM totals for each colour tag.
+    u32 ramPools[MEMP_TOTAL]; // RAM totals for each colour tag.
     u16 menuScroll; // Page menu scroll value to offset the text.
     s16 pageScroll; // Generic scroller var for a page. Reset when swapped.
     u16 textureLoads; // Tracked number of texture loads.
@@ -343,8 +343,8 @@ extern u32 gLoadAllocTime;
 extern u32 gLoadObjectTime;
 extern u32 gLoadEtcTime;
 extern u32 gLoadTotalTime;
-extern u8 sRAMPrintOrder[MEMP_TOTAL + 13];
-extern char *sPuppyprintMemColours[MEMP_TOTAL + 13];
+extern u8 sRAMPrintOrder[MEMP_TOTAL];
+extern char *sPuppyprintMemColours[MEMP_TOTAL];
 #else
 
 #define update_rdp_profiling()

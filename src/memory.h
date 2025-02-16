@@ -90,6 +90,18 @@ enum MemoryTags {
     MEMP_SAVES,
     MEMP_SUBPOOL,
     MEMP_POOLSLOTS,
+    MEMP_RED,
+    MEMP_BLACK,
+    MEMP_BLUE,
+    MEMP_CYAN,
+    MEMP_GREEN,
+    MEMP_GREY,
+    MEMP_MAGENTA,
+    MEMP_GREYXLU,
+    MEMP_WHITE,
+    MEMP_YELLOW,
+    MEMP_ORANGE,
+    MEMP_GREENXLU,
 
     MEMP_TOTAL
 };
@@ -101,13 +113,10 @@ typedef struct MemoryPoolSlot {
 /* 0x08 */ u8 flags;
     // 0x00 = Slot is free 
     // 0x01 = Slot is being used?
-/* 0x09 */ u8 padding;
+/* 0x09 */ u8 colourTag;
 /* 0x0A */ s16 prevIndex;
 /* 0x0C */ s16 nextIndex;
 /* 0x0E */ s16 index;
-#ifdef PUPPYPRINT_DEBUG
-/* 0x10 */ u32 colourTag;
-#endif
 } MemoryPoolSlot;
 
 /* Size: 0x10 bytes */

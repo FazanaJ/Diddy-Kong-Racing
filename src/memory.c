@@ -160,7 +160,7 @@ MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag
     pool = &gMemoryPools[poolIndex];
     if ((pool->curNumSlots + 1) == (*pool).maxNumSlots) {
         interrupts_enable(intFlags);
-        puppyprint_assert("Out of slots (%X)", colourTag);
+        puppyprint_assert("Out of slots (%X)", puppyprint_colourtag(colourTag));
         puppyprint_load_snapshot(PP_LOAD_MALLOC, profiler_get_timer());
         return NULL;
     }
@@ -177,7 +177,6 @@ MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag
             if (curSlot->size >= size && curSlot->size < slotSize) {
                 slotSize = curSlot->size;
                 currIndex = nextIndex;
-                break;
             }
         }
         nextIndex = curSlot->nextIndex;
@@ -438,6 +437,7 @@ s32 mempool_slot_assign(MemoryPools poolIndex, s32 slotIndex, s32 size, s32 slot
     s32 index;
     s32 nextIndex;
     s32 poolSize;
+    s32 tag = puppyprint_colourtag(colourTag);
 
     pool = &gMemoryPools[poolIndex];
     poolSlots = pool->slots;
@@ -445,7 +445,7 @@ s32 mempool_slot_assign(MemoryPools poolIndex, s32 slotIndex, s32 size, s32 slot
     poolSize = poolSlots[slotIndex].size;
     poolSlots[slotIndex].size = size;
 #ifdef PUPPYPRINT_DEBUG
-    poolSlots[slotIndex].colourTag = colourTag;
+    poolSlots[slotIndex].colourTag = tag;
 #endif
     index = poolSlots[pool->curNumSlots].index;
     if (size < poolSize) {
@@ -463,7 +463,7 @@ s32 mempool_slot_assign(MemoryPools poolIndex, s32 slotIndex, s32 size, s32 slot
         if (nextIndex != MEMSLOT_NONE) {
             poolSlots[nextIndex].prevIndex = index;
         }
-        calculate_ram_total(poolIndex, colourTag);
+        calculate_ram_total(poolIndex, tag);
         return index;
     }
     return slotIndex;
@@ -483,31 +483,31 @@ u8 *align16(u8 *address) {
 
 #ifdef PUPPYPRINT_DEBUG
 s32 puppyprint_colourtag(s32 colourTag) {
-switch (colourTag) {
+    switch (colourTag) {
     case COLOUR_TAG_RED:
-        return MEMP_TOTAL + 0;
+        return MEMP_RED;
     case COLOUR_TAG_BLACK:
-        return MEMP_TOTAL + 1;
+        return MEMP_BLACK;
     case COLOUR_TAG_BLUE:
-        return MEMP_TOTAL + 2;
+        return MEMP_BLUE;
     case COLOUR_TAG_CYAN:
-        return MEMP_TOTAL + 3;
+        return MEMP_CYAN;
     case COLOUR_TAG_GREEN:
-        return MEMP_TOTAL + 4;
+        return MEMP_GREEN;
     case COLOUR_TAG_GREY:
-        return MEMP_TOTAL + 5;
+        return MEMP_GREY;
     case COLOUR_TAG_MAGENTA:
-        return MEMP_TOTAL + 6;
+        return MEMP_MAGENTA;
     case COLOUR_TAG_SEMITRANS_GREY:
-        return MEMP_TOTAL + 7;
+        return MEMP_GREYXLU;
     case COLOUR_TAG_WHITE:
-        return MEMP_TOTAL + 8;
+        return MEMP_WHITE;
     case COLOUR_TAG_YELLOW:
-        return MEMP_TOTAL + 9;
+        return MEMP_YELLOW;
     case COLOUR_TAG_ORANGE:
-        return MEMP_TOTAL + 10;
+        return MEMP_ORANGE;
     case COLOUR_TAG_SEMITRANS_GREEN:
-        return MEMP_TOTAL + 11;
+        return MEMP_GREENXLU;
     default:
         if (colourTag > MEMP_TOTAL || colourTag == 0) {
             return 0;

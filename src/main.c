@@ -252,7 +252,7 @@ u32 sTimerTemp = 0;
 u8 gShowHiddenGeometry = FALSE;
 u8 gShowHiddenObjects = FALSE;
 u8 sPrintOrder[PP_RSP_GFX];
-u8 sRAMPrintOrder[MEMP_TOTAL + 13];
+u8 sRAMPrintOrder[MEMP_TOTAL];
 u16 sObjPrintOrder[NUM_OBJECT_PRINTS];
 struct PuppyPrint gPuppyPrint;
 char *sPuppyPrintStrings[] = { PP_STRINGS };
@@ -460,10 +460,10 @@ void profiler_snapshot(s32 eventID) {
 
 #define TEXT_OFFSET 10
 
-void draw_blank_box(s32 x1, s32 y1, s32 x2, s32 y2, u32 colour) {
-    gDPSetPrimColor(gCurrDisplayList++, 0, 0, (colour << 24) & 0xFF, (colour << 16) & 0xFF, (colour << 8) & 0xFF,
+void draw_blank_box(Gfx **gfx, s32 x1, s32 y1, s32 x2, s32 y2, u32 colour) {
+    gDPSetPrimColor((*gfx)++, 0, 0, (colour << 24) & 0xFF, (colour << 16) & 0xFF, (colour << 8) & 0xFF,
                     (colour) & 0xFF);
-    gDPPipeSync(gCurrDisplayList++);
+    gDPPipeSync((*gfx)++);
     gDPSetCombineMode(gCurrDisplayList++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
     if (x1 < 0) {
         x1 = 0;
@@ -478,17 +478,17 @@ void draw_blank_box(s32 x1, s32 y1, s32 x2, s32 y2, u32 colour) {
         y2 = gScreenHeight;
     }
     if ((colour & 0xFF) == 255) {
-        gDPSetRenderMode(gCurrDisplayList++, G_RM_OPA_SURF, G_RM_OPA_SURF2);
+        gDPSetRenderMode((*gfx)++, G_RM_OPA_SURF, G_RM_OPA_SURF2);
     } else {
-        gDPSetRenderMode(gCurrDisplayList++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
+        gDPSetRenderMode((*gfx)++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
     }
-    gDPSetCycleType(gCurrDisplayList++, G_CYC_1CYCLE);
-    gDPFillRectangle(gCurrDisplayList++, x1, y1, x2, y2);
+    gDPSetCycleType((*gfx)++, G_CYC_1CYCLE);
+    gDPFillRectangle((*gfx)++, x1, y1, x2, y2);
 }
 
 void puppyprint_render_minimal(void) {
     char textBytes[16];
-    draw_blank_box(TEXT_OFFSET - 2, 8, 112, 50 + 2, 0x0000007F);
+    draw_blank_box(&gCurrDisplayList, TEXT_OFFSET - 2, 8, 112, 50 + 2, 0x0000007F);
     set_text_font(ASSET_FONTS_SMALLFONT);
     set_text_colour(255, 255, 255, 255, 255);
     set_text_background_colour(0, 0, 0, 0);
@@ -515,7 +515,7 @@ void puppyprint_render_overview(void) {
     s32 y;
     puppyprint_render_minimal();
     // Draw triangle, vertex and overall RAM on bottom left.
-    draw_blank_box(((gScreenWidth / 2) / 3) - 42, gScreenHeight - 50, ((gScreenWidth / 2) / 3) + 62, gScreenHeight - 6,
+    draw_blank_box(&gCurrDisplayList, ((gScreenWidth / 2) / 3) - 42, gScreenHeight - 50, ((gScreenWidth / 2) / 3) + 62, gScreenHeight - 6,
                    0x0000007F);
     puppyprintf(textBytes, "Textures: %d", gPuppyPrint.textureLoads);
     draw_text(&gCurrDisplayList, ((gScreenWidth / 2) / 3) + 10, gScreenHeight - 48, textBytes, ALIGN_TOP_CENTER);
@@ -529,7 +529,7 @@ void puppyprint_render_overview(void) {
     draw_text(&gCurrDisplayList, ((gScreenWidth / 2) / 3) + 10, gScreenHeight - 18, textBytes, ALIGN_TOP_CENTER);
 
     // Draw important timings on the top right.
-    draw_blank_box(gScreenWidth - 124, 8, gScreenWidth - 8, 74, 0x0000007F);
+    draw_blank_box(&gCurrDisplayList, gScreenWidth - 124, 8, gScreenWidth - 8, 74, 0x0000007F);
     puppyprintf(textBytes, "Game: %dus", gPuppyPrint.gameTime[PERF_TOTAL]);
     draw_text(&gCurrDisplayList, gScreenWidth - 122, 10, textBytes, ALIGN_TOP_LEFT);
     puppyprintf(textBytes, "(%d%%)", gPuppyPrint.gameTime[PERF_TOTAL] / 333);
@@ -555,7 +555,7 @@ void puppyprint_render_breakdown(void) {
 
     puppyprint_render_minimal();
     y = 8;
-    draw_blank_box(gScreenWidth - 144, 0, gScreenWidth, gScreenHeight, 0x00000064);
+    draw_blank_box(&gCurrDisplayList, gScreenWidth - 144, 0, gScreenWidth, gScreenHeight, 0x00000064);
     gDPPipeSync(gCurrDisplayList++);
     set_text_font(ASSET_FONTS_SMALLFONT);
     set_text_colour(255, 255, 255, 255, 255);
@@ -583,7 +583,7 @@ void puppyprint_render_rcp(void) {
     puppyprint_render_minimal();
 
     
-    draw_blank_box(gScreenWidth - 100, 0, gScreenWidth, gScreenHeight, 0x00000064);
+    draw_blank_box(&gCurrDisplayList, gScreenWidth - 100, 0, gScreenWidth, gScreenHeight, 0x00000064);
     puppyprintf(textBytes, "CPU");
     draw_text(&gCurrDisplayList, gScreenWidth - 50, y, textBytes, ALIGN_TOP_CENTER);
     puppyprintf(textBytes, "Thread 3:");
@@ -661,7 +661,7 @@ void puppyprint_render_memory(void) {
     u32 i;
 
     y = 36 - gPuppyPrint.pageScroll;
-    draw_blank_box(gScreenWidth - 160, 0, gScreenWidth, gScreenHeight, 0x00000064);
+    draw_blank_box(&gCurrDisplayList, gScreenWidth - 160, 0, gScreenWidth, gScreenHeight, 0x00000064);
     gDPPipeSync(gCurrDisplayList++);
     set_text_font(ASSET_FONTS_SMALLFONT);
     set_text_colour(255, 255, 255, 255, 255);
@@ -676,7 +676,7 @@ void puppyprint_render_memory(void) {
     puppyprintf(textBytes, "Total 0x%06X", TOTALRAM);
     draw_text(&gCurrDisplayList, gScreenWidth - 78, 18, textBytes, ALIGN_TOP_CENTER);
     gDPSetScissor(gCurrDisplayList++, G_SC_NON_INTERLACE, gScreenWidth - 156, 32, gScreenWidth, gScreenHeight);
-    for (i = 1; i < MEMP_TOTAL + 12; i++) {
+    for (i = 1; i < MEMP_TOTAL; i++) {
         if (gPuppyPrint.ramPools[sRAMPrintOrder[i]] == 0) {
             continue;
         }
@@ -702,7 +702,7 @@ void puppyprint_render_objects(void) {
 
     puppyprint_render_minimal();
     y = 8;
-    draw_blank_box(gScreenWidth - 144, 0, gScreenWidth, gScreenHeight, 0x00000064);
+    draw_blank_box(&gCurrDisplayList, gScreenWidth - 144, 0, gScreenWidth, gScreenHeight, 0x00000064);
     gDPPipeSync(gCurrDisplayList++);
     set_text_font(ASSET_FONTS_SMALLFONT);
     set_text_colour(255, 255, 255, 255, 255);
@@ -730,7 +730,7 @@ void puppyprint_render_log(void) {
     s32 y;
     s32 sineTime = 224 + (sins_f(sTimerTemp * 2500.0f) * 32.0f);
     s32 firstDraw = TRUE;
-    draw_blank_box(0, 0, gScreenWidth, gScreenHeight, 0x00000064);
+    draw_blank_box(&gCurrDisplayList, 0, 0, gScreenWidth, gScreenHeight, 0x00000064);
     set_text_font(ASSET_FONTS_SMALLFONT);
     set_text_colour(255, 255, 255, 255, 255);
     set_text_background_colour(0, 0, 0, 0);
@@ -778,7 +778,7 @@ void puppyprint_render_load(void) {
 
     puppyprint_render_minimal();
     y = 8;
-    draw_blank_box(gScreenWidth - 144, 0, gScreenWidth, gScreenHeight, 0x00000064);
+    draw_blank_box(&gCurrDisplayList, gScreenWidth - 144, 0, gScreenWidth, gScreenHeight, 0x00000064);
     gDPPipeSync(gCurrDisplayList++);
     set_text_font(ASSET_FONTS_SMALLFONT);
     set_text_colour(255, 255, 255, 255, 255);
@@ -824,7 +824,7 @@ void render_page_menu(void) {
     s32 i;
     s32 y;
     s32 sineTime = 192 + (sins_f(sTimerTemp * 5000.0f) * 64.0f);
-    draw_blank_box(TEXT_OFFSET - 2, 56, 112, 108 + 2, 0x0000007F);
+    draw_blank_box(&gCurrDisplayList, TEXT_OFFSET - 2, 56, 112, 108 + 2, 0x0000007F);
     set_text_font(ASSET_FONTS_SMALLFONT);
     set_text_background_colour(0, 0, 0, 0);
     set_kerning(FALSE);
@@ -947,20 +947,20 @@ void calculate_print_order(void) {
 
 void calculate_ram_print_order(void) {
     u32 i, j, min_idx;
-    for (i = 1; i < MEMP_TOTAL + 12; i++) {
+    for (i = 1; i < MEMP_TOTAL; i++) {
         sRAMPrintOrder[i] = i;
     }
-    gPuppyPrint.ramPools[MEMP_CODE] = (u32) &gMainMemoryPool - 0x80000000;
+    gPuppyPrint.ramPools[MEMP_CODE] = (u32) &gMainMemoryPool - K0BASE;
 
     // One by one move boundary of unsorted subarray
-    for (i = 1; i < MEMP_TOTAL + 12; i++) {
+    for (i = 1; i < MEMP_TOTAL; i++) {
 
         if (gPuppyPrint.ramPools[sRAMPrintOrder[i]] == 0) {
             continue;
         }
         // Find the minimum element in unsorted array
         min_idx = i;
-        for (j = i + 1; j < MEMP_TOTAL + 12; j++) {
+        for (j = i + 1; j < MEMP_TOTAL; j++) {
             if (gPuppyPrint.ramPools[sRAMPrintOrder[j]] > gPuppyPrint.ramPools[sRAMPrintOrder[min_idx]]) {
                 min_idx = j;
             }

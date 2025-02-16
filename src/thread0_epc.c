@@ -430,17 +430,18 @@ void crash_page_memory(void) {
                 (f64) (((f32) (TOTALRAM - gPuppyPrint.ramPools[MEMP_OVERALL] - gPuppyPrint.ramPools[MEMP_CODE]) / (f32) TOTALRAM) * 100.0f));
     sCrashMaxScroll = -((gScreenHeight - 24));
     y = sCrashY + 5 - sCrashScroll;
-    for (i = 1; i < MEMP_TOTAL + 12; i++) {
+    for (i = 1; i < MEMP_TOTAL; i++) {
         if (gPuppyPrint.ramPools[sRAMPrintOrder[i]] == 0) {
             continue;
         }
+        debug_printf("%02X %s\t\t0x%X (%2.2f%%)\n", i, sPuppyprintMemColours[sRAMPrintOrder[i]], gPuppyPrint.ramPools[sRAMPrintOrder[i]],
+                        (f64) (((f32) gPuppyPrint.ramPools[sRAMPrintOrder[i]] / (f32) TOTALRAM) * 100.0f));
         sCrashMaxScroll += 10;
         if (y < 24 || y > gScreenHeight - 16) {
             y += 10;
             continue;
         }
-        debug_printf("%02X %s\t\t0x%X (%2.2f%%)\n", i, sPuppyprintMemColours[sRAMPrintOrder[i]], gPuppyPrint.ramPools[sRAMPrintOrder[i]],
-        (f64) (((f32) gPuppyPrint.ramPools[sRAMPrintOrder[i]] / (f32) TOTALRAM) * 100.0f));
+        
         crash_screen_print(sCrashX + 10, y, "%02X %s", i, sPuppyprintMemColours[sRAMPrintOrder[i]]);
         crash_screen_print(sCrashX + 120, y, "0x%X (%2.2f%%)", gPuppyPrint.ramPools[sRAMPrintOrder[i]],
         (f64) (((f32) gPuppyPrint.ramPools[sRAMPrintOrder[i]] / (f32) TOTALRAM) * 100.0f));
@@ -484,9 +485,12 @@ void crash_ram_dump(void) {
     int i;
     s32 colourTag;
     MemoryPoolSlot *slot;
+    u32 ramTotal = osGetMemSize();
 
     for (i = 0; i <= gNumberOfMemoryPools; i++) {
-        debug_printf("------------- Pool: %d\t Slots: %d/%d -------------\n", i, gMemoryPools[i].curNumSlots, gMemoryPools[i].maxNumSlots);
+        debug_printf("------------- Pool: %d\t Size: %X (%2.3fKiB)\t %2.2f%%\t Slots: %d/%d -------------\n", i, 
+        gMemoryPools[i].size, (double) gMemoryPools[i].size / 1024.0, 
+        (double) ((f32) gMemoryPools[i].size / (f32) ramTotal) * 100.0, gMemoryPools[i].curNumSlots, gMemoryPools[i].maxNumSlots);
         slot = &gMemoryPools[i].slots[0];
         
         do {
@@ -501,9 +505,11 @@ void crash_ram_dump(void) {
             }
 
             if (flags == SLOT_FREE) {
-                debug_printf("Pool: %d Free Slot \t\t\t\t\t Size: 0x%X\t Addr: %X\n", i, slot->size, slot->data);
+                debug_printf("Pool: %d Idx: %d   \t Free Slot\t\t\t\t\t Size: 0x%X\t (%2.3fKiB) \t %2.2f%%\t Addr: %X\n", i, slot->index, slot->size, (double) slot->size / 1024.0, 
+                (double) ((f32) slot->size / (f32) ramTotal) * 100.0, slot->data);
             } else {
-                debug_printf("Pool: %d %s\t Tag: %s \t\t Size: 0x%X \t Addr: %X\n", i, sMemDumpStrings[flags], sPuppyprintMemColours[colourTag], slot->size, slot->data);
+                debug_printf("Pool: %d Idx: %d   \t %s\t Tag: %s \t\t Size: 0x%X\t (%2.3fKiB) \t %2.2f%% \t Addr: %X\n", i, slot->index, sMemDumpStrings[flags], 
+                sPuppyprintMemColours[colourTag], slot->size, (double) slot->size / 1024.0, (double) ((f32) slot->size / (f32) ramTotal) * 100.0, slot->data);
             }
 
             skip:
