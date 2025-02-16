@@ -25,6 +25,8 @@ typedef enum MempoolFlags {
 #define RAM_END 0x80400000
 #define EXPANSION_RAM_END 0x80800000
 #define MAIN_POOL_SLOT_COUNT 1200
+#define OBJ_POOL_SLOT_COUNT 512
+#define AUD_POOL_SLOT_COUNT 300
 #define FREE_QUEUE_SIZE 256
 #define MEMSLOT_NONE -1
 
@@ -87,6 +89,7 @@ enum MemoryTags {
     MEMP_TEMP,
     MEMP_SAVES,
     MEMP_SUBPOOL,
+    MEMP_POOLSLOTS,
 
     MEMP_TOTAL
 };

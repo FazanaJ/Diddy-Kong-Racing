@@ -225,6 +225,7 @@ enum PPLoadNames {
     "Temp Mem", \
     "Saves\t", \
     "Sub Pool\t", \
+    "Pool Slots", \
     \
     "Red\t", \
     "Black\t", \
@@ -343,7 +344,7 @@ extern u32 gLoadObjectTime;
 extern u32 gLoadEtcTime;
 extern u32 gLoadTotalTime;
 extern u8 sRAMPrintOrder[MEMP_TOTAL + 13];
-extern char *sPuppyprintMemColours[43];
+extern char *sPuppyprintMemColours[MEMP_TOTAL + 13];
 #else
 
 #define update_rdp_profiling()

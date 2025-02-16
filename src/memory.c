@@ -78,14 +78,14 @@ void mempool_init_main(void) {
  * Official name: mmAllocRegion
  */
 MemoryPoolSlot *mempool_new_sub(s32 poolDataSize, s32 numSlots) {
-    s32 size;
     MemoryPoolSlot *slots;
     u32 intFlags = interrupts_disable();
     MemoryPoolSlot *newPool;
 
-    size = poolDataSize + (numSlots * sizeof(MemoryPoolSlot));
-    slots = (MemoryPoolSlot *) mempool_alloc_safe(size, MEMP_SUBPOOL);
-    newPool = mempool_init(slots, size, numSlots);
+    slots = (MemoryPoolSlot *) mempool_alloc_safe(numSlots * sizeof(MemoryPoolSlot), MEMP_POOLSLOTS);
+    // Good thing we're not using Rust :)
+    slots[numSlots].data = (u8 *) mempool_alloc_safe(poolDataSize, MEMP_SUBPOOL);
+    newPool = mempool_init(slots, poolDataSize + (numSlots * sizeof(MemoryPoolSlot)), numSlots);
     interrupts_enable(intFlags);
     return newPool;
 }
@@ -516,29 +516,66 @@ switch (colourTag) {
     }
 }
 
+s32 puppyprint_subpool_offset(void) {
+    int flags;
+    int nextIndex;
+    int i;
+    MemoryPoolSlot *slot;
+    s32 total = 0;
+    s32 size = 0;
+
+    for (i = 1; i <= gNumberOfMemoryPools; i++) {
+        total += gMemoryPools[i].size;
+        slot = &gMemoryPools[i].slots[0];
+        
+        do {
+            flags = slot->flags;
+            nextIndex = slot->nextIndex;
+
+            if (flags) {
+                total -= slot->size;
+            }
+
+
+            slot = &gMemoryPools[i].slots[slot->nextIndex];
+        } while (nextIndex != -1);
+    }
+    gPuppyPrint.ramPools[MEMP_SUBPOOL] = total;
+    return total;
+}
+
 void calculate_ram_total(s32 poolIndex, u32 colourTag) {
     s32 index;
     MemoryPoolSlot *slots;
     MemoryPoolSlot *curSlot;
     s32 i;
 
-    if (colourTag == MEMP_SUBPOOL) {
-        gPuppyPrint.ramPools[MEMP_SUBPOOL] = 0;
-        return;
-    }
-
     index = puppyprint_colourtag(colourTag);
 
     slots = gMemoryPools[poolIndex].slots;
     gPuppyPrint.ramPools[MEMP_OVERALL] -= gPuppyPrint.ramPools[index];
     gPuppyPrint.ramPools[index] = 0;
+    s32 size = 0;
 
     for (i = 0; i != -1; i = curSlot->nextIndex) {
         curSlot = &slots[i];
         if (curSlot->flags != 0 && curSlot->colourTag == colourTag) {
             gPuppyPrint.ramPools[index] += curSlot->size;
-            gPuppyPrint.ramPools[MEMP_OVERALL] += curSlot->size;
+            size += curSlot->size;
         }
     }
+
+    if (colourTag == MEMP_POOLSLOTS) {
+        s32 add = gMemoryPools[POOL_MAIN].maxNumSlots * sizeof(MemoryPoolSlot);
+        gPuppyPrint.ramPools[index] += add;
+        size += add;
+    }
+
+    if (colourTag == MEMP_SUBPOOL || poolIndex != POOL_MAIN) {
+        gPuppyPrint.ramPools[MEMP_OVERALL] -= gPuppyPrint.ramPools[MEMP_SUBPOOL];
+        size += puppyprint_subpool_offset();
+    }
+
+    gPuppyPrint.ramPools[MEMP_OVERALL] += size;
 }
 #endif
