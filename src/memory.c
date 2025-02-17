@@ -26,6 +26,7 @@ void *gFreeQueue[FREE_QUEUE_SIZE];
 u8 gFreeQueueElementTimer[FREE_QUEUE_SIZE];
 s32 gFreeQueueCount;
 s32 gFreeQueueTimer; // Official Name: mmDelay
+u32 gRamEnd;
 
 extern MemoryPoolSlot gMainMemoryPool;
 
@@ -67,6 +68,7 @@ void mempool_init_main(void) {
     } else {
         ramEnd = RAM_END;
     }
+    gRamEnd = ramEnd;
     ramEnd -= (s32) (&gMainMemoryPool);
     mempool_init(&gMainMemoryPool, ramEnd, MAIN_POOL_SLOT_COUNT);
     mempool_free_timer(2);
@@ -88,6 +90,17 @@ MemoryPoolSlot *mempool_new_sub(s32 poolDataSize, s32 numSlots) {
     newPool = mempool_init(slots, poolDataSize + (numSlots * sizeof(MemoryPoolSlot)), numSlots);
     interrupts_enable(intFlags);
     return newPool;
+}
+
+void mempool_free_sub(MemoryPoolSlot *pool) {
+    for (int i = gNumberOfMemoryPools; i != 0; i--) {
+        if (pool == gMemoryPools[i].slots) {
+            mempool_free(gMemoryPools->slots[gMemoryPools[i].maxNumSlots].data);
+            mempool_free(gMemoryPools->slots);
+            gNumberOfMemoryPools--;
+            return;
+        }
+    }
 }
 
 /**
@@ -123,6 +136,7 @@ MemoryPoolSlot *mempool_init(MemoryPoolSlot *slots, s32 poolSize, s32 numSlots) 
     firstSlot->prevIndex = MEMSLOT_NONE;
     firstSlot->nextIndex = MEMSLOT_NONE;
     gMemoryPools[poolCount].curNumSlots++;
+    gMemoryPools[poolCount].slotData = slots[numSlots].data;
     return gMemoryPools[poolCount].slots;
 }
 

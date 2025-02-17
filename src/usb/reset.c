@@ -87,7 +87,7 @@ void reset(void) {
     reboot_disable_interrupts();
 
     resetFuncSize = (s32) ((u8 *) &reset_start_end - (u8 *) &reset_start);
-    resetFunc = (void *) ((u8 *) RAM_END - resetFuncSize);
+    resetFunc = (void *) ((u8 *) gRamEnd - resetFuncSize);
 
     // Need to copy the invalidate cache functions to the end of RAM too.
     osInvalICacheCopy = (void *) ((u8 *) resetFunc - SIZEOF_osInvalICache);

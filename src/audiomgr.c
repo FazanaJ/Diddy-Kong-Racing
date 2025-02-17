@@ -115,10 +115,7 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
     u8 *crc_region_start;
     u8 *crc_region;
 #endif
-    u32 ramEnd = RAM_END;
-    if (gUseExpansionMemory) {
-        ramEnd = 0x80800000;
-    }
+    u32 ramEnd = gRamEnd;
 
     gAudioSched = audSched;
     gAudioHeap = c->heap;
@@ -258,7 +255,6 @@ static void __amMain(UNUSED void *arg) {
                 break;
         }
 #ifdef PUPPYPRINT_DEBUG
-        gPokeThread[1] = 0;
         audioStack[0]++;
         audioStack[THREAD4_STACK / sizeof(u64) - 1]++;
         if (audioStack[THREAD4_STACK / sizeof(u64) - 1] != audioStack[0]) {

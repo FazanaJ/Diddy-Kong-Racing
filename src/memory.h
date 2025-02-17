@@ -10,7 +10,7 @@ typedef enum MemoryPools {
     POOL_MAIN,
     POOL_OBJECT,
     POOL_AUDIO,
-    POOL_UNUSED_3,
+    POOL_TEMP,
 
     POOL_COUNT
 } MemoryPools;
@@ -124,6 +124,7 @@ typedef struct MemoryPool {
 /* 0x00 */ s32 maxNumSlots;
 /* 0x04 */ s32 curNumSlots;
 /* 0x08 */ MemoryPoolSlot *slots;
+           void *slotData;
 /* 0x0C */ s32 size;
 } MemoryPool;
 
@@ -135,6 +136,7 @@ typedef struct StackInfo {
 
 extern MemoryPool gMemoryPools[POOL_COUNT];
 extern s32 gNumberOfMemoryPools;
+extern u32 gRamEnd;
 
 void mempool_init_main(void);
 MemoryPoolSlot *mempool_new_sub(s32 poolDataSize, s32 numSlots);
@@ -158,5 +160,6 @@ u8 *align16(u8 *address);
 s32 puppyprint_colourtag(s32 colourTag);
 void *mempool_alloc_audio(MemoryPoolSlot *slots, s32 size, s32 colourTag);
 void calculate_pool_remainder(void);
+void mempool_free_sub(MemoryPoolSlot *pool);
 
 #endif

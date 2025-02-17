@@ -120,6 +120,7 @@ void fb_swap(void);
 void fb_memcpy(u8 *src, u8 *dest, s32 len);
 void set_dither_filter(void);
 void fb_update(void);
+void fb_blank(void);
 
 void change_vi(OSViMode *mode, int width, int height);
 

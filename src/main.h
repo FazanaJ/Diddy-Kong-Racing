@@ -346,7 +346,6 @@ extern u32 gPrevLoadTimeObjects;
 extern u8 sPrevLoadTimer;
 extern u8 gShowHiddenGeometry;
 extern u8 gShowHiddenObjects;
-extern u32 gPokeThread[4];
 extern u32 gLoadDmaTime;
 extern u32 gLoadDecompressTime;
 extern u32 gLoadAllocTime;

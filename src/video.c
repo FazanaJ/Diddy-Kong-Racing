@@ -249,6 +249,11 @@ void detect_framebuffer(void) {
     }
 }
 
+void fb_blank(void) {
+    osViBlack(TRUE);
+    sBlackScreenTimer = 2;
+}
+
 /**
  * Wait for the finished message from the scheduler while counting up a timer,
  * then update the current framebuffer index.

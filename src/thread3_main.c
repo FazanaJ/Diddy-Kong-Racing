@@ -151,7 +151,6 @@ void thread3_main(UNUSED void *unused) {
                 break;
         }
 #ifdef PUPPYPRINT_DEBUG
-        gPokeThread[0] = 0;
         gThread3Stack[0]++;
         gThread3Stack[THREAD3_STACK / sizeof(u64) - 1]++;
         if (gThread3Stack[THREAD3_STACK / sizeof(u64) - 1] != gThread3Stack[0]) {
@@ -394,7 +393,8 @@ void main_game_loop(void) {
     gPuppyPrint.mainTimerPoints[1][PP_PROFILER_CALC] = osGetCount();
 #endif
     if (gDrawFrameTimer == 2) {
-        wcopy(gVideoCurrFramebuffer, gVideoLastFramebuffer, (gScreenWidth * gScreenHeight) * 2);
+        fb_blank();
+        //wcopy(gVideoCurrFramebuffer, gVideoLastFramebuffer, (gScreenWidth * gScreenHeight) * 2);
     }
 
     fb_update();

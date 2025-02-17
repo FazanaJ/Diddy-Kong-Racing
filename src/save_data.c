@@ -75,6 +75,9 @@ u8 input_get_id(s32 controllerIndex) {
  */
 void rumble_init(u8 canRumble) {
     gRumbleOn = canRumble;
+    if (__osBbIsBb == FALSE) { 
+        puppyprint_log(LOG_EXTRA, "Resetting rumble\n");
+    }
     if (canRumble) {
         gRumbleDetectionTimer = 121;
         gRumbleIdle = 0xF;

@@ -113,7 +113,6 @@ void thread30_track_loading(UNUSED void *arg) {
         load_level_for_menu(gThread30LevelIdToLoad, -1, gThread30CutsceneIdToLoad);
         gThread30NeedToLoadLevel = FALSE;
 #ifdef PUPPYPRINT_DEBUG
-        gPokeThread[3] = 0;
         gThread30Stack[0]++;
         gThread30Stack[THREAD30_STACK / sizeof(u64) - 1]++;
         if (gThread30Stack[THREAD30_STACK / sizeof(u64) - 1] != gThread30Stack[0]) {

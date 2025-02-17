@@ -16,7 +16,8 @@
 OSTimer sRSPGfxHangTimer;
 OSTimer sRSPAudHangTimer;
 OSTimer sRDPHangTimer;
-u8 sTimerChecks[3];
+OSTimer sSchedHangTimer;
+u8 sTimerChecks[4];
 #endif
 
 static void __scTaskComplete(OSSched *sc, OSScTask *t) {
@@ -135,7 +136,6 @@ static void __scHandleRetrace(OSSched *sc) {
     __scTryDispatch(sc);
 #ifdef PUPPYPRINT_DEBUG
     gSchedStack[0]++;
-    gPokeThread[2] = 0;
     gSchedStack[THREAD5_STACK / sizeof(u64) - 1]++;
     if (gSchedStack[THREAD5_STACK / sizeof(u64) - 1] != gSchedStack[0]) {
         puppyprint_assert("Thread 5 Stack overflow");
@@ -208,7 +208,13 @@ static void __scMain(void *arg) {
     while (1) {
         osRecvMesg(&sc->interruptQ, (OSMesg *)&msg, OS_MESG_BLOCK);
         profiler_snapshot(THREAD5_START);
+        if (sTimerChecks[3] == FALSE && gPlatform & CONSOLE) {
+            osSetTimer(&sSchedHangTimer, OS_USEC_TO_CYCLES(20000), (OSTime) 0, &gCrashScreen.mesgQueue, (OSMesg) MESG_TASK_FAILED);
+            sTimerChecks[3] = TRUE;
+        }
         msg(sc);
+        sTimerChecks[3] = FALSE;
+        osStopTimer(&sSchedHangTimer);
         profiler_snapshot(THREAD5_END);
     }
 }
