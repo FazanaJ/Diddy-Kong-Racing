@@ -301,7 +301,7 @@ $(BUILD_DIR)/lib/src/os/osViMgr.o: OPT_FLAGS := -O2 -Xfullwarn
 
 ##############################################################
 
-#DUMMY != python3 ./tools/python/generate_gcc_files.py gcc_safe_files.mk
+DUMMY != python3 ./tools/python/generate_gcc_files.py gcc_safe_files.mk
 
 include gcc_safe_files.mk
 
