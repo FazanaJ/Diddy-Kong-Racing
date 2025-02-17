@@ -17,11 +17,10 @@
 .word  0x0000004E # cartridge
 .ascii "ED"       # cartridge ID
 .ascii "E"        # country
-.byte  0x10       # version
-
-# 0 - NONE
-# 1 - EEP4K
-# 2 - EEP16K
-# 3 - SRAM
-# 4 - SRAM768K
-# 5 - Flash
+.if EEP4K == 1
+    .byte  0x10       # version
+.elseif EEP16K == 1
+    .byte  0x20       # version
+.elseif SRAM == 1
+    .byte  0x30       # version
+.endif

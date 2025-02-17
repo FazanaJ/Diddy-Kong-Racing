@@ -300,6 +300,7 @@ struct PuppyPrint {
 };
 
 extern struct PuppyPrint gPuppyPrint;
+extern struct ConfigBits sConfigZipped;
 extern void profiler_update(u32 *time, u32 time2);
 extern void puppyprint_update_rsp(u8 flags);
 extern void profiler_add(u32 time, u32 offset);

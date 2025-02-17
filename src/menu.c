@@ -9528,6 +9528,7 @@ s32 menu_pause_loop(UNUSED Gfx **dl, s32 updateRate) {
                 sound_play(SOUND_SELECT2, NULL);
                 gMenuSubOption = 0;
                 gPauseSubmenu = 0;
+                save_config_write();
             } else {
                 temp = gMenuSubOption;
                 playerId = gLastPlayerWhoPaused;

@@ -16,6 +16,24 @@ extern s32 gMapId;
 #define REGIONMODE_NTSC 1
 #define REGIONMODE_PAL60 2
 
+#define MAGIC_NUMBER 0x14
+
+typedef struct ConfigBits {
+    unsigned magic : 8;
+    signed antiAliasing : 2;
+    signed screenPosX : 5;
+    signed screenPosY : 5;
+    unsigned screenMode : 2;
+    unsigned regionMode : 2;
+    unsigned frameCap : 2;
+    unsigned dedither : 1;
+    unsigned noCutbacks : 1;
+    unsigned perfMode : 1;
+    unsigned sameStats : 1;
+
+    unsigned padding : 4;
+} ConfigBits;
+
 struct ConfigOptions {
     s8 antiAliasing;
     s8 screenPosX;

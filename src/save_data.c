@@ -793,10 +793,18 @@ s32 save_detect(void) {
     return status;
 }
 
-void save_readwrite(u64 *data, u32 offset, u32 size, s32 type) {
+char *sSaveResponses[] = {
+    "Failed",
+    "Success",
+    "Bruh"
+};
+
+s32 save_readwrite(u64 *data, u32 offset, u32 size, s32 type) {
     u32 i;
     u32 addr;
+    s32 result;
     s32 (*func)(OSMesgQueue *, s32 address, u8 *buffer);
+    u32 first;
 #if EEP4K || EEP16K
     if (type == OS_READ) {
         puppyprint_log(LOG_EXTRA, "Reading 0x%X bytes at 0x%X from eeprom.\n", size, offset);
@@ -805,15 +813,19 @@ void save_readwrite(u64 *data, u32 offset, u32 size, s32 type) {
         puppyprint_log(LOG_EXTRA, "Writing 0x%X bytes at 0x%X from eeprom.\n", size, offset);
         func = osEepromWrite;
     }
-    u32 first = osGetCount();
+    first = osGetCount();
     for (i = 0, addr = offset / sizeof(u64); i < size / sizeof(u64); i++, addr++) {
-        (*func)(&sSIMesgQueue, addr, (u8 *) &data[i]);
+        result = (*func)(&sSIMesgQueue, addr, (u8 *) &data[i]);
     }
 #elif SRAM
-    u32 first = osGetCount();
-    nuPiReadWriteSram(offset, (u8 *) &data[0], size, type);
+    first = osGetCount();
+    result = nuPiReadWriteSram(offset, (u8 *) &data[0], size, type);
 #endif
-    puppyprint_log(LOG_EXTRA, "Finished (%2.3fs)\n", (f64) (f32)((osGetCount() - first) / 46875000.0f));
+    if (result == 8) {
+        result = 2;
+    }
+    puppyprint_log(LOG_EXTRA, "Finished (%2.3fs) Result: %s\n", (f64) (f32)((osGetCount() - first) / 46875000.0f), sSaveResponses[result + 1]);
+    return result;
 }
 
 // Returns TRUE / FALSE for whether a given save file is a new game. Also populates the settings object.
@@ -862,6 +874,8 @@ void erase_save_file(s32 saveFileNum, Settings *settings) {
     s32 levelCount;
     s32 worldCount;
     s32 i;
+
+    puppyprint_log(LOG_EXTRA, "Erasing file %d\n", saveFileNum + 1);
 
     get_number_of_levels_and_worlds(&levelCount, &worldCount);
     for (i = 0; i < levelCount; i++) {
@@ -1068,6 +1082,56 @@ s32 write_eeprom_settings(u64 *eepromSettings) {
     *eepromSettings |= (s64) (calculate_eeprom_settings_checksum(*eepromSettings)) << 56;
     if (is_reset_pressed() == 0) {
         save_readwrite(eepromSettings, 0xF * sizeof(u64), 1 * sizeof(u64), OS_WRITE);
+    }
+    return 1;
+}
+
+s32 save_config_write(void) {
+    if (gSaveMissing) {
+        return -1;
+    }
+    ConfigBits c;
+    c.antiAliasing = gConfig.antiAliasing;
+    c.dedither = gConfig.dedither;
+    c.frameCap = gConfig.frameCap;
+    c.noCutbacks = gConfig.noCutbacks;
+    c.perfMode = gConfig.perfMode;
+    c.regionMode = gConfig.regionMode;
+    c.sameStats = gConfig.sameStats;
+    c.screenMode = gConfig.screenMode;
+    c.screenPosX = gConfig.screenPosX;
+    c.screenPosY = gConfig.screenPosY;
+    c.magic = MAGIC_NUMBER;
+    puppyprint_log(LOG_EXTRA, "Saving custom config\n");
+    save_readwrite((void *) &c, 0x200, sizeof(ConfigBits), OS_WRITE);
+    return 1;
+}
+
+
+s32 save_config_read(void) {
+    if (gSaveMissing) {
+        return -1;
+    }
+    ConfigBits c;
+    puppyprint_log(LOG_EXTRA, "Loading custom config\n");
+    save_readwrite((void *) &c, 0x200, sizeof(ConfigBits), OS_READ);
+    if (c.magic != MAGIC_NUMBER) {
+        puppyprint_log(LOG_WARN, "Custom Config mismatch (%X), resetting to default.\n", c.magic);
+        bzero(&c, sizeof(ConfigBits));
+        c.magic = MAGIC_NUMBER;
+        save_readwrite((void *) &c, 0x200, sizeof(ConfigBits), OS_WRITE);
+    } else {
+        gConfig.antiAliasing = c.antiAliasing;
+        gConfig.dedither = c.dedither;
+        gConfig.frameCap = c.frameCap;
+        gConfig.noCutbacks = c.noCutbacks;
+        gConfig.perfMode = c.perfMode;
+        gConfig.regionMode = c.regionMode;
+        gConfig.sameStats = c.sameStats;
+        gConfig.screenMode = c.screenMode;
+        gConfig.screenPosX = c.screenPosX;
+        gConfig.screenPosY = c.screenPosY;
+        refresh_screen_res();
     }
     return 1;
 }

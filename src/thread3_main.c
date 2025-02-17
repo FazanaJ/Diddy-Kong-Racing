@@ -1648,6 +1648,7 @@ void mode_intro(void) {
   #endif
 #endif
     if (sBootDelayTimer >= 8) {
+        save_config_read();
         load_menu_with_level_background(BOOT_LVL, ASSET_LEVEL_OPTIONSBACKGROUND, 2);
     }
 }
