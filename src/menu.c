@@ -2127,6 +2127,7 @@ void init_save_data(void) {
     s32 saveFileSize;
     s32 offset;
 
+    save_detect();
     get_number_of_levels_and_worlds(&numLevels, &numWorlds);
     courseFlagsPtrSize = numLevels * sizeof(s32);
     saveFileSize = courseFlagsPtrSize;
@@ -2210,6 +2211,7 @@ void menu_init(u32 menuId) {
             menu_file_select_init();
             break;
         case MENU_TRACK_SELECT:
+            mark_read_all_save_files();
             menu_track_select_init();
             break;
         case MENU_TRACK_SELECT_ADVENTURE:
@@ -6357,7 +6359,7 @@ void charselect_pick(void) {
     if (buttonsPressedAllPlayers & (A_BUTTON | START_BUTTON)) {
         // Character Selected
         gMenuDelay = 1;
-        mark_read_all_save_files();
+        //mark_read_all_save_files();
         transition_begin(&sMenuTransitionFadeIn);
         characterSelected = -1;
         //!@bug: This loop condition is doing a bitwise & instead of a boolean &&
@@ -6766,7 +6768,7 @@ void menu_game_select_init(void) {
     gMenuCurIndex = 0;
     gMenuStage = 2;
     transition_begin(&sMenuTransitionFadeOut);
-    mark_read_all_save_files();
+    //mark_read_all_save_files();
     set_ghost_none();
     gOpacityDecayTimer = 1;
     menu_asset_load(67);

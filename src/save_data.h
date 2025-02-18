@@ -181,6 +181,7 @@ SIDeviceStatus func_80075000(s32 controllerIndex, s16 levelId, s16 vehicleId, s1
 s32 func_800753D8(s32 controllerIndex, s32 worldId);
 s32 save_config_read(void);
 s32 save_config_write(void);
+s32 save_detect(void);
 
 int nuPiInitSram(void);
 int nuPiReadWriteSram(u32 addr, void* buf_ptr, u32 size, s32 flag);

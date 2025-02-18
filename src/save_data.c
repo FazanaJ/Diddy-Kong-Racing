@@ -13,6 +13,7 @@
 #include "thread3_main.h"
 #include "controller.h"
 #include "main.h"
+#include "PR/os_flash.h"
 
 /************ .data ************/
 
@@ -784,14 +785,17 @@ s32 write_time_data_to_controller_pak(s32 controllerIndex, Settings *arg1) {
 }
 
 s32 save_detect(void) {
-    s32 status;
+    s32 status = 0;
 #if EEP4K || EEP16K
     status = osEepromProbe(&sSIMesgQueue);
     if (status == 0) {
+        puppyprint_log(LOG_ERROR, "Save type unavailable.\n");
         gSaveMissing = TRUE;
     }
 #elif SRAM
     status = nuPiInitSram();
+#elif FLASHRAM
+    status = ((u32) osFlashInit()) & 1;
 #endif
     return status;
 }
@@ -801,6 +805,93 @@ char *sSaveResponses[] = {
     "Success",
     "Bruh"
 };
+
+void dump_value(u8 *var, s32 size) {
+    for (int i = 0; i < size; i++) {
+        debug_printf("0x%02X, ", (u32) var[i]);
+
+        if (i && ((i + 1) % 8)== 0) {
+            debug_printf("\n");
+        }
+    }
+    debug_printf("\n");
+}
+
+s32 flash_read(u64 *data, u32 offset, u32 size) {
+    s32 blockID;
+    s32 pageCount;
+    s32 result;
+    s32 pos = offset;
+    
+    blockID = offset / FLASH_BLOCK_SIZE;
+    pageCount = (size / FLASH_BLOCK_SIZE) + 1;
+
+    if ((blockID % FLASH_BLOCK_COUNT) == 0x7F) {
+        pageCount++;
+    }
+
+    pos %= FLASH_BLOCK_SIZE;
+    
+    u8 *buf = (u8 *) mempool_alloc((FLASH_BLOCK_SIZE * pageCount) + 0x10, MEMP_TEMP);
+    buf = align16(buf);
+    osInvalDCache(&buf[pos], size);
+    result = osFlashReadArray(&gAssetsDmaIoMesg, OS_MESG_PRI_NORMAL, blockID, buf, pageCount, &gDmaMesgQueue);
+    osRecvMesg(&gDmaMesgQueue, NULL, OS_MESG_BLOCK);
+    
+    wcopy(&buf[pos], data, size);
+    mempool_free(buf);
+    return result;
+}
+
+s32 flash_write(u64 *data, u32 offset, u32 size) {
+    s32 result;
+    s32 sectorCount;
+    s32 sectorOffset;
+
+    sectorOffset = (offset / FLASH_BLOCK_SIZE) / FLASH_BLOCK_COUNT;
+    sectorCount = (((offset + size - 1) / FLASH_BLOCK_SIZE) / FLASH_BLOCK_COUNT) + 1;
+
+    u8 *buf = (u8 *) mempool_alloc((FLASH_SECTOR_SIZE) + 0x10, MEMP_TEMP);
+    buf = align16(buf);
+
+    for (int i = sectorOffset; i < sectorCount; i++, sectorOffset += FLASH_SECTOR_SIZE) {
+        s32 pos;
+        s32 length;
+        s32 sectorSize = FLASH_SECTOR_SIZE * sectorOffset;
+        OSIoMesg msg;
+        osInvalDCache(buf, FLASH_SECTOR_SIZE);
+        osFlashReadArray(&msg, OS_MESG_PRI_NORMAL, sectorOffset, buf, FLASH_BLOCK_SIZE, &gDmaMesgQueue);
+        osRecvMesg(&gDmaMesgQueue, NULL, OS_MESG_BLOCK);
+        
+        pos = offset;
+        length = size;
+
+        if (pos >= sectorSize && pos + length >= sectorSize) {
+            pos -= sectorSize;
+        } else {
+            if (pos + length >= sectorSize) {
+                length = sectorSize - pos;
+            }
+
+            if (pos >= sectorSize) {
+                pos -= sectorSize;
+                offset += pos;
+            }
+        }
+
+        result = osFlashSectorErase(sectorOffset);
+        wcopy(data, &buf[pos], length);
+        osWritebackDCache(&buf[pos], length);
+        for (int j = 0; j < (FLASH_SECTOR_SIZE / FLASH_BLOCK_SIZE); j++) {
+            result = osFlashWriteBuffer(&gAssetsDmaIoMesg, OS_MESG_PRI_NORMAL, buf + (j * FLASH_BLOCK_SIZE), &gDmaMesgQueue);
+            osRecvMesg(&gDmaMesgQueue, NULL, OS_MESG_BLOCK);
+            result = osFlashWriteArray(sectorOffset + j);
+        }
+    }
+    
+    mempool_free(buf);
+    return result;
+}
 
 s32 save_readwrite(u64 *data, u32 offset, u32 size, s32 type) {
     u32 i;
@@ -813,7 +904,7 @@ s32 save_readwrite(u64 *data, u32 offset, u32 size, s32 type) {
         puppyprint_log(LOG_EXTRA, "Reading 0x%X bytes at 0x%X from eeprom.\n", size, offset);
         func = osEepromRead;
     } else {
-        puppyprint_log(LOG_EXTRA, "Writing 0x%X bytes at 0x%X from eeprom.\n", size, offset);
+        puppyprint_log(LOG_EXTRA, "Writing 0x%X bytes at 0x%X to eeprom.\n", size, offset);
         func = osEepromWrite;
     }
     first = osGetCount();
@@ -823,6 +914,15 @@ s32 save_readwrite(u64 *data, u32 offset, u32 size, s32 type) {
 #elif SRAM
     first = osGetCount();
     result = nuPiReadWriteSram(offset, (u8 *) &data[0], size, type);
+#elif FLASHRAM
+    first = osGetCount();
+    if (type == OS_READ) {
+        puppyprint_log(LOG_EXTRA, "Reading 0x%X bytes at 0x%X from flash.\n", size, offset);
+        result = flash_read(data, offset, size);
+    } else {
+        puppyprint_log(LOG_EXTRA, "Writing 0x%X bytes at 0x%X to flash.\n", size, offset);
+        result = flash_write(data, offset, size);
+    }
 #endif
     if (result == 8) {
         result = 2;
@@ -838,7 +938,11 @@ s32 read_save_file(s32 saveFileNum, Settings *settings) {
     s32 blocks;
     s32 ret;
 
-    if (save_detect() == 0) {
+    if (settings->newGame > 1) {
+        settings->newGame = 0;
+    }
+
+    if (gSaveMissing) {
         erase_save_file(saveFileNum, settings);
         return settings->newGame;
     }
@@ -913,7 +1017,7 @@ void erase_save_file(s32 saveFileNum, Settings *settings) {
     for (i = 0; i < blockSize * (s32) sizeof(u64); i++) {
         saveData[i] = 0xFF;
     } // Must be one line
-    if (!is_reset_pressed() && save_detect()) {
+    if (!is_reset_pressed() && gSaveMissing == FALSE) {
         save_readwrite(alloc, startingAddress * sizeof(u64), blockSize * sizeof(u64), OS_WRITE);
     }
     mempool_free(alloc);
@@ -931,7 +1035,7 @@ s32 write_save_data(s32 saveFileNum, Settings *settings) {
     u64 *alloc;
     s32 blocks;
 
-    if (save_detect() == 0) {
+    if (gSaveMissing) {
         return -1;
     }
 
@@ -973,7 +1077,7 @@ s32 write_save_data(s32 saveFileNum, Settings *settings) {
 s32 read_eeprom_data(Settings *settings, u8 flags) {
     u64 *alloc;
 
-    if (save_detect() == 0) {
+    if (gSaveMissing) {
         return -1;
     }
 
@@ -1004,7 +1108,7 @@ s32 read_eeprom_data(Settings *settings, u8 flags) {
 s32 write_eeprom_data(Settings *settings, u8 flags) {
     u64 *alloc;
 
-    if (save_detect() == 0) {
+    if (gSaveMissing) {
         return -1;
     }
 
@@ -1052,7 +1156,7 @@ s32 read_eeprom_settings(u64 *eepromSettings) {
     s32 temp;
     s32 sp20;
 
-    if (save_detect() == 0) {
+    if (gSaveMissing) {
         return -1;
     }
     
@@ -1077,7 +1181,7 @@ s32 read_eeprom_settings(u64 *eepromSettings) {
  * Address (0xF * sizeof(u64)) = 0x78 - 0x80 of the actual save data file
  */
 s32 write_eeprom_settings(u64 *eepromSettings) {
-    if (save_detect() == 0) {
+    if (gSaveMissing) {
         return -1;
     }
     *eepromSettings <<= 8;

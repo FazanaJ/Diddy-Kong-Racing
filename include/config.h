@@ -112,7 +112,7 @@
 #define ENABLE_USB                         // Always have USB enabled if puppyprint is enabled.
 #endif
 
-#if !defined(EEP4K) && !defined(EEP16) && !defined(SRAM)
+#if !defined(EEP4K) && !defined(EEP16) && !defined(SRAM) && !defined(FLASHRAM)
     #define EEP4K 1
 #endif
 

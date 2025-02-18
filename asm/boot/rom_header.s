@@ -18,9 +18,11 @@
 .ascii "ED"       # cartridge ID
 .ascii "E"        # country
 .if EEP4K == 1
-    .byte  0x10       # version
+    .byte  0x12       # version
 .elseif EEP16K == 1
-    .byte  0x20       # version
+    .byte  0x22       # version
 .elseif SRAM == 1
-    .byte  0x30       # version
+    .byte  0x32       # version
+.elseif FLASHRAM == 1
+    .byte  0x52       # version
 .endif

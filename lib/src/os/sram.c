@@ -16,7 +16,7 @@
 
 #if SRAM
 OSPiHandle*		nuPiSramHandle;
-static OSPiHandle	SramHandle;
+OSPiHandle	SramHandle;
 OSPiHandle* __osPiTable = NULL;
 u8 sSramInit = FALSE;
 
@@ -136,7 +136,7 @@ int nuPiReadWriteSram(u32 addr, void* buf_ptr, u32 size, s32 flag) {
 	    osInvalDCache((void*)buf_ptr, (s32)size);
     } else {
         /* Write back */
-        puppyprint_log(LOG_EXTRA, "Writing 0x%X bytes at 0x%X from sram.\n", size, (u32) addr);
+        puppyprint_log(LOG_EXTRA, "Writing 0x%X bytes at 0x%X to sram.\n", size, (u32) addr);
         osWritebackDCache((void*)buf_ptr, (s32)size);
     }
     osEPiStartDma(nuPiSramHandle, &dmaIoMesgBuf, flag);

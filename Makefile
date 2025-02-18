@@ -28,14 +28,16 @@ else
   DEFINES += ANTI_TAMPER=1
 endif
 
-SAVE_TYPE ?= sram
-$(eval $(call validate-option,SAVE_TYPE,eep4k, eep16k, sram))
+SAVE_TYPE ?= flash
+$(eval $(call validate-option,SAVE_TYPE,eep4k, eep16k, sram, flash))
 ifeq ($(SAVE_TYPE),eep4k)
   DEFINES += EEP4K=1
 else ifeq ($(SAVE_TYPE),eep16k)
   DEFINES += EEP16K=1
 else ifeq ($(SAVE_TYPE),sram)
   DEFINES += SRAM=1
+else ifeq ($(SAVE_TYPE),flash)
+  DEFINES += FLASHRAM=1
 endif
 
 # Whether to hide commands or not
