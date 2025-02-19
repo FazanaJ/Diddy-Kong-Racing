@@ -60,7 +60,11 @@
 // another way of converting virtual to physical
 #define VIRTUAL_TO_PHYSICAL2(addr)  ((u8 *)(addr) - 0x80000000U)
 
-#define ABSF(x) (x < 0.f ? -x : x)
+#if defined(__sgi)
+    #define ABSF(x) (x < 0.f ? -x : x)
+#else
+    #define ABSF(x) fabsf(x)
+#endif
 
 // Used to suppress warnings in the ./generate_ctx.sh script.
 #define INCONSISTENT 

@@ -5621,7 +5621,7 @@ void func_8001F23C(Object *obj, LevelObjectEntry_Animation *animEntry) {
         if (newObj->segment.header->behaviorId == BHV_CAMERA_ANIMATION) {
             camera = &newObj->unk64->anim_camera;
             camera->unk44 = D_8011AD3E;
-            viewportCount = get_viewport_count();
+            viewportCount = gNumberOfViewports;
             if (is_two_player_adventure_race()) {
                 viewportCount = VIEWPORTS_COUNT_2_PLAYERS;
             }

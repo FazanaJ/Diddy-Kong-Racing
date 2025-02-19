@@ -179,7 +179,7 @@ void obj_loop_scenery(Object *obj, s32 updateRate) {
             properties->interactObj = obj->interactObj->obj;
             properties->angleVel = 0x71C;
             properties->hitTimer = 10;
-            if (get_number_of_active_players() < 2) {
+            if (gNumberOfActivePlayers < 2 || gConfig.noCutbacks) {
                 if (obj->segment.header->particleCount > 0) {
                     if (obj->segment.header->particleCount == 1) {
                         particleFlagShift = 0;
@@ -1539,7 +1539,7 @@ void obj_loop_fish(Object *fishObj, s32 updateRate) {
     Vertex *verts;
     s32 randNumber;
 
-    if (get_viewport_count() > 0) {
+    if (gNumberOfViewports > 0 && gConfig.noCutbacks == FALSE) {
         free_object(fishObj);
         return;
     }
@@ -2271,7 +2271,7 @@ void obj_loop_bombexplosion(Object *obj, s32 updateRate) {
     }
 
     if (obj->particleEmitFlags) {
-        if (get_number_of_active_players() < THREE_PLAYERS) {
+        if (gNumberOfActivePlayers < THREE_PLAYERS || gConfig.noCutbacks) {
             obj_spawn_particle(obj, LOGIC_30FPS);
             obj->particleEmitFlags = OBJ_EMIT_OFF;
         }
@@ -4348,7 +4348,7 @@ void obj_loop_banana(Object *obj, s32 updateRate) {
                     if (banana->spawner != NULL) {
                         banana->spawner->properties.bananaSpawner.spawn = TRUE;
                     }
-                    if (get_number_of_active_players() > TWO_PLAYERS) {
+                    if (gNumberOfActivePlayers > TWO_PLAYERS && gConfig.noCutbacks == FALSE) {
                         free_object(obj);
                     } else {
                         properties->status = BANANA_COLLECTED;
@@ -4626,7 +4626,7 @@ void obj_loop_weaponballoon(Object *weaponBalloonObj, s32 updateRate) {
                     prevBalloonQuantity = racer->balloon_quantity;
                     racer->balloon_quantity = powerupTable[(racer->balloon_type * 10) + (racer->balloon_level * 2) + 1];
                     racer->unk209 |= 1;
-                    if (get_number_of_active_players() < THREE_PLAYERS) {
+                    if (gNumberOfActivePlayers < THREE_PLAYERS || gConfig.noCutbacks) {
                         weaponBalloonObj->properties.weaponBalloon.particleTimer = 16;
                     }
                     if (racer->playerIndex == PLAYER_COMPUTER) {
@@ -4953,7 +4953,7 @@ void homing_rocket_prevent_overshoot(Object *obj, s32 updateRate, Object_Weapon 
         }
     }
     play_rocket_trailing_sound(obj, rocket, SOUND_HOMING_ROCKET);
-    if (get_number_of_active_players() < 3) {
+    if (gNumberOfActivePlayers < FOUR_PLAYERS || gConfig.noCutbacks) {
         obj->particleEmitFlags |= OBJ_EMIT_PARTICLE_1;
         obj_spawn_particle(obj, updateRate);
     }
@@ -6019,7 +6019,7 @@ void obj_init_midifade(Object *obj, LevelObjectEntry_MidiFade *entry) {
     if (scaleF < 1.0f) {
         scaleF = 1.0f;
     }
-    scaleF /= 8;
+    scaleF /= 8.0f;
     obj->segment.trans.scale = obj->segment.header->scale * (scaleF);
     transform.y_rotation = obj->segment.trans.y_rotation;
     transform.x_rotation = obj->segment.trans.x_rotation;
@@ -6161,7 +6161,7 @@ void obj_loop_bubbler(Object *obj, s32 updateRate) {
     } else {
         obj->particleEmitFlags = OBJ_EMIT_OFF;
     }
-    if (get_number_of_active_players() < 2) {
+    if (gNumberOfActivePlayers < 2) {
         obj_spawn_particle(obj, updateRate);
     }
 }

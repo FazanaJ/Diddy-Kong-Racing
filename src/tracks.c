@@ -441,7 +441,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, TriangleList **tris,
         weather_clip_planes(-1, -512);
         // Show weather effects in single player.
         if (((gCurrentLevelHeader2->weatherEnable > 0 && numViewports < 2) || gConfig.noCutbacks) && !gConfig.perfMode) {
-            weather_update(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, &gSceneCurrTriList, tempUpdateRate);
+            weather_update(dList, &gSceneCurrMatrix, &gSceneCurrVertexList, &gSceneCurrTriList, tempUpdateRate, gSceneCurrentPlayerID);
         }
         profiler_add(PP_WEATHER, first);
         lensflare_override(get_active_camera_segment());

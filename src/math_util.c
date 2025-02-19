@@ -26,33 +26,6 @@ extern s16 gArcTanTable[];
 
 /******************************/
 
-/**
- * Zero out the interrupt mask. This stops this thread
- * from being interrupted by others, letting you safely
- * work with delicate areas in memory. Kind of like a mutex.
- * Returns what the interrupt mask wask before.
- * Official Name: disableInterrupts */
-u32 interrupts_disable(void) {
-    if (gIntDisFlag) {
-        return __osDisableInt();
-    }
-}
-
-/**
- * Set the interrupt mask to whichever flags were given.
- * Required after zeroing them out, otherwise system
- * operation won't work as normal.
- * Official Name: enableInterrupts */
-void interrupts_enable(u32 flags) {
-    if (gIntDisFlag) {
-        __osRestoreInt(flags);
-    }
-}
-
-void set_gIntDisFlag(s8 setting) {
-    gIntDisFlag = setting;
-}
-
 #ifdef NON_MATCHING
 void f32_matrix_to_s32_matrix(Matrix *input, MatrixS *output) {
     s32 i;
@@ -75,7 +48,7 @@ void guMtxXFMF(Matrix mf, float x, float y, float z, float *ox, float *oy, float
     *oz = mf[0][2] * x + mf[1][2] * y + mf[2][2] * z + mf[3][2];
 }
 #else
-GLOBAL_ASM("asm/math_util/guMtxXFMF.s")
+//GLOBAL_ASM("asm/math_util/guMtxXFMF.s")
 #endif
 
 #ifdef NON_MATCHING
@@ -131,34 +104,6 @@ void f32_matrix_to_s16_matrix(Matrix *input, MatrixS *output) {
 #else
 GLOBAL_ASM("asm/math_util/f32_matrix_to_s16_matrix.s")
 #endif
-
-/* Official Name: mathSeed */
-void set_rng_seed(s32 num) {
-    gCurrentRNGSeed = num;
-}
-
-void save_rng_seed(void) {
-    gPrevRNGSeed = gCurrentRNGSeed;
-}
-
-void load_rng_seed(void) {
-    gCurrentRNGSeed = gPrevRNGSeed;
-}
-
-s32 get_rng_seed(void) {
-    return gCurrentRNGSeed;
-}
-
-s32 get_random_number_from_range(s32 min, s32 max) {
-    s32 newSeed;
-    u64 curSeed;
-
-    curSeed = (((u64) ((s64) gCurrentRNGSeed << 0x3F) >> 0x1F) | ((u64) ((s64) gCurrentRNGSeed << 0x1F) >> 0x20)) ^
-              ((u64) ((s64) gCurrentRNGSeed << 0x2C) >> 0x20);
-    newSeed = ((curSeed >> 0x14) & 0xFFF) ^ curSeed;
-    gCurrentRNGSeed = newSeed;
-    return ((u32) (newSeed - min) % (u32) ((max - min) + 1)) + min;
-}
 
 #ifdef NON_EQUIVALENT
 /* Official name: fastShortReflection */
@@ -581,5 +526,5 @@ f32 area_triangle_2d(f32 x0, f32 z0, f32 x1, f32 z1, f32 x2, f32 z2) {
     return sqrtf(result);
 }
 #else
-GLOBAL_ASM("asm/math_util/area_triangle_2d.s")
+//GLOBAL_ASM("asm/math_util/area_triangle_2d.s")
 #endif

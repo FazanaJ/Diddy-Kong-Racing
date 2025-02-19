@@ -14,6 +14,7 @@
 #include "math_util.h"
 #include "main.h"
 #include "objects.h"
+#include "thread3_main.h"
 
 #define WEATHER_OVERRIDE_COUNT 16
 
@@ -392,7 +393,7 @@ void weather_set(s32 velX, s32 velY, s32 velZ, s32 intensity, s32 opacity, s32 t
  * Decide whether to perform rain or snow logic, execute it, then set it to render right after.
  */
 void weather_update(Gfx **currDisplayList, MatrixS **currHudMat, Vertex **currHudVerts, TriangleList **currHudTris,
-                    s32 updateRate) {
+                    s32 updateRate, s32 racerID) {
     gCurrWeatherDisplayList = *currDisplayList;
     gCurrWeatherMatrix = *currHudMat;
     gCurrWeatherVertexList = *currHudVerts;
@@ -400,7 +401,7 @@ void weather_update(Gfx **currDisplayList, MatrixS **currHudMat, Vertex **currHu
     gWeatherCamera = get_active_camera_segment();
     gWeatherCameraMatrix = get_camera_matrix();
     if (gWeatherType != WEATHER_SNOW) {
-        rain_update(updateRate);
+        rain_update(updateRate, racerID);
     } else {
         if (gWeather.shiftTime > 0) {
             if (updateRate < gWeather.shiftTime) {
@@ -626,7 +627,7 @@ void lensflare_render(Gfx **dList, MatrixS **mats, Vertex **verts, ObjectSegment
     s32 i;
 
     if (gLensFlare != NULL && gLensFlareOff == 0) {
-        if (get_viewport_count() == 0) {
+        if (gNumberOfViewports == 0 || gConfig.noCutbacks) {
             lensFlareEntry = &gLensFlare->segment.level_entry->lensFlare;
             pos[1].x = 0.0f;
             pos[1].y = 0.0f;
@@ -684,9 +685,8 @@ void lensflare_render(Gfx **dList, MatrixS **mats, Vertex **verts, ObjectSegment
                         pos[1].z = (mag2 * gLensFlarePos.z) - pos[1].z;
                     }
                 }
-                width = fb_size();
-                height = GET_VIDEO_HEIGHT(width);
-                width = GET_VIDEO_WIDTH(width);
+                height = gScreenHeight;
+                width = gScreenWidth;
                 gfxTemp = (*dList);
                 gSPDisplayList(gfxTemp++, dLensFlare);
                 gDPSetPrimColor(gfxTemp++, 0, 0, lensFlareEntry->red, lensFlareEntry->green, lensFlareEntry->blue,
@@ -825,7 +825,7 @@ void rain_set(s32 lightningFrequency, s32 opacity, f32 time) {
  */
 void rain_fog(void) {
     s32 a, b;
-    if (gWeatherType != WEATHER_SNOW && gNumberOfViewports == VIEWPORTS_COUNT_1_PLAYER) {
+    if (gWeatherType != WEATHER_SNOW && (gNumberOfViewports == VIEWPORTS_COUNT_1_PLAYER || gConfig.noCutbacks)) {
         a = ((gLightningFrequency * -38) >> 16) + 1018;
         b = ((gLightningFrequency * -20) >> 16) + 1023;
         set_fog(0, a, b, 28, 15, 36);
@@ -836,10 +836,10 @@ void rain_fog(void) {
  * When active, (Single player only) Call all the functions related to the behaviour and rendering of
  * rain, and if necessary, thunder.
  */
-void rain_update(s32 updateRate) {
+void rain_update(s32 updateRate, s32 racerID) {
     s32 i;
 
-    if (gNumberOfViewports == VIEWPORTS_COUNT_1_PLAYER && gWeatherType != WEATHER_SNOW) {
+    if ((gNumberOfViewports == VIEWPORTS_COUNT_1_PLAYER || gConfig.noCutbacks) && gWeatherType != WEATHER_SNOW) {
         if (gRainHiddenTimer > 0) {
             if (updateRate < gRainHiddenTimer) {
                 gRainHiddenTimer -= updateRate;
@@ -852,7 +852,7 @@ void rain_update(s32 updateRate) {
             }
         }
         rain_sound(updateRate);
-        rain_render_splashes(updateRate);
+        rain_render_splashes(updateRate, racerID);
         rain_lightning(updateRate);
         if (gLightningFrequency > 255) {
             set_ortho_matrix_view(&gCurrWeatherDisplayList, &gCurrWeatherMatrix);
@@ -872,7 +872,7 @@ void rain_update(s32 updateRate) {
  * Set position to be a random spot near the camera and account for wave height.
  * Every existing splash particle gets rendered as a billboard.
  */
-void rain_render_splashes(s32 updateRate) {
+void rain_render_splashes(s32 updateRate, s32 racerID) {
     s32 temp_t0;
     s32 i;
     f32 var_f2;
@@ -891,7 +891,7 @@ void rain_render_splashes(s32 updateRate) {
     if (gRainSplashGfx != NULL) {
         temp_t0 = ((gRainOpacity >> 2) * gLightningFrequency) >> 14;
         if (temp_t0 > 0x4000) {
-            racer = get_racer_object_by_port(0);
+            racer = get_racer_object_by_port(racerID);
             gRainSplashDelay -= updateRate;
             if (gRainSplashDelay <= 0) {
                 i = 0;

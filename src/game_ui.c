@@ -248,7 +248,7 @@ void init_hud(UNUSED s32 viewportCount) {
 
     set_texture_colour_tag(MEMP_HUD);
     gAssetColourTag = MEMP_HUD;
-    gHUDNumPlayers = get_viewport_count();
+    gHUDNumPlayers = gNumberOfViewports;
     gNumActivePlayers = set_active_viewports_and_max(gHUDNumPlayers);
     gHudSettings = get_settings();
     gHudSilverCoinRace = check_if_silver_coin_race();
