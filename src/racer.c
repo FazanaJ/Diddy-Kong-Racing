@@ -1117,14 +1117,17 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
             }
             if (gCurrentRacerInput) {}
         }
+        temp *= updateRateF / 3.0f;
         obj->segment.x_velocity -= racer->ox3 * temp;
         obj->segment.y_velocity -= racer->oy3 * temp;
         obj->segment.z_velocity -= racer->oz3 * temp;
         spF4 *= xVelTemp;
+        spF4 *= updateRateF / 3.0f;
         obj->segment.x_velocity -= racer->ox1 * spF4;
         obj->segment.y_velocity -= racer->oy1 * spF4;
         obj->segment.z_velocity -= racer->oz1 * spF4;
         spF0 *= xVelTemp / 2.0f;
+        spF0 *= updateRateF / 3.0f;
         obj->segment.x_velocity += racer->ox1 * spF0;
         obj->segment.y_velocity += racer->oy1 * spF0;
         obj->segment.z_velocity += racer->oz1 * spF0;
@@ -1145,6 +1148,7 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
         } else {
             temp = zVelTemp * spFC;
         }
+        temp *= updateRateF / 3.0f;
         obj->segment.x_velocity -= racer->ox1 * temp;
         obj->segment.y_velocity -= racer->oy1 * temp;
         obj->segment.z_velocity -= racer->oz1 * temp;
