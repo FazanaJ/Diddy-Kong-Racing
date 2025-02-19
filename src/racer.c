@@ -823,7 +823,7 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
                                    obj->segment.trans.z_position, NULL);
                 play_random_character_voice(obj, SOUND_VOICE_KRUNCH_POSITIVE1, 8, 0x80 | 0x2);
             }
-            racer->boostTimer = normalise_time(45);
+            racer->boostTimer = 45;
             racer->boostType = BOOST_LARGE;
             if (racer->throttleReleased) {
                 racer->boostType |= BOOST_SMALL_FAST;
@@ -1031,7 +1031,7 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
         racer->lateral_velocity = 0.0f;
     }
     if ((racer->boostTimer == 0) && (lastWheelSurface == 3)) {
-        racer->boostTimer = normalise_time(45);
+        racer->boostTimer = 45;
         racer->boostType = BOOST_LARGE;
         if (racer->throttleReleased) {
             racer->boostType |= BOOST_SMALL_FAST;
@@ -2379,6 +2379,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
         }
         tempVar = tempRacer->playerIndex;
         if (tempRacer->playerIndex != PLAYER_COMPUTER) {
+            Asset20 *asset20;
             if (tempRacer->exitObj == 0) {
                 if (func_8000E158()) {
                     tempVar = 1 - tempVar;
@@ -2391,9 +2392,17 @@ void update_player_racer(Object *obj, s32 updateRate) {
                 }
                 gCurrentStickY = clamp_joystick_y_axis(tempVar);
                 gCurrentRacerInput = get_buttons_held_from_player(tempVar);
-                if (tempRacer->boostTimer && tempRacer->boostType & EMPOWER_BOOST) {
-                    gCurrentRacerInput &= ~A_BUTTON;
-                    gPowerBoosting = TRUE;
+                
+                // If the player has successfully empowered their boost, then do the rest
+                // of the mechanic for them. Experienced players won't notice and new
+                // players get a small crutch.
+                if (tempRacer->boostType & EMPOWER_BOOST) {
+                    asset20 = (Asset20 *) get_misc_asset(ASSET_MISC_20);
+                    asset20 = &asset20[tempRacer->racerIndex];
+                    if (tempRacer->boostTimer || asset20->unk74 != 0.0f) {
+                        gCurrentRacerInput &= ~A_BUTTON;
+                        gPowerBoosting = TRUE;
+                    }
                 }
                 gCurrentButtonsPressed = get_buttons_pressed_from_player(tempVar);
                 gCurrentButtonsReleased = get_buttons_released_from_player(tempVar);

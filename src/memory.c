@@ -203,7 +203,7 @@ MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag
     }
     interrupts_enable(intFlags);
 
-    puppyprint_log(LOG_ERROR, "Allocation failed (%X %s) SP: %X\n", colourTag, sPuppyprintMemColours[colourTag], stack_pointer()->sp);
+    puppyprint_log(LOG_ERROR, "Allocation failed (%X %s) SP: %X\n", colourTag, sPuppyprintMemColours[puppyprint_colourtag(colourTag)], stack_pointer()->sp);
     
     puppyprint_load_snapshot(PP_LOAD_MALLOC, profiler_get_timer());
     return NULL;
