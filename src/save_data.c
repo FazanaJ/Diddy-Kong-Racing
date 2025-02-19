@@ -817,7 +817,7 @@ void dump_value(u8 *var, s32 size) {
     debug_printf("\n");
 }
 
-#ifdef FLASH
+#if FLASHRAM
 
 s32 flash_read(u64 *data, u32 offset, u32 size) {
     s32 blockID;
@@ -849,9 +849,17 @@ s32 flash_write(u64 *data, u32 offset, u32 size) {
     s32 result;
     s32 sectorCount;
     s32 sectorOffset;
+    s32 saveSize;
 
     sectorOffset = (offset / FLASH_BLOCK_SIZE) / FLASH_BLOCK_COUNT;
     sectorCount = (((offset + size - 1) / FLASH_BLOCK_SIZE) / FLASH_BLOCK_COUNT) + 1;
+
+    // If you're trying to write further than the expected save region, then ignore the optimisation.
+    if (offset > SAVE_SIZE) {
+        saveSize = FLASH_SIZE;
+    } else {
+        saveSize = SAVE_SIZE;
+    }
 
     u8 *buf = (u8 *) mempool_alloc((FLASH_SECTOR_SIZE) + 0x10, MEMP_TEMP);
     buf = align16(buf);
@@ -859,6 +867,9 @@ s32 flash_write(u64 *data, u32 offset, u32 size) {
     for (int i = sectorOffset; i < sectorCount; i++, sectorOffset += FLASH_SECTOR_SIZE) {
         s32 pos;
         s32 length;
+        s32 iter;
+        f32 iterF;
+        s32 writeSize;
         s32 sectorSize = FLASH_SECTOR_SIZE * sectorOffset;
         OSIoMesg msg;
         osInvalDCache(buf, FLASH_SECTOR_SIZE);
@@ -881,10 +892,24 @@ s32 flash_write(u64 *data, u32 offset, u32 size) {
             }
         }
 
+        // Try and reduce writes by only writing as far as the game actually expects save data.
+        if (saveSize > FLASH_SECTOR_SIZE) {
+            writeSize = FLASH_SECTOR_SIZE;
+            saveSize -= FLASH_SECTOR_SIZE;
+        } else {
+            writeSize = saveSize;
+        }
+
+        iterF = (f32) writeSize / (f32) FLASH_BLOCK_SIZE;
+        iter = iterF;
+        if (iterF > iter) {
+            iter++;
+        }
+
         result = osFlashSectorErase(sectorOffset);
         wcopy(data, &buf[pos], length);
         osWritebackDCache(&buf[pos], length);
-        for (int j = 0; j < (FLASH_SECTOR_SIZE / FLASH_BLOCK_SIZE); j++) {
+        for (int j = 0; j < iter; j++) {
             result = osFlashWriteBuffer(&gAssetsDmaIoMesg, OS_MESG_PRI_NORMAL, buf + (j * FLASH_BLOCK_SIZE), &gDmaMesgQueue);
             osRecvMesg(&gDmaMesgQueue, NULL, OS_MESG_BLOCK);
             result = osFlashWriteArray(sectorOffset + j);
@@ -1085,7 +1110,7 @@ s32 read_eeprom_data(Settings *settings, u8 flags) {
         return -1;
     }
 
-    alloc = mempool_alloc_safe(SAVE_SIZE, MEMP_MISC);
+    alloc = mempool_alloc_safe(0x200, MEMP_MISC);
 
     if (flags & SAVE_DATA_FLAG_READ_FLAP_TIMES) {
         save_readwrite(alloc, EEP_FLAP_OFFSET * sizeof(u64), EEP_FLAP_SIZE * sizeof(u64), OS_READ);
@@ -1116,7 +1141,7 @@ s32 write_eeprom_data(Settings *settings, u8 flags) {
         return -1;
     }
 
-    alloc = mempool_alloc_safe(SAVE_SIZE, MEMP_MISC);
+    alloc = mempool_alloc_safe(0x200, MEMP_MISC);
 
     func_800738A4(settings, (u8 *) alloc);
 
