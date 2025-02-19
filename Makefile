@@ -28,7 +28,7 @@ else
   DEFINES += ANTI_TAMPER=1
 endif
 
-SAVE_TYPE ?= flash
+SAVE_TYPE ?= sram
 $(eval $(call validate-option,SAVE_TYPE,eep4k, eep16k, sram, flash))
 ifeq ($(SAVE_TYPE),eep4k)
   DEFINES += EEP4K=1
@@ -393,12 +393,21 @@ distclean:
 	rm -f dkr.ld
 	$(MAKE) -C tools distclean
 
-clean_lib:
+
+clean_asm: 
+ifneq ($(wildcard $(BUILD_DIR)/lib/.*),)
+	rm -r $(BUILD_DIR)/asm/*/*.o
+else
+	@echo "build asm directory has already been deleted."
+endif
+
+clean_lib: clean_asm
 ifneq ($(wildcard $(BUILD_DIR)/lib/.*),)
 	rm -r $(BUILD_DIR)/lib/src/*/*.o
 else
 	@echo "build lib directory has already been deleted."
 endif
+
 
 clean_src: clean_lib
 ifneq ($(wildcard $(BUILD_DIR)/src/.*),)

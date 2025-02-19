@@ -817,6 +817,8 @@ void dump_value(u8 *var, s32 size) {
     debug_printf("\n");
 }
 
+#ifdef FLASH
+
 s32 flash_read(u64 *data, u32 offset, u32 size) {
     s32 blockID;
     s32 pageCount;
@@ -892,6 +894,8 @@ s32 flash_write(u64 *data, u32 offset, u32 size) {
     mempool_free(buf);
     return result;
 }
+
+#endif
 
 s32 save_readwrite(u64 *data, u32 offset, u32 size, s32 type) {
     u32 i;
