@@ -6232,15 +6232,15 @@ void obj_init_frog(Object *obj, LevelObjectEntry_Frog *entry) {
  * character.
  */
 void obj_loop_frog(Object *obj, s32 updateRate) {
+    Object_Frog *frog;
     s32 i;
     s32 hopping;
     s32 var_v1;
-    f32 sp6C[8];
-    Object_Frog *frog;
+    f32 colY[8];
+    f32 cosine;
     f32 diffX;
     f32 diffY;
     f32 diffZ;
-    f32 cosine;
     f32 updateRateF;
     Object *racerObj;
 
@@ -6339,10 +6339,10 @@ void obj_loop_frog(Object *obj, s32 updateRate) {
             ignore_bounds_check();
             move_object(obj, obj->segment.x_velocity, 0.0f, obj->segment.z_velocity);
             if (func_8002BAB0(obj->segment.object.segmentID, obj->segment.trans.x_position,
-                              obj->segment.trans.z_position, sp6C) != 0) {
+                              obj->segment.trans.z_position, colY) != 0) {
                 obj->segment.trans.y_position = 0.0f;
                 ignore_bounds_check();
-                move_object(obj, 0.0f, sp6C[0], 0.0f);
+                move_object(obj, 0.0f, colY[0], 0.0f);
             }
             if (frog->squishCooldown <= 0 && (frog->hopFrame < 6 || frog->hopFrame >= 27)) {
                 if (obj_dist_racer(obj->segment.trans.x_position, obj->segment.trans.y_position,
