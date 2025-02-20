@@ -14,6 +14,7 @@
 #include "objects.h"
 #include "math_util.h"
 #include "usb/dkr_usb.h"
+#include "audiosfx.h"
 
 /************ .bss ************/
 
@@ -461,10 +462,10 @@ void profiler_snapshot(s32 eventID) {
 #define TEXT_OFFSET 10
 
 void draw_blank_box(Gfx **gfx, s32 x1, s32 y1, s32 x2, s32 y2, u32 colour) {
-    gDPSetPrimColor((*gfx)++, 0, 0, (colour << 24) & 0xFF, (colour << 16) & 0xFF, (colour << 8) & 0xFF,
+    gDPSetPrimColor((*gfx)++, 0, 0, (colour >> 24) & 0xFF, (colour >> 16) & 0xFF, (colour >> 8) & 0xFF,
                     (colour) & 0xFF);
     gDPPipeSync((*gfx)++);
-    gDPSetCombineMode(gCurrDisplayList++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
+    gDPSetCombineMode((*gfx)++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
     if (x1 < 0) {
         x1 = 0;
     }
@@ -808,6 +809,68 @@ void puppyprint_render_load(void) {
     y += 12;
 }
 
+void puppyprint_render_audio(void) {
+    char textBytes[64];
+    u32 audChan = 0;
+    s32 xOrigin = (gScreenWidth / 2) - ((32 * 7) / 2);
+    s32 x;
+    Gfx *gfx = gCurrDisplayList;
+    draw_blank_box(&gfx, (gScreenWidth / 2) - 120, (gScreenHeight / 2) - 80, (gScreenWidth / 2) + 120, (gScreenHeight / 2) + 100, 0x00000064);
+
+    unk800DC6BC *p = gAlSndPlayerPtr;
+    ALEvent *e = &p->nextEvent;
+    ALSeqPlayer *s = gMusicPlayer;
+    ALSeqPlayer *j = gJinglePlayer;
+    ALEventQueue *evtq;
+
+    x = xOrigin;
+    // sfx
+    for (int i = 0; i < 32; i++) {
+        //debug_printf("%d\n", p->soundChannels);
+        u32 col;
+        if (audChan) {
+            col = 0x00FF00FF;
+        } else {
+            col = 0xFF0000FF;
+        }
+        draw_blank_box(&gfx, x, (gScreenHeight / 2) + 76, x + 4, (gScreenHeight / 2) + 80, col);
+        x += 7;
+    }
+    x = xOrigin;
+    // bgm
+    evtq = &gMusicPlayer->evtq;
+    for (int i = 0; i < s->maxChannels; i++) {
+        u32 col;
+
+        if (audChan) {
+            col = 0x00FF00FF;
+        } else {
+            col = 0xFF0000FF;
+        }
+        draw_blank_box(&gfx, x, (gScreenHeight / 2) + 84, x + 4, (gScreenHeight / 2) + 88, col);
+        x += 7;
+    }
+    x = xOrigin;
+    // jingle
+    for (int i = 0; i < j->maxChannels; i++) {
+        u32 col;
+        if (audChan) {
+            col = 0x00FF00FF;
+        } else {
+            col = 0xFF0000FF;
+        }
+        draw_blank_box(&gfx, x, (gScreenHeight / 2) + 92, x + 4, (gScreenHeight / 2) + 96, col);
+        x += 7;
+    }
+    gDPPipeSync(gfx++);
+    set_text_font(ASSET_FONTS_SMALLFONT);
+    set_text_colour(255, 255, 255, 255, 255);
+    set_text_background_colour(0, 0, 0, 0);
+    set_kerning(FALSE);
+
+    gCurrDisplayList = gfx;
+}
+
 void puppyprint_render_coverage(Gfx **dList) {
     gSPClearGeometryMode((*dList)++, G_ZBUFFER);
     gDPPipeSync((*dList)++);
@@ -877,6 +940,9 @@ void render_profiler(void) {
         case PAGE_LOAD:
             puppyprint_render_load();
             break;
+        case PAGE_AUDIO:
+            puppyprint_render_audio();
+            break;
         case PAGE_COVERAGE:
             break;
     }
@@ -902,7 +968,7 @@ void puppyprint_log(s32 logType, const char *str, ...) {
     char textBytes[127];
     va_list arguments;
 
-    bzero(textBytes, sizeof(textBytes));
+    //bzero(textBytes, sizeof(textBytes));
     va_start(arguments, str);
     if ((len = _Printf(proutSprintf, textBytes, str, arguments)) <= 0) {
         va_end(arguments);

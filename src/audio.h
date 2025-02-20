@@ -45,6 +45,8 @@ typedef struct DelayedSound {
 
 extern ALSeqFile *gSequenceTable;
 extern MemoryPoolSlot *gAudioPool;
+extern ALSeqPlayer *gMusicPlayer;
+extern ALSeqPlayer *gJinglePlayer;
 
 void  alCSPNew(ALCSPlayer *seqp, ALSeqpConfig *config); //lib/src/al/csplayer.c
 void  alCSPSetBank(ALCSPlayer *seqp, ALBank *b); //lib/src/unknown_0C8660.c

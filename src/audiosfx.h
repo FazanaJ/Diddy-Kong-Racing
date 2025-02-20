@@ -133,6 +133,7 @@ typedef struct AudQueueCustom {
 
 
 extern s32 sfxVolumeSlider;
+extern unk800DC6BC *gAlSndPlayerPtr;
 
 extern void *alHeapDBAlloc(u8 *file, s32 line, ALHeap *hp, s32 num, s32 size); //lib/src/al
 extern void alEvtqNew(ALEventQueue *evtq, ALEventListItem *items, s32 itemCount); //lib/src/unknown_0C9C90.c

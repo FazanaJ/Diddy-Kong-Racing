@@ -825,12 +825,9 @@ s32 flash_read(u64 *data, u32 offset, u32 size) {
     s32 result;
     s32 pos = offset;
     
-    blockID = offset / FLASH_BLOCK_SIZE;
-    pageCount = (size / FLASH_BLOCK_SIZE) + 1;
-
-    if ((blockID % FLASH_BLOCK_COUNT) == 0x7F) {
-        pageCount++;
-    }
+    blockID = (offset / FLASH_BLOCK_SIZE);
+    pageCount = (((offset + size - 1) / FLASH_BLOCK_SIZE)) + 1;
+    pageCount -= blockID;
 
     pos %= FLASH_BLOCK_SIZE;
     

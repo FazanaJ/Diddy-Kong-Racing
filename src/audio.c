@@ -131,8 +131,8 @@ void audio_init(OSSched *sc) {
     synth_config.maxPVoices = 40;
     synth_config.maxUpdates = 96;
     synth_config.dmaproc = NULL;
-    synth_config.fxType[0] = 6;
-    synth_config.fxType[1] = 2;
+    synth_config.fxType[0] = AL_FX_CUSTOM;
+    synth_config.fxType[1] = AL_FX_BIGROOM;
     synth_config.outputRate = 0;
     synth_config.heap = &gALHeap;
     amCreateAudioMgr(&synth_config, 12, sc);
@@ -700,7 +700,8 @@ void sound_play(u16 soundID, s32 *soundMask) {
         return;
     }
     if (soundID >= NUM_SOUND_IDS) {
-        puppyprint_assert("Invalid sound ID: %X", soundID);
+        puppyprint_log(LOG_ERROR, "Invalid sound ID: %X\n", soundID);
+        return;
     }
     pitch = gSoundTable[soundID].pitch / 100.0f;
     if (soundMask != NULL) {
