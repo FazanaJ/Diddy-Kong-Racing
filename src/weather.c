@@ -6,7 +6,6 @@
 #include "macros.h"
 #include "structs.h"
 #include "f3ddkr.h"
-#include "PR/libultra.h"
 #include "camera.h"
 #include "tracks.h"
 #include "audio_spatial.h"
@@ -15,6 +14,7 @@
 #include "main.h"
 #include "objects.h"
 #include "thread3_main.h"
+#include "common.h"
 
 #define WEATHER_OVERRIDE_COUNT 16
 

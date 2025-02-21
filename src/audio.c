@@ -40,7 +40,7 @@ u8 gBlockVoiceLimitChange = FALSE;
 /************ .bss ************/
 
 // The audio heap is located at the start of the BSS section.
-void *gBssSectionStart;
+void *gAudioHeapStack;
 
 ALHeap gALHeap;
 ALSeqFile *gSequenceTable;
@@ -50,7 +50,7 @@ u8 gCurrentJingleID;
 s32 gMusicTempo;
 u32 *gSeqLengthTable;
 ALBankFile *gSequenceBank;
-ALBankFile *gSoundBank;
+ALBankFile *gSoundBank; // Official Name: sfxBankPtr
 SoundData *gSoundTable;
 MusicData *gSeqSoundTable;
 s32 gSoundCount;
@@ -86,8 +86,8 @@ void audio_init(OSSched *sc) {
     u32 seqfSize;
     audioMgrConfig audConfig;
 
-    //gBssSectionStart = mempool_alloc_safe(AUDIO_HEAP_SIZE, MEMP_AUDIO_POOL);
-    //alHeapInit(&gALHeap, gBssSectionStart, AUDIO_HEAP_SIZE);
+    //gAudioHeapStack = mempool_alloc_safe(AUDIO_HEAP_SIZE, MEMP_AUDIO_POOL);
+    //alHeapInit(&gALHeap, gAudioHeapStack, AUDIO_HEAP_SIZE);
 
     gAudioPool = mempool_new_sub(AUDIO_HEAP_SIZE, 300);
 
@@ -759,6 +759,14 @@ void sound_volume_set_relative(u16 soundID, void *soundState, u8 volume) {
     if (soundState) {
         sound_event_update((s32) soundState, AL_SNDP_VOL_EVT, newVolume);
     }
+}
+
+/**
+ * Return the number of playable sounds in the audio table.
+ * Official name: amGetSfxCount
+ */
+u16 sound_count(void) {
+    return gSoundBank->bankArray[0]->instArray[0]->soundCount;
 }
 
 /**

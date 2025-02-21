@@ -12,9 +12,13 @@ VERSION := us_1.0
 NON_MATCHING ?= 1
 $(eval $(call validate-option,NON_MATCHING,0 1))
 
+LIBULTRA_VERSION_DEFINE := -DBUILD_VERSION=4 -DBUILD_VERSION_STRING=\"2.0G\" -DRAREDIFFS
+
 ifeq ($(VERSION),us_1.0)
   DEFINES += VERSION_US_1_0=1
   DEFINES += F3DDKR_GBI=1
+  DEFINES += _FINALROM=1
+  DEFINES += TARGET_N64=1
 endif
 ifeq ($(NON_EQUIVALENT),1)
   DEFINES += NON_EQUIVALENT=1
@@ -179,7 +183,7 @@ OPT_FLAGS := -O2 -Xfullwarn #include -Xfullwarn here since it's not supported wi
 
 INCLUDE_DIRS := include $(BUILD_DIR) $(BUILD_DIR)/include src include/libc .
 
-C_DEFINES := $(foreach d,$(DEFINES),-D$(d))
+C_DEFINES := $(foreach d,$(DEFINES),-D$(d)) $(LIBULTRA_VERSION_DEFINE) -D_MIPS_SZLONG=32
 DEF_INC_CFLAGS := $(foreach i,$(INCLUDE_DIRS),-I$(i)) $(C_DEFINES)
 
 #IDO Warnings to Ignore. These are coding style warnings we don't follow

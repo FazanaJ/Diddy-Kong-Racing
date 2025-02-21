@@ -13,6 +13,7 @@
 #include "main.h"
 #include "lib/src/os/piint.h"
 #include "printf.h"
+#include "include/viint.h"
 
 /************ .data ************/
 
@@ -95,7 +96,7 @@ f32 gModelMatrixViewY[5];
 f32 gModelMatrixViewZ[5];
 Matrix *gModelMatrixF[6];
 MatrixS *gModelMatrixS[6];
-Matrix D_80120DA0[5];
+Matrix *D_80120DA0[5]; // Not sure why, but gModelMatrixF is populated from here, even though this is never set.
 Matrix gPerspectiveMatrixF;
 Matrix gViewMatrixF;
 Matrix gCameraMatrixF;
@@ -155,13 +156,14 @@ extern s32 D_B0000578;
 /**
  * Official Name: camInit
  */
+extern s32 D_B0000578;
 void camera_init(void) {
     s32 i;
     s32 j;
 
     // This loop is not cooperating.
     for (i = 0; i < 5; i++) {
-        gModelMatrixF[i] = D_80120DA0 + i;
+        gModelMatrixF[i] = D_80120DA0[i];
     }
 
     for (j = 0; j < 8; j++) {
@@ -912,7 +914,7 @@ void viewport_reset(Gfx **dlist) {
     gActiveCameraID = 0;
 }
 
-UNUSED const char D_800E6F34[] = "cameraPushSprMtx: model stack overflow!!\n";
+UNUSED const char D_800E6F44[] = "cameraPushSprMtx: model stack overflow!!\n";
 
 /**
  * Sets the matrix position to the world origin (0, 0, 0)

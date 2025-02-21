@@ -3,7 +3,7 @@
 
 #include "thread30_track_loading.h"
 #include "macros.h"
-#include "libultra_internal.h"
+#include <ultra64.h>
 #include "game.h"
 #include "main.h"
 
@@ -18,16 +18,10 @@ s16 gThread30LoadDelay = 0;
 
 /************ .bss ************/
 
-// Used for __osException, but .bss file order is weird. Need to fix later.
-u8 leoDiskStack[16]; // technically should have a OS_LEO_STACKSIZE or something. This is something like 4096 in
-                     // libreultra...
 OSThread gThread30;
 OSMesgQueue gThread30MesgQueue;
 OSMesg gThread30Message[2];
-u8 gThread30Active;
-
-// Currently defined in osViMgr.c
-u8 *gThread30Stack;
+u64 gThread30Stack[THREAD30_STACK / sizeof(U64)];
 
 /*****************************/
 

@@ -2,6 +2,7 @@
 /* RAM_POS: 0x800C29F0 */
 
 #include "game_text.h"
+#include "common.h"
 #include "menu.h"
 #include "objects.h"
 #include "racer.h"

@@ -33,6 +33,7 @@
 #include "main.h"
 #include "controller.h"
 #include "printf.h"
+#include "common.h"
 
 /************ .data ************/
 

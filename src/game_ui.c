@@ -2,6 +2,7 @@
 /* RAM_POS: 0x8009ECF0 */
 
 #include "game_ui.h"
+#include "common.h"
 #include "types.h"
 #include "macros.h"
 #include "structs.h"
@@ -147,7 +148,7 @@ ByteColour gHudMinimapColours[40] = {
 u32 gHudColour = COLOUR_RGBA32(255, 255, 255, 254);
 
 // Unused?
-s32 D_800E283C[5] = { 0x06FFFFFF, 0x000FFFFF, 0x06000000, 0x0014FFFF, 0x00000000 };
+s32 D_800E283C[] = { 0x06FFFFFF, 0x000FFFFF, 0x06000000, 0x0014FFFF };
 
 /*******************************/
 
@@ -231,7 +232,7 @@ u8 gMinimapOpacityTarget;
 s32 gStopwatchErrorX;
 s32 gStopwatchErrorY;
 LevelHeader_70 *D_80127194;
-s32 D_80127198[6];
+UNUSED s32 D_80127198[6];
 
 // Not sure why this ended up here, and not in rcp.c along with the rest of the task data.
 u8 gGfxTaskYieldData[OS_YIELD_DATA_SIZE];
@@ -1354,17 +1355,17 @@ void func_800A277C(s32 arg0, Object *playerRacerObj, s32 updateRate) {
         render_speedometer(playerRacerObj, updateRate);
         if (contpak > 0) {
             switch (contpak) {
-                case 1:
+                case CONTPAK_ERROR_UNKNOWN:
                     SWMessage[0] = "CAN'T";
                     SWMessage[1] = "SAVE";
                     SWMessage[2] = "GHOST";
                     break;
-                case 2:
+                case CONTPAK_ERROR_FULL:
                     SWMessage[0] = " CONTROLLER";
                     SWMessage[1] = "PAK";
                     SWMessage[2] = "FULL";
                     break;
-                case 3:
+                case CONTPAK_ERROR_DAMAGED:
                     SWMessage[0] = " CONTROLLER";
                     SWMessage[1] = "PAK";
                     SWMessage[2] = "DAMAGED";

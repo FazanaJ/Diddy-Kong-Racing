@@ -47,6 +47,7 @@
 #include "math_util.h"
 #include "controller.h"
 #include "math_util.h"
+#include "common.h"
 
 /************ .data ************/
 
@@ -56,7 +57,7 @@ u8 gTwoPlayerAdvRace = FALSE;
 s32 gIsInRace = 0;
 
 // Updated automatically from calc_func_checksums.py
-s32 gViewportFuncChecksum = 0x585E;
+s32 gViewportFuncChecksum = ViewportFuncChecksum;
 s32 gViewportFuncLength = 0x154;
 s16 gLevelPropertyStackPos = 0;
 s16 D_800DD32C = 0;

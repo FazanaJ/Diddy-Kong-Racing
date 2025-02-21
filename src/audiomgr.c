@@ -11,6 +11,7 @@
 #include "PR/abi.h"
 #include "main.h"
 #include "memory.h"
+#include "common.h"
 
 /****  type define's for structures unique to audiomgr ****/
 typedef union {
@@ -82,7 +83,7 @@ s32 gAudioCmdLen; // Set but not used
 /**** Anti Piracy - Sets random audio frequency ****/
 s16 gAntiPiracyCRCStart;
 s8 gAntiPiracyAudioFreq = FALSE;
-s32 gFunc80019808Checksum = 0x35281;
+s32 gFunc80019808Checksum = Func80019808Checksum;
 s32 gFunc80019808Length = 0xFD0;
 
 /** Queues and storage for use with audio DMA's ****/
@@ -98,7 +99,6 @@ static ALDMAproc __amDmaNew(AMDMAState **state);
 static u32 __amHandleFrameMsg(AudioInfo *info, AudioInfo *lastInfo);
 static void __amHandleDoneMsg(AudioInfo *info);
 static void __clearAudioDMA(void);
-#endif
 
 /******************************************************************************
  * Audio Manager API
@@ -366,7 +366,7 @@ static void __amHandleDoneMsg(UNUSED AudioInfo *info) {
 
     samplesLeft = IO_READ(AI_LEN_REG) >> 2;
     if (samplesLeft == 0 && !firstTime) {
-        // stubbed_printf("audio: ai out of samples\n");
+        stubbed_printf("audio: ai out of samples\n");
         firstTime = 0;
     }
 }
@@ -403,10 +403,9 @@ static s32 __amDMA(s32 addr, s32 len, UNUSED void *state) {
     while (dmaPtr) {
         buffEnd = dmaPtr->startAddr + DMA_BUFFER_LENGTH;
         if (dmaPtr->startAddr > (u32) addr) { /* since buffers are ordered */
-            break;                          /* abort if past possible */
-
-        } else if (addrEnd <= buffEnd) {    /* yes, found a buffer with samples */
-            dmaPtr->lastFrame = audFrameCt; /* mark it used */
+            break;                            /* abort if past possible */
+        } else if (addrEnd <= buffEnd) {      /* yes, found a buffer with samples */
+            dmaPtr->lastFrame = audFrameCt;   /* mark it used */
             foundBuffer = dmaPtr->ptr + addr - dmaPtr->startAddr;
             profiler_add(PP_DMA, first);
             return (int) osVirtualToPhysical(foundBuffer);
@@ -509,8 +508,8 @@ static void __clearAudioDMA(void) {
      * overrun. (Bad news, but go for it anyway, and try and recover.
      */
     for (i = 0; i < nextDMA; i++) {
-        if (osRecvMesg(&audDMAMessageQ, (OSMesg *) &iomsg, OS_MESG_NOBLOCK) ==
-            -1) { /* stubbed_printf("Dma not done\n"); */
+        if (osRecvMesg(&audDMAMessageQ, (OSMesg *) &iomsg, OS_MESG_NOBLOCK) == -1) {
+            stubbed_printf("Dma not done\n");
         }
         // if (logging)
         //     osLogEvent(log, 17, 2, iomsg->devAddr, iomsg->size);

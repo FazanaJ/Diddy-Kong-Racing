@@ -50,7 +50,7 @@ void bgdraw_primcolour(u8 red, u8 green, u8 blue);
 void bgdraw_fillcolour(s32 red, s32 green, s32 blue);
 void rdp_init(Gfx **dList);
 void rsp_init(Gfx **dList);
-void bgdraw_texture_init(TextureHeader *arg0, TextureHeader *arg1, u32 arg2);
+void bgdraw_texture_init(TextureHeader *tex1, TextureHeader *tex2, u32 shiftX);
 void gfxtask_run_xbus(Gfx *dlBegin, Gfx *dlEnd);
 void gfxtask_run_fifo(Gfx *dlBegin, Gfx *dlEnd);
 void texrect_draw(Gfx **dList, DrawTexture *element, s32 xPos, s32 yPos, u8 red, u8 green, u8 blue,

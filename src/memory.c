@@ -541,7 +541,7 @@ s32 puppyprint_subpool_offset(void) {
     for (i = 1; i <= gNumberOfMemoryPools; i++) {
         total += gMemoryPools[i].size;
         slot = &gMemoryPools[i].slots[0];
-        
+
         do {
             flags = slot->flags;
             nextIndex = slot->nextIndex;

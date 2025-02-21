@@ -393,8 +393,7 @@ void main_game_loop(void) {
     gPuppyPrint.mainTimerPoints[1][PP_PROFILER_CALC] = osGetCount();
 #endif
     if (gDrawFrameTimer == 2) {
-        fb_blank();
-        //wcopy(gVideoCurrFramebuffer, gVideoLastFramebuffer, (gScreenWidth * gScreenHeight) * 2);
+        wcopy(gVideoCurrFramebuffer, gVideoLastFramebuffer, (gScreenWidth * gScreenHeight) * 2);
     }
 
     fb_update();
