@@ -129,7 +129,7 @@ s32 osContSetMask(u8 ch) {
     __osSiGetAccess();
 
     if (ch > (CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4)) {
-        __osMaxControllers = CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4;
+        __osControllerMask = CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4;
     } else {
         __osControllerMask = ch;
     }
