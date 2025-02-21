@@ -243,6 +243,11 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
     Vec3i *pos;
 
     weather_free();
+
+    if (gConfig.perfMode || (gConfig.noCutbacks == FALSE && gNumberOfViewports > ONE_PLAYER)) {
+        return;
+    }
+
     gWeather.velX = velX;
     gWeather.velXStep = 0;
     gWeather.velXTarget = velX;
@@ -825,7 +830,7 @@ void rain_set(s32 lightningFrequency, s32 opacity, f32 time) {
  */
 void rain_fog(void) {
     s32 a, b;
-    if (gWeatherType != WEATHER_SNOW && (gNumberOfViewports == VIEWPORTS_COUNT_1_PLAYER || gConfig.noCutbacks)) {
+    if (gWeatherType != WEATHER_SNOW && (gNumberOfViewports == VIEWPORTS_COUNT_1_PLAYER/* || gConfig.noCutbacks*/)) {
         a = ((gLightningFrequency * -38) >> 16) + 1018;
         b = ((gLightningFrequency * -20) >> 16) + 1023;
         set_fog(0, a, b, 28, 15, 36);
@@ -839,7 +844,7 @@ void rain_fog(void) {
 void rain_update(s32 updateRate, s32 racerID) {
     s32 i;
 
-    if ((gNumberOfViewports == VIEWPORTS_COUNT_1_PLAYER || gConfig.noCutbacks) && gWeatherType != WEATHER_SNOW) {
+    if ((gNumberOfViewports == VIEWPORTS_COUNT_1_PLAYER/* || gConfig.noCutbacks*/) && gWeatherType != WEATHER_SNOW) {
         if (gRainHiddenTimer > 0) {
             if (updateRate < gRainHiddenTimer) {
                 gRainHiddenTimer -= updateRate;

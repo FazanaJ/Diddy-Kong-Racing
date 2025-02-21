@@ -725,7 +725,7 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
         updateRateF *= 1.15f;
     }
     playerObjectHasMoved = 0;
-    if ((racer->playerIndex >= PLAYER_ONE) && (gNumViewports < 2)) {
+    if ((racer->playerIndex >= PLAYER_ONE) && (gNumViewports < 2 || gConfig.noCutbacks)) {
         obj->particleEmitFlags |= OBJ_EMIT_UNK_100;
     }
     D_8011D550 = 0;
@@ -1277,7 +1277,7 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
     if (((racer->buoyancy > 0.0f) && (racer->unk1FB == 0)) && (obj->segment.y_velocity > 4.0f)) {
         obj->segment.y_velocity = 4.0f;
     }
-    if (gNumViewports < 2 && obj->segment.header->particleCount >= 9) {
+    if ((gNumViewports < 2 || gConfig.noCutbacks) && obj->segment.header->particleCount >= 9) {
         if ((gCurrentRacerInput & (A_BUTTON | R_TRIG)) == (A_BUTTON | R_TRIG) &&
             (gCurrentStickX < -30 || gCurrentStickX > 30)) {
             func_800B4668(obj, 8, updateRate << 10, 0x80);
@@ -1286,7 +1286,7 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
         }
     }
     if ((gCurrentPlayerIndex >= PLAYER_ONE) && (racer->buoyancy > 0.0f)) {
-        if (gNumViewports < 3) {
+        if (gNumViewports < 3 || gConfig.noCutbacks) {
             var_f2 = ((obj->segment.x_velocity * obj->segment.x_velocity) +
                        (obj->segment.y_velocity * obj->segment.y_velocity)) +
                       (obj->segment.z_velocity * obj->segment.z_velocity);
@@ -1297,7 +1297,7 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
                 if (var_f2 > 28.0f) {
                     obj->particleEmitFlags |= OBJ_EMIT_PARTICLE_1 | OBJ_EMIT_PARTICLE_2;
                 }
-                if (gNumViewports == 1 && var_f2 > 10.25f) {
+                if ((gNumViewports == 1 || gConfig.noCutbacks) && var_f2 > 10.25f) {
                     obj->particleEmitFlags |= OBJ_EMIT_UNK_40;
                 }
             }
@@ -1312,7 +1312,7 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
             }
         }
     }
-    if (gCurrentPlayerIndex != PLAYER_COMPUTER && racer->boostTimer == 0 && gNumViewports < 2) {
+    if (gCurrentPlayerIndex != PLAYER_COMPUTER && racer->boostTimer == 0 && (gNumViewports < 2 || gConfig.noCutbacks)) {
         asset20 = (Asset20 *) get_misc_asset(ASSET_MISC_20);
         asset20 = &asset20[racer->racerIndex];
         iTemp = ((racer->boostType & EMPOWER_BOOST) >> 2) + 10;
@@ -2979,7 +2979,7 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
         }
         sp60 = TRUE;
         if (gCurrentPlayerIndex >= PLAYER_ONE) {
-            if (gNumViewports < FOUR_PLAYERS) {
+            if (gNumViewports < FOUR_PLAYERS || gConfig.noCutbacks) {
                 if (racer->drift_direction > 0) {
                     obj->particleEmitFlags |= 0x1000 | 0x400;
                 } else if (racer->drift_direction < 0) {
@@ -3011,7 +3011,7 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
         gCurrentRacerInput |= B_BUTTON;
         gCurrentStickY = -70;
         sp60 = TRUE;
-        if (gNumViewports < FOUR_PLAYERS) {
+        if (gNumViewports < FOUR_PLAYERS || gConfig.noCutbacks) {
             obj->particleEmitFlags |= 0x2000 | 0x1000 | 0x800 | 0x400;
         } else {
             sp58 = 1;
@@ -3035,7 +3035,7 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
     }
     // Apply some flags when drifting
     if (racer->drift_direction != 0 && gCurrentPlayerIndex >= PLAYER_ONE) {
-        if (gNumViewports < FOUR_PLAYERS) {
+        if (gNumViewports < FOUR_PLAYERS || gConfig.noCutbacks) {
             if (racer->drift_direction > 0) {
                 obj->particleEmitFlags |= 0x1000 | 0x400;
             } else {
@@ -3520,7 +3520,7 @@ void func_8005250C(Object *obj, Object_Racer *racer, s32 updateRate) {
         racer->unk1F3 |= 4;
     }
     if (racer->unk1F3 & 8) {
-        if (gNumViewports < 3) {
+        if (gNumViewports < FOUR_PLAYERS || gConfig.noCutbacks) {
             if (gCurrentPlayerIndex >= PLAYER_ONE) {
                 obj->particleEmitFlags |= 0x100000;
             } else {
@@ -3682,7 +3682,7 @@ void racer_spinout_car(Object *obj, Object_Racer *racer, s32 updateRate, f32 upd
     }
     angleVel = racer->y_rotation_vel;
     if (gCurrentPlayerIndex > PLAYER_COMPUTER) {
-        if (gNumViewports < VIEWPORTS_COUNT_4_PLAYERS) {
+        if (gNumViewports < VIEWPORTS_COUNT_4_PLAYERS || gConfig.noCutbacks) {
             obj->particleEmitFlags |= 0x4FC00;
         } else {
             if (racer->wheel_surfaces[2] < SURFACE_NONE) {

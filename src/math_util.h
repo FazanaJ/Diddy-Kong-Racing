@@ -22,7 +22,12 @@
     if ((x) < (low)) (x) += ((high) * 2) - 1;   \
 }
 
-#define	ABS(d)		((d) > 0) ? (d) : -(d)
+
+#if defined(__sgi)
+    #define	ABS(d)		((d) > 0) ? (d) : -(d)
+#else
+    #define ABS(x) abs(x)
+#endif
 
 u16 arctan2_f(f32 y, f32 x);
 f32 coss_f(s16 angle);

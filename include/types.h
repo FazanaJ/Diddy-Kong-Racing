@@ -52,6 +52,7 @@ typedef u8 TriangleList;
 #define abs(x)             __builtin_abs(x)
 #define fabsf(x)           __builtin_fabsf(x)
 #define sqrtf(f) __builtin_sqrtf(f)
+#define round(f) __builtin_round(f)
 #endif
 
 #endif

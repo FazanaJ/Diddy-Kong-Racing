@@ -37,6 +37,5 @@ typedef union
 #endif
 
 #define ROUND(d)	(int)(((d) >= 0.0f)? ((d) + 0.5f): ((d) - 0.5f))
-#define	ABS(d)		((d) > 0) ? (d) : -(d)
 
 //extern float	__libm_qnan_f;

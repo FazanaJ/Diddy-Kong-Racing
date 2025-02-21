@@ -49,7 +49,7 @@ u16 gScreenHeight;
  * Framebuffers are allocated at runtime.
  * Official Name: viInit
  */
-void video_init(s32 videoModeIndex) {
+void video_init(UNUSED s32 videoModeIndex) {
     s32 i;
     if (osTvType == TV_TYPE_PAL) {
         gVideoRefreshRate = REFRESH_50HZ;
@@ -225,8 +225,6 @@ void fb_alloc(s32 index) {
         fbAddr[100] = 0xBEEF;
     }
 }
-
-void swap_framebuffers(void);
 
 /**
  * Read the framebuffer and check to see if the magic number written is still there.

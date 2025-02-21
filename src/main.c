@@ -825,7 +825,7 @@ void puppyprint_render_audio(void) {
 
     x = xOrigin;
     // sfx
-    for (int i = 0; i < 32; i++) {
+    for (int i = 0; i < p->soundChannels; i++) {
         //debug_printf("%d\n", p->soundChannels);
         u32 col;
         if (audChan) {

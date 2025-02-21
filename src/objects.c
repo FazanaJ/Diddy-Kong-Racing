@@ -2803,7 +2803,7 @@ void render_3d_model(Gfx **dList, Object *obj) {
                     racerObj->playerIndex == PLAYER_COMPUTER) {
                     flags = FALSE;
                 }
-                if (gNumberOfViewports != VIEWPORTS_COUNT_1_PLAYER) {
+                if (gNumberOfViewports != VIEWPORTS_COUNT_1_PLAYER && gConfig.noCutbacks == FALSE) {
                     flags = FALSE;
                 }
                 obj->unk44 = (Vertex *) obj68->unk4[obj68->animationTaskNum];

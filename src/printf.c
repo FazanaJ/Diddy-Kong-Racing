@@ -603,13 +603,17 @@ void debug_text_background(Gfx **dList, u32 ulx, u32 uly, u32 lrx, u32 lry) {
 s32 debug_text_character(Gfx **dList, s32 asciiVal) {
     s32 fontCharWidth;
     s32 fontCharU;
+    s32 width;
+    s32 prevTex = gDebugFontTexture;
 
     if (asciiVal < '@') {
         // Character is a symbol or number and not a letter
         if (gDebugFontTexture != 0) {
             if (gDebugTextOn) {
-                gDPLoadTextureBlock((*dList)++, OS_PHYSICAL_TO_K0(gTexture[0] + 1), G_IM_FMT_IA, G_IM_SIZ_8b, 192, 11,
-                                    0, 2, 2, 0, 0, 0, 0);
+                width = 192;
+                //gDPLoadTextureBlock((*dList)++, OS_PHYSICAL_TO_K0(gTexture[0] + 1), G_IM_FMT_IA, G_IM_SIZ_8b, width, 11, 0, 2, 2, 0, 0, 0, 0);
+                gDPSetTextureImage((*dList)++, G_IM_FMT_IA, G_IM_SIZ_8b_LOAD_BLOCK, 1, OS_PHYSICAL_TO_K0(gTexture[0] + 1));
+                gDPLoadBlock((*dList)++, G_TX_LOADTILE, 0, 0, (((width) * (11) + G_IM_SIZ_8b_INCR) >> G_IM_SIZ_8b_SHIFT) -1, CALC_DXT(width, G_IM_SIZ_8b_BYTES));
             }
             gDebugFontTexture = 0;
         }
@@ -618,8 +622,10 @@ s32 debug_text_character(Gfx **dList, s32 asciiVal) {
         // Character is a upper case letter
         if (gDebugFontTexture != 1) {
             if (gDebugTextOn) {
-                gDPLoadTextureBlock((*dList)++, OS_PHYSICAL_TO_K0(gTexture[1] + 1), G_IM_FMT_IA, G_IM_SIZ_8b, 248, 11,
-                                    0, 2, 2, 0, 0, 0, 0);
+                width = 248;
+                //gDPLoadTextureBlock((*dList)++, OS_PHYSICAL_TO_K0(gTexture[1] + 1), G_IM_FMT_IA, G_IM_SIZ_8b, width, 11, 0, 2, 2, 0, 0, 0, 0);
+                gDPSetTextureImage((*dList)++, G_IM_FMT_IA, G_IM_SIZ_8b_LOAD_BLOCK, 1, OS_PHYSICAL_TO_K0(gTexture[1] + 1));
+                gDPLoadBlock((*dList)++, G_TX_LOADTILE, 0, 0, (((width) * (11) + G_IM_SIZ_8b_INCR) >> G_IM_SIZ_8b_SHIFT) -1, CALC_DXT(width, G_IM_SIZ_8b_BYTES));
             }
             gDebugFontTexture = 1;
         }
@@ -628,12 +634,19 @@ s32 debug_text_character(Gfx **dList, s32 asciiVal) {
         // Character is a lower case letter
         if (gDebugFontTexture != 2) {
             if (gDebugTextOn) {
-                gDPLoadTextureBlock((*dList)++, OS_PHYSICAL_TO_K0(gTexture[2] + 1), G_IM_FMT_IA, G_IM_SIZ_8b, 192, 11,
-                                    0, 2, 2, 0, 0, 0, 0);
+                width = 192;
+                //gDPLoadTextureBlock((*dList)++, OS_PHYSICAL_TO_K0(gTexture[2] + 1), G_IM_FMT_IA, G_IM_SIZ_8b, width, 11, 0, 2, 2, 0, 0, 0, 0);
+                gDPSetTextureImage((*dList)++, G_IM_FMT_IA, G_IM_SIZ_8b_LOAD_BLOCK, 1, OS_PHYSICAL_TO_K0(gTexture[2] + 1));
+                gDPLoadBlock((*dList)++, G_TX_LOADTILE, 0, 0, (((width) * (11) + G_IM_SIZ_8b_INCR) >> G_IM_SIZ_8b_SHIFT) -1, CALC_DXT(width, G_IM_SIZ_8b_BYTES));
             }
             gDebugFontTexture = 2;
         }
         asciiVal -= '`';
+    }
+    if (gDebugFontTexture != prevTex) {
+        gDPSetTile((*dList)++, G_IM_FMT_IA, G_IM_SIZ_8b_LOAD_BLOCK, 0, 0, G_TX_LOADTILE, 0, 2, 0, 0, 2, 0, 0);
+        gDPSetTile((*dList)++, G_IM_FMT_IA, G_IM_SIZ_8b, (((width) * G_IM_SIZ_8b_LINE_BYTES) + 7) >> 3, 0, G_TX_RENDERTILE, NULL, 2, 0, 0, 2, 0, 0);
+        gDPSetTileSize((*dList)++, G_TX_RENDERTILE, 0, 0, ((width)  - 1) << G_TEXTURE_IMAGE_FRAC, ((11) - 1) << G_TEXTURE_IMAGE_FRAC);
     }
     fontCharU = gDebugFontCoords[gDebugFontTexture][asciiVal].u;
     fontCharWidth = (gDebugFontCoords[gDebugFontTexture][asciiVal].v - fontCharU) + 1;
