@@ -5,6 +5,7 @@
 #include "libultra_internal.h"
 #include "lib/src/os/piint.h"
 #include "macros.h"
+#include "src/stacks.h"
 
 static OSThread piThread ALIGNED(0x8);
 static STACK(piThreadStack, OS_PIM_STACKSIZE) ALIGNED(0x10);
@@ -51,11 +52,11 @@ void osCreatePiManager(OSPri pri, OSMesgQueue* cmdQ, OSMesg* cmdBuf, s32 cmdMsgC
 
     osSetEventMesg(OS_EVENT_PI, &piEventQueue, (OSMesg)0x22222222);
     oldPri = -1;
-    myPri = osGetThreadPri(NULL);
+    myPri = __osRunningThread->priority;
 
     if (myPri < pri) {
         oldPri = myPri;
-        osSetThreadPri(NULL, pri);
+        osSetThreadPri(pri);
     }
 
     savedMask = __osDisableInt();
@@ -71,6 +72,6 @@ void osCreatePiManager(OSPri pri, OSMesgQueue* cmdQ, OSMesg* cmdBuf, s32 cmdMsgC
     __osRestoreInt(savedMask);
 
     if (oldPri != -1) {
-        osSetThreadPri(NULL, oldPri);
+        osSetThreadPri(oldPri);
     }
 }

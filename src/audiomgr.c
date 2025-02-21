@@ -95,7 +95,6 @@ OSMesg audDMAMessageBuf[NUM_DMA_MESSAGES];
 static void __amMain(UNUSED void *arg);
 static s32 __amDMA(s32 addr, s32 len, void *state);
 static ALDMAproc __amDmaNew(AMDMAState **state);
-#ifndef DISABLE_AUDIO
 static u32 __amHandleFrameMsg(AudioInfo *info, AudioInfo *lastInfo);
 static void __amHandleDoneMsg(AudioInfo *info);
 static void __clearAudioDMA(void);

@@ -30,6 +30,7 @@
 #include "controller.h"
 #include "particles.h"
 #include "common.h"
+#include "thread0_epc.h"
 
 #define MAX_NUMBER_OF_GHOST_NODES 360
 
@@ -780,14 +781,14 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
     }
     if ((gCurrentRacerInput & B_BUTTON) && (gCurrentStickY < -40 || racer->velocity < 0.0f)) {
         racer->brake += updateRateF * 0.046f;
-        if (racer->brake > 1.2) {
+        if (racer->brake > 1.2f) {
             racer->brake = 1.2f;
         }
         if (racer->velocity < -2.0f) {
             rumble_set(racer->playerIndex, RUMBLE_TYPE_5);
         }
     } else {
-        racer->brake -= updateRateF * 0.046;
+        racer->brake -= updateRateF * 0.046f;
         if (racer->brake < 0.0f) {
             racer->brake = 0.0f;
         }

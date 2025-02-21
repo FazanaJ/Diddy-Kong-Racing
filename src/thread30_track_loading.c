@@ -21,7 +21,8 @@ s16 gThread30LoadDelay = 0;
 OSThread gThread30;
 OSMesgQueue gThread30MesgQueue;
 OSMesg gThread30Message[2];
-u64 gThread30Stack[THREAD30_STACK / sizeof(U64)];
+u8 *gThread30Stack;
+u8 gThread30Active;
 
 /*****************************/
 

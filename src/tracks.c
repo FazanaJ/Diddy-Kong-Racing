@@ -2935,15 +2935,15 @@ void func_8002E234(Object *obj, s32 bool) {
         D_8011D0CC = obj->segment.header->unk42 + yPos;
         if (obj->behaviorId != BHV_RACER) {
             var_f2 = obj->segment.object.distanceToCamera;
-            if (var_f2 < 0.0) {
+            if (var_f2 < 0.0f) {
                 var_f2 = -var_f2;
             }
-            var_f2 -= 512.0;
-            if (var_f2 < 0.0) {
-                var_f2 = 0.0;
+            var_f2 -= 512.0f;
+            if (var_f2 < 0.0f) {
+                var_f2 = 0.0f;
             }
-            if (var_f2 > 1024.0) {
-                var_f2 = 1024.0;
+            if (var_f2 > 1024.0f) {
+                var_f2 = 1024.0f;
             }
             D_8011D0C8 += (var_f2 * 0.005f);
         }
