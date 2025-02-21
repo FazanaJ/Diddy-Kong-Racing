@@ -162,6 +162,10 @@ typedef struct {
 #define	CONT_ERR_VOICE_WORD		14
 #define	CONT_ERR_VOICE_NO_RESPONSE	15
 
+#define CONT_P1	0x01
+#define CONT_P2 0x02
+#define CONT_P3 0x04
+#define CONT_P4 0x08
 
 #if defined(_LANGUAGE_C) || defined(_LANGUAGE_C_PLUS_PLUS)
 
@@ -187,6 +191,9 @@ typedef struct {
 
 /* Controller interface */
 
+
+extern u8 __osControllerMask;
+
 extern s32		osContInit(OSMesgQueue *mq, u8 *bitpattern, OSContStatus *data);
 extern s32		osContReset(OSMesgQueue *, OSContStatus *);
 extern s32		osContStartQuery(OSMesgQueue *);
@@ -194,6 +201,7 @@ extern s32		osContStartReadData(OSMesgQueue *mq);
 #ifndef _HW_VERSION_1
 extern s32		osContSetCh(u8);
 #endif
+extern s32 osContSetMask(u8 ch);
 extern void		osContGetQuery(OSContStatus *);
 extern void		osContGetReadData(OSContPad *);
 

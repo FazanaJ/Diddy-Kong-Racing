@@ -32,6 +32,9 @@ s32 osPfsIsPlug(OSMesgQueue *queue, u8 *pattern) {
         __osPfsGetInitData(&bitpattern, data);
 
         for (channel = 0; channel < __osMaxControllers; channel++) {
+            if ((__osControllerMask & (1 << channel)) == 0) {
+                continue;
+            }
             if ((data[channel].status & CONT_ADDR_CRC_ER) == 0) {
                 crc_error_cnt--;
                 break;
@@ -43,6 +46,9 @@ s32 osPfsIsPlug(OSMesgQueue *queue, u8 *pattern) {
 
         if (crc_error_cnt < 1) {
             for (channel = 0; channel < __osMaxControllers; channel++) {
+                if ((__osControllerMask & (1 << channel)) == 0) {
+                    continue;
+                }
                 if (data[channel].errno == 0 && (data[channel].status & CONT_CARD_ON) != 0)
                     bits |= 1 << channel;
             }
@@ -77,6 +83,9 @@ void __osPfsRequestData(u8 cmd) {
     requestformat.dummy1 = CONT_CMD_NOP;
 
     for (i = 0; i < __osMaxControllers; i++) {
+        if ((__osControllerMask & (1 << i)) == 0) {
+            continue;
+        }
         *(__OSContRequesFormat *)ptr = requestformat;
         ptr += sizeof(__OSContRequesFormat);
     }
@@ -94,6 +103,9 @@ void __osPfsGetInitData(u8 *pattern, OSContStatus *data) {
     ptr = (u8 *)&__osPfsPifRam;
 
     for (i = 0; i < __osMaxControllers; i++, ptr += sizeof(__OSContRequesFormat)) {
+        if ((__osControllerMask & (1 << i)) == 0) {
+            continue;
+        }
         requestformat = *(__OSContRequesFormat *)ptr;
         data->errno = CHNL_ERR(requestformat);
         if (data->errno == 0) {

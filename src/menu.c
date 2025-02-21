@@ -2996,6 +2996,7 @@ void menu_title_screen_init(void) {
     gTitleCinematicTextColourCount = 0;
     gOpacityDecayTimer = 0;
     gIsInTracksMode = FALSE;
+    osContSetMask(CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4);
 }
 
 /**
@@ -5039,6 +5040,7 @@ void menu_expansionerror_init(void) {
     load_font(FONT_COLOURFUL);
     music_play(SEQUENCE_NO_TROPHY_FOR_YOU);
     settings = get_settings();
+    osContSetMask(CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4);
     sExpansionErrorTimer = 0;
     sExpansionErrorLang = get_language();
 }
@@ -6278,6 +6280,7 @@ void menu_character_select_init(void) {
     menu_imagegroup_load(gCharSelectImageIndices);
     transition_begin(&sMenuTransitionFadeOut);
     load_font(ASSET_FONTS_BIGFONT);
+    osContSetMask(CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4);
 }
 
 /**
@@ -6536,6 +6539,7 @@ s32 menu_character_select_loop(s32 updateRate) {
     s32 confirmOffset;
     s8 activePlayers[4];
     s32 j;
+    s32 contMask;
 
     charselect_render_text(updateRate);
     charselect_music_channels(updateRate);
@@ -6582,6 +6586,14 @@ s32 menu_character_select_loop(s32 updateRate) {
 
             charselect_assign_ai(charSlot);
             charselect_assign_players(gActivePlayersArray);
+
+            contMask = 0;
+            for (j = 0; j < 4; j++) {
+                if (gActivePlayersArray[j]) {
+                    contMask |= (1 << j);
+                }
+            }
+            osContSetCh(contMask);
 
             gIsInTracksMode = 1;
             if (confirmOffset >= gNumberOfActivePlayers) {

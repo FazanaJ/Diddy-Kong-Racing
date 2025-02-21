@@ -31,6 +31,7 @@ s32 init_controllers(void) {
     osContInit(&sSIMesgQueue, &bitpattern, gControllerStatus);
     osContStartReadData(&sSIMesgQueue);
     initialise_player_ids();
+    osContSetMask(CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4);
 
     sNoControllerPluggedIn = FALSE;
 

@@ -24,6 +24,7 @@ OSMesg __osEepromTimerMsg;
 s32 D_8012CDD4[2]; //Padding? Maybe osClockRate should be declared here?
 ALIGNED16 OSPifRam __osPfsPifRam;
 extern OSTime osClockRate;
+u8 __osControllerMask;
 
 s32 osContInit(OSMesgQueue *mq, u8 *bitpattern, OSContStatus *data) {
     OSMesg dummy;
@@ -36,6 +37,7 @@ s32 osContInit(OSMesgQueue *mq, u8 *bitpattern, OSContStatus *data) {
         return ret;
     }
     __osContinitialized = TRUE;
+    __osControllerMask = CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4;
     t = osGetTime();
     if (HALF_A_SECOND > t) {
         osCreateMesgQueue(&timerMesgQueue, &dummy, 1);
@@ -102,4 +104,37 @@ void __osPackRequestData(u8 cmd) {
     }
 
     ptr[0] = CONT_CMD_END;
+}
+
+s32 osContSetCh(u8 ch) {
+    s32 ret = 0;
+
+    __osSiGetAccess();
+
+    if (ch > MAXCONTROLLERS) {
+        __osMaxControllers = MAXCONTROLLERS;
+    } else {
+        __osMaxControllers = ch;
+    }
+
+    __osContLastCmd = CONT_CMD_END;
+    __osSiRelAccess();
+    return ret;
+}
+
+s32 osContSetMask(u8 ch) {
+    s32 ret = 0;
+    s32 i;
+
+    __osSiGetAccess();
+
+    if (ch > (CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4)) {
+        __osMaxControllers = CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4;
+    } else {
+        __osControllerMask = ch;
+    }
+
+    __osContLastCmd = CONT_CMD_END;
+    __osSiRelAccess();
+    return ret;
 }
