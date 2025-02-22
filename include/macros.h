@@ -71,6 +71,7 @@
     #define ABSF(x) (x < 0.f ? -x : x)
 #else
     #define ABSF(x) fabsf(x)
+    #define INLINE static inline
 #endif
 
 // Used to suppress warnings in the ./generate_ctx.sh script.

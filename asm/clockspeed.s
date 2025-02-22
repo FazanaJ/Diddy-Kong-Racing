@@ -46,3 +46,9 @@ reboot_disable_interrupts:
     jr $ra 
     mtc0 $t0, $12      # Write new status flags
 
+.global emux_detect
+.balign 32
+emux_detect:
+or $v0, $0, $0
+jr $ra
+tne $v0, $v0, 0x0

@@ -26,88 +26,177 @@ u16 gPlatform = 0;
 
 /******************************/
 
+
+extern u8 __osContPifRam[];
+extern u8 __osContLastCmd;
+void __osSiGetAccess(void);
+void __osSiRelAccess(void);
+void __osPiGetAccess(void);
+void __osPiRelAccess(void);
 u32 get_clockspeed(void);
 void skGetId(u32 *arg);
+u32 emux_detect(void); // defined in asm/emux.s
 
-void check_cache_emulation() {
+INLINE void get_pj64_version() {
+    // When calling this function, we know that the emulator is some version of Project 64,
+    // and it isn't using the PJ64 4.0 interpreter core. Figure out which version it is.
+    
+    // PJ64 4.0 dynarec core doesn't update the COUNT register correctly within recompiled functions
+    if (get_clockspeed() == 0) {
+        gPlatform |= PJ64_4;
+        return;
+    }
+
+    // Instead of implementing this PIF command correctly, PJ64 versions prior to 3.0 just have
+    // a set of hardcoded values for some requests. At least one of these hardcoded values has a
+    // typo in it, making it give an incorrect result.
+    __osSiGetAccess();
+    u32 *pifRam32 = (u32*)__osContPifRam;
+    for (s32 i = 0; i < 15; i++) pifRam32[i] = 0;
+    pifRam32[15] = 2;
+
+    const u8 cicTest[] = {
+        0x0F, 0x0F,
+        0xEC, 0x3C, 0xB6, 0x76, 0xB8, 0x1D, 0xBB, 0x8F,
+        0x6B, 0x3A, 0x80, 0xEC, 0xED, 0xEA, 0x5B
+    };
+
+    memcpy(&__osContPifRam[46], cicTest, 17);
+
+    __osSiRawStartDma(OS_WRITE, __osContPifRam);
+    osRecvMesg(&sSIMesgQueue, NULL, OS_MESG_BLOCK);
+    __osContLastCmd = 254;
+
+    __osSiRawStartDma(OS_READ, __osContPifRam);
+    osRecvMesg(&sSIMesgQueue, NULL, OS_MESG_BLOCK);
+    const u8 pifCheck = __osContPifRam[54];
+    __osSiRelAccess();
+
+    if (pifCheck == 0xB0) {
+        gPlatform |= PJ64_1;
+    } else {
+        gPlatform |= PJ64_3;
+    }
+}
+
+static u8 check_cache_emulation() {
     // Disable interrupts to ensure that nothing evicts the variable from cache while we're using it.
     u32 saved = __osDisableInt();
     // Create a variable with an initial value of 1. This value will remain cached.
     volatile u8 sCachedValue = 1;
     // Overwrite the variable directly in RDRAM without going through cache.
     // This should preserve its value of 1 in dcache if dcache is emulated correctly.
-    *(u8 *) (K0_TO_K1(&sCachedValue)) = 0;
+    *(u8*)(K0_TO_K1(&sCachedValue)) = 0;
     // Read the variable back from dcache, if it's still 1 then cache is emulated correctly.
     // If it's zero, then dcache is not emulated correctly.
-    if (sCachedValue) {
-        gPlatform |= ARES;
-    }
+    const u8 cacheEmulated = sCachedValue;
     // Restore interrupts
     __osRestoreInt(saved);
+    return cacheEmulated;
 }
 
 void get_platform(void) {
-    // u32 notiQue;
-    gPlatform = 0;
-    char region[5];
+    if ((u32)IO_READ(DPC_PIPEBUSY_REG) | (u32)IO_READ(DPC_TMEM_REG) | (u32)IO_READ(DPC_BUFBUSY_REG)) {
+        gPlatform |= emux_detect() ? ARES : CONSOLE;
 
-    if (__osBbIsBb) {
-        gPlatform = IQUE | CONSOLE;
-        puppyprint_log(LOG_INFO, "iQue Player detected.\n");
+        if (gPlatform & CONSOLE) {
+            if (__osBbIsBb) {
+                gPlatform = IQUE | CONSOLE;
+                puppyprint_log(LOG_INFO, "iQue Player detected.\n");
+                return;
+            } else {
+                char region[5];
+                if (osTvType == TV_TYPE_PAL) {
+                    puppyprintf(region, "PAL");
+                } else if (osTvType == TV_TYPE_NTSC) {
+                    puppyprintf(region, "NTSC");
+                } else {
+                    puppyprintf(region, "MPAL");
+                }
+                puppyprint_log(LOG_INFO, "%s N64 Console detected.\n", region);
+            }
+        } else {
+            puppyprint_log(LOG_INFO, "Ares N64 Emulator Detected.\n");
+        }
         return;
     }
 
-    // Read the RDP timing registers. Emulators read them as zero.
-    if ((u32) IO_READ(DPC_PIPEBUSY_REG) | (u32) IO_READ(DPC_TMEM_REG) | (u32) IO_READ(DPC_BUFBUSY_REG)) {
-        gPlatform |= CONSOLE;
-    } else {
-        gPlatform |= EMULATOR;
-        // Simple64 and Ares correctly emulate cache on the N64, perform this check to single them out.
-        check_cache_emulation();
-    }
-
-    // Find the counter factor of an emulator. Console will return 0. This is mainly for Project64, which can default to
-    // 2, which can affect performance.
-    if (get_clockspeed() > 1) {
+    gPlatform |= EMULATOR;
+    u32 cf = get_clockspeed();
+    if (cf > 1) {
         gPlatform |= CF_2;
     }
 
-    if (*((volatile u64 *) 0xb4000008u) == 0x00080008000C000Cull && !(gPlatform & ARES)) {
-        gPlatform |= PJ64;
-    }
-
-#ifdef PUPPYPRINT_DEBUG
-    // Piece together a string to print out.
-    if (gPlatform & EMULATOR) {
-        if (gPlatform & ARES) {
-            puppyprint_log(LOG_INFO, "AresN64/Simple64 Emulator detected.\n");
-        } else if (gPlatform & PJ64) {
-            puppyprint_log(LOG_INFO, "Project 64 detected.\n");
-        } else {
-            puppyprint_log(LOG_INFO, "N64 Emulator detected.\n");
-        }
+    // Perform a read from unmapped PIF ram.
+    // On console and well behaved emulators, this echos back the lower half of
+    // the requested memory address, repeating it if a whole word is requested.
+    // So in this case, it should result in 0x01040104
+    u32 magic;
+    osPiReadIo(0x1fd00104u, &magic);
+    if (magic == 0u) {
+        // Older versions of mupen (and pre-2.12 ParallelN64) just always read 0
+        gPlatform |= MUPEN_OLD;
+        puppyprint_log(LOG_INFO, "Mupen64 Emulator Detected.\n");
     } else {
-        if (osTvType == TV_TYPE_PAL) {
-            puppyprintf(region, "PAL");
-        } else if (osTvType == TV_TYPE_NTSC) {
-            puppyprintf(region, "NTSC");
-        } else {
-            puppyprintf(region, "MPAL");
+        __osPiGetAccess();
+        while (IO_READ(PI_STATUS_REG) & (PI_STATUS_DMA_BUSY|PI_STATUS_IO_BUSY));
+        const u16 halfMagic = *((volatile u16*)0xbfd00106u);
+        __osPiRelAccess();
+
+        // Now do a halfword read instead.
+        switch (halfMagic) {
+            // This is the correct result (echo back the lower half of the requested address)
+            case 0x0106: {
+                // Test to see if the libpl emulator extension is present.
+                osPiWriteIo(0x1ffb0000u, 0u);
+                osPiReadIo(0x1ffb0000u, &magic);
+                if (magic == 0x00500000u) {
+                    // libpl is supported. Must be ParallelN64
+                    gPlatform |= PARALLEL_LAUNCHER;
+                    puppyprint_log(LOG_INFO, "Ares N64 Emulator Detected.\n");
+                    break;
+                }
+                
+                // If the cache is emulated, it's Ares
+                if (check_cache_emulation()) {
+                    gPlatform |= ARES;
+                    puppyprint_log(LOG_INFO, "Ares N64 Emulator Detected.\n");
+                    break;
+                }
+
+                // its the Project64 4.0 interpreter core
+                gPlatform |= PJ64_4;
+                puppyprint_log(LOG_INFO, "Project64 Emulator Detected.\n");
+                break;
+            }
+            // This looks like it should be the expected result considering what we got when we
+            // requested the whole word, but that's actually wrong. Later versions of mupen
+            // (and the Simple64 fork of it) get this wrong.
+            case 0x0104:
+                if (check_cache_emulation()) {
+                    gPlatform |= SIMPLE64;
+                    puppyprint_log(LOG_INFO, "Simple64 Emulator Detected.\n");
+                } else {
+                    gPlatform |= MUPEN_NEXT;
+                    puppyprint_log(LOG_INFO, "Mupen64 Emulator Detected.\n");
+                }
+                break;
+            // If reading a word gives the correct response, but reading a halfword always gives 0,
+            // then we are dealing with some version of Project 64. Call into this helper function
+            // to find out which version we're dealing with.
+            case 0x0000:
+                get_pj64_version();
+                puppyprint_log(LOG_INFO, "Project64 Emulator Detected.\n");
+                break;
+            // No known emulator gives any other value. If we somehow manage to get here, just return 0
+            default:
+                puppyprint_log(LOG_INFO, "Cannot determine run environment.\n");
+                gPlatform = 0;
+                break;
         }
-        puppyprint_log(LOG_INFO, "%s N64 Console detected.\n", region);
     }
-    // Skip all this on console. This is emulator related info.
-    if ((gPlatform & CONSOLE) == FALSE) {
-        u32 cf;
-        if (gPlatform & CF_2) {
-            cf = 2;
-        } else {
-            cf = 1;
-        }
-        puppyprint_log(LOG_INFO, "Counter Factor Setting: %d.\n", cf);
-    }
-#endif
-}
+    puppyprint_log(LOG_INFO, "Counter Factor Setting: %d.\n", cf);
+} 
 
 #define STEP 0x100000
 #define SIZE_4MB 0x400000
@@ -145,7 +234,7 @@ u32 osGetMemSize(void) {
     return size;
 }
 
-void find_expansion_pak(void) {
+INLINE void find_expansion_pak(void) {
 #ifdef FORCE_4MB_MEMORY
     gExpansionPak = FALSE;
     gUseExpansionMemory = FALSE;
@@ -219,7 +308,7 @@ void thread1_main(UNUSED void *unused) {
 
 s32 _Printf(outfun prout, char *dst, const char *fmt, va_list args);
 
-static char *proutSprintf(char *dst, const char *src, size_t count) {
+INLINE char *proutSprintf(char *dst, const char *src, size_t count) {
     char *ret = dst;
     bcopy((char *) src, dst, count);
     return ret + count;
@@ -319,7 +408,7 @@ void profiler_add(u32 time, u32 offset) {
     gPuppyPrint.timers[time][perfIteration] += offset;
 }
 
-void puppyprint_input(void) {
+INLINE void puppyprint_input(void) {
     u32 inputHeld;
     u32 inputPressed;
 
@@ -510,7 +599,7 @@ void puppyprint_render_minimal(void) {
     draw_text(&gCurrDisplayList, 112 - 4, 40, textBytes, ALIGN_TOP_RIGHT);
 }
 
-void puppyprint_render_overview(void) {
+INLINE void puppyprint_render_overview(void) {
     char textBytes[32];
     s32 i;
     s32 y;
@@ -549,7 +638,7 @@ void puppyprint_render_overview(void) {
     }
 }
 
-void puppyprint_render_breakdown(void) {
+INLINE void puppyprint_render_breakdown(void) {
     char textBytes[32];
     s32 y;
     s32 i;
@@ -577,7 +666,7 @@ void puppyprint_render_breakdown(void) {
     }
 }
 
-void puppyprint_render_rcp(void) {
+INLINE void puppyprint_render_rcp(void) {
     char textBytes[32];
     int y = 8;
 
@@ -656,7 +745,7 @@ void puppyprint_render_rcp(void) {
 
 }
 
-void puppyprint_render_memory(void) {
+INLINE void puppyprint_render_memory(void) {
     char textBytes[24];
     s32 y;
     u32 i;
@@ -696,7 +785,7 @@ void puppyprint_render_memory(void) {
 
 #undef TOTALRAM
 
-void puppyprint_render_objects(void) {
+INLINE void puppyprint_render_objects(void) {
     char textBytes[48];
     s32 y;
     s32 i;
@@ -726,7 +815,7 @@ void puppyprint_render_objects(void) {
     }
 }
 
-void puppyprint_render_log(void) {
+INLINE void puppyprint_render_log(void) {
     s32 i;
     s32 y;
     s32 sineTime = 224 + (sins_f(sTimerTemp * 2500.0f) * 32.0f);
@@ -773,7 +862,7 @@ void puppyprint_reset_load(void) {
     bzero(&gPuppyPrint.loadTimes, sizeof(gPuppyPrint.loadTimes));
 }
 
-void puppyprint_render_load(void) {
+INLINE void puppyprint_render_load(void) {
     char textBytes[48];
     s32 y;
 
@@ -809,7 +898,7 @@ void puppyprint_render_load(void) {
     y += 12;
 }
 
-void puppyprint_render_audio(void) {
+INLINE void puppyprint_render_audio(void) {
     char textBytes[64];
     u32 audChan = 0;
     s32 xOrigin = (gScreenWidth / 2) - ((32 * 7) / 2);
@@ -882,7 +971,7 @@ void puppyprint_render_coverage(Gfx **dList) {
     gDPFillRectangle((*dList)++, 0, 0, gScreenWidth - 1, gScreenHeight - 1);
 }
 
-void render_page_menu(void) {
+INLINE void render_page_menu(void) {
     char textBytes[16];
     s32 i;
     s32 y;
@@ -983,19 +1072,19 @@ void puppyprint_log(s32 logType, const char *str, ...) {
     va_end(arguments);
 }
 
-void swapu(u8 *xp, u8 *yp) {
+INLINE void swapu(u8 *xp, u8 *yp) {
     u8 temp = *xp;
     *xp = *yp;
     *yp = temp;
 }
 
-void swapu16(u16 *xp, u16 *yp) {
+INLINE void swapu16(u16 *xp, u16 *yp) {
     u16 temp = *xp;
     *xp = *yp;
     *yp = temp;
 }
 
-void calculate_print_order(void) {
+INLINE void calculate_print_order(void) {
     u32 i, j, min_idx;
     for (i = 0; i < PP_RSP_GFX; i++) {
         sPrintOrder[i] = i;
@@ -1048,7 +1137,7 @@ void calculate_ram_print_order(void) {
     }
 }
 
-void calculate_obj_print_order(void) {
+INLINE void calculate_obj_print_order(void) {
     u32 i, j, min_idx;
     for (i = 0; i < NUM_OBJECT_PRINTS; i++) {
         sObjPrintOrder[i] = i;
@@ -1094,7 +1183,7 @@ s32 find_thread_interrupt_offset(u32 lowTime, u32 highTime) {
     return offsetTime;
 }
 
-void calculate_individual_thread_timers(void) {
+INLINE void calculate_individual_thread_timers(void) {
     s32 i;
     s32 j;
     u32 highTime;
@@ -1157,7 +1246,7 @@ void calculate_individual_thread_timers(void) {
     }
 }
 
-void calculate_core_timers(void) {
+INLINE void calculate_core_timers(void) {
     s32 i;
     s32 lowTime;
     s32 highTime;
@@ -1311,7 +1400,7 @@ void puppyprint_update_rsp(u8 flags) {
     }
 }
 
-void count_triangles_in_dlist(u8 *dlist, u8 *dlistEnd) {
+INLINE void count_triangles_in_dlist(u8 *dlist, u8 *dlistEnd) {
     s32 triCount = 0;
     s32 vtxCount = 0;
     s32 rectCount = 0;
