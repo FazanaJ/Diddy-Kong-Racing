@@ -81,6 +81,8 @@ s16 gLevelPropertyStack[5 * 4]; // Stores level info for cutscenes. 5 sets of fo
 
 /******************************/
 
+static void set_ai_level(s8 *aiLevelTable);
+
 /**
  * Allocates memory for gGlobalLevelTable, then populates it with relevant data from every level header.
  * The level headers are streamed from ROM.
@@ -574,7 +576,7 @@ void clear_audio_and_track(void) {
  * Set the skill level of the AI.
  * Apply offsets based on game mode.
  */
-void set_ai_level(s8 *aiLevelTable) {
+static void set_ai_level(s8 *aiLevelTable) {
     s32 temp;
     s16 tableIndexCount;
     s8 aiLevel;

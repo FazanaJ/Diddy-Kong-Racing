@@ -820,7 +820,7 @@ void dump_value(u8 *var, s32 size) {
 
 #if FLASHRAM
 
-s32 flash_read(u64 *data, u32 offset, u32 size) {
+INLINE s32 flash_read(u64 *data, u32 offset, u32 size) {
     s32 blockID;
     s32 pageCount;
     s32 result;
@@ -843,7 +843,7 @@ s32 flash_read(u64 *data, u32 offset, u32 size) {
     return result;
 }
 
-s32 flash_write(u64 *data, u32 offset, u32 size) {
+INLINE s32 flash_write(u64 *data, u32 offset, u32 size) {
     s32 result;
     s32 sectorCount;
     s32 sectorOffset;
@@ -920,7 +920,7 @@ s32 flash_write(u64 *data, u32 offset, u32 size) {
 
 #endif
 
-s32 save_readwrite(u64 *data, u32 offset, u32 size, s32 type) {
+static s32 save_readwrite(u64 *data, u32 offset, u32 size, s32 type) {
     u32 i;
     u32 addr;
     s32 result;

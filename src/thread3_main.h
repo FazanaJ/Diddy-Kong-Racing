@@ -128,11 +128,7 @@ extern s8 gDrawFrameTimer;
 extern u64 gSchedStack[THREAD5_STACK / sizeof(u64)];
 
 void thread3_main(UNUSED void *unused);
-void init_game(void);
-void main_game_loop(void);
-void load_next_ingame_level(s32 numPlayers, s32 trackID, Vehicle vehicle);
 void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicleId);
-void unload_level_game(void);
 void set_drumstick_unlock_transition(void);
 void race_postrace_type(s32 finishState);
 void func_8006D8F0(s32 arg0);
@@ -143,10 +139,7 @@ void set_level_default_vehicle(Vehicle vehicleID);
 void set_vehicle_id_for_menu(Vehicle vehicleId);
 Vehicle get_level_default_vehicle(void);
 void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicleId, s32 cutsceneId);
-void unload_level_menu(void);
-void update_menu_scene(s32 updateRate);
 void load_level_for_menu(s32 levelId, s32 numberOfPlayers, s32 cutsceneId);
-void calc_and_alloc_heap_for_settings(void);
 void init_racer_headers(void);
 void clear_lap_records(Settings *settings, s32 flags);
 void clear_game_progress(Settings *settings);
@@ -177,15 +170,9 @@ void begin_lighthouse_rocket_cutscene(void);
 void begin_level_teleport(s32 levelID);
 void set_pause_lockout_timer(u8 time);
 void swap_lead_player(void);
-void mode_intro(void);
 s32 is_controller_missing(void);
 s32 drm_validate_imem(void);
-void mode_game(s32 updateRate);
 void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicleId, s32 cutsceneId);
 void init_level_globals(void);
-void alloc_displaylist_heap(s32 numberOfPlayers);
-void default_alloc_displaylist_heap(void);
-void mode_menu(s32 updateRate);
-void gamemode_missing_expansion(void);
 
 #endif

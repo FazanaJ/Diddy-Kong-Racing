@@ -32,6 +32,12 @@ extern MemoryPoolSlot gMainMemoryPool;
 
 /******************************/
 
+static MemoryPoolSlot *mempool_init(MemoryPoolSlot *slots, s32 poolSize, s32 numSlots);
+static MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag);
+static void mempool_free_addr(u8 *address);
+static void mempool_slot_clear(MemoryPools poolIndex, s32 slotIndex);
+static s32 mempool_slot_assign(MemoryPools poolIndex, s32 slotIndex, s32 size, s32 slotIsTaken, s32 newSlotIsTaken, u32 colourTag);
+
 /**
  * Creates the main memory pool.
  * Starts at 0x8012D3F0. Ends at 0x80400000. Contains 1600 allocation slots.
@@ -107,7 +113,7 @@ void mempool_free_sub(MemoryPoolSlot *pool) {
  * Create and initialise a memory pool in RAM that will act as the place where arbitrary allocations can go.
  * Will return the location of the first free slot in that pool.
  */
-MemoryPoolSlot *mempool_init(MemoryPoolSlot *slots, s32 poolSize, s32 numSlots) {
+static MemoryPoolSlot *mempool_init(MemoryPoolSlot *slots, s32 poolSize, s32 numSlots) {
     MemoryPoolSlot *firstSlot;
     s32 poolCount;
     s32 i;
@@ -160,7 +166,7 @@ MemoryPoolSlot *mempool_alloc(s32 size, u32 colourTag) {
  * Search the existing empty slots and try to find one that can meet the size requirement.
  * Afterwards, write the new allocation data to the slot in question and return the address.
  */
-MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag) {
+static MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag) {
     s32 slotSize;
     MemoryPoolSlot *curSlot;
     MemoryPool *pool;
@@ -338,7 +344,7 @@ void mempool_free_queue_clear(void) {
  * If a slot is found, free it.
  * Official name: heapFree
  */
-void mempool_free_addr(u8 *address) {
+static void mempool_free_addr(u8 *address) {
     s32 slotIndex;
     s32 poolIndex;
     MemoryPool *pool;
@@ -394,7 +400,7 @@ s32 mempool_get_pool(u8 *address) {
  * Clears the current slot of all information, effectively freeing the allocated memory.
  * Unused slots before and after will be merged with this slot
  */
-void mempool_slot_clear(MemoryPools poolIndex, s32 slotIndex) {
+static void mempool_slot_clear(MemoryPools poolIndex, s32 slotIndex) {
     s32 nextIndex;
     s32 prevIndex;
     s32 tempNextIndex;
@@ -444,7 +450,7 @@ void mempool_slot_clear(MemoryPools poolIndex, s32 slotIndex) {
  * Updates the linked list with any entries before and after then returns the new slot index.
  * If the region cannot fit, return the old slot instead.
  */
-s32 mempool_slot_assign(MemoryPools poolIndex, s32 slotIndex, s32 size, s32 slotIsTaken, s32 newSlotIsTaken,
+static s32 mempool_slot_assign(MemoryPools poolIndex, s32 slotIndex, s32 size, s32 slotIsTaken, s32 newSlotIsTaken,
                         u32 colourTag) {
     MemoryPool *pool;
     MemoryPoolSlot *poolSlots;
@@ -530,7 +536,7 @@ s32 puppyprint_colourtag(s32 colourTag) {
     }
 }
 
-s32 puppyprint_subpool_offset(void) {
+static s32 puppyprint_subpool_offset(void) {
     int flags;
     int nextIndex;
     int i;

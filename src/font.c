@@ -74,6 +74,10 @@ s8 sDialogueBoxCloseTimer;
 
 /******************************/
 
+static void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, AlignmentFlags alignmentFlags, f32 scisScale);
+static void s32_to_string(char **outString, s32 number);
+static void parse_string_with_number(char *input, char *output, s32 number);
+
 /**
  * Loads the text asset data and sets the default values for each dialogue box in the list.
  */
@@ -239,7 +243,7 @@ void draw_text(Gfx **displayList, s32 xpos, s32 ypos, char *text, AlignmentFlags
  * Loops through a string, then draws each character onscreen.
  * Will also draw a fillrect if text backgrounds are enabled.
  */
-void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, AlignmentFlags alignmentFlags,
+static void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, AlignmentFlags alignmentFlags,
                         f32 scisScale) {
     s32 scisOffset;
     s32 scisPos;
@@ -688,7 +692,7 @@ void render_dialogue_boxes(Gfx **dlist, MatrixS **mat, Vertex **verts) {
  * Convert an integer to a string.
  * Official Name: fontStringAddNumber
  */
-void s32_to_string(char **outString, s32 number) {
+static void s32_to_string(char **outString, s32 number) {
     u8 digit;
     s32 i;
     s32 hasDigit; // boolean
@@ -829,7 +833,7 @@ void render_dialogue_box(Gfx **dlist, MatrixS **mat, Vertex **verts, s32 dialogu
  * Takes in a string and a number, and replaces each instance of the
  * character '~' with the number.
  */
-void parse_string_with_number(char *input, char *output, s32 number) {
+static void parse_string_with_number(char *input, char *output, s32 number) {
     while (*input) {
         if (*input == '~') { // ~ is equivalent to a %d.
             // output the number as part of the string

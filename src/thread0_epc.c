@@ -184,7 +184,7 @@ extern u64 osClockRate;
 
 CrashData gCrashScreen;
 
-void crash_screen_draw_rect(s32 x, s32 y, s32 w, s32 h) {
+INLINE void crash_screen_draw_rect(s32 x, s32 y, s32 w, s32 h) {
     u16 *ptr;
     s32 i, j;
 
@@ -199,7 +199,7 @@ void crash_screen_draw_rect(s32 x, s32 y, s32 w, s32 h) {
     }
 }
 
-void crash_screen_draw_glyph(s32 x, s32 y, s32 glyph) {
+INLINE void crash_screen_draw_glyph(s32 x, s32 y, s32 glyph) {
     const u32 *data;
     u16 *ptr;
     u32 bit;
@@ -224,13 +224,13 @@ void crash_screen_draw_glyph(s32 x, s32 y, s32 glyph) {
     }
 }
 
-void crash_screen_sleep(s32 ms) {
+INLINE void crash_screen_sleep(s32 ms) {
     u32 cycles = ms * 1000 * osClockRate / 1000000U;
     osSetTime(0);
     while (osGetTime() < cycles) {}
 }
 
-void crash_screen_print(s32 x, s32 y, const char *fmt, ...) {
+INLINE void crash_screen_print(s32 x, s32 y, const char *fmt, ...) {
     char *ptr;
     char buf[127];
     u32 glyph;
@@ -251,7 +251,7 @@ void crash_screen_print(s32 x, s32 y, const char *fmt, ...) {
     va_end(args);
 }
 
-void crash_screen_print_float_reg(s32 x, s32 y, s32 regNum, void *addr) {
+INLINE void crash_screen_print_float_reg(s32 x, s32 y, s32 regNum, void *addr) {
     u32 bits;
     s32 exponent;
 
@@ -264,7 +264,7 @@ void crash_screen_print_float_reg(s32 x, s32 y, s32 regNum, void *addr) {
     }
 }
 
-void crash_screen_print_fpcsr(u32 fpcsr) {
+INLINE void crash_screen_print_fpcsr(u32 fpcsr) {
     s32 i;
     u32 bit;
 
@@ -286,7 +286,7 @@ char *sGPRegisterNames[] = {
     "s5", "s6", "s7", "t8", "t9",
 };
 
-void crash_page_registers(OSThread *thread) {
+INLINE void crash_page_registers(OSThread *thread) {
     s32 cause;
     __OSThreadContext *tc = &thread->context;
     s32 i;
@@ -371,7 +371,7 @@ void crash_page_registers(OSThread *thread) {
 }
 
 #ifdef DETAILED_CRASH
-void crash_page_object(void) {
+INLINE void crash_page_object(void) {
     crash_screen_draw_rect(sCrashX, sCrashY, 270, 205);
     if (sCrashObjID) {
         Object *o = sCrashObjID;
@@ -391,7 +391,7 @@ void crash_page_object(void) {
 }
 
 #ifdef PUPPYPRINT_DEBUG
-void crash_page_log(void) {
+INLINE void crash_page_log(void) {
     s32 i;
     s32 y = 0;
     crash_screen_draw_rect(sCrashX, sCrashY, 270, 205);
@@ -406,7 +406,7 @@ void crash_page_log(void) {
 #endif
 #endif
 
-void crash_page_assert(void) {
+INLINE void crash_page_assert(void) {
     crash_screen_draw_rect(sCrashX, sCrashY, 270, 205);
     debug_printf("----- Assert Page -----\n");
     if (gAssert) {
@@ -418,7 +418,7 @@ void crash_page_assert(void) {
     }
 }
 
-void crash_page_memory(void) {
+INLINE void crash_page_memory(void) {
     s32 i;
     s32 y;
     debug_printf("----- RAM Page -----\n");
@@ -453,7 +453,7 @@ void crash_page_memory(void) {
 
 extern OSThread *__osFaultedThread;
 
-OSThread *get_crashed_thread(void) {
+INLINE OSThread *get_crashed_thread(void) {
     OSThread *thread;
 
     thread = __osFaultedThread;
@@ -479,7 +479,7 @@ char *sMemDumpStrings[] = {
     "4 FixedAlloc"
 };
 
-void crash_ram_dump(void) {
+INLINE void crash_ram_dump(void) {
     int flags;
     int nextIndex;
     int i;
@@ -529,7 +529,7 @@ void ram_dump(void) {
 #endif
 
 #ifdef DETAILED_CRASH
-void crash_screen_input(void) {
+INLINE void crash_screen_input(void) {
     s32 i;
     s32 prevScroll = sCrashScroll;
     for (i = 0; i < 4; i++) {
@@ -592,7 +592,7 @@ void crash_screen_input(void) {
 }
 #endif
 
-void draw_crash_screen(OSThread *thread) {
+INLINE void draw_crash_screen(OSThread *thread) {
 #ifdef DETAILED_CRASH
     crash_screen_input();
 #endif
@@ -642,7 +642,7 @@ void draw_crash_screen(OSThread *thread) {
 extern OSThread gThread3;
 extern OSThread gThread30;
 
-void thread2_crash_screen(UNUSED void *arg) {
+INLINE void thread2_crash_screen(UNUSED void *arg) {
     OSMesg mesg;
     OSThread *thread = NULL;
 

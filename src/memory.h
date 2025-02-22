@@ -148,13 +148,7 @@ void mempool_free(void *data);
 void mempool_free_queue_clear(void);
 void mempool_free_queue(void *dataAddress);
 s32 mempool_get_pool(u8 *address);
-MemoryPoolSlot *mempool_init(MemoryPoolSlot *slots, s32 poolSize, s32 numSlots);
-void mempool_slot_clear(MemoryPools poolIndex, s32 slotIndex);
-s32 mempool_slot_assign(MemoryPools poolIndex, s32 slotIndex, s32 size, s32 slotIsTaken, s32 newSlotIsTaken,
-                              u32 colourTag);
 s32 get_memory_colour_tag_count(u32 colourTag);
-void mempool_free_addr(u8 *address);
-MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag);
 void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag);
 u8 *align16(u8 *address);
 s32 puppyprint_colourtag(s32 colourTag);

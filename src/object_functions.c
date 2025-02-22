@@ -4681,6 +4681,12 @@ void obj_init_weapon(Object *obj, UNUSED LevelObjectEntry_Weapon *entry) {
     obj->properties.projectile.unk4 = 0;
 }
 
+INLINE void weapon_projectile(Object *obj, s32 updateRate);
+INLINE void weapon_trap(Object *obj, s32 updateRate);
+INLINE void rocket_prevent_overshoot(Object *obj, UNUSED s32 updateRate, Object_Weapon *rocket);
+INLINE void homing_rocket_prevent_overshoot(Object *obj, s32 updateRate, Object_Weapon *rocket);
+INLINE void play_rocket_trailing_sound(Object *obj, struct Object_Weapon *weapon, u16 soundID);
+
 /**
  * Racer weapon loop behaviour.
  * Rockets will move forwards, or towards their victim.
@@ -4708,7 +4714,7 @@ void obj_loop_weapon(Object *obj, s32 updateRate) {
  * A homing rocket uses the checkpoint system to path towards its victim.
  * When it collides with a racer, they're launched into the air.
  */
-void weapon_projectile(Object *obj, s32 updateRate) {
+INLINE void weapon_projectile(Object *obj, s32 updateRate) {
     Object *interactObj;
     Object_Racer *weaponOwner;
     Object_Weapon *weapon;
@@ -4854,7 +4860,7 @@ block_37:
  * to be right on top of them. This ensures a collision is guaranteed this frame.
  * This function also calls the function that plays the incoming rocket sound.
  */
-void rocket_prevent_overshoot(Object *obj, UNUSED s32 updateRate, Object_Weapon *rocket) {
+INLINE void rocket_prevent_overshoot(Object *obj, UNUSED s32 updateRate, Object_Weapon *rocket) {
     Object *interactedObj;
     f32 dist;
     f32 diffX;
@@ -4896,7 +4902,7 @@ void rocket_prevent_overshoot(Object *obj, UNUSED s32 updateRate, Object_Weapon 
  * to be right on top of them. This ensures a collision is guaranteed this frame.
  * This function also calls the function that plays the incoming rocket sound.
  */
-void homing_rocket_prevent_overshoot(Object *obj, s32 updateRate, Object_Weapon *rocket) {
+INLINE void homing_rocket_prevent_overshoot(Object *obj, s32 updateRate, Object_Weapon *rocket) {
     Object *targetObj;
     Object_64 *racer;
     f32 dist;
@@ -4978,7 +4984,7 @@ void decrease_rocket_sound_timer(void) {
  * Existing flying rockets that don't belong to that player will play a sound when flying.
  * This will check if that player is close enough to hear it, and whether to update an existing sound or play a new one.
  */
-void play_rocket_trailing_sound(Object *obj, struct Object_Weapon *weapon, u16 soundID) {
+INLINE void play_rocket_trailing_sound(Object *obj, struct Object_Weapon *weapon, u16 soundID) {
     Object *racer;
     Object **racerGroup;
     f32 distance;
@@ -5032,7 +5038,7 @@ void play_rocket_trailing_sound(Object *obj, struct Object_Weapon *weapon, u16 s
  * The timer is used for scaling the trap, which the bubble and oil slick use.
  * If triggered, the trap will perform different behaviours depending on what it is, then remove itself.
  */
-void weapon_trap(Object *weaponObj, s32 updateRate) {
+INLINE void weapon_trap(Object *weaponObj, s32 updateRate) {
     Object *weaponInteractObj;
     Object_Racer *weaponHit;
     Object_Racer *weaponOwner;

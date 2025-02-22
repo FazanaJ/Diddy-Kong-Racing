@@ -746,6 +746,8 @@ void render_fade_waves(Gfx **dlist, UNUSED MatrixS **mats, UNUSED Vertex **verts
     s32 i;
     Vertex *v;
     Triangle *t;
+    s32 offV;
+    s32 offT;
     reset_render_settings(dlist);
     gfx = *dlist;
     v = (Vertex *) sTransitionVtx[sTransitionTaskNum];
@@ -761,16 +763,16 @@ void render_fade_waves(Gfx **dlist, UNUSED MatrixS **mats, UNUSED Vertex **verts
     */
     for (i = 0; i < 6; i++) {
         if (i == 1 || i == 4) { // Is middle third?
-            gSPVertexDKR(gfx++, OS_PHYSICAL_TO_K0(v), 14, 0);
-            gSPPolygon(gfx++, OS_PHYSICAL_TO_K0(t), 12, TRIN_DISABLE_TEXTURE);
-            v += 14;
-            t += 12;
+            offV = 14;
+            offT = 12;
         } else {
-            gSPVertexDKR(gfx++, OS_PHYSICAL_TO_K0(v), 16, 0);
-            gSPPolygon(gfx++, OS_PHYSICAL_TO_K0(t), 14, TRIN_DISABLE_TEXTURE);
-            v += 16;
-            t += 14;
+            offV = 16;
+            offT = 14;
         }
+        gSPVertexDKR(gfx++, OS_PHYSICAL_TO_K0(v), offV, 0);
+        gSPPolygon(gfx++, OS_PHYSICAL_TO_K0(t), offT, TRIN_DISABLE_TEXTURE);
+        v += offV;
+        t += offT;
     }
     *dlist = gfx;
     reset_render_settings(dlist);

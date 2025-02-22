@@ -172,12 +172,8 @@ void clear_dialogue_box_open_flag(s32 dialogueBoxID);
 void render_dialogue_boxes(Gfx **dlist, MatrixS **mat, Vertex **verts);
 void render_fill_rectangle(Gfx **dlist, s32 ulx, s32 uly, s32 lrx, s32 lry);
 void render_dialogue_box(Gfx **dlist, MatrixS **mat, Vertex **verts, s32 dialogueBoxID);
-void parse_string_with_number(char *input, char *output, s32 number);
-void s32_to_string(char **outString, s32 number);
 void load_font(s32 fontID);
 void unload_font(s32 fontID);
-void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, AlignmentFlags alignmentFlags,
-                        f32 scisScale);
 s32 get_text_width(char *text, s32 x, s32 font);
 void *render_dialogue_text(s32 dialogueBoxID, s32 posX, s32 posY, char *text, s32 number, s32 flags);
 s32 get_current_dialogue_box_height(s32 dialogueBoxID);

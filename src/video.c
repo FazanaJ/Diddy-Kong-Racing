@@ -44,6 +44,10 @@ u16 gScreenHeight;
 
 /******************************/
 
+static void fb_swap(void);
+static void fb_alloc(s32 index);
+static void fb_init_vi(void);
+
 /**
  * Set up the framebuffers and the VI.
  * Framebuffers are allocated at runtime.
@@ -167,7 +171,7 @@ void set_dither_filter(void) {
  * depending on the gVideoModeIndex value.
  * Most of these go unused, as the value is always 1.
  */
-void fb_init_vi(void) {
+static void fb_init_vi(void) {
     change_vi(&gGlobalVI, SCREEN_WIDTH, SCREEN_HEIGHT);
     osViSetMode(&gGlobalVI);
     gScreenWidth = SCREEN_WIDTH;
@@ -181,7 +185,7 @@ void fb_init_vi(void) {
  * Framebuffers should be 64 bit aligned, but since the memory allocator
  * already aligns by 16, it only needs 48 bits of alignment in addition.
  */
-void fb_alloc(s32 index) {
+static void fb_alloc(s32 index) {
     s32 width = SCREEN_WIDTH;
     u32 *fbAddr;
     s32 fbSize = (SCREEN_HEIGHT * 2);
@@ -275,7 +279,7 @@ void fb_update(void) {
     }
 }
 
-void fb_swap(void) {
+static void fb_swap(void) {
     gVideoLastFramebuffer = gVideoFramebuffers[(gVideoCurrFbIndex + (NUM_FRAMEBUFFERS - 1)) % NUM_FRAMEBUFFERS];
     gVideoCurrFbIndex++;
     if (gVideoCurrFbIndex >= NUM_FRAMEBUFFERS) {

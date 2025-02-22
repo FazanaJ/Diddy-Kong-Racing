@@ -51,6 +51,8 @@ s32 D_8012A7D4;
 
 /*****************************/
 
+static void find_next_subtitle(void);
+
 /**
  * Set the default values of dialogue and allocate memory for the active text entry.
  */
@@ -89,7 +91,7 @@ void set_subtitles(s32 setting) {
 /**
  * Render currently active subtitles on the screen.
  */
-void render_subtitles(void) {
+static void render_subtitles(void) {
     s32 textX;
     s32 textY;
     s32 i;
@@ -129,7 +131,7 @@ void render_subtitles(void) {
  * Get the line count and text timer from the next message of the subtitle.
  * Close the subtitles if none can be found.
  */
-void find_next_subtitle(void) {
+static void find_next_subtitle(void) {
     u32 new_var3;
     u8 new_var;
     s32 new_var2;
@@ -173,7 +175,7 @@ void find_next_subtitle(void) {
  * Handle the subtitle system from here.
  * Slowly show the text, tick down the timer, find the next message or close the box, then render.
  */
-void process_subtitles(s32 updateRate) {
+static void process_subtitles(s32 updateRate) {
     if (gSubtitleSetting == FALSE) {
         gShowSubtitles = FALSE;
     }

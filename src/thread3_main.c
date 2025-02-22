@@ -126,6 +126,20 @@ s32 gNMIMesgBuf; // Official Name: resetPressed
 extern u32 gMemUsed[16];
 extern u8 gMemUsedCounter;
 
+static void init_config(void);
+static void init_game(void);
+static void main_game_loop(void);
+static void load_next_ingame_level(s32 numPlayers, s32 trackID, Vehicle vehicle);
+static void unload_level_game(void);
+static void mode_game(s32 updateRate);
+static void unload_level_menu(void);
+static void update_menu_scene(s32 updateRate);
+static void mode_menu(s32 updateRate);
+static void calc_and_alloc_heap_for_settings(void);
+static void alloc_displaylist_heap(s32 numberOfPlayers);
+static void default_alloc_displaylist_heap(void);
+static void mode_intro(void);
+
 /**
  * Main looping function for the main thread.
  * Official Name: mainThread
@@ -163,7 +177,7 @@ void thread3_main(UNUSED void *unused) {
 struct ConfigOptions gConfig;
 u8 gHideHUD = FALSE;
 
-void init_config(void) {
+static void init_config(void) {
     bzero(&gConfig, sizeof(gConfig));
     if (gPlatform & EMULATOR) {
         gConfig.noCutbacks = TRUE;
@@ -180,7 +194,7 @@ void init_config(void) {
  * This includes the memory pool. controllers, video, audio, core assets and more.
  * Official Name: mainInitGame
  */
-void init_game(void) {
+static void init_game(void) {
 
     mempool_init_main();
     gzip_init();
@@ -254,7 +268,7 @@ s32 sTotalTime = 0;
  * The main gameplay loop.
  * Contains all game logic, audio and graphics processing.
  */
-void main_game_loop(void) {
+static void main_game_loop(void) {
     f32 divisor;
 #ifdef PUPPYPRINT_DEBUG
     profiler_reset_values();
@@ -424,7 +438,7 @@ void main_game_loop(void) {
 /**
  * Loads a level for gameplay based on what the next track ID is, with the option to override.
  */
-void load_next_ingame_level(s32 numPlayers, s32 trackID, Vehicle vehicle) {
+static void load_next_ingame_level(s32 numPlayers, s32 trackID, Vehicle vehicle) {
     gGameNumPlayers = numPlayers - 1;
     if (trackID == -1) {
         gPlayableMapId = get_track_id_to_load();
@@ -463,7 +477,7 @@ void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
  * Then call to free particles, HUD and text.
  * Waits for a GFX task before unloading.
  */
-void unload_level_game(void) {
+static void unload_level_game(void) {
     mempool_free_timer(0);
     if (gSkipGfxTask == FALSE) {
         if (gDrawFrameTimer != 1) {
@@ -485,7 +499,7 @@ void unload_level_game(void) {
  * The main behaviour function involving all of the ingame stuff.
  * Involves the updating of all objects and setting up the render scene.
  */
-void mode_game(s32 updateRate) {
+static void mode_game(s32 updateRate) {
     s32 buttonPressedInputs, buttonHeldInputs, i, loadContext, sp3C;
 
     loadContext = LEVEL_CONTEXT_NONE;
@@ -955,7 +969,7 @@ void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
  * Call numerous functions to clear data in RAM.
  * Then call to free particles, HUD and text.
  */
-void unload_level_menu(void) {
+static void unload_level_menu(void) {
     if (!gIsLoading) {
         gIsLoading = TRUE;
         mempool_free_timer(0);
@@ -972,7 +986,7 @@ void unload_level_menu(void) {
  * Used in menus, update objects and draw the game.
  * In the tracks menu, this only runs if there's a track actively loaded.
  */
-void update_menu_scene(s32 updateRate) {
+static void update_menu_scene(s32 updateRate) {
     if (gThread30NeedToLoadLevel == NULL) {
         update_time_dialation(updateRate);
         func_80010994(updateRate);
@@ -997,7 +1011,7 @@ void update_menu_scene(s32 updateRate) {
  * Main function for handling behaviour in menus.
  * Runs the menu code, with a simplified object update and scene rendering system.
  */
-void mode_menu(s32 updateRate) {
+static void mode_menu(s32 updateRate) {
     s32 menuLoopResult;
     s32 temp;
     s32 playerVehicle;
@@ -1169,7 +1183,7 @@ void load_level_for_menu(s32 levelId, s32 numberOfPlayers, s32 cutsceneId) {
  * Initialise global game settings data.
  * Allocate space to accomodate it then set the start points for each data point.
  */
-void calc_and_alloc_heap_for_settings(void) {
+static void calc_and_alloc_heap_for_settings(void) {
     s32 dataSize;
     u32 sizes[15];
     s32 numWorlds, numLevels;
@@ -1421,7 +1435,7 @@ void mark_write_eeprom_settings(void) {
 /**
  * Allocates an amount of memory for the number of players passed in.
  */
-void alloc_displaylist_heap(s32 numberOfPlayers) {
+static void alloc_displaylist_heap(s32 numberOfPlayers) {
     s32 num;
     s32 totalSize;
 
@@ -1486,7 +1500,7 @@ s32 drm_validate_dmem(void) {
 /**
  * Defaults allocations for 4 players
  */
-void default_alloc_displaylist_heap(void) {
+static void default_alloc_displaylist_heap(void) {
     s32 numberOfPlayers;
     s32 totalSize;
 
@@ -1629,7 +1643,7 @@ void swap_lead_player(void) {
 /**
  * Give the player 8 frames to enter the CPak menu with start, then load the intro sequence.
  */
-void mode_intro(void) {
+static void mode_intro(void) {
     s32 i;
     s32 buttonInputs = 0;
 

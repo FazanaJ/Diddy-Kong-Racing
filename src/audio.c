@@ -75,6 +75,11 @@ MemoryPoolSlot *gAudioPool;
 
 /******************************/
 
+static void music_sequence_init(ALSeqPlayer *seqp, s32 sequence, u8 *seqID, ALCSeq *seq);
+static void music_sequence_stop(ALSeqPlayer *seqPlayer);
+static ALSeqPlayer *sound_seqplayer_init(s32 maxVoices, s32 maxEvents);
+static void music_sequence_start(u8 seqID, ALSeqPlayer *seqPlayer);
+
 /**
  * Allocate memory for all of the audio systems, including sequence data, sound data and heaps.
  * Afterwards, set up the audio thread and start it.
@@ -801,7 +806,7 @@ u8 gSoundBank_GetSoundDecayTime(u16 soundID) {
 /**
  * Allocate space, then initialise a sequence player for audio playback.
  */
-ALSeqPlayer *sound_seqplayer_init(s32 maxVoices, s32 maxEvents) {
+static ALSeqPlayer *sound_seqplayer_init(s32 maxVoices, s32 maxEvents) {
     ALCSPlayer *cseqp;
     ALSeqpConfig config;
 
@@ -825,7 +830,7 @@ ALSeqPlayer *sound_seqplayer_init(s32 maxVoices, s32 maxEvents) {
 /**
  * Stop the current sequence then set the parameters for the next sequence.
  */
-void music_sequence_start(u8 seqID, ALSeqPlayer *seqPlayer) {
+static void music_sequence_start(u8 seqID, ALSeqPlayer *seqPlayer) {
     music_sequence_stop(seqPlayer);
     if (seqID < gSequenceTable->seqCount) {
         if (seqPlayer == gMusicPlayer) {
@@ -839,7 +844,7 @@ void music_sequence_start(u8 seqID, ALSeqPlayer *seqPlayer) {
 /**
  * If the sequence player is currently inactive, start a new sequence with the current properties.
  */
-void music_sequence_init(ALSeqPlayer *seqp, s32 sequence, u8 *seqID, ALCSeq *seq) {
+static void music_sequence_init(ALSeqPlayer *seqp, s32 sequence, u8 *seqID, ALCSeq *seq) {
     s32 i;
 
     if ((alCSPGetState((ALCSPlayer *) seqp) == AL_STOPPED) && (*seqID != 0)) {
@@ -885,7 +890,7 @@ void music_sequence_init(ALSeqPlayer *seqp, s32 sequence, u8 *seqID, ALCSeq *seq
 /**
  * Stops the current playing sequence for the given sequence player.
  */
-void music_sequence_stop(ALSeqPlayer *seqPlayer) {
+static void music_sequence_stop(ALSeqPlayer *seqPlayer) {
     if (gMusicPlayer == seqPlayer && gMusicPlaying) {
         alCSPStop((ALCSPlayer *) seqPlayer);
         gMusicPlaying = FALSE;
