@@ -89,9 +89,9 @@ static void __osPackReadData(void) {
     readformat.stick_y = -1;
     for(i=0; i < __osMaxControllers; i++) {
         if ((__osControllerMask & (1 << i)) == 0) {
-            readformat.txsize = 1;
-            readformat.rxsize = 1;
-            readformat.cmd = CONT_CMD_REQUEST_STATUS;
+            readformat.txsize = CONT_CMD_NOP;
+            readformat.rxsize = CONT_CMD_NOP;
+            readformat.cmd = 0;
         } else {
             readformat.txsize = CONT_CMD_READ_BUTTON_TX;
             readformat.rxsize = CONT_CMD_READ_BUTTON_RX;
