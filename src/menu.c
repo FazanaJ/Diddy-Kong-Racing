@@ -6234,6 +6234,7 @@ void menu_character_select_init(void) {
 
     breakTheLoop = FALSE;
     initialise_player_ids();
+    osContSetMask(CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4);
     if (is_drumstick_unlocked()) {
         if (is_tt_unlocked()) {
             gCurrCharacterSelectData = (CharacterSelectData(*)[10]) & gCharacterSelectBytesComplete;
@@ -6593,7 +6594,7 @@ s32 menu_character_select_loop(s32 updateRate) {
                     contMask |= (1 << j);
                 }
             }
-            osContSetCh(contMask);
+            osContSetMask(contMask);
 
             gIsInTracksMode = 1;
             if (confirmOffset >= gNumberOfActivePlayers) {

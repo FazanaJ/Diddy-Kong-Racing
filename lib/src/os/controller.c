@@ -69,6 +69,9 @@ void __osContGetInitData(u8 *pattern, OSContStatus *data) {
     bits = 0;
     ptr = (u8 *)&__osContPifRam;
     for (i = 0; i < __osMaxControllers; i++, ptr += sizeof(__OSContRequesFormat), data++) {
+        if ((__osControllerMask & (1 << i)) == 0) {
+            continue;
+        }
         requestformat = *(__OSContRequesFormat *)ptr;
         data->errno = CHNL_ERR(requestformat);
         if (data->errno == 0) {
@@ -126,12 +129,23 @@ s32 osContSetMask(u8 ch) {
     s32 ret = 0;
     s32 i;
 
+    if (__osBbIsBb) {
+        return ret;
+    }
+
     __osSiGetAccess();
 
     if (ch > (CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4)) {
         __osControllerMask = CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4;
+        __osMaxControllers = 4;
     } else {
         __osControllerMask = ch;
+        for (i = 0; i < 4; i++) {
+            if (ch & (1 << i)) {
+                __osMaxControllers = i;
+            }
+        }
+        __osMaxControllers++;
     }
 
     __osContLastCmd = CONT_CMD_END;
