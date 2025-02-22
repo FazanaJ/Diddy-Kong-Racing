@@ -5,8 +5,8 @@
 #include "libultra_internal.h"
 #include "lib/src/os/piint.h"
 #include "macros.h"
-#include "src/stacks.h"
 
+#define OS_PIM_STACKSIZE 256
 static OSThread piThread ALIGNED(0x8);
 static STACK(piThreadStack, OS_PIM_STACKSIZE) ALIGNED(0x10);
 

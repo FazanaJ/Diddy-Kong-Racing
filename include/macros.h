@@ -88,4 +88,114 @@
 #define STACK_START(stack) \
     ((u8*)(stack) + sizeof(stack))
 
+
+#if !defined(__sgi)
+INLINE void CreateDirtyExclusiveOne(void* addr) {
+    asm volatile (
+        "cache 0xD, 0x00(%0);"
+        :            
+        : "r"(addr)        
+    );
+}
+INLINE void CreateDirtyExclusiveOneRoundUp(void* addr) {
+    asm volatile (
+        "cache 0xD, 0x08(%0);"
+        :            
+        : "r"(addr)        
+    );
+}
+INLINE void CreateDirtyExclusiveTwoRoundUp(void* addr) {
+    asm volatile (
+        "cache 0xD, 0x08(%0);"
+        "cache 0xD, 0x18(%0);"
+        :            
+        : "r"(addr)        
+    );
+}
+ 
+INLINE void HitInvalidate(void* addr) {
+    asm volatile (
+        "cache 0x11, 0x00(%0);"
+        :            
+        : "r"(addr)        
+    );
+}
+ 
+INLINE void HitWritebackInvalidate(void* addr) {
+    asm volatile (
+        "cache 0x15, 0x00(%0);"
+        :            
+        : "r"(addr)        
+    );
+}
+INLINE void HitWritebackInvalidateTwo(void* addr) {
+    asm volatile (
+        "cache 0x15, 0x00(%0);"
+        "cache 0x15, 0x10(%0);"
+        :            
+        : "r"(addr)        
+    );
+}
+ 
+INLINE void HitWritebackInvalidateRoundUp(void* addr) {
+    asm volatile (
+        "cache 0x15, 0x08(%0);"
+        :            
+        : "r"(addr)        
+    );
+}
+ 
+INLINE void HitWritebackInvalidateFour(void* addr) {
+    asm volatile (
+        "cache 0x15, 0x00(%0);"
+        "cache 0x15, 0x10(%0);"
+        "cache 0x15, 0x20(%0);"
+        "cache 0x15, 0x30(%0);"
+        :            
+        : "r"(addr)        
+    );
+}
+ 
+ 
+// Cen64 dev suggested this might be faster (Create_Dirty_Exclusive)
+INLINE void CreateDirtyExclusiveTwo(void* addr) {
+    asm volatile (
+        "cache 0xD, 0x00(%0);"
+        "cache 0xD, 0x10(%0);"
+        :            
+        : "r"(addr)        
+    );
+}
+// Cen64 dev suggested this might be faster (Create_Dirty_Exclusive)
+INLINE void CreateDirtyExclusiveThree(void* addr) {
+    asm volatile (
+        "cache 0xD, 0x00(%0);"
+        "cache 0xD, 0x10(%0);"
+        "cache 0xD, 0x20(%0);"
+        :            
+        : "r"(addr)        
+    );
+}
+ 
+// Cen64 dev suggested this might be faster (Create_Dirty_Exclusive)
+INLINE void CreateDirtyExclusiveFour(void* addr) {
+    asm volatile (
+        "cache 0xD, 0x00(%0);"
+        "cache 0xD, 0x10(%0);"
+        "cache 0xD, 0x20(%0);"
+        "cache 0xD, 0x30(%0);"
+        :            
+        : "r"(addr)        
+    );
+}
+ 
+INLINE void InvalidateICacheLine(void* addr) {
+    asm volatile (
+        "cache 0x10, 0x00(%0);"
+        :            
+        : "r"(addr)        
+    );
+}
+#endif
+
 #endif

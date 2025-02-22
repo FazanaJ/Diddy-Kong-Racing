@@ -1434,9 +1434,11 @@ void alloc_displaylist_heap(s32 numberOfPlayers) {
         totalSize = ((gNumF3dCmdsPerPlayer[num] * sizeof(Gwords))) + ((gNumHudMatPerPlayer[num] * sizeof(Matrix))) +
                     ((gNumHudVertsPerPlayer[num] * sizeof(Vertex))) + ((gNumHudTrisPerPlayer[num] * sizeof(Triangle)));
         gDisplayLists[0] =
-            (Gfx *) mempool_alloc_fixed(totalSize, (u8 *) gDisplayLists[0], MEMP_GFXBUFFERS);
+            (Gfx *) mempool_alloc_fixed(totalSize + 0x10, (u8 *) gDisplayLists[0], MEMP_GFXBUFFERS);
+        gDisplayLists[0] = (Gfx *) align16((u8 *) gDisplayLists[0]);
         gDisplayLists[1] =
-            (Gfx *) mempool_alloc_fixed(totalSize, (u8 *) gDisplayLists[1], MEMP_GFXBUFFERS);
+            (Gfx *) mempool_alloc_fixed(totalSize + 0x10, (u8 *) gDisplayLists[1], MEMP_GFXBUFFERS);
+        gDisplayLists[1] = (Gfx *) align16((u8 *) gDisplayLists[1]);
         if ((gDisplayLists[0] == NULL) || gDisplayLists[1] == NULL) {
             if (gDisplayLists[0] != NULL) {
                 mempool_free(gDisplayLists[0]);
@@ -1495,13 +1497,15 @@ void default_alloc_displaylist_heap(void) {
                 (gNumHudVertsPerPlayer[numberOfPlayers] * sizeof(Vertex)) +
                 (gNumHudTrisPerPlayer[numberOfPlayers] * sizeof(Triangle));
 
-    gDisplayLists[0] = (Gfx *) mempool_alloc_safe(totalSize, MEMP_GFXBUFFERS);
+    gDisplayLists[0] = (Gfx *) mempool_alloc_safe(totalSize + 0x10, MEMP_GFXBUFFERS);
+    gDisplayLists[0] = (Gfx *) align16((u8 *) gDisplayLists[0]);
     gMatrixHeap[0] = (MatrixS *) ((u8 *) gDisplayLists[0] + (gNumF3dCmdsPerPlayer[numberOfPlayers] * sizeof(Gwords)));
     gVertexHeap[0] = (Vertex *) ((u8 *) gMatrixHeap[0] + (gNumHudMatPerPlayer[numberOfPlayers] * sizeof(Matrix)));
     gTriangleHeap[0] =
         (TriangleList *) ((u8 *) gVertexHeap[0] + (gNumHudVertsPerPlayer[numberOfPlayers] * sizeof(Vertex)));
 
-    gDisplayLists[1] = (Gfx *) mempool_alloc_safe(totalSize, MEMP_GFXBUFFERS);
+    gDisplayLists[1] = (Gfx *) mempool_alloc_safe(totalSize + 0x10, MEMP_GFXBUFFERS);
+    gDisplayLists[1] = (Gfx *) align16((u8 *) gDisplayLists[1]);
     gMatrixHeap[1] = (MatrixS *) ((u8 *) gDisplayLists[1] + (gNumF3dCmdsPerPlayer[numberOfPlayers] * sizeof(Gwords)));
     gVertexHeap[1] = (Vertex *) ((u8 *) gMatrixHeap[1] + (gNumHudMatPerPlayer[numberOfPlayers] * sizeof(Matrix)));
     gTriangleHeap[1] =

@@ -94,16 +94,16 @@ s32 gCameraMatrixPos;
 f32 gModelMatrixViewX[5];
 f32 gModelMatrixViewY[5];
 f32 gModelMatrixViewZ[5];
-Matrix *gModelMatrixF[6];
-MatrixS *gModelMatrixS[6];
-Matrix D_80120DA0[5]; // Not sure why, but gModelMatrixF is populated from here, even though this is never set.
-Matrix gPerspectiveMatrixF;
-Matrix gViewMatrixF;
-Matrix gCameraMatrixF;
-Matrix gProjectionMatrixF;
+ALIGNED16 Matrix *gModelMatrixF[6];
+ALIGNED16 MatrixS *gModelMatrixS[6];
+ALIGNED16 Matrix D_80120DA0[5]; // Not sure why, but gModelMatrixF is populated from here, even though this is never set.
+ALIGNED16 Matrix gPerspectiveMatrixF;
+ALIGNED16 Matrix gViewMatrixF;
+ALIGNED16 Matrix gCameraMatrixF;
+ALIGNED16 Matrix gProjectionMatrixF;
 ALIGNED16 MatrixS gProjectionMatrixS;
-Matrix gCurrentModelMatrixF;
-Matrix gCurrentModelMatrixS;
+ALIGNED16 Matrix gCurrentModelMatrixF;
+ALIGNED16 Matrix gCurrentModelMatrixS;
 
 /******************************/
 
