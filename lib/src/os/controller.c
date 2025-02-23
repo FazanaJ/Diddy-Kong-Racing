@@ -110,19 +110,7 @@ void __osPackRequestData(u8 cmd) {
 }
 
 s32 osContSetCh(u8 ch) {
-    s32 ret = 0;
-
-    __osSiGetAccess();
-
-    if (ch > MAXCONTROLLERS) {
-        __osMaxControllers = MAXCONTROLLERS;
-    } else {
-        __osMaxControllers = ch;
-    }
-
-    __osContLastCmd = CONT_CMD_END;
-    __osSiRelAccess();
-    return ret;
+    return osContSetMask((1 << ch) - 1);
 }
 
 s32 osContSetMask(u8 ch) {
@@ -130,17 +118,19 @@ s32 osContSetMask(u8 ch) {
     s32 i;
 
     if (__osBbIsBb) {
+        __osControllerMask = (CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4);
+        __osMaxControllers = MAXCONTROLLERS;
         return ret;
     }
 
     __osSiGetAccess();
 
-    if (ch > (CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4)) {
+    if (ch == 0 || ch > (CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4)) {
         __osControllerMask = CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4;
         __osMaxControllers = 4;
     } else {
         __osControllerMask = ch;
-        for (i = 0; i < 4; i++) {
+        for (i = 0; i < MAXCONTROLLERS; i++) {
             if (ch & (1 << i)) {
                 __osMaxControllers = i;
             }

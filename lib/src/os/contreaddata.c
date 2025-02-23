@@ -81,14 +81,16 @@ static void __osPackReadData(void) {
     }
     __osContPifRam.pifstatus = CONT_CMD_EXE;
     readformat.dummy = CONT_CMD_NOP;
-    readformat.txsize = CONT_CMD_READ_BUTTON_TX;
-    readformat.rxsize = CONT_CMD_READ_BUTTON_RX;
-    readformat.cmd = CONT_CMD_READ_BUTTON;
     readformat.button = -1;
     readformat.stick_x = -1;
     readformat.stick_y = -1;
     for(i=0; i < __osMaxControllers; i++) {
         if ((__osControllerMask & (1 << i)) == 0) {
+            // In the Joybus frame, a packet is sent to the PIF chip describing the number of bytes to transfer and
+            // receive over the protocol. There are two special commands, 0x00 (skip) and 0xFF (nop). This function
+            // sends a packet with the layout: FF FF FF 00 FF FF FF FF, basically saying to skip the channel, with some
+            // extra bytes that do nothing, allowing the next packet to be processed. This wastes memory, but it works.
+            // Source: https://n64brew.dev/wiki/PIF-NUS#Joybus_frame_(controller_and_EEPROM_communication)
             readformat.txsize = CONT_CMD_NOP;
             readformat.rxsize = CONT_CMD_NOP;
             readformat.cmd = 0;

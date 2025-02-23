@@ -74,9 +74,6 @@ void __osPfsRequestData(u8 cmd) {
     __osPfsPifRam.pifstatus = CONT_CMD_EXE;
     ptr = (u8 *)&__osPfsPifRam;
     requestformat.dummy = CONT_CMD_NOP;
-    requestformat.txsize = CONT_CMD_REQUEST_STATUS_TX;
-    requestformat.rxsize = CONT_CMD_REQUEST_STATUS_RX;
-    requestformat.cmd = cmd;
     requestformat.typeh = CONT_CMD_NOP;
     requestformat.typel = CONT_CMD_NOP;
     requestformat.status = CONT_CMD_NOP;
@@ -84,7 +81,14 @@ void __osPfsRequestData(u8 cmd) {
 
     for (i = 0; i < __osMaxControllers; i++) {
         if ((__osControllerMask & (1 << i)) == 0) {
-            continue;
+            // See __osPackReadData in contreaddata.c for an explanation for this behavior.
+            requestformat.txsize = CONT_CMD_NOP;
+            requestformat.rxsize = CONT_CMD_NOP;
+            requestformat.cmd = 0;
+        } else {
+            requestformat.txsize = CONT_CMD_REQUEST_STATUS_TX;
+            requestformat.rxsize = CONT_CMD_REQUEST_STATUS_RX;
+            requestformat.cmd = cmd;
         }
         *(__OSContRequesFormat *)ptr = requestformat;
         ptr += sizeof(__OSContRequesFormat);
