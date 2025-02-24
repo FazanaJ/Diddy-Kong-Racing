@@ -96,70 +96,7 @@ static inline s32 osEPiLinkHandle(OSPiHandle* EPiHandle) {
     return 0;
 }
 
-s32 osFlashAllErase(void) {
-    u32 status;
-    OSTimer mytimer;
-    OSMesgQueue timerMesgQueue;
-    OSMesg dummy;
-
-    // start chip erase operation
-    osEPiWriteIo(&__osFlashHandler, __osFlashHandler.baseAddress | FLASH_CMD_REG, FLASH_CMD_CHIP_ERASE);
-    osEPiWriteIo(&__osFlashHandler, __osFlashHandler.baseAddress | FLASH_CMD_REG, FLASH_CMD_EXECUTE_ERASE);
-
-    // wait for completion by polling erase-busy flag
-    osCreateMesgQueue(&timerMesgQueue, &dummy, 1);
-    do {
-        osSetTimer(&mytimer, OS_USEC_TO_CYCLES(15000), 0, &timerMesgQueue, &dummy);
-        osRecvMesg(&timerMesgQueue, &dummy, OS_MESG_BLOCK);
-        osEPiReadIo(&__osFlashHandler, __osFlashHandler.baseAddress, &status);
-    } while ((status & FLASH_STATUS_ERASE_BUSY) == FLASH_STATUS_ERASE_BUSY);
-
-    // check erase operation status, clear status
-    osEPiReadIo(&__osFlashHandler, __osFlashHandler.baseAddress, &status);
-    osFlashClearStatus();
-
-    // check for success
-    if (((status & 0xFF) == 8) || ((status & 0xFF) == 0x48) || ((status & 8) == 8)) {
-        return FLASH_STATUS_ERASE_OK;
-    } else {
-        return FLASH_STATUS_ERASE_ERROR;
-    }
-}
-
-void osFlashAllEraseThrough(void) {
-    // start chip erase operation, no waiting for completion
-    osEPiWriteIo(&__osFlashHandler, __osFlashHandler.baseAddress | FLASH_CMD_REG, FLASH_CMD_CHIP_ERASE);
-    osEPiWriteIo(&__osFlashHandler, __osFlashHandler.baseAddress | FLASH_CMD_REG, FLASH_CMD_EXECUTE_ERASE);
-}
-
-void osFlashChange(u32 flash_num) {
-    __osFlashHandler.baseAddress = PHYS_TO_K1((FLASH_START_ADDR + flash_num * FLASH_SIZE));
-    __osFlashHandler.type = DEVICE_TYPE_FLASH + flash_num;
-    return;
-}
-
-s32 osFlashCheckEraseEnd(void) {
-    u8 status;
-
-    osFlashReadStatus(&status);
-
-    if ((status & FLASH_STATUS_ERASE_BUSY) == FLASH_STATUS_ERASE_BUSY) {
-        return FLASH_STATUS_ERASE_BUSY;
-    } else {
-        // not busy, read and clear status
-        osFlashReadStatus(&status);
-    }
-    osFlashClearStatus();
-
-    // check for success
-    if (((status & 0xFF) == 8) || ((status & 0xFF) == 0x48) || ((status & 8) == 8)) {
-        return FLASH_STATUS_ERASE_OK;
-    } else {
-        return FLASH_STATUS_ERASE_ERROR;
-    }
-}
-
-void osFlashClearStatus(void) {
+static void osFlashClearStatus(void) {
     // select status mode
     osEPiWriteIo(&__osFlashHandler, __osFlashHandler.baseAddress | FLASH_CMD_REG, FLASH_CMD_STATUS);
     // clear status
@@ -167,7 +104,7 @@ void osFlashClearStatus(void) {
     return;
 }
 
-u32 __osFlashGetAddr(u32 page_num) {
+static u32 __osFlashGetAddr(u32 page_num) {
     u32 devAddr;
 
     if (__osFlashVersion == OLD_FLASH) {
@@ -306,18 +243,6 @@ void osFlashReadStatus(u8* flash_status) {
 
     *flash_status = status & 0xFF;
     return;
-}
-
-OSPiHandle* osFlashReInit(u8 latency, u8 pulse, u8 page_size, u8 rel_duration, u32 start) {
-    __osFlashHandler.baseAddress = PHYS_TO_K1(start);
-    __osFlashHandler.type++;
-    __osFlashHandler.latency = latency;
-    __osFlashHandler.pulse = pulse;
-    __osFlashHandler.pageSize = page_size;
-    __osFlashHandler.relDuration = rel_duration;
-    __osFlashHandler.domain = PI_DOMAIN2;
-
-    return &__osFlashHandler;
 }
 
 s32 osFlashSectorErase(u32 page_num) {

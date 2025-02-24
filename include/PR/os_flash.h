@@ -59,7 +59,6 @@ extern OSPiHandle *osFlashReInit(u8 latency, u8 pulse,
 extern OSPiHandle *osFlashInit(void);
 extern void    osFlashReadStatus(u8 *flash_status);
 extern void    osFlashReadId(u32 *flash_type, u32 *flash_maker);
-extern void    osFlashClearStatus(void);
 extern s32     osFlashAllErase(void);
 extern s32     osFlashSectorErase(u32 page_num);
 extern s32     osFlashWriteBuffer(OSIoMesg *mb, s32 priority, 

@@ -33,6 +33,4 @@ extern OSMesg __osFlashMsgBuf[1];
 extern s32 __osFlashVersion;
 extern u32 __osFlashID[4];
 
-u32 __osFlashGetAddr(u32 page_num);
-
 #endif
