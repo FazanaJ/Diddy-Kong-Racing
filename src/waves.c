@@ -12,6 +12,7 @@
 #include "main.h"
 #include "tracks.h"
 #include "math_util.h"
+#include "viint.h"
 
 /************ .data ************/
 

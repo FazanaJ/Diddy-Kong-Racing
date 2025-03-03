@@ -8,7 +8,7 @@
 #include "lib/src/libc/xprintf.h"
 #include "string.h"
 #include "stdarg.h"
-#include "controller.h"
+#include "joypad.h"
 #include "printf.h"
 #include "particles.h"
 #include "objects.h"

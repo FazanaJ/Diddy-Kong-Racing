@@ -26,11 +26,12 @@
 #include "game_ui.h"
 #include "audio_spatial.h"
 #include "main.h"
-#include "controller.h"
+#include "joypad.h"
 #include "game_text.h"
 #include "audiosfx.h"
 #include "audio_vehicle.h"
 #include "vehicle_misc.h"
+#include "viint.h"
 
 /************ .data ************/
 
@@ -948,7 +949,7 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
                         spF4[curObj->properties.setupPoint.racerIndex] = curObj->segment.trans.x_position;
                         spD4[curObj->properties.setupPoint.racerIndex] = curObj->segment.trans.y_position;
                         spB4[curObj->properties.setupPoint.racerIndex] = curObj->segment.trans.z_position;
-                        sp94[curObj->properties.setupPoint.racerIndex] = curObj->segment.trans.y_rotation;
+                        sp94[curObj->properties.setupPoint.racerIndex] = curObj->segment.trans.rotation.y_rotation;
                     }
                     tempVehicle = curObj->segment.level_entry->setupPoint.vehicle;
                     if (tempVehicle != -1) {
@@ -1039,7 +1040,9 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
             }
         }
     }
-    entry = mempool_alloc_safe(sizeof(LevelObjectEntry_Unk8000CC7C), MEMP_OBJECTS);
+    if (((!(curObj->segment.trans.rotation.y_rotation)) && (!(curObj->segment.trans.rotation.y_rotation))) &&
+        (!(curObj->segment.trans.rotation.y_rotation))) {}
+    entry = mempool_alloc_safe(sizeof(LevelObjectEntry_Unk8000CC7C), COLOUR_TAG_YELLOW);
     entry->unkC = 0;
     entry->unkA = 0;
     entry->unk8 = 0;
@@ -1115,7 +1118,7 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
                 func_800619F4(0);
             }
             newRacerObj = spawn_object((LevelObjectEntryCommon *) entry, spawnObjFlags);
-            newRacerObj->segment.trans.y_rotation = sp94[i6];
+            newRacerObj->segment.trans.rotation.y_rotation = sp94[i6];
             (*gRacers)[i6] = newRacerObj;
             gRacersByPosition[i6] = newRacerObj;
             gRacersByPort[var_s4] = newRacerObj;
@@ -1410,7 +1413,7 @@ void despawn_player_racer(Object *obj, s32 vehicleID) {
     gTransformPosX = obj->segment.trans.x_position;
     gTransformPosY = obj->segment.trans.y_position;
     gTransformPosZ = obj->segment.trans.z_position;
-    gTransformAngleY = obj->segment.trans.y_rotation;
+    gTransformAngleY = obj->segment.trans.rotation.y_rotation;
     free_object(obj);
     gNumRacers = 0;
 }
@@ -1470,7 +1473,7 @@ void transform_player_vehicle(void) {
         player->segment.trans.scale *= 0.714f;
     }
     player->segment.level_entry = NULL;
-    player->segment.trans.y_rotation = gTransformAngleY;
+    player->segment.trans.rotation.y_rotation = gTransformAngleY;
     player->segment.trans.y_position = gTransformPosY;
 }
 
@@ -1759,7 +1762,8 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 arg1) {
 
     // WRONG WRONG WRONG - Is this really just trying to set up the first several values in a weird way?
     for (var_s0_5 = 0; var_s0_5 < sizeOfobj; var_s0_5 += 4) {
-        newObj[var_s0_5].segment.trans.y_rotation = (*gSpawnObjectHeap)[var_s0_5]->segment.trans.y_rotation;
+        newObj[var_s0_5].segment.trans.rotation.y_rotation =
+            (*gSpawnObjectHeap)[var_s0_5]->segment.trans.rotation.y_rotation;
     }
     if (newObj->waterEffect != NULL) {
         newObj->waterEffect =
@@ -2718,9 +2722,9 @@ void render_3d_billboard(Gfx **dList, Object *obj) {
 
     // 5 = OilSlick, SmokeCloud, Bomb, BubbleWeapon
     if (bubbleTrap != NULL || !(obj->behaviorId != BHV_WEAPON || obj->unk64->weapon.weaponID != WEAPON_BUBBLE_TRAP)) {
-        objTrans.trans.z_rotation = 0;
-        objTrans.trans.x_rotation = 0;
-        objTrans.trans.y_rotation = 0;
+        objTrans.trans.rotation.z_rotation = 0;
+        objTrans.trans.rotation.x_rotation = 0;
+        objTrans.trans.rotation.y_rotation = 0;
         objTrans.trans.scale = obj->segment.trans.scale;
         objTrans.trans.x_position = 0.0f;
         objTrans.trans.z_position = 0.0f;
@@ -3032,9 +3036,9 @@ void object_do_player_tumble(Object *this) {
     if (this->behaviorId == BHV_RACER) {
 
         sp_20 = &this->unk64->racer;
-        this->segment.trans.y_rotation += sp_20->y_rotation_offset;
-        this->segment.trans.x_rotation += sp_20->x_rotation_offset;
-        this->segment.trans.z_rotation += sp_20->z_rotation_offset;
+        this->segment.trans.rotation.y_rotation += sp_20->y_rotation_offset;
+        this->segment.trans.rotation.x_rotation += sp_20->x_rotation_offset;
+        this->segment.trans.rotation.z_rotation += sp_20->z_rotation_offset;
         offsetY = 0.0f;
         if (sp_20->vehicleIDPrev < VEHICLE_TRICKY) {
 
@@ -3058,9 +3062,9 @@ void object_do_player_tumble(Object *this) {
 void object_undo_player_tumble(Object *obj) {
     if (obj->behaviorId == BHV_RACER) {
         Object_Racer *racer = &obj->unk64->racer;
-        obj->segment.trans.y_rotation -= racer->y_rotation_offset;
-        obj->segment.trans.x_rotation -= racer->x_rotation_offset;
-        obj->segment.trans.z_rotation -= racer->z_rotation_offset;
+        obj->segment.trans.rotation.y_rotation -= racer->y_rotation_offset;
+        obj->segment.trans.rotation.x_rotation -= racer->x_rotation_offset;
+        obj->segment.trans.rotation.z_rotation -= racer->z_rotation_offset;
         obj->segment.trans.y_position -= gObjectOffsetY;
     }
 }
@@ -3321,9 +3325,9 @@ void render_racer_shield(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *o
         shear = (coss_f(D_8011B010[racerIndex] * 0x400) * 0.05f) + 0.95f;
         gShieldEffectObject->segment.trans.scale = shield->scale * shear;
         shear = shear * shield->turnSpeed;
-        gShieldEffectObject->segment.trans.y_rotation = D_8011B010[racerIndex] * 0x800;
-        gShieldEffectObject->segment.trans.x_rotation = 0x800;
-        gShieldEffectObject->segment.trans.z_rotation = 0;
+        gShieldEffectObject->segment.trans.rotation.y_rotation = D_8011B010[racerIndex] * 0x800;
+        gShieldEffectObject->segment.trans.rotation.x_rotation = 0x800;
+        gShieldEffectObject->segment.trans.rotation.z_rotation = 0;
         shieldType = racer->shieldType;
         if (shieldType != SHIELD_NONE) {
             shieldType--;
@@ -3392,9 +3396,9 @@ void render_racer_magnet(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *o
             gMagnetEffectObject->segment.trans.scale = magnet[0] * shear;
             magnet += 1;
             shear = magnet[0] * shear;
-            gMagnetEffectObject->segment.trans.y_rotation = D_8011B078[var_t0].b * 0x1000;
-            gMagnetEffectObject->segment.trans.x_rotation = 0;
-            gMagnetEffectObject->segment.trans.z_rotation = 0;
+            gMagnetEffectObject->segment.trans.rotation.y_rotation = D_8011B078[var_t0].b * 0x1000;
+            gMagnetEffectObject->segment.trans.rotation.x_rotation = 0;
+            gMagnetEffectObject->segment.trans.rotation.z_rotation = 0;
             gfxData = *gMagnetEffectObject->unk68;
             mdl = gfxData->objModel;
             gMagnetEffectObject->unk44 = (Vertex *) gfxData->unk4[gfxData->animationTaskNum];
@@ -3565,8 +3569,6 @@ s32 func_80014814(s32 *retObjCount) {
 #else
 GLOBAL_ASM("asm/non_matchings/objects/func_80014814.s")
 #endif
-
-GLOBAL_ASM("asm/non_matchings/objects/func_80014B50.s")
 
 /**
  * Takes every object and sorts the main object list by distance to the camera.
@@ -3959,9 +3961,9 @@ void func_8001709C(Object *obj) {
     obj5C = obj->unk5C;
     obj5C->unk104 = (obj5C->unk104 + 1) & 1;
     sp6C = (Matrix *) &obj5C->_matrices[obj5C->unk104 << 1];
-    sp78.y_rotation = -obj->segment.trans.y_rotation;
-    sp78.x_rotation = -obj->segment.trans.x_rotation;
-    sp78.z_rotation = -obj->segment.trans.z_rotation;
+    sp78.rotation.y_rotation = -obj->segment.trans.rotation.y_rotation;
+    sp78.rotation.x_rotation = -obj->segment.trans.rotation.x_rotation;
+    sp78.rotation.z_rotation = -obj->segment.trans.rotation.z_rotation;
     sp78.scale = 1.0f;
     sp78.x_position = -obj->segment.trans.x_position;
     sp78.y_position = -obj->segment.trans.y_position;
@@ -3978,9 +3980,9 @@ void func_8001709C(Object *obj) {
     sp2C[2][2] = inverseScale;
     sp2C[3][3] = 1.0f;
     f32_matrix_mult(sp6C, &sp2C, sp6C);
-    sp78.y_rotation = obj->segment.trans.y_rotation;
-    sp78.x_rotation = obj->segment.trans.x_rotation;
-    sp78.z_rotation = obj->segment.trans.z_rotation;
+    sp78.rotation.y_rotation = obj->segment.trans.rotation.y_rotation;
+    sp78.rotation.x_rotation = obj->segment.trans.rotation.x_rotation;
+    sp78.rotation.z_rotation = obj->segment.trans.rotation.z_rotation;
     sp78.scale = 1.0f / inverseScale;
     sp78.x_position = obj->segment.trans.x_position;
     sp78.y_position = obj->segment.trans.y_position;
@@ -4599,18 +4601,18 @@ void set_ghost_none(void) {
     gHasGhostToSave = FALSE;
 }
 
-Object *func_8001B7A8(Object *racer, s32 position, f32 *distance) {
-    Object *tempRacer;
-    position = (racer->obj.unk112 - position) - 1;
+Object *func_8001B7A8(Object_Racer *racer, s32 position, f32 *distance) {
+    Object *tempRacerObj;
+    position = (racer->unk1AA - position) - 1;
     if (position < 0 || position >= gNumRacers) {
         return NULL;
     }
-    tempRacer = gRacersByPosition[position];
-    if (tempRacer == NULL) {
+    tempRacerObj = gRacersByPosition[position];
+    if (tempRacerObj == NULL) {
         return NULL;
     }
-    *distance = func_8001B834((Object_Racer *) racer, (Object_Racer *) tempRacer->unk64);
-    return tempRacer;
+    *distance = func_8001B834(racer, &tempRacerObj->unk64->racer);
+    return tempRacerObj;
 }
 
 f32 func_8001B834(Object_Racer *racer1, Object_Racer *racer2) {
@@ -5309,8 +5311,9 @@ void calc_dyn_light_and_env_map_for_object(ObjectModel *model, Object *object, s
     profiler_reset_timer();
     if (environmentMappingEnabled) {
         // Calculates environment mapping for the object
-        calc_env_mapping_for_object(model, object->segment.trans.z_rotation, object->segment.trans.x_rotation,
-                                    object->segment.trans.y_rotation);
+        calc_env_mapping_for_object(model, object->segment.trans.rotation.z_rotation,
+                                    object->segment.trans.rotation.x_rotation,
+                                    object->segment.trans.rotation.y_rotation);
         profiler_add(PP_ENVMAP, first);
     }
 }
@@ -5551,9 +5554,9 @@ void obj_init_animcamera(Object *arg0, Object *animObj) {
     animObj->segment.trans.x_position = arg0->segment.trans.x_position;
     animObj->segment.trans.y_position = arg0->segment.trans.y_position;
     animObj->segment.trans.z_position = arg0->segment.trans.z_position;
-    animObj->segment.trans.y_rotation = arg0->segment.trans.y_rotation;
-    animObj->segment.trans.z_rotation = arg0->segment.trans.z_rotation;
-    animObj->segment.trans.x_rotation = arg0->segment.trans.x_rotation;
+    animObj->segment.trans.rotation.y_rotation = arg0->segment.trans.rotation.y_rotation;
+    animObj->segment.trans.rotation.z_rotation = arg0->segment.trans.rotation.z_rotation;
+    animObj->segment.trans.rotation.x_rotation = arg0->segment.trans.rotation.x_rotation;
     anim->unk26 = 0;
     anim->unk3D = animEntry->channel;
     anim->unk28 = animEntry->actorIndex;
@@ -5698,9 +5701,9 @@ void func_80021104(Object *obj, Object_Animation *animObj, LevelObjectEntry_Anim
         animObjTrans->x_position = seg->trans.x_position;
         animObjTrans->y_position = seg->trans.y_position;
         animObjTrans->z_position = seg->trans.z_position;
-        animObjTrans->y_rotation = (0x8000 - seg->trans.y_rotation);
-        animObjTrans->x_rotation = -seg->trans.x_rotation;
-        animObjTrans->z_rotation = seg->trans.z_rotation;
+        animObjTrans->rotation.y_rotation = (0x8000 - seg->trans.rotation.y_rotation);
+        animObjTrans->rotation.x_rotation = -seg->trans.rotation.x_rotation;
+        animObjTrans->rotation.z_rotation = seg->trans.rotation.z_rotation;
     }
     if ((entry->unk22 >= 10) && (entry->unk22 < 18)) {
         seg = &(*gRacers)[entry->unk22 - 10]->segment;
@@ -5708,9 +5711,9 @@ void func_80021104(Object *obj, Object_Animation *animObj, LevelObjectEntry_Anim
             animObjTrans->x_position = seg->trans.x_position;
             animObjTrans->y_position = seg->trans.y_position;
             animObjTrans->z_position = seg->trans.z_position;
-            animObjTrans->y_rotation = seg->trans.y_rotation;
-            animObjTrans->x_rotation = seg->trans.x_rotation;
-            animObjTrans->z_rotation = seg->trans.z_rotation;
+            animObjTrans->rotation.y_rotation = seg->trans.rotation.y_rotation;
+            animObjTrans->rotation.x_rotation = seg->trans.rotation.x_rotation;
+            animObjTrans->rotation.z_rotation = seg->trans.rotation.z_rotation;
         }
     }
 }
@@ -6122,11 +6125,11 @@ CheckpointNode *func_800230D0(Object *obj, Object_Racer *racer) {
     if (lastCheckpointNode != NULL) {
         racer->steerVisualRotation = arctan2_f(lastCheckpointNode->rotationXFrac, lastCheckpointNode->rotationZFrac);
     } else {
-        racer->steerVisualRotation = ptrList->segment.trans.y_rotation;
+        racer->steerVisualRotation = ptrList->segment.trans.rotation.y_rotation;
     }
     racer->checkpoint = 0;
     racer->courseCheckpoint = racer->lap * gNumberOfCheckpoints;
-    obj->segment.trans.y_rotation = racer->steerVisualRotation;
+    obj->segment.trans.rotation.y_rotation = racer->steerVisualRotation;
     racer->unkD8.x = obj->segment.trans.x_position;
     racer->unkD8.y = obj->segment.trans.y_position + 15.0f;
     racer->unkD8.z = obj->segment.trans.z_position;

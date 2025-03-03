@@ -158,8 +158,8 @@ void update_bubbler(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *
     firstRacerObj = get_racer_object(PLAYER_ONE);
     diffX = firstRacerObj->segment.trans.x_position - obj->segment.trans.x_position;
     diffZ = firstRacerObj->segment.trans.z_position - obj->segment.trans.z_position;
-    if (((diffX * diffX) + (diffZ * diffZ)) < 700.0f * 700.0f) {
-        timer = (arctan2_f(diffX, diffZ) - (obj->segment.trans.y_rotation & 0xFFFF)) + 0x8000;
+    if (sqrtf((diffX * diffX) + (diffZ * diffZ)) < 700.0f * 700.0f) {
+        timer = (arctan2_f(diffX, diffZ) - (obj->segment.trans.rotation.y_rotation & 0xFFFF)) + 0x8000;
         WRAP(timer, -0x8000, 0x8000);
         CLAMP(timer, -headAngleRange, headAngleRange);
         racer->headAngleTarget = timer;

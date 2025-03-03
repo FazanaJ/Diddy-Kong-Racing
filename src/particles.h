@@ -3,7 +3,7 @@
 
 #include "types.h"
 #include "structs.h"
-#include "libultra_internal.h"
+#include <ultra64.h>
 
 enum ObjectEmitterFlags {
     OBJ_EMIT_OFF,
@@ -159,12 +159,8 @@ typedef struct ParticleSegment_3C {
 } ParticleSegment_3C;
 
 typedef struct ParticleAngle {
-    s16 y_rotation;
-    s16 x_rotation;
-    s16 z_rotation;
-    s16 y_direction;
-    s16 x_direction;
-    s16 z_direction;
+    Vec3s rotation;
+    Vec3s direction;
 } ParticleAngle;
 
 typedef struct ParticleData {

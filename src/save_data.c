@@ -12,7 +12,7 @@
 #include "objects.h"
 #include "game.h"
 #include "thread3_main.h"
-#include "controller.h"
+#include "joypad.h"
 #include "main.h"
 #include "PR/os_flash.h"
 

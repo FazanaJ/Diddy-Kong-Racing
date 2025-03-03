@@ -2,6 +2,7 @@
 /* RAM_POS: 0x800B6F50 */
 
 #include "thread0_epc.h"
+#include "common.h"
 #include "types.h"
 #include "macros.h"
 #include "menu.h"
@@ -9,7 +10,7 @@
 #include "lib/src/libc/xprintf.h"
 #include "printf.h"
 #include "objects.h"
-#include "controller.h"
+#include "joypad.h"
 #include "game.h"
 #include "stdarg.h"
 #include "string.h"
@@ -380,8 +381,8 @@ INLINE void crash_page_object(void) {
         crash_screen_print(sCrashX + 10, sCrashY + 15, "X: %2.2f, Y: %2.2f, Z: %2.2f",
                            (f64) o->segment.trans.x_position, (f64) o->segment.trans.y_position,
                            (f64) o->segment.trans.z_position);
-        crash_screen_print(sCrashX + 10, sCrashY + 25, "Y: 0x%X, P: 0x%X, R: 0x%X", (u16) o->segment.trans.y_rotation,
-                           (u16) o->segment.trans.x_rotation, (u16) o->segment.trans.z_rotation);
+        crash_screen_print(sCrashX + 10, sCrashY + 25, "Y: 0x%X, P: 0x%X, R: 0x%X", (u16) o->segment.trans.rotation.y_rotation,
+                           (u16) o->segment.trans.rotation.x_rotation, (u16) o->segment.trans.rotation.z_rotation);
         crash_screen_print(sCrashX + 10, sCrashY + 35, "FLAGS: %X, SCALE: %2.3f", o->segment.trans.flags,
                            (f64) o->segment.trans.scale);
         crash_screen_print(sCrashX + 10, sCrashY + 50, "MTX POS: %d", gModelMatrixStackPos);

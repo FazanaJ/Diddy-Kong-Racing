@@ -25,7 +25,7 @@
 #include "objects.h"
 #include "camera.h"
 #include "save_data.h"
-#include "rcp.h"
+#include "rcp_dkr.h"
 #include "audiosfx.h"
 #include "audiomgr.h"
 #include "lights.h"
@@ -45,7 +45,7 @@
 #include "string.h"
 #include "stdarg.h"
 #include "math_util.h"
-#include "controller.h"
+#include "joypad.h"
 #include "math_util.h"
 #include "common.h"
 

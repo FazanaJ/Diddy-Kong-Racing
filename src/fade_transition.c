@@ -8,11 +8,11 @@
 #include "f3ddkr.h"
 #include "asset_enums.h"
 #include "memory.h"
-#include "PR/libultra.h"
 #include "video.h"
 #include "textures_sprites.h"
 #include "game.h"
 #include "math_util.h"
+#include "viint.h"
 
 /************ .data ************/
 

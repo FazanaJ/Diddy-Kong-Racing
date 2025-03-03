@@ -137,6 +137,10 @@ typedef struct StackInfo {
 extern MemoryPool gMemoryPools[POOL_COUNT];
 extern s32 gNumberOfMemoryPools;
 extern u32 gRamEnd;
+// This variable doesn't truly exist in memory.
+// It's just defined as the end of BSS, and it's 
+// symbol needs to be in the undefined syms place.
+extern MemoryPoolSlot gMainMemoryPool;
 
 void mempool_init_main(void);
 MemoryPoolSlot *mempool_new_sub(s32 poolDataSize, s32 numSlots);

@@ -1,10 +1,10 @@
-#ifndef _CONTROLLER_H_
-#define _CONTROLLER_H_
+#ifndef _JOYPAD_H_
+#define _JOYPAD_H_
 
 #include "types.h"
 #include "macros.h"
 #include "structs.h"
-#include "libultra_internal.h"
+#include <ultra64.h>
 
 #define CONTROLLER_MISSING -1
 #define CONTROLLER_EXISTS   0

@@ -56,11 +56,11 @@ Vp gViewportStack[20] = {
 };
 
 ObjectTransform D_800DD288 = {
-    0, 0, 0, 0, 1.0f, 0.0f, 0.0f, -281.0f,
+    { { { 0, 0, 0 } } }, 0, 1.0f, 0.0f, 0.0f, -281.0f,
 };
 
 ObjectTransform D_800DD2A0 = {
-    0, 0, 0, 0, 1.0f, 0.0f, 0.0f, 0.0f,
+    { { { 0, 0, 0 } } }, 0, 1.0f, 0.0f, 0.0f, 0.0f,
 };
 
 Matrix gOrthoMatrixF = {
@@ -249,16 +249,16 @@ void camera_init_tracks_menu(Gfx **dList, MatrixS **mtxS) {
     set_active_viewports_and_max(0);
     set_active_camera(0);
     cam = get_active_camera_segment();
-    angleY = cam->trans.y_rotation;
-    angleX = cam->trans.x_rotation;
-    angleZ = cam->trans.z_rotation;
+    angleY = cam->trans.rotation.y_rotation;
+    angleX = cam->trans.rotation.x_rotation;
+    angleZ = cam->trans.rotation.z_rotation;
     posX = cam->trans.x_position;
     posY = cam->trans.y_position;
     posZ = cam->trans.z_position;
     sp24 = cam->camera.unk38;
-    cam->trans.z_rotation = 0;
-    cam->trans.x_rotation = 0;
-    cam->trans.y_rotation = -0x8000;
+    cam->trans.rotation.z_rotation = 0;
+    cam->trans.rotation.x_rotation = 0;
+    cam->trans.rotation.y_rotation = -0x8000;
     cam->camera.unk38 = 0;
     cam->trans.x_position = 0.0f;
     cam->trans.y_position = 0.0f;
@@ -266,9 +266,9 @@ void camera_init_tracks_menu(Gfx **dList, MatrixS **mtxS) {
     update_envmap_position(0.0f, 0.0f, -1.0f);
     func_80066CDC(dList, mtxS);
     cam->camera.unk38 = sp24;
-    cam->trans.y_rotation = angleY;
-    cam->trans.x_rotation = angleX;
-    cam->trans.z_rotation = angleZ;
+    cam->trans.rotation.y_rotation = angleY;
+    cam->trans.rotation.x_rotation = angleX;
+    cam->trans.rotation.z_rotation = angleZ;
     cam->trans.x_position = posX;
     cam->trans.y_position = posY;
     cam->trans.z_position = posZ;
@@ -293,19 +293,23 @@ f32 get_distance_to_active_camera(f32 xPos, f32 yPos, f32 zPos) {
     return ((dz * dz) + ((dx * dx) + (dy * dy)));
 }
 
+/**
+ * Sets the position and angle of the active camera.
+ * Also sets the other properties of the camera to a default.
+ */
 void camera_reset(f32 xPos, f32 yPos, f32 zPos, s32 angleZ, s32 angleX, s32 angleY) {
-    gCameraSegment[gActiveCameraID].trans.z_rotation = (s16) (angleZ * 0xB6);
+    gCameraSegment[gActiveCameraID].trans.rotation.z_rotation = (s16) (angleZ * 0xB6);
     gCameraSegment[gActiveCameraID].trans.x_position = xPos;
     gCameraSegment[gActiveCameraID].trans.y_position = yPos;
     gCameraSegment[gActiveCameraID].trans.z_position = zPos;
-    gCameraSegment[gActiveCameraID].trans.x_rotation = (s16) (angleX * 0xB6);
-    gCameraSegment[gActiveCameraID].camera.unk38 = (s16) 0;
+    gCameraSegment[gActiveCameraID].trans.rotation.x_rotation = (s16) (angleX * 0xB6);
+    gCameraSegment[gActiveCameraID].camera.unk38 = 0;
     gCameraSegment[gActiveCameraID].z_velocity = 0.0f;
     gCameraSegment[gActiveCameraID].unk28 = 0.0f;
     gCameraSegment[gActiveCameraID].camera.unk2C = 0.0f;
     gCameraSegment[gActiveCameraID].camera.distanceToCamera = 0.0f;
     gCameraSegment[gActiveCameraID].x_velocity = 160.0f;
-    gCameraSegment[gActiveCameraID].trans.y_rotation = (s16) (angleY * 0xB6);
+    gCameraSegment[gActiveCameraID].trans.rotation.y_rotation = (s16) (angleY * 0xB6);
     gCameraSegment[gActiveCameraID].object.animationID = gCameraZoomLevels[gActiveCameraID];
 }
 
@@ -320,9 +324,9 @@ void write_to_object_render_stack(s32 stackPos, f32 xPos, f32 yPos, f32 zPos, s1
     gCameraSegment[stackPos].trans.x_position = xPos;
     gCameraSegment[stackPos].trans.y_position = yPos;
     gCameraSegment[stackPos].trans.z_position = zPos;
-    gCameraSegment[stackPos].trans.y_rotation = arg4;
-    gCameraSegment[stackPos].trans.x_rotation = arg5;
-    gCameraSegment[stackPos].trans.z_rotation = arg6;
+    gCameraSegment[stackPos].trans.rotation.y_rotation = arg4;
+    gCameraSegment[stackPos].trans.rotation.x_rotation = arg5;
+    gCameraSegment[stackPos].trans.rotation.z_rotation = arg6;
     gCameraSegment[stackPos].object.cameraSegmentID = get_level_segment_index_from_position(xPos, yPos, zPos);
     gCutsceneCameraActive = TRUE;
 }
@@ -789,10 +793,10 @@ void func_80067D3C(Gfx **dlist, UNUSED MatrixS **mats) {
         gActiveCameraID += 4;
     }
 
-    gCameraTransform.y_rotation = 0x8000 + gCameraSegment[gActiveCameraID].trans.y_rotation;
-    gCameraTransform.x_rotation =
-        gCameraSegment[gActiveCameraID].trans.x_rotation + gCameraSegment[gActiveCameraID].camera.unk38;
-    gCameraTransform.z_rotation = gCameraSegment[gActiveCameraID].trans.z_rotation;
+    gCameraTransform.rotation.y_rotation = 0x8000 + gCameraSegment[gActiveCameraID].trans.rotation.y_rotation;
+    gCameraTransform.rotation.x_rotation =
+        gCameraSegment[gActiveCameraID].trans.rotation.x_rotation + gCameraSegment[gActiveCameraID].camera.unk38;
+    gCameraTransform.rotation.z_rotation = gCameraSegment[gActiveCameraID].trans.rotation.z_rotation;
 
     gCameraTransform.x_position = -gCameraSegment[gActiveCameraID].trans.x_position;
     gCameraTransform.y_position = -gCameraSegment[gActiveCameraID].trans.y_position;
@@ -804,10 +808,10 @@ void func_80067D3C(Gfx **dlist, UNUSED MatrixS **mats) {
     object_transform_to_matrix_2(gCameraMatrixF, &gCameraTransform);
     f32_matrix_mult(&gCameraMatrixF, &gPerspectiveMatrixF, &gViewMatrixF);
 
-    gCameraTransform.y_rotation = -0x8000 - gCameraSegment[gActiveCameraID].trans.y_rotation;
-    gCameraTransform.x_rotation =
-        -(gCameraSegment[gActiveCameraID].trans.x_rotation + gCameraSegment[gActiveCameraID].camera.unk38);
-    gCameraTransform.z_rotation = -gCameraSegment[gActiveCameraID].trans.z_rotation;
+    gCameraTransform.rotation.y_rotation = -0x8000 - gCameraSegment[gActiveCameraID].trans.rotation.y_rotation;
+    gCameraTransform.rotation.x_rotation =
+        -(gCameraSegment[gActiveCameraID].trans.rotation.x_rotation + gCameraSegment[gActiveCameraID].camera.unk38);
+    gCameraTransform.rotation.z_rotation = -gCameraSegment[gActiveCameraID].trans.rotation.z_rotation;
     gCameraTransform.scale = 1.0f;
     gCameraTransform.x_position = gCameraSegment[gActiveCameraID].trans.x_position;
     gCameraTransform.y_position = gCameraSegment[gActiveCameraID].trans.y_position;
@@ -968,12 +972,12 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
         diffX = gModelMatrixViewX[gCameraMatrixPos] - obj->segment.trans.x_position;
         diffY = gModelMatrixViewY[gCameraMatrixPos] - obj->segment.trans.y_position;
         diffZ = gModelMatrixViewZ[gCameraMatrixPos] - obj->segment.trans.z_position;
-        sineY = sins_f(obj->segment.trans.y_rotation);
-        cosY = coss_f(obj->segment.trans.y_rotation);
+        sineY = sins_f(obj->segment.trans.rotation.y_rotation);
+        cosY = coss_f(obj->segment.trans.rotation.y_rotation);
         sp44 = (diffX * cosY) + (diffZ * sineY);
         diffZ = (diffZ * cosY) - (diffX * sineY);
         tanY = arctan2_f(sp44, sqrtf((diffY * diffY) + (diffZ * diffZ)));
-        tanX = -sins(arctan2_f(sp44, diffZ)) >> 8;
+        tanX = -sins_s16(arctan2_f(sp44, diffZ)) >> 8;
         if (diffZ < 0.0f) {
             diffZ = -diffZ;
             tanX  = 1 - tanX;
@@ -995,9 +999,9 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
         diffY = gModelMatrixViewY[gCameraMatrixPos] - obj->segment.trans.y_position;
         diffZ = gModelMatrixViewZ[gCameraMatrixPos] - obj->segment.trans.z_position;
         lateralDist = sqrtf((diffX * diffX) + (diffZ * diffZ));
-        gCameraTransform.y_rotation = arctan2_f(diffX, diffZ);
-        gCameraTransform.x_rotation = -arctan2_f(diffY, lateralDist);
-        gCameraTransform.z_rotation = angleDiff;
+        gCameraTransform.rotation.y_rotation = arctan2_f(diffX, diffZ);
+        gCameraTransform.rotation.x_rotation = -arctan2_f(diffY, lateralDist);
+        gCameraTransform.rotation.z_rotation = angleDiff;
         gCameraTransform.scale = obj->segment.trans.scale;
         gCameraTransform.x_position = obj->segment.trans.x_position;
         gCameraTransform.y_position = obj->segment.trans.y_position;
@@ -1019,9 +1023,11 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
         gSPVertexDKR((*dlist)++, OS_PHYSICAL_TO_K0(*vertexList), 1, 0);
         (*vertexList)++;
         if (gCutsceneCameraActive == 0) {
-            angleDiff = gCameraSegment[gActiveCameraID].trans.z_rotation + obj->segment.trans.z_rotation;
+            angleDiff =
+                gCameraSegment[gActiveCameraID].trans.rotation.z_rotation + obj->segment.trans.rotation.z_rotation;
         } else {
-            angleDiff = gCameraSegment[gActiveCameraID + 4].trans.z_rotation + obj->segment.trans.z_rotation;
+            angleDiff =
+                gCameraSegment[gActiveCameraID + 4].trans.rotation.z_rotation + obj->segment.trans.rotation.z_rotation;
         }
         textureFrame = obj->segment.animFrame;
         gModelMatrixStackPos++;
@@ -1087,9 +1093,10 @@ void render_ortho_triangle_image(Gfx **dList, MatrixS **mtx, Vertex **vtx, Objec
         (*vtx)++; // Can't be done in the macro?
         index = segment->animFrame;
         gModelMatrixStackPos++;
-        gCameraTransform.y_rotation = -segment->trans.y_rotation;
-        gCameraTransform.x_rotation = -segment->trans.x_rotation;
-        gCameraTransform.z_rotation = gCameraSegment[gActiveCameraID].trans.z_rotation + segment->trans.z_rotation;
+        gCameraTransform.rotation.y_rotation = -segment->trans.rotation.y_rotation;
+        gCameraTransform.rotation.x_rotation = -segment->trans.rotation.x_rotation;
+        gCameraTransform.rotation.z_rotation =
+            gCameraSegment[gActiveCameraID].trans.rotation.z_rotation + segment->trans.rotation.z_rotation;
         gCameraTransform.x_position = 0.0f;
         gCameraTransform.y_position = 0.0f;
         gCameraTransform.z_position = 0.0f;
@@ -1143,19 +1150,19 @@ void apply_object_shear_matrix(Gfx **dList, MatrixS **mtx, Object *arg2, Object 
     f32 arg3_zPos;
     Matrix matrix_mult;
 
-    cossf_x_arg2 = coss_f(arg2->segment.trans.x_rotation);
-    sinsf_x_arg2 = sins_f(arg2->segment.trans.x_rotation);
-    cossf_y_arg2 = coss_f(arg2->segment.trans.y_rotation);
-    sinsf_y_arg2 = sins_f(arg2->segment.trans.y_rotation);
+    cossf_x_arg2 = coss_f(arg2->segment.trans.rotation.x_rotation);
+    sinsf_x_arg2 = sins_f(arg2->segment.trans.rotation.x_rotation);
+    cossf_y_arg2 = coss_f(arg2->segment.trans.rotation.y_rotation);
+    sinsf_y_arg2 = sins_f(arg2->segment.trans.rotation.y_rotation);
     arg2_xPos = arg2->segment.trans.x_position;
     arg2_yPos = arg2->segment.trans.y_position;
     arg2_zPos = arg2->segment.trans.z_position;
-    cossf_z_arg3 = coss_f(arg3->segment.trans.z_rotation);
-    sinsf_z_arg3 = sins_f(arg3->segment.trans.z_rotation);
-    cossf_x_arg3 = coss_f(arg3->segment.trans.x_rotation);
-    sinsf_x_arg3 = sins_f(arg3->segment.trans.x_rotation);
-    cossf_y_arg3 = coss_f(arg3->segment.trans.y_rotation);
-    sinsf_y_arg3 = sins_f(arg3->segment.trans.y_rotation);
+    cossf_z_arg3 = coss_f(arg3->segment.trans.rotation.z_rotation);
+    sinsf_z_arg3 = sins_f(arg3->segment.trans.rotation.z_rotation);
+    cossf_x_arg3 = coss_f(arg3->segment.trans.rotation.x_rotation);
+    sinsf_x_arg3 = sins_f(arg3->segment.trans.rotation.x_rotation);
+    cossf_y_arg3 = coss_f(arg3->segment.trans.rotation.y_rotation);
+    sinsf_y_arg3 = sins_f(arg3->segment.trans.rotation.y_rotation);
     arg3_xPos = arg3->segment.trans.x_position;
     arg3_yPos = arg3->segment.trans.y_position;
     arg3_zPos = arg3->segment.trans.z_position;
@@ -1258,9 +1265,9 @@ void camera_push_model_mtx(Gfx **dList, MatrixS **mtx, ObjectTransform *trans, f
     tempX = gCameraSegment[index].trans.x_position - tempX;
     tempY = gCameraSegment[index].trans.y_position - tempY;
     tempZ = gCameraSegment[index].trans.z_position - tempZ;
-    gCameraTransform.y_rotation = -trans->y_rotation;
-    gCameraTransform.x_rotation = -trans->x_rotation;
-    gCameraTransform.z_rotation = -trans->z_rotation;
+    gCameraTransform.rotation.y_rotation = -trans->rotation.y_rotation;
+    gCameraTransform.rotation.x_rotation = -trans->rotation.x_rotation;
+    gCameraTransform.rotation.z_rotation = -trans->rotation.z_rotation;
     gCameraTransform.x_position = 0.0f;
     gCameraTransform.y_position = 0.0f;
     gCameraTransform.z_position = 0.0f;

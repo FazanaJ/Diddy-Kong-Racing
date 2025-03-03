@@ -7,7 +7,7 @@
 #include "game.h"
 #include "main.h"
 #include "printf.h"
-#include "rcp.h"
+#include "rcp_dkr.h"
 
 /************ .data ************/
 

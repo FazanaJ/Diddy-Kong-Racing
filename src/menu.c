@@ -1,10 +1,10 @@
 /* The comment below is needed for this file to be picked up by generate_ld */
 /* RAM_POS: 0x8007F900 */
 
+#include "common.h"
 #include "menu.h"
 #include "memory.h"
 #include "fade_transition.h"
-
 #include <PR/os_cont.h>
 #include "asset_enums.h"
 #include "types.h"
@@ -22,7 +22,7 @@
 #include "thread30_track_loading.h"
 #include "objects.h"
 #include "game.h"
-#include "rcp.h"
+#include "rcp_dkr.h"
 #include "save_data.h"
 #include "object_functions.h"
 #include "audiosfx.h"
@@ -33,8 +33,9 @@
 #include "printf.h"
 #include "libc/stdio.h"
 #include "main.h"
-#include "controller.h"
+#include "joypad.h"
 #include "math_util.h"
+#include "viint.h"
 
 /**
  * @file Contains all the code used for every menu in the game.
@@ -12246,7 +12247,7 @@ s32 menu_credits_loop(s32 updateRate) {
         transition_begin(NULL);
         enable_new_screen_transitions();
     }
-    if (osTvType == TV_TYPE_PAL) {
+    if (osTvType == OS_TV_TYPE_PAL) {
         credits_fade(0, 38, SCREEN_WIDTH, 186, gOpacityDecayTimer * 8);
     } else {
         credits_fade(0, 40, SCREEN_WIDTH, 156, gOpacityDecayTimer * 8);
@@ -12262,8 +12263,8 @@ s32 menu_credits_loop(s32 updateRate) {
         temp_s4 = (var_s4 * 5) + 72;
         temp_s2 = (fb_size() >> 17) & 0x7FFF; // Truncated video height? Height / 2?
         for (i = 0; i < ARRAY_COUNT(gRacerPortraits); i++) {
-            texrect_draw(&sMenuCurrDisplayList, gRacerPortraits[i], ((sins(var_s5) * temp_s4) >> 16) + 140,
-                         ((coss(var_s5) * temp_s4) >> 16) + (temp_s2 - 20), 255, 255, 255, 255);
+            texrect_draw(&sMenuCurrDisplayList, gRacerPortraits[i], ((sins_s16(var_s5) * temp_s4) >> 16) + 140,
+                         ((coss_s16(var_s5) * temp_s4) >> 16) + (temp_s2 - 20), 255, 255, 255, 255);
             var_s5 += 0x1999;
         }
         reset_render_settings(&sMenuCurrDisplayList);
@@ -12288,7 +12289,7 @@ s32 menu_credits_loop(s32 updateRate) {
                         while ((gCreditsControlData[D_80126BC4] & 0xF000) == CREDITS_NO_FLAG) {
                             D_80126BC4++;
                         }
-                        if (osTvType == TV_TYPE_PAL) {
+                        if (osTvType == OS_TV_TYPE_PAL) {
                             textPos = SCREEN_HEIGHT_HALF + 14;
                         } else {
                             textPos = SCREEN_HEIGHT_HALF;
@@ -12496,15 +12497,15 @@ void menu_camera_centre(void) {
 
     cam = get_active_camera_segment();
 
-    angleY = cam->trans.y_rotation;
-    angleX = cam->trans.x_rotation;
-    angleZ = cam->trans.z_rotation;
+    angleY = cam->trans.rotation.y_rotation;
+    angleX = cam->trans.rotation.x_rotation;
+    angleZ = cam->trans.rotation.z_rotation;
     posX = cam->trans.x_position;
     posY = cam->trans.y_position;
     posZ = cam->trans.z_position;
-    cam->trans.z_rotation = 0;
-    cam->trans.x_rotation = 0;
-    cam->trans.y_rotation = 0x8000;
+    cam->trans.rotation.z_rotation = 0;
+    cam->trans.rotation.x_rotation = 0;
+    cam->trans.rotation.y_rotation = 0x8000;
     cam->trans.x_position = -32.0f;
     cam->trans.y_position = -32.0f;
     cam->trans.z_position = -32.0f;
@@ -12512,9 +12513,9 @@ void menu_camera_centre(void) {
     update_envmap_position(0, 0, -1);
     func_80066CDC(&sMenuCurrDisplayList, &sMenuCurrHudMat);
 
-    cam->trans.y_rotation = angleY;
-    cam->trans.x_rotation = angleX;
-    cam->trans.z_rotation = angleZ;
+    cam->trans.rotation.y_rotation = angleY;
+    cam->trans.rotation.x_rotation = angleX;
+    cam->trans.rotation.z_rotation = angleZ;
     cam->trans.x_position = posX;
     cam->trans.y_position = posY;
     cam->trans.z_position = posZ;
@@ -12935,9 +12936,9 @@ void menu_element_render(s32 elementID) {
             if ((*gAssetsMenuElementIds)[gMenuImages[elementID].spriteID] & HUD_ELEMENT_OBJECT) {
                 object = (Object *) gMenuAssets[gMenuImages[elementID].spriteID];
                 asset = (MenuAsset *) &gMenuImages[elementID];
-                object->segment.trans.y_rotation = asset->y_rotation;
-                object->segment.trans.x_rotation = asset->x_rotation;
-                object->segment.trans.z_rotation = asset->z_rotation;
+                object->segment.trans.rotation.y_rotation = asset->y_rotation;
+                object->segment.trans.rotation.x_rotation = asset->x_rotation;
+                object->segment.trans.rotation.z_rotation = asset->z_rotation;
                 object->segment.trans.x_position = asset->x;
                 object->segment.trans.y_position = asset->y;
                 object->segment.trans.z_position = asset->z;

@@ -5,6 +5,7 @@
 #include "structs.h"
 #include "PR/pfs.h"
 #include "PR/os_cont.h"
+#include "common.h"
 
 #define GAMD 0x47414D44 // 'GAMD' ASCII - Game Data?
 #define TIMD 0x54494D44 // 'TIMD' ASCII - Time Data?
@@ -30,7 +31,17 @@
 #define EEP_COURSE_TIME_OFFSET (0x140 / sizeof(u64))
 #define EEP_FLAP_SIZE (0xC0  / sizeof(u64))
 #define EEP_COURSE_RECORD_SIZE (0xC0  / sizeof(u64))
+
+#if REGION == REGION_JP
+// The Save size constant seems to change depending on the file being compiled in JP?
+#define SAVE_SIZE_MENU 0x400
 #define SAVE_SIZE 0x208
+#define SAVE_FILE_BYTES 48
+#else
+#define SAVE_SIZE_MENU 0x208
+#define SAVE_SIZE 0x208
+#define SAVE_FILE_BYTES 24
+#endif
 
 #define GHSS_SIZE 0x100
 #define AS_BYTES(ptr) ((u8 *) ptr)
@@ -185,5 +196,6 @@ s32 save_detect(void);
 
 int nuPiInitSram(void);
 int nuPiReadWriteSram(u32 addr, void* buf_ptr, u32 size, s32 flag);
+void rumble_enable(s32 enable);
 
 #endif

@@ -191,7 +191,7 @@ enum ObjectSpawnFlags {
 enum ContPakErrors {
     CONTPAK_ERROR_MISSING = -1,
     CONTPAK_ERROR_NONE,
-    CONTPAK_ERROR_UNKNOWN,
+    CONTPAK_ERROR_UNKNOWN, //Time trial ghost has reached its size limit?
     CONTPAK_ERROR_FULL,
     CONTPAK_ERROR_DAMAGED
 };
@@ -463,7 +463,7 @@ void func_8000B290(void);
 void func_80016BC4(Object *obj);
 s32 ainode_register(Object *obj);
 void obj_taj_create_balloon(s32 blockID, f32 x, f32 y, f32 z);
-Object *func_8001B7A8(Object *racer, s32 position, f32 *distance);
+Object *func_8001B7A8(Object_Racer *racer, s32 position, f32 *distance);
 s32 func_8000FD34(Object *obj, Object_5C *matrices);
 void func_8000E4E8(s32 index);
 void objFreeAssets(Object *obj, s32 count, s32 objType);
@@ -510,6 +510,7 @@ f32 func_8002277C(f32 *data, s32 index, f32 x);
 void race_transition_adventure(s32 updateRate);
 void func_8001E4C4(void);
 void func_8000B020(s32 numberOfVertices, s32 numberOfTriangles);
+s32 func_80014B50(s32 arg0, s32 arg1, f32 arg2, u32 arg3);
 
 //Non Matching
 void calc_dynamic_lighting_for_object_1(Object *, ObjectModel *, s16, Object *, f32, f32);

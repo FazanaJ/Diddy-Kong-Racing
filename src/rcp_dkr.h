@@ -1,11 +1,11 @@
-#ifndef _UNKNOWN_078050_H_
-#define _UNKNOWN_078050_H_
+#ifndef _RCP_DKR_H_
+#define _RCP_DKR_H_
 
 #include "types.h"
 #include "structs.h"
 #include "f3ddkr.h"
 #include "sched.h"
-#include "libultra_internal.h"
+#include <ultra64.h>
 
 #include "game_ui.h"
 #include "video.h"

@@ -11,7 +11,6 @@ u32 __osSiAccessQueueEnabled = 0;
 // This is probably not the right place for them, but we can always 
 // fix that later.
 #define SI_Q_BUF_LEN 1
-MemoryPoolSlot *gMainMemoryPool;
 static OSMesg siAccessBuf[SI_Q_BUF_LEN];
 OSMesgQueue __osSiAccessQueue;
 OSPifRam __osEepPifRam;

@@ -1,7 +1,7 @@
 /* The comment below is needed for this file to be picked up by generate_ld */
 /* RAM_POS: 0x80077450 */
 
-#include "rcp.h"
+#include "rcp_dkr.h"
 #include "types.h"
 #include "structs.h"
 #include "macros.h"
