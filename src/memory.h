@@ -90,6 +90,7 @@ enum MemoryTags {
     MEMP_SAVES,
     MEMP_SUBPOOL,
     MEMP_POOLSLOTS,
+    MEMP_WAVES,
     MEMP_RED,
     MEMP_BLACK,
     MEMP_BLUE,

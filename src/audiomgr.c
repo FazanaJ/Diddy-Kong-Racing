@@ -365,7 +365,6 @@ static void __amHandleDoneMsg(UNUSED AudioInfo *info) {
 
     samplesLeft = IO_READ(AI_LEN_REG) >> 2;
     if (samplesLeft == 0 && !firstTime) {
-        stubbed_printf("audio: ai out of samples\n");
         firstTime = 0;
     }
 }
@@ -508,7 +507,6 @@ static void __clearAudioDMA(void) {
      */
     for (i = 0; i < nextDMA; i++) {
         if (osRecvMesg(&audDMAMessageQ, (OSMesg *) &iomsg, OS_MESG_NOBLOCK) == -1) {
-            stubbed_printf("Dma not done\n");
         }
         // if (logging)
         //     osLogEvent(log, 17, 2, iomsg->devAddr, iomsg->size);

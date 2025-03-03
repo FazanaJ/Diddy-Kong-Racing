@@ -209,7 +209,7 @@ enum PPLoadNames {
 
 #define PP_MEM \
     "Huh???\t", \
-    "Code", \
+    "Code\t", \
     "Animations", \
     "Models\t", \
     "Audio\t", \
@@ -240,6 +240,7 @@ enum PPLoadNames {
     "Saves\t", \
     "Sub Pool\t", \
     "Pool Slots", \
+    "Waves\t", \
     \
     "Red\t", \
     "Black\t", \

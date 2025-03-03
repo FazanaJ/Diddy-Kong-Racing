@@ -1661,10 +1661,6 @@ void apply_plane_tilt_anim(s32 updateRate, Object *obj, Object_Racer *racer) {
     s32 animAdd;
 
     if (racer->vehicleIDPrev != VEHICLE_CARPET) {
-        //!@bug Typo. Should've been `== 0`, not `= 0`.
-        if ((racer->unk1F2 = 0)) {
-            return; // This never gets called because of the typo.
-        }
         animAdd = racer->steerAngle;
         animAdd = 40 - (animAdd >> 1);
         if (animAdd < 0) {

@@ -365,7 +365,6 @@ static void mempool_free_addr(u8 *address) {
         }
         slot = &slots[slotIndex];
     }
-    stubbed_printf("\n*** mm Error *** ---> No match found for mmFree.\n");
 }
 
 /**
