@@ -4259,10 +4259,8 @@ void race_transition_adventure(s32 updateRate) {
     if (gRaceEndStage == 3) {
         transition_begin(&gRaceEndTransition);
         gRaceEndStage = 4;
-        set_anti_aliasing(TRUE);
     }
     if (gRaceEndStage == 4) {
-        set_anti_aliasing(TRUE);
         disable_racer_input();
         if (!(get_current_level_race_type() & RACETYPE_CHALLENGE_BATTLE)) {
             cutsceneTimerLimit = 540;

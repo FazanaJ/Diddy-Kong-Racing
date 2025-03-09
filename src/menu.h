@@ -170,6 +170,19 @@ enum DialogIDsTaj {
     DIALOGUEPAGE_TAJ_CHALLENGES_2
 };
 
+/**
+ * If type is -1, allocate and initialise all the track setup elements.
+ * If type is 0, reset the cursor target to the current position.
+ * If type is 1, free the assetgroup for the track setup.
+ * If type is 2, to load the race
+ */
+enum TrackMenuTypes {
+    TRACKMENU_TYPE_INIT = -1,
+    TRACKMENU_TYPE_RESET_CURSOR,
+    TRACKMENU_TYPE_FREE,
+    TRACKMENU_TYPE_LOAD_LEVEL
+};
+
 #define CHEAT(index) 1 << index
 
 typedef enum Cheats {
@@ -281,14 +294,10 @@ typedef struct MenuAsset {
 } MenuAsset;
 
 typedef struct unk80080BC8 {
-    Vertex *vertices;
-    s32 *unk4;
-    Triangle *triangles;
-    s32 *unkC;
-    TextureHeader *texture;
-    s32 *unk14;
-    s32 unk18;
-    s32 unk1C;
+    Vertex *vertices[2];
+    Triangle *triangles[2];
+    TextureHeader *texture[2];
+    s32 unk18[2];
 } unk80080BC8;
 
 typedef struct unk80126460 {
@@ -665,6 +674,7 @@ SIDeviceStatus savemenu_write(void);
 void trackmenu_setup_render(s32 updateRate);
 void rankings_render_order(s32 updateRate);
 void results_render(UNUSED s32 updateRate, f32 opacity);
+void func_80092188(s32 updateRate);
 
 // Non Matching functions below here
 void load_menu_text(s32 language); // Non Matching
@@ -672,7 +682,6 @@ s32 menu_controller_pak_loop(s32 updateRate);
 void menu_game_select_init(void);
 void func_8008FF1C(s32 updateRate);
 void trackmenu_input(s32 updateRate);
-void func_80092188(s32 updateRate);
 void filename_trim(char *input, char *output);
 void menu_ghost_data_init(void);
 void update_controller_sticks(void);
@@ -692,7 +701,8 @@ void fileselect_input_copy(s32 updateRate);
 
 s32 func_8008F618(Gfx **dList, MatrixS **mtx);
 void func_80080BC8(Gfx **);
-void func_80080E90(Gfx **dList, s32 startX, s32 startY, s32 width, s32 height, s32 borderWidth, s32 borderHeight, s32 colour0, s32 colour1, s32 colour2, s32 colour3);
+void func_80080E90(Gfx **dlist, s32 startX, s32 startY, s32 width, s32 height, s32 borderWidth, s32 borderHeight,
+                   s32 colour0, s32 colour1, s32 colour2, s32 colour3);
 void func_80084854(void);
 void func_80098774(s32);
 void func_80094D28(UNUSED s32 updateRate);

@@ -60,6 +60,11 @@ u32 D_801241F0;
 u32 D_801241F4;
 u8 gSaveMissing;
 
+SavefileInfo gCurrentSave;
+Settings gCurrentSettings;
+u8 gCurrentSaveID;          // File ID, like A, B or C, or the first on a controller pak
+u8 gCurrentSaveDest;        // 0 = cart save, 1 = player 1, 2 = player 2, etc
+
 /*******************************/
 
 /**
@@ -462,17 +467,17 @@ void func_80073588(Settings *settings, u8 *saveData, u8 arg2) {
                 if (get_map_race_type(i) == RACETYPE_DEFAULT) {
                     availableVehicles = get_map_available_vehicles(i);
                     // Car Available
-                    if (availableVehicles & 1) {
+                    if (availableVehicles & (1 << VEHICLE_CAR)) {
                         settings->flapTimesPtr[0][i] = func_80072C54(16);
                         settings->flapInitialsPtr[0][i] = func_80072C54(16);
                     }
                     // Hovercraft Available
-                    if (availableVehicles & 2) {
+                    if (availableVehicles & (1 << VEHICLE_HOVERCRAFT)) {
                         settings->flapTimesPtr[1][i] = func_80072C54(16);
                         settings->flapInitialsPtr[1][i] = func_80072C54(16);
                     }
                     // Plane Available
-                    if (availableVehicles & 4) {
+                    if (availableVehicles & (1 << VEHICLE_PLANE)) {
                         settings->flapTimesPtr[2][i] = func_80072C54(16);
                         settings->flapInitialsPtr[2][i] = func_80072C54(16);
                     }
@@ -493,17 +498,17 @@ void func_80073588(Settings *settings, u8 *saveData, u8 arg2) {
                 if (get_map_race_type(i) == RACETYPE_DEFAULT) {
                     availableVehicles = get_map_available_vehicles(i);
                     // Car Available
-                    if (availableVehicles & 1) {
+                    if (availableVehicles & (1 << VEHICLE_CAR)) {
                         settings->courseTimesPtr[0][i] = func_80072C54(16);
                         settings->courseInitialsPtr[0][i] = func_80072C54(16);
                     }
                     // Hovercraft Available
-                    if (availableVehicles & 2) {
+                    if (availableVehicles & (1 << VEHICLE_HOVERCRAFT)) {
                         settings->courseTimesPtr[1][i] = func_80072C54(16);
                         settings->courseInitialsPtr[1][i] = func_80072C54(16);
                     }
                     // Plane Available
-                    if (availableVehicles & 4) {
+                    if (availableVehicles & (1 << VEHICLE_PLANE)) {
                         settings->courseTimesPtr[2][i] = func_80072C54(16);
                         settings->courseInitialsPtr[2][i] = func_80072C54(16);
                     }
@@ -530,19 +535,19 @@ void func_800738A4(Settings *settings, u8 *saveData) {
         if (get_map_race_type(i) == RACETYPE_DEFAULT) {
             availableVehicles = get_map_available_vehicles(i);
             // Car Available
-            if (availableVehicles & 1) {
+            if (availableVehicles & (1 << VEHICLE_CAR)) {
                 func_80072E28(16, settings->flapTimesPtr[0][i]);
                 func_80072E28(16, settings->flapInitialsPtr[0][i]);
                 vehicleCount++;
             }
             // Hovercraft Available
-            if (availableVehicles & 2) {
+            if (availableVehicles & (1 << VEHICLE_HOVERCRAFT)) {
                 func_80072E28(16, settings->flapTimesPtr[1][i]);
                 func_80072E28(16, settings->flapInitialsPtr[1][i]);
                 vehicleCount++;
             }
             // Plane Available
-            if (availableVehicles & 4) {
+            if (availableVehicles & (1 << VEHICLE_PLANE)) {
                 func_80072E28(16, settings->flapTimesPtr[2][i]);
                 func_80072E28(16, settings->flapInitialsPtr[2][i]);
                 vehicleCount++;
@@ -568,17 +573,17 @@ void func_800738A4(Settings *settings, u8 *saveData) {
         if (get_map_race_type(i) == RACETYPE_DEFAULT) {
             availableVehicles = get_map_available_vehicles(i);
             // Car Available
-            if (availableVehicles & 1) {
+            if (availableVehicles & (1 << VEHICLE_CAR)) {
                 func_80072E28(16, settings->courseTimesPtr[0][i]);
                 func_80072E28(16, settings->courseInitialsPtr[0][i]);
             }
             // Hovercraft Available
-            if (availableVehicles & 2) {
+            if (availableVehicles & (1 << VEHICLE_HOVERCRAFT)) {
                 func_80072E28(16, settings->courseTimesPtr[1][i]);
                 func_80072E28(16, settings->courseInitialsPtr[1][i]);
             }
             // Plane Available
-            if (availableVehicles & 4) {
+            if (availableVehicles & (1 << VEHICLE_PLANE)) {
                 func_80072E28(16, settings->courseTimesPtr[2][i]);
                 func_80072E28(16, settings->courseInitialsPtr[2][i]);
             }
@@ -673,7 +678,7 @@ s32 read_game_data_from_controller_pak(s32 controllerIndex, char *fileExt, Setti
             ret = CONTROLLER_PAK_BAD_DATA;
         }
         if (ret == CONTROLLER_PAK_GOOD) {
-            alloc = mempool_alloc_safe(fileSize, MEMP_MISC);
+            alloc = mempool_alloc_safe(fileSize, MEMP_TEMP);
             ret = read_data_from_controller_pak(controllerIndex, fileNumber, (u8 *) alloc, fileSize);
 
             if (ret == CONTROLLER_PAK_GOOD) {

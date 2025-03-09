@@ -248,7 +248,7 @@ char **gPostRaceMessage;
 s32 gBootMenuPhase;
 s32 gPostRaceLineCount;
 s8 gPostraceFinishState;
-unk80080BC8 (*gMenuGeometry)[2];
+unk80080BC8 *gMenuGeometry;
 u16 (*gCheatsAssetData)[30]; // Cheat table.
 s32 gNameEntryStickHeld;
 s32 gNumberOfCheats;
@@ -1533,6 +1533,8 @@ char *gCreditsBestTimesArray[20] = {
     /*** Future Fun Land ***/ "2:00:38", "2:05:68", "1:52:96", "1:55:00"
 };
 
+// clang-format on
+
 char *gCreditsLastMessageArray[5] = {
     "THE END?", "TO BE CONTINUED ...", // Appears after beating the first wizpig race.
     "THE END",                         // Appears after beating the second wizpig race.
@@ -1706,7 +1708,7 @@ Gfx dMenuHudSettings[] = {
     gsSPEndDisplayList(),
 };
 
-UNUSED Gfx dMenuHudDrawModes[][2] = {
+Gfx dMenuHudDrawModes[][2] = {
     {
         gsDPSetCombineMode(G_CC_SHADE, G_CC_SHADE),
         gsDPSetOtherMode(DKR_OMH_1CYC_POINT_NOPERSP, DKR_OML_COMMON | G_RM_XLU_SURF | G_RM_XLU_SURF2),
@@ -1777,11 +1779,12 @@ char *gConPakAdvSavePrefix = " (ADV.";
 
 /*******************************/
 
-#ifdef NON_EQUIVALENT
-
-// Should be functionally equivalent
 void load_menu_text(s32 language) {
-    s32 start, langIndex, i, j;
+    char **menuText;
+    char **temp;
+    s32 langIndex;
+    s32 size;
+    char **fake;
 
     if (gMenuTextLangTable == NULL) {
         gMenuTextLangTable = load_asset_section_from_rom(ASSET_MENU_TEXT_TABLE);
@@ -1802,141 +1805,148 @@ void load_menu_text(s32 language) {
             break;
     }
 
-    start = gMenuTextLangTable[langIndex];
-    if (gMenuText != NULL) {
-        load_asset_to_address(ASSET_MENU_TEXT, gMenuText, start, gMenuTextLangTable[langIndex + 1] - start);
-        // Fill up the lookup table with proper RAM addresses
-        for (i = 0; i < gMenuTextLangTable[0]; i++) {
-            if ((s32) gMenuText[i] == -1) {
-                gMenuText[i] = NULL;
-            } else {
-                gMenuText[i] = &((u8 *) gMenuText)[(s32) gMenuText[i]];
-            }
-        }
-        gAudioOutputStrings[0] = gMenuText[ASSET_MENU_TEXT_STEREO];                             // "STEREO"
-        gAudioOutputStrings[1] = gMenuText[ASSET_MENU_TEXT_MONO];                               // "MONO"
-        gAudioOutputStrings[2] = gMenuText[ASSET_MENU_TEXT_HEADPHONES];                         // "HEADPHONES"
-        gAudioMenuStrings[1].unkC = gMenuText[ASSET_MENU_TEXT_SFXVOLUME];                       // "SFX VOLUME"
-        gAudioMenuStrings[2].unkC = gMenuText[ASSET_MENU_TEXT_MUSICVOLUME];                     // "MUSIC VOLUME"
-        gAudioMenuStrings[3].unkC = gMenuText[ASSET_MENU_TEXT_RETURN];                          // "RETURN"
-        gAudioMenuStrings[4].unkC = gMenuText[ASSET_MENU_TEXT_AUDIOOPTIONS];                    // "AUDIO OPTIONS"
-        gAudioMenuStrings[5].unkC = gMenuText[ASSET_MENU_TEXT_AUDIOOPTIONS];                    // "AUDIO OPTIONS"
-        gMusicTestString = gMenuText[ASSET_MENU_TEXT_MUSICTEST];                                // "MUSIC TEST 00"
-        gMagicCodeMenuStrings[0] = gMenuText[ASSET_MENU_TEXT_ENTERCODE];                        // "ENTER CODE"
-        gMagicCodeMenuStrings[1] = gMenuText[ASSET_MENU_TEXT_CLEARALLCODES];                    // "CLEAR ALL CODES"
-        gMagicCodeMenuStrings[2] = gMenuText[ASSET_MENU_TEXT_CODELIST];                         // "CODE LIST"
-        gMagicCodeMenuStrings[3] = gMenuText[ASSET_MENU_TEXT_RETURN];                           // "RETURN"
-        gRaceResultsMenuElements[1].t.asciiText = gMenuText[ASSET_MENU_TEXT_LAPTIMES];    // "LAP TIMES"
-        gRaceResultsMenuElements[2].t.asciiText = gMenuText[ASSET_MENU_TEXT_OVERALLTIME]; // "OVERALL TIME"
-        gRaceOrderMenuElements[8].t.asciiText = gMenuText[ASSET_MENU_TEXT_RACEORDER];     // "RACE ORDER"
-        gRaceOrderMenuElements[9].t.asciiText = gMenuText[ASSET_MENU_TEXT_RACEORDER];     // "RACE ORDER"
-        gRecordTimesMenuElements[0].t.asciiText = gMenuText[ASSET_MENU_TEXT_RECORDTIMES]; // "RECORD TIMES"
-        gRecordTimesMenuElements[1].t.asciiText = gMenuText[ASSET_MENU_TEXT_RECORDTIMES]; // "RECORD TIMES"
-        gRecordTimesMenuElements[2].t.asciiText = gMenuText[ASSET_MENU_TEXT_BESTTIME];    // "BEST TIME"
-        gRecordTimesMenuElements[5].t.asciiText = gMenuText[ASSET_MENU_TEXT_BESTLAP];     // "BEST LAP"
-        gOptionMenuStrings[0] = gMenuText[ASSET_MENU_TEXT_LANGUAGE];                            // "ENGLISH"
-        if (sEepromSettings & 0x2000000) {
-            gOptionMenuStrings[1] = gMenuText[ASSET_MENU_TEXT_SUBTITLESON]; // "SUBTITLES ON"
+    size = gMenuTextLangTable[langIndex + 1];
+    langIndex = gMenuTextLangTable[langIndex];
+    size -= langIndex;
+    temp = gMenuText;
+
+    if (temp == NULL) {
+        return;
+    }
+
+    load_asset_to_address(ASSET_MENU_TEXT, temp, langIndex, size);
+
+    // TODO: Find a way to clean up the ugly hacks.
+    // Fill up the lookup table with proper RAM addresses
+    for (langIndex = 0; langIndex < gMenuTextLangTable[0]; langIndex++) {
+        menuText = gMenuText[langIndex];
+        if ((((s32) menuText) & 0xFFFFFFFF) == -1) {
+            gMenuText[langIndex] = NULL;
         } else {
-            gOptionMenuStrings[1] = gMenuText[ASSET_MENU_TEXT_SUBTITLESOFF]; // "SUBTITLES OFF"
-        }
-        gOptionMenuStrings[2] = gMenuText[ASSET_MENU_TEXT_AUDIOOPTIONS];             // "AUDIO OPTIONS"
-        gOptionMenuStrings[3] = gMenuText[ASSET_MENU_TEXT_SAVEOPTIONS];              // "SAVE OPTIONS"
-        gOptionMenuStrings[4] = gMenuText[ASSET_MENU_TEXT_MAGICCODES];               // "MAGIC CODES"
-        gOptionMenuStrings[5] = gMenuText[ASSET_MENU_TEXT_RETURN];                   // "RETURN"
-        gFilenames[0] = gMenuText[ASSET_MENU_TEXT_GAMEA];                            // "GAME A"
-        gFilenames[1] = gMenuText[ASSET_MENU_TEXT_GAMEB];                            // "GAME B"
-        gFilenames[2] = gMenuText[ASSET_MENU_TEXT_GAMEC];                            // "GAME C"
-        gContPakNotPresentStrings[0] = gMenuText[ASSET_MENU_TEXT_CONTPAKX];          // "CONTROLLER PAK ~"
-        gContPakNotPresentStrings[1] = gMenuText[ASSET_MENU_TEXT_CONTPAKNOTPRESENT]; // "IS NOT PRESENT."
-        gContPakNotPresentStrings[3] = gMenuText[ASSET_MENU_TEXT_CANCEL];            // "CANCEL"
-        gContPakCorruptDataRepairStrings[0] = gMenuText[ASSET_MENU_TEXT_CONTPAKX];   // "CONTROLLER PAK ~"
-        gContPakCorruptDataRepairStrings[1] =
-            gMenuText[ASSET_MENU_TEXT_CONTPAKHASCORRUPTDATA_0]; // "CONTAINS CORRUPT DATA."
-        gContPakCorruptDataRepairStrings[3] = gMenuText[ASSET_MENU_TEXT_CONTPAKHASCORRUPTDATA_1]; // "ATTEMPT TO REPAIR"
-        gContPakCorruptDataRepairStrings[4] = gMenuText[ASSET_MENU_TEXT_CANCEL];                  // "CANCEL"
-        gContPakDamagedStrings[0] = gMenuText[ASSET_MENU_TEXT_CONTPAKX];                          // "CONTROLLER PAK ~"
-        gContPakDamagedStrings[1] = gMenuText[ASSET_MENU_TEXT_CONTPAKISDAMAGED_0];  // "IRREPARABLY DAMAGED."
-        gContPakDamagedStrings[3] = gMenuText[ASSET_MENU_TEXT_CONTPAKISDAMAGED_1];  // "REFORMAT PAK"
-        gContPakDamagedStrings[4] = gMenuText[ASSET_MENU_TEXT_CANCEL];              // "CANCEL"
-        gContPakFullStrings[0] = gMenuText[ASSET_MENU_TEXT_CONTPAKX];               // "CONTROLLER PAK ~"
-        gContPakFullStrings[1] = gMenuText[ASSET_MENU_TEXT_CONTPAKISFULL];          // "FULL."
-        gContPakFullStrings[3] = gMenuText[ASSET_MENU_TEXT_CONTINUE];               // "CONTINUE"
-        gContPakDiffContStrings[0] = gMenuText[ASSET_MENU_TEXT_CONTPAKX];           // "CONTROLLER PAK ~"
-        gContPakDiffContStrings[1] = gMenuText[ASSET_MENU_TEXT_CONTPAKDIFFERENT_0]; // "DIFFERENT CONTROLLER"
-        gContPakDiffContStrings[2] = gMenuText[ASSET_MENU_TEXT_CONTPAKDIFFERENT_1]; // "PAK IS INSERTED."
-        gContPakDiffContStrings[4] = gMenuText[ASSET_MENU_TEXT_CANCEL];             // "CANCEL"
-        gContPakNoRoomForGhostsStrings[0] = gMenuText[ASSET_MENU_TEXT_CONTPAKX];    // "CONTROLLER PAK ~"
-        gContPakNoRoomForGhostsStrings[1] = gMenuText[ASSET_MENU_TEXT_CANNOTSTOREANYMOREGHOSTS_0]; // "CANNOT STORE ANY"
-        gContPakNoRoomForGhostsStrings[2] = gMenuText[ASSET_MENU_TEXT_CANNOTSTOREANYMOREGHOSTS_1]; // "MORE GHOSTS."
-        gContPakNoRoomForGhostsStrings[4] = gMenuText[ASSET_MENU_TEXT_CONTINUE];                   // "CONTINUE"
-        gContPakCorruptDataStrings[0] = gMenuText[ASSET_MENU_TEXT_CONTPAKX];                       // "CONTROLLER PAK ~"
-        gContPakCorruptDataStrings[1] = gMenuText[ASSET_MENU_TEXT_CORRUPTDATA_0];                  // "CORRUPT DATA."
-        gContPakCorruptDataStrings[3] = gMenuText[ASSET_MENU_TEXT_TRYAGAIN];                       // "TRY AGAIN"
-        gContPakCorruptDataStrings[4] = gMenuText[ASSET_MENU_TEXT_CANCEL];                         // "CANCEL"
-        gContPakRumbleDetectedStrings[0] = gMenuText[ASSET_MENU_TEXT_RUMBLEPAKDETECTED_0]; // "Rumble Pak Detected"
-        gContPakRumbleDetectedStrings[1] =
-            gMenuText[ASSET_MENU_TEXT_RUMBLEPAKDETECTED_1]; // "Insert any Controller Paks"
-        gContPakRumbleDetectedStrings[2] = gMenuText[ASSET_MENU_TEXT_RUMBLEPAKDETECTED_2]; // "you wish to use now!"
-        gContPakRumbleDetectedStrings[4] = gMenuText[ASSET_MENU_TEXT_CONTINUE];            // "CONTINUE"
-        gContPakSwitchToRumbleStrings[0] = gMenuText[ASSET_MENU_TEXT_INSERTDEVICE_0];      // "If you wish to use any"
-        gContPakSwitchToRumbleStrings[1] = gMenuText[ASSET_MENU_TEXT_INSERTDEVICE_1];      // "Rumble Paks then please"
-        gContPakSwitchToRumbleStrings[2] = gMenuText[ASSET_MENU_TEXT_INSERTDEVICE_2];      // "insert them now."
-        gContPakSwitchToRumbleStrings[4] = gMenuText[ASSET_MENU_TEXT_CONTINUE];            // "CONTINUE"
-        gContPakNeed2ndAdvStrings[0] = gMenuText[ASSET_MENU_TEXT_ADVTWOLOADERROR_0];       // "SORRY, BUT YOU"
-        gContPakNeed2ndAdvStrings[1] = gMenuText[ASSET_MENU_TEXT_ADVTWOLOADERROR_1];       // "CAN'T LOAD GAMES"
-        gContPakNeed2ndAdvStrings[2] = gMenuText[ASSET_MENU_TEXT_ADVTWOLOADERROR_2];       // "FOR THE SECOND"
-        gContPakNeed2ndAdvStrings[3] = gMenuText[ASSET_MENU_TEXT_ADVTWOLOADERROR_3];       // "ADVENTURE UNTIL"
-        gContPakNeed2ndAdvStrings[4] = gMenuText[ASSET_MENU_TEXT_ADVTWOLOADERROR_4];       // "YOU HAVE COMPLETED"
-        gContPakNeed2ndAdvStrings[5] = gMenuText[ASSET_MENU_TEXT_ADVTWOLOADERROR_5];       // "THE FIRST."
-        gContPakNeed2ndAdvStrings[7] = gMenuText[ASSET_MENU_TEXT_CONTINUE];                // "CONTINUE"
-        gTitleMenuStrings[0] = gMenuText[ASSET_MENU_TEXT_START];                           // "START"
-        gTitleMenuStrings[1] = gMenuText[ASSET_MENU_TEXT_OPTIONS];                         // "OPTIONS"
-        gGameSelectTextElemsNoAdv2[0].t.asciiText = gMenuText[ASSET_MENU_TEXT_GAMESELECT];     // "GAME SELECT"
-        gGameSelectTextElemsNoAdv2[1].t.asciiText = gMenuText[ASSET_MENU_TEXT_GAMESELECT];     // "GAME SELECT"
-        gGameSelectTextElemsNoAdv2[3].t.asciiText = gMenuText[ASSET_MENU_TEXT_ADVENTURE];      // "ADVENTURE"
-        gGameSelectTextElemsNoAdv2[5].t.asciiText = gMenuText[ASSET_MENU_TEXT_TRACKS];         // "TRACKS"
-        gGameSelectTextElemsWithAdv2[0].t.asciiText = gMenuText[ASSET_MENU_TEXT_GAMESELECT];   // "GAME SELECT"
-        gGameSelectTextElemsWithAdv2[1].t.asciiText = gMenuText[ASSET_MENU_TEXT_GAMESELECT];   // "GAME SELECT"
-        gGameSelectTextElemsWithAdv2[3].t.asciiText = gMenuText[ASSET_MENU_TEXT_ADVENTURE];    // "ADVENTURE"
-        gGameSelectTextElemsWithAdv2[5].t.asciiText = gMenuText[ASSET_MENU_TEXT_ADVENTURETWO]; // "ADVENTURE TWO"
-        gGameSelectTextElemsWithAdv2[7].t.asciiText = gMenuText[ASSET_MENU_TEXT_TRACKS];       // "TRACKS"
-        sBadControllerPakMenuText[0] = gMenuText[ASSET_MENU_TEXT_BADCONTPAK];   // "BAD CONTROLLER PAK"
-        sControllerPakFullMenuText[0] = gMenuText[ASSET_MENU_TEXT_CONTPAKFULL]; // "CONTROLLER PAK FULL"
-        sNoControllerPakMenuText[0] = gMenuText[ASSET_MENU_TEXT_NOCONTPAK];     // 'NO CONTROLLER PAK"
-        sCorruptDataMenuText[4] = NULL;
-        sCorruptDataMenuText[5] = NULL;
-        sCorruptDataMenuText[0] = gMenuText[ASSET_MENU_TEXT_CORRUPTDATA_0]; // "CORRUPT DATA."
-        // Three messages
-        //"If you wish to change" / "Controller Pak or Rumble Pak," / "please do so now."
-        for (i = 0; i < 2; i++) {
-            sBadControllerPakMenuText[i + 1] = gMenuText[177 + i];
-            sControllerPakFullMenuText[i + 1] = gMenuText[177 + i];
-            sNoControllerPakMenuText[i + 1] = gMenuText[177 + i];
-            sCorruptDataMenuText[i + 1] = gMenuText[177 + i];
-        }
-        j = 0;
-        while (sCorruptDataMenuText[j] != NULL) {
-            j++;
-        }
-        sCorruptDataMenuText[j] = gMenuText[ASSET_MENU_TEXT_CORRUPTDATA_1];                 // "TRY AGAIN!"
-        sInsertControllerPakMenuText[0] = gMenuText[ASSET_MENU_TEXT_INSERTDEVICE_3];        // "If you wish to use"
-        sInsertControllerPakMenuText[1] = gMenuText[ASSET_MENU_TEXT_INSERTDEVICE_4];        // "the Controller Pak"
-        sInsertControllerPakMenuText[2] = gMenuText[ASSET_MENU_TEXT_INSERTDEVICE_6];        // "insert it now!"
-        sInsertRumblePakMenuText[0] = gMenuText[ASSET_MENU_TEXT_INSERTDEVICE_3];            // "If you wish to use"
-        sInsertRumblePakMenuText[1] = gMenuText[ASSET_MENU_TEXT_INSERTDEVICE_5];            // "the Rumble Pak"
-        sInsertRumblePakMenuText[2] = gMenuText[ASSET_MENU_TEXT_INSERTDEVICE_6];            // "insert it now!"
-        gCautionMenuTextElements[0].t.asciiText = gMenuText[ASSET_MENU_TEXT_CAUTION]; // "CAUTION"
-        gCautionMenuTextElements[1].t.asciiText = gMenuText[ASSET_MENU_TEXT_CAUTION]; // "CAUTION"
-        for (i = 2; i < 13; i++) {
-            // Caution message lines starting from gMenuText[166]
-            gCautionMenuTextElements[i].t.asciiText = gMenuText[166 + (i - 2)];
+            gMenuText[langIndex] = &((char *) gMenuText)[(s32) (fake = menuText)];
         }
     }
+
+    menuText = gMenuText;
+    gAudioOutputStrings[0] = menuText[ASSET_MENU_TEXT_STEREO];                       // "STEREO"
+    gAudioOutputStrings[1] = menuText[ASSET_MENU_TEXT_MONO];                         // "MONO"
+    gAudioOutputStrings[2] = menuText[ASSET_MENU_TEXT_HEADPHONES];                   // "HEADPHONES"
+    gAudioMenuStrings[1].unkC = menuText[ASSET_MENU_TEXT_SFXVOLUME];                 // "SFX VOLUME"
+    gAudioMenuStrings[2].unkC = menuText[ASSET_MENU_TEXT_MUSICVOLUME];               // "MUSIC VOLUME"
+    gAudioMenuStrings[3].unkC = menuText[ASSET_MENU_TEXT_RETURN];                    // "RETURN"
+    gAudioMenuStrings[4].unkC = menuText[ASSET_MENU_TEXT_AUDIOOPTIONS];              // "AUDIO OPTIONS"
+    gAudioMenuStrings[5].unkC = menuText[ASSET_MENU_TEXT_AUDIOOPTIONS];              // "AUDIO OPTIONS"
+    gMusicTestString = menuText[ASSET_MENU_TEXT_MUSICTEST];                          // "MUSIC TEST 00"
+    gMagicCodeMenuStrings[0] = menuText[ASSET_MENU_TEXT_ENTERCODE];                  // "ENTER CODE"
+    gMagicCodeMenuStrings[1] = menuText[ASSET_MENU_TEXT_CLEARALLCODES];              // "CLEAR ALL CODES"
+    gMagicCodeMenuStrings[2] = menuText[ASSET_MENU_TEXT_CODELIST];                   // "CODE LIST"
+    gMagicCodeMenuStrings[3] = menuText[ASSET_MENU_TEXT_RETURN];                     // "RETURN"
+    gRaceResultsMenuElements[1].t.asciiText = menuText[ASSET_MENU_TEXT_LAPTIMES];    // "LAP TIMES"
+    gRaceResultsMenuElements[2].t.asciiText = menuText[ASSET_MENU_TEXT_OVERALLTIME]; // "OVERALL TIME"
+    gRaceOrderMenuElements[8].t.asciiText = menuText[ASSET_MENU_TEXT_RACEORDER];     // "RACE ORDER"
+    gRaceOrderMenuElements[9].t.asciiText = menuText[ASSET_MENU_TEXT_RACEORDER];     // "RACE ORDER"
+    gRecordTimesMenuElements[0].t.asciiText = menuText[ASSET_MENU_TEXT_RECORDTIMES]; // "RECORD TIMES"
+    gRecordTimesMenuElements[1].t.asciiText = menuText[ASSET_MENU_TEXT_RECORDTIMES]; // "RECORD TIMES"
+    gRecordTimesMenuElements[2].t.asciiText = menuText[ASSET_MENU_TEXT_BESTTIME];    // "BEST TIME"
+    gRecordTimesMenuElements[5].t.asciiText = menuText[ASSET_MENU_TEXT_BESTLAP];     // "BEST LAP"
+    gOptionMenuStrings[0] = menuText[ASSET_MENU_TEXT_LANGUAGE];                      // "ENGLISH"
+    if (sEepromSettings & 0x2000000) {
+        gOptionMenuStrings[1] = menuText[ASSET_MENU_TEXT_SUBTITLESON]; // "SUBTITLES ON"
+    } else {
+        gOptionMenuStrings[1] = menuText[ASSET_MENU_TEXT_SUBTITLESOFF]; // "SUBTITLES OFF"
+    }
+    gOptionMenuStrings[2] = menuText[ASSET_MENU_TEXT_AUDIOOPTIONS];                          // "AUDIO OPTIONS"
+    gOptionMenuStrings[3] = menuText[ASSET_MENU_TEXT_SAVEOPTIONS];                           // "SAVE OPTIONS"
+    gOptionMenuStrings[4] = menuText[ASSET_MENU_TEXT_MAGICCODES];                            // "MAGIC CODES"
+    gOptionMenuStrings[5] = menuText[ASSET_MENU_TEXT_RETURN];                                // "RETURN"
+    gFilenames[0] = menuText[ASSET_MENU_TEXT_GAMEA];                                         // "GAME A"
+    gFilenames[1] = menuText[ASSET_MENU_TEXT_GAMEB];                                         // "GAME B"
+    gFilenames[2] = menuText[ASSET_MENU_TEXT_GAMEC];                                         // "GAME C"
+    gContPakNotPresentStrings[0] = menuText[ASSET_MENU_TEXT_CONTPAKX];                       // "CONTROLLER PAK ~"
+    gContPakNotPresentStrings[1] = menuText[ASSET_MENU_TEXT_CONTPAKNOTPRESENT];              // "IS NOT PRESENT."
+    gContPakNotPresentStrings[3] = menuText[ASSET_MENU_TEXT_CANCEL];                         // "CANCEL"
+    gContPakCorruptDataRepairStrings[0] = menuText[ASSET_MENU_TEXT_CONTPAKX];                // "CONTROLLER PAK ~"
+    gContPakCorruptDataRepairStrings[1] = menuText[ASSET_MENU_TEXT_CONTPAKHASCORRUPTDATA_0]; // "CONTAINS CORRUPT DATA."
+    gContPakCorruptDataRepairStrings[3] = menuText[ASSET_MENU_TEXT_CONTPAKHASCORRUPTDATA_1]; // "ATTEMPT TO REPAIR"
+    gContPakCorruptDataRepairStrings[4] = menuText[ASSET_MENU_TEXT_CANCEL];                  // "CANCEL"
+    gContPakDamagedStrings[0] = menuText[ASSET_MENU_TEXT_CONTPAKX];                          // "CONTROLLER PAK ~"
+    gContPakDamagedStrings[1] = menuText[ASSET_MENU_TEXT_CONTPAKISDAMAGED_0];                // "IRREPARABLY DAMAGED."
+    gContPakDamagedStrings[3] = menuText[ASSET_MENU_TEXT_CONTPAKISDAMAGED_1];                // "REFORMAT PAK"
+    gContPakDamagedStrings[4] = menuText[ASSET_MENU_TEXT_CANCEL];                            // "CANCEL"
+    gContPakFullStrings[0] = menuText[ASSET_MENU_TEXT_CONTPAKX];                             // "CONTROLLER PAK ~"
+    gContPakFullStrings[1] = menuText[ASSET_MENU_TEXT_CONTPAKISFULL];                        // "FULL."
+    gContPakFullStrings[3] = menuText[ASSET_MENU_TEXT_CONTINUE];                             // "CONTINUE"
+    gContPakDiffContStrings[0] = menuText[ASSET_MENU_TEXT_CONTPAKX];                         // "CONTROLLER PAK ~"
+    gContPakDiffContStrings[1] = menuText[ASSET_MENU_TEXT_CONTPAKDIFFERENT_0];               // "DIFFERENT CONTROLLER"
+    gContPakDiffContStrings[2] = menuText[ASSET_MENU_TEXT_CONTPAKDIFFERENT_1];               // "PAK IS INSERTED."
+    gContPakDiffContStrings[4] = menuText[ASSET_MENU_TEXT_CANCEL];                           // "CANCEL"
+    gContPakNoRoomForGhostsStrings[0] = menuText[ASSET_MENU_TEXT_CONTPAKX];                  // "CONTROLLER PAK ~"
+    gContPakNoRoomForGhostsStrings[1] = menuText[ASSET_MENU_TEXT_CANNOTSTOREANYMOREGHOSTS_0]; // "CANNOT STORE ANY"
+    gContPakNoRoomForGhostsStrings[2] = menuText[ASSET_MENU_TEXT_CANNOTSTOREANYMOREGHOSTS_1]; // "MORE GHOSTS."
+    gContPakNoRoomForGhostsStrings[4] = menuText[ASSET_MENU_TEXT_CONTINUE];                   // "CONTINUE"
+    gContPakCorruptDataStrings[0] = menuText[ASSET_MENU_TEXT_CONTPAKX];                       // "CONTROLLER PAK ~"
+    gContPakCorruptDataStrings[1] = menuText[ASSET_MENU_TEXT_CORRUPTDATA_0];                  // "CORRUPT DATA."
+    gContPakCorruptDataStrings[3] = menuText[ASSET_MENU_TEXT_TRYAGAIN];                       // "TRY AGAIN"
+    gContPakCorruptDataStrings[4] = menuText[ASSET_MENU_TEXT_CANCEL];                         // "CANCEL"
+    gContPakRumbleDetectedStrings[0] = menuText[ASSET_MENU_TEXT_RUMBLEPAKDETECTED_0];         // "Rumble Pak Detected"
+    gContPakRumbleDetectedStrings[1] = menuText[ASSET_MENU_TEXT_RUMBLEPAKDETECTED_1];   // "Insert any Controller Paks"
+    gContPakRumbleDetectedStrings[2] = menuText[ASSET_MENU_TEXT_RUMBLEPAKDETECTED_2];   // "you wish to use now!"
+    gContPakRumbleDetectedStrings[4] = menuText[ASSET_MENU_TEXT_CONTINUE];              // "CONTINUE"
+    gContPakSwitchToRumbleStrings[0] = menuText[ASSET_MENU_TEXT_INSERTDEVICE_0];        // "If you wish to use any"
+    gContPakSwitchToRumbleStrings[1] = menuText[ASSET_MENU_TEXT_INSERTDEVICE_1];        // "Rumble Paks then please"
+    gContPakSwitchToRumbleStrings[2] = menuText[ASSET_MENU_TEXT_INSERTDEVICE_2];        // "insert them now."
+    gContPakSwitchToRumbleStrings[4] = menuText[ASSET_MENU_TEXT_CONTINUE];              // "CONTINUE"
+    gContPakNeed2ndAdvStrings[0] = menuText[ASSET_MENU_TEXT_ADVTWOLOADERROR_0];         // "SORRY, BUT YOU"
+    gContPakNeed2ndAdvStrings[1] = menuText[ASSET_MENU_TEXT_ADVTWOLOADERROR_1];         // "CAN'T LOAD GAMES"
+    gContPakNeed2ndAdvStrings[2] = menuText[ASSET_MENU_TEXT_ADVTWOLOADERROR_2];         // "FOR THE SECOND"
+    gContPakNeed2ndAdvStrings[3] = menuText[ASSET_MENU_TEXT_ADVTWOLOADERROR_3];         // "ADVENTURE UNTIL"
+    gContPakNeed2ndAdvStrings[4] = menuText[ASSET_MENU_TEXT_ADVTWOLOADERROR_4];         // "YOU HAVE COMPLETED"
+    gContPakNeed2ndAdvStrings[5] = menuText[ASSET_MENU_TEXT_ADVTWOLOADERROR_5];         // "THE FIRST."
+    gContPakNeed2ndAdvStrings[7] = menuText[ASSET_MENU_TEXT_CONTINUE];                  // "CONTINUE"
+    gTitleMenuStrings[0] = menuText[ASSET_MENU_TEXT_START];                             // "START"
+    gTitleMenuStrings[1] = menuText[ASSET_MENU_TEXT_OPTIONS];                           // "OPTIONS"
+    gGameSelectTextElemsNoAdv2[0].t.asciiText = menuText[ASSET_MENU_TEXT_GAMESELECT];   // "GAME SELECT"
+    gGameSelectTextElemsNoAdv2[1].t.asciiText = menuText[ASSET_MENU_TEXT_GAMESELECT];   // "GAME SELECT"
+    gGameSelectTextElemsNoAdv2[3].t.asciiText = menuText[ASSET_MENU_TEXT_ADVENTURE];    // "ADVENTURE"
+    gGameSelectTextElemsNoAdv2[5].t.asciiText = menuText[ASSET_MENU_TEXT_TRACKS];       // "TRACKS"
+    gGameSelectTextElemsWithAdv2[0].t.asciiText = menuText[ASSET_MENU_TEXT_GAMESELECT]; // "GAME SELECT"
+    gGameSelectTextElemsWithAdv2[1].t.asciiText = menuText[ASSET_MENU_TEXT_GAMESELECT]; // "GAME SELECT"
+    gGameSelectTextElemsWithAdv2[3].t.asciiText = menuText[ASSET_MENU_TEXT_ADVENTURE];  // "ADVENTURE"
+    gGameSelectTextElemsWithAdv2[5].t.asciiText = menuText[ASSET_MENU_TEXT_ADVENTURETWO]; // "ADVENTURE TWO"
+    gGameSelectTextElemsWithAdv2[7].t.asciiText = menuText[ASSET_MENU_TEXT_TRACKS];       // "TRACKS"
+    sBadControllerPakMenuText[0] = menuText[ASSET_MENU_TEXT_BADCONTPAK];                  // "BAD CONTROLLER PAK"
+    sControllerPakFullMenuText[0] = menuText[ASSET_MENU_TEXT_CONTPAKFULL];                // "CONTROLLER PAK FULL"
+    sNoControllerPakMenuText[0] = menuText[ASSET_MENU_TEXT_NOCONTPAK];                    // 'NO CONTROLLER PAK"
+    sCorruptDataMenuText[0] = menuText[ASSET_MENU_TEXT_CORRUPTDATA_0];                    // "CORRUPT DATA."
+    sCorruptDataMenuText[4] = NULL;
+    sCorruptDataMenuText[5] = NULL;
+
+    // Three messages
+    //"If you wish to change" / "Controller Pak or Rumble Pak," / "please do so now."
+    for (langIndex = 0; langIndex <= 2; langIndex++) {
+        sBadControllerPakMenuText[langIndex + 1] = menuText[ASSET_MENU_TEXT_CANNOTSAVEGHOSTDATA_0 + langIndex];
+        sControllerPakFullMenuText[langIndex + 1] = menuText[ASSET_MENU_TEXT_CANNOTSAVEGHOSTDATA_0 + langIndex];
+        sNoControllerPakMenuText[langIndex + 1] = menuText[ASSET_MENU_TEXT_CANNOTSAVEGHOSTDATA_0 + langIndex];
+        sCorruptDataMenuText[langIndex + 1] = menuText[ASSET_MENU_TEXT_CANNOTSAVEGHOSTDATA_0 + langIndex];
+    }
+
+    for (langIndex = 0; sCorruptDataMenuText[langIndex] != NULL; langIndex++) {}
+
+    sCorruptDataMenuText[langIndex] = menuText[ASSET_MENU_TEXT_CORRUPTDATA_1];   // "TRY AGAIN!"
+    sInsertControllerPakMenuText[0] = menuText[ASSET_MENU_TEXT_INSERTDEVICE_3];  // "If you wish to use"
+    sInsertControllerPakMenuText[1] = menuText[ASSET_MENU_TEXT_INSERTDEVICE_4];  // "the Controller Pak"
+    sInsertControllerPakMenuText[2] = menuText[ASSET_MENU_TEXT_INSERTDEVICE_6];  // "insert it now!"
+    sInsertRumblePakMenuText[0] = menuText[ASSET_MENU_TEXT_INSERTDEVICE_3];      // "If you wish to use"
+    sInsertRumblePakMenuText[1] = menuText[ASSET_MENU_TEXT_INSERTDEVICE_5];      // "the Rumble Pak"
+    sInsertRumblePakMenuText[2] = menuText[ASSET_MENU_TEXT_INSERTDEVICE_6];      // "insert it now!"
+    gCautionMenuTextElements[0].t.asciiText = menuText[ASSET_MENU_TEXT_CAUTION]; // "CAUTION"
+    gCautionMenuTextElements[1].t.asciiText = menuText[ASSET_MENU_TEXT_CAUTION]; // "CAUTION"
+
+    for (langIndex = 0; langIndex <= 10; langIndex++) {
+        // Caution message lines starting from gMenuText[166]
+        gCautionMenuTextElements[langIndex + 2].t.element = menuText[ASSET_MENU_TEXT_CAUTIONMESSAGE_0 + langIndex];
+    }
 }
-#else
-GLOBAL_ASM("asm/non_matchings/menu/load_menu_text.s")
-#endif
 
 /**
  * Free the geometry used by the 3D menu buttons.
@@ -1977,9 +1987,9 @@ void func_80080580(Gfx **dList, s32 startX, s32 startY, s32 width, s32 height, s
     s32 texEnabled;
 
     //((unk80080BC8*)((u8*)gMenuGeometry[gWoodPanelCount] + (gMenuTrisFlip * 4)))->texture = tex;
-    ((unk80080BC8 *) ((u8 *) gMenuGeometry + (gWoodPanelCount << 5) + (gMenuTrisFlip * 4)))->texture = tex;
+    //((unk80080BC8 *) ((u8 *) gMenuGeometry + (gWoodPanelCount << 5) + (gMenuTrisFlip * 4)))->texture = tex;
     //(&(*gMenuGeometry)[gWoodPanelCount] + (gMenuTrisFlip * 4))->texture = tex;
-    // gMenuGeometry[gWoodPanelCount][gMenuTrisFlip].texture = tex;
+    //gMenuGeometry->texture[gWoodPanelCount] = tex;
     if (tex != NULL) {
         uVals[0] = 0;
         vVals[0] = 0;
@@ -2022,15 +2032,15 @@ void func_80080580(Gfx **dList, s32 startX, s32 startY, s32 width, s32 height, s
         }
     }
     if (dList != NULL) {
-        ((unk80080BC8 *) ((u8 *) gMenuGeometry + (gWoodPanelCount << 5) + (gMenuTrisFlip * 4)))->unk18 = 1;
+        //((unk80080BC8 *) ((u8 *) gMenuGeometry + (gWoodPanelCount << 5) + (gMenuTrisFlip * 4)))->unk18 = 1;
         gSPDisplayList((*dList)++, &dMenuHudSettings);
         if (tex != NULL) {
             texEnabled = TRUE;
-            gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(&dMenuHudSettings[8]), 2);
+            gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(&dMenuHudDrawModes[1]), 2);
             gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(tex->cmd), tex->numberOfCommands);
         } else {
             texEnabled = FALSE;
-            gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(&dMenuHudSettings[6]), 2);
+            gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(&dMenuHudDrawModes[0]), 2);
         }
         gDPPipeSync((*dList)++);
         /*
@@ -2057,7 +2067,7 @@ void func_80080580(Gfx **dList, s32 startX, s32 startY, s32 width, s32 height, s
             texEnabled);
         reset_render_settings(dList);
     } else {
-        ((unk80080BC8 *) ((u8 *) gMenuGeometry + (gWoodPanelCount * 32) + (gMenuTrisFlip * 4)))->unk18 = 0;
+        //((unk80080BC8 *) ((u8 *) gMenuGeometry + (gWoodPanelCount * 32) + (gMenuTrisFlip * 4)))->unk18 = 0;
     }
     gWoodPanelCount++;
 }
@@ -2065,8 +2075,6 @@ void func_80080580(Gfx **dList, s32 startX, s32 startY, s32 width, s32 height, s
 GLOBAL_ASM("asm/non_matchings/menu/func_80080580.s")
 #endif
 
-// https://decomp.me/scratch/lS3f5
-#ifdef NON_EQUIVALENT
 void func_80080BC8(Gfx **dList) {
     s16 temp_a1;
     s32 i;
@@ -2079,13 +2087,12 @@ void func_80080BC8(Gfx **dList) {
     lastTex = NULL;
 
     for (i = 0; i < gWoodPanelCount; i++) {
-        //((unk80080BC8*)((u8*)gMenuGeometry + (i << 5) + (gMenuTrisFlip * 4)))->texture
-        if (!gMenuGeometry[i][gMenuTrisFlip].unk18) {
-            tex = gMenuGeometry[i][gMenuTrisFlip].texture;
+        if (!gMenuGeometry[i].unk18[gMenuTrisFlip]) {
+            tex = gMenuGeometry[i].texture[gMenuTrisFlip];
             if (tex != NULL) {
                 if (var_t0 != 1) {
                     var_t0 = 1;
-                    gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(&dMenuHudSettings[8]), 2);
+                    gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(&dMenuHudDrawModes[1]), 2);
                 }
                 if (lastTex != tex) {
                     gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(tex->cmd), tex->numberOfCommands);
@@ -2093,20 +2100,17 @@ void func_80080BC8(Gfx **dList) {
                 }
             } else if (var_t0 != 0) {
                 var_t0 = 0;
-                gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(&dMenuHudSettings[6]), 2);
+                gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(&dMenuHudDrawModes[0]), 2);
             }
             gDPPipeSync((*dList)++);
-            gSPVertexDKR((*dList)++, OS_K0_TO_PHYSICAL((&gMenuGeometry[i][gMenuTrisFlip])->vertices), 20, 0);
-            gSPPolygon((*dList)++, OS_K0_TO_PHYSICAL((&gMenuGeometry[i][gMenuTrisFlip])->triangles), 10, 0);
+            gSPVertexDKR((*dList)++, OS_K0_TO_PHYSICAL(gMenuGeometry[i].vertices[gMenuTrisFlip]), 20, 0);
+            gSPPolygon((*dList)++, OS_K0_TO_PHYSICAL(gMenuGeometry[i].triangles[gMenuTrisFlip]), 10, var_t0);
         }
     }
     gWoodPanelCount = 0;
     gMenuTrisFlip = 1 - gMenuTrisFlip;
     reset_render_settings(dList);
 }
-#else
-GLOBAL_ASM("asm/non_matchings/menu/func_80080BC8.s")
-#endif
 
 /**
  * Resets the menu geometry after drawing, then flips the geometry index for the next frame.
@@ -2116,8 +2120,99 @@ void menu_geometry_end(void) {
     gMenuTrisFlip = 1 - gMenuTrisFlip;
 }
 
-// https://decomp.me/scratch/IZ1Gq
-GLOBAL_ASM("asm/non_matchings/menu/func_80080E90.s")
+void func_80080E90(Gfx **dlist, s32 startX, s32 startY, s32 width, s32 height, s32 borderWidth, s32 borderHeight,
+                   s32 colour0, s32 colour1, s32 colour2, s32 colour3) {
+    s32 temp_ra;
+    s32 temp_t3;
+    s32 temp_t4;
+    s32 temp_t5;
+    s32 recUly;
+    s32 recUlx;
+    s32 uly;
+    s32 recLrx;
+    s32 borderLineCount;
+    s32 i;
+    s32 recLry;
+    s32 ulx;
+    s32 y0Orig;
+    s32 primColour;
+    s32 j;
+    s32 index;
+
+    gSPDisplayList((*dlist)++, &dMenuHudSettings);
+    gDkrDmaDisplayList((*dlist)++, OS_K0_TO_PHYSICAL(&dMenuHudDrawModes[2]), 2);
+
+    // Must be a while loop to match.
+    i = 0;
+    while (i < 4) {
+        index = i << 2;
+        temp_t3 = D_800E1DC8[index + 0];
+        temp_t4 = D_800E1DC8[index + 1];
+        temp_t5 = D_800E1DC8[index + 2];
+        temp_ra = D_800E1DC8[index + 3];
+        ulx = startX;
+        y0Orig = startY;
+        uly = y0Orig;
+
+        switch (i) {
+            case 0:
+                primColour = colour0;
+                recLrx = startX + width;
+                recLry = y0Orig + 1;
+                borderLineCount = borderHeight;
+                break;
+            case 1:
+                ulx = (startX + (u32) width) - 1;
+                primColour = colour1;
+                uly = y0Orig + 1;
+                recLrx = startX + width;
+                recLry = (y0Orig + height) - 1;
+                borderLineCount = borderWidth;
+                break;
+            case 2:
+                primColour = colour2;
+                uly = (y0Orig + height) - 1;
+                recLrx = startX + width;
+                recLry = y0Orig + height;
+                borderLineCount = borderHeight;
+                break;
+            default:
+                primColour = colour3;
+                uly = y0Orig + 1;
+                recLrx = startX + 1;
+                recLry = (y0Orig + height) - 1;
+                borderLineCount = borderWidth;
+                break;
+        }
+
+        gDPSetPrimColor((*dlist)++, 0, 0, primColour >> 24, primColour >> 16, primColour >> 8, primColour);
+
+        for (j = 0; j < borderLineCount; j++) {
+            if (recLrx >= 0 && recLry >= 0) {
+                if (ulx < 0) {
+                    recUlx = 0;
+                } else {
+                    recUlx = ulx;
+                }
+                if (uly < 0) {
+                    recUly = 0;
+                } else {
+                    recUly = uly;
+                }
+                gDPFillRectangle((*dlist)++, recUlx, recUly, recLrx, recLry);
+            }
+            ulx += temp_t3;
+            uly += temp_t4;
+            recLrx += temp_t5;
+            recLry += temp_ra;
+        }
+        i++;
+    }
+
+    gDPPipeSync((*dlist)++);
+    gDPSetPrimColor((*dlist)++, 0, 0, 255, 255, 255, 255);
+    reset_render_settings(dlist);
+}
 
 void init_save_data(void) {
     s32 numLevels;
@@ -2135,7 +2230,7 @@ void init_save_data(void) {
     saveFileSize += numWorlds * sizeof(s16); // balloonsPtrSize;
     saveFileSize += sizeof(Settings);
     saveFileSize = (saveFileSize + 3) & ~3; // align to a 4-byte boundary
-    
+
     *gSavefileData = mempool_alloc_safe(saveFileSize * ARRAY_COUNT(gSavefileData), MEMP_SAVES);
 
     for (index = 0, offset = 0; index < ARRAY_COUNT(gSavefileData); index++) {
@@ -2144,15 +2239,17 @@ void init_save_data(void) {
         gSavefileData[index]->balloonsPtr = (s16 *) ((u8 *) gSavefileData[index]->courseFlagsPtr + courseFlagsPtrSize);
         offset += saveFileSize;
     }
-    
-    gCheatsAssetData = (u16 (*)[30]) get_misc_asset(ASSET_MISC_MAGIC_CODES);
+
+    gCheatsAssetData = (u16(*)[30]) get_misc_asset(ASSET_MISC_MAGIC_CODES);
     gNumberOfCheats = (*gCheatsAssetData)[0];
-    gMenuText = mempool_alloc_safe(1024 * sizeof(char *), MEMP_SAVES);
+    gMenuText = mempool_alloc_safe(1024 * sizeof(char *), MEMP_TEXT);
     load_menu_text(LANGUAGE_ENGLISH);
-    
+
+    // clang-format off
     for (i = 0; i < ARRAY_COUNT(gMenuAssets); i++) { \
         gMenuAssets[i] = NULL;
     }
+    // clang-format on
 }
 
 /**
@@ -6595,7 +6692,7 @@ s32 menu_character_select_loop(s32 updateRate) {
                     contMask |= (1 << j);
                 }
             }
-            osContSetMask(contMask);
+            //osContSetMask(contMask);
 
             gIsInTracksMode = 1;
             if (confirmOffset >= gNumberOfActivePlayers) {
@@ -6967,20 +7064,96 @@ void gameselect_free(void) {
     menu_asset_free(67);
 }
 
+#define NUMBER_OF_SAVE_FILES 3
+
+f32 gFileSelectScrollX;
+s32 gFileSelectScrollT;
+s32 gFileSelectMax;
+SavefileInfo gCpakSaveInfo[16];
+u8 gCpakSaveIDs[16];
+u8 gCpakSavePads[16];
+char *gCpakFileEmptys[] = {
+    "Empty",
+    "Empty2",
+    "Empty3",
+    "Empty4"
+};
+
+s32 fileselect_find_cpak(void) {
+    s32 numFiles = 0;
+    s32 i;
+    s32 j;
+    s32 status;
+    s32 freeAlready;
+    s32 saveFileSize;
+    s32 courseFlagsPtrSize;
+    char *fileNames[16];
+    char *fileExts[16];
+    u8 fileTypes[16];
+    u32 fileSizes[16];
+    Settings *settings = gSavefileData[3];
+
+    for (i = 0; i < 1; i++) {
+        freeAlready = FALSE;
+        status = get_controller_pak_file_list(i, 16, fileNames, fileExts, fileSizes, fileTypes);
+        if (status != CONTROLLER_PAK_GOOD && status != CONTROLLER_PAK_FULL) {
+            continue;
+        }
+        for (j = 0; j < 16; j++) {
+            if (fileTypes[j] == SAVE_FILE_TYPE_CPAK_SAVE) {
+                if (read_game_data_from_controller_pak(i, fileExts[j], settings) == CONTROLLER_PAK_GOOD) {
+                    if (settings->cutsceneFlags & CUTSCENE_ADVENTURE_TWO) {
+                        gCpakSaveInfo[numFiles].isAdventure2 = TRUE;
+                    }
+                    gCpakSaveInfo[numFiles].isStarted = TRUE;
+                    gCpakSaveInfo[numFiles].balloonCount = *settings->balloonsPtr;
+                    filename_decompress(settings->filename, gCpakSaveInfo[numFiles].name, 3);
+                    gCpakSaveIDs[numFiles] = j;
+                    gCpakSavePads[numFiles] = i;
+                    numFiles++;
+                }
+            } else if (freeAlready == FALSE) {
+                if (fileTypes[j] == 255) {
+                    gCpakSaveInfo[numFiles].isStarted = 0;
+                    gCpakSaveInfo[numFiles].balloonCount = 0;
+                    gCpakSaveInfo[numFiles].name[0] = 'D';
+                    gCpakSaveInfo[numFiles].name[1] = 'K';
+                    gCpakSaveInfo[numFiles].name[2] = 'R';
+                    gCpakSaveInfo[numFiles].name[3] = '\0';
+                    gCpakSaveIDs[numFiles] = j;
+                    gCpakSavePads[numFiles] = i;
+                    numFiles++;
+                    freeAlready = TRUE;
+                }
+            }
+            if (numFiles >= ARRAY_COUNT(gCpakSaveIDs)) {
+                puppyprint_log(LOG_WARN, "Controller Pak Saves at capacity!\n");
+                return numFiles;
+            }
+        }
+    }
+    
+    return numFiles;
+}
+
 /**
  * Initialises the file selection menu. Loads the relevant textures for the menu.
  * Sets the audio channels to match the selected character.
  */
 void menu_file_select_init(void) {
     s32 i;
+    s32 numValidFiles;
     UNUSED s32 numLevels;
     UNUSED s32 numWorlds;
+
+    numValidFiles = 0;
 
     get_number_of_levels_and_worlds(&numLevels, &numWorlds); // Unused
     menu_assetgroup_load(gFileSelectObjectIndices);
     menu_imagegroup_load(gFileSelectImageIndices);
     func_8007FFEC(6);
     mark_read_all_save_files();
+    //numValidFiles = fileselect_find_cpak();
     gOpacityDecayTimer = 1;
     gSaveFileIndex = 0;
     gMenuDelay = 0;
@@ -6989,6 +7162,9 @@ void menu_file_select_init(void) {
     gFileCopy = FALSE;
     gFileErase = FALSE;
     gFileNew = FALSE;
+    gFileSelectScrollX = 0;
+    gFileSelectScrollT = 0;
+    gFileSelectMax = NUMBER_OF_SAVE_FILES + numValidFiles;
     transition_begin(&sMenuTransitionFadeOut);
     load_font(ASSET_FONTS_BIGFONT);
     music_play(SEQUENCE_CHOOSE_YOUR_RACER);
@@ -7028,8 +7204,6 @@ void fileselect_render_element(s32 imageID, s32 xOffset, s32 yOffset, s32 red, s
     menu_element_render(imageID);
 }
 
-#define NUMBER_OF_SAVE_FILES 3
-
 /**
  * Render the file select buttons onscreen. This includes the 3D buttons,
  * and then the copy and erase text beneath.
@@ -7042,19 +7216,62 @@ void fileselect_render(UNUSED s32 updateRate) {
     u32 colour;
     s32 i;
     s32 x;
+    s32 saveCount;
+    s32 offsetX;
     char trimmedFilename[4];
 
     yPos = 0;
+    saveCount = gFileSelectMax;
+
+    if (gFileSelectScrollT - gSaveFileIndex < -2) {
+        gFileSelectScrollT++;
+    } else if (gFileSelectScrollT - gSaveFileIndex >= 1) {
+        gFileSelectScrollT--;
+    } else if (gSaveFileIndex < 1 && gFileSelectScrollT > 0) {
+        gFileSelectScrollT--;
+    }
+
+    offsetX = gFileSelectScrollT * 92;
+    if (gFileSelectScrollX < offsetX) {
+        gFileSelectScrollX += updateRate * 20;
+        if (gFileSelectScrollX > offsetX) {
+            gFileSelectScrollX = offsetX;
+        }
+    } else if (gFileSelectScrollX > offsetX) {
+        gFileSelectScrollX -= updateRate * 20;
+        if (gFileSelectScrollX < offsetX) {
+            gFileSelectScrollX = offsetX;
+        }
+    }
 
     menu_camera_centre();
     set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
-    x = -((NUMBER_OF_SAVE_FILES * 92) / 2) + ((gScreenWidth - 320) / 2);
-    for (i = 0; i < NUMBER_OF_SAVE_FILES; i++) {
-        s32 saveNum = i;
-        if (saveNum >= 3) {
-            saveNum = 0;
+    x = (-((3 * 92) / 2) + ((gScreenWidth - 320) / 2)) - gFileSelectScrollX;
+    for (i = 0; i < saveCount; i++) {
+        if (x > gScreenWidth) {
+            break;
         }
-        if (gSavefileInfo[saveNum].isAdventure2 == gIsInAdventureTwo || gSavefileInfo[saveNum].isStarted == 0) {
+        if (x + 256 < 0) {
+            x += 92;
+            continue;
+        }
+        if (i >= NUMBER_OF_SAVE_FILES) {
+            s32 saveNum = i - NUMBER_OF_SAVE_FILES;
+            switch (gCpakSavePads[saveNum]) {
+            case 0:
+                colour = COLOUR_RGBA32(255, 64, 64, 255);
+                break;
+            case 1:
+                colour = COLOUR_RGBA32(64, 64, 255, 255);
+                break;
+            case 2:
+                colour = COLOUR_RGBA32(64, 255, 64, 255);
+                break;
+            case 3:
+                colour = COLOUR_RGBA32(255, 64, 255, 255);
+                break;
+            }
+        } else if (gSavefileInfo[i].isAdventure2 == gIsInAdventureTwo || gSavefileInfo[i].isStarted == 0) {
             colour = COLOUR_RGBA32(176, 224, 192, 255);
         } else {
             colour = COLOUR_RGBA32(106, 144, 115, 255);
@@ -7068,25 +7285,35 @@ void fileselect_render(UNUSED s32 updateRate) {
     if (gOpacityDecayTimer == 0) {
         set_text_font(ASSET_FONTS_BIGFONT);
         set_text_background_colour(0, 0, 0, 0);
-        x = (gScreenWidth / 2) - ((NUMBER_OF_SAVE_FILES * 92) / 2);
-        for (i = 0; i < NUMBER_OF_SAVE_FILES; i++) {
+        x = ((gScreenWidth / 2) - ((3 * 92) / 2)) - gFileSelectScrollX;
+        for (i = 0; i < saveCount; i++) {
             s32 saveNum = i;
-            if (saveNum >= 3) {
-                saveNum = 0;
+            SavefileInfo *file;
+            if (x > gScreenWidth) {
+                break;
             }
-            if (gSavefileInfo[saveNum].isStarted) {
+            if (x + 92 < 0) {
+                x += 92;
+                continue;
+            }
+            if (saveNum >= NUMBER_OF_SAVE_FILES) {
+                file = &gCpakSaveInfo[saveNum - NUMBER_OF_SAVE_FILES];
+            } else {
+                file = &gSavefileInfo[saveNum];
+            }
+            if (file->isStarted) {
                 sprite_opaque(FALSE);
                 var_s2 = 11;
-                if (gSavefileInfo[saveNum].isAdventure2) {
+                if (file->isAdventure2) {
                     var_s2 = 12;
                 }
                 fileselect_render_element(var_s2, x + gFileSelectElementPos[2], gFileSelectButtons.y + gFileSelectElementPos[3],
                                   0, 0, 0, 128);
                 sprite_anim_off(TRUE);
-                gMenuImages->spriteOffset = gSavefileInfo[saveNum].balloonCount / 10;
+                gMenuImages->spriteOffset = file->balloonCount / 10;
                 fileselect_render_element(0, x + gFileSelectElementPos[6] - 6, gFileSelectButtons.y + gFileSelectElementPos[7],
                                   0, 0, 0, 128);
-                gMenuImages->spriteOffset = gSavefileInfo[saveNum].balloonCount % 10;
+                gMenuImages->spriteOffset = file->balloonCount % 10;
                 fileselect_render_element(0, x + gFileSelectElementPos[6] + 6, gFileSelectButtons.y + gFileSelectElementPos[7],
                                   0, 0, 0, 128);
                 sprite_anim_off(FALSE);
@@ -7117,11 +7344,28 @@ void fileselect_render(UNUSED s32 updateRate) {
         draw_text(&sMenuCurrDisplayList, gScreenWidth / 2, 48, "SAVE TYPE INCORRECT", ALIGN_TOP_CENTER);
         draw_text(&sMenuCurrDisplayList, gScreenWidth / 2, 64, "GAME WILL NOT SAVE", ALIGN_TOP_CENTER);
     }
-    x = (gScreenWidth / 2) - ((NUMBER_OF_SAVE_FILES * 92) / 2);
-    for (i = 0; i < NUMBER_OF_SAVE_FILES; i++) {
+    x = ((gScreenWidth / 2) - ((3 * 92) / 2)) - gFileSelectScrollX;
+    for (i = 0; i < saveCount; i++) {
         s32 saveNum = i;
-        if (saveNum >= 3) {
-            saveNum = 0;
+        SavefileInfo *file;
+        char *name;
+        if (x > gScreenWidth) {
+            break;
+        }
+        if (x + 92 < 0) {
+            x += 92;
+            continue;
+        }
+        if (saveNum >= NUMBER_OF_SAVE_FILES) {
+            file = &gCpakSaveInfo[saveNum - NUMBER_OF_SAVE_FILES];
+            if (file->isStarted == FALSE) {
+                name = gCpakFileEmptys[get_language()];
+            } else {
+                name = file->name;
+            }
+        } else {
+            file = &gSavefileInfo[saveNum];
+            name = gFilenames[saveNum];
         }
         var_s2 = FALSE;
         if (gFileCopy) {
@@ -7144,9 +7388,9 @@ void fileselect_render(UNUSED s32 updateRate) {
                           colour, colour, colour, colour);
         }
         if (!gFileNew || i != gSaveFileIndex) {
-            filename_trim(gSavefileInfo[saveNum].name, trimmedFilename);
-            if (!gSavefileInfo[saveNum].isStarted) {
-                filename_trim(gFilenames[saveNum], trimmedFilename);
+            filename_trim(file->name, trimmedFilename);
+            if (!file->isStarted) {
+                filename_trim(name, trimmedFilename);
             }
             draw_text(&sMenuCurrDisplayList, x + gFileSelectElementPos[0],
                       gFileSelectButtons.y + gFileSelectElementPos[1] + yPos, trimmedFilename, ALIGN_MIDDLE_CENTER);
@@ -7250,7 +7494,7 @@ s32 fileselect_input_root(UNUSED s32 updateRate) {
             gSaveFileIndex--;
         }
         // Right
-        if (xAxisDirection > 0 && (gSaveFileIndex < 2)) {
+        if (xAxisDirection > 0 && (gSaveFileIndex < gFileSelectMax - 1)) {
             gSaveFileIndex++;
         }
         // Down
@@ -7473,9 +7717,9 @@ s32 menu_file_select_loop(s32 updateRate) {
         gOpacityDecayTimer += updateRate;
 
         if (gOpacityDecayTimer >= 3) {
-            for (i = 0; i < NUMBER_OF_SAVE_FILES; i++) {
+            for (i = 0; i < ARRAY_COUNT(gSavefileInfo); i++) {
                 gSavefileInfo[i].isAdventure2 = 0;
-                if (gSavefileData[i]->newGame) {
+                if (i > 2 || gSavefileData[i]->newGame) {
                     gSavefileInfo[i].isStarted = 0;
                     gSavefileInfo[i].balloonCount = 0;
                     gSavefileInfo[i].name[0] = 'D';
@@ -7714,7 +7958,7 @@ void menu_track_select_init(void) {
     gTrackmenuLoadedLevel = -1;
     gOpacityDecayTimer = 32;
     gOptionBlinkTimer = 0;
-    gTrackmenuType = -1;
+    gTrackmenuType = TRACKMENU_TYPE_INIT;
     trackmenu_assets(0);
     transition_begin(&sMenuTransitionFadeOut);
     enable_new_screen_transitions();
@@ -7843,26 +8087,28 @@ GLOBAL_ASM("asm/non_matchings/menu/menu_track_select_init.s")
  * If type is -1, allocate and initialise all the track setup elements.
  * If type is 0, reset the cursor target to the current position.
  * If type is 1, free the assetgroup for the track setup.
+ * If type is 2, to load the race
  */
 void trackmenu_assets(s32 type) {
     Vehicle vehicle;
     s32 i;
     s32 newType;
 
-    if (gTrackmenuType != -1 && gTrackmenuType != 0 && gTrackmenuType == 1) {
+    if (gTrackmenuType != TRACKMENU_TYPE_INIT && gTrackmenuType != TRACKMENU_TYPE_RESET_CURSOR &&
+        gTrackmenuType == TRACKMENU_TYPE_FREE) {
         menu_assetgroup_free(gTrackSelectPreviewObjectIndices);
     }
 
     gTrackmenuType = type;
     newType = gTrackmenuType;
 
-    if (newType > -1 && newType < 2) {
+    if (newType > TRACKMENU_TYPE_INIT && newType <= TRACKMENU_TYPE_FREE) {
         switch (gTrackmenuType) {
-            case 0:
+            case TRACKMENU_TYPE_RESET_CURSOR:
                 gTrackSelectTargetX = gTrackSelectX;
                 gTrackSelectTargetY = gTrackSelectY;
                 break;
-            case 1:
+            case TRACKMENU_TYPE_FREE:
                 vehicle = get_map_default_vehicle(gTrackIdForPreview);
                 for (i = 0; i < gNumberOfActivePlayers; i++) {
                     gPlayerSelectConfirm[i] = 0;
@@ -7924,12 +8170,12 @@ s32 menu_track_select_loop(s32 updateRate) {
     gSPClearGeometryMode(sMenuCurrDisplayList++, G_CULL_FRONT);
 
     switch (gTrackmenuType) {
-        case 0:
+        case TRACKMENU_TYPE_RESET_CURSOR:
             func_8008FF1C(updateRate);
             trackmenu_track_view(updateRate);
             trackmenu_input(updateRate);
             break;
-        case 1:
+        case TRACKMENU_TYPE_FREE:
             trackmenu_timetrial_sound(updateRate);
             trackmenu_setup_render(updateRate);
             func_80092188(updateRate);
@@ -7945,7 +8191,7 @@ s32 menu_track_select_loop(s32 updateRate) {
         }
         music_volume_set(sMenuMusicVolume);
     }
-    if (gTrackmenuType < 0) {
+    if (gTrackmenuType <= TRACKMENU_TYPE_INIT) {
         menu_track_select_unload();
         gTrackSpecifiedWithTrackIdToLoad = 0;
         if (gNumberOfActivePlayers >= 3 ||
@@ -7966,7 +8212,7 @@ s32 menu_track_select_loop(s32 updateRate) {
         menu_init(MENU_GAME_SELECT);
         return MENU_RESULT_CONTINUE;
     }
-    if (gTrackmenuType >= 2) {
+    if (gTrackmenuType >= TRACKMENU_TYPE_LOAD_LEVEL) {
         menu_track_select_unload();
         if (gMultiplayerSelectedNumberOfRacersCopy != gMultiplayerSelectedNumberOfRacers) {
             for (cutsceneId = 0; cutsceneId < 8; cutsceneId++) {
@@ -8443,11 +8689,11 @@ void trackmenu_input(s32 updateRate) {
             } else {
                 gMenuStage = TRACKMENU_OPT_1;
             }
-            trackmenu_assets(1);
+            trackmenu_assets(TRACKMENU_TYPE_FREE);
         } else if (gMenuDelay < -30) {
             disable_new_screen_transitions();
             camDisableUserView(0, FALSE);
-            trackmenu_assets(-1);
+            trackmenu_assets(TRACKMENU_TYPE_INIT);
         }
     }
     if (menuDelay == 0) {
@@ -8826,7 +9072,271 @@ void trackmenu_setup_render(UNUSED s32 updateRate) {
     }
 }
 
-GLOBAL_ASM("asm/non_matchings/menu/func_80092188.s")
+void func_80092188(s32 updateRate) {
+    s32 yOffset2;
+    s32 origVehicle;
+    s32 availableVehicles;
+    s32 xOffset;
+    s32 yOffset;
+    s32 i;
+    s32 menuBackedOut;
+    s32 menuSelected;
+    s32 menuChanged;
+    s32 menuDelay;
+    Settings *settings;
+
+    menuDelay = gMenuDelay;
+    settings = get_settings();
+    if (gTrackNameVoiceDelay != 0) {
+        gTrackNameVoiceDelay += updateRate;
+    }
+    // Challenge Races
+    if (gTrackSelectCursorX == 5 && gMenuStage != 2) {
+        gMenuStage = 2;
+        if (gTrackSelectCursorX == 5) {
+            // One of the following three text messages
+            // THE FIRST PLAYER TO HATCH // THE LAST PLAYER REMAINING // THE FIRST PLAYER TO GET 10
+            // THREE EGGS WILL WIN!      // WILL WIN!!                // BANANAS INTO THEIR TREASURE
+            //                                                        // CHEST WILL WIN!!
+            set_current_text(gTrackSelectCursorY + ASSET_GAME_TEXT_60);
+        }
+    }
+    // Trophy Races
+    if (gTrackSelectCursorX == 4 && gMenuStage != -1 && gMenuStage != 2) {
+        gMenuStage = 2;
+    }
+    if (gTTVoiceLines[gTrackIdForPreview] != -1 && gTrackNameVoiceDelay >= 7) {
+        sound_play(gTTVoiceLines[gTrackIdForPreview], NULL);
+        gTrackNameVoiceDelay = 0;
+    }
+    xOffset = gMenuDelay + 25;
+    if (gMenuDelay < 0) {
+        if (xOffset > 20) {
+            xOffset = 20;
+        }
+        if (xOffset < 0) {
+            xOffset = 0;
+        }
+        yOffset = ((xOffset + 20) * gTrackSelectViewPortHalfY) / 40;
+        yOffset2 = yOffset + gTrackSelectViewPortHalfY;
+        viewport_menu_set(0, 80 - (xOffset * 4), gTrackSelectViewPortHalfY - yOffset, (xOffset * 4) + 240, yOffset2);
+        // TODO: gMenuImages is not just an array of MenuAsset?
+        ((f32 *) gMenuImages)[34] = (f32) (sMenuImageProperties[4].scale * (1.0f + ((f32) xOffset / 20.0f)));
+        ((f32 *) gMenuImages)[42] = (f32) (sMenuImageProperties[5].scale * (1.0f + ((f32) xOffset / 20.0f)));
+        ((f32 *) gMenuImages)[50] = (f32) (sMenuImageProperties[6].scale * (1.0f + ((f32) xOffset / 20.0f)));
+    }
+    if (gMenuDelay > 0) {
+        sMenuMusicVolume -= updateRate * 4;
+    }
+    if (gMenuDelay > 40) {
+        trackmenu_assets(TRACKMENU_TYPE_LOAD_LEVEL);
+    } else if (gMenuDelay < -30) {
+        gOpacityDecayTimer = 0;
+        trackmenu_assets(TRACKMENU_TYPE_RESET_CURSOR);
+        viewport_menu_set(0, 80, gTrackSelectViewPortHalfY - (gTrackSelectViewPortHalfY >> 1), 240,
+                          (gTrackSelectViewPortHalfY >> 1) + gTrackSelectViewPortHalfY);
+    }
+    camEnableUserView(0, TRUE);
+    if (menuDelay == 0) {
+        availableVehicles = get_map_available_vehicles(gTrackIdForPreview);
+        menuBackedOut = FALSE;
+        menuSelected = FALSE;
+        menuChanged = FALSE;
+        switch (gMenuStage) {
+            case -1:
+                if (gMenuButtons[4] & (A_BUTTON | START_BUTTON)) {
+                    if (gTrackSelectCursorX == 4) {
+                        gMenuStage = 2;
+                    } else {
+                        gMenuStage = 0;
+                    }
+                    menuSelected = TRUE;
+                } else if (gMenuButtons[4] & B_BUTTON) {
+                    gMenuDelay = -1;
+                    menuBackedOut = TRUE;
+                } else {
+                    if (gMenuStickY[4] > 0 && gTracksMenuAdventureHighlightIndex != 0) {
+                        gTracksMenuAdventureHighlightIndex = 0;
+                        menuChanged = TRUE;
+                    } else if ((gMenuStickY[4] < 0) && (gTracksMenuAdventureHighlightIndex == 0)) {
+                        gTracksMenuAdventureHighlightIndex = 1;
+                        menuChanged = TRUE;
+                    }
+                }
+                break;
+            case 0:
+                for (i = 0; i < gNumberOfActivePlayers; i++) {
+                    if (gMenuButtons[i] & B_BUTTON) {
+                        menuBackedOut = TRUE;
+                        if (gNumberOfReadyPlayers == 0) {
+                            if (is_adventure_two_unlocked()) {
+                                gMenuStage = -1;
+                            } else {
+                                gMenuDelay = -1;
+                            }
+                        } else if (gPlayerSelectConfirm[i] != 0) {
+                            gNumberOfReadyPlayers--;
+                            gPlayerSelectConfirm[i] = 0;
+                        }
+                    } else {
+                        if (gMenuButtons[i] & (A_BUTTON | START_BUTTON)) {
+                            if (gPlayerSelectConfirm[i] == 0) {
+                                gPlayerSelectConfirm[i] = 1;
+                                gNumberOfReadyPlayers++;
+                                menuSelected = TRUE;
+                            }
+                        } else if (gPlayerSelectConfirm[i] == 0 && settings->courseFlagsPtr[gTrackIdForPreview] & 2) {
+                            origVehicle = gPlayerSelectVehicle[i];
+                            if (gMenuStickY[i] > 0) {
+                                do {
+                                    gPlayerSelectVehicle[i]--;
+                                } while (((1 << gPlayerSelectVehicle[i]) & availableVehicles) == 0 &&
+                                         gPlayerSelectVehicle[i] >= 0);
+                            }
+                            if (gMenuStickY[i] < 0) {
+                                do {
+                                    gPlayerSelectVehicle[i]++;
+                                } while (((1 << gPlayerSelectVehicle[i]) & availableVehicles) == 0 &&
+                                         gPlayerSelectVehicle[i] < 3);
+                            }
+                            if (origVehicle != gPlayerSelectVehicle[i]) {
+                                if (gPlayerSelectVehicle[i] < 0 || gPlayerSelectVehicle[i] >= 3) {
+                                    gPlayerSelectVehicle[i] = origVehicle;
+                                } else {
+                                    menuChanged = TRUE;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (gNumberOfReadyPlayers == gNumberOfActivePlayers) {
+                    menuBackedOut = FALSE;
+                    menuSelected = FALSE;
+                    menuChanged = FALSE;
+                    if (gNumberOfActivePlayers >= 2) {
+                        gMenuStage = 2;
+                    } else {
+                        gMenuStage = 1;
+                    }
+                    sound_play(SOUND_CAR_REV2, NULL);
+                }
+                break;
+            case 1:
+                if (gMenuButtons[0] & (A_BUTTON | START_BUTTON)) {
+                    gMenuStage = 2;
+                    menuSelected = TRUE;
+                } else if (gMenuButtons[0] & B_BUTTON) {
+                    gPlayerSelectConfirm[0] = 0;
+                    gNumberOfReadyPlayers = 0;
+                    gMenuStage = 0;
+                    menuBackedOut = TRUE;
+                }
+                if (gMenuStickY[0] > 0 && gTracksMenuTimeTrialHighlightIndex > 0) {
+                    if (D_80126848 != NULL) {
+                        sound_stop((u8 *) D_80126848);
+                    }
+                    gTracksMenuTimeTrialHighlightIndex--;
+                    menuChanged = TRUE;
+                }
+                if (gMenuStickY[0] < 0) {
+                    if (gTracksMenuTimeTrialHighlightIndex <= 0) {
+                        menuChanged = TRUE;
+                        if (gTrackTTSoundMask != NULL) {
+                            sound_stop((u8 *) gTrackTTSoundMask);
+                        }
+                        if (get_random_number_from_range(0, 255) >= 128) {
+                            sound_play(SOUND_VOICE_TT_INTRO, (s32 *) &D_80126848);
+                        } else {
+                            sound_play(SOUND_VOICE_TT_GO_FOR_IT, (s32 *) &D_80126848);
+                        }
+                        gTracksMenuTimeTrialHighlightIndex++;
+                    }
+                }
+                break;
+            case 2: /* fall through */
+            case 3:
+                if (gMenuStage == 2 && gNumberOfActivePlayers == 2 && gTrackSelectCursorX < 4) {
+                    if (gMenuButtons[4] & (A_BUTTON | START_BUTTON)) {
+                        gMenuStage = 3;
+                        menuSelected = TRUE;
+                    } else if (gMenuButtons[4] & B_BUTTON) {
+                        gMenuStage = 0;
+                        gNumberOfReadyPlayers--;
+                        if (gMenuButtons[0] & B_BUTTON) {
+                            gPlayerSelectConfirm[0] = 0;
+                        } else {
+                            gPlayerSelectConfirm[1] = 0;
+                        }
+                        menuBackedOut = TRUE;
+                    } else {
+                        if (gMenuStickX[4] < 0 && gMultiplayerSelectedNumberOfRacers > 0) {
+                            menuChanged = TRUE;
+                            gMultiplayerSelectedNumberOfRacers--;
+                        } else if (gMenuStickX[4] > 0 && gMultiplayerSelectedNumberOfRacers < 2) {
+                            menuChanged = TRUE;
+                            gMultiplayerSelectedNumberOfRacers++;
+                        }
+                    }
+                } else if (gMenuButtons[4] & (A_BUTTON | START_BUTTON)) {
+                    gMenuDelay = 1;
+                    bgdraw_set_func(NULL);
+                    gIsInTracksMenu = 0;
+                    disable_new_screen_transitions();
+                    transition_begin(&sMenuTransitionFadeIn);
+                    if (gTrackSelectCursorX == 5) {
+                        set_current_text(10000); // Nonsense value. No text.
+                    }
+                    menuSelected = TRUE;
+                } else if (gTrackSelectCursorX >= 4) {
+                    if (gMenuButtons[4] & B_BUTTON) {
+                        menuBackedOut = TRUE;
+                        if ((gTrackSelectCursorX == 4) && (is_adventure_two_unlocked())) {
+                            gMenuStage = -1;
+                        } else {
+                            gMenuDelay = -1;
+                        }
+                        if (gTrackSelectCursorX == 5) {
+                            set_current_text(10000); // Nonsense value. No text.
+                        }
+                    }
+                } else if (gNumberOfActivePlayers == 1) {
+                    if (gMenuButtons[0] & B_BUTTON) {
+                        gMenuStage = 1;
+                        menuBackedOut = TRUE;
+                    }
+                } else if (gNumberOfActivePlayers == 2) {
+                    if (gMenuButtons[4] & B_BUTTON) {
+                        gMenuStage = 2;
+                        menuBackedOut = TRUE;
+                    }
+                } else {
+                    for (i = 0; i < gNumberOfActivePlayers; i++) {
+                        if (gMenuButtons[i] & B_BUTTON) {
+                            gNumberOfReadyPlayers--;
+                            gPlayerSelectConfirm[i] = 0;
+                            gMenuStage = 0;
+                            menuBackedOut = TRUE;
+                        }
+                    }
+                }
+                break;
+        }
+        if (menuBackedOut) {
+            sound_play(SOUND_MENU_BACK3, NULL);
+        } else if (menuSelected) {
+            sound_play(SOUND_SELECT2, NULL);
+        } else if (menuChanged) {
+            sound_play(SOUND_MENU_PICK2, NULL);
+        }
+        set_level_default_vehicle((enum Vehicle) * gPlayerSelectVehicle);
+        if (gNumberOfActivePlayers >= 2 || gTrackSelectCursorX >= 4) {
+            set_time_trial_enabled(FALSE);
+        } else {
+            set_time_trial_enabled(gTracksMenuTimeTrialHighlightIndex);
+        }
+        gIsInAdventureTwo = gTracksMenuAdventureHighlightIndex;
+    }
+}
 
 /**
  * Return whether the staff time has been beaten for this level.
@@ -9098,7 +9608,7 @@ s32 menu_adventure_track_loop(s32 updateRate) {
         if (gMenuStage != ADVENTURESETUP_VEHICLE || sp20 || challenge) {
             if (gMenuButtons[PLAYER_ONE] & (A_BUTTON | START_BUTTON)) {
                 if (challenge) {
-                    set_current_text(0x2710);
+                    set_current_text(10000);
                 }
                 gMenuDelay = 1;
                 transition_begin(&sMenuTransitionFadeIn);
@@ -9107,7 +9617,7 @@ s32 menu_adventure_track_loop(s32 updateRate) {
                 sound_play(SOUND_MENU_BACK3, NULL);
                 if (sp20 || challenge) {
                     if (challenge) {
-                        set_current_text(0x2710);
+                        set_current_text(10000);
                     }
                     transition_begin(&sMenuTransitionFadeIn);
                     gMenuDelay = -1;

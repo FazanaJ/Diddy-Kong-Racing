@@ -39,3 +39,13 @@ lastRomPath.txt
 tools/flips
 gcc_safe_files.mk
 *.DS_Store
+
+# Temp ignore for splat related stuff.
+asm/data/
+asm/header.s
+asm/nonmatchings/
+tools/asm-differ/
+tools/asm-processor/
+tools/ido-recomp/
+tools/m2c/
+ver/
