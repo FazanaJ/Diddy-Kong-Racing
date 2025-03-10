@@ -18,6 +18,7 @@ OSTimer sRSPAudHangTimer;
 OSTimer sRDPHangTimer;
 OSTimer sSchedHangTimer;
 u8 sTimerChecks[4];
+u8 sWroteRDP;
 #endif
 
 static void __scTaskComplete(OSSched *sc, OSScTask *t) {
@@ -71,7 +72,10 @@ static void __scExec(OSSched *sc, OSScTask *t) {
             osSetTimer(&sRDPHangTimer, OS_USEC_TO_CYCLES(300000), (OSTime) 0, &gCrashScreen.mesgQueue, (OSMesg) MESG_RDP_HUNG);
             sTimerChecks[2] = TRUE;
         }
-        IO_WRITE(DPC_STATUS_REG, DPC_CLR_CLOCK_CTR | DPC_CLR_CMD_CTR | DPC_CLR_PIPE_CTR | DPC_CLR_TMEM_CTR);
+        if (sWroteRDP) {
+            IO_WRITE(DPC_STATUS_REG, DPC_CLR_CLOCK_CTR | DPC_CLR_CMD_CTR | DPC_CLR_PIPE_CTR | DPC_CLR_TMEM_CTR);
+            sWroteRDP = 0;
+        }
 #endif
     }
 }
@@ -126,7 +130,7 @@ static void __scHandleRetrace(OSSched *sc) {
 
         if (sc->nextAudTask) {
             if (sc->curRSPTask && sc->curRSPTask->list.t.type == M_GFXTASK) {
-                puppyprint_update_rsp(RSP_GFX_PAUSED);
+                //puppyprint_update_rsp(RSP_GFX_PAUSED);
                 sc->curRSPTask->state |= OS_SC_YIELD;
                 IO_WRITE(SP_STATUS_REG, SPSTATUS_SET_SIGNAL0);
             }
@@ -165,7 +169,7 @@ static void __scHandleRSP(OSSched *sc) {
         if ((t->flags & OS_SC_RCP_MASK) == OS_SC_XBUS) {
             sc->nextGfxTask2 = sc->nextGfxTask;
             sc->nextGfxTask = t;
-            puppyprint_update_rsp(RSP_GFX_RESUME);
+            //puppyprint_update_rsp(RSP_GFX_RESUME);
         }
         //sc->curRDPTask = NULL;
     } else {
@@ -189,6 +193,7 @@ static void __scHandleRDP(OSSched *sc) {
 
     t->state &= ~OS_SC_NEEDS_RDP;
     update_rdp_profiling();
+    sWroteRDP = 1;
 
     if ((t->state & OS_SC_RCP_MASK) == 0) {
 #ifdef PUPPYPRINT_DEBUG

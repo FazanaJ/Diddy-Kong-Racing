@@ -152,7 +152,7 @@ static MemoryPoolSlot *mempool_init(MemoryPoolSlot *slots, s32 poolSize, s32 num
  * dumping the function stack contents onto a controller pak for debugging.
  */
 void *mempool_alloc_safe(s32 size, u32 colourTag) {
-    return mempool_slot_find(0, size, colourTag);
+    return mempool_slot_find(POOL_MAIN, size, colourTag);
 }
 
 /**

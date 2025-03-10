@@ -296,6 +296,8 @@ void thread1_main(UNUSED void *unused) {
     find_expansion_pak();
 #ifdef PUPPYPRINT_DEBUG
     bzero(&gPuppyPrint, sizeof(gPuppyPrint));
+    gPuppyPrint.enabled = 1;
+    gPuppyPrint.page = PAGE_GRAPHS;
     gPuppyPrint.logLevel = LOG_EXTRA;
 #endif
     osCreateThread(&gThread3, 3, &thread3_main, 0, &gThread3Stack[THREAD3_STACK / sizeof(u64)], 10);
@@ -374,7 +376,7 @@ void calculate_and_update_fps(void) {
         curFrameTimeIndex = 0;
     }
 
-    gFrameDeltas[perfIteration] = (OS_CYCLES_TO_USEC(newTime - oldTime) * divisor) / 10;
+    gFrameDeltas[perfIteration] = ((newTime - oldTime) * divisor) / 10;
     gFPS = (FRAMETIME_COUNT * 1000000.0f) / (OS_CYCLES_TO_USEC(newTime - oldTime) * divisor);
 }
 
@@ -609,8 +611,8 @@ char *sGraphStrings[] = {
 void puppyprint_render_graphs(void) {
     s32 x;
     const s32 num = MIN(NUM_PERF_ITERATIONS, 30);
-    puppyprint_render_minimal();
     Gfx *gfx = gCurrDisplayList;
+    u32 first = osGetCount();
 
     set_text_font(ASSET_FONTS_SMALLFONT);
     set_text_colour(255, 255, 255, 255, 255);
@@ -619,44 +621,61 @@ void puppyprint_render_graphs(void) {
     x = 16;
     for (int j = 0; j < 4; j++) {
         s32 origin = x + (((num * 2)) / 2);
+        u32 *ref;
         gDPSetRenderMode(gfx++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
         gDPSetCombineMode(gfx++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
+        // bg
         gDPSetPrimColor(gfx++, 0, 0, 0, 0, 0, 127);
         gDPFillRectangle(gfx++, x - 1, gScreenHeight - 16 - 42, x + (num * 2) + 1, gScreenHeight - 15);
+        // 60 line
+        gDPSetPrimColor(gfx++, 0, 0, 64, 255, 255, 96);
+        gDPFillRectangle(gfx++, x, gScreenHeight - 16 - 8, x + (num * 2), gScreenHeight - 16 - 7);
+        // 30 line
+        gDPSetPrimColor(gfx++, 0, 0, 64, 255, 64, 96);
+        gDPFillRectangle(gfx++, x, gScreenHeight - 16 - 16, x + (num * 2), gScreenHeight - 16 - 15);
         gDPPipeSync(gfx++);
         gDPSetRenderMode(gfx++, G_RM_OPA_SURF, G_RM_OPA_SURF2);
+        switch (j) {
+        case 0:
+            ref = gFrameDeltas;
+            break;
+        case 1:
+            ref = gPuppyPrint.cpuTime;
+            break;
+        case 2:
+            ref = gPuppyPrint.timers[PP_RSP_GFX];
+            break;
+        case 3:
+            ref = gPuppyPrint.timers[PP_RDP_CLK];
+            break;
+        }
+        u32 prevColour = 0;
         for (int i = 0; i < num; i++) {
             s32 iter = perfIteration + i;
             if (iter >= num) {
                 iter -= num;
             }
             u32 count;
-            switch (j) {
-            case 0:
-                count = MIN(gFrameDeltas[iter], 66666);
-                break;
-            case 1:
-                count = MIN(OS_CYCLES_TO_USEC(gPuppyPrint.cpuTime[iter]), 66666);
-                break;
-            case 2:
-                count = MIN(OS_CYCLES_TO_USEC(gPuppyPrint.timers[PP_RSP_GFX][iter] + gPuppyPrint.timers[PP_RSP_AUD][iter]), 66666);
-                break;
-            case 3:
-                count = MIN(OS_CYCLES_TO_USEC(gPuppyPrint.timers[PP_RDP_CLK][iter]), 66666);
-                break;
+            count = *(ref + (iter));
+            if (j == 2) {
+                count += gPuppyPrint.timers[PP_RSP_AUD][iter];
             }
+            count = MIN(OS_CYCLES_TO_USEC(count), 66666);
+            s32 yT = count / 2048;
             u32 colour;
-            s32 yT = (f32) count / (1041.65625f * 2.0f);
-            if (count >= 50000) {
+            if (count >= 52000) {
                 colour = 0xFF4040FF;
-            } else if (count >= 33333) {
+            } else if (count >= 35000) {
                 colour = 0xFFFF40FF;
-            } else if (count >= 17777) {
+            } else if (count >= 18000) {
                 colour = 0x40FF40FF;
             } else {
                 colour = 0x40FFFFFF;
             }
-            gDPSetPrimColorRGBA(gfx++, colour);
+            if (colour != prevColour) {
+                gDPSetPrimColorRGBA(gfx++, colour);
+                prevColour = colour;
+            }
             gDPFillRectangle(gfx++, x, gScreenHeight - 16 - (yT), x + 2, gScreenHeight - 16);
             x += 2;
         }
@@ -664,6 +683,7 @@ void puppyprint_render_graphs(void) {
         gDPPipeSync(gfx++);
         draw_text(&gfx, origin, gScreenHeight - 56, sGraphStrings[j], ALIGN_TOP_CENTER);
     }
+    //render_printf("%d", (OS_CYCLES_TO_USEC(osGetCount() - first)));
     gCurrDisplayList = gfx; 
 }
 
@@ -1162,14 +1182,14 @@ INLINE void calculate_print_order(void) {
     }
 
     // One by one move boundary of unsorted subarray
-    for (i = 0; i < PP_RSP_AUD; i++) {
+    for (i = 0; i < PP_RSP_GFX; i++) {
 
         if (gPuppyPrint.timers[sPrintOrder[i]][PERF_TOTAL] == 0) {
             continue;
         }
         // Find the minimum element in unsorted array
         min_idx = i;
-        for (j = i + 1; j < PP_RSP_AUD; j++) {
+        for (j = i + 1; j < PP_RSP_GFX; j++) {
             if (gPuppyPrint.timers[sPrintOrder[j]][PERF_TOTAL] > gPuppyPrint.timers[sPrintOrder[min_idx]][PERF_TOTAL]) {
                 min_idx = j;
             }
@@ -1446,19 +1466,24 @@ void puppyprint_update_rsp(u8 flags) {
     switch (flags) {
         case RSP_GFX_START:
             gPuppyPrint.rspGfx[0][gPuppyPrint.rspGfxIter] = time;
+            //debug_printf("gfx start\n");
             break;
         case RSP_AUDIO_START:
             gPuppyPrint.rspAudioBufTime = time;
+            //debug_printf("aud start\n");
             break;
         case RSP_GFX_PAUSED:
             gPuppyPrint.rspGfx[1][gPuppyPrint.rspGfxIter++] = time;
             gPuppyPrint.rspYield++;
+            //debug_printf("gfx pause\n");
             break;
         case RSP_GFX_RESUME:
             gPuppyPrint.rspGfx[0][gPuppyPrint.rspGfxIter] = time;
+            //debug_printf("gfx resume\n");
             break;
         case RSP_GFX_FINISHED:
             gPuppyPrint.rspGfx[1][gPuppyPrint.rspGfxIter++] = time;
+            //debug_printf("gfx finish\n");
             break;
         case RSP_AUDIO_FINISHED:
             gPuppyPrint.timers[PP_RSP_AUD][PERF_AGGREGATE] -= gPuppyPrint.timers[PP_RSP_AUD][perfIteration];
@@ -1467,6 +1492,7 @@ void puppyprint_update_rsp(u8 flags) {
                 gPuppyPrint.timers[PP_RSP_AUD][perfIteration] = OS_USEC_TO_CYCLES(99999);
             }
             gPuppyPrint.timers[PP_RSP_AUD][PERF_AGGREGATE] += gPuppyPrint.timers[PP_RSP_AUD][perfIteration];
+            //debug_printf("aud finish\n");
             break;
     }
 }
