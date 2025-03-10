@@ -54,6 +54,7 @@ extern u16 gPlatform;
 
 enum DebugPages {
     PAGE_MINIMAL,
+    PAGE_GRAPHS,
     PAGE_OVERVIEW,
     PAGE_BREAKDOWN,
     PAGE_RCP,
@@ -77,6 +78,7 @@ enum LogLevels {
 
 #define PP_PAGES \
     "Minimal", \
+    "Graphs", \
     "Overview", \
     "Breakdown", \
     "RCP", \

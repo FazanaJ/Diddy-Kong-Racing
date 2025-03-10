@@ -353,6 +353,7 @@ char *sPuppyprintMemColours[] = { PP_MEM };
 #define FRAMETIME_COUNT 10
 
 u32 frameTimes[FRAMETIME_COUNT];
+u32 gFrameDeltas[NUM_PERF_ITERATIONS];
 u8 curFrameTimeIndex = 0;
 
 // Call once per frame
@@ -372,6 +373,8 @@ void calculate_and_update_fps(void) {
     if (curFrameTimeIndex >= FRAMETIME_COUNT) {
         curFrameTimeIndex = 0;
     }
+
+    gFrameDeltas[perfIteration] = (OS_CYCLES_TO_USEC(newTime - oldTime) * divisor) / 10;
     gFPS = (FRAMETIME_COUNT * 1000000.0f) / (OS_CYCLES_TO_USEC(newTime - oldTime) * divisor);
 }
 
@@ -597,6 +600,71 @@ void puppyprint_render_minimal(void) {
     draw_text(&gCurrDisplayList, TEXT_OFFSET, 40, textBytes, ALIGN_TOP_LEFT);
     puppyprintf(textBytes, "(%d%%)", gPuppyPrint.rdpTime / 333);
     draw_text(&gCurrDisplayList, 112 - 4, 40, textBytes, ALIGN_TOP_RIGHT);
+}
+
+char *sGraphStrings[] = {
+    "F.Time", "CPU", "RSP", "RDP"
+};
+
+void puppyprint_render_graphs(void) {
+    s32 x;
+    const s32 num = MIN(NUM_PERF_ITERATIONS, 30);
+    puppyprint_render_minimal();
+    Gfx *gfx = gCurrDisplayList;
+
+    set_text_font(ASSET_FONTS_SMALLFONT);
+    set_text_colour(255, 255, 255, 255, 255);
+    set_text_background_colour(0, 0, 0, 0);
+    set_kerning(FALSE);
+    x = 16;
+    for (int j = 0; j < 4; j++) {
+        s32 origin = x + (((num * 2)) / 2);
+        gDPSetRenderMode(gfx++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
+        gDPSetCombineMode(gfx++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
+        gDPSetPrimColor(gfx++, 0, 0, 0, 0, 0, 127);
+        gDPFillRectangle(gfx++, x - 1, gScreenHeight - 16 - 42, x + (num * 2) + 1, gScreenHeight - 15);
+        gDPPipeSync(gfx++);
+        gDPSetRenderMode(gfx++, G_RM_OPA_SURF, G_RM_OPA_SURF2);
+        for (int i = 0; i < num; i++) {
+            s32 iter = perfIteration + i;
+            if (iter >= num) {
+                iter -= num;
+            }
+            u32 count;
+            switch (j) {
+            case 0:
+                count = MIN(gFrameDeltas[iter], 66666);
+                break;
+            case 1:
+                count = MIN(OS_CYCLES_TO_USEC(gPuppyPrint.cpuTime[iter]), 66666);
+                break;
+            case 2:
+                count = MIN(OS_CYCLES_TO_USEC(gPuppyPrint.timers[PP_RSP_GFX][iter] + gPuppyPrint.timers[PP_RSP_AUD][iter]), 66666);
+                break;
+            case 3:
+                count = MIN(OS_CYCLES_TO_USEC(gPuppyPrint.timers[PP_RDP_CLK][iter]), 66666);
+                break;
+            }
+            u32 colour;
+            s32 yT = (f32) count / (1041.65625f * 2.0f);
+            if (count >= 50000) {
+                colour = 0xFF4040FF;
+            } else if (count >= 33333) {
+                colour = 0xFFFF40FF;
+            } else if (count >= 17777) {
+                colour = 0x40FF40FF;
+            } else {
+                colour = 0x40FFFFFF;
+            }
+            gDPSetPrimColorRGBA(gfx++, colour);
+            gDPFillRectangle(gfx++, x, gScreenHeight - 16 - (yT), x + 2, gScreenHeight - 16);
+            x += 2;
+        }
+        x += 16;
+        gDPPipeSync(gfx++);
+        draw_text(&gfx, origin, gScreenHeight - 56, sGraphStrings[j], ALIGN_TOP_CENTER);
+    }
+    gCurrDisplayList = gfx; 
 }
 
 INLINE void puppyprint_render_overview(void) {
@@ -1007,6 +1075,9 @@ void render_profiler(void) {
     switch (gPuppyPrint.page) {
         case PAGE_MINIMAL:
             puppyprint_render_minimal();
+            break;
+        case PAGE_GRAPHS:
+            puppyprint_render_graphs();
             break;
         case PAGE_OVERVIEW:
             puppyprint_render_overview();
