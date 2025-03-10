@@ -619,20 +619,15 @@ void puppyprint_render_graphs(void) {
     set_text_background_colour(0, 0, 0, 0);
     set_kerning(FALSE);
     x = 16;
+    gDPSetRenderMode(gfx++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
     for (int j = 0; j < 4; j++) {
         s32 origin = x + (((num * 2)) / 2);
+        s32 origin2 = x;
         u32 *ref;
-        gDPSetRenderMode(gfx++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
         gDPSetCombineMode(gfx++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
         // bg
         gDPSetPrimColor(gfx++, 0, 0, 0, 0, 0, 127);
-        gDPFillRectangle(gfx++, x - 1, gScreenHeight - 16 - 42, x + (num * 2) + 1, gScreenHeight - 15);
-        // 60 line
-        gDPSetPrimColor(gfx++, 0, 0, 64, 255, 255, 96);
-        gDPFillRectangle(gfx++, x, gScreenHeight - 16 - 8, x + (num * 2), gScreenHeight - 16 - 7);
-        // 30 line
-        gDPSetPrimColor(gfx++, 0, 0, 64, 255, 64, 96);
-        gDPFillRectangle(gfx++, x, gScreenHeight - 16 - 16, x + (num * 2), gScreenHeight - 16 - 15);
+        gDPFillRectangle(gfx++, x - 1, gScreenHeight - 16 - 54, x + (num * 2) + 1, gScreenHeight - 15);
         gDPPipeSync(gfx++);
         gDPSetRenderMode(gfx++, G_RM_OPA_SURF, G_RM_OPA_SURF2);
         switch (j) {
@@ -660,8 +655,12 @@ void puppyprint_render_graphs(void) {
             if (j == 2) {
                 count += gPuppyPrint.timers[PP_RSP_AUD][iter];
             }
-            count = MIN(OS_CYCLES_TO_USEC(count), 66666);
-            s32 yT = count / 2048;
+            if (j != 3) {
+                count = MIN(OS_CYCLES_TO_USEC(count), 66666);
+            } else {
+                count = MIN((count * 10) / 625, 66666);
+            }
+            s32 yT = count / 1536;
             u32 colour;
             if (count >= 52000) {
                 colour = 0xFF4040FF;
@@ -679,9 +678,19 @@ void puppyprint_render_graphs(void) {
             gDPFillRectangle(gfx++, x, gScreenHeight - 16 - (yT), x + 2, gScreenHeight - 16);
             x += 2;
         }
+        gDPSetRenderMode(gfx++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
+        // 60 line
+        gDPSetPrimColor(gfx++, 0, 0, 64, 255, 255, 255);
+        gDPFillRectangle(gfx++, origin2, gScreenHeight - 16 - 11, origin2 + (num * 2), gScreenHeight - 16 - 10);
+        // 30 line
+        gDPSetPrimColor(gfx++, 0, 0, 64, 255, 64, 255);
+        gDPFillRectangle(gfx++, origin2, gScreenHeight - 16 - 22, origin2 + (num * 2), gScreenHeight - 16 - 21);
+        // bruh line
+        gDPSetPrimColor(gfx++, 0, 0, 192, 192, 192, 112);
+        gDPFillRectangle(gfx++, origin2, gScreenHeight - 16 - 44, origin2 + (num * 2), gScreenHeight - 16 - 43);
         x += 16;
         gDPPipeSync(gfx++);
-        draw_text(&gfx, origin, gScreenHeight - 56, sGraphStrings[j], ALIGN_TOP_CENTER);
+        draw_text(&gfx, origin, gScreenHeight - 69, sGraphStrings[j], ALIGN_TOP_CENTER);
     }
     //render_printf("%d", (OS_CYCLES_TO_USEC(osGetCount() - first)));
     gCurrDisplayList = gfx; 
