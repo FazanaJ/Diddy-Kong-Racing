@@ -376,7 +376,7 @@ void calculate_and_update_fps(void) {
         curFrameTimeIndex = 0;
     }
 
-    gFrameDeltas[perfIteration] = ((newTime - oldTime) * divisor) / 10;
+    gFrameDeltas[perfIteration] = (newTime - oldTime) / 10;
     gFPS = (FRAMETIME_COUNT * 1000000.0f) / (OS_CYCLES_TO_USEC(newTime - oldTime) * divisor);
 }
 
@@ -613,6 +613,13 @@ void puppyprint_render_graphs(void) {
     const s32 num = MIN(NUM_PERF_ITERATIONS, 30);
     Gfx *gfx = gCurrDisplayList;
     u32 first = osGetCount();
+    f32 divisor;
+
+    if (__osBbIsBb) {
+        divisor = IQUE_DIVISOR;
+    } else {
+        divisor = 1.0f;
+    }
 
     set_text_font(ASSET_FONTS_SMALLFONT);
     set_text_colour(255, 255, 255, 255, 255);
@@ -660,7 +667,7 @@ void puppyprint_render_graphs(void) {
             } else {
                 count = MIN((count * 10) / 625, 66666);
             }
-            s32 yT = count / 1536;
+            s32 yT = (count / 1536) * divisor;
             u32 colour;
             if (count >= 52000) {
                 colour = 0xFF4040FF;
