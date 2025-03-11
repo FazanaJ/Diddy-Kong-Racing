@@ -153,6 +153,7 @@ enum TrackTimers {
     PP_RDP_BUF,
     PP_RDP_TMM,
     PP_RDP_CLK,
+    PP_RDP_OFS, // Same as CLK, but minus TMM.
 
     PP_TIMES_TOTAL
 };

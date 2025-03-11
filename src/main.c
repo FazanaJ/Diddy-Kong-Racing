@@ -631,7 +631,7 @@ const ProfilerGraph sProfilerGraph[] = {
     {"Frametime", 1, 0, {{gFrameDeltas, 0xFF4040FF}}}, 
     {"CPU", 3, 0, {{gPuppyPrint.schedTime, 0x40FFFFFF}, {gPuppyPrint.gameTime, 0xFF4040FF}, {gPuppyPrint.audTime, 0xFFFF40FF}, }}, 
     {"RSP", 2, 0, {{gPuppyPrint.timers[PP_RSP_GFX], 0xFF4040FF}, {gPuppyPrint.timers[PP_RSP_AUD], 0xFFFF40FF}, }}, 
-    {"RDP", 1, 1, {{gPuppyPrint.timers[PP_RDP_CLK], 0xFF4040FF}, }}, 
+    {"RDP", 2, 1, {{gPuppyPrint.timers[PP_RDP_OFS], 0xFF4040FF}, {gPuppyPrint.timers[PP_RDP_TMM], 0x40FFFFFF}, }}, 
 };
 
 void puppyprint_render_graphs(void) {
@@ -1304,6 +1304,7 @@ void update_rdp_profiling(void) {
     rdp_profiler_update(gPuppyPrint.timers[PP_RDP_TMM], IO_READ(DPC_TMEM_REG));
     rdp_profiler_update(gPuppyPrint.timers[PP_RDP_BUS], IO_READ(DPC_PIPEBUSY_REG));
     rdp_profiler_update(gPuppyPrint.timers[PP_RDP_CLK], IO_READ(DPC_CLOCK_REG));
+    gPuppyPrint.timers[PP_RDP_OFS][perfIteration] = gPuppyPrint.timers[PP_RDP_CLK][perfIteration] - gPuppyPrint.timers[PP_RDP_TMM][perfIteration];
 }
 
 s32 find_thread_interrupt_offset(u32 lowTime, u32 highTime) {
