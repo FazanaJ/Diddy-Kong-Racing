@@ -33,25 +33,6 @@ Gfx dRspInit[] = {
                           G_TEXTURE_GEN_LINEAR | G_LOD),
     gsSPTexture(0, 0, 0, 0, 0),
     gsSPSetGeometryMode(G_SHADING_SMOOTH | G_SHADE),
-    gsSPClipRatio(FRUSTRATIO_2),
-    gsSPEndDisplayList(),
-};
-
-// Default RDP settings
-Gfx dRdpInit[] = {
-    gsDPSetCycleType(G_CYC_1CYCLE),
-    gsDPPipelineMode(G_PM_NPRIMITIVE),
-    gsDPSetTextureLOD(G_TL_TILE),
-    gsDPSetTextureLUT(G_TT_NONE),
-    gsDPSetTextureDetail(G_TD_CLAMP),
-    gsDPSetTexturePersp(G_TP_PERSP),
-    gsDPSetTextureFilter(G_TF_BILERP),
-    gsDPSetTextureConvert(G_TC_FILT),
-    gsDPSetCombineMode(G_CC_DECALRGB, G_CC_DECALRGB),
-    gsDPSetCombineKey(G_CK_NONE),
-    gsDPSetAlphaCompare(G_AC_NONE),
-    gsDPSetRenderMode(G_RM_OPA_SURF, G_RM_OPA_SURF2),
-    gsDPSetColorDither(G_CD_MAGICSQ),
     gsSPEndDisplayList(),
 };
 
@@ -379,7 +360,6 @@ void bgdraw_render(Gfx **dList, Matrix *mtx, s32 drawBG) {
 void rdp_init(Gfx **dList) {
     gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, gBitDepth, gScreenWidth, SEGMENT_FRAMEBUFFER << 24);
     gDPSetDepthImage((*dList)++, SEGMENT_ZBUFFER << 24);
-    gSPDisplayList((*dList)++, dRdpInit);
 }
 
 /**
@@ -388,6 +368,11 @@ void rdp_init(Gfx **dList) {
  */
 void rsp_init(Gfx **dList) {
     gSPDisplayList((*dList)++, dRspInit);
+    if (gConfig.dedither) {
+        gSPClipRatio((*dList)++, FRUSTRATIO_1);
+    } else {
+        gSPClipRatio((*dList)++, FRUSTRATIO_2);
+    }
 }
 
 /**

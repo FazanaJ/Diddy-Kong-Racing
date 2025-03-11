@@ -294,6 +294,7 @@ struct PuppyPrint {
     u8 enabled; // Show the profiler
     u8 menuOpen; // Whether the page menu's open
     u8 page; // Current viewed page.
+    u8 pageToggle; // Current pages specific var. Reset when page is changed.
     u8 loading;
     u8 showCvg;
     u8 showCol;

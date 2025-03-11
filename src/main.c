@@ -445,6 +445,7 @@ INLINE void puppyprint_input(void) {
             gPuppyPrint.menuOpen ^= 1;
             if (gPuppyPrint.page != gPuppyPrint.menuOption) {
                 gPuppyPrint.pageScroll = 0;
+                gPuppyPrint.pageToggle = 0;
             }
             gPuppyPrint.page = gPuppyPrint.menuOption;
         } else {
@@ -472,6 +473,9 @@ INLINE void puppyprint_input(void) {
             gPuppyPrint.menuScroll--;
         }
     } else {
+        if (inputPressed & R_JPAD) { 
+            gPuppyPrint.pageToggle ^= 1;
+        }
         if (gPuppyPrint.page == PAGE_LOG) {
             s32 maxPrints = (gScreenHeight - 36);
             if (inputHeld & D_JPAD) {
@@ -604,8 +608,30 @@ void puppyprint_render_minimal(void) {
     draw_text(&gCurrDisplayList, 112 - 4, 40, textBytes, ALIGN_TOP_RIGHT);
 }
 
-char *sGraphStrings[] = {
-    "F.Time", "CPU", "RSP", "RDP"
+u32 barColours[] = {
+    0xFF0000FF,
+    0x0000FFFF,
+    0x00FF00FF,
+    0x00FFFFFF
+};
+
+typedef struct ProfilerGraphEntry {
+    u32 *ptr;
+    u32 colour;
+} ProfilerGraphEntry;
+
+typedef struct ProfilerGraph {
+    char *name;
+    u8 indexCount;
+    u8 countType;
+    ProfilerGraphEntry entry[4];
+} ProfilerGraph;
+
+const ProfilerGraph sProfilerGraph[] = {
+    {"Frametime", 1, 0, {{gFrameDeltas, 0xFF4040FF}}}, 
+    {"CPU", 3, 0, {{gPuppyPrint.schedTime, 0x40FFFFFF}, {gPuppyPrint.gameTime, 0xFF4040FF}, {gPuppyPrint.audTime, 0xFFFF40FF}, }}, 
+    {"RSP", 2, 0, {{gPuppyPrint.timers[PP_RSP_GFX], 0xFF4040FF}, {gPuppyPrint.timers[PP_RSP_AUD], 0xFFFF40FF}, }}, 
+    {"RDP", 1, 1, {{gPuppyPrint.timers[PP_RDP_CLK], 0xFF4040FF}, }}, 
 };
 
 void puppyprint_render_graphs(void) {
@@ -627,77 +653,79 @@ void puppyprint_render_graphs(void) {
     set_kerning(FALSE);
     x = 16;
     gDPSetRenderMode(gfx++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
-    for (int j = 0; j < 4; j++) {
+    for (int j = 0; j < ARRAY_COUNT(sProfilerGraph); j++) {
         s32 origin = x + (((num * 2)) / 2);
         s32 origin2 = x;
         u32 *ref;
+        s32 bm;
+        if (gPuppyPrint.pageToggle == 0 || sProfilerGraph[j].indexCount <= 1) {
+            bm = 0;
+        } else {
+            bm = 1;
+        }
         gDPSetCombineMode(gfx++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
         // bg
         gDPSetPrimColor(gfx++, 0, 0, 0, 0, 0, 127);
         gDPFillRectangle(gfx++, x - 1, gScreenHeight - 16 - 54, x + (num * 2) + 1, gScreenHeight - 15);
         gDPPipeSync(gfx++);
         gDPSetRenderMode(gfx++, G_RM_OPA_SURF, G_RM_OPA_SURF2);
-        switch (j) {
-        case 0:
-            ref = gFrameDeltas;
-            break;
-        case 1:
-            ref = gPuppyPrint.cpuTime;
-            break;
-        case 2:
-            ref = gPuppyPrint.timers[PP_RSP_GFX];
-            break;
-        case 3:
-            ref = gPuppyPrint.timers[PP_RDP_CLK];
-            break;
-        }
         u32 prevColour = 0;
         for (int i = 0; i < num; i++) {
             s32 iter = perfIteration + i;
+            u32 count;
+            s32 yT = 0;
+            s32 y = 0;
+            u32 colour;
             if (iter >= num) {
                 iter -= num;
             }
-            u32 count;
-            count = *(ref + (iter));
-            if (j == 2) {
-                count += gPuppyPrint.timers[PP_RSP_AUD][iter];
+
+            for (int k = 0; k < sProfilerGraph[j].indexCount; k++) {
+                u32 *ref = sProfilerGraph[j].entry[k].ptr;
+                count = *(ref + (iter));
+                if (sProfilerGraph[j].countType == 0) {
+                    count = MIN(OS_CYCLES_TO_USEC(count), 66666);
+                } else {
+                    count = MIN((count * 10) / 625, 66666);
+                }
+                yT += (count / 1536) * divisor;
+                if (bm) {
+                    gDPSetPrimColorRGBA(gfx++, sProfilerGraph[j].entry[k].colour);
+                    gDPFillRectangle(gfx++, x, gScreenHeight - 16 - (yT), x + 2, gScreenHeight - 16 - y);
+                    y = yT;
+                }
             }
-            if (j != 3) {
-                count = MIN(OS_CYCLES_TO_USEC(count), 66666);
-            } else {
-                count = MIN((count * 10) / 625, 66666);
+            if (bm == 0) {
+                if (yT >= 34) {
+                    colour = 0xFF4040FF;
+                } else if (yT >= 23) {
+                    colour = 0xFFFF40FF;
+                } else if (yT >= 12) {
+                    colour = 0x40FF40FF;
+                } else {
+                    colour = 0x40FFFFFF;
+                }
+                if (colour != prevColour) {
+                    gDPSetPrimColorRGBA(gfx++, colour);
+                    prevColour = colour;
+                }
+                gDPFillRectangle(gfx++, x, gScreenHeight - 16 - (yT), x + 2, gScreenHeight - 16);
             }
-            s32 yT = (count / 1536) * divisor;
-            u32 colour;
-            if (count >= 52000) {
-                colour = 0xFF4040FF;
-            } else if (count >= 35000) {
-                colour = 0xFFFF40FF;
-            } else if (count >= 18000) {
-                colour = 0x40FF40FF;
-            } else {
-                colour = 0x40FFFFFF;
-            }
-            if (colour != prevColour) {
-                gDPSetPrimColorRGBA(gfx++, colour);
-                prevColour = colour;
-            }
-            gDPFillRectangle(gfx++, x, gScreenHeight - 16 - (yT), x + 2, gScreenHeight - 16);
             x += 2;
         }
         gDPSetRenderMode(gfx++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
         // 60 line
-        gDPSetPrimColor(gfx++, 0, 0, 64, 255, 255, 255);
+        gDPSetPrimColor(gfx++, 0, 0, 64, 255, 255, 160);
         gDPFillRectangle(gfx++, origin2, gScreenHeight - 16 - 11, origin2 + (num * 2), gScreenHeight - 16 - 10);
         // 30 line
-        gDPSetPrimColor(gfx++, 0, 0, 64, 255, 64, 255);
+        gDPSetPrimColor(gfx++, 0, 0, 64, 255, 64, 160);
         gDPFillRectangle(gfx++, origin2, gScreenHeight - 16 - 22, origin2 + (num * 2), gScreenHeight - 16 - 21);
         // bruh line
         gDPSetPrimColor(gfx++, 0, 0, 192, 192, 192, 112);
         gDPFillRectangle(gfx++, origin2, gScreenHeight - 16 - 44, origin2 + (num * 2), gScreenHeight - 16 - 43);
         x += 16;
         gDPPipeSync(gfx++);
-        draw_text(&gfx, origin, gScreenHeight - 69, sGraphStrings[j], ALIGN_TOP_CENTER);
+        draw_text(&gfx, origin, gScreenHeight - 69, sProfilerGraph[j].name, ALIGN_TOP_CENTER);
     }
     //render_printf("%d", (OS_CYCLES_TO_USEC(osGetCount() - first)));
     gCurrDisplayList = gfx; 

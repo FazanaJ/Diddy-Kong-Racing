@@ -199,7 +199,7 @@ u32 check_fadeout_transition(void) {
             return (gTransitionFadeIn != 0);
         }
     }
-    //!@bug: This doesn't seem to guarantee a return.
+    return FALSE;
 }
 
 /**
