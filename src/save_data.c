@@ -1238,6 +1238,7 @@ s32 save_config_write(void) {
     c.regionMode = gConfig.regionMode;
     c.sameStats = gConfig.sameStats;
     c.screenMode = gConfig.screenMode;
+    c.screenQuality = gConfig.screenQuality;
     c.screenPosX = gConfig.screenPosX;
     c.screenPosY = gConfig.screenPosY;
     c.magic = MAGIC_NUMBER;
@@ -1268,6 +1269,7 @@ s32 save_config_read(void) {
         gConfig.regionMode = c.regionMode;
         gConfig.sameStats = c.sameStats;
         gConfig.screenMode = c.screenMode;
+        gConfig.screenQuality = c.screenQuality;
         gConfig.screenPosX = c.screenPosX;
         gConfig.screenPosY = c.screenPosY;
         refresh_screen_res();

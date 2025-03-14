@@ -30,8 +30,9 @@ typedef struct ConfigBits {
     unsigned noCutbacks : 1;
     unsigned perfMode : 1;
     unsigned sameStats : 1;
+    unsigned screenQuality : 1;
 
-    unsigned padding : 4;
+    unsigned padding : 3;
 } ConfigBits;
 
 struct ConfigOptions {
@@ -45,6 +46,7 @@ struct ConfigOptions {
     s8 noCutbacks;
     s8 perfMode;
     s8 sameStats;
+    s8 screenQuality;
 };
 
 extern struct ConfigOptions gConfig;

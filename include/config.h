@@ -65,6 +65,8 @@
 #define SCREEN_WIDTH_WIDE       424         // Default width is 424. Recommended to be 408 for 4MB users.
 #define SCREEN_HEIGHT           240         // Default height is 240. Recommended to be 224 for 4MB users.
 #define SCREEN_HEIGHT_PAL       288
+#define SCREEN_WIDTH_HIGH       560
+#define SCREEN_HEIGHT_HIGH      420
 
 
 /* --------------------------Usb-------------------------- */

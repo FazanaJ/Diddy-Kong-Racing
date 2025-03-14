@@ -1852,11 +1852,12 @@ void load_menu_text(s32 language) {
     gRecordTimesMenuElements[2].t.asciiText = menuText[ASSET_MENU_TEXT_BESTTIME];    // "BEST TIME"
     gRecordTimesMenuElements[5].t.asciiText = menuText[ASSET_MENU_TEXT_BESTLAP];     // "BEST LAP"
     gOptionMenuStrings[0] = menuText[ASSET_MENU_TEXT_LANGUAGE];                      // "ENGLISH"
-    if (sEepromSettings & 0x2000000) {
+    /*if (sEepromSettings & 0x2000000) {
         gOptionMenuStrings[1] = menuText[ASSET_MENU_TEXT_SUBTITLESON]; // "SUBTITLES ON"
     } else {
         gOptionMenuStrings[1] = menuText[ASSET_MENU_TEXT_SUBTITLESOFF]; // "SUBTITLES OFF"
-    }
+    }*/
+    gOptionMenuStrings[1] = "VIDEO OPTIONS";
     gOptionMenuStrings[2] = menuText[ASSET_MENU_TEXT_AUDIOOPTIONS];                          // "AUDIO OPTIONS"
     gOptionMenuStrings[3] = menuText[ASSET_MENU_TEXT_SAVEOPTIONS];                           // "SAVE OPTIONS"
     gOptionMenuStrings[4] = menuText[ASSET_MENU_TEXT_MAGICCODES];                            // "MAGIC CODES"
@@ -2354,6 +2355,9 @@ void menu_init(u32 menuId) {
         case MENU_AUDIO_OPTIONS:
             menu_audio_options_init();
             break;
+        case MENU_VIDEO_OPTIONS:
+            menu_video_options_init();
+            break;
         case MENU_SAVE_OPTIONS:
             menu_save_options_init();
             break;
@@ -2444,6 +2448,9 @@ s32 menu_loop(Gfx **currDisplayList, MatrixS **currHudMat, Vertex **currHudVerts
             break;
         case MENU_AUDIO_OPTIONS:
             ret = menu_audio_options_loop(updateRate);
+            break;
+        case MENU_VIDEO_OPTIONS:
+            ret = menu_video_options_loop(updateRate);
             break;
         case MENU_SAVE_OPTIONS:
             ret = menu_save_options_loop(updateRate);
@@ -3502,9 +3509,14 @@ s32 menu_options_loop(s32 updateRate) {
         gMenuDelay = -1;
         transition_begin(&sMenuTransitionFadeIn);
         sound_play(SOUND_MENU_BACK3, NULL);
-    } else if ((buttonsPressed & (A_BUTTON | START_BUTTON)) && gMenuCurIndex >= 2) {
+    } else if ((buttonsPressed & (A_BUTTON | START_BUTTON)) && gMenuCurIndex >= 1) {
         // Go to a sub-menu
-        gMenuDelay = 31;
+        if (gMenuCurIndex == 1) {
+            transition_begin(&sMenuTransitionFadeIn);
+            gMenuDelay = 12;
+        } else {
+            gMenuDelay = 31;
+        }
         sound_play(SOUND_SELECT2, NULL);
 
     } else if (gMenuCurIndex == 0 && analogueX != 0) {
@@ -3517,19 +3529,6 @@ s32 menu_options_loop(s32 updateRate) {
         }
         set_language(lang);
         sound_play(SOUND_MENU_PICK2, NULL);
-    } else if (gMenuCurIndex == 1 && analogueX != 0) {
-        if (sEepromSettings & 0x2000000) {
-            // 0x2000000 SUBTITLES ENABLED?
-            sound_play(SOUND_MENU_PICK2, NULL);
-            unset_eeprom_settings_value(0x2000000);
-            set_subtitles(0);
-            gOptionMenuStrings[1] = gMenuText[ASSET_MENU_TEXT_SUBTITLESOFF];
-        } else {
-            sound_play(SOUND_MENU_PICK2, NULL);
-            set_eeprom_settings_value(0x2000000);
-            set_subtitles(1);
-            gOptionMenuStrings[1] = gMenuText[ASSET_MENU_TEXT_SUBTITLESON];
-        }
     } else {
         s32 prevOption = gMenuCurIndex;
         if (analogueY < 0) {
@@ -3550,6 +3549,13 @@ s32 menu_options_loop(s32 updateRate) {
     }
     if (gMenuDelay > 30) {
         // Change screen to a sub-menu
+        if (gMenuCurIndex == 1) {
+            optionscreen_free();
+            load_level_for_menu(ASSET_LEVEL_FROSTYVILLAGE, 0, 100);
+            menu_init(MENU_VIDEO_OPTIONS);
+            gMenuOption = 0;
+            return MENU_RESULT_CONTINUE;
+        }
         if (gMenuCurIndex == 2) {
             optionscreen_free();
             menu_init(MENU_AUDIO_OPTIONS);
@@ -3580,6 +3586,18 @@ s32 menu_options_loop(s32 updateRate) {
  */
 void optionscreen_free(void) {
     unload_font(ASSET_FONTS_BIGFONT);
+}
+
+void menu_video_options_init(void) {
+    gOptionsMenuItemIndex = 0;
+    gOptionBlinkTimer = 0;
+    gMenuDelay = 0;
+    gSoundOptionMask = NULL;
+    gOpacityDecayTimer = -1;
+    transition_begin(&sMenuTransitionFadeOut);
+    music_voicelimit_set(32);
+    gMenuStage = 5;
+    load_font(ASSET_FONTS_BIGFONT);
 }
 
 /**
@@ -9795,6 +9813,12 @@ void adventuretrack_free(void) {
     music_change_on();
 }
 
+void perfmode_reset(void) {
+    if (get_game_mode() == GAMEMODE_MENU) {
+        load_level_for_menu(ASSET_LEVEL_FROSTYVILLAGE, 0, 100);
+    }
+}
+
 typedef struct ConfigOptionEntry {
     char *name;
     s8 *option;
@@ -9821,14 +9845,15 @@ enum ConfigOptionFlags {
 };
 
 ConfigOptionEntry gOptionMenu[] = {
-    { "Screen", &gConfig.screenMode, OPT_EX_PAK, 5, 0, 5, refresh_screen_res },
+    { "Screen", &gConfig.screenMode, OPT_EX_PAK, 5, 0, 2, refresh_screen_res },
+    { "Quality", &gConfig.screenQuality, OPT_EX_PAK, 19, 0, 1, refresh_screen_res },
     { "Screen X", &gConfig.screenPosX, OPT_NO_EMU | OPT_NUMBER | OPT_240, 0, -8, 8, refresh_screen_res },
     { "Screen Y", &gConfig.screenPosY, OPT_NO_EMU | OPT_NUMBER | OPT_240, 0, -8, 8, refresh_screen_res },
     { "Anti Aliasing", &gConfig.antiAliasing, OPT_NO_EMU, 2, -1, 1, set_dither_filter },
     { "Dedither", &gConfig.dedither, OPT_NO_EMU, 0, 0, 1, set_dither_filter },
     { "Frame Cap", &gConfig.frameCap, OPT_PAL, 11, 0, 3, NULL },
     { "MP Cutbacks", &gConfig.noCutbacks, OPT_NO_EMU, 1, 0, 1, NULL },
-    { "Perf Mode", &gConfig.perfMode, OPT_NO_EMU, 0, 0, 1, NULL },
+    { "Perf Mode", &gConfig.perfMode, OPT_NO_EMU, 0, 0, 1, perfmode_reset },
     { "Same Stats", &gConfig.sameStats, OPT_NONE, 0, 0, 1, NULL },
 };
 
@@ -9856,6 +9881,8 @@ char *gPauseOptStrings[][2] = {
     { "25", "25" },
     { "18", "18" },
     { "14", "14" },
+    { "16 bit", "16 bit" },
+    { "32 bit", "32 bit" },
 };
 u8 gPauseSubmenu = 0;
 u8 gPauseOptionScroll;
@@ -9904,8 +9931,8 @@ void refresh_screen_res(void) {
             gScreenHeight = 360;
             break;
         case 5:
-            gScreenWidth = 560;
-            gScreenHeight = 420;
+            gScreenWidth = SCREEN_WIDTH_HIGH;
+            gScreenHeight = SCREEN_HEIGHT_HIGH;
             break;
     }
 #endif
@@ -9921,6 +9948,186 @@ void refresh_screen_res(void) {
     }
     reset_perspective_matrix();
 #endif
+}
+
+extern f32 gFPS;
+
+s32 menu_video_options_loop(s32 updateRate) {
+    char textBytes[32];
+    s32 i;
+    s32 intendedScroll;
+    s32 alpha;
+    s32 y;
+    s32 numRacers;
+    s32 moveDir = 0;
+    s32 inputs;
+    s32 stickX;
+    s32 stickY;
+    s32 al;
+    s32 moveOpt = FALSE;
+    s32 prevOpt;
+    Object_Racer *racer = (Object_Racer *) get_racer_object(PLAYER_ONE)->unk64;
+    racer->raceFinished = TRUE;
+    gOptionBlinkTimer = (gOptionBlinkTimer + updateRate) & 0x3F;
+    alpha = gOptionBlinkTimer * 8;
+    if (alpha > 255) {
+        alpha = 511 - alpha;
+    }
+    // We're allowed a little bit of evil code as a treat.
+    get_racer_objects(&numRacers);
+    if (numRacers != 0) {
+        for (i = 1; i < numRacers; i++) {
+            Object *obj = get_racer_object(i);
+            obj->segment.trans.flags |= OBJ_FLAGS_INVISIBLE;
+            obj->segment.trans.x_position = 10000.0f;
+            obj->segment.trans.y_position = 10000.0f;
+            obj->segment.trans.z_position = 10000.0f;
+        }
+    }
+
+    
+    set_text_font(ASSET_FONTS_BIGFONT);
+    set_text_colour(0, 0, 0, 0, 127);
+    draw_text(&sMenuCurrDisplayList, (gScreenWidth / 2) + 2, 16 + 2, "VIDEO OPTIONS", ALIGN_TOP_CENTER);
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(&sMenuCurrDisplayList, gScreenWidth / 2, 16, "VIDEO OPTIONS", ALIGN_TOP_CENTER);
+
+    set_text_font(ASSET_FONTS_FUNFONT);
+    set_text_background_colour(0, 0, 0, 0);
+    puppyprintf(textBytes, "FPS: %2.2f", (f64) gFPS);
+    draw_text(&sMenuCurrDisplayList, 32, 64, textBytes, ALIGN_MIDDLE_LEFT);
+    y = 0;
+    intendedScroll = gPauseOptionScroll;
+    for (i = 0; i < (s32) OPTIONSIZE; i++) {
+        s32 stringOffset = gOptionMenu[i].stringOffset;
+        if (menu_option_hidden(i)) {
+            continue;
+        }
+        // If the value can be negative, offset the string by the amount it takes to not be negative.
+        if (gOptionMenu[i].minValue < 0) {
+            stringOffset -= gOptionMenu[i].minValue;
+        }
+        // Offset PAL by the max value.
+        if ((gOptionMenu[i].flags & OPT_PAL) && osTvType == TV_TYPE_PAL) {
+            stringOffset += gOptionMenu[i].maxValue + 1;
+        }
+        if (gMenuOption == i) {
+            al = alpha;
+            while (y - (intendedScroll * 16) > (16 * 4) - 24) {
+                intendedScroll++;
+            }
+            while (y - (intendedScroll * 16) < 0) {
+                intendedScroll--;
+            }
+        } else {
+            al = 0;
+        }
+        
+        if (y - (intendedScroll * 16) < 72 && y - (intendedScroll * 16) >= 0) {
+            set_text_colour(255, 255, 255, al, 255);
+            if (gOptionMenu[i].flags & OPT_NUMBER) {
+                puppyprintf(textBytes, "%s: %d", gOptionMenu[i].name, *gOptionMenu[i].option);
+            } else {
+                puppyprintf(textBytes, "%s: %s", gOptionMenu[i].name, gPauseOptStrings[*gOptionMenu[i].option + stringOffset][0]);
+            }
+            draw_text(&sMenuCurrDisplayList, gScreenWidth / 2, gScreenHeight - 72 + y - (intendedScroll * 16), textBytes, ALIGN_TOP_CENTER);
+        }
+        y += 16;
+    }
+    if (gMenuOption == (s32) OPTIONSIZE) {
+        set_text_colour(255, 255, 255, alpha, 255);
+    } else {
+        set_text_colour(255, 255, 255, 0, 255);
+    }
+    draw_text(&sMenuCurrDisplayList, gScreenWidth / 2, gScreenHeight - 72 + y - (intendedScroll * 16), "Back", ALIGN_TOP_CENTER);
+    gPauseOptionScroll = intendedScroll;
+
+    inputs = 0;
+    stickX = 0;
+    for (i = 0; i < 4; i++) {
+        inputs |= get_buttons_pressed_from_player(i);
+        stickX = gControllersXAxisDirection[i];
+        stickY = gControllersYAxisDirection[i];
+
+        if (stickX | stickY) {
+            break;
+        }
+    }
+
+    prevOpt = gMenuOption;
+    if (stickY < 0) {
+        gMenuOption++;
+        while (menu_option_hidden(gMenuOption)) {
+            gMenuOption++;
+            if (gMenuOption > (s32) OPTIONSIZE) {
+                gMenuOption = prevOpt;
+            }
+        }
+        if (gMenuOption > (s32) OPTIONSIZE) {
+            gMenuOption = OPTIONSIZE;
+        } else {
+            sound_play(SOUND_MENU_PICK2, NULL);
+        }
+    }
+    if (stickY > 0) {
+        gMenuOption--;
+        while (menu_option_hidden(gMenuOption)) {
+            gMenuOption--;
+            if (gMenuOption < 0) {
+                gMenuOption = prevOpt;
+            }
+        }
+        if (gMenuOption < 0) {
+            gMenuOption = 0;
+        } else {
+            sound_play(SOUND_MENU_PICK2, NULL);
+        }
+    }
+    
+    if (stickX != 0 && gMenuOption < (s32) OPTIONSIZE) {
+        if (stickX > 0) {
+            moveDir = 1;
+            if (*gOptionMenu[gMenuOption].option < gOptionMenu[gMenuOption].maxValue) {
+                moveOpt = TRUE;
+            }
+        } else {
+            moveDir = -1;
+            if (*gOptionMenu[gMenuOption].option > gOptionMenu[gMenuOption].minValue) {
+                moveOpt = TRUE;
+            }
+        }
+        if (moveOpt) {
+            if (gOptionMenu[gMenuOption].minValue == 0 &&
+                gOptionMenu[gMenuOption].maxValue == 1) {
+                *gOptionMenu[gMenuOption].option ^= 1;
+            } else {
+                *gOptionMenu[gMenuOption].option += moveDir;
+            }
+            sound_play(SOUND_SELECT2, NULL);
+            if (gOptionMenu[gMenuOption].func) {
+                (gOptionMenu[gMenuOption].func)();
+            }
+        }
+    }
+
+    viewport_menu_set(0, 0, 0, gScreenWidth, gScreenHeight);
+
+    if ((inputs & B_BUTTON) || (inputs & A_BUTTON && gMenuOption == OPTIONSIZE)) {
+        gMenuDelay = 1;
+        transition_begin(&sMenuTransitionFadeIn);
+        save_config_write();
+    }
+
+    if (gMenuDelay) {
+        gMenuDelay += updateRate;
+
+        if (gMenuDelay > 20) {
+            load_level_for_menu(ASSET_LEVEL_OPTIONSBACKGROUND, -1, 0);
+            menu_init(MENU_OPTIONS);
+        }
+    }
+
+    return MENU_RESULT_CONTINUE;
 }
 
 /**
@@ -10362,7 +10569,9 @@ void postrace_start(s32 finishState, s32 worldID) {
     gOpacityDecayTimer = 0;
     gMenuDelay = 0;
     gMenuCurIndex = 0;
-    gMenuOption = 0;
+    if (gCurrentMenuId != MENU_VIDEO_OPTIONS) {
+        gMenuOption = 0;
+    }
     gIgnorePlayerInputTime = 1;
     gPostRace.unk0_s32 = -1;
     gMenuSubOption = 0;

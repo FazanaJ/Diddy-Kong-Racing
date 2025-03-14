@@ -249,6 +249,7 @@ typedef enum MENU_ID {
     MENU_UNUSED_27,
     MENU_CAUTION,
     MENU_EXPANSION_ERROR,
+    MENU_VIDEO_OPTIONS,
 #ifdef PUPPYPRINT_DEBUG
     MENU_BENCHMARK
 #endif
@@ -675,6 +676,8 @@ void rankings_render_order(s32 updateRate);
 void results_render(UNUSED s32 updateRate, f32 opacity);
 void func_80092188(s32 updateRate);
 SIDeviceStatus func_80087F14(s32 *controllerIndex, s32 xAxisDirection);
+s32 menu_video_options_loop(s32 updateRate);
+void menu_video_options_init(void);
 
 // Non Matching functions below here
 void load_menu_text(s32 language); // Non Matching

@@ -1448,11 +1448,9 @@ static void alloc_displaylist_heap(s32 numberOfPlayers) {
         mempool_free(gDisplayLists[1]);
         totalSize = ((gNumF3dCmdsPerPlayer[num] * sizeof(Gwords))) + ((gNumHudMatPerPlayer[num] * sizeof(Matrix))) +
                     ((gNumHudVertsPerPlayer[num] * sizeof(Vertex))) + ((gNumHudTrisPerPlayer[num] * sizeof(Triangle)));
-        gDisplayLists[0] =
-            (Gfx *) mempool_alloc_fixed(totalSize + 0x10, (u8 *) gDisplayLists[0], MEMP_GFXBUFFERS);
+        gDisplayLists[0] = (Gfx *) mempool_alloc_safe(totalSize + 0x10, MEMP_GFXBUFFERS);
         gDisplayLists[0] = (Gfx *) align16((u8 *) gDisplayLists[0]);
-        gDisplayLists[1] =
-            (Gfx *) mempool_alloc_fixed(totalSize + 0x10, (u8 *) gDisplayLists[1], MEMP_GFXBUFFERS);
+        gDisplayLists[1] = (Gfx *) mempool_alloc_safe(totalSize + 0x10, MEMP_GFXBUFFERS);
         gDisplayLists[1] = (Gfx *) align16((u8 *) gDisplayLists[1]);
         if ((gDisplayLists[0] == NULL) || gDisplayLists[1] == NULL) {
             if (gDisplayLists[0] != NULL) {

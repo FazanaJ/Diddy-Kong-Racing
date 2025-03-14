@@ -115,12 +115,14 @@ void change_vi(OSViMode *mode, int width, int height) {
         gGlobalVI = osViModeNtscLan1;
     }
 
-    if (gBitDepth == G_IM_SIZ_16b) {
-        mul = 2;
-    } else {
+    if (gConfig.screenQuality) {
+        gBitDepth = G_IM_SIZ_32b;
+        mode->comRegs.ctrl = VI_CTRL_TYPE_32 | VI_CTRL_GAMMA_DITHER_ON | VI_CTRL_GAMMA_ON | VI_CTRL_DIVOT_ON | VI_CTRL_ANTIALIAS_MODE_3 | 0x3000;
         mul = 4;
-        mode->comRegs.ctrl &= ~VI_CTRL_ANTIALIAS_MODE_1 | VI_CTRL_TYPE_16;
-        mode->comRegs.ctrl |= VI_CTRL_TYPE_32;
+    } else {
+        gBitDepth = G_IM_SIZ_16b;
+        mode->comRegs.ctrl = VI_CTRL_TYPE_16 | VI_CTRL_GAMMA_DITHER_ON | VI_CTRL_GAMMA_ON | VI_CTRL_DIVOT_ON | VI_CTRL_ANTIALIAS_MODE_1 | 0x3000;
+        mul = 2;
     }
 
     if (height < 240) {
@@ -155,6 +157,8 @@ void change_vi(OSViMode *mode, int width, int height) {
     mode->fldRegs[1].origin = width * 4;
     gVideoAspectRatio = ((f32) width / (f32) height);
     reset_perspective_matrix();
+    osViSetMode(mode);
+    set_dither_filter();
 }
 
 void set_dither_filter(void) {
@@ -187,12 +191,16 @@ static void fb_init_vi(void) {
  */
 static void fb_alloc(s32 index) {
     s32 width = SCREEN_WIDTH;
+    s32 height = SCREEN_HEIGHT;
+    s32 bitSize = 2;
     u32 *fbAddr;
-    s32 fbSize = (SCREEN_HEIGHT * 2);
+    s32 fbSize;
     u8 *addr;
 #if EXPANSION_PAK_SUPPORT
     if (gExpansionPak) {
         width = SCREEN_WIDTH_WIDE;
+        //height = SCREEN_HEIGHT_HIGH;
+        bitSize = 4;
     }
 #endif
 #if EXPANSION_PAK_SUPPORT || defined(FIFO_4MB)
@@ -202,13 +210,13 @@ static void fb_alloc(s32 index) {
     }
 #endif
 
-    fbSize *= width;
+    fbSize = (width * height) * bitSize;
     switch (index) {
         case 0:
             addr = (u8 *) 0x80200000;
         break;
         case 1:
-            addr = (u8 *) 0x80300000;
+            addr = (u8 *) (0x80400000 - (fbSize + 0x40));
         break;
         case 2:
             if (gUseExpansionMemory) {
