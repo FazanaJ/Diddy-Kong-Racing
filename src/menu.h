@@ -344,17 +344,16 @@ typedef struct unk800DF83C {
 } unk800DF83C;
 
 typedef struct unk800DFA3C {
-    s16 unk0;
-    s16 unk2;
-    u8  unk4;
-    u8  unk5;
-    u8  unk6;
-    u8  unk7;
-    u8  unk8;
-    u8  unk9;
-    u8  unkA;
-    u8  unkB;
-    char *unkC;
+ /* 0x00 */ s16 x;
+ /* 0x02 */ s16 y;
+ /* 0x04 */ u8 red;
+ /* 0x05 */ u8 green;
+ /* 0x06 */ u8 blue;
+ /* 0x07 */ u8 alpha;
+ /* 0x08 */ u8 opacity;
+ /* 0x09 */ u8 font;
+ /* 0x0A */ s16 alignmentFlags;
+ /* 0x0C */ char *text; 
 } unk800DFA3C;
 
 typedef struct ButtonElement {
@@ -522,7 +521,7 @@ void cheatlist_free(void);
 void charselect_prev(s32 context, s32 *arg1);
 void titlescreen_controller_assign(s32 controllerIndex);
 void menu_character_select_init(void);
-void charselect_render_text(s32 arg0);
+void charselect_render_text(s32 updateRate);
 void charselect_move(s32 playerID, s8 *direction, s32 bounds, u16 menuPickSoundId, u16 menuPickFailedSoundId);
 void charselect_free(void);
 void menu_caution_init(void);
@@ -675,6 +674,7 @@ void trackmenu_setup_render(s32 updateRate);
 void rankings_render_order(s32 updateRate);
 void results_render(UNUSED s32 updateRate, f32 opacity);
 void func_80092188(s32 updateRate);
+SIDeviceStatus func_80087F14(s32 *controllerIndex, s32 xAxisDirection);
 
 // Non Matching functions below here
 void load_menu_text(s32 language); // Non Matching
@@ -692,10 +692,9 @@ s32 menu_title_screen_loop(s32 updateRate);
 s32 menu_magic_codes_loop(s32 updateRate);
 s32 menu_credits_loop(s32 updateRate);
 void func_8007FFEC(s32 arg0);
-SIDeviceStatus func_80087F14(s32 *controllerIndex, s32 arg1);
 void set_gIntDisFlag(s8 setting);
 void init_save_data(void);
-void func_80080580(Gfx **dList, s32 startX, s32 startY, s32 width, s32 height, s32 borderWidth, s32 borderHeight,
+void func_80080580(Gfx **dlist, s32 startX, s32 startY, s32 width, s32 height, s32 borderWidth, s32 borderHeight,
                    s32 colour, TextureHeader *tex);
 void fileselect_input_copy(s32 updateRate);
 
@@ -703,7 +702,7 @@ s32 func_8008F618(Gfx **dList, MatrixS **mtx);
 void func_80080BC8(Gfx **);
 void func_80080E90(Gfx **dlist, s32 startX, s32 startY, s32 width, s32 height, s32 borderWidth, s32 borderHeight,
                    s32 colour0, s32 colour1, s32 colour2, s32 colour3);
-void func_80084854(void);
+void func_80084854(s32 updateRate);
 void func_80098774(s32);
 void func_80094D28(UNUSED s32 updateRate);
 

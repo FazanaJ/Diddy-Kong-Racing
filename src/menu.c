@@ -75,7 +75,7 @@ u8 gResultsPlayers[8];
 u8 gRankingsPlayers[8];
 u8 gResultsPlayerIDs[8];
 u8 gRankingsPlayerIDs[8]; // Contains the order of racer indices that tell you what place they are in.
-s8 D_80126438[16];
+s8 gRankingsPortraitIDs[16];
 
 // Eeeprom save data bits stored at address 0xF
 // bit 0      = Adventure Two is Unlocked
@@ -200,13 +200,13 @@ s32 gSaveMenuRumbleNag;
 s32 gSaveMenuRumbleConnected;
 s32 gSaveMenuSourceState;
 s32 gSaveMenuDestState;
-s32 sControllerPakNotesFree[MAXCONTROLLERS]; // Looks to be an array for number notes free in each controller memory pak
-u8 sControllerPakIssueNotFound[MAXCONTROLLERS];   // Flag to see if there's no known issues for the given controller pak
-u8 sControllerPakFatalErrorFound[MAXCONTROLLERS]; // Flag to see if there's a fatal error for the given controller pak
-u8 sControllerPakNoFreeSpace[MAXCONTROLLERS];     // Flag to see if there's no free space for the given controller pak
-u8 sControllerPakBadData[MAXCONTROLLERS];         // Flag to see if there's bad data for the given controller pak
+s32 sControllerPakNotesFree[MAXCONTROLLERS];      // Number notes free in each controller memory pak
+u8 sControllerPakIssueNotFound[MAXCONTROLLERS];   // Bool to see if there's no known issues for the given controller pak
+u8 sControllerPakFatalErrorFound[MAXCONTROLLERS]; // Bool to see if there's a fatal error for the given controller pak
+u8 sControllerPakNoFreeSpace[MAXCONTROLLERS];     // Bool to see if there's no free space for the given controller pak
+u8 sControllerPakBadData[MAXCONTROLLERS];         // Bool to see if there's bad data for the given controller pak
 char *gMenuOptionText[8];                         // Menu Text
-u8 sControllerPakDataPresent[MAXCONTROLLERS];     // Flag to see if there's data present for the given controller pak?
+u8 sControllerPakDataPresent[MAXCONTROLLERS];     // Bool to see if there's data present for the given controller pak
 char *D_80126A64;
 s32 gMenuOption;
 s32 gSaveMenuRumbleNagSet;
@@ -219,13 +219,13 @@ s32 gPostRace1Player;
 s32 gPostRaceTimer;
 s32 gTracksSaveGhost;
 UNUSED s32 D_80126A9C;
-char *gBootPakData[16];                         // Text to render
-u8 *sCurrentControllerPakAllFileNames[16];      // Every file name on the controller pak
-u8 *sCurrentControllerPakAllFileExtensions[16]; // Every file extension on the controller pak
-u8 sCurrentControllerPakAllFileTypes[16];       // File type of all files on controller pak
-u32 sCurrentControllerPakAllFileSizes[16];      // File size of all files on controller pak
-u32 sCurrentControllerPakFreeSpace;             // Space available in current controller pak
-s32 sControllerPakMenuNumberOfRows;             // 8 if PAL, 7 if not
+char *gBootPakData[MAX_CPAK_FILES];                           // Text to render
+char *sCurrentControllerPakAllFileNames[MAX_CPAK_FILES];      // Every file name on the controller pak
+char *sCurrentControllerPakAllFileExtensions[MAX_CPAK_FILES]; // Every file extension on the controller pak
+u8 sCurrentControllerPakAllFileTypes[MAX_CPAK_FILES];         // File type of all files on controller pak
+u32 sCurrentControllerPakNumberOfPages[MAX_CPAK_FILES];       // Number of pages for each file on controller pak
+u32 sCurrentControllerPakFreePages;                           // Pages available in current controller pak
+s32 sControllerPakMenuNumberOfRows;                           // 8 if PAL, 7 if not
 TextureHeader *gMenuMosaic1;
 TextureHeader *gMenuMosaic2;
 s32 gMenuMosaicShift;
@@ -435,28 +435,28 @@ unk800DF83C gTitleCinematicText[10] = {
 s32 gTitleCinematicTextColourCount = 0;
 
 // Colours used for the Character Names during the title screen cinematic
-MenuColour gTitleCinematicTextColours[4] = {
+MenuColour gTitleCinematicTextColours[] = {
     { 255, 255, 0, 255, 204 }, // Yellow
     { 0, 255, 0, 255, 153 },   // Green
     { 0, 255, 255, 255, 102 }, // Cyan
     { 0, 0, 255, 255, 51 }     // Blue
 };
 
-UNUSED u8 unused_800DFA10[4] = { 0, 0, 15, 120 };
+UNUSED u8 unused_800DFA10[] = { 0, 0, 15, 120 };
 
-char *gOptionMenuStrings[7] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+char *gOptionMenuStrings[] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
-s16 gOptionMenuTextures[8] = { 0x3D, 0x3C, 0x3F, 0x3E, 0x44, -1, -1, 0 };
+s16 gOptionMenuTextures[] = { 0x3D, 0x3C, 0x3F, 0x3E, 0x44, -1, -1, 0 };
 
-unk800DFA3C gAudioMenuStrings[8] = {
-    { SCREEN_WIDTH_HALF, 80, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0, 0, 12, NULL },
-    { SCREEN_WIDTH_HALF, 104, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0, 0, 12, NULL },
-    { SCREEN_WIDTH_HALF, 144, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0, 0, 12, NULL },
-    { SCREEN_WIDTH_HALF, 192, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0, 0, 12, NULL },
-    { SCREEN_WIDTH_HALF + 1, 35, 0, 0, 0, 0xFF, 0x80, 2, 0, 12, NULL },
-    { SCREEN_WIDTH_HALF, 32, 0xFF, 0x80, 0xFF, 0, 0xFF, 2, 0, 12, NULL },
-    { SCREEN_WIDTH_HALF, 188, 0xFF, 0xFF, 0xFF, 0, 0xFF, 0, 0, 12, NULL },
-    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, NULL },
+unk800DFA3C gAudioMenuStrings[] = {
+    { 160, 80, 255, 255, 255, 0, 255, ASSET_FONTS_FUNFONT, 12, NULL },
+    { 160, 104, 255, 255, 255, 0, 255, ASSET_FONTS_FUNFONT, 12, NULL },
+    { 160, 144, 255, 255, 255, 0, 255, ASSET_FONTS_FUNFONT, 12, NULL },
+    { 160, 192, 255, 255, 255, 0, 255, ASSET_FONTS_FUNFONT, 12, NULL },
+    { 161, 35, 0, 0, 0, 255, 128, ASSET_FONTS_BIGFONT, 12, NULL },
+    { 160, 32, 255, 128, 255, 0, 255, ASSET_FONTS_BIGFONT, 12, NULL },
+    { 160, 188, 255, 255, 255, 0, 255, ASSET_FONTS_FUNFONT, 12, NULL },
+    { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 },
 };
 
 // Current song index used in the music test (from JUKEBOX magic code)
@@ -1724,7 +1724,7 @@ Gfx dMenuHudDrawModes[][2] = {
 };
 
 // Triangle indices for the wood panels used in multiple menus.
-s8 gWoodPanelsIndices[32] = { 0,  1,  2,  0,  2,  3,  4,  5,  6,  4,  6,  7,  8,  9,  10, 8,
+u8 gWoodPanelsIndices[32] = { 0,  1,  2,  0,  2,  3,  4,  5,  6,  4,  6,  7,  8,  9,  10, 8,
                               10, 11, 12, 13, 14, 12, 14, 15, 16, 17, 18, 16, 18, 19, 0,  0 };
 
 // UV coordinate indices the wood panels.
@@ -1734,11 +1734,13 @@ u8 gWoodPanelTexCoords[5][12] = { { 0, 0, 3, 0, 2, 1, 0, 0, 2, 1, 1, 1 },
                                   { 0, 0, 1, 1, 1, 2, 0, 0, 1, 2, 0, 3 },
                                   { 1, 1, 2, 1, 2, 2, 1, 1, 2, 2, 1, 2 } };
 
-// Position offsets for the wood panels.
-u16 gWoodPanelVertCoords[10][4] = { { 0, 0, 256, 0 },         { 511, 255, 1, 255 },   { 511, 255, 256, 0 },
-                                    { 256, -256, 511, -255 }, { 1, -255, 511, -255 }, { 256, -256, 0, -256 },
-                                    { 0, 0, 1, 255 },         { 1, -255, 0, -256 },   { 1, 255, 511, 255 },
-                                    { 511, -255, 1, -255 } };
+// Position offsets for the wood panels. It has a X Width, X BorderWidth, Y Width, Y BorderWidth pattern.
+s8 gWoodPanelVertCoords[][4] = {
+    { 0, 0, 0, 0 },  { 1, 0, 0, 0 },  { 1, -1, 0, -1 }, { 0, 1, 0, -1 },  { 1, -1, 0, -1 },
+    { 1, 0, 0, 0 },  { 1, 0, -1, 0 }, { 1, -1, -1, 1 }, { 0, 1, -1, 1 },  { 1, -1, -1, 1 },
+    { 1, 0, -1, 0 }, { 0, 0, -1, 0 }, { 0, 0, 0, 0 },   { 0, 1, 0, -1 },  { 0, 1, -1, 1 },
+    { 0, 0, -1, 0 }, { 0, 1, 0, -1 }, { 1, -1, 0, -1 }, { 1, -1, -1, 1 }, { 0, 1, -1, 1 }
+};
 
 // Colour filter, used for the shadows on the side of the panels.
 s16 gWoodPanelVertColours[5][4] = {
@@ -1751,7 +1753,7 @@ s16 gWoodPanelVertColours[5][4] = {
 
 s32 *gWoodPanelVertices[2] = { NULL, NULL };
 
-s32 *gWoodPanelTriangles[2] = { NULL, NULL };
+Triangle *gWoodPanelTriangles[2] = { NULL, NULL };
 
 s32 gMenuTrisFlip = 0;
 s32 gWoodPanelCount = 0;
@@ -1787,7 +1789,7 @@ void load_menu_text(s32 language) {
     char **fake;
 
     if (gMenuTextLangTable == NULL) {
-        gMenuTextLangTable = load_asset_section_from_rom(ASSET_MENU_TEXT_TABLE);
+        gMenuTextLangTable = (s32 *) load_asset_section_from_rom(ASSET_MENU_TEXT_TABLE);
     }
 
     switch (language) {
@@ -1814,13 +1816,13 @@ void load_menu_text(s32 language) {
         return;
     }
 
-    load_asset_to_address(ASSET_MENU_TEXT, temp, langIndex, size);
+    load_asset_to_address(ASSET_MENU_TEXT, (u32) temp, langIndex, size);
 
     // TODO: Find a way to clean up the ugly hacks.
     // Fill up the lookup table with proper RAM addresses
     for (langIndex = 0; langIndex < gMenuTextLangTable[0]; langIndex++) {
-        menuText = gMenuText[langIndex];
-        if ((((s32) menuText) & 0xFFFFFFFF) == -1) {
+        menuText = (char **) gMenuText[langIndex];
+        if ((((s32) menuText) & 0xFFFFFFFF) == 0xFFFFFFFF) {
             gMenuText[langIndex] = NULL;
         } else {
             gMenuText[langIndex] = &((char *) gMenuText)[(s32) (fake = menuText)];
@@ -1831,11 +1833,11 @@ void load_menu_text(s32 language) {
     gAudioOutputStrings[0] = menuText[ASSET_MENU_TEXT_STEREO];                       // "STEREO"
     gAudioOutputStrings[1] = menuText[ASSET_MENU_TEXT_MONO];                         // "MONO"
     gAudioOutputStrings[2] = menuText[ASSET_MENU_TEXT_HEADPHONES];                   // "HEADPHONES"
-    gAudioMenuStrings[1].unkC = menuText[ASSET_MENU_TEXT_SFXVOLUME];                 // "SFX VOLUME"
-    gAudioMenuStrings[2].unkC = menuText[ASSET_MENU_TEXT_MUSICVOLUME];               // "MUSIC VOLUME"
-    gAudioMenuStrings[3].unkC = menuText[ASSET_MENU_TEXT_RETURN];                    // "RETURN"
-    gAudioMenuStrings[4].unkC = menuText[ASSET_MENU_TEXT_AUDIOOPTIONS];              // "AUDIO OPTIONS"
-    gAudioMenuStrings[5].unkC = menuText[ASSET_MENU_TEXT_AUDIOOPTIONS];              // "AUDIO OPTIONS"
+    gAudioMenuStrings[1].text = menuText[ASSET_MENU_TEXT_SFXVOLUME];                 // "SFX VOLUME"
+    gAudioMenuStrings[2].text = menuText[ASSET_MENU_TEXT_MUSICVOLUME];               // "MUSIC VOLUME"
+    gAudioMenuStrings[3].text = menuText[ASSET_MENU_TEXT_RETURN];                    // "RETURN"
+    gAudioMenuStrings[4].text = menuText[ASSET_MENU_TEXT_AUDIOOPTIONS];              // "AUDIO OPTIONS"
+    gAudioMenuStrings[5].text = menuText[ASSET_MENU_TEXT_AUDIOOPTIONS];              // "AUDIO OPTIONS"
     gMusicTestString = menuText[ASSET_MENU_TEXT_MUSICTEST];                          // "MUSIC TEST 00"
     gMagicCodeMenuStrings[0] = menuText[ASSET_MENU_TEXT_ENTERCODE];                  // "ENTER CODE"
     gMagicCodeMenuStrings[1] = menuText[ASSET_MENU_TEXT_CLEARALLCODES];              // "CLEAR ALL CODES"
@@ -1964,7 +1966,74 @@ void menu_button_free(void) {
     gWoodPanelAllocCount = 0;
 }
 
+#ifdef NON_EQUIVALENT
+void func_8007FFEC(s32 arg0) {
+    s32 sp28;
+    s32 sp24;
+    s32 sp20;
+    Triangle *alloc;
+    s32 triListIndex;
+    s32 IndicesIndex;
+    s32 triIndex;
+    s32 i;
+    s32 j;
+
+    if (gMenuGeometry != NULL) {
+        menu_button_free();
+    }
+
+    gWoodPanelTexScaleU = 32; // 32 = 1.0x scale
+    gWoodPanelTexScaleV = 32; // 32 = 1.0x scale
+    sp20 = arg0 * 0xA * 0x10;
+    // sp28 = arg0 << 5;
+    // sp24 = arg0 * 0x64 * 2;
+
+    // This is mostly wrong. Need to fix!
+    alloc = mempool_alloc_safe(arg0 * 0x2F0, COLOUR_TAG_WHITE);
+    gWoodPanelTriangles[0] = alloc;
+    gWoodPanelTriangles[1] = gWoodPanelTriangles[0] + sp20;
+    gMenuGeometry = gWoodPanelTriangles[1] + sp20;
+    gWoodPanelVertices[1] = gMenuGeometry;
+    gWoodPanelVertices[1] = gWoodPanelVertices[0] + arg0;
+
+    // This loop isn't quite right.
+    for (i = 0; i < arg0; i++) {
+        gMenuGeometry[i].vertices[0] = gWoodPanelVertices[0] + i;
+        gMenuGeometry[i].vertices[1] = gWoodPanelVertices[1] + i;
+        gMenuGeometry[i].triangles[0] = gWoodPanelTriangles[0] + i;
+        gMenuGeometry[i].triangles[1] = gWoodPanelTriangles[1] + i;
+        gMenuGeometry[i].texture[0] = 0;
+        gMenuGeometry[i].texture[1] = 0;
+        gMenuGeometry[i].unk18[0] = 0;
+        gMenuGeometry[i].unk18[1] = 0;
+    }
+
+    for (triIndex = 0; triIndex < arg0; triIndex++) {
+        for (IndicesIndex = 0; IndicesIndex < 10; IndicesIndex++) {    // Index into gWoodPanelsIndices
+            for (triListIndex = 0; triListIndex < 2; triListIndex++) { // Index into gWoodPanelTriangles?
+                (gWoodPanelTriangles[triListIndex] + triIndex)->verticesArray[0] = 0x40;
+                (gWoodPanelTriangles[triListIndex] + triIndex)->verticesArray[1] =
+                    gWoodPanelsIndices[IndicesIndex * 3 + 0];
+                (gWoodPanelTriangles[triListIndex] + triIndex)->verticesArray[2] =
+                    gWoodPanelsIndices[IndicesIndex * 3 + 1];
+                (gWoodPanelTriangles[triListIndex] + triIndex)->verticesArray[3] =
+                    gWoodPanelsIndices[IndicesIndex * 3 + 2];
+                (gWoodPanelTriangles[triListIndex] + triIndex)->uv0.u = 0;
+                (gWoodPanelTriangles[triListIndex] + triIndex)->uv0.v = 0;
+                (gWoodPanelTriangles[triListIndex] + triIndex)->uv1.u = 0;
+                (gWoodPanelTriangles[triListIndex] + triIndex)->uv1.v = 0;
+                (gWoodPanelTriangles[triListIndex] + triIndex)->uv2.u = 0;
+                (gWoodPanelTriangles[triListIndex] + triIndex)->uv2.v = 0;
+            }
+        }
+    }
+    gMenuTrisFlip = 0;
+    gWoodPanelCount = 0;
+    gWoodPanelAllocCount = arg0;
+}
+#else
 GLOBAL_ASM("asm/non_matchings/menu/func_8007FFEC.s")
+#endif
 
 /**
  * Resize the UV's of the menu panels.
@@ -1974,109 +2043,104 @@ UNUSED void menu_button_uvs(f32 u, f32 v) {
     gWoodPanelTexScaleV = v * 32.0f;
 }
 
-// https://decomp.me/scratch/W0adv
-#ifdef NON_EQUIVALENT
-void func_80080580(Gfx **dList, s32 startX, s32 startY, s32 width, s32 height, s32 borderWidth, s32 borderHeight,
+void func_80080580(Gfx **dlist, s32 startX, s32 startY, s32 width, s32 height, s32 borderWidth, s32 borderHeight,
                    s32 colour, TextureHeader *tex) {
     s32 uVals[4];
     s32 vVals[4];
-    Vertex *verts;
-    Triangle *tris;
-    s32 j;
+    Vertex *vertices;
+    Triangle *triangles;
     s32 i;
-    s32 texEnabled;
+    s32 j;
+    s32 r, g, b, a;
+    s32 r0, g0, b0, a0;
+    s8(*texCoords)[4];
+    s16(*texColors)[4];
+    u8(*woodPanelTexCoords)[12];
+    UNUSED s32 pad;
 
-    //((unk80080BC8*)((u8*)gMenuGeometry[gWoodPanelCount] + (gMenuTrisFlip * 4)))->texture = tex;
-    //((unk80080BC8 *) ((u8 *) gMenuGeometry + (gWoodPanelCount << 5) + (gMenuTrisFlip * 4)))->texture = tex;
-    //(&(*gMenuGeometry)[gWoodPanelCount] + (gMenuTrisFlip * 4))->texture = tex;
-    //gMenuGeometry->texture[gWoodPanelCount] = tex;
+    gMenuGeometry[gWoodPanelCount].texture[gMenuTrisFlip] = tex;
     if (tex != NULL) {
+        woodPanelTexCoords = gWoodPanelTexCoords;
         uVals[0] = 0;
-        vVals[0] = 0;
         uVals[1] = gWoodPanelTexScaleU * borderWidth;
         uVals[2] = (width - borderWidth) * gWoodPanelTexScaleU;
         uVals[3] = gWoodPanelTexScaleU * width;
-        vVals[1] = gWoodPanelTexScaleV * borderHeight;
+        vVals[0] = 0;
+        j = gWoodPanelTexScaleV; // fake
+        vVals[1] = j * borderHeight;
         vVals[2] = (height - borderHeight) * gWoodPanelTexScaleV;
         vVals[3] = gWoodPanelTexScaleV * height;
-        tris = ((unk80080BC8 *) ((u8 *) gMenuGeometry + (gWoodPanelCount << 5) + (gMenuTrisFlip * 4)))->triangles;
-        for (i = 0; i < 5; i++) {
-            tris[i * 2].uv0.u = uVals[gWoodPanelTexCoords[i][0]];
-            tris[i * 2].uv0.v = vVals[gWoodPanelTexCoords[i][1]];
-            tris[i * 2].uv1.u = uVals[gWoodPanelTexCoords[i][2]];
-            tris[i * 2].uv1.v = vVals[gWoodPanelTexCoords[i][3]];
-            tris[i * 2].uv2.u = uVals[gWoodPanelTexCoords[i][4]];
-            tris[i * 2].uv2.v = vVals[gWoodPanelTexCoords[i][5]];
-            tris[i * 2 + 1].uv0.u = uVals[gWoodPanelTexCoords[i][6]];
-            tris[i * 2 + 1].uv0.v = vVals[gWoodPanelTexCoords[i][7]];
-            tris[i * 2 + 1].uv1.u = uVals[gWoodPanelTexCoords[i][8]];
-            tris[i * 2 + 1].uv1.v = vVals[gWoodPanelTexCoords[i][9]];
-            tris[i * 2 + 1].uv2.u = uVals[gWoodPanelTexCoords[i][10]];
-            tris[i * 2 + 1].uv2.v = vVals[gWoodPanelTexCoords[i][11]];
+        triangles = gMenuGeometry[gWoodPanelCount].triangles[gMenuTrisFlip];
+        for (i = 0; i < 10; i += 2) {
+            if (1) {}
+            if (1) {}
+            if (1) {} // fake
+            triangles[0].uv0.u = uVals[(*woodPanelTexCoords)[0]];
+            triangles[0].uv0.v = vVals[(*woodPanelTexCoords)[1]];
+            triangles[0].uv1.u = uVals[(*woodPanelTexCoords)[2]];
+            triangles[0].uv1.v = vVals[(*woodPanelTexCoords)[3]];
+            triangles[0].uv2.u = uVals[(*woodPanelTexCoords)[4]];
+            triangles[0].uv2.v = vVals[(*woodPanelTexCoords)[5]];
+            triangles[1].uv0.u = uVals[(*woodPanelTexCoords)[6]];
+            triangles[1].uv0.v = vVals[(*woodPanelTexCoords)[7]];
+            triangles[1].uv1.u = uVals[(*woodPanelTexCoords)[8]];
+            triangles[1].uv1.v = vVals[(*woodPanelTexCoords)[9]];
+            triangles[1].uv2.u = uVals[(*woodPanelTexCoords)[10]];
+            triangles[1].uv2.v = vVals[(*woodPanelTexCoords)[11]];
+            woodPanelTexCoords += 1;
+            triangles += 2;
         }
     }
-    verts = ((unk80080BC8 *) ((u8 *) gMenuGeometry + (gWoodPanelCount << 5) + (gMenuTrisFlip * 4)))->vertices;
-    for (i = 0; i < 5; i++) {
+    r0 = ((colour >> 24) & 0xFF);
+    g0 = ((colour >> 16) & 0xFF);
+    b0 = ((colour >> 8) & 0xFF);
+    a0 = (colour & 0xFF);
+    vertices = gMenuGeometry[gWoodPanelCount].vertices[gMenuTrisFlip];
+    for (texColors = gWoodPanelVertColours, texCoords = gWoodPanelVertCoords, i = 0; i < 5; i++) {
+        r = ((*texColors)[0] * r0) >> 8;
+        g = ((*texColors)[1] * g0) >> 8;
+        b = ((*texColors)[2] * b0) >> 8;
+        a = ((*texColors)[3] * a0) >> 8;
+        texColors += 1;
         for (j = 0; j < 4; j++) {
-            verts[j].x = startX;
-            verts[j].y = startY;
-            verts[j].x += (gWoodPanelVertCoords[j][0] * width);
-            verts[j].x += (gWoodPanelVertCoords[j][1] * borderWidth);
-            verts[j].y += (gWoodPanelVertCoords[j][2] * height);
-            verts[j].y += (gWoodPanelVertCoords[j][3] * borderHeight);
-            verts[j].z = 0;
-            verts[j].r = (s32) (gWoodPanelVertColours[i][0] * ((colour >> 24) & 0xFF)) >> 8;
-            verts[j].g = (s32) (gWoodPanelVertColours[i][1] * ((colour >> 16) & 0xFF)) >> 8;
-            verts[j].b = (s32) (gWoodPanelVertColours[i][2] * ((colour >> 8) & 0xFF)) >> 8;
-            verts[j].a = (s32) (gWoodPanelVertColours[i][3] * (colour & 0xFF)) >> 8;
+            vertices->x = startX;
+            vertices->x += (*texCoords)[0] * width;
+            vertices->x += (*texCoords)[1] * borderWidth;
+            vertices->y = startY;
+            vertices->y += (*texCoords)[2] * height;
+            vertices->y += (*texCoords)[3] * borderHeight;
+            vertices->z = 0;
+            vertices->r = r;
+            vertices->g = g;
+            vertices->b = b;
+            vertices->a = a;
+            texCoords += 1;
+            vertices++;
         }
     }
-    if (dList != NULL) {
-        //((unk80080BC8 *) ((u8 *) gMenuGeometry + (gWoodPanelCount << 5) + (gMenuTrisFlip * 4)))->unk18 = 1;
-        gSPDisplayList((*dList)++, &dMenuHudSettings);
+    if (dlist != NULL) {
+        gMenuGeometry[gWoodPanelCount].unk18[gMenuTrisFlip] = 1;
+        gSPDisplayList((*dlist)++, &dMenuHudSettings);
         if (tex != NULL) {
-            texEnabled = TRUE;
-            gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(&dMenuHudDrawModes[1]), 2);
-            gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(tex->cmd), tex->numberOfCommands);
+            gDkrDmaDisplayList((*dlist)++, OS_K0_TO_PHYSICAL(&dMenuHudDrawModes[1]), 2);
+            gDkrDmaDisplayList((*dlist)++, OS_PHYSICAL_TO_K0(tex->cmd), tex->numberOfCommands);
+            i = TRUE; // texEnabled
         } else {
-            texEnabled = FALSE;
-            gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(&dMenuHudDrawModes[0]), 2);
+            gDkrDmaDisplayList((*dlist)++, OS_K0_TO_PHYSICAL(&dMenuHudDrawModes[0]), 2);
+            i = FALSE; // texEnabled
         }
-        gDPPipeSync((*dList)++);
-        /*
-        temp_v0_6 = *dList;
-        *dList = temp_v0_6 + 8;
-        temp_v0_6->words.w0 = (((((*(gMenuGeometry + (gWoodPanelCount << 5) + (gMenuTrisFlip * 4)) + 0x80000000) & 6) |
-        0x98) & 0xFF) << 0x10) | 0x04000000 | 0x170; temp_v0_6->words.w1 = *(gMenuGeometry + (gWoodPanelCount << 5) +
-        (gMenuTrisFlip
-        * 4)) + 0x80000000;
-        */
-        gSPVertexDKR(
-            (*dList)++,
-            OS_K0_TO_PHYSICAL(((unk80080BC8 *) ((u8 *) gMenuGeometry + (i * 32) + (gMenuTrisFlip * 4)))->vertices), 20,
-            0);
-        /*
-        temp_v0_7 = *dList;
-        *dList = temp_v0_7 + 8;
-        temp_v0_7->words.w0 = (((texEnabled | 0x90) & 0xFF) << 0x10) | 0x05000000 | 0xA0;
-        temp_v0_7->words.w1 = (gMenuGeometry + (gWoodPanelCount << 5) + (gMenuTrisFlip * 4))->unk8 + 0x80000000;
-        */
-        gSPPolygon(
-            (*dList)++,
-            OS_K0_TO_PHYSICAL(((unk80080BC8 *) ((u8 *) gMenuGeometry + (i * 32) + (gMenuTrisFlip * 4)))->triangles), 10,
-            texEnabled);
-        reset_render_settings(dList);
+        gDPPipeSync((*dlist)++);
+        gSPVertexDKR((*dlist)++, OS_PHYSICAL_TO_K0(gMenuGeometry[gWoodPanelCount].vertices[gMenuTrisFlip]), 20, 0);
+        gSPPolygon((*dlist)++, OS_PHYSICAL_TO_K0(gMenuGeometry[gWoodPanelCount].triangles[gMenuTrisFlip]), 10, i);
+        reset_render_settings(dlist);
     } else {
-        //((unk80080BC8 *) ((u8 *) gMenuGeometry + (gWoodPanelCount * 32) + (gMenuTrisFlip * 4)))->unk18 = 0;
+        gMenuGeometry[gWoodPanelCount].unk18[gMenuTrisFlip] = 0;
     }
     gWoodPanelCount++;
 }
-#else
-GLOBAL_ASM("asm/non_matchings/menu/func_80080580.s")
-#endif
 
 void func_80080BC8(Gfx **dList) {
-    s16 temp_a1;
+    UNUSED s16 pad;
     s32 i;
     s32 var_t0;
     TextureHeader *tex;
@@ -2954,89 +3018,92 @@ void init_title_screen_variables(void) {
 }
 
 #ifdef NON_MATCHING
-void func_80083098(f32 arg0) {
+// Single regswap diff
+void func_80083098(f32 updateRateF) {
     f32 temp;
     f32 temp2;
     s32 didUpdate;
     s32 xPos;
     s32 yPos;
-    s32 i;
-    unk800DF83C *introCharData;
-    char *text;
+    s32 i; // s1
     s32 j;
+    char *text;
+    unk800DF83C *introCharData;
 
     didUpdate = FALSE;
     xPos = 0;
     yPos = 0;
     text = NULL;
-    if (gOpeningNameID < 10) {
-        introCharData = &gTitleCinematicText[gOpeningNameID];
-        D_801268D8 += arg0;
-        set_text_font(ASSET_FONTS_BIGFONT);
-        set_text_background_colour(0, 0, 0, 0);
-        i = 0;
-        while (i < gTitleCinematicTextColourCount) {
-            // set_text_colour(gTitleCinematicTextColours[D_80126878[i].colourIndex].red,
-            // gTitleCinematicTextColours[D_80126878[i].colourIndex].green,
-            // gTitleCinematicTextColours[D_80126878[i].colourIndex].blue,
-            // gTitleCinematicTextColours[D_80126878[i].colourIndex].alpha,
-            // gTitleCinematicTextColours[D_80126878[i].colourIndex].opacity);
-            j = D_80126878[i].colourIndex; // This seems super fake, but I can't do any better.
-            set_text_colour(gTitleCinematicTextColours[j].red, gTitleCinematicTextColours[j].green,
-                            gTitleCinematicTextColours[j].blue, gTitleCinematicTextColours[j].alpha,
-                            gTitleCinematicTextColours[j].opacity);
-            draw_text(&sMenuCurrDisplayList, D_80126878[i].x, D_80126878[i].y, D_80126878[i].text, ALIGN_MIDDLE_CENTER);
-            D_80126878[i].colourIndex++;
-            if (D_80126878[i].colourIndex >= 4) {
-                j = i;
-                gTitleCinematicTextColourCount--;
-                while (j < gTitleCinematicTextColourCount) {
-                    D_80126878[j].text = D_80126878[j + 1].text;
-                    D_80126878[j].x = D_80126878[j + 1].x;
-                    D_80126878[j].y = D_80126878[j + 1].y;
-                    D_80126878[j].colourIndex = D_80126878[j + 1].colourIndex;
-                    j++;
-                }
-            } else {
-                i++;
+
+    if (gOpeningNameID >= 10) {
+        return;
+    }
+
+    introCharData = &gTitleCinematicText[gOpeningNameID];
+    D_801268D8 += updateRateF;
+    set_text_font(ASSET_FONTS_BIGFONT);
+    set_text_background_colour(0, 0, 0, 0);
+    i = 0;
+    while (i < gTitleCinematicTextColourCount) {
+        j = D_80126878[i].colourIndex;
+        set_text_colour(gTitleCinematicTextColours[j].red, gTitleCinematicTextColours[j].green,
+                        gTitleCinematicTextColours[j].blue, gTitleCinematicTextColours[j].alpha,
+                        gTitleCinematicTextColours[j].opacity);
+        draw_text(&sMenuCurrDisplayList, D_80126878[i].x, D_80126878[i].y, D_80126878[i].text, ALIGN_MIDDLE_CENTER);
+        D_80126878[i].colourIndex++;
+        if (D_80126878[i].colourIndex >= 4) {
+            gTitleCinematicTextColourCount--;
+            for (j = i; j < gTitleCinematicTextColourCount; j++) {
+                D_80126878[j].text = D_80126878[j + 1].text;
+                D_80126878[j].x = D_80126878[j + 1].x;
+                D_80126878[j].y = D_80126878[j + 1].y;
+                D_80126878[j].colourIndex = D_80126878[j + 1].colourIndex;
             }
-        }
-        if (introCharData->unk4 <= D_801268D8) {
-            if (D_801268D8 < introCharData->unk8) {
-                temp = (D_801268D8 - introCharData->unk4);
-                temp2 = (introCharData->unk8 - introCharData->unk4);
-                xPos = (introCharData->unk14 + (((introCharData->unk1C - introCharData->unk14) * temp) / temp2));
-                yPos = (introCharData->unk18 + (((introCharData->unk20 - introCharData->unk18) * temp) / temp2));
-                text = introCharData->unk0;
-                didUpdate = TRUE;
-            } else if (D_801268D8 <= introCharData->unkC) {
-                xPos = introCharData->unk1C;
-                yPos = introCharData->unk20;
-                text = introCharData->unk0;
-                didUpdate = TRUE;
-            } else if (D_801268D8 < introCharData->unk10) {
-                temp = (D_801268D8 - introCharData->unkC);
-                temp2 = (introCharData->unk10 - introCharData->unkC);
-                xPos = (introCharData->unk1C + (((introCharData->unk24 - introCharData->unk1C) * temp) / temp2));
-                yPos = (introCharData->unk20 + (((introCharData->unk28 - introCharData->unk20) * temp) / temp2));
-                text = introCharData->unk0;
-                didUpdate = TRUE;
-            } else {
-                gOpeningNameID++;
-            }
-        }
-        if (didUpdate) {
-            if (gTitleCinematicTextColourCount < 4) {
-                D_80126878[gTitleCinematicTextColourCount].colourIndex = 0;
-                D_80126878[gTitleCinematicTextColourCount].text = text;
-                D_80126878[gTitleCinematicTextColourCount].x = xPos;
-                D_80126878[gTitleCinematicTextColourCount].y = yPos;
-                gTitleCinematicTextColourCount++;
-            }
-            set_text_colour(255, 255, 255, 0, 255);
-            draw_text(&sMenuCurrDisplayList, xPos, yPos, text, ALIGN_MIDDLE_CENTER);
+        } else {
+            i++;
         }
     }
+
+    if (introCharData->unk4 <= D_801268D8) {
+        if (D_801268D8 < introCharData->unk8) {
+            temp = (D_801268D8 - introCharData->unk4);
+            temp2 = (introCharData->unk8 - introCharData->unk4);
+            xPos = (introCharData->unk14 + (((introCharData->unk1C - introCharData->unk14) * temp) / temp2));
+            yPos = (introCharData->unk18 + (((introCharData->unk20 - introCharData->unk18) * temp) / temp2));
+            text = introCharData->unk0;
+            didUpdate = TRUE;
+        } else if (D_801268D8 <= introCharData->unkC) {
+            xPos = introCharData->unk1C;
+            yPos = introCharData->unk20;
+            text = introCharData->unk0;
+            didUpdate = TRUE;
+        } else if (D_801268D8 < introCharData->unk10) {
+            temp = (D_801268D8 - introCharData->unkC);
+            temp2 = (introCharData->unk10 - introCharData->unkC);
+            xPos = (introCharData->unk1C + (((introCharData->unk24 - introCharData->unk1C) * temp) / temp2));
+            yPos = (introCharData->unk20 + (((introCharData->unk28 - introCharData->unk20) * temp) / temp2));
+            text = introCharData->unk0;
+            didUpdate = TRUE;
+        } else {
+            gOpeningNameID++;
+        }
+    }
+
+    if (gTitleCinematicTextColours) {}
+
+    if (!didUpdate) {
+        return;
+    }
+
+    if (gTitleCinematicTextColourCount < 4) {
+        D_80126878[gTitleCinematicTextColourCount].colourIndex = 0;
+        D_80126878[gTitleCinematicTextColourCount].text = text;
+        D_80126878[gTitleCinematicTextColourCount].x = xPos;
+        D_80126878[gTitleCinematicTextColourCount].y = yPos;
+        gTitleCinematicTextColourCount++;
+    }
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(&sMenuCurrDisplayList, xPos, yPos, text, ALIGN_MIDDLE_CENTER);
 }
 #else
 GLOBAL_ASM("asm/non_matchings/menu/func_80083098.s")
@@ -3533,15 +3600,86 @@ void menu_audio_options_init(void) {
     func_8007FFEC(2);
     gMusicVolumeSliderValue = music_volume_config();
     gSfxVolumeSliderValue = sfxVolumeSlider;
-    gAudioMenuStrings[6].unkC = gMusicTestString;
-    gAudioMenuStrings[3].unk2 = 212;
+    gAudioMenuStrings[6].text = gMusicTestString;
+    gAudioMenuStrings[3].y = 212;
     music_voicelimit_set(32);
     gMenuStage = 5;
     load_font(ASSET_FONTS_BIGFONT);
 }
 
 // Probably soundoption_render
-GLOBAL_ASM("asm/non_matchings/menu/func_80084854.s")
+void func_80084854(UNUSED s32 updateRate) {
+    s32 i;
+    s32 yOffset;
+    s32 j;
+    s32 temp;
+
+    temp = gMusicTestSongIndex;
+
+    for (i = 0; (gMusicTestString[i] < '0') || (gMusicTestString[i] > '9'); i++) {}
+
+    j = temp / 10;
+    gMusicTestString[i] = '0' + j;
+    temp -= (j * 10);
+    i++;
+    gMusicTestString[i] = '0' + temp;
+
+    temp = gOptionBlinkTimer * 8;
+    if (temp >= 256) {
+        temp = 511 - temp;
+    }
+    gAudioMenuStrings[0].text = gAudioOutputStrings[gAudioOutputType];
+    set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
+
+    if (osTvType == OS_TV_TYPE_PAL) {
+        yOffset = 101;
+    } else {
+        yOffset = 113;
+    }
+    func_80080580(NULL, -72, 120 - yOffset, 144, 14, 6, 4, COLOUR_RGBA32(255, 192, 64, 255),
+                  (TextureHeader *) gMenuAssets[TEXTURE_UNK_44]);
+    func_80080580(NULL, -72, 80 - yOffset, 144, 14, 6, 4, COLOUR_RGBA32(255, 192, 64, 255),
+                  (TextureHeader *) gMenuAssets[TEXTURE_UNK_44]);
+    func_80080BC8(&sMenuCurrDisplayList);
+    dialogue_clear(7);
+    set_current_dialogue_background_colour(7, 0, 0, 0, 255);
+    set_current_dialogue_box_coords(7, 94, 117, 226, 123);
+    render_dialogue_box(&sMenuCurrDisplayList, NULL, NULL, 7);
+    set_current_dialogue_box_coords(7, 94, 157, 226, 163);
+    render_dialogue_box(&sMenuCurrDisplayList, NULL, NULL, 7);
+    texrect_draw(&sMenuCurrDisplayList, gMenuSelectionArrowLeft, (gSfxVolumeSliderValue >> 1) + 96, 120, 255, 255, 255,
+                 255);
+    texrect_draw(&sMenuCurrDisplayList, gMenuSelectionArrowLeft, (gMusicVolumeSliderValue >> 1) + 96, 160, 255, 255,
+                 255, 255);
+    reset_render_settings(&sMenuCurrDisplayList);
+    set_text_background_colour(0, 0, 0, 0);
+
+    // j must be here.
+    j = 0;
+
+    if (gMenuStage < 5) {
+        i = gOptionsMenuItemIndex;
+    } else if (gOptionsMenuItemIndex < 3) {
+        i = gOptionsMenuItemIndex;
+    } else if (gOptionsMenuItemIndex == 3) {
+        i = 6;
+    } else {
+        i = 3;
+    }
+
+    // Must be a for loop?
+    for (; gAudioMenuStrings[j].text != NULL; j++) {
+        set_text_font(gAudioMenuStrings[j].font);
+        if (j == i) {
+            set_text_colour(255, 255, 255, temp, 255);
+        } else {
+            set_text_colour(gAudioMenuStrings[j].red, gAudioMenuStrings[j].green, gAudioMenuStrings[j].blue,
+                            gAudioMenuStrings[j].alpha, gAudioMenuStrings[j].opacity);
+        }
+        draw_text(&sMenuCurrDisplayList, gAudioMenuStrings[j].x, gAudioMenuStrings[j].y, gAudioMenuStrings[j].text,
+                  gAudioMenuStrings[j].alignmentFlags);
+    }
+}
 
 /**
  * Handles the input for the audio options menu.
@@ -3565,7 +3703,7 @@ s32 menu_audio_options_loop(s32 updateRate) {
         }
     }
     if (gMenuDelay > -20 && gMenuDelay < 20) {
-        func_80084854();
+        func_80084854(updateRate);
     }
     if (gIgnorePlayerInputTime == 0) {
         contX = 0;
@@ -4144,16 +4282,16 @@ SIDeviceStatus savemenu_load_sources(void) {
             gSaveMenuRumbleConnected = FALSE;
 
             do {
-                result = get_controller_pak_file_list(0, 16, fileNames, fileExts, fileSizes, fileTypes);
+                result = get_controller_pak_file_list(0, MAX_CPAK_FILES, fileNames, fileExts, fileSizes, fileTypes);
                 temp = result & 0xFF; // strip the controller index from the result to just get the SI Device Status
                 numAttempts++;
-            } while ((temp == CONTROLLER_PAK_CHANGED) && (numAttempts < 3));
+            } while (temp == CONTROLLER_PAK_CHANGED && numAttempts < 3);
 
             if (result == CONTROLLER_PAK_GOOD) {
-                for (fileIndex = 0; fileIndex < 16; fileIndex++) {
+                for (fileIndex = 0; fileIndex < MAX_CPAK_FILES; fileIndex++) {
                     if ((fileTypes[fileIndex] >= SAVE_FILE_TYPE_CPAK_SAVE) &&
                         (fileTypes[fileIndex] <= SAVE_FILE_TYPE_CPAK_OTHER)) {
-                        (*sControllerPakNotesFree)--;
+                        sControllerPakNotesFree[0]--;
                         gSaveMenuFilesSource[gSaveMenuOptionCountUpper].saveFileType = fileTypes[fileIndex];
                         gSaveMenuFilesSource[gSaveMenuOptionCountUpper].controllerIndex = 0;
                         gSaveMenuFilesSource[gSaveMenuOptionCountUpper].saveFileNumber = fileIndex;
@@ -4821,147 +4959,126 @@ void savemenu_free(void) {
     mempool_free((void *) D_80126A64);
 }
 
-#ifdef NON_EQUIVALENT
-// Nearly complete
-SIDeviceStatus func_80087F14(s32 *controllerIndex, s32 arg1) {
+SIDeviceStatus func_80087F14(s32 *controllerIndex, s32 xAxisDirection) {
+    s32 j;
+    s32 k;
+    s32 i;
+    UNUSED s32 pad;
+    s32 paksWithStatusSuccess;
     s32 ret;
-    s32 j = 0;
-    s32 k = 0;
-    s32 i = 0;
-    s32 controllerIndexVal;
-    s32 pakStatusSuccess;
-    s32 pakStatusError3;
-    s32 pakStatusError9;
-    s32 bytesFree;
+    u32 bytesFree;
     s32 notesFree;
-    s32 pakStatusErrorNoFreeSpace;
-    s32 pakStatus;
+    s32 paksWithNoFreeSpace;
+    s32 paksWithFatalErrors;
+    s32 paksWithBadData;
 
-    pakStatusSuccess = 0;
-    pakStatusError3 = 0;
-    pakStatusError9 = 0;
-    pakStatusErrorNoFreeSpace = 0;
-    // Is this really <= 0?
+    paksWithFatalErrors = 0;
+    paksWithNoFreeSpace = 0;
+    paksWithBadData = 0;
+    paksWithStatusSuccess = 0;
+
+    // This has been hard limited to just the first controller pak, but can easily be modified to check the rest with i
+    // <= MAXCONTROLLERS
     for (i = 0; i <= 0; i++) {
-        // sControllerPakIssueNotFound[i] = 0;
-        sControllerPakFatalErrorFound[i] = 0;
-        sControllerPakNoFreeSpace[i] = 0;
-        sControllerPakBadData[i] = 0;
+        sControllerPakFatalErrorFound[i] = FALSE;
+        sControllerPakNoFreeSpace[i] = FALSE;
+        sControllerPakBadData[i] = FALSE;
         ret = get_free_space(i, &bytesFree, &notesFree);
-        pakStatus = ret & 0xFF; // Upper 2 bits are controller index
         if (ret == CONTROLLER_PAK_GOOD) {
-            sControllerPakIssueNotFound[i] = 1;
+            sControllerPakIssueNotFound[i] = TRUE;
             if (bytesFree == 0 || notesFree == 0) {
-                sControllerPakNoFreeSpace[i] = 1;
-                if (sControllerPakDataPresent[i] == 0) {
-                    pakStatusErrorNoFreeSpace++;
+                sControllerPakNoFreeSpace[i] = TRUE;
+                if (sControllerPakDataPresent[i] == FALSE) {
+                    paksWithNoFreeSpace++;
                 }
             }
-            pakStatusSuccess++;
+            paksWithStatusSuccess++;
         } else {
-            sControllerPakIssueNotFound[i] = 0;
-            // Bad data
-            if (pakStatus == CONTROLLER_PAK_BAD_DATA) {
-                sControllerPakBadData[i] = 1;
-                pakStatusError9++;
+            ret &= 0xFF; // Upper 2 bits are controller index
+            sControllerPakIssueNotFound[i] = FALSE;
+            if (ret == CONTROLLER_PAK_BAD_DATA) {
+                sControllerPakBadData[i] = TRUE;
+                paksWithBadData++;
             }
-            // Error inconsistent
-            if (pakStatus == CONTROLLER_PAK_INCONSISTENT) {
-                // Repair file system
+            if (ret == CONTROLLER_PAK_INCONSISTENT) {
                 repair_controller_pak(i);
             }
-            // fatal error
-            if (pakStatus == CONTROLLER_PAK_WITH_BAD_ID) {
-                sControllerPakFatalErrorFound[i] = 1;
-                pakStatusError3++;
+            if (ret == CONTROLLER_PAK_WITH_BAD_ID) {
+                sControllerPakFatalErrorFound[i] = TRUE;
+                paksWithFatalErrors++;
             }
         }
     }
-    if ((pakStatusSuccess == 0) || (pakStatusError3 != 0) || (pakStatusErrorNoFreeSpace != 0) ||
-        (pakStatusError9 != 0)) {
-        return CONTROLLER_PAK_NOT_FOUND; // Return unsuccessfully?
+
+    if (paksWithStatusSuccess == 0 || paksWithFatalErrors != 0 || paksWithNoFreeSpace != 0 || paksWithBadData != 0) {
+        return CONTROLLER_PAK_NOT_FOUND; // Return unsuccessfully
     }
 
-    controllerIndexVal = *controllerIndex;
-    if (controllerIndexVal < 0) {
-        i = controllerIndexVal;
+    // Loop through the cpaks to find the next one with no issues found.
+    i = *controllerIndex;
+    if (i < 0) {
+        //!@bug If i == -1, and sControllerPakIssueNotFound[0] is FALSE, then this will get stuck in an infinite loop.
+        // This is saved by the fact that this code can't be reached when cpak 0 has an error as it will return above.
         do {
-            controllerIndexVal++;
             i++;
-            if (controllerIndexVal > 0) {
-                controllerIndexVal--;
+            if (i > 0) {
                 i--;
             }
-        } while (sControllerPakIssueNotFound[i] == 0);
-    } else if (sControllerPakIssueNotFound[*controllerIndex] == 0 || arg1 > 0) {
-        i = controllerIndexVal;
+        } while (sControllerPakIssueNotFound[i] == FALSE);
+    } else if (sControllerPakIssueNotFound[*controllerIndex] == FALSE || xAxisDirection > 0) {
         do {
-            controllerIndexVal++;
             i++;
-            if (controllerIndexVal > 0) {
-                controllerIndexVal--;
+            if (i > 0) {
                 i--;
             }
-        } while (sControllerPakIssueNotFound[i] == 0);
-    } else if (arg1 < 0) {
-        i = controllerIndexVal;
+        } while (sControllerPakIssueNotFound[i] == FALSE);
+    } else if (xAxisDirection < 0) {
         do {
-            controllerIndexVal--;
             i--;
-            if (controllerIndexVal < 0) {
-                ;
-                controllerIndexVal++;
+            if (i < 0) {
                 i++;
             }
-        } while (sControllerPakIssueNotFound[i] == 0);
+        } while (sControllerPakIssueNotFound[i] == FALSE);
     }
 
-    *controllerIndex = controllerIndexVal;
-    ret = get_controller_pak_file_list(controllerIndexVal, 16, &sCurrentControllerPakAllFileNames,
-                                       &sCurrentControllerPakAllFileExtensions, &sCurrentControllerPakAllFileSizes,
-                                       &sCurrentControllerPakAllFileTypes);
+    // Set the controller index to the next cpak with no issue found.
+    *controllerIndex = i;
+    ret = get_controller_pak_file_list(*controllerIndex, MAX_CPAK_FILES, sCurrentControllerPakAllFileNames,
+                                       sCurrentControllerPakAllFileExtensions, sCurrentControllerPakNumberOfPages,
+                                       sCurrentControllerPakAllFileTypes);
 
     if (ret == CONTROLLER_PAK_GOOD) {
-        i = 0;
-        j = 0;
-        do {
-            sCurrentControllerPakAllFileSizes[i] = sCurrentControllerPakAllFileSizes[i] / 256;
-            if (sCurrentControllerPakAllFileNames[i] != 0) {
+        for (i = 0; i < MAX_CPAK_FILES; i++) {
+            sCurrentControllerPakNumberOfPages[i] /= (PFS_ONE_PAGE * BLOCKSIZE);
+            j = 0;
+            if (sCurrentControllerPakAllFileNames[i] != NULL) {
                 k = 0;
-                for (; sCurrentControllerPakAllFileNames[i][k] != 0; j++, k++) {
-                    gBootPakData[i][j] = sCurrentControllerPakAllFileNames[i][k];
+                while (sCurrentControllerPakAllFileNames[i][k] != '\0') {
+                    gBootPakData[i][j++] = sCurrentControllerPakAllFileNames[i][k++];
                 }
 
-                if ((sCurrentControllerPakAllFileExtensions[i] != 0) &&
-                    (*sCurrentControllerPakAllFileExtensions[i] != 0)) {
-                    gBootPakData[i][j] = '.';
-                    j++;
+                if (sCurrentControllerPakAllFileExtensions[i] != NULL &&
+                    sCurrentControllerPakAllFileExtensions[i][0] != '\0') {
+                    gBootPakData[i][j++] = '.';
                     k = 0;
-                    for (; sCurrentControllerPakAllFileExtensions[i][k] != 0; j++, k++) {
-                        gBootPakData[i][j] = sCurrentControllerPakAllFileExtensions[i][k];
+                    while (sCurrentControllerPakAllFileExtensions[i][k] != '\0') {
+                        gBootPakData[i][j++] = sCurrentControllerPakAllFileExtensions[i][k++];
                     }
                 }
             }
             if (j == 0) {
-                gBootPakData[i][j] = '-';
-                j++;
+                gBootPakData[i][j++] = '-';
             }
-            i++;
-            gBootPakData[i - 1][j] = 0;
-        } while (&gBootPakData != &sCurrentControllerPakAllFileNames);
+            gBootPakData[i][j] = '\0';
+        }
 
-        cpak_free_files();                                                       // Free gPakFileList from memory
-        get_free_space(*controllerIndex, &sCurrentControllerPakFreeSpace, NULL); // Get Available Space in Controller
-                                                                                 // Pak
-        sCurrentControllerPakFreeSpace = sCurrentControllerPakFreeSpace / 256; // Bytes
-        ret = pakStatus;                                                       // Really?
+        cpak_free_files();
+        get_free_space(*controllerIndex, &sCurrentControllerPakFreePages, NULL);
+        sCurrentControllerPakFreePages /= (PFS_ONE_PAGE * BLOCKSIZE);
     }
 
     return ret;
 }
-#else
-GLOBAL_ASM("asm/non_matchings/menu/func_80087F14.s")
-#endif
 
 /**
  * Sets and returns an error code if any controller paks have an error.
@@ -5245,12 +5362,13 @@ void bootscreen_init_cpak(void) {
     gBootPakData[0] = mempool_alloc_safe(SAVE_SIZE, MEMP_MENU);
 
     // Fills in the table.
-    for (i = 1; i < 16; i++) {
-        gBootPakData[i] = (char *) (((u32) gBootPakData[0]) + (i * 0x20));
+    for (i = 1; i < ARRAY_COUNT(gBootPakData); i++) {
+        gBootPakData[i] = (char *) (((u32) gBootPakData[0]) + (i * (SAVE_SIZE_MENU / ARRAY_COUNT(gBootPakData))));
     }
 
-    for (i = 0; i < 1; i++) {
-        sControllerPakDataPresent[i] = 0;
+    // Only check cpak 0
+    for (i = 0; i <= 0; i++) {
+        sControllerPakDataPresent[i] = FALSE;
     }
 
     gCpakWriteTimer = 0;
@@ -5288,7 +5406,6 @@ void pakmenu_render(UNUSED s32 updateRate) {
     char *pagesText;
     s32 numberOfPages;
     s32 yPos = 0;
-    static const char sTilde[] = "~";
 
     set_text_background_colour(0, 0, 0, 0);
     highlight = gOptionBlinkTimer << 3;
@@ -5320,9 +5437,9 @@ void pakmenu_render(UNUSED s32 updateRate) {
         set_dialogue_font(6, ASSET_FONTS_FUNFONT);
         set_current_text_colour(6, 255, 255, 255, 0, 255);
         set_current_text_background_colour(6, 0, 0, 0, 0);
-        render_dialogue_text(6, POS_CENTRED, 2, gMenuText[86 + gMenuOption], 1,
-                             HORZ_ALIGN_CENTER); // ASSET_MENU_TEXT_CONTPAK1 - CONTROLLER PAK 1 / 2 / 3 / 4
-        render_dialogue_text(6, POS_CENTRED, 16, gMenuText[ASSET_MENU_TEXT_FREEPAGESX], sCurrentControllerPakFreeSpace,
+        render_dialogue_text(6, POS_CENTRED, 2, gMenuText[ASSET_MENU_TEXT_CONTPAK1 + gMenuOption], 1,
+                             HORZ_ALIGN_CENTER); // CONTROLLER PAK 1 / 2 / 3 / 4
+        render_dialogue_text(6, POS_CENTRED, 16, gMenuText[ASSET_MENU_TEXT_FREEPAGESX], sCurrentControllerPakFreePages,
                              HORZ_ALIGN_CENTER); // FREE PAGES: ~
         render_dialogue_box(&sMenuCurrDisplayList, NULL, NULL, 6);
 
@@ -5350,10 +5467,9 @@ void pakmenu_render(UNUSED s32 updateRate) {
                     set_current_dialogue_background_colour(6, 224, 224, 48, 224);
                 }
                 set_current_text_colour(6, 16, 16, 160, 255, 255);
-                noteText = (char *) &sTilde;
-                pagesText = (char *) &sTilde;
+                pagesText = noteText = "~";
                 fileNameText = gBootPakData[gOpacityDecayTimer + i];
-                numberOfPages = sCurrentControllerPakAllFileSizes[gOpacityDecayTimer + i];
+                numberOfPages = sCurrentControllerPakNumberOfPages[gOpacityDecayTimer + i];
             }
             render_dialogue_text(6, 26, 2, noteText, gOpacityDecayTimer + i + 1, HORZ_ALIGN_CENTER);
             render_dialogue_text(6, 56, 2, fileNameText, 1, HORZ_ALIGN_LEFT);
@@ -6385,9 +6501,9 @@ void menu_character_select_init(void) {
 /**
  * Draws the "Player Select" and "OK?" text in the character select menu.
  */
-void charselect_render_text(UNUSED s32 arg0) {
+void charselect_render_text(UNUSED s32 updateRate) {
     s32 yPos;
-    if (gMenuDelay >= -0x16 && gMenuDelay < 0x17) {
+    if (gMenuDelay > -23 && gMenuDelay < 23) {
         set_text_font(ASSET_FONTS_BIGFONT);
         set_text_background_colour(0, 0, 0, 0);
         set_text_colour(0, 0, 0, 255, 128);
@@ -8462,11 +8578,11 @@ void trackmenu_render_2D(s32 x, s32 y, char *hubName, char *trackName, s32 rectO
 // trackmenu_render_names
 void func_8008FF1C(UNUSED s32 updateRate) {
     s32 i; // sp7C
-    UNUSED s16 **temp2;
+    UNUSED s32 pad1;
     char *hubName;
-    UNUSED s32 temp4;
+    s16 temp4;
     s32 trackSelectX;
-    UNUSED s32 pad4;
+    UNUSED s32 pad2;
     s32 temp;
     s32 maxTrackY;
     s8 *trackMenuIds;
@@ -8497,9 +8613,9 @@ void func_8008FF1C(UNUSED s32 updateRate) {
                 } else {
                     cur->visible = 1;
                     hubName = get_level_name(get_hub_area_id(trackY + 1));
+                    temp4 = gTrackSelectIDs[trackY][trackX];
                     cur->hubName = hubName;
-                    // Problem is here.
-                    if (gTrackSelectIDs[trackY][trackX] != -1) {
+                    if ((temp4) != -1) {
                         cur->trackName = get_level_name(trackMenuIds[(trackY * 6) + trackX]);
                         if (trackX == 4) {
                             if (((settings->trophies >> (trackY * 2)) & 3) == 3) {
@@ -9120,10 +9236,9 @@ void func_80092188(s32 updateRate) {
         yOffset = ((xOffset + 20) * gTrackSelectViewPortHalfY) / 40;
         yOffset2 = yOffset + gTrackSelectViewPortHalfY;
         viewport_menu_set(0, 80 - (xOffset * 4), gTrackSelectViewPortHalfY - yOffset, (xOffset * 4) + 240, yOffset2);
-        // TODO: gMenuImages is not just an array of MenuAsset?
-        ((f32 *) gMenuImages)[34] = (f32) (sMenuImageProperties[4].scale * (1.0f + ((f32) xOffset / 20.0f)));
-        ((f32 *) gMenuImages)[42] = (f32) (sMenuImageProperties[5].scale * (1.0f + ((f32) xOffset / 20.0f)));
-        ((f32 *) gMenuImages)[50] = (f32) (sMenuImageProperties[6].scale * (1.0f + ((f32) xOffset / 20.0f)));
+        gMenuImages[4].scale = sMenuImageProperties[4].scale * (1.0f + ((f32) xOffset / 20.0f));
+        gMenuImages[5].scale = sMenuImageProperties[5].scale * (1.0f + ((f32) xOffset / 20.0f));
+        gMenuImages[6].scale = sMenuImageProperties[6].scale * (1.0f + ((f32) xOffset / 20.0f));
     }
     if (gMenuDelay > 0) {
         sMenuMusicVolume -= updateRate * 4;
@@ -10371,58 +10486,58 @@ void postrace_music_fade(s32 updateRate) {
     }
 }
 
-#ifdef NON_MATCHING
 // postrace_render
 void func_80094D28(UNUSED s32 updateRate) {
-    s32 y;
-    s32 textAlpha;
-    s32 viewportULX;
-    s32 viewportLRY;
-    s32 viewportULY;
-    Settings *settings;
-    s32 j;
-    s32 i;
-    s32 sp3C;
     s32 temp;
+    s32 var_s3;
+    Settings *settings;
+    s32 sp50;
+    s32 var_s2;
+    s32 var_s0;
+    s32 i;
+    s32 sp40;
+    s32 filterColour;
+    s32 var_v0;
 
     settings = get_settings();
     if (gNumberOfActivePlayers == 1) {
         set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
     }
     camDisableUserView(0, TRUE);
-    textAlpha = gOptionBlinkTimer * 8;
-    if (textAlpha > 255) {
-        textAlpha = 511 - textAlpha;
+    var_s3 = gOptionBlinkTimer * 8;
+    if (var_s3 > 255) {
+        var_s3 = 511 - var_s3;
     }
     switch (gMenuStage) {
         case 1:
-            temp = gPostRaceTimer;
-            if (temp > 60) {
-                temp = 60;
+            var_s0 = gPostRaceTimer;
+            if (var_s0 > 60) {
+                var_s0 = 60;
             }
-            viewportULY = ((gTrackSelectViewPortHalfY - ((gTrackSelectViewPortHalfY * 4) / 5)) * temp) / 60;
-            viewportLRY =
-                gTrackSelectViewportY - (((gTrackSelectViewPortHalfY - (gTrackSelectViewPortHalfY / 5)) * temp) / 60);
-            viewportULX = (temp * 80) / 60;
-            viewport_menu_set(0, viewportULX, viewportULY, SCREEN_WIDTH - viewportULX, viewportLRY);
+            var_s2 = ((gTrackSelectViewPortHalfY - ((gTrackSelectViewPortHalfY * 4) / 5)) * var_s0) / 60;
+            temp = var_s2;
+            sp50 =
+                gTrackSelectViewportY - (((gTrackSelectViewPortHalfY - (gTrackSelectViewPortHalfY / 5)) * var_s0) / 60);
+            var_v0 = (var_s0 * 80) / 60;
+            viewport_menu_set(0, var_v0, temp, SCREEN_WIDTH - var_v0, sp50);
             gMenuImages[4].x = 0.0f;
-            gMenuImages[4].y = gTrackSelectViewPortHalfY - ((viewportULY + viewportLRY) >> 1);
-            gMenuImages[4].scale = sMenuImageProperties[4].scale * (2.0f - (temp / 60.0f));
+            gMenuImages[4].y = gTrackSelectViewPortHalfY - ((var_s2 + sp50) >> 1);
+            gMenuImages[4].scale = sMenuImageProperties[4].scale * (2.0f - (var_s0 / 60.0f));
             break;
         case 2:
             for (i = 0; i < 3; i++) {
-                if (settings->display_times && settings->racers[0].best_times & (1 << i)) {
-                    gRaceResultsMenuElements[i + 3].filterGreen = 192 - ((textAlpha * 3) >> 2);
-                    gRaceResultsMenuElements[i + 3].filterBlue = 255 - textAlpha;
+                if (settings->display_times && settings->racers[PLAYER_ONE].best_times & (1 << i)) {
+                    gRaceResultsMenuElements[i + 3].filterGreen = 192 - ((var_s3 * 3) >> 2);
+                    gRaceResultsMenuElements[i + 3].filterBlue = 255 - var_s3;
                 } else {
                     gRaceResultsMenuElements[i + 3].filterGreen = 192;
                     gRaceResultsMenuElements[i + 3].filterBlue = 255;
                 }
             }
             if (settings->display_times && settings->racers[0].best_times & (1 << 7)) {
-                gRaceResultsMenuElements[6].filterRed = (textAlpha >> 1) + 128;
-                gRaceResultsMenuElements[6].filterGreen = 255 - textAlpha;
-                gRaceResultsMenuElements[6].filterBlue = 255 - textAlpha;
+                gRaceResultsMenuElements[6].filterRed = (var_s3 >> 1) + 128;
+                gRaceResultsMenuElements[6].filterGreen = 255 - var_s3;
+                gRaceResultsMenuElements[6].filterBlue = 255 - var_s3;
             } else {
                 gRaceResultsMenuElements[6].filterRed = 128;
                 gRaceResultsMenuElements[6].filterGreen = 255;
@@ -10430,37 +10545,37 @@ void func_80094D28(UNUSED s32 updateRate) {
             }
             break;
         case 3:
-            for (j = 0; j < 8; j++) {
-                i = j;
-                sp3C = 255;
+            for (i = 0; i < ARRAY_COUNT(settings->racers); i++) {
+                filterColour = 255;
+                sp40 = i;
                 if (is_in_two_player_adventure()) {
-                    i = j - 1;
-                    if (i == settings->racers[1].starting_position) {
-                        sp3C = (textAlpha >> 1) + 128;
+                    sp40--;
+                    if (sp40 == settings->racers[1].starting_position) {
+                        filterColour = (var_s3 >> 1) + 128;
                     }
                 }
-                if (i == settings->racers[0].starting_position) {
-                    sp3C = (textAlpha >> 1) + 128;
+                if (sp40 == settings->racers[0].starting_position) {
+                    filterColour = (var_s3 >> 1) + 128;
                 }
-                gRaceOrderMenuElements[7 - j].filterRed = sp3C;
-                gRaceOrderMenuElements[7 - j].filterGreen = sp3C;
-                gRaceOrderMenuElements[7 - j].filterBlue = sp3C;
+                gRaceOrderMenuElements[7 - i].filterRed = filterColour;
+                gRaceOrderMenuElements[7 - i].filterGreen = filterColour;
+                gRaceOrderMenuElements[7 - i].filterBlue = filterColour;
             }
             break;
         case 5:
             if (settings->display_times && settings->racers[0].best_times & (s8) ~(1 << 7)) {
                 gRecordTimesMenuElements[6].filterRed = 255;
-                gRecordTimesMenuElements[6].filterGreen = 192 - ((textAlpha * 3) >> 2);
-                gRecordTimesMenuElements[6].filterBlue = 255 - textAlpha;
+                gRecordTimesMenuElements[6].filterGreen = 192 - ((var_s3 * 3) >> 2);
+                gRecordTimesMenuElements[6].filterBlue = 255 - var_s3;
             } else {
                 gRecordTimesMenuElements[6].filterRed = 255;
                 gRecordTimesMenuElements[6].filterGreen = 192;
                 gRecordTimesMenuElements[6].filterBlue = 255;
             }
             if (settings->display_times && settings->racers[0].best_times & (1 << 7)) {
-                gRecordTimesMenuElements[3].filterRed = (textAlpha >> 1) + 128;
-                gRecordTimesMenuElements[3].filterGreen = 255 - textAlpha;
-                gRecordTimesMenuElements[3].filterBlue = 255 - textAlpha;
+                gRecordTimesMenuElements[3].filterRed = (var_s3 >> 1) + 128;
+                gRecordTimesMenuElements[3].filterGreen = 255 - var_s3;
+                gRecordTimesMenuElements[3].filterBlue = 255 - var_s3;
             } else {
                 gRecordTimesMenuElements[3].filterRed = 128;
                 gRecordTimesMenuElements[3].filterGreen = 255;
@@ -10474,58 +10589,65 @@ void func_80094D28(UNUSED s32 updateRate) {
             set_current_text_background_colour(7, 0, 0, 0, 0);
 
             if (gTracksSaveGhost != 0) {
-                temp = 1;
+                var_s0 = 1;
             } else if (gPostRaceMessage != NULL) {
-                temp = gPostRaceLineCount;
+                var_s0 = gPostRaceLineCount;
             } else {
-                temp = gResultOptionCount;
+                var_s0 = gResultOptionCount;
             }
-            if (temp >= 5) {
-                viewportULX = 2;
-                viewportLRY = 13;
+            if (var_s0 >= 5) {
+                var_v0 = 2;
+                sp50 = 13;
             } else {
-                viewportULX = 0;
-                viewportLRY = 16;
+                var_v0 = 0;
+                sp50 = 16;
             }
-            viewportULY = ((temp * viewportLRY) + 1) >> 1;
-            temp = 192;
-            set_current_dialogue_box_coords(7, 0, temp - viewportULY - viewportULX - 4, gScreenWidth,
-                                            temp + viewportULY + viewportULX + 4);
+            var_s2 = ((var_s0 * sp50) + 1) >> 1;
+            var_s0 = 192;
+            if (osTvType == OS_TV_TYPE_PAL) {
+                var_s0 = 218;
+            }
+            set_current_dialogue_box_coords(7, 0, var_s0 - var_s2 - var_v0 - 4, gScreenWidth,
+                                            var_s0 + var_s2 + var_v0 + 4);
             set_current_dialogue_background_colour(7, 64, 64, 255, 0);
             set_current_text_colour(7, 255, 0, 255, 64, 255);
             if (gTracksSaveGhost != 0) {
                 render_dialogue_text(7, POS_CENTRED, 12, gMenuText[ASSET_MENU_TEXT_PLEASEWAIT], 1, ALIGN_MIDDLE_CENTER);
             } else if (gPostRaceMessage != NULL) {
-                for (y = 12, temp = 0; temp < gPostRaceLineCount; temp++, y += viewportLRY) {
-                    render_dialogue_text(7, POS_CENTRED, y, gPostRaceMessage[temp], 1, ALIGN_MIDDLE_CENTER);
+                var_s2 = 12;
+                for (var_s0 = 0; var_s0 < gPostRaceLineCount; var_s0++) {
+                    render_dialogue_text(7, POS_CENTRED, var_s2, gPostRaceMessage[var_s0], 1, ALIGN_MIDDLE_CENTER);
+                    var_s2 += sp50;
                 }
             } else {
-                viewportULY -= 24;
+                var_s2 -= 24;
                 if (gMenuSubOption != 0) {
-                    render_dialogue_text(7, POS_CENTRED, viewportULY + 8, gMenuText[ASSET_MENU_TEXT_QUITGAMETITLE], 1,
+                    render_dialogue_text(7, POS_CENTRED, var_s2 + 8, gMenuText[ASSET_MENU_TEXT_QUITGAMETITLE], 1,
                                          ALIGN_MIDDLE_CENTER);
-                    temp = 0;
+                    var_s0 = 0;
                     if (gMenuSubOption == 1) {
-                        temp = textAlpha;
+                        var_s0 = var_s3;
                     }
-                    set_current_text_colour(7, 255, 255, 255, temp, 255);
-                    render_dialogue_text(7, POS_CENTRED, viewportULY + 26, gMenuText[ASSET_MENU_TEXT_OK], 1,
+                    set_current_text_colour(7, 255, 255, 255, var_s0, 255);
+                    render_dialogue_text(7, POS_CENTRED, var_s2 + 26, gMenuText[ASSET_MENU_TEXT_OK], 1,
                                          ALIGN_MIDDLE_CENTER);
-                    temp = 0;
+                    var_s0 = 0;
                     if (gMenuSubOption == 2) {
-                        temp = textAlpha;
+                        var_s0 = var_s3;
                     }
-                    set_current_text_colour(7, 255, 255, 255, temp, 255);
-                    render_dialogue_text(7, POS_CENTRED, viewportULY + 42, gMenuText[ASSET_MENU_TEXT_CANCEL], 1,
+                    set_current_text_colour(7, 255, 255, 255, var_s0, 255);
+                    render_dialogue_text(7, POS_CENTRED, var_s2 + 42, gMenuText[ASSET_MENU_TEXT_CANCEL], 1,
                                          ALIGN_MIDDLE_CENTER);
                 } else {
-                    for (y = 12, temp = 0; temp < gResultOptionCount; temp++, y += viewportLRY) {
-                        if (temp == gMenuOption) {
-                            set_current_text_colour(7, 255, 255, 255, textAlpha, 255);
+                    for (var_s2 = 12, var_s0 = 0; var_s0 < gResultOptionCount; var_s0++) {
+                        if (var_s0 == gMenuOption) {
+                            set_current_text_colour(7, 255, 255, 255, var_s3, 255);
                         } else {
                             set_current_text_colour(7, 255, 255, 255, 0, 255);
                         }
-                        render_dialogue_text(7, SCREEN_WIDTH_HALF, y, gResultOptionText[temp], 1, ALIGN_MIDDLE_CENTER);
+                        render_dialogue_text(7, SCREEN_WIDTH_HALF, var_s2, gResultOptionText[var_s0], 1,
+                                             ALIGN_MIDDLE_CENTER);
+                        var_s2 += sp50;
                     }
                 }
             }
@@ -10542,9 +10664,6 @@ void func_80094D28(UNUSED s32 updateRate) {
         }
     }
 }
-#else
-GLOBAL_ASM("asm/non_matchings/menu/func_80094D28.s")
-#endif
 
 /**
  * Set the postrace message depending on if a controller pak was detected.
@@ -12047,12 +12166,12 @@ s32 menu_trophy_race_rankings_loop(s32 updateRate) {
                             temp7 = settings->racers[gRankingsPlayerIDs[i]].character;
                             if (temp6 == 0) {
                                 sp34 = i;
-                                D_80126438[temp6++] = temp7;
+                                gRankingsPortraitIDs[temp6++] = temp7;
                                 continue;
                             }
                             if (settings->racers[gRankingsPlayerIDs[i]].trophy_points ==
                                 settings->racers[gRankingsPlayerIDs[sp34]].trophy_points) {
-                                D_80126438[temp6++] = temp7;
+                                gRankingsPortraitIDs[temp6++] = temp7;
                             }
                         }
                     }
@@ -12060,7 +12179,7 @@ s32 menu_trophy_race_rankings_loop(s32 updateRate) {
                     if (gNumberOfActivePlayers == 1 && !is_in_two_player_adventure()) {
                         temp6 = 0;
                     }
-                    D_80126438[temp6] = -1;
+                    gRankingsPortraitIDs[temp6] = -1;
                     if (gIsInTracksMode == 1) {
                         if (sp34 >= 3) {
                             menu_init(MENU_TRACK_SELECT);
@@ -12089,7 +12208,7 @@ s32 menu_trophy_race_rankings_loop(s32 updateRate) {
                     if (sp34 < 3) {
                         params = (s8 *) get_misc_asset(ASSET_MISC_CINEMATIC_TROPHY);
                         temp0 = ((gTrophyRaceWorldId * 3) + sp34) - 3;
-                        cinematic_start(params, temp0, ret, 0, 0, D_80126438);
+                        cinematic_start(params, temp0, ret, 0, 0, gRankingsPortraitIDs);
                         ret = MENU_RESULT_CONTINUE;
                         menu_init(MENU_NEWGAME_CINEMATIC);
                     }
@@ -12199,53 +12318,34 @@ s32 ghostmenu_erase(s32 id) {
     return result;
 }
 
-#ifdef NON_EQUIVALENT
-
-// Should be functionally equivalent
 void menu_ghost_data_init(void) {
     s32 i;
     SIDeviceStatus pakStatus;
 
-    pakStatus = func_800756D4(gCpakGhostData, &gGhostLevelIDsPak, &gGhostVehicleIDsPak, &gGhostCharacterIDsPak,
-                              &gGhostChecksumIDsPak);
+    pakStatus = func_800756D4(gCpakGhostData, gGhostLevelIDsPak, gGhostVehicleIDsPak, gGhostCharacterIDsPak,
+                              gGhostChecksumIDsPak);
     if (pakStatus == CONTROLLER_PAK_GOOD) {
         ghostmenu_generate();
     }
-    menu_assetgroup_load(&gGhostDataObjectIndices);
-    menu_imagegroup_load(&gGhostDataImageIndices);
+    menu_assetgroup_load(gGhostDataObjectIndices);
+    menu_imagegroup_load(gGhostDataImageIndices);
     load_font(ASSET_FONTS_BIGFONT);
-    gDrawTexDinoDomainGhostBg[0].texture = gMenuAssets[TEXTURE_BACKGROUND_DINO_DOMAIN_TOP];
-    gDrawTexDinoDomainGhostBg[5].texture = gMenuAssets[TEXTURE_BACKGROUND_DINO_DOMAIN_BOTTOM];
-    gDrawTexSherbetIslandGhostBg[0].texture = gMenuAssets[TEXTURE_BACKGROUND_SHERBERT_ISLAND_TOP];
-    gDrawTexSherbetIslandGhostBg[5].texture = gMenuAssets[TEXTURE_BACKGROUND_SHERBERT_ISLAND_BOTTOM];
-    gDrawTexSnowflakeMountainGhostBg[0].texture = gMenuAssets[TEXTURE_BACKGROUND_SNOWFLAKE_MOUNTAIN_TOP];
-    gDrawTexSnowflakeMountainGhostBg[5].texture = gMenuAssets[TEXTURE_BACKGROUND_SNOWFLAKE_MOUNTAIN_BOTTOM];
-    gDrawTexDragonForestGhostBg[0].texture = gMenuAssets[TEXTURE_BACKGROUND_DRAGON_FOREST_TOP];
-    gDrawTexDragonForestGhostBg[5].texture = gMenuAssets[TEXTURE_BACKGROUND_DRAGON_FOREST_BOTTOM];
-    gDrawTexFutureFunLandGhostBg[0].texture = gMenuAssets[TEXTURE_BACKGROUND_FUTURE_FUN_LAND_TOP];
-    gDrawTexFutureFunLandGhostBg[5].texture = gMenuAssets[TEXTURE_BACKGROUND_FUTURE_FUN_LAND_BOTTOM];
-    for (i = 0; i < 4; i++) {
-        gDrawTexDinoDomainGhostBg[i + 1].texture = gDrawTexDinoDomainGhostBg[0].texture;
-        gDrawTexDinoDomainGhostBg[i + 6].texture = gDrawTexDinoDomainGhostBg[5].texture;
-        if (i & 1 == 1) {
-            gDrawTexSherbetIslandGhostBg[i + 1].texture = gDrawTexSherbetIslandGhostBg[0].texture;
-            gDrawTexSherbetIslandGhostBg[i + 6].texture = gDrawTexSherbetIslandGhostBg[5].texture;
-        } else {
-            gDrawTexSherbetIslandGhostBg[i + 1].texture = gDrawTexSherbetIslandGhostBg[5].texture;
-            gDrawTexSherbetIslandGhostBg[i + 6].texture = gDrawTexSherbetIslandGhostBg[0].texture;
-        }
-        gDrawTexSnowflakeMountainGhostBg[i + 1].texture = gDrawTexSnowflakeMountainGhostBg[0].texture;
-        gDrawTexSnowflakeMountainGhostBg[i + 6].texture = gDrawTexSnowflakeMountainGhostBg[5].texture;
-        gDrawTexDragonForestGhostBg[i + 1].texture = gDrawTexDragonForestGhostBg[0].texture;
-        gDrawTexDragonForestGhostBg[i + 6].texture = gDrawTexDragonForestGhostBg[5].texture;
-        if (i & 1 == 1) {
-            gDrawTexFutureFunLandGhostBg[i + 1].texture = gDrawTexFutureFunLandGhostBg[0].texture;
-            gDrawTexFutureFunLandGhostBg[i + 6].texture = gDrawTexFutureFunLandGhostBg[5].texture;
-        } else {
-            gDrawTexFutureFunLandGhostBg[i + 1].texture = gDrawTexFutureFunLandGhostBg[5].texture;
-            gDrawTexFutureFunLandGhostBg[i + 6].texture = gDrawTexFutureFunLandGhostBg[0].texture;
-        }
+
+    for (i = 0; i < 5; i++) {
+        gDrawTexDinoDomainGhostBg[i].texture = gMenuAssets[TEXTURE_BACKGROUND_DINO_DOMAIN_TOP];
+        gDrawTexDinoDomainGhostBg[i + 5].texture = gMenuAssets[TEXTURE_BACKGROUND_DINO_DOMAIN_BOTTOM];
+        gDrawTexSherbetIslandGhostBg[i + ((i & 1) * 5)].texture = gMenuAssets[TEXTURE_BACKGROUND_SHERBERT_ISLAND_TOP];
+        gDrawTexSherbetIslandGhostBg[i + (((i & 1) ^ 1) * 5)].texture =
+            gMenuAssets[TEXTURE_BACKGROUND_SHERBERT_ISLAND_BOTTOM];
+        gDrawTexSnowflakeMountainGhostBg[i].texture = gMenuAssets[TEXTURE_BACKGROUND_SNOWFLAKE_MOUNTAIN_TOP];
+        gDrawTexSnowflakeMountainGhostBg[i + 5].texture = gMenuAssets[TEXTURE_BACKGROUND_SNOWFLAKE_MOUNTAIN_BOTTOM];
+        gDrawTexDragonForestGhostBg[i].texture = gMenuAssets[TEXTURE_BACKGROUND_DRAGON_FOREST_TOP];
+        gDrawTexDragonForestGhostBg[i + 5].texture = gMenuAssets[TEXTURE_BACKGROUND_DRAGON_FOREST_BOTTOM];
+        gDrawTexFutureFunLandGhostBg[i + ((i & 1) * 5)].texture = gMenuAssets[TEXTURE_BACKGROUND_FUTURE_FUN_LAND_TOP];
+        gDrawTexFutureFunLandGhostBg[i + (((i & 1) ^ 1) * 5)].texture =
+            gMenuAssets[TEXTURE_BACKGROUND_FUTURE_FUN_LAND_BOTTOM];
     }
+
     menu_init_vehicle_textures();
     menu_racer_portraits();
     menu_init_arrow_textures();
@@ -12260,9 +12360,6 @@ void menu_ghost_data_init(void) {
     }
     gMenuDelay = 30;
 }
-#else
-GLOBAL_ASM("asm/non_matchings/menu/menu_ghost_data_init.s")
-#endif
 
 /**
  * Render the list of existing ghost data.
