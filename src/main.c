@@ -636,7 +636,7 @@ const ProfilerGraph sProfilerGraph[] = {
 
 void puppyprint_render_graphs(void) {
     s32 x;
-    const s32 num = MIN(NUM_PERF_ITERATIONS, 30);
+    const s32 num = MIN(NUM_PERF_ITERATIONS, 60);
     Gfx *gfx = gCurrDisplayList;
     u32 first = osGetCount();
     f32 divisor;
@@ -654,7 +654,7 @@ void puppyprint_render_graphs(void) {
     x = 16;
     gDPSetRenderMode(gfx++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
     for (int j = 0; j < ARRAY_COUNT(sProfilerGraph); j++) {
-        s32 origin = x + (((num * 2)) / 2);
+        s32 origin = x + (((num * 1)) / 2);
         s32 origin2 = x;
         u32 *ref;
         s32 bm;
@@ -666,7 +666,7 @@ void puppyprint_render_graphs(void) {
         gDPSetCombineMode(gfx++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
         // bg
         gDPSetPrimColor(gfx++, 0, 0, 0, 0, 0, 127);
-        gDPFillRectangle(gfx++, x - 1, gScreenHeight - 16 - 54, x + (num * 2) + 1, gScreenHeight - 15);
+        gDPFillRectangle(gfx++, x - 1, gScreenHeight - 16 - 54, x + (num * 1) + 1, gScreenHeight - 15);
         gDPPipeSync(gfx++);
         gDPSetRenderMode(gfx++, G_RM_OPA_SURF, G_RM_OPA_SURF2);
         u32 prevColour = 0;
@@ -691,7 +691,7 @@ void puppyprint_render_graphs(void) {
                 yT += (count / 1536) * divisor;
                 if (bm) {
                     gDPSetPrimColorRGBA(gfx++, sProfilerGraph[j].entry[k].colour);
-                    gDPFillRectangle(gfx++, x, gScreenHeight - 16 - (yT), x + 2, gScreenHeight - 16 - y);
+                    gDPFillRectangle(gfx++, x, gScreenHeight - 16 - (yT), x + 1, gScreenHeight - 16 - y);
                     y = yT;
                 }
             }
@@ -709,20 +709,20 @@ void puppyprint_render_graphs(void) {
                     gDPSetPrimColorRGBA(gfx++, colour);
                     prevColour = colour;
                 }
-                gDPFillRectangle(gfx++, x, gScreenHeight - 16 - (yT), x + 2, gScreenHeight - 16);
+                gDPFillRectangle(gfx++, x, gScreenHeight - 16 - (yT), x + 1, gScreenHeight - 16);
             }
-            x += 2;
+            x += 1;
         }
         gDPSetRenderMode(gfx++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
         // 60 line
         gDPSetPrimColor(gfx++, 0, 0, 64, 255, 255, 160);
-        gDPFillRectangle(gfx++, origin2, gScreenHeight - 16 - 11, origin2 + (num * 2), gScreenHeight - 16 - 10);
+        gDPFillRectangle(gfx++, origin2, gScreenHeight - 16 - 11, origin2 + (num * 1), gScreenHeight - 16 - 10);
         // 30 line
         gDPSetPrimColor(gfx++, 0, 0, 64, 255, 64, 160);
-        gDPFillRectangle(gfx++, origin2, gScreenHeight - 16 - 22, origin2 + (num * 2), gScreenHeight - 16 - 21);
+        gDPFillRectangle(gfx++, origin2, gScreenHeight - 16 - 22, origin2 + (num * 1), gScreenHeight - 16 - 21);
         // bruh line
         gDPSetPrimColor(gfx++, 0, 0, 192, 192, 192, 112);
-        gDPFillRectangle(gfx++, origin2, gScreenHeight - 16 - 44, origin2 + (num * 2), gScreenHeight - 16 - 43);
+        gDPFillRectangle(gfx++, origin2, gScreenHeight - 16 - 44, origin2 + (num * 1), gScreenHeight - 16 - 43);
         x += 16;
         gDPPipeSync(gfx++);
         draw_text(&gfx, origin, gScreenHeight - 69, sProfilerGraph[j].name, ALIGN_TOP_CENTER);
