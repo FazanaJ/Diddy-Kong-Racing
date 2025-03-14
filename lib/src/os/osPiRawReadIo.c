@@ -13,7 +13,7 @@ s32 osPiRawReadIo(u32 devAddr, u32 *data) {
     return 0;
 }
 
-#ifdef ENABLE_USB
+//#ifdef ENABLE_USB
 
 // These are needed for the USB library to work.
 
@@ -44,4 +44,4 @@ s32 osPiWriteIo(u32 devAddr, u32 data) {
     return ret;
 }
 
-#endif
+//#endif

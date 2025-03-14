@@ -246,8 +246,10 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     }
     
     set_active_viewports_and_max(numberOfPlayers);
+#ifdef PUPPYPRINT_DEBUG
     loadTime = gPuppyPrint.loadTimes[PP_LOAD_DMA] + gPuppyPrint.loadTimes[PP_LOAD_DECOMPRESS] + gPuppyPrint.loadTimes[PP_LOAD_MALLOC];
     profiler_reset_timer();
+#endif
     spawn_skydome(skybox);
     D_8011B110 = 0;
     D_8011B114 = 0x10000;

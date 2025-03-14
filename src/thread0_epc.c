@@ -419,6 +419,7 @@ INLINE void crash_page_assert(void) {
     }
 }
 
+#ifdef PUPPYPRINT_DEBUG
 INLINE void crash_page_memory(void) {
     s32 i;
     s32 y;
@@ -451,6 +452,7 @@ INLINE void crash_page_memory(void) {
     
     debug_printf("Press A for a detailed breakdown.\n");
 }
+#endif
 
 extern OSThread *__osFaultedThread;
 
@@ -467,7 +469,7 @@ INLINE OSThread *get_crashed_thread(void) {
     return NULL;
 }
 
-#if defined(DETAILED_CRASH) || defined(PUPPYPRINT_DEBUG)
+#if defined(DETAILED_CRASH) && defined(PUPPYPRINT_DEBUG)
 
 char *sMemDumpStrings[] = {
     "",
@@ -570,9 +572,11 @@ INLINE void crash_screen_input(void) {
                     sCrashScroll = sCrashMaxScroll;
                 }
             }
+#ifdef PUPPYPRINT_DEBUG
             if (get_buttons_pressed_from_player(i) & A_BUTTON) {
                 ram_dump();
             }
+#endif
         } else if (sCrashPage == CRASH_PAGE_REGISTERS) {
             if (get_buttons_pressed_from_player(i) & U_JPAD) {
                 sCrashScroll -= 10;
@@ -693,7 +697,9 @@ INLINE void thread2_crash_screen(UNUSED void *arg) {
     debug_printf("Game has crashed.\n\n");
     wcopy(gVideoCurrFramebuffer, gVideoCurrDepthBuffer, (gScreenWidth * gScreenHeight) * 2);
     crash_screen_sleep(500);
+#ifdef PUPPYPRINT_DEBUG
     calculate_ram_print_order();
+#endif
     while (TRUE) {
         handle_save_data_and_read_controller(0, LOGIC_30FPS);
         draw_crash_screen(thread);

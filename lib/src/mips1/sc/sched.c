@@ -192,8 +192,10 @@ static void __scHandleRDP(OSSched *sc) {
     sc->curRDPTask = NULL;
 
     t->state &= ~OS_SC_NEEDS_RDP;
+#ifdef PUPPYPRINT_DEBUG
     update_rdp_profiling();
     sWroteRDP = 1;
+#endif
 
     if ((t->state & OS_SC_RCP_MASK) == 0) {
 #ifdef PUPPYPRINT_DEBUG
@@ -212,14 +214,18 @@ static void __scMain(void *arg) {
 
     while (1) {
         osRecvMesg(&sc->interruptQ, (OSMesg *)&msg, OS_MESG_BLOCK);
+#ifdef PUPPYPRINT_DEBUG
         profiler_snapshot(THREAD5_START);
         if (sTimerChecks[3] == FALSE && gPlatform & CONSOLE) {
             osSetTimer(&sSchedHangTimer, OS_USEC_TO_CYCLES(20000), (OSTime) 0, &gCrashScreen.mesgQueue, (OSMesg) MESG_TASK_FAILED);
             sTimerChecks[3] = TRUE;
         }
+#endif
         msg(sc);
+#ifdef PUPPYPRINT_DEBUG
         sTimerChecks[3] = FALSE;
         osStopTimer(&sSchedHangTimer);
+#endif
         profiler_snapshot(THREAD5_END);
     }
 }
@@ -297,5 +303,7 @@ void osCreateScheduler(OSSched *sc, void *stack, OSPri priority, UNUSED u8 mode,
 
     osCreateThread(&sc->thread, 5, __scMain, (void *)sc, stack, priority);
     osStartThread(&sc->thread);
+#ifdef PUPPYPRINT_DEBUG
     sWroteRDP = 1;
+#endif
 }

@@ -156,7 +156,11 @@ s32 mempool_get_pool(u8 *address);
 s32 get_memory_colour_tag_count(u32 colourTag);
 void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag);
 u8 *align16(u8 *address);
+#ifdef PUPPYPRINT_DEBUG
 s32 puppyprint_colourtag(s32 colourTag);
+#else
+  #define puppyprint_colourtag(x) (x)
+#endif
 void *mempool_alloc_audio(MemoryPoolSlot *slots, s32 size, s32 colourTag);
 void calculate_pool_remainder(void);
 void mempool_free_sub(MemoryPoolSlot *pool);

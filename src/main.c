@@ -296,8 +296,6 @@ void thread1_main(UNUSED void *unused) {
     find_expansion_pak();
 #ifdef PUPPYPRINT_DEBUG
     bzero(&gPuppyPrint, sizeof(gPuppyPrint));
-    gPuppyPrint.enabled = 1;
-    gPuppyPrint.page = PAGE_GRAPHS;
     gPuppyPrint.logLevel = LOG_EXTRA;
 #endif
     osCreateThread(&gThread3, 3, &thread3_main, 0, &gThread3Stack[THREAD3_STACK / sizeof(u64)], 10);
