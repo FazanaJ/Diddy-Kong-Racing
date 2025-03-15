@@ -2308,7 +2308,6 @@ void init_save_data(void) {
     gCheatsAssetData = (u16(*)[30]) get_misc_asset(ASSET_MISC_MAGIC_CODES);
     gNumberOfCheats = (*gCheatsAssetData)[0];
     gMenuText = mempool_alloc_safe(1024 * sizeof(char *), MEMP_TEXT);
-    load_menu_text(LANGUAGE_ENGLISH);
 
     // clang-format off
     for (i = 0; i < ARRAY_COUNT(gMenuAssets); i++) { \
@@ -3125,6 +3124,7 @@ void menu_title_screen_init(void) {
     s32 i;
     s32 numberOfPlayers;
 
+    load_menu_text(get_language());
     gTitleScreenLoaded = 1;
     gOptionBlinkTimer = 0;
     gMenuDelay = 0;
@@ -14627,19 +14627,20 @@ u64 get_eeprom_settings(void) {
  * Official Name: frontGetLanguage
  */
 s32 get_language(void) {
-    s32 language = LANGUAGE_ENGLISH;
     switch (sEepromSettings & 0xC) {
         case 4:
-            language = LANGUAGE_GERMAN;
+            return LANGUAGE_GERMAN;
             break;
         case 8:
-            language = LANGUAGE_FRENCH;
+            return LANGUAGE_FRENCH;
             break;
         case 12:
-            language = LANGUAGE_JAPANESE;
+            return LANGUAGE_JAPANESE;
             break;
+        default:
+            return LANGUAGE_ENGLISH;
     }
-    return language;
+    return LANGUAGE_ENGLISH;
 }
 
 /**
