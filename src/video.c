@@ -39,6 +39,7 @@ u8 gUseExpansionMemory = FALSE;
 u8 gBitDepth = G_IM_SIZ_16b;
 u8 gVideoSkipNextRate = FALSE;
 s8 gBootTimer = 8;
+u8 gRefreshRes;
 u16 gScreenWidth = SCREEN_WIDTH;
 u16 gScreenHeight;
 
@@ -72,6 +73,7 @@ void video_init(UNUSED s32 videoModeIndex) {
             fb_alloc(i);
         }
     }
+    osWritebackDCacheAll();
 // If Enforced 4MB is on, move framebuffers to expansion memory
 #if EXPANSION_PAK_SUPPORT == 0 && !defined(FORCE_4MB_MEMORY)
     if (gExpansionPak) {
@@ -90,8 +92,6 @@ void video_init(UNUSED s32 videoModeIndex) {
     gVideoWriteFbIndex = 0;
     fb_swap();
     fb_init_vi();
-    sBlackScreenTimer = 12;
-    osViBlack(TRUE);
 }
 
 /**
@@ -105,10 +105,11 @@ s32 fb_size(void) {
 
 OSViMode gGlobalVI;
 
-void change_vi(OSViMode *mode, int width, int height) {
+void change_vi(int width, int height) {
     s32 addPAL = 0;
     s32 addX = 0;
     s32 mul;
+    OSViMode *mode = &gGlobalVI;
     if (osTvType == TV_TYPE_PAL) {
         gGlobalVI = osViModePalLan1;
     } else {
@@ -159,6 +160,7 @@ void change_vi(OSViMode *mode, int width, int height) {
     reset_perspective_matrix();
     osViSetMode(mode);
     set_dither_filter();
+    fb_blank(15);
 }
 
 void set_dither_filter(void) {
@@ -176,11 +178,9 @@ void set_dither_filter(void) {
  * Most of these go unused, as the value is always 1.
  */
 static void fb_init_vi(void) {
-    change_vi(&gGlobalVI, SCREEN_WIDTH, SCREEN_HEIGHT);
-    osViSetMode(&gGlobalVI);
+    change_vi(SCREEN_WIDTH, SCREEN_HEIGHT);
     gScreenWidth = SCREEN_WIDTH;
     gScreenHeight = SCREEN_HEIGHT;
-    set_dither_filter();
 }
 
 /**
@@ -228,6 +228,7 @@ static void fb_alloc(s32 index) {
     }
     gVideoFramebuffers[index] = mempool_alloc_fixed(fbSize + 0x40, addr, MEMP_FRAMEBUFFERS);
     gVideoFramebuffers[index] = (u32 *) (((s32) gVideoFramebuffers[index] + 0x3F) & ~0x3F);
+    bzero(gVideoFramebuffers[index], fbSize);
     fbAddr = gVideoFramebuffers[index];
     fbAddr[100] = 0xBEEF;
     if (gVideoDepthBuffer == NULL) {
@@ -259,9 +260,9 @@ void detect_framebuffer(void) {
     }
 }
 
-void fb_blank(void) {
+void fb_blank(s32 counter) {
     osViBlack(TRUE);
-    sBlackScreenTimer = 2;
+    sBlackScreenTimer = counter;
 }
 
 /**
@@ -271,11 +272,12 @@ void fb_blank(void) {
  * than an update magnitude of 2. It's only purpose is to be used as a divisor
  * in the unused function, vi_refresh_rate.
  */
-void fb_update(void) {
+void fb_update(s32 updateRate) {
     if (sBlackScreenTimer) {
-        sBlackScreenTimer--;
-        if (sBlackScreenTimer == 0) {
+        sBlackScreenTimer -= updateRate;
+        if (sBlackScreenTimer <= 0) {
             osViBlack(FALSE);
+            sBlackScreenTimer = 0;
         }
     }
     fb_swap();

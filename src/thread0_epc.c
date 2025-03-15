@@ -635,7 +635,7 @@ INLINE void draw_crash_screen(OSThread *thread) {
 
     osWritebackDCacheAll();
     osViBlack(FALSE);
-    change_vi(&gGlobalVI, SCREEN_WIDTH, SCREEN_HEIGHT);
+    change_vi(SCREEN_WIDTH, SCREEN_HEIGHT);
     osViSwapBuffer(gCrashScreen.framebuffer);
     gVideoCurrFbIndex ^= 1;
     if (gVideoCurrFramebuffer) {

@@ -127,7 +127,6 @@ s32 gNMIMesgBuf; // Official Name: resetPressed
 extern u32 gMemUsed[16];
 extern u8 gMemUsedCounter;
 
-static void init_config(void);
 static void init_game(void);
 static void main_game_loop(void);
 static void load_next_ingame_level(s32 numPlayers, s32 trackID, Vehicle vehicle);
@@ -177,18 +176,6 @@ void thread3_main(UNUSED void *unused) {
 
 struct ConfigOptions gConfig;
 u8 gHideHUD = FALSE;
-
-static void init_config(void) {
-    bzero(&gConfig, sizeof(gConfig));
-    if (gPlatform & EMULATOR) {
-        gConfig.noCutbacks = TRUE;
-        gConfig.antiAliasing = 1;
-        gConfig.dedither = TRUE;
-        gConfig.perfMode = FALSE;
-    }
-    refresh_screen_res();
-    //gConfig.perfMode = TRUE;
-}
 
 /**
  * Setup all of the necessary pieces required for the game to function.
@@ -248,7 +235,6 @@ static void init_game(void) {
     gDPFullSync(gCurrDisplayList++);
     gSPEndDisplayList(gCurrDisplayList++);
     get_platform();
-    init_config();
     load_game_text_table();
     puppyprint_log(LOG_INFO, "Game booted in %2.3fs.\n", (f64) ((f32)(osGetCount()) / 46875000.0f));
     osTvType = TV_TYPE_NTSC; // Temporary while PAL is still broken
@@ -283,6 +269,11 @@ static void main_game_loop(void) {
 #ifdef ENABLE_USB
         tick_usb_thread();
 #endif
+    }
+
+    if (gRefreshRes) {
+        refresh_screen_res();
+        gRefreshRes = FALSE;
     }
 
     if (gVideoSkipNextRate) {
@@ -411,7 +402,7 @@ static void main_game_loop(void) {
         wcopy(gVideoCurrFramebuffer, gVideoLastFramebuffer, (gScreenWidth * gScreenHeight) * 2);
     }
 
-    fb_update();
+    fb_update(sLogicUpdateRate);
 
     if (gDrawFrameTimer == 0) {
 #ifndef FIFO_UCODE

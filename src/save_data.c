@@ -1272,7 +1272,7 @@ s32 save_config_read(void) {
         gConfig.screenQuality = c.screenQuality;
         gConfig.screenPosX = c.screenPosX;
         gConfig.screenPosY = c.screenPosY;
-        refresh_screen_res();
+        gRefreshRes = TRUE;
     }
     return 1;
 }

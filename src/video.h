@@ -93,10 +93,11 @@ extern s8  D_800DE778;
 extern u32 *gVideoFramebuffers[];
 extern u16 gScreenWidth;
 extern u16 gScreenHeight;
-extern OSViMode gGlobalVI;
+extern s32 sSkipScreenTimer;
 extern u8 gUseExpansionMemory;
 extern s8 gBootTimer;
 extern u8 gVideoSkipNextRate;
+extern u8 gRefreshRes;
 
 extern OSViMode osViModeNtscLpn1, osViModePalLpn1, osViModeMpalLpn1, osViModePalLan1, osViModeNtscLan1, osViModeNtscLan2, osViModeMpalLan1;
 
@@ -115,9 +116,10 @@ s32 fb_size(void);
 s32 get_video_refresh_speed(void);
 void fb_memcpy(u8 *src, u8 *dest, s32 len);
 void set_dither_filter(void);
-void fb_update(void);
-void fb_blank(void);
+void fb_update(s32 updateRate);
+void fb_blank(s32 counter);
+void fb_skip(s32 counter);
 
-void change_vi(OSViMode *mode, int width, int height);
+void change_vi(int width, int height);
 
 #endif

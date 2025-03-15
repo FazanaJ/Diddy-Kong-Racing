@@ -9936,7 +9936,7 @@ void refresh_screen_res(void) {
             break;
     }
 #endif
-    change_vi(&gGlobalVI, gScreenWidth, gScreenHeight);
+    change_vi(gScreenWidth, gScreenHeight);
 #ifndef NATIVE_RES_WIDESCREEN
     switch (gConfig.screenMode) {
         case 1:

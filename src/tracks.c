@@ -1513,7 +1513,7 @@ void render_level_geometry_and_objects(Gfx **dList) {
     objectsVisible[0] = TRUE;
 
     prevAAMode = gConfig.antiAliasing;
-    if (gConfig.perfMode) {
+    if (gConfig.perfMode || gConfig.screenQuality) {
         gConfig.antiAliasing = -1;
     }
 
@@ -1533,7 +1533,7 @@ void render_level_geometry_and_objects(Gfx **dList) {
 #ifdef PUPPYPRINT_DEBUG
     gPuppyPrint.mainTimerPoints[0][PP_OBJGFX] = osGetCount();
 #endif
-    if (gConfig.perfMode) {
+    if (gConfig.perfMode || gConfig.screenQuality) {
         gConfig.antiAliasing = -1;
     } else if (prevAAMode == 0) { // Fast AA, override AA to true to give objects full AA.
         gConfig.antiAliasing = 1;
@@ -1594,9 +1594,7 @@ void render_level_geometry_and_objects(Gfx **dList) {
 #ifdef PUPPYPRINT_DEBUG
     gPuppyPrint.mainTimerPoints[1][PP_OBJGFX] = osGetCount();
 #endif
-    if (gConfig.perfMode == FALSE) {
-        gConfig.antiAliasing = prevAAMode;
-    }
+    gConfig.antiAliasing = -1;
     if (gDrawLevelSegments) {
         for (i = numberOfSegments - 1; i >= 0; i--) {
             render_level_segment(dList, segmentIds[i], TRUE); // Render transparent segments
@@ -1605,9 +1603,7 @@ void render_level_geometry_and_objects(Gfx **dList) {
     }
     if (gWaveBlockCount != 0) {
         profiler_begin_timer();
-        gConfig.antiAliasing = -1;
         func_800BA8E4(dList, &gSceneCurrMatrix, gActiveCameraID);
-        gConfig.antiAliasing = prevAAMode;
         profiler_add(PP_WAVES, first);
     }
 
@@ -1663,9 +1659,7 @@ void render_level_geometry_and_objects(Gfx **dList) {
         profiler_add(PP_VOID, first3);
     }
 
-    if (gConfig.perfMode) {
-        gConfig.antiAliasing = prevAAMode;
-    }
+    gConfig.antiAliasing = prevAAMode;
 #ifdef PUPPYPRINT_DEBUG
     gPuppyPrint.mainTimerPoints[1][PP_PARTICLEGFX] = osGetCount();
 #endif
