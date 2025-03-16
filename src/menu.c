@@ -229,7 +229,7 @@ s32 sControllerPakMenuNumberOfRows;                           // 8 if PAL, 7 if 
 TextureHeader *gMenuMosaic1;
 TextureHeader *gMenuMosaic2;
 s32 gMenuMosaicShift;
-s32 D_80126BC4;               // gCreditsControlData - CurIndex?
+s32 gCreditsControlDataIndex;
 PakError sControllerPakError; // 0 = no error, 1 = fatal error, 2 = no free space, 3 = bad data
 s32 D_80126BCC;
 UNUSED s32 D_80126BD0; // Set to zero, never read.
@@ -1364,18 +1364,27 @@ s16 gCreditsImageIndices[2] = { -1, 0 };
 #define CREDITS_CONTINUE_TITLE_FLAG (0x3000)
 #define CREDITS_NEXT_LEVEL_FLAG (0x4000)
 #define CREDITS_UNK_FLAG (0x5000)
-#define CREDITS_DEV_TIMES_FLAG (0x6000)
+#define CREDITS_BEST_RACE_TIMES_FLAG (0x6000)
+
+#define CREDITS_CONTROL_DATA_BITMASK 0xF000
 
 #define CREDITS_END (CREDITS_END_FLAG)
 #define CREDITS_NEW_TITLE(seconds) (CREDITS_NEW_TITLE_FLAG | ((s16) (seconds * 60.0)))
 #define CREDITS_CONTINUE_TITLE(seconds) (CREDITS_CONTINUE_TITLE_FLAG | ((s16) (seconds * 60.0)))
 #define CREDITS_NEXT_LEVEL (CREDITS_NEXT_LEVEL_FLAG)
-#define CREDITS_DEV_TIMES(seconds) (CREDITS_DEV_TIMES_FLAG | ((s16) (seconds * 60.0)))
+#define CREDITS_BEST_RACE_TIMES(seconds) (CREDITS_BEST_RACE_TIMES_FLAG | ((s16) (seconds * 60.0)))
 
 // Number of seconds for each section in the credits.
 #define CREDITS_DEFAULT_TITLE_TIME 2.75
 #define CREDITS_MAGIC_CODE_TIME 4.5
-#define CREDITS_DEV_TIMES_TIME 8.334
+#define CREDITS_BEST_RACE_TIMES_TIME 8.334
+
+typedef struct CreditsBackgroundLevelData {
+    s8 levelId;
+    s8 unk1;
+    s8 cutsceneId;
+    s8 unk3;
+} CreditsBackgroundLevelData;
 
 // clang-format off
 
@@ -1400,7 +1409,7 @@ s16 gCreditsControlData[] = {
     CREDITS_NEW_TITLE(CREDITS_DEFAULT_TITLE_TIME),
     18, 19,
     CREDITS_NEW_TITLE(CREDITS_DEFAULT_TITLE_TIME),
-    20,
+    20, // ALSO
     CREDITS_NEXT_LEVEL,
     CREDITS_NEW_TITLE(CREDITS_DEFAULT_TITLE_TIME),
     21, 22,
@@ -1456,19 +1465,19 @@ s16 gCreditsControlData[] = {
     CREDITS_NEW_TITLE(CREDITS_MAGIC_CODE_TIME),
     85, 86, // Magic Code Description, Magic Code
     CREDITS_NEXT_LEVEL,
-    CREDITS_END, // Set to CREDITS_DEV_TIMES(CREDITS_DEV_TIMES_TIME) if you've beaten wizpig 2.
+    CREDITS_END, // Set to CREDITS_BEST_RACE_TIMES(CREDITS_BEST_RACE_TIMES_TIME) if you've beaten wizpig 2.
     0, 1, 2, 3,
     CREDITS_NEXT_LEVEL,
-    CREDITS_DEV_TIMES(CREDITS_DEV_TIMES_TIME),
+    CREDITS_BEST_RACE_TIMES(CREDITS_BEST_RACE_TIMES_TIME),
     4, 5, 6, 7,
     CREDITS_NEXT_LEVEL,
-    CREDITS_DEV_TIMES(CREDITS_DEV_TIMES_TIME),
+    CREDITS_BEST_RACE_TIMES(CREDITS_BEST_RACE_TIMES_TIME),
     8, 9, 10, 11,
     CREDITS_NEXT_LEVEL,
-    CREDITS_DEV_TIMES(CREDITS_DEV_TIMES_TIME),
+    CREDITS_BEST_RACE_TIMES(CREDITS_BEST_RACE_TIMES_TIME),
     12, 13, 14, 15,
     CREDITS_NEXT_LEVEL,
-    CREDITS_DEV_TIMES(CREDITS_DEV_TIMES_TIME),
+    CREDITS_BEST_RACE_TIMES(CREDITS_BEST_RACE_TIMES_TIME),
     16, 17, 18, 19,
     CREDITS_NEXT_LEVEL,
     CREDITS_END
@@ -8048,31 +8057,20 @@ void menu_input(void) {
     }
 }
 
-#ifdef NON_EQUIVALENT
 void menu_track_select_init(void) {
     s32 levelCount;
     s32 worldCount;
+    s32 sp74;
+    s32 i;
+    s32 j;
+    s32 var_a0;
     Settings *settings;
-    TextureHeader **var_s0;
-    s16 temp_a0;
-    s16 temp_a0_2;
-    s16 var_a0;
-    s8 **trackMenuIds;
-    s16 *var_s2;
-    s32 videoWidthAndHeight;
-    s32 temp_v0_6;
-    s32 var_a0_2;
-    s32 var_a1;
-    s32 var_a1_2;
-    s32 idx2;
-    s32 idx;
-    s32 var_v0;
-    s16 var_t4;
+    s8 *trackIds;
 
     load_font(ASSET_FONTS_BIGFONT);
     settings = get_settings();
     get_number_of_levels_and_worlds(&levelCount, &worldCount);
-    trackMenuIds = (s8 **) get_misc_asset(ASSET_MISC_TRACKS_MENU_IDS);
+    trackIds = (s8 *) get_misc_asset(ASSET_MISC_TRACKS_MENU_IDS);
     if (gTitleScreenLoaded != 0) {
         gTrackSelectCursorX = 0;
         gTrackSelectCursorY = 0;
@@ -8080,12 +8078,12 @@ void menu_track_select_init(void) {
         gTracksMenuAdventureHighlightIndex = 0;
         gTitleScreenLoaded = 0;
     }
-    videoWidthAndHeight = fb_size();
-    gTrackSelectViewPortX = GET_VIDEO_WIDTH(videoWidthAndHeight);
-    gTrackSelectViewportY = GET_VIDEO_HEIGHT(videoWidthAndHeight);
+    gTrackSelectViewPortX = fb_size();
+    gTrackSelectViewportY = GET_VIDEO_HEIGHT(gTrackSelectViewPortX) & 0xFFFF;
+    gTrackSelectViewPortX = GET_VIDEO_WIDTH(gTrackSelectViewPortX);
     gTrackSelectViewPortHalfX = gTrackSelectViewPortX >> 1;
     gTrackSelectViewPortHalfY = gTrackSelectViewportY >> 1;
-    gTrackSelectX = (f32) gTrackSelectCursorX * 320.0f;
+    gTrackSelectX = (f32) gTrackSelectCursorX * ((f32) gScreenWidth);
     gTrackSelectY = (f32) gTrackSelectCursorY * (f32) -gTrackSelectViewportY;
     gSelectedTrackX = -1;
     gSelectedTrackY = -1;
@@ -8097,42 +8095,51 @@ void menu_track_select_init(void) {
     transition_begin(&sMenuTransitionFadeOut);
     enable_new_screen_transitions();
     bgdraw_fillcolour(50, 105, 223);
-    for (var_a1 = 0; var_a1 != 5; var_a1++) {
-        temp_a0 = gTracksMenuBgTextureIndices[(var_a1 * 3)];
-        var_s0 = (TextureHeader **) gTracksMenuBgTextures[var_a1];
-        if (temp_a0 != -1) {
-            menu_asset_load(temp_a0);
-            var_s0[0] = gMenuAssets[gTracksMenuBgTextureIndices[(var_a1 * 3)]];
+
+    for (sp74 = 0; sp74 < 5; sp74++) {
+        if (gTracksMenuBgTextureIndices[sp74 * 3] != -1) {
+            menu_asset_load(gTracksMenuBgTextureIndices[sp74 * 3]);
+            gTracksMenuBgTextures[sp74 << 1] = gMenuAssets[gTracksMenuBgTextureIndices[sp74 * 3]];
         } else {
-            var_s0[0] = NULL;
+            gTracksMenuBgTextures[sp74 << 1] = NULL;
         }
-        temp_a0_2 = gTracksMenuBgTextureIndices[(var_a1 * 3) + 1];
-        if (temp_a0_2 != -1) {
-            menu_asset_load(temp_a0_2);
-            var_s0[1] = (TextureHeader *) gMenuAssets[gTracksMenuBgTextureIndices[(var_a1 * 3)]];
+        if (gTracksMenuBgTextureIndices[sp74 * 3 + 1] != -1) {
+            menu_asset_load(gTracksMenuBgTextureIndices[sp74 * 3 + 1]);
+            gTracksMenuBgTextures[(sp74 << 1) + 1] = gMenuAssets[gTracksMenuBgTextureIndices[sp74 * 3 + 1]];
         } else {
-            var_s0[1] = NULL;
+            gTracksMenuBgTextures[(sp74 << 1) + 1] = NULL;
         }
     }
-    gTrackSelectBgTriangles[0] = (Triangle *) mempool_alloc_safe(2880, COLOUR_TAG_YELLOW);
-    gTrackSelectBgTriangles[1] = (s32) (&gTrackSelectBgTriangles[0][40]); // 640 bytes forward
-    gTrackSelectBgVertices[0] = (s32) (&gTrackSelectBgTriangles[1][80]);  // 1280 bytes forward
-    // gTrackSelectBgVertices[1] = (s32) (&gTrackSelectBgVertices[0][80]); //800 bytes past gTrackSelectBgVertices
+
+    i = 40;
+    gTrackSelectBgTriangles[0] = mempool_alloc_safe(0xB40, COLOUR_TAG_YELLOW);
+    gTrackSelectBgTriangles[1] = gTrackSelectBgTriangles[0] + i;
+    gTrackSelectBgVertices[0] = (Vertex *) (gTrackSelectBgTriangles[1] + i);
+    gTrackSelectBgVertices[1] = gTrackSelectBgVertices[0] + i * 2;
+
     var_a0 = -160;
-    var_v0 = 0;
-    for (var_v0 = 0; var_v0 < 80; var_v0++) {
-        gTrackSelectBgVertices[var_v0]->x = var_a0;
-        var_a0 = -var_a0;
-        gTrackSelectBgVertices[var_v0]->z = -1024;
-        gTrackSelectBgVertices[var_v0]->r = 0xFF;
-        gTrackSelectBgVertices[var_v0]->g = 0xFF;
-        gTrackSelectBgVertices[var_v0]->b = 0xFF;
+    for (i = 0; i < 2; i++) {
+        for (j = 0; j < 80; j++) {
+            gTrackSelectBgVertices[i][j].x = var_a0;
+            gTrackSelectBgVertices[i][j].z = -0x400;
+            gTrackSelectBgVertices[i][j].r = 255;
+            gTrackSelectBgVertices[i][j].g = 255;
+            gTrackSelectBgVertices[i][j].b = 255;
+            var_a0 = -var_a0;
+        }
     }
-    for (var_v0 = 0; var_v0 < 40; var_v0++) {
-        gTrackSelectBgTriangles[var_v0]->flags = 0x40; // 0x40 = Draw backface
-        gTrackSelectBgTriangles[var_v0]->vi0 = 0;
-        gTrackSelectBgTriangles[var_v0]->vi1 = 2;
-        gTrackSelectBgTriangles[var_v0]->vi2 = 1;
+    for (i = 0; i < 2; i++) {
+        for (j = 0; j < 40; j++) {
+            gTrackSelectBgTriangles[i][j].flags = 0x40; // 0x40 = Draw backface
+            gTrackSelectBgTriangles[i][j].vi0 = 0;
+            gTrackSelectBgTriangles[i][j].vi1 = 2;
+            gTrackSelectBgTriangles[i][j].vi2 = 1;
+            j++;
+            gTrackSelectBgTriangles[i][j].flags = 0x40;
+            gTrackSelectBgTriangles[i][j].vi0 = 1;
+            gTrackSelectBgTriangles[i][j].vi1 = 2;
+            gTrackSelectBgTriangles[i][j].vi2 = 3;
+        }
     }
     gTrackSelectVertsFlip = 0;
     bgdraw_set_func(func_8008F618);
@@ -8144,56 +8151,55 @@ void menu_track_select_init(void) {
     menu_assetgroup_load(gTrackSelectObjectIndices);
     menu_imagegroup_load(gTrackSelectImageIndices);
     menu_init_arrow_textures();
+    D_800E05D4[0].texture = (TextureHeader *) gMenuAssets[TEXTURE_UNK_08];
+    D_800E05D4[1].texture = (TextureHeader *) gMenuAssets[TEXTURE_UNK_09];
+    D_800E05D4[2].texture = (TextureHeader *) gMenuAssets[TEXTURE_UNK_0A];
+    D_800E05F4[0].texture = (TextureHeader *) gMenuAssets[TEXTURE_UNK_0B];
+    D_800E05F4[1].texture = (TextureHeader *) gMenuAssets[TEXTURE_UNK_0C];
+    D_800E05F4[2].texture = (TextureHeader *) gMenuAssets[TEXTURE_UNK_0D];
 
-    D_800E05D4[0].texture = gMenuAssets[TEXTURE_UNK_08];
-    D_800E05D4[1].texture = gMenuAssets[TEXTURE_UNK_09];
-    D_800E05D4[2].texture = gMenuAssets[TEXTURE_UNK_0A];
-    D_800E05F4[0].texture = gMenuAssets[TEXTURE_UNK_0B];
-    D_800E05F4[1].texture = gMenuAssets[TEXTURE_UNK_0C];
-    D_800E05F4[2].texture = gMenuAssets[TEXTURE_UNK_0D];
-
-    for (idx = 0; idx < 4; idx++) {
-        var_s2 = gTrackSelectIDs[idx];
-        for (idx2 = 0; idx2 < 6; idx2++) {
-            *var_s2 = -1;
-            if (idx2 == 0) {
-                if (idx < 4) {
-                    *var_s2 = trackMenuIds[idx][idx2];
+    for (i = 0; i < 5; i++) {
+#define getTrackId(add) ((i * 6) + add)
+        for (j = 0; j < 6; j++) {
+            gTrackSelectIDs[i][j] = -1;
+            if (j == 0 && i < 4) {
+                gTrackSelectIDs[i][j] = trackIds[getTrackId(j)];
+            } else if (j < 4) {
+                if (trackIds[getTrackId(j)] != -1 &&
+                    (settings->courseFlagsPtr[trackIds[getTrackId(j)]] & RACE_VISITED)) {
+                    gTrackSelectIDs[i][j] = trackIds[getTrackId(j)];
                 }
-            } else if (idx2 < 4) {
-                if ((trackMenuIds[idx][idx2] != -1) && (settings->courseFlagsPtr[trackMenuIds[idx][idx2]] & 1)) {
-                    *var_s2 = trackMenuIds[idx][idx2];
-                }
-            } else if (idx2 == 4) {
-                var_a1_2 = 0;
-                // This is almost definitely wrong.
-                for (var_a0_2 = 0; var_a0_2 < 2; var_a0_2++) {
-                    if ((trackMenuIds[idx][var_a0_2] != -1) &&
-                        ((settings->courseFlagsPtr[trackMenuIds[idx][var_a0_2]] & 6) == 6)) {
-                        var_a1_2++;
+            } else if (j == 4) {
+                for (var_a0 = 0, sp74 = 0; (var_a0 < 4) ^ 0; var_a0++) {
+                    if (trackIds[getTrackId(var_a0)] != -1 &&
+                        ((settings->courseFlagsPtr[trackIds[getTrackId(var_a0)]] &
+                          (RACE_CLEARED | RACE_CLEARED_SILVER_COINS)) == (RACE_CLEARED | RACE_CLEARED_SILVER_COINS))) {
+                        sp74++;
                     }
                 }
-                if ((var_a1_2 == 4) && (idx != 4)) {
-                    temp_v0_6 = 130 << idx;
-                    if (temp_v0_6 != (settings->bosses & temp_v0_6)) {
-                        var_a1_2 = 0;
+                if (sp74 == 4 && i != 4) {
+                    // Not Tricky 1 / 2
+                    if ((settings->bosses & (0x82 << i)) != (0x82 << i)) {
+                        sp74 = 0;
                     }
                 }
-                if (var_a1_2 == 4) {
-                    *var_s2 = trackMenuIds[idx][idx2];
+                if (sp74 == 4) {
+                    gTrackSelectIDs[i][j] = trackIds[getTrackId(j)];
                 }
-            } else if ((idx2 == 5) && (settings->keys & (1 << idx))) {
-                *var_s2 = trackMenuIds[idx][idx2];
+            } else if (j == 5 && (settings->keys & (1 << (i + 1)))) {
+                gTrackSelectIDs[i][j] = trackIds[getTrackId(j)];
             }
             if (is_adventure_two_unlocked()) {
-                *var_s2 = trackMenuIds[idx][idx2];
+                gTrackSelectIDs[i][j] = trackIds[getTrackId(j)];
             }
         }
+#undef getTrackId
     }
+
     gTrackIdForPreview = gTrackSelectIDs[gTrackSelectCursorY][gTrackSelectCursorX];
     gTrackSelectRow = gTrackSelectCursorY + 1;
-    if (gTrackIdForPreview == (s16) -1) {
-        gTrackmenuLoadedLevel = gTrackSelectIDs[0];
+    if (gTrackIdForPreview == -1) {
+        gTrackmenuLoadedLevel = gTrackSelectIDs[0][0];
         load_level_for_menu(gTrackmenuLoadedLevel, -1, 1);
         gTrackSelectRow = 1;
         gSelectedTrackX = 0;
@@ -8201,21 +8207,18 @@ void menu_track_select_init(void) {
     }
     dialogue_clear(7);
     func_8007FFEC(2);
-    gTrackTTSoundMask = 0;
-    D_80126848 = 0;
+    gTrackTTSoundMask = NULL;
+    D_80126848 = NULL;
     sMenuMusicVolume = 0;
     music_voicelimit_set(24);
     music_voicelimit_change_off();
     music_play(SEQUENCE_MAIN_MENU);
     music_volume_set(sMenuMusicVolume);
     music_change_off();
-    set_gIntDisFlag(TRUE); // Set an interrupt?
+    set_gIntDisFlag(TRUE);
     gIsInAdventureTwo = gTracksMenuAdventureHighlightIndex;
     gMultiplayerSelectedNumberOfRacersCopy = gMultiplayerSelectedNumberOfRacers;
 }
-#else
-GLOBAL_ASM("asm/non_matchings/menu/menu_track_select_init.s")
-#endif
 
 /**
  * If type is -1, allocate and initialise all the track setup elements.
@@ -12939,7 +12942,7 @@ void menu_credits_init(void) {
 
     settings = get_settings();
     gMenuDelay = 0;
-    D_80126BC4 = 0;
+    gCreditsControlDataIndex = 0;
     D_80126BCC = 0;
     gMenuStage = 0;
     gOpacityDecayTimer = 40;
@@ -12968,7 +12971,7 @@ void menu_credits_init(void) {
         if (settings->bosses & 0x20) { // WIZPIG 2
             music_play(SEQUENCE_CRESCENT_ISLAND);
             gCreditsArray[84] = gCreditsLastMessageArray[1];                      // "TO BE CONTINUED ..."
-            gCreditsControlData[130] = CREDITS_DEV_TIMES(CREDITS_DEV_TIMES_TIME); // Show developer times.
+            gCreditsControlData[130] = CREDITS_BEST_RACE_TIMES(CREDITS_BEST_RACE_TIMES_TIME); // Show developer times.
             D_80126BCC = 9;
         } else {
             music_play(SEQUENCE_DARKMOON_CAVERNS);
@@ -13014,60 +13017,47 @@ void credits_fade(s32 x1, s32 y1, s32 x2, s32 y2, s32 a) {
     reset_render_settings(&sMenuCurrDisplayList);
 }
 
-#ifdef NON_EQUIVALENT
-typedef struct Asset69 {
-    s8 unk0;
-    s8 unk1;
-    s8 unk2;
-    s8 unk3;
-} Asset69;
-
-// Heavily WIP
+/**
+ * Handles the credits for the game
+ */
 s32 menu_credits_loop(s32 updateRate) {
-    s32 breakLoop;
-    s32 sp68;
-    Asset69 *asset69;
-    s8 *mainTrackIds;
     MenuElement *menuElement;
-    s16 *var_s1_2;
-    s16 temp_a0_control_data;
+    UNUSED s32 pad_sp7C[2];
     s32 nextIndex;
-    s32 controlDataIndex;
-    s32 temp_s2;
-    s32 temp_s4;
-    s32 temp_t1;
-    s32 temp_t3;
-    s32 temp_t8_2;
-    s32 temp_v0_credits_flag;
-    s32 temp_v1;
-    s32 original_D_80126BC4;
+    UNUSED s32 pad_sp70[2];
+    s32 breakLoop;
+    s32 isCreditsEnd;
+    UNUSED s32 pad_sp64;
+    CreditsBackgroundLevelData *creditsBackgroundLevelData;
+    s8 *mainTrackIds;
+    s8 isShowingBestRaceTimes;
+    CreditsBackgroundLevelData *tempBackgroundLevelData;
+    s32 i;
     s32 textPos;
     s32 buttonsPressedAllPlayers;
-    s32 var_s3;
-    s32 var_s4;
-    s32 new_D_80126BC4;
+    s32 controlDataLength;
+    s32 creditsMenuElementInex;
     s32 var_s5;
+    s32 var_s4;
     s32 textLineHeight;
-    s32 controlDataFlag;
-    char *asciiText;
-    u8 textFont;
-    MenuElement *var_v0_3;
-    s32 i;
+    s32 halvedFbSize;
 
-    sp68 = FALSE;
-    mainTrackIds = get_misc_asset(ASSET_MISC_MAIN_TRACKS_IDS);
-    asset69 = get_misc_asset(ASSET_MISC_69);
+    isCreditsEnd = FALSE;
+    mainTrackIds = (s8 *)get_misc_asset(ASSET_MISC_MAIN_TRACKS_IDS);
+    creditsBackgroundLevelData = (CreditsBackgroundLevelData *)get_misc_asset(ASSET_MISC_69);
     tick_thread30();
     if (gMenuDelay == 0) {
         disable_new_screen_transitions();
         transition_begin(NULL);
         enable_new_screen_transitions();
     }
+
     if (osTvType == OS_TV_TYPE_PAL) {
         credits_fade(0, 38, SCREEN_WIDTH, 186, gOpacityDecayTimer * 8);
     } else {
         credits_fade(0, 40, SCREEN_WIDTH, 156, gOpacityDecayTimer * 8);
     }
+
     if (gOpacityDecayTimer > 0) {
         gMenuCurIndex += updateRate << 8;
         if (gOpacityDecayTimer >= 40) {
@@ -13075,148 +13065,188 @@ s32 menu_credits_loop(s32 updateRate) {
         } else {
             var_s4 = 40 - gOpacityDecayTimer;
         }
+        var_s4 = (var_s4 * 5) + 72;
+
         var_s5 = gMenuCurIndex;
-        temp_s4 = (var_s4 * 5) + 72;
-        temp_s2 = (fb_size() >> 17) & 0x7FFF; // Truncated video height? Height / 2?
+        halvedFbSize = fb_size();
+        halvedFbSize >>= 17;
+        halvedFbSize &= 0x7FFF;
+        textPos = halvedFbSize;
         for (i = 0; i < ARRAY_COUNT(gRacerPortraits); i++) {
-            texrect_draw(&sMenuCurrDisplayList, gRacerPortraits[i], ((sins_s16(var_s5) * temp_s4) >> 16) + 140,
-                         ((coss_s16(var_s5) * temp_s4) >> 16) + (temp_s2 - 20), 255, 255, 255, 255);
+            texrect_draw(
+                &sMenuCurrDisplayList,
+                gRacerPortraits[i],
+                ((sins_s16(var_s5) * var_s4) >> 16) + 140,
+                (((coss_s16(var_s5) * var_s4) >> 16) + textPos) - 20,
+                255,
+                255,
+                255,
+                255
+            );
             var_s5 += 0x1999;
         }
         reset_render_settings(&sMenuCurrDisplayList);
     }
-    if (D_80126BE0 != 0) {
-        D_80126BE0 = postrace_render(updateRate) == 0;
+
+    if (D_80126BE0 != FALSE) {
+        D_80126BE0 = postrace_render(updateRate) == MENU_RESULT_CONTINUE;
     }
-    if ((D_80126BD8 == 0) && (D_80126BE0 == 0)) {
+
+    if ((D_80126BD8 == FALSE) && (D_80126BE0 == FALSE)) {
         breakLoop = FALSE;
         do {
-            temp_a0_control_data = gCreditsControlData[D_80126BC4];
-            temp_v0_credits_flag = temp_a0_control_data & 0xF000;
-            if (temp_v0_credits_flag != CREDITS_NEW_TITLE_FLAG) {
-                nextIndex = D_80126BC4 + 1;
-                switch (temp_v0_credits_flag) {
-                    case CREDITS_NEW_TITLE_FLAG: /* fallthrough */
-                    case CREDITS_DEV_TIMES_FLAG:
-                        D_80126BE8 = temp_a0_control_data & 0xFFFF0FFF;
-                        D_80126BC4 = nextIndex;
-                        breakLoop = TRUE;
-                        textFont = FONT_COLOURFUL;
-                        while ((gCreditsControlData[D_80126BC4] & 0xF000) == CREDITS_NO_FLAG) {
-                            D_80126BC4++;
-                        }
-                        if (osTvType == OS_TV_TYPE_PAL) {
-                            textPos = SCREEN_HEIGHT_HALF + 14;
+            isShowingBestRaceTimes = (gCreditsControlData[gCreditsControlDataIndex] & CREDITS_CONTROL_DATA_BITMASK) == CREDITS_BEST_RACE_TIMES_FLAG;
+
+            // check what to display
+            switch (gCreditsControlData[gCreditsControlDataIndex] & CREDITS_CONTROL_DATA_BITMASK) {
+                case CREDITS_END_FLAG:
+                    gCreditsControlDataIndex = 0;
+                    isCreditsEnd = TRUE;
+                    gIgnorePlayerInputTime = 0;
+                    break;
+
+                case CREDITS_BEST_RACE_TIMES_FLAG: /* fallthrough */
+                case CREDITS_NEW_TITLE_FLAG:
+                    // Keep everything but the current credits control flag
+                    D_80126BE8 = gCreditsControlData[gCreditsControlDataIndex] & 0xFFFFFFFF & ~CREDITS_CONTROL_DATA_BITMASK;
+                    // advance credits control data index by 1
+                    nextIndex = ++gCreditsControlDataIndex;
+                    // find next control command (basically skip any values < 0x1000)
+                    while ((gCreditsControlData[gCreditsControlDataIndex] & CREDITS_CONTROL_DATA_BITMASK) == CREDITS_NO_FLAG) {
+                        gCreditsControlDataIndex++;
+                    }
+                    
+                    // if tv type is pal we want to offset the position slightly
+                    textPos = osTvType == OS_TV_TYPE_PAL ? SCREEN_HEIGHT_HALF + 14 : SCREEN_HEIGHT_HALF;
+
+                    var_s5 = FONT_COLOURFUL;
+                    textLineHeight = 20;
+                    controlDataLength = gCreditsControlDataIndex - nextIndex;
+                    // only one thing to show for example "CREDITS"
+                    if (controlDataLength == 1) {
+                        textPos -= 14;
+                        var_s5 = FONT_LARGE;
+                    } else if (isShowingBestRaceTimes) {
+                        textPos -= (controlDataLength * 16) - 3;
+                        textLineHeight = 32;
+                    } else {
+                        // we're showing multiple things
+                        textPos -= (controlDataLength * 16) - 8;
+                    }
+
+                    gCreditsMenuElements[0].left = 480;
+                    if ((gCreditsControlData[gCreditsControlDataIndex] & CREDITS_CONTROL_DATA_BITMASK) == CREDITS_CONTINUE_TITLE_FLAG) {
+                        gCreditsMenuElements[0].right = SCREEN_WIDTH_HALF;
+                    } else {
+                        gCreditsMenuElements[0].right = -SCREEN_WIDTH_HALF;
+                    }
+
+                    for (creditsMenuElementInex = 0, var_s4 = nextIndex; var_s4 < gCreditsControlDataIndex; var_s4++) {
+                        gCreditsMenuElements[creditsMenuElementInex].top = textPos;
+                        gCreditsMenuElements[creditsMenuElementInex].middle = textPos;
+                        gCreditsMenuElements[creditsMenuElementInex].bottom = textPos;
+                        if (isShowingBestRaceTimes) {
+                            // show best time for a level. Lists level in the first row and then the time in the next row
+                            gCreditsMenuElements[creditsMenuElementInex].textFont = FONT_COLOURFUL;
+                            gCreditsMenuElements[creditsMenuElementInex].filterGreen = 0;
+                            gCreditsMenuElements[creditsMenuElementInex].filterBlendFactor = 48;
+                            gCreditsMenuElements[creditsMenuElementInex].t.asciiText = get_level_name(mainTrackIds[gCreditsControlData[var_s4]]);
+
+                            creditsMenuElementInex++;
+                            gCreditsMenuElements[creditsMenuElementInex].top = textPos + 14;
+                            gCreditsMenuElements[creditsMenuElementInex].middle = textPos + 14;
+                            gCreditsMenuElements[creditsMenuElementInex].bottom = textPos + 14;
+                            gCreditsMenuElements[creditsMenuElementInex].textFont = FONT_COLOURFUL;
+                            gCreditsMenuElements[creditsMenuElementInex].t.asciiText = gCreditsBestTimesArray[gCreditsControlData[var_s4]];
+                            creditsMenuElementInex++;
                         } else {
-                            textPos = SCREEN_HEIGHT_HALF;
-                        }
-                        textLineHeight = 20;
-                        temp_v1 = D_80126BC4 - nextIndex;
-                        if (temp_v1 == 1) {
-                            textPos -= 14;
-                            textFont = FONT_LARGE;
-                        } else if ((temp_v0_credits_flag == CREDITS_DEV_TIMES_FLAG) != 0) {
-                            textPos = (textPos - (temp_v1 * 16)) + 3;
-                            textLineHeight = 32;
-                        } else {
-                            textPos = (textPos - (temp_v1 * 16)) + 8;
-                        }
-                        gCreditsMenuElements->left = 480;
-                        if ((gCreditsControlData[D_80126BC4] & 0xF000) == CREDITS_CONTINUE_TITLE_FLAG) {
-                            gCreditsMenuElements->right = SCREEN_WIDTH_HALF;
-                        } else {
-                            gCreditsMenuElements->right = -SCREEN_WIDTH_HALF;
-                        }
-                        var_s3 = 0;
-                        menuElement = gCreditsMenuElements;
-                        for (i = nextIndex; i < D_80126BC4; i += 2) {
-                            menuElement->top = textPos;
-                            menuElement->middle = textPos;
-                            menuElement->bottom = textPos;
-                            if ((temp_v0_credits_flag == CREDITS_DEV_TIMES_FLAG) != 0) {
-                                menuElement->textFont = FONT_COLOURFUL;
-                                menuElement->filterGreen = 0;
-                                menuElement->filterBlendFactor = 48;
-                                menuElement->t.asciiText = get_level_name(mainTrackIds[gCreditsControlData[i]]);
-                                menuElement++;
-                                menuElement->top = textPos + 14;
-                                menuElement->middle = textPos + 14;
-                                menuElement->bottom = textPos + 14;
-                                menuElement->textFont = FONT_COLOURFUL;
-                                menuElement->t.asciiText = gCreditsBestTimesArray[gCreditsControlData[i]];
-                                menuElement++;
-                                var_s3 += 2;
-                            } else {
-                                if (var_s3 & 1) {
-                                    menuElement->filterGreen = 255;
-                                    menuElement->filterBlendFactor = 0;
-                                }
-                                menuElement->textFont = textFont;
-                                menuElement->t.asciiText = gCreditsArray[gCreditsControlData[i]];
-                                menuElement++;
-                                var_s3++;
+                            // every other element should have a little more green and a little less red/orange
+                            if (creditsMenuElementInex & 1) {
+                                gCreditsMenuElements[creditsMenuElementInex].filterGreen = 255;
+                                gCreditsMenuElements[creditsMenuElementInex].filterBlendFactor = 0;
                             }
-                            textFont = FONT_LARGE;
-                            textPos += textLineHeight;
-                            textLineHeight = 32;
+                            gCreditsMenuElements[creditsMenuElementInex].textFont = var_s5;
+                            gCreditsMenuElements[creditsMenuElementInex].t.asciiText = gCreditsArray[gCreditsControlData[var_s4]];
+                            creditsMenuElementInex++;
                         }
-                        gCreditsMenuElements[var_s3].t.element = NULL;
-                        postrace_offsets(gCreditsMenuElements, 0.5f, (f32) D_80126BE8 / 60.0f, 0.5f, 0, 0);
-                        D_80126BE0 = postrace_render(0) == MENU_RESULT_CONTINUE;
-                        break;
-                    case CREDITS_CONTINUE_TITLE_FLAG:
-                        D_80126BE8 = temp_a0_control_data & 0xFFFF0FFF;
-                        D_80126BC4++;
-                        original_D_80126BC4 = D_80126BC4;
-                        breakLoop = TRUE;
-                        while ((gCreditsControlData[D_80126BC4] & 0xF000) == CREDITS_NO_FLAG) {
-                            D_80126BC4++;
-                        }
-                        gCreditsMenuElements->left = SCREEN_WIDTH_HALF;
-                        if ((gCreditsControlData[D_80126BC4] & 0xF000) == CREDITS_CONTINUE_TITLE_FLAG) {
-                            gCreditsMenuElements->right = SCREEN_WIDTH_HALF;
-                        } else {
-                            gCreditsMenuElements->right = -SCREEN_WIDTH_HALF;
-                        }
-                        new_D_80126BC4 = original_D_80126BC4;
-                        while (new_D_80126BC4 < D_80126BC4) {
-                            asciiText = gCreditsArray[gCreditsControlData[new_D_80126BC4]];
-                            // The negation part is a bit confusing.
-                            gCreditsMenuElements[(new_D_80126BC4) + (-original_D_80126BC4)].t.asciiText = asciiText;
-                            new_D_80126BC4++;
-                        }
-                        gCreditsMenuElements[((new_D_80126BC4) + (-original_D_80126BC4)) + 1].t.asciiText = NULL;
-                        postrace_offsets(gCreditsMenuElements, 0.5f, (f32) D_80126BE8 / 60.0f, 0.5f, 0, 0);
-                        D_80126BE0 = postrace_render(0) == 0;
-                        break;
-                    case CREDITS_NEXT_LEVEL_FLAG:
-                        D_80126BC4++;
-                        D_80126BD8 = 1;
-                        breakLoop = TRUE;
-                        break;
-                    // case CREDITS_UNK_FLAG:
-                    default:
-                        D_80126BC4++;
-                        break;
-                }
-            } else {
-                D_80126BC4 = 0;
-                sp68 = TRUE;
-                gIgnorePlayerInputTime = 0;
+                        // after the first iteration, whatever was the font previously, set it to large now
+                        // this way to title like "Software Director" is colourful while the parts after it are "just" large
+                        var_s5 = FONT_LARGE;
+                        // move text position up (which puts the next entry a further down on the actual screen)
+                        textPos += textLineHeight;
+                        // Since every element now uses large font increase the text line height
+                        textLineHeight = 32;
+                    }
+
+                    gCreditsMenuElements[creditsMenuElementInex].t.element = NULL;
+                    postrace_offsets(gCreditsMenuElements, 0.5f, (f32) D_80126BE8 / 60.0f, 0.5f, 0, 0);
+                    D_80126BE0 = postrace_render(0) == MENU_RESULT_CONTINUE;
+                    breakLoop = TRUE;
+                    break;
+
+                // Continuation of the previous "title" e.g. "Character voices"
+                case CREDITS_CONTINUE_TITLE_FLAG:
+                    // Keep everything but the current credits control flag
+                    D_80126BE8 = gCreditsControlData[gCreditsControlDataIndex] & 0xFFFFFFFF & ~CREDITS_CONTROL_DATA_BITMASK;
+                    // advance credits control data index by 1
+                    nextIndex = ++gCreditsControlDataIndex;
+                    // find next control command (basically skip any values < 0x1000)
+                    while ((gCreditsControlData[gCreditsControlDataIndex] & CREDITS_CONTROL_DATA_BITMASK) == CREDITS_NO_FLAG) {
+                        gCreditsControlDataIndex++;
+                    }
+                    gCreditsMenuElements[0].left = SCREEN_WIDTH_HALF;
+                    if ((gCreditsControlData[gCreditsControlDataIndex] & CREDITS_CONTROL_DATA_BITMASK) == CREDITS_CONTINUE_TITLE_FLAG) {
+                        gCreditsMenuElements[0].right = SCREEN_WIDTH_HALF;
+                    } else {
+                        gCreditsMenuElements[0].right = -SCREEN_WIDTH_HALF;
+                    }
+
+                    for (var_s4 = nextIndex; var_s4 < gCreditsControlDataIndex; var_s4++) {
+                        // always add 1 to keep first line (title)
+                        // this doesn't require setting fonts or anything else as it was already setup before, only the text has to change
+                        gCreditsMenuElements[1 + var_s4 - nextIndex].t.asciiText = gCreditsArray[gCreditsControlData[var_s4]];
+                    }
+
+                    // clear text of last element
+                    // this *technically* has the bug that it would not properly clear the text of the last n elements if n is > 1
+                    // for example if the first screen has 1 title and 3 names and the next screen has only 1 name (+ 1 title) 
+                    // it would not properly clear the second name of the previous page
+                    gCreditsMenuElements[var_s4 - nextIndex + 1].t.asciiText = NULL;
+                    postrace_offsets(gCreditsMenuElements, 0.5f, (f32) D_80126BE8 / 60.0f, 0.5f, 0, 0);
+                    D_80126BE0 = postrace_render(0) == MENU_RESULT_CONTINUE;
+                    breakLoop = TRUE;
+                    break;
+
+                // continue to the next level in the credits
+                case CREDITS_NEXT_LEVEL_FLAG:
+                    gCreditsControlDataIndex++;
+                    // show the characters in a circle?
+                    D_80126BD8 = TRUE;
+                    breakLoop = TRUE;
+                    break;
+                // ??? advance command index, this is 0x5000 so it might be 0x4000 (next level) + 0x1000 (end)
+                case CREDITS_UNK_FLAG:
+                    gCreditsControlDataIndex++;
+                    break;
             }
-        } while (breakLoop == FALSE);
+         } while (breakLoop == FALSE);
     }
+
+    // collect all pressed buttons of all players
     buttonsPressedAllPlayers = 0;
     if (gIgnorePlayerInputTime == 0) {
         if (gMenuDelay == 0) {
-            for (i = 0; i < MAXCONTROLLERS; i++) {
-                buttonsPressedAllPlayers |= get_buttons_pressed_from_player(i);
+            for (nextIndex = 0; nextIndex < 4; nextIndex++) {
+                buttonsPressedAllPlayers |= get_buttons_pressed_from_player(nextIndex);
             }
         }
     }
+
+    // handles the animations (if any) between levels in the credits
     switch (gMenuStage) {
         case 0:
-            set_level_to_load_in_background(asset69[D_80126BCC].unk0, asset69[D_80126BCC].unk2);
+            tempBackgroundLevelData = &creditsBackgroundLevelData[D_80126BCC];
+            set_level_to_load_in_background(tempBackgroundLevelData->levelId, tempBackgroundLevelData->cutsceneId);
             gMenuStage = 1;
             gOpacityDecayTimer = 40;
             break;
@@ -13224,12 +13254,12 @@ s32 menu_credits_loop(s32 updateRate) {
             if (get_thread30_level_id_to_load() == 0) {
                 gMenuStage = 2;
                 gOptionBlinkTimer = 40;
-                D_80126BD8 = 0;
+                D_80126BD8 = FALSE;
             }
             break;
         case 2:
-            gOpacityDecayTimer -= updateRate;
             gOptionBlinkTimer -= updateRate;
+            gOpacityDecayTimer -= updateRate;
             if (gOptionBlinkTimer <= 0) {
                 gOptionBlinkTimer += 600;
                 gMenuStage = 3;
@@ -13253,14 +13283,16 @@ s32 menu_credits_loop(s32 updateRate) {
             if (gOptionBlinkTimer <= 0) {
                 gMenuStage = 0;
                 D_80126BCC++;
-                if (asset69[D_80126BCC].unk0 < 0) {
+                if ((D_80126BCC + creditsBackgroundLevelData)->levelId < 0) {
                     D_80126BCC = 0;
                     gIgnorePlayerInputTime = 0;
                 }
             }
             break;
     }
-    if ((buttonsPressedAllPlayers & (A_BUTTON | START_BUTTON)) || (buttonsPressedAllPlayers & B_BUTTON) || sp68) {
+
+    // check if the credits should end
+    if((buttonsPressedAllPlayers & (A_BUTTON | START_BUTTON)) || (buttonsPressedAllPlayers & B_BUTTON) || isCreditsEnd) {
         gMenuDelay = 1;
         disable_new_screen_transitions();
         transition_begin(&sMenuTransitionFadeIn);
@@ -13278,9 +13310,6 @@ s32 menu_credits_loop(s32 updateRate) {
     }
     return 0;
 }
-#else
-GLOBAL_ASM("asm/non_matchings/menu/menu_credits_loop.s")
-#endif
 
 /**
  * Unload associated assets with the credits scene.
