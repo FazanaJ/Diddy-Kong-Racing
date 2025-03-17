@@ -164,7 +164,7 @@ void change_vi(int width, int height) {
 }
 
 void set_dither_filter(void) {
-    if (gConfig.dedither) {
+    if (gConfig.dedither && gConfig.screenQuality == FALSE) {
         osViSetSpecialFeatures(VI_CTRL_DITHER_FILTER_ON | VI_CTRL_DIVOT_ON, VI_CTRL_GAMMA_ON);
     } else {
         osViSetSpecialFeatures(0, VI_CTRL_GAMMA_ON | VI_CTRL_DITHER_FILTER_ON | VI_CTRL_DIVOT_ON);

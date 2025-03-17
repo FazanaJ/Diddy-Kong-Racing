@@ -2082,9 +2082,6 @@ void func_80080580(Gfx **dlist, s32 startX, s32 startY, s32 width, s32 height, s
         vVals[3] = gWoodPanelTexScaleV * height;
         triangles = gMenuGeometry[gWoodPanelCount].triangles[gMenuTrisFlip];
         for (i = 0; i < 10; i += 2) {
-            if (1) {}
-            if (1) {}
-            if (1) {} // fake
             triangles[0].uv0.u = uVals[(*woodPanelTexCoords)[0]];
             triangles[0].uv0.v = vVals[(*woodPanelTexCoords)[1]];
             triangles[0].uv1.u = uVals[(*woodPanelTexCoords)[2]];
@@ -8078,9 +8075,8 @@ void menu_track_select_init(void) {
         gTracksMenuAdventureHighlightIndex = 0;
         gTitleScreenLoaded = 0;
     }
-    gTrackSelectViewPortX = fb_size();
-    gTrackSelectViewportY = GET_VIDEO_HEIGHT(gTrackSelectViewPortX) & 0xFFFF;
-    gTrackSelectViewPortX = GET_VIDEO_WIDTH(gTrackSelectViewPortX);
+    gTrackSelectViewportY = gScreenHeight;
+    gTrackSelectViewPortX = gScreenWidth;
     gTrackSelectViewPortHalfX = gTrackSelectViewPortX >> 1;
     gTrackSelectViewPortHalfY = gTrackSelectViewportY >> 1;
     gTrackSelectX = (f32) gTrackSelectCursorX * ((f32) gScreenWidth);

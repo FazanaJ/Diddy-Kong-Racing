@@ -324,7 +324,7 @@ void bgdraw_render(Gfx **dList, Matrix *mtx, s32 drawBG) {
                     (*dList)++,
                     (GPACK_RGBA5551(bgR, bgG, bgB, 1) << 16) |
                         GPACK_RGBA5551(bgR, bgG, bgB, 1));
-                gDPFillRectangle((*dList)++, x1, y1, x2, y2);
+                gDPFillRectangle((*dList)++, x1, y1, x2 - 1, y2 - 1);
             }
         } else {
             if (gTexBGTex1) {
