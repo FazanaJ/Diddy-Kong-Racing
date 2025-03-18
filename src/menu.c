@@ -8731,10 +8731,8 @@ void trackmenu_track_view(s32 updateRate) {
     s32 i;
 
     tick_thread30();
-    for (i = 0; i < updateRate; i++) {
-        gTrackSelectX += (gTrackSelectTargetX - gTrackSelectX) * 0.1f;
-        gTrackSelectY += (gTrackSelectTargetY - gTrackSelectY) * 0.1f;
-    }
+    gTrackSelectX += ((gTrackSelectTargetX - gTrackSelectX) * 0.1f) * updateRate;
+    gTrackSelectY += ((gTrackSelectTargetY - gTrackSelectY) * 0.1f) * updateRate;
     if (gThread30NeedToLoadLevel == 0) {
         if (gTrackIdForPreview == gTrackmenuLoadedLevel) {
             gSelectedTrackX = gTrackSelectCursorX;
@@ -8748,7 +8746,7 @@ void trackmenu_track_view(s32 updateRate) {
         }
     }
     x1 = ((gSelectedTrackX * 320) - gTrackSelectX) + (gScreenWidth / 2) - 80.0f;
-    x2 = x1 + (SCREEN_WIDTH_HALF);
+    x2 = x1 + (320 / 2);
     y1 = gTrackSelectViewPortHalfY - ((gSelectedTrackY * -gTrackSelectViewportY) - gTrackSelectY) -
          (gTrackSelectViewportY >> 2);
     y2 = y1 + gTrackSelectViewPortHalfY;
@@ -8769,6 +8767,7 @@ void trackmenu_input(s32 updateRate) {
     s32 menuDelay;
     s32 y2;
     s32 y1;
+    s32 x2;
 
     menuDelay = gMenuDelay;
     if (gMenuDelay > 0) {
@@ -8791,10 +8790,14 @@ void trackmenu_input(s32 updateRate) {
         }
         y2 = (((scaleOffset + 20) * gTrackSelectViewPortHalfY) / 40) + centreY;
         y1 = centreY - (((scaleOffset + 20) * gTrackSelectViewPortHalfY) / 40);
-        viewport_menu_set(0, (centreX - (scaleOffset * 4)) - 80, y1, (scaleOffset * 4) + centreX + 80, y2);
+        x2 = (scaleOffset * 4) + centreX + 80;
+        viewport_menu_set(0, (centreX - (scaleOffset * 4)) - 80, y1, x2, y2);
         gMenuImages[4].scale = (f32) (sMenuImageProperties[4].scale * (1.0f + ((f32) scaleOffset / 20.0f)));
         gMenuImages[6].scale = (f32) (sMenuImageProperties[6].scale * (1.0f + ((f32) scaleOffset / 20.0f)));
         gMenuImages[5].scale = (f32) (sMenuImageProperties[5].scale * (1.0f + ((f32) scaleOffset / 20.0f)));
+        if (x2 == gScreenWidth && y2 == gScreenHeight) {
+            bgdraw_set_func(NULL);
+        }
     }
     camEnableUserView(0, FALSE);
     if (gThread30NeedToLoadLevel == 0) {
@@ -9256,6 +9259,7 @@ void func_80092188(s32 updateRate) {
         gMenuImages[4].scale = sMenuImageProperties[4].scale * (1.0f + ((f32) xOffset / 20.0f));
         gMenuImages[5].scale = sMenuImageProperties[5].scale * (1.0f + ((f32) xOffset / 20.0f));
         gMenuImages[6].scale = sMenuImageProperties[6].scale * (1.0f + ((f32) xOffset / 20.0f));
+        bgdraw_set_func(func_8008F618);
     }
     if (gMenuDelay > 0) {
         sMenuMusicVolume -= updateRate * 4;

@@ -294,7 +294,7 @@ void bgdraw_render(Gfx **dList, Matrix *mtx, s32 drawBG) {
     gBGHeight = gScreenHeight;
     if ((gMapId == ASSET_LEVEL_CENTRALAREAHUB || gMapId == ASSET_LEVEL_WHALEBAY || gMapId == ASSET_LEVEL_PIRATELAGOON ||
          gMapId == ASSET_LEVEL_DINODOMAINHUB || gMapId == ASSET_LEVEL_DINODOMAINTROPHYANIM ||
-         gMapId == ASSET_LEVEL_OPTIONSBACKGROUND || gMapId == ASSET_LEVEL_FRONTEND || gMapId == ASSET_LEVEL_WIZPIG2)) {
+         gMapId == ASSET_LEVEL_FRONTEND || gMapId == ASSET_LEVEL_WIZPIG2)) {
         skip = FALSE;
     } else if (gConfig.perfMode || gConfig.noCutbacks) {
         skip = FALSE;
@@ -313,7 +313,7 @@ void bgdraw_render(Gfx **dList, Matrix *mtx, s32 drawBG) {
                     gDPFillRectangle((*dList)++, 0, 0, w - 1, gBGHeight - 1);
                 }
             }
-            if (copy_viewport_background_size_to_coords(0, &x1, &y1, &x2, &y2)) {
+            if (copy_viewport_background_size_to_coords(0, &x1, &y1, &x2, &y2) && skip == FALSE) {
                 s32 bgR, bgG, bgB;
                 LevelHeader *h = get_current_level_header();
                 gDPSetCycleType((*dList)++, G_CYC_FILL);
