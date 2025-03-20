@@ -298,7 +298,6 @@ void bgdraw_render(Gfx **dList, Matrix *mtx, s32 drawBG) {
         skip = FALSE;
     } else if (gConfig.perfMode || gConfig.noCutbacks) {
         skip = FALSE;
-    } else {
     }
 
     if (drawBG) {

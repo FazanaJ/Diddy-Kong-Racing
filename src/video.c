@@ -154,6 +154,11 @@ void change_vi(int width, int height) {
     }
     mode->comRegs.width = width;
     mode->comRegs.xScale = ((width + addX) * 512) / 320;
+    if (width <= 320 && gConfig.antiAliasing == -1) {
+        mode->comRegs.xScale = 0x201;
+        mode->comRegs.ctrl &= ~VI_CTRL_ANTIALIAS_MODE_1;
+        mode->comRegs.ctrl |= VI_CTRL_ANTIALIAS_MODE_3;
+    }
     mode->fldRegs[0].origin = width * mul;
     mode->fldRegs[1].origin = width * 4;
     gVideoAspectRatio = ((f32) width / (f32) height);
