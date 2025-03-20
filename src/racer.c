@@ -172,6 +172,7 @@ WaterProperties **gRacerCurrentWave;
 s32 D_8011D5B4;
 s16 D_8011D5B8;
 s8 gPowerBoosting;
+s8 gCameraMove;
 
 /******************************/
 
@@ -737,7 +738,11 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
     if (gCurrentPlayerIndex == PLAYER_COMPUTER || racer->raceFinished) {
         var_f2 = 32.0f;
     }
-    var_v1 = gCurrentStickX - racer->steerAngle;
+    if (gCameraMove == FALSE) {
+        var_v1 = gCurrentStickX - racer->steerAngle;
+    } else {
+        var_v1 = - racer->steerAngle;
+    }
     var_a3 = (var_v1 * updateRateF) / var_f2;
     if ((var_v1 != 0) && (var_a3 == 0)) {
         if (var_v1 > 0) {
@@ -1054,7 +1059,9 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
         }
         sp11C *= 0.125f;
         var_v1 = (sp11C * var_v1) * 0.75f;
-        racer->cameraYaw += (var_v1 * updateRate) >> 4;
+        if (gCameraMove == FALSE) {
+            racer->cameraYaw += (var_v1 * updateRate) >> 4;
+        }
         var_v1 = (0x8000 - racer->cameraYaw) - (racer->steerVisualRotation & 0xFFFF);
         if (var_v1 > 0x8000) {
             var_v1 -= 0xFFFF;
@@ -1083,7 +1090,9 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
     var_f6 = 1.0f;
     var_v1 = ((s32) ((((f32) var_v1) * 1.75f) * var_f6));
     var_t0 = (var_v1 * updateRate);
-    racer->cameraYaw += var_t0 >> 6;
+    if (gCameraMove == FALSE) {
+        racer->cameraYaw += var_t0 >> 6;
+    }
     if (racer->zipperDirCorrection == 0) {
         if (gCurrentPlayerIndex == PLAYER_COMPUTER && !racer->raceFinished) {
             temp = racer->lateral_velocity * 0.25f;
@@ -2652,6 +2661,12 @@ void update_player_racer(Object *obj, s32 updateRate) {
         }
         tempRacer->playerIndex = gCurrentPlayerIndex;
         update_player_camera(obj, tempRacer, updateRateF);
+        if (gCurrentRacerInput & D_CBUTTONS && ABSF(tempRacer->forwardVel) < 0.1f) {
+            gCameraMove = TRUE;
+            tempRacer->cameraYaw += gCurrentStickX * 12.0f;
+        } else {
+            gCameraMove = FALSE;
+        }
         gRacerDialogueCamera = FALSE;
         if (tempRacer->approachTarget) {
             tempRacer->approachTarget = NULL;

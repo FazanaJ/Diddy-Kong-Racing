@@ -154,6 +154,7 @@ void change_vi(int width, int height) {
     }
     mode->comRegs.width = width;
     mode->comRegs.xScale = ((width + addX) * 512) / 320;
+    // Disable VI resampling if frame size is 320.
     if (width <= 320 && gConfig.antiAliasing == -1) {
         mode->comRegs.xScale = 0x201;
         mode->comRegs.ctrl &= ~VI_CTRL_ANTIALIAS_MODE_1;
