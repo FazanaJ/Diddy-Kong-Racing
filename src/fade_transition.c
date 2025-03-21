@@ -439,8 +439,8 @@ void init_transition_shape(FadeTransition *transition, s32 numVerts, s32 numTris
     s32 j;
 
     j = numVerts;
-    sizeVerts = j * 10;
-    sizeTris = numTris * 16;
+    sizeVerts = j * sizeof(Vertex);
+    sizeTris = numTris * sizeof(Triangle);
     i = j * 12;
 
     sTransitionVtx[0] = mempool_alloc_safe(((sizeVerts + sizeTris) * 2) + (i * 3), MEMP_HUD);
@@ -552,25 +552,36 @@ void render_fade_barndoor_horizontal(Gfx **dList, UNUSED MatrixS **mats, UNUSED 
     reset_render_settings(dList);
 }
 
+/**
+ * Renders a transition effect on screen that will close in from both sides vertically.
+ * Codewise, exactly the same as above, but uses a different vertex layout to make the difference.
+ */
+void render_fade_barndoor_vertical(Gfx **dList, UNUSED MatrixS **mats, UNUSED Vertex **verts) {
+    reset_render_settings(dList);
+    gSPDisplayList((*dList)++, dTransitionShapeSettings);
+    gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(sTransitionVtx[sTransitionTaskNum]), 12, 0);
+    gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(sTransitionTris[sTransitionTaskNum]), 8, TRIN_DISABLE_TEXTURE);
+    reset_render_settings(dList);
+}
+
 void func_800C15D4(FadeTransition *transition) {
     s32 i;
-    u32 j;
-    float new_var;
-    unsigned short new_var4;
-    float new_var2;
-    int k;
+    s32 j;
+    s32 k;
+    f32 var_f12;
+    f32 var_f20;
     s32 sizeVerts;
     s32 sizeTris;
     s16 xSins;
     s16 yCoss;
-    
-    sizeVerts = 72 * (sizeof(Vertex));
-    sizeTris = 64;
-    sTransitionVtx[0] = (Vertex *) mempool_alloc(((72 * 2) * sizeof(Vertex)) + ((64 * 2) * sizeof(Triangle)), MEMP_TEMP);
+
+    sizeVerts = 72 * sizeof(Vertex);
+    sizeTris = 64 * sizeof(Triangle);
+    sTransitionVtx[0] = (Vertex *) mempool_alloc_safe((sizeVerts + sizeTris) * 2, COLOUR_TAG_YELLOW);
     sTransitionVtx[1] = sTransitionVtx[0] + 72;
     sTransitionTris[0] = (Triangle *) (sTransitionVtx[1] + 72);
     sTransitionTris[1] = sTransitionTris[0] + 64;
-    
+
     for (i = 0; i < 2; i++) {
         for (j = 0; j < 72; j++) {
             sTransitionVtx[i][j].r = gCurFadeRed;
@@ -579,18 +590,19 @@ void func_800C15D4(FadeTransition *transition) {
             sTransitionVtx[i][j].a = 255;
         }
     }
-    
     for (i = 0; i < 2; i++) {
         for (j = 0; j < 9; j++) {
             sTransitionVtx[i][(j << 1) + 19].a = 0;
             sTransitionVtx[i][(j << 1) + 55].a = 0;
         }
     }
-    
-    k = 0; 
+
+    var_f12 = 180.0f;
+    var_f20 = 240.0f;
+    k = 0;
     for (i = 0; i < 9; i++, k += 0x1000) {
-        xSins = sins_f(k) * 240.0f;
-        yCoss = coss_f(k) * 180.0f;
+        xSins = sins_f(k) * var_f20;
+        yCoss = coss_f(k) * var_f12;
         for (j = 0; j < 2; j++) {
             sTransitionVtx[j][i << 1].x = xSins;
             sTransitionVtx[j][i << 1].y = yCoss;
@@ -608,28 +620,25 @@ void func_800C15D4(FadeTransition *transition) {
     
     }
     
-    new_var = 180.0f;
-    new_var2 = 240.0f;
-    
     if (transition->type & (1 << 7)) {
         D_8012A758 = 0.0f;
         D_8012A75C = 0.0f;
-        D_8012A760 = new_var2 / sTransitionFadeTimer;
-        D_8012A764 = new_var / sTransitionFadeTimer;
-        D_8012A768 = new_var2;
-        D_8012A76C = new_var;
+        D_8012A760 = var_f20 / sTransitionFadeTimer;
+        D_8012A764 = var_f12 / sTransitionFadeTimer;
+        D_8012A768 = var_f20;
+        D_8012A76C = var_f12;
     } else {
-        D_8012A758 = new_var2;
-        D_8012A75C = new_var;
-        D_8012A760 = (-new_var2) / sTransitionFadeTimer;
-        D_8012A764 = (-new_var) / sTransitionFadeTimer;
+        D_8012A758 = var_f20;
+        D_8012A75C = var_f12;
+        D_8012A760 = (-var_f20) / sTransitionFadeTimer;
+        D_8012A764 = (-var_f12) / sTransitionFadeTimer;
         D_8012A768 = 0.0f;
         D_8012A76C = 0.0f;
     }
     
     for (i = 0; i < 2; i++) {
         for (j = 0; j < 64; j++) {
-            sTransitionTris[i][j].flags = 0x40;
+            sTransitionTris[i][j].flags = BACKFACE_DRAW;
             sTransitionTris[i][j].uv0.u = 0;
             sTransitionTris[i][j].uv0.v = 0;
             sTransitionTris[i][j].uv1.u = 0;
@@ -638,39 +647,26 @@ void func_800C15D4(FadeTransition *transition) {
             sTransitionTris[i][j].uv2.v = 0;
         }
     }
-    
+
+#define ASSIGN_TRANSITION_TRI(i, j, k)                                                                                 \
+    ((u8 *) sTransitionTris[j])[((i << 1) << 4) + (sizeof(Triangle) * k) * sizeof(Triangle) + 1] = (i << 1) + 0;       \
+    ((u8 *) sTransitionTris[j])[((i << 1) << 4) + (sizeof(Triangle) * k) * sizeof(Triangle) + 2] = (i << 1) + 1;       \
+    ((u8 *) sTransitionTris[j])[((i << 1) << 4) + (sizeof(Triangle) * k) * sizeof(Triangle) + 3] = (i << 1) + 3;       \
+    ((u8 *) sTransitionTris[j])[((i << 1) << 4) + (1 + (sizeof(Triangle) * k)) * sizeof(Triangle) + 1] = (i << 1) + 0; \
+    ((u8 *) sTransitionTris[j])[((i << 1) << 4) + (1 + (sizeof(Triangle) * k)) * sizeof(Triangle) + 2] = (i << 1) + 3; \
+    ((u8 *) sTransitionTris[j])[((i << 1) << 4) + (1 + (sizeof(Triangle) * k)) * sizeof(Triangle) + 3] = (i << 1) + 2;
+
     for (i = 0; i < 8; i++) {
         for (j = 0; j < 2; j++) {
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 1] = (i << 1) + 0;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 2] = (i << 1) + 1;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 3] = (i << 1) + 3;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 16 + 1] = (i << 1) + 0;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 16 + 2] = (i << 1) + 3;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 16 + 3] = (i << 1) + 2;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 16*16 + 1] = (i << 1) + 0; 
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 16*16 + 2] = (i << 1) + 1;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 16*16 + 3] = (i << 1) + 3;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 17*16 + 1] = (i << 1) + 0;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 17*16 + 2] = (i << 1) + 3;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 17*16 + 3] = (i << 1) + 2;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 32*16 + 1] = (i << 1) + 0;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 32*16 + 2] = (i << 1) + 1;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 32*16 + 3] = (i << 1) + 3;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 33*16 + 1] = (i << 1) + 0;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 33*16 + 2] = (i << 1) + 3;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 33*16 + 3] = (i << 1) + 2;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 48*16 + 1] = (i << 1) + 0;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 48*16 + 2] = (i << 1) + 1;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 48*16 + 3] = (i << 1) + 3;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 49*16 + 1] = (i << 1) + 0;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 49*16 + 2] = (i << 1) + 3;
-            ((u8*)sTransitionTris[j])[((i << 1) << 4) + 49*16 + 3] = (i << 1) + 2;
+            ASSIGN_TRANSITION_TRI(i, j, 0);
+            ASSIGN_TRANSITION_TRI(i, j, 1);
+            ASSIGN_TRANSITION_TRI(i, j, 2);
+            ASSIGN_TRANSITION_TRI(i, j, 3);
         }
     }
     
     sTransitionStatus = TRANSITION_ACTIVE;
 }
-
 
 void func_800C1EE8(s32 updateRate) {
     f32 temp_f20;

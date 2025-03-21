@@ -30,7 +30,7 @@ extern u8 gAssert;
 extern char gAssertString[127];
 extern u64 gThread3Stack[THREAD3_STACK / sizeof(u64)];
 
-void main(void);
+void mainproc(void);
 void thread1_main(void *);
 
 enum PlatformFlags {
