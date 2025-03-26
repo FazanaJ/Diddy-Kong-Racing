@@ -21,6 +21,7 @@ OSThread gThread3; // OSThread for thread 3
  */
 void mainproc(void) {
     osInitialize();
+    osTvType = OS_TV_NTSC;
 #ifdef AVOID_UB
     bzero(&gMainMemoryPool, RAM_END - (s32)(&gMainMemoryPool));
 #endif

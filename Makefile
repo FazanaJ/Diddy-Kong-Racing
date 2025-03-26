@@ -1,15 +1,15 @@
 BASENAME  = dkr
 REGION  := us
 VERSION  := v77
-NON_MATCHING ?= 0
+NON_MATCHING ?= 1
 
 # Experimental option for nonmatching builds. GCC may not function identically to ido.
-COMPILER ?= ido
+COMPILER ?= gcc
 $(eval $(call validate-option,NON_MATCHING,ido gcc))
 
 # Define a custom boot file if desired to use something other than the vanilla one
 BOOT_CUSTOM ?= mods/boot_custom.bin
-BOOT_CIC ?= 6103
+BOOT_CIC ?= 6102
 $(eval $(call validate-option,BOOT_CIC,6102 6103))
 
 LIBULTRA_VERSION_DEFINE := -DBUILD_VERSION=4 -DBUILD_VERSION_STRING=\"2.0G\"
@@ -120,7 +120,7 @@ FIXCHECKSUMS = $(PYTHON) $(TOOLS_DIR)/python/calc_func_checksums.py $(REGION) $(
 
 OPT_FLAGS      = -O2
 
-MIPSISET       = -mips1
+MIPSISET       = -mips2
 
 DEFINES := _FINALROM NDEBUG TARGET_N64 F3DDKR_GBI
 DEFINES += VERSION_$(REGION)_$(VERSION)
@@ -248,7 +248,7 @@ endif
 $(GCC_SAFE_FILES): CC := $(CROSS)gcc
 $(GCC_SAFE_FILES): CC_WARNINGS := 
 $(GCC_SAFE_FILES): MIPSISET := -mips3
-$(GCC_SAFE_FILES): CFLAGS := -DNDEBUG -DAVOID_UB -DNON_MATCHING -O2 $(INCLUDE_CFLAGS) $(C_DEFINES) \
+$(GCC_SAFE_FILES): CFLAGS := -DNDEBUG -DAVOID_UB -DNON_MATCHING -Os $(INCLUDE_CFLAGS) $(C_DEFINES) \
 	-EB \
 	-march=vr4300 \
 	-mabi=32 \
