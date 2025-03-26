@@ -658,6 +658,8 @@ void load_and_set_texture(Gfx **dlist, TextureHeader *texhead, s32 flags, s32 te
         gUsingTexture = FALSE;
     }
 
+    flags &= ~RENDER_ANTI_ALIASING;
+
     flags = (gUsePrimColour)
                 ? (flags & (RENDER_DECAL | RENDER_COLOUR_INDEX | RENDER_ANTI_ALIASING | RENDER_Z_COMPARE |
                             RENDER_SEMI_TRANSPARENT))

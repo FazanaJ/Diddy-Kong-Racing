@@ -260,7 +260,7 @@ void main_game_loop(void) {
         rsp_segment(&gCurrDisplayList, SEGMENT_FRAMEBUFFER_OFFSET, (s32) gVideoCurrFramebuffer - VI_OFFSET); // Unused
     }
     if (gDrawFrameTimer == 0) {
-        gfxtask_run_xbus(gDisplayLists[gSPTaskNum], gCurrDisplayList, 0);
+        gfxtask_run_fifo(gDisplayLists[gSPTaskNum], gCurrDisplayList, 0);
         gSPTaskNum += 1;
         gSPTaskNum &= 1;
     }
