@@ -1,0 +1,16 @@
+
+{
+    "compressed": true,
+    "flags": {
+        "wrap-s": "Clamp",
+        "wrap-t": "Clamp"
+    },
+    "flipped-image": true,
+    "format": "I4",
+    "images": [
+        "unused.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "type": "Texture",
+    "write-size": true
+}

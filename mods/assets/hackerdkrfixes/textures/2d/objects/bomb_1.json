@@ -1,0 +1,17 @@
+{
+    "compressed": true,
+    "flags": {
+        "cutout": true,
+        "interlaced": true,
+        "wrap-s": "Clamp",
+        "wrap-t": "Clamp"
+    },
+    "format": "RGBA16",
+    "images": [
+        "bomb_1.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "sprite-x": 16,
+    "sprite-y": 22,
+    "type": "Texture"
+}

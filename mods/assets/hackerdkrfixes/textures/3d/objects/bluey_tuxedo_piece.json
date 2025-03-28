@@ -1,0 +1,15 @@
+{
+    "compressed": true,
+    "flags": {
+        "wrap-s": "Clamp",
+        "wrap-t": "Clamp"
+    },
+    "flipped-image": true,
+    "format": "I4",
+    "images": [
+        "bluey_tuxedo_piece.png"
+    ],
+    "render-mode": "OPAQUE",
+    "type": "Texture",
+    "write-size": true
+}

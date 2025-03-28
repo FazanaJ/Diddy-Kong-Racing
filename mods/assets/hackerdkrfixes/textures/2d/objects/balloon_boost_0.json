@@ -1,0 +1,17 @@
+{
+    "compressed": true,
+    "flags": {
+        "cutout": true,
+        "interlaced": true,
+        "wrap-s": "Clamp",
+        "wrap-t": "Clamp"
+    },
+    "format": "RGBA16",
+    "images": [
+        "balloon_boost_0.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "sprite-x": 17,
+    "sprite-y": 7,
+    "type": "Texture"
+}

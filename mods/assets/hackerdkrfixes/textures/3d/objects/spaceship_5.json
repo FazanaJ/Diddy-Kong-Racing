@@ -1,0 +1,15 @@
+{
+    "compressed": true,
+    "flags": {
+        "wrap-s": "Clamp",
+        "wrap-t": "Clamp"
+    },
+    "flipped-image": true,
+    "format": "IA8",
+    "images": [
+        "spaceship_5.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "type": "Texture",
+    "write-size": true
+}

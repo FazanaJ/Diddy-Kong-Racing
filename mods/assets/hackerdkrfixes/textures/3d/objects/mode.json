@@ -1,0 +1,15 @@
+{
+    "compressed": true,
+    "flags": {
+        "wrap-s": "Clamp",
+        "wrap-t": "Clamp"
+    },
+    "flipped-image": true,
+    "format": "RGBA16",
+    "images": [
+        "mode.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "type": "Texture",
+    "write-size": true
+}

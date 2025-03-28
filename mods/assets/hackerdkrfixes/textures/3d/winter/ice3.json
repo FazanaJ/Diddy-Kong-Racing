@@ -1,0 +1,16 @@
+{
+    "compressed": true,
+    "flags": {
+        "cutout": true,
+        "wrap-s": "Wrap",
+        "wrap-t": "Wrap"
+    },
+    "flipped-image": true,
+    "format": "RGBA16",
+    "images": [
+        "ice3.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "type": "Texture",
+    "write-size": true
+}

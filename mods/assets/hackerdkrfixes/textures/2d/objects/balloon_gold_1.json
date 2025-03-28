@@ -1,0 +1,17 @@
+{
+    "compressed": true,
+    "flags": {
+        "cutout": true,
+        "interlaced": true,
+        "wrap-s": "Clamp",
+        "wrap-t": "Clamp"
+    },
+    "format": "RGBA16",
+    "images": [
+        "balloon_gold_1.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "sprite-x": 18,
+    "sprite-y": 28,
+    "type": "Texture"
+}

@@ -1,0 +1,15 @@
+{
+    "compressed": true,
+    "flags": {
+        "wrap-s": "Wrap",
+        "wrap-t": "Wrap"
+    },
+    "flipped-image": true,
+    "format": "I4",
+    "images": [
+        "wheat_field.png"
+    ],
+    "render-mode": "OPAQUE_2",
+    "type": "Texture",
+    "write-size": true
+}

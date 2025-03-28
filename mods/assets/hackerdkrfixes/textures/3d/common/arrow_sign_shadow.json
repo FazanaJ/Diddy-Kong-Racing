@@ -1,0 +1,15 @@
+{
+    "compressed": true,
+    "flags": {
+        "wrap-s": "Clamp",
+        "wrap-t": "Clamp"
+    },
+    "flipped-image": true,
+    "format": "IA4",
+    "images": [
+        "arrow_sign_shadow.png"
+    ],
+    "render-mode": "TRANSPARENT_2",
+    "type": "Texture",
+    "write-size": true
+}

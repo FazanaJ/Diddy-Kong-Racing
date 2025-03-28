@@ -1,0 +1,17 @@
+{
+    "compressed": true,
+    "flags": {
+        "cutout": true,
+        "interlaced": true,
+        "wrap-s": "Clamp",
+        "wrap-t": "Clamp"
+    },
+    "format": "RGBA16",
+    "images": [
+        "balloon_silver_2.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "sprite-x": 32,
+    "sprite-y": 49,
+    "type": "Texture"
+}

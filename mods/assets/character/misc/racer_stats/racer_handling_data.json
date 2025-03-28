@@ -1,0 +1,17 @@
+{
+    "misc-type": "RacerStat",
+    "type": "Miscellaneous",
+    "values": {
+        "CHARACTER_BANJO": 0.9,
+        "CHARACTER_BUMPER": 1.0,
+        "CHARACTER_CONKER": 1.0,
+        "CHARACTER_DIDDY": 1.2,
+        "CHARACTER_DRUMSTICK": 0.8,
+        "CHARACTER_KRUNCH": 0.65,
+        "CHARACTER_PIPSY": 1.5,
+        "CHARACTER_TIMBER": 1.0,
+        "CHARACTER_TIPTUP": 1.2,
+        "CHARACTER_TT": 1.0,
+        "CHARACTER_CUSTOM": 2.0
+    }
+}

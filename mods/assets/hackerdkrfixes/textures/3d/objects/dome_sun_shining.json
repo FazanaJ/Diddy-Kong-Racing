@@ -1,0 +1,15 @@
+{
+    "compressed": true,
+    "flags": {
+        "wrap-s": "Clamp",
+        "wrap-t": "Clamp"
+    },
+    "flipped-image": true,
+    "format": "RGBA32",
+    "images": [
+        "dome_sun_shining.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "type": "Texture",
+    "write-size": true
+}

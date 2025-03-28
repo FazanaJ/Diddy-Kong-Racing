@@ -1,0 +1,14 @@
+{
+    "flags": {
+        "wrap-s": "Clamp",
+        "wrap-t": "Clamp"
+    },
+    "flipped-image": true,
+    "format": "I4",
+    "images": [
+        "rocket_envmap.png"
+    ],
+    "render-mode": "OPAQUE",
+    "type": "Texture",
+    "write-size": true
+}

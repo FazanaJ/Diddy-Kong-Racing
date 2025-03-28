@@ -1,0 +1,17 @@
+{
+    "compressed": true,
+    "flags": {
+        "wrap-s": "Wrap",
+        "wrap-t": "Clamp"
+    },
+    "flipped-image": true,
+    "format": "IA4",
+    "frame-advance-delay": 0.35,
+    "images": [
+        "flashing_arrow_0.png",
+        "flashing_arrow_1.png"
+    ],
+    "render-mode": "TRANSPARENT_2",
+    "type": "Texture",
+    "write-size": true
+}

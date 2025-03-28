@@ -1,0 +1,63 @@
+{
+    "behavior": "BHV_BUTTERFLY",
+    "draw-distance": 0,
+    "flags": [
+        "FLAG_0040",
+        "FLAG_0080"
+    ],
+    "internal-name": "Butterfly",
+    "junk-data": [
+        35,
+        47,
+        0,
+        0
+    ],
+    "model-type": "OBJECT_MODEL_TYPE_MISC",
+    "models": [
+        "ASSET_TEX2D_UNKNOWN_BUTTERFLYORANGE",
+        "ASSET_TEX2D_UNKNOWN_BUTTERFLYPURPLE",
+        "ASSET_TEX2D_UNKNOWN_BAT"
+    ],
+    "scale": 1.0,
+    "shade-ambient": 1.9900000095367432,
+    "shade-angle-y": 0,
+    "shade-angle-z": 0,
+    "shade-brightness": 0.31200000643730164,
+    "shadow-group": 0,
+    "shadow-scale": 4.0,
+    "type": "ObjectHeader",
+    "unknown": {
+        "unk0": 0,
+        "unk34": 9,
+        "unk38": 61,
+        "unk3A": 255,
+        "unk3B": 255,
+        "unk3C": 255,
+        "unk3D": 0,
+        "unk42": -100,
+        "unk44": 10,
+        "unk46": -2,
+        "unk48": 32,
+        "unk4A": 768,
+        "unk4C": 512,
+        "unk50": 0,
+        "unk52": 0,
+        "unk58": -1,
+        "unk59": 0,
+        "unk5B": 0,
+        "unk5C": 0,
+        "unk5D": 0,
+        "unk5E": 0,
+        "unk5F": 0,
+        "unk70": 0,
+        "unk71": 0,
+        "unk72": 255,
+        "unk73": 0,
+        "unk74": 0,
+        "unk75": 0,
+        "unk76": 98,
+        "unk77": 97,
+        "unk8": 4.0
+    },
+    "water-effect-group": 0
+}

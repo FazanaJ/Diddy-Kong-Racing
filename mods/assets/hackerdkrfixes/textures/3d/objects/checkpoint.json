@@ -1,0 +1,15 @@
+{
+    "compressed": true,
+    "flags": {
+        "wrap-s": "Wrap",
+        "wrap-t": "Wrap"
+    },
+    "flipped-image": true,
+    "format": "RGBA16",
+    "images": [
+        "checkpoint.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "type": "Texture",
+    "write-size": true
+}

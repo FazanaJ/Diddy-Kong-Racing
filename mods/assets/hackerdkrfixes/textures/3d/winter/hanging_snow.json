@@ -1,0 +1,16 @@
+{
+    "compressed": true,
+    "flags": {
+        "cutout": true,
+        "wrap-s": "Clamp",
+        "wrap-t": "Wrap"
+    },
+    "flipped-image": true,
+    "format": "IA4",
+    "images": [
+        "hanging_snow.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "type": "Texture",
+    "write-size": true
+}

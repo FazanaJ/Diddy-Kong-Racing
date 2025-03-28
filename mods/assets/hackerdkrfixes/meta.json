@@ -1,0 +1,5 @@
+{
+    "name": "HackerDKR Base Fixes",
+    "authors" : ["Fazana"],
+    "description": "Applies some basic tweaks to vanilla assets. Includes fixing shadow types for character select, adds cutback flags to some objects that needed it."
+}

@@ -1,0 +1,19 @@
+{
+    "compressed": true,
+    "flags": {
+        "cutout": true,
+        "wrap-s": "Clamp",
+        "wrap-t": "Clamp"
+    },
+    "flipped-image": true,
+    "format": "RGBA16",
+    "frame-advance-delay": 2.133,
+    "images": [
+        "bubbler_eye_0.png",
+        "bubbler_eye_1.png",
+        "bubbler_eye_2.png"
+    ],
+    "render-mode": "TRANSPARENT",
+    "type": "Texture",
+    "write-size": true
+}
