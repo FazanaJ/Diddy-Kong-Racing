@@ -17,7 +17,7 @@
 #include "gzip.h"
 #include "printf.h"
 #include "thread0_epc.h"
-#include "thread30_track_loading.h"
+#include "thread30_bgload.h"
 #include "weather.h"
 #include "audio.h"
 #include "objects.h"
@@ -68,7 +68,7 @@ UNUSED char gBuildString[] = "Version 7.9 14/10/97 19.40 L.Schuneman";
 UNUSED char gBuildString[] = "Version 7.7 29/09/97 15.00 L.Schuneman";
 #endif
 
-s8 sAntiPiracyTriggered = 0;
+s8 sAntiPiracyTriggered = FALSE;
 UNUSED s32 D_800DD378 = 1;
 s32 gSaveDataFlags = 0; // Official Name: load_save_flags
 s32 gScreenStatus = OSMESG_SWAP_BUFFER;
@@ -80,21 +80,21 @@ s16 gLevelLoadTimer = 0;
 s8 gPauseLockTimer = 0; // If this is above zero, the player cannot pause the game.
 s8 gFutureFunLandLevelTarget = FALSE;
 s8 gDmemInvalid = FALSE;
-UNUSED s32 D_800DD3A4 = 0;
-UNUSED s32 D_800DD3A8 = 0;
-UNUSED s32 D_800DD3AC = 0;
-s32 gNumF3dCmdsPerPlayer[4] = { 4500, 7000, 11000, 11000 };
-s32 gNumHudVertsPerPlayer[4] = { 300, 600, 850, 900 };
-s32 gNumHudMatPerPlayer[4] = { 300, 400, 550, 600 };
-s32 gNumHudTrisPerPlayer[4] = { 20, 30, 40, 50 };
+UNUSED s32 D_800DD3A4[] = { 0, 0, 0 };
+s32 gNumF3dCmdsPerPlayer[MAXCONTROLLERS] = { 4500, 7000, 11000, 11000 };
+s32 gNumHudVertsPerPlayer[MAXCONTROLLERS] = { 300, 600, 850, 900 };
+s32 gNumHudMatPerPlayer[MAXCONTROLLERS] = { 300, 400, 550, 600 };
+s32 gNumHudTrisPerPlayer[MAXCONTROLLERS] = { 20, 30, 40, 50 };
 s8 gDrawFrameTimer = 0;
 FadeTransition D_800DD3F4 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_BLACK, 20, 0);
-UNUSED FadeTransition D_800DD3FC = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_WHITE, 20, -1);
+UNUSED FadeTransition D_800DD3FC = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_WHITE, 20, FADE_STAY);
 s32 sLogicUpdateRate = LOGIC_5FPS;
-FadeTransition gDrumstickSceneTransition = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_WHITE, 30, -1);
+FadeTransition gDrumstickSceneTransition =
+    FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_WHITE, 30, FADE_STAY);
 UNUSED char *D_800DD410[3] = { "CAR", "HOV", "PLN" };
-FadeTransition gLevelFadeOutTransition = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_BLACK, 30, -1);
-FadeTransition D_800DD424 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_BLACK, 260, -1);
+FadeTransition gLevelFadeOutTransition =
+    FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_BLACK, 30, FADE_STAY);
+FadeTransition D_800DD424 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_BLACK, 260, FADE_STAY);
 
 /*******************************/
 
@@ -159,7 +159,7 @@ void thread3_main(UNUSED void *unused) {
         if (is_reset_pressed()) {
             rumble_kill();
             audioStopThread();
-            stop_thread30();
+            bgload_kill();
             __osSpSetStatus(SP_SET_HALT | SP_CLR_INTR_BREAK | SP_CLR_YIELD | SP_CLR_YIELDED | SP_CLR_TASKDONE |
                             SP_CLR_RSPSIGNAL | SP_CLR_CPUSIGNAL | SP_CLR_SIG5 | SP_CLR_SIG6 | SP_CLR_SIG7);
             osDpSetStatus(DPC_SET_XBUS_DMEM_DMA | DPC_CLR_FREEZE | DPC_CLR_FLUSH | DPC_CLR_TMEM_CTR | DPC_CLR_PIPE_CTR |
@@ -226,7 +226,7 @@ void init_game(void) {
     load_fonts();
     init_controller_paks();
     init_save_data();
-    create_and_start_thread30();
+    bgload_init();
     osCreateMesgQueue(&gNMIMesgQueue, &gNMIOSMesg, 1);
     osScAddClient(&gMainSched, (OSScClient *) gNMISched, &gNMIMesgQueue, OS_SC_ID_PRENMI);
     gNMIMesgBuf = 0;
@@ -279,7 +279,7 @@ void main_game_loop(void) {
     rsp_segment(&gCurrDisplayList, SEGMENT_FRAMEBUFFER_OFFSET, (s32) gVideoLastFramebuffer - VI_OFFSET); // Unused
     rsp_init(&gCurrDisplayList);
     rdp_init(&gCurrDisplayList);
-    bgdraw_render(&gCurrDisplayList, (Matrix *) &gGameCurrMatrix, TRUE);
+    bgdraw_render(&gCurrDisplayList, &gGameCurrMatrix, TRUE);
     gSaveDataFlags = input_update(gSaveDataFlags, sLogicUpdateRate);
     if (get_lockup_status()) {
         render_epc_lock_up_display();
@@ -318,9 +318,9 @@ void main_game_loop(void) {
     render_dialogue_boxes(&gCurrDisplayList, &gGameCurrMatrix, &gGameCurrVertexList);
     dialogue_close(4);
     dialogue_clear(4);
-    // handle_transitions will perform the logic of transitions and return the transition ID.
-    if (handle_transitions(sLogicUpdateRate)) {
-        render_fade_transition(&gCurrDisplayList, &gGameCurrMatrix, &gGameCurrVertexList);
+    // transition_update will perform the logic of transitions and return the transition ID.
+    if (transition_update(sLogicUpdateRate)) {
+        transition_render(&gCurrDisplayList, &gGameCurrMatrix, &gGameCurrVertexList);
     }
     if (sBootDelayTimer >= 8 && is_controller_missing()) {
         menu_missing_controller(&gCurrDisplayList, sLogicUpdateRate);
@@ -388,7 +388,7 @@ void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     camera_init();
     load_game_text_table();
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, gGameCurrentCutscene);
-    init_hud(get_viewport_count());
+    hud_init(get_viewport_count());
     func_800AE728(8, 0x10, 0x96, 0x64, 0x32, 0);
     ainode_update();
     osSetTime(0);
@@ -412,7 +412,7 @@ void unload_level_game(void) {
     clear_audio_and_track();
     transition_begin(&D_800DD3F4);
     func_800AE270();
-    free_hud();
+    hud_free();
     free_game_text_table();
     gCurrDisplayList = gDisplayLists[gSPTaskNum];
     gDPFullSync(gCurrDisplayList++);
@@ -570,7 +570,7 @@ void mode_game(s32 updateRate) {
     }
     rdp_init(&gCurrDisplayList);
     divider_draw(&gCurrDisplayList);
-    render_minimap_and_misc_hud(&gCurrDisplayList, &gGameCurrMatrix, &gGameCurrVertexList, updateRate);
+    hud_render_general(&gCurrDisplayList, &gGameCurrMatrix, &gGameCurrVertexList, updateRate);
     divider_clear_coverage(&gCurrDisplayList);
     if (gFutureFunLandLevelTarget) {
         if (func_800214C4() != 0) {
@@ -879,7 +879,7 @@ void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     camera_init();
     load_game_text_table();
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, cutsceneId);
-    init_hud(get_viewport_count());
+    hud_init(get_viewport_count());
     func_800AE728(4, 4, 0x6E, 0x30, 0x20, 0);
     ainode_update();
     osSetTime(0);
@@ -897,7 +897,7 @@ void unload_level_menu(void) {
         clear_audio_and_track();
         transition_begin(&D_800DD3F4);
         func_800AE270();
-        free_hud();
+        hud_free();
         free_game_text_table();
         mempool_free_timer(2);
     }
@@ -909,7 +909,7 @@ void unload_level_menu(void) {
  * In the tracks menu, this only runs if there's a track actively loaded.
  */
 void update_menu_scene(s32 updateRate) {
-    if (!get_thread30_need_to_load_level()) {
+    if (bgload_active() == FALSE) {
         func_80010994(updateRate);
         gParticlePtrList_flush();
         ainode_update();
@@ -1051,7 +1051,7 @@ void mode_menu(s32 updateRate) {
 void load_level_for_menu(s32 levelId, s32 numberOfPlayers, s32 cutsceneId) {
     if (!gIsLoading) {
         unload_level_menu();
-        if (!get_thread30_need_to_load_level()) {
+        if (bgload_active() == FALSE) {
             gCurrDisplayList = gDisplayLists[gSPTaskNum];
             gDPFullSync(gCurrDisplayList++);
             gSPEndDisplayList(gCurrDisplayList++);
@@ -1439,14 +1439,12 @@ void default_alloc_displaylist_heap(void) {
     gDisplayLists[0] = (Gfx *) mempool_alloc_safe(totalSize, COLOUR_TAG_RED);
     gMatrixHeap[0] = (MatrixS *) ((u8 *) gDisplayLists[0] + (gNumF3dCmdsPerPlayer[numberOfPlayers] * sizeof(Gwords)));
     gVertexHeap[0] = (Vertex *) ((u8 *) gMatrixHeap[0] + (gNumHudMatPerPlayer[numberOfPlayers] * sizeof(Matrix)));
-    gTriangleHeap[0] =
-        (Triangle *) ((u8 *) gVertexHeap[0] + (gNumHudVertsPerPlayer[numberOfPlayers] * sizeof(Vertex)));
+    gTriangleHeap[0] = (Triangle *) ((u8 *) gVertexHeap[0] + (gNumHudVertsPerPlayer[numberOfPlayers] * sizeof(Vertex)));
 
     gDisplayLists[1] = (Gfx *) mempool_alloc_safe(totalSize, COLOUR_TAG_YELLOW);
     gMatrixHeap[1] = (MatrixS *) ((u8 *) gDisplayLists[1] + (gNumF3dCmdsPerPlayer[numberOfPlayers] * sizeof(Gwords)));
     gVertexHeap[1] = (Vertex *) ((u8 *) gMatrixHeap[1] + (gNumHudMatPerPlayer[numberOfPlayers] * sizeof(Matrix)));
-    gTriangleHeap[1] =
-        (Triangle *) ((u8 *) gVertexHeap[1] + (gNumHudVertsPerPlayer[numberOfPlayers] * sizeof(Vertex)));
+    gTriangleHeap[1] = (Triangle *) ((u8 *) gVertexHeap[1] + (gNumHudVertsPerPlayer[numberOfPlayers] * sizeof(Vertex)));
 
     gCurrNumF3dCmdsPerPlayer = gNumF3dCmdsPerPlayer[numberOfPlayers];
     gCurrNumHudMatPerPlayer = gNumHudMatPerPlayer[numberOfPlayers];

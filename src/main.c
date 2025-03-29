@@ -23,7 +23,7 @@ void mainproc(void) {
     osInitialize();
     osTvType = OS_TV_NTSC;
 #ifdef AVOID_UB
-    bzero(&gMainMemoryPool, RAM_END - (s32)(&gMainMemoryPool));
+    bzero(&gMainMemoryPool, RAM_END - (s32) (&gMainMemoryPool));
 #endif
     osCreateThread(&gThread1, 1, &thread1_main, 0, &gThread1Stack[STACKSIZE(STACK_IDLE)], OS_PRIORITY_IDLE);
     osStartThread(&gThread1);

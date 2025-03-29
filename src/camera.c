@@ -604,30 +604,27 @@ UNUSED void copy_framebuffer_size_to_coords(s32 *x1, s32 *y1, s32 *x2, s32 *y2) 
     *y2 = GET_VIDEO_HEIGHT(widthAndHeight);
 }
 
-#ifdef NON_EQUIVALENT
-// viewport_main
-// Alternative attempt: https://decomp.me/scratch/rcJYo
-// Still a work-in-progress but it doesn't seem to cause any problems,
-// which is why it is labeled under NON_EQUIVALENT
+#ifdef NON_MATCHING
 
 #define SCISSOR_INTERLACE G_SC_NON_INTERLACE
 
-void func_80066CDC(Gfx **dlist, MatrixS **mats) {
-    u32 sp58_y;
-    u32 sp54_x;
-    u32 sp50_altPosY;
-    u32 sp4C_altPosX;
-    u32 posX;
-    u32 posY;
-    u32 x;
+// viewport_main
+void func_80066CDC(Gfx **dList, MatrixS **mats) {
     u32 y;
+    u32 x;
+    u32 pad0;
+    u32 sp58_height;
+    u32 sp54_width;
+    u32 posY;
+    u32 posX; // sp4C
+    u32 pad1;
     u32 videoHeight;
     u32 videoWidth;
     u32 widthAndHeight;
-    s32 savedCameraID;
-    s32 originalCameraID;
-    s32 tempCameraID;
     s32 viewports;
+    s32 originalCameraID; // sp34
+    s32 savedCameraID;    // sp30
+    s32 tempCameraID;     // sp2C
 
     originalCameraID = gActiveCameraID;
     savedCameraID = gActiveCameraID;
@@ -642,99 +639,118 @@ void func_80066CDC(Gfx **dlist, MatrixS **mats) {
     if (gScreenViewports[savedCameraID].flags & VIEWPORT_EXTRA_BG) {
         tempCameraID = gActiveCameraID;
         gActiveCameraID = savedCameraID;
-        gDPSetScissor((*dlist)++, SCISSOR_INTERLACE, gScreenViewports[gActiveCameraID].scissorX1,
+        gDPSetScissor((*dList)++, SCISSOR_INTERLACE, gScreenViewports[gActiveCameraID].scissorX1,
                       gScreenViewports[gActiveCameraID].scissorY1, gScreenViewports[gActiveCameraID].scissorX2,
                       gScreenViewports[gActiveCameraID].scissorY2);
-        viewport_rsp_set(dlist, 0, 0, 0, 0);
+        viewport_rsp_set(dList, 0, 0, 0, 0);
         gActiveCameraID = tempCameraID;
-        if (mats != 0) {
-            func_80067D3C(dlist, mats);
+        if (mats != NULL) {
+            func_80067D3C(dList, mats);
         }
         gActiveCameraID = originalCameraID;
         return;
     }
+
     viewports = gNumberOfViewports;
     if (viewports == VIEWPORTS_COUNT_3_PLAYERS) {
         viewports = VIEWPORTS_COUNT_4_PLAYERS;
+        // Fake match
+        if ((x && x) && x) {}
     }
-    y = videoHeight >> 1;
+    y = (videoHeight >> 1) & 0xFFFFFFFFFFFFFFFF;
     x = videoWidth >> 1;
-    sp54_x = x;
-    sp58_y = y;
+    sp54_width = x;
+    sp58_height = y;
+
     if (osTvType == OS_TV_TYPE_PAL) {
-        sp58_y = 145;
+        sp58_height = 145;
     }
 
-    switch (viewports) {
+    switch (viewports ^ 0) {
         case VIEWPORTS_COUNT_1_PLAYER:
-            posY = sp58_y;
+            posY = sp58_height;
             if (osTvType == OS_TV_TYPE_PAL) {
                 posY -= 18;
+                // Fake match
+                if (!gScreenViewports[gActiveCameraID].scissorX2) {}
             }
-            gDPSetScissor((*dlist)++, SCISSOR_INTERLACE, 0, 0, videoWidth, videoHeight);
+            gDPSetScissor((*dList)++, SCISSOR_INTERLACE, 0, 0, videoWidth, videoHeight);
             posX = x;
             break;
         case VIEWPORTS_COUNT_2_PLAYERS:
+            // 2 players = split screen horizontally
+            // first player has top half
             if (gActiveCameraID == 0) {
                 posY = videoHeight >> 2;
                 if (osTvType == OS_TV_TYPE_PAL) {
                     posY -= 12;
                 }
-                gDPSetScissor((*dlist)++, SCISSOR_INTERLACE, 0, 0, videoWidth, (y - (videoHeight >> 7)));
+                gDPSetScissor((*dList)++, SCISSOR_INTERLACE, 0, 0, videoWidth, y - (videoHeight >> 7));
             } else {
-                posY = y;
+                // second player has bottom half
+                posY = sp58_height;
                 posY += videoHeight >> 2;
-                gDPSetScissor((*dlist)++, SCISSOR_INTERLACE, 0, (y + (videoHeight >> 7)), videoWidth,
-                              (videoHeight - (videoHeight >> 7)));
+                gDPSetScissor((*dList)++, SCISSOR_INTERLACE, 0, y + (videoHeight >> 7), videoWidth,
+                              videoHeight - (videoHeight >> 7));
             }
             posX = x;
             break;
+        // this is probably never reached because of an if above that sets the viewport to 4 players if its currently 3
+        // players
         case VIEWPORTS_COUNT_3_PLAYERS:
+            posY = sp58_height;
+            // 3 player splits screen in 4 parts, first player = top left, second = top right, third = bottom left and
+            // bottom right has map of race track
             if (gActiveCameraID == 0) {
-                posY = sp58_y;
                 posX = videoWidth >> 2;
-                gDPSetScissor((*dlist)++, SCISSOR_INTERLACE, 0, 0, x - (videoWidth >> 8), videoHeight);
+                gDPSetScissor((*dList)++, SCISSOR_INTERLACE, 0, 0, x - (videoWidth >> 8), videoHeight);
             } else {
-                posY = sp58_y;
-                // posX = x;
                 posX = x + (videoWidth >> 2);
-                gDPSetScissor((*dlist)++, SCISSOR_INTERLACE, x + (videoWidth >> 8), 0, videoWidth - (videoWidth >> 8),
+                gDPSetScissor((*dList)++, SCISSOR_INTERLACE, x + (videoWidth >> 8), 0, videoWidth - (videoWidth >> 8),
                               videoHeight);
             }
             break;
         case VIEWPORTS_COUNT_4_PLAYERS:
-            sp58_y >>= 1;
-            sp54_x = x >> 1;
-            posY = 0;
+            sp58_height >>= 1;
+            sp54_width >>= 1;
             posX = 0;
+            posY = 0;
             switch (gActiveCameraID) {
                 case 0:
                     // Using posX and posY here is not smart since IDO can't optimize out the zero now.
                     // Why here of all places did they do this instead of just setting zero like everywhere else?
-                    gDPSetScissor((*dlist)++, SCISSOR_INTERLACE, posX, posY, (x - (videoWidth >> 8)),
-                                  (y - (videoHeight >> 7)));
+                    gDPSetScissor((*dList)++, SCISSOR_INTERLACE, posX, posY, x - (videoWidth >> 8),
+                                  y - (videoHeight >> 7));
                     break;
                 case 1:
                     posX = x;
-                    gDPSetScissor((*dlist)++, SCISSOR_INTERLACE, (sp54_x + (videoWidth >> 8)), 0,
-                                  ((sp54_x + sp54_x) - (videoWidth >> 8)), (y - (videoHeight >> 7)));
+                    gDPSetScissor((*dList)++, SCISSOR_INTERLACE, x + (videoWidth >> 8), 0, (x + x) - (videoWidth >> 8),
+                                  y - (videoHeight >> 7));
+
+                    // Fake
+                    if (1) {}
+                    if (1) {}
+                    if (1) {}
+                    if (1) {}
+
                     break;
                 case 2:
                     posY = y;
-                    gDPSetScissor((*dlist)++, SCISSOR_INTERLACE, 0, y + (videoHeight >> 7), x - (videoWidth >> 8),
+                    gDPSetScissor((*dList)++, SCISSOR_INTERLACE, 0, y + (videoHeight >> 7), x - (videoWidth >> 8),
                                   (y + y) - (videoHeight >> 7));
                     break;
                 case 3:
-                    posY = y;
                     posX = x;
-                    gDPSetScissor((*dlist)++, SCISSOR_INTERLACE, (sp54_x + (videoWidth >> 8)), y + (videoHeight >> 7),
+                    posY = y;
+                    gDPSetScissor((*dList)++, SCISSOR_INTERLACE, x + (videoWidth >> 8), y + (videoHeight >> 7),
                                   (x + x) - (videoWidth >> 8), (y + y) - (videoHeight >> 7));
                     break;
             }
-            posY += sp58_y;
-            posX += sp54_x;
+            // This should probably assign to a temp variable first?
+            posY += sp58_height;
+            posX += sp54_width;
             if (osTvType == OS_TV_TYPE_PAL) {
-                if (gActiveCameraID <= VIEWPORTS_COUNT_2_PLAYERS) {
+                if (gActiveCameraID <= 3) {
                     posY -= 20;
                 } else {
                     posY -= 6;
@@ -742,18 +758,17 @@ void func_80066CDC(Gfx **dlist, MatrixS **mats) {
             }
             break;
         default:
-            //@bug These values are unset!
-            posY = sp50_altPosY;
-            posX = sp4C_altPosX;
+            posY = sp58_height;
+            posX = x;
             break;
     }
 
     if (osTvType == OS_TV_TYPE_PAL) {
         posX -= 4;
     }
-    viewport_rsp_set(dlist, sp54_x, sp58_y, posX, posY);
+    viewport_rsp_set(dList, sp54_width, sp58_height, posX, posY);
     if (mats != NULL) {
-        func_80067D3C(dlist, mats);
+        func_80067D3C(dList, mats);
     }
     gActiveCameraID = originalCameraID;
 }
@@ -765,7 +780,7 @@ void func_80066CDC(Gfx **dlist, MatrixS **mats) {
  * Takes the size of the screen as depicted by the active menu viewport, then sets the RDP scissor to match it.
  * Official Name: camSetScissor
  */
-void viewport_scissor(Gfx **dlist) {
+void viewport_scissor(Gfx **dList) {
     s32 size;
     s32 lrx;
     s32 lry;
@@ -848,17 +863,17 @@ void viewport_scissor(Gfx **dlist) {
                 // clang-format on
                 break;
         }
-        gDPSetScissor((*dlist)++, 0, ulx, uly, lrx, lry);
+        gDPSetScissor((*dList)++, 0, ulx, uly, lrx, lry);
         return;
     }
-    gDPSetScissor((*dlist)++, 0, 0, 0, width, height);
+    gDPSetScissor((*dList)++, 0, 0, 0, width, height);
 }
 
 // Official Name: camGetPlayerProjMtx / camSetProjMtx - ??
-void func_80067D3C(Gfx **dlist, UNUSED MatrixS **mats) {
+void func_80067D3C(Gfx **dList, UNUSED MatrixS **mats) {
     s32 temp;
 
-    gSPPerspNormalize((*dlist)++, perspNorm);
+    gSPPerspNormalize((*dList)++, perspNorm);
 
     temp = gActiveCameraID;
     if (gCutsceneCameraActive) {
@@ -912,7 +927,7 @@ void set_ortho_matrix_height(f32 value) {
  * Used for drawing triangles on screen as HUD.
  * Official Name: camStandardOrtho
  */
-void set_ortho_matrix_view(Gfx **dlist, MatrixS **mtx) {
+void set_ortho_matrix_view(Gfx **dList, MatrixS **mtx) {
     u32 widthAndHeight;
     s32 width, height;
     s32 i, j;
@@ -926,8 +941,8 @@ void set_ortho_matrix_view(Gfx **dlist, MatrixS **mtx) {
     gViewportStack[gActiveCameraID + 5].vp.vscale[1] = width * 2;
     gViewportStack[gActiveCameraID + 5].vp.vtrans[0] = width * 2;
     gViewportStack[gActiveCameraID + 5].vp.vtrans[1] = height * 2;
-    gSPViewport((*dlist)++, OS_K0_TO_PHYSICAL(&gViewportStack[gActiveCameraID + 5]));
-    gSPMatrix((*dlist)++, OS_PHYSICAL_TO_K0((*mtx)++), G_MTX_NOPUSH | G_MTX_MUL | G_MTX_MODELVIEW);
+    gSPViewport((*dList)++, OS_K0_TO_PHYSICAL(&gViewportStack[gActiveCameraID + 5]));
+    gSPMatrix((*dList)++, OS_PHYSICAL_TO_K0((*mtx)++), G_MTX_NOPUSH | G_MTX_MUL | G_MTX_MODELVIEW);
     gModelMatrixStackPos = 0;
     gMatrixType = G_MTX_DKR_INDEX_0;
 
@@ -942,13 +957,13 @@ void set_ortho_matrix_view(Gfx **dlist, MatrixS **mtx) {
 }
 
 // Official Name: camStandardPersp?
-void func_8006807C(Gfx **dlist, MatrixS **mtx) {
+void func_8006807C(Gfx **dList, MatrixS **mtx) {
     object_transform_to_matrix_2(gCurrentModelMatrixF, &D_800DD288);
     f32_matrix_mult(&gCurrentModelMatrixF, &gPerspectiveMatrixF, &gViewMatrixF);
     object_transform_to_matrix_2((float(*)[4]) gModelMatrixF[0], &D_800DD2A0);
     f32_matrix_mult(gModelMatrixF[0], &gViewMatrixF, &gCurrentModelMatrixF);
     f32_matrix_to_s16_matrix(&gCurrentModelMatrixF, *mtx);
-    gSPMatrix((*dlist)++, OS_PHYSICAL_TO_K0((*mtx)++), G_MTX_NOPUSH | G_MTX_MUL | G_MTX_MODELVIEW);
+    gSPMatrix((*dList)++, OS_PHYSICAL_TO_K0((*mtx)++), G_MTX_NOPUSH | G_MTX_MUL | G_MTX_MODELVIEW);
     gModelMatrixStackPos = 0;
     gMatrixType = G_MTX_DKR_INDEX_0;
 }
@@ -958,7 +973,7 @@ void func_8006807C(Gfx **dlist, MatrixS **mtx) {
  * Viewports have a centre position and a scale factor, rather than a standard four corners.
  * Official Name: camSetViewport
  */
-void viewport_rsp_set(Gfx **dlist, s32 width, s32 height, s32 posX, s32 posY) {
+void viewport_rsp_set(Gfx **dList, s32 width, s32 height, s32 posX, s32 posY) {
     s32 tempWidth = (get_filtered_cheats() & CHEAT_MIRRORED_TRACKS) ? -width : width;
 #ifdef ANTI_TAMPER
     // Antipiracy measure. Flips the screen upside down.
@@ -972,9 +987,9 @@ void viewport_rsp_set(Gfx **dlist, s32 width, s32 height, s32 posX, s32 posY) {
         gViewportStack[gActiveCameraID].vp.vtrans[1] = posY * 4;
         gViewportStack[gActiveCameraID].vp.vscale[0] = tempWidth * 4;
         gViewportStack[gActiveCameraID].vp.vscale[1] = height * 4;
-        gSPViewport((*dlist)++, OS_PHYSICAL_TO_K0(&gViewportStack[gActiveCameraID]));
+        gSPViewport((*dList)++, OS_PHYSICAL_TO_K0(&gViewportStack[gActiveCameraID]));
     } else {
-        gSPViewport((*dlist)++, OS_PHYSICAL_TO_K0(&gViewportStack[gActiveCameraID + 10 + (gViewportWithBG * 5)]));
+        gSPViewport((*dList)++, OS_PHYSICAL_TO_K0(&gViewportStack[gActiveCameraID + 10 + (gViewportWithBG * 5)]));
     }
 }
 
@@ -983,18 +998,18 @@ void viewport_rsp_set(Gfx **dlist, s32 width, s32 height, s32 posX, s32 posY) {
  * If in the track menu, or post-race, set it to a small screen view instead.
  * Official Name: camResetView?
  */
-void viewport_reset(Gfx **dlist) {
+void viewport_reset(Gfx **dList) {
     u32 widthAndHeight, width, height;
     gActiveCameraID = 4;
     widthAndHeight = fb_size();
     height = GET_VIDEO_HEIGHT(widthAndHeight);
     width = GET_VIDEO_WIDTH(widthAndHeight);
     if (!(gScreenViewports[gActiveCameraID].flags & VIEWPORT_EXTRA_BG)) {
-        gDPSetScissor((*dlist)++, G_SC_NON_INTERLACE, 0, 0, width - 1, height - 1);
-        viewport_rsp_set(dlist, width >> 1, height >> 1, width >> 1, height >> 1);
+        gDPSetScissor((*dList)++, G_SC_NON_INTERLACE, 0, 0, width - 1, height - 1);
+        viewport_rsp_set(dList, width >> 1, height >> 1, width >> 1, height >> 1);
     } else {
-        viewport_scissor(dlist);
-        viewport_rsp_set(dlist, 0, 0, 0, 0);
+        viewport_scissor(dList);
+        viewport_rsp_set(dList, 0, 0, 0, 0);
     }
     gActiveCameraID = 0;
 }
@@ -1006,12 +1021,12 @@ UNUSED const char D_800E6F44[] = "cameraPushSprMtx: model stack overflow!!\n";
  * Used when the next thing rendered relies on there not being any matrix offset.
  * Official Name: camOffsetZero?
  */
-void matrix_world_origin(Gfx **dlist, MatrixS **mtx) {
+void matrix_world_origin(Gfx **dList, MatrixS **mtx) {
     f32_matrix_from_position(gModelMatrixF[gModelMatrixStackPos], 0.0f, 0.0f, 0.0f);
     f32_matrix_mult(gModelMatrixF[gModelMatrixStackPos], &gViewMatrixF, &gCurrentModelMatrixF);
     f32_matrix_to_s16_matrix(&gCurrentModelMatrixF, *mtx);
     gModelMatrixS[gModelMatrixStackPos] = *mtx;
-    gSPMatrix((*dlist)++, OS_PHYSICAL_TO_K0((*mtx)++), gMatrixType << 6);
+    gSPMatrix((*dList)++, OS_PHYSICAL_TO_K0((*mtx)++), gMatrixType << 6);
 }
 
 /**
@@ -1025,7 +1040,7 @@ void sprite_anim_off(s32 setting) {
 /**
  * Calculates angle from object to camera, then renders the sprite as a billboard, facing the camera.
  */
-s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Object *obj, unk80068514_arg4 *arg4,
+s32 render_sprite_billboard(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Object *obj, unk80068514_arg4 *arg4,
                             s32 flags) {
     f32 diffX;
     f32 diffY;
@@ -1092,8 +1107,8 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
         f32_matrix_mult(gModelMatrixF[gModelMatrixStackPos], &gViewMatrixF, &gCurrentModelMatrixF);
         f32_matrix_to_s16_matrix(&gCurrentModelMatrixF, *mtx);
         gModelMatrixS[gModelMatrixStackPos] = *mtx;
-        gSPMatrix((*dlist)++, OS_PHYSICAL_TO_K0((*mtx)++), G_MTX_DKR_INDEX_2);
-        gSPVertexDKR((*dlist)++, OS_K0_TO_PHYSICAL(&gVehiclePartVertex), 1, 0);
+        gSPMatrix((*dList)++, OS_PHYSICAL_TO_K0((*mtx)++), G_MTX_DKR_INDEX_2);
+        gSPVertexDKR((*dList)++, OS_K0_TO_PHYSICAL(&gVehiclePartVertex), 1, 0);
     } else {
         v = *vertexList;
         v->x = obj->segment.trans.x_position;
@@ -1103,7 +1118,7 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
         v->g = 255;
         v->b = 255;
         v->a = 255;
-        gSPVertexDKR((*dlist)++, OS_PHYSICAL_TO_K0(*vertexList), 1, 0);
+        gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(*vertexList), 1, 0);
         (*vertexList)++;
         if (gCutsceneCameraActive == 0) {
             angleDiff =
@@ -1118,8 +1133,8 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
                                            obj->segment.trans.scale, gVideoAspectRatio);
         f32_matrix_to_s16_matrix(gModelMatrixF[gModelMatrixStackPos], *mtx);
         gModelMatrixS[gModelMatrixStackPos] = *mtx;
-        gSPMatrix((*dlist)++, OS_PHYSICAL_TO_K0((*mtx)++), G_MTX_DKR_INDEX_2);
-        gDkrEnableBillboard((*dlist)++);
+        gSPMatrix((*dList)++, OS_PHYSICAL_TO_K0((*mtx)++), G_MTX_DKR_INDEX_2);
+        gDkrEnableBillboard((*dList)++);
     }
     if (gSpriteAnimOff == FALSE) {
         textureFrame = ((textureFrame & 0xFF) * arg4->textureCount) >> 8;
@@ -1128,20 +1143,20 @@ s32 render_sprite_billboard(Gfx **dlist, MatrixS **mtx, Vertex **vertexList, Obj
     if (flags & RENDER_SEMI_TRANSPARENT) {
         flags |= RENDER_ANTI_ALIASING;
     }
-    func_8007BF34(dlist, arg4->unk6 | (flags & (RENDER_FOG_ACTIVE | RENDER_SEMI_TRANSPARENT | RENDER_Z_COMPARE |
+    func_8007BF34(dList, arg4->unk6 | (flags & (RENDER_FOG_ACTIVE | RENDER_SEMI_TRANSPARENT | RENDER_Z_COMPARE |
                                                 RENDER_ANTI_ALIASING)));
     if (!(flags & RENDER_Z_UPDATE)) {
-        gDPSetPrimColor((*dlist)++, 0, 0, 255, 255, 255, 255);
+        gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
     }
-    gSPDisplayList((*dlist)++, arg4->unk8[textureFrame + 1]);
+    gSPDisplayList((*dList)++, arg4->unk8[textureFrame + 1]);
     gModelMatrixStackPos--;
     if (gModelMatrixStackPos == 0) {
         textureFrame = 0;
     } else {
         textureFrame = 1;
     }
-    gDkrInsertMatrix((*dlist)++, 0, textureFrame << 6);
-    gDkrDisableBillboard((*dlist)++);
+    gDkrInsertMatrix((*dList)++, 0, textureFrame << 6);
+    gDkrDisableBillboard((*dList)++);
     return result;
 }
 
@@ -1378,7 +1393,7 @@ void camera_push_model_mtx(Gfx **dList, MatrixS **mtx, ObjectTransform *trans, f
 /**
  * Calculate the rotation matrix for an actors head, then run it.
  */
-void apply_head_turning_matrix(Gfx **dlist, MatrixS **mtx, Object_68 *objGfx, s16 headAngle) {
+void apply_head_turning_matrix(Gfx **dList, MatrixS **mtx, Object_68 *objGfx, s16 headAngle) {
     f32 coss_headAngle;
     f32 sins_headAngle;
     f32 offsetX;
@@ -1392,8 +1407,8 @@ void apply_head_turning_matrix(Gfx **dlist, MatrixS **mtx, Object_68 *objGfx, s1
     offsetX = (f32) objGfx->offsetX;
     offsetY = (f32) objGfx->offsetY;
     offsetZ = (f32) objGfx->offsetZ;
-    coss_unk1C = coss_f(objGfx->unk1C);
-    sins_unk1C = sins_f(objGfx->unk1C);
+    coss_unk1C = coss_f(objGfx->headTilt);
+    sins_unk1C = sins_f(objGfx->headTilt);
     coss_headAngle = coss_f(headAngle);
     sins_headAngle = sins_f(headAngle);
     headMtxF[0][0] = (coss_headAngle * coss_unk1C);
@@ -1416,8 +1431,8 @@ void apply_head_turning_matrix(Gfx **dlist, MatrixS **mtx, Object_68 *objGfx, s1
     headMtxF[3][3] = 1.0f;
     f32_matrix_mult(&headMtxF, &gCurrentModelMatrixS, &rotationMtxF);
     f32_matrix_to_s16_matrix(&rotationMtxF, *mtx);
-    gSPMatrix((*dlist)++, OS_PHYSICAL_TO_K0((*mtx)++), G_MTX_DKR_INDEX_2);
-    gDkrInsertMatrix((*dlist)++, G_MWO_MATRIX_XX_XY_I, G_MTX_DKR_INDEX_1);
+    gSPMatrix((*dList)++, OS_PHYSICAL_TO_K0((*mtx)++), G_MTX_DKR_INDEX_2);
+    gDkrInsertMatrix((*dList)++, G_MWO_MATRIX_XX_XY_I, G_MTX_DKR_INDEX_1);
 }
 
 /**
@@ -1433,7 +1448,7 @@ UNUSED void get_modelmatrix_vector(f32 *x, f32 *y, f32 *z) {
  * Run a matrix from the top of the stack and pop it.
  * If the stack pos is less than zero, add a matrix instead.
  */
-void apply_matrix_from_stack(Gfx **dlist) {
+void apply_matrix_from_stack(Gfx **dList) {
     gCameraMatrixPos--;
     gModelMatrixStackPos--;
 
@@ -1448,9 +1463,9 @@ void apply_matrix_from_stack(Gfx **dlist) {
     } // Fakematch
 
     if (gModelMatrixStackPos > 0) {
-        gSPMatrix((*dlist)++, OS_PHYSICAL_TO_K0(gModelMatrixS[gModelMatrixStackPos]), G_MTX_DKR_INDEX_1);
+        gSPMatrix((*dList)++, OS_PHYSICAL_TO_K0(gModelMatrixS[gModelMatrixStackPos]), G_MTX_DKR_INDEX_1);
     } else {
-        gDkrInsertMatrix((*dlist)++, G_MWO_MATRIX_XX_XY_I, G_MTX_DKR_INDEX_0);
+        gDkrInsertMatrix((*dList)++, G_MWO_MATRIX_XX_XY_I, G_MTX_DKR_INDEX_0);
     }
 }
 
