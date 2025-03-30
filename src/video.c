@@ -28,12 +28,10 @@ VideoModeResolution gVideoModeResolutions[] = {
 s32 gVideoRefreshRate; // Official Name: viFramesPerSecond
 f32 gVideoAspectRatio;
 f32 gVideoHeightRatio;
-OSMesg gVideoMesgBuf[8];
-OSMesgQueue gVideoMesgQueue[8];
 OSViMode gTvViMode;
-s32 gVideoFbWidths[2];
-s32 gVideoFbHeights[2];
-u16 *gVideoFramebuffers[2];
+s32 gVideoFbWidths[3];
+s32 gVideoFbHeights[3];
+u16 *gVideoFramebuffers[3];
 s32 gVideoCurrFbIndex;
 s32 gVideoModeIndex;
 s32 sBlackScreenTimer;
@@ -46,6 +44,7 @@ UNUSED OSMesg D_801262E8[8];
 u8 gVideoDeltaCounter;
 u8 gVideoDeltaTime;
 OSScClient gVideoSched;
+s32 gVideoSkipNextRate = FALSE;
 
 /******************************/
 
@@ -78,14 +77,12 @@ void video_init(s32 videoModeIndex, OSSched *sc) {
 
     video_delta_reset();
     fb_mode_set(videoModeIndex);
-    gVideoFramebuffers[0] = NULL;
-    gVideoFramebuffers[1] = NULL;
-    fb_alloc(0);
-    fb_alloc(1);
+    for (s32 i = 0; i < 3; i++) {
+        gVideoFramebuffers[0];
+        fb_alloc(i);
+    }
     gVideoCurrFbIndex = 1;
     fb_swap();
-    osCreateMesgQueue((OSMesgQueue *) &gVideoMesgQueue, gVideoMesgBuf, ARRAY_COUNT(gVideoMesgBuf));
-    osScAddClient(sc, &gVideoSched, (OSMesgQueue *) &gVideoMesgQueue, OS_SC_ID_VIDEO);
     fb_init_vi();
     sBlackScreenTimer = 12;
     osViBlack(TRUE);
@@ -217,10 +214,12 @@ void fb_init_vi(void) {
             osViSetMode(&osViModeTable[viModeTableIndex + OS_VI_NTSC_HAF1]);
             break;
     }
-    osViSetSpecialFeatures(OS_VI_DIVOT_ON);
-    osViSetSpecialFeatures(OS_VI_DITHER_FILTER_ON);
+    osViSetSpecialFeatures(OS_VI_DIVOT_OFF);
+    osViSetSpecialFeatures(OS_VI_DITHER_FILTER_OFF);
     osViSetSpecialFeatures(OS_VI_GAMMA_OFF);
 }
+
+#define gUseExpansionMemory 0
 
 /**
  * Allocate the selected framebuffer index from the main pool.
@@ -263,6 +262,7 @@ void fb_alloc(s32 index) {
 void video_delta_reset(void) {
     gVideoDeltaCounter = 0;
     gVideoDeltaTime = 2;
+    gVideoSkipNextRate = TRUE;
 }
 
 /**
@@ -272,45 +272,24 @@ void video_delta_reset(void) {
  * than an update magnitude of 2. It's only purpose is to be used as a divisor
  * in the unused function, vi_refresh_rate.
  */
-s32 fb_update(s32 mesg) {
-    u8 tempUpdateRate;
-
-    tempUpdateRate = LOGIC_60FPS;
+void fb_update(s32 updateRate) {
     if (sBlackScreenTimer) {
-        sBlackScreenTimer--;
-        if (sBlackScreenTimer == 0) {
+        sBlackScreenTimer -= updateRate;
+        if (sBlackScreenTimer <= 0) {
             osViBlack(FALSE);
+            sBlackScreenTimer = 0;
         }
     }
-    if (mesg != MESG_SKIP_BUFFER_SWAP) {
-        fb_swap();
-    }
-    while (osRecvMesg(gVideoMesgQueue, NULL, OS_MESG_NOBLOCK) != -1) {
-        tempUpdateRate++;
-    }
-
-    if (tempUpdateRate < gVideoDeltaTime) {
-        if (gVideoDeltaCounter < 20) {
-            gVideoDeltaCounter++;
+    osViSetSpecialFeatures(OS_VI_DIVOT_OFF);
+    osViSetSpecialFeatures(OS_VI_DITHER_FILTER_OFF);
+    osViSetSpecialFeatures(OS_VI_GAMMA_OFF);
+    fb_swap();
+    /*if (gBootTimer) {
+        gBootTimer--;
+        if (gBootTimer == 0) {
+            detect_framebuffer();
         }
-        if (gVideoDeltaCounter == 20) {
-            gVideoDeltaTime = tempUpdateRate;
-            gVideoDeltaCounter = 0;
-        }
-    } else {
-        gVideoDeltaCounter = 0;
-        if ((gVideoDeltaTime < tempUpdateRate) && (D_801262E4 >= tempUpdateRate)) {
-            gVideoDeltaTime = tempUpdateRate;
-        }
-    }
-    while (tempUpdateRate < gVideoDeltaTime) {
-        osRecvMesg(gVideoMesgQueue, NULL, OS_MESG_BLOCK);
-        tempUpdateRate++;
-    }
-
-    osViSwapBuffer(gVideoLastFramebuffer);
-    osRecvMesg(gVideoMesgQueue, NULL, OS_MESG_BLOCK);
-    return tempUpdateRate;
+    }*/
 }
 
 void func_8007AB24(u8 arg0) {
@@ -326,15 +305,21 @@ UNUSED s32 vi_refresh_rate(void) {
     return (s32) ((f32) gVideoRefreshRate / (f32) gVideoDeltaTime);
 }
 
+#define NUM_FRAMEBUFFERS 3
+
 /**
  * Flips the current framebuffer index, swapping to the other framebuffer
  * for the next frame, then update the current and previous framebuffer pointers.
  */
 void fb_swap(void) {
-    gVideoLastFramebuffer = gVideoFramebuffers[gVideoCurrFbIndex];
-    gVideoLastDepthBuffer = gVideoDepthBuffer;
-    gVideoCurrFbIndex ^= 1;
+    gVideoLastFramebuffer = gVideoFramebuffers[(gVideoCurrFbIndex + (NUM_FRAMEBUFFERS - 1)) % NUM_FRAMEBUFFERS];
+    gVideoCurrFbIndex++;
+    if (gVideoCurrFbIndex >= NUM_FRAMEBUFFERS) {
+        gVideoCurrFbIndex = 0;
+    }
     gVideoCurrFramebuffer = gVideoFramebuffers[gVideoCurrFbIndex];
+
+    gVideoLastDepthBuffer = gVideoDepthBuffer;
     gVideoCurrDepthBuffer = gVideoDepthBuffer;
 }
 

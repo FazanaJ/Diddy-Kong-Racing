@@ -326,7 +326,7 @@ static u32 __amHandleFrameMsg(AudioInfo *info, AudioInfo *lastInfo) {
     t->list.t.type = M_AUDTASK;
     t->list.t.ucode_boot = (u64 *) rspF3DDKRBootStart;
     t->list.t.ucode_boot_size = ((int) rspF3DDKRDramStart - (int) rspF3DDKRBootStart);
-    t->list.t.flags = OS_TASK_DP_WAIT;
+    t->list.t.flags = 0;
     t->list.t.ucode = (u64 *) aspMainTextStart;
     t->list.t.ucode_data = (u64 *) aspMainDataStart;
     t->list.t.ucode_data_size = SP_UCODE_DATA_SIZE;
@@ -334,11 +334,11 @@ static u32 __amHandleFrameMsg(AudioInfo *info, AudioInfo *lastInfo) {
     t->list.t.yield_data_size = 0;
     t->unk6C = 1;
 
-    ret = osSendMesg(osScGetCmdQ(gAudioSched), (OSMesg) t, OS_MESG_NOBLOCK);
+    osScSubmitTask(gAudioSched, t);
 
     curAcmdList ^= 1; /* swap which acmd list you use each frame */
 
-    return ret;
+    return 0;
 }
 
 /******************************************************************************

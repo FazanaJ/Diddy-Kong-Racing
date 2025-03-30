@@ -71,7 +71,6 @@ UNUSED char gBuildString[] = "Version 7.7 29/09/97 15.00 L.Schuneman";
 s8 sAntiPiracyTriggered = FALSE;
 UNUSED s32 D_800DD378 = 1;
 s32 gSaveDataFlags = 0; // Official Name: load_save_flags
-s32 gScreenStatus = OSMESG_SWAP_BUFFER;
 s32 sControllerStatus = 0;
 UNUSED s32 D_800DD388 = 0;
 s8 gSkipGfxTask = FALSE;
@@ -89,6 +88,7 @@ s8 gDrawFrameTimer = 0;
 FadeTransition D_800DD3F4 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_BLACK, 20, 0);
 UNUSED FadeTransition D_800DD3FC = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_WHITE, 20, FADE_STAY);
 s32 sLogicUpdateRate = LOGIC_5FPS;
+f32 sLogicUpdateRateF = LOGIC_5FPS;
 FadeTransition gDrumstickSceneTransition =
     FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_WHITE, 30, FADE_STAY);
 UNUSED char *D_800DD410[3] = { "CAR", "HOV", "PLN" };
@@ -139,10 +139,11 @@ s32 gCurrNumHudMatPerPlayer;
 s32 gCurrNumHudTrisPerPlayer;
 s32 gCurrNumHudVertsPerPlayer;
 OSScClient *gNMISched[3];
-OSMesg gNMIOSMesg;
-OSMesgQueue gNMIMesgQueue;
+OSMesg gGameMesgBuf[3];
+OSMesgQueue gGameMesgQueue;
 s32 gNMIMesgBuf;          // Official Name: resetPressed
 UNUSED s32 D_80123568[3]; // BSS Padding
+s32 gNumGfxTasksAtScheduler = 0;
 
 /******************************/
 
@@ -151,12 +152,26 @@ UNUSED s32 D_80123568[3]; // BSS Padding
  * Official Name: mainThread
  */
 void thread3_main(UNUSED void *unused) {
+    OSMesg mesg;
     init_game();
     gSaveDataFlags = input_update(gSaveDataFlags, 0);
     sBootDelayTimer = 0;
     gGameMode = GAMEMODE_INTRO;
     while (1) {
-        if (is_reset_pressed()) {
+        while (gNumGfxTasksAtScheduler < 2) {
+            main_game_loop();
+        }
+
+        osRecvMesg(&gGameMesgQueue, &mesg, OS_MESG_BLOCK);
+
+        switch ((s32) mesg) {
+        case OS_SC_DONE_MSG:
+            gNumGfxTasksAtScheduler--;
+            break;
+
+        case OS_SC_PRE_NMI_MSG:
+            gNMIMesgBuf = TRUE;
+
             rumble_kill();
             audioStopThread();
             bgload_kill();
@@ -168,8 +183,6 @@ void thread3_main(UNUSED void *unused) {
                 ; // Infinite loop
             }
         }
-        main_game_loop();
-        thread3_verify_stack();
     }
 }
 
@@ -227,8 +240,8 @@ void init_game(void) {
     init_controller_paks();
     init_save_data();
     bgload_init();
-    osCreateMesgQueue(&gNMIMesgQueue, &gNMIOSMesg, 1);
-    osScAddClient(&gMainSched, (OSScClient *) gNMISched, &gNMIMesgQueue, OS_SC_ID_PRENMI);
+    osCreateMesgQueue(&gGameMesgQueue, gGameMesgBuf, 3);
+    osScAddClient(&gMainSched, (OSScClient*) gNMISched, &gGameMesgQueue, OS_SC_ID_VIDEO);
     gNMIMesgBuf = 0;
     gGameCurrentEntrance = 0;
     gGameCurrentCutscene = 0;
@@ -241,6 +254,10 @@ void init_game(void) {
     osSetTime(0);
 }
 
+u32 sPrevTime = 0;
+u32 sDeltaTime = 0;
+s32 sTotalTime = 0;
+
 /**
  * The main gameplay loop.
  * Contains all game logic, audio and graphics processing.
@@ -249,24 +266,36 @@ void main_game_loop(void) {
     s32 debugLoopCounter;
     s32 framebufferSize;
     s32 tempLogicUpdateRate, tempLogicUpdateRateMax;
+    const f32 divisor = 1.0f;
+
+
+    if (gVideoSkipNextRate) {
+        sLogicUpdateRate = LOGIC_60FPS;
+        sLogicUpdateRateF = 1.0f;
+        sTotalTime = 0;
+        sPrevTime = 0;
+        gVideoSkipNextRate = FALSE;
+    } else {
+        sDeltaTime = osGetCount() - sPrevTime;
+        sPrevTime = osGetCount();
+        sLogicUpdateRateF = (f32) sDeltaTime / (f32) (OS_USEC_TO_CYCLES(16666) * divisor);
+        if (sLogicUpdateRateF <= 0.0001f) {
+            sLogicUpdateRateF = 0.0001f;
+        }
+        sTotalTime += (OS_CYCLES_TO_USEC(sDeltaTime) * divisor);
+        sTotalTime -= 16666;
+        sLogicUpdateRate = LOGIC_60FPS;
+        while (sTotalTime > 16666) {
+            sTotalTime -= 16666;
+            sLogicUpdateRate++;
+        }
+        if (sLogicUpdateRate >= LOGIC_12FPS) {
+            sTotalTime = 0;
+            sLogicUpdateRate = LOGIC_12FPS;
+        }
+    }
 
     osSetTime(0);
-
-    if (gScreenStatus == MESG_SKIP_BUFFER_SWAP) {
-        gCurrDisplayList = gDisplayLists[gSPTaskNum];
-        rsp_segment(&gCurrDisplayList, SEGMENT_MAIN, 0x00000000);
-        rsp_segment(&gCurrDisplayList, SEGMENT_FRAMEBUFFER, (s32) gVideoCurrFramebuffer);
-        rsp_segment(&gCurrDisplayList, SEGMENT_ZBUFFER, (s32) gVideoLastDepthBuffer);
-        rsp_segment(&gCurrDisplayList, SEGMENT_FRAMEBUFFER_OFFSET, (s32) gVideoCurrFramebuffer - VI_OFFSET); // Unused
-    }
-    if (gDrawFrameTimer == 0) {
-        gfxtask_run_fifo(gDisplayLists[gSPTaskNum], gCurrDisplayList, 0);
-        gSPTaskNum += 1;
-        gSPTaskNum &= 1;
-    }
-    if (gDrawFrameTimer) {
-        gDrawFrameTimer--;
-    }
 
     gCurrDisplayList = gDisplayLists[gSPTaskNum];
     gGameCurrMatrix = gMatrixHeap[gSPTaskNum];
@@ -276,7 +305,6 @@ void main_game_loop(void) {
     rsp_segment(&gCurrDisplayList, SEGMENT_MAIN, 0x00000000);
     rsp_segment(&gCurrDisplayList, SEGMENT_FRAMEBUFFER, (s32) gVideoLastFramebuffer);
     rsp_segment(&gCurrDisplayList, SEGMENT_ZBUFFER, (s32) gVideoLastDepthBuffer);
-    rsp_segment(&gCurrDisplayList, SEGMENT_FRAMEBUFFER_OFFSET, (s32) gVideoLastFramebuffer - VI_OFFSET); // Unused
     rsp_init(&gCurrDisplayList);
     rdp_init(&gCurrDisplayList);
     bgdraw_render(&gCurrDisplayList, &gGameCurrMatrix, TRUE);
@@ -332,7 +360,7 @@ void main_game_loop(void) {
     copy_viewports_to_stack();
     if (gDrawFrameTimer != 1) {
         if (gSkipGfxTask == FALSE) {
-            gScreenStatus = gfxtask_wait();
+            gfxtask_wait();
         }
     } else {
         gDrawFrameTimer = 0;
@@ -349,16 +377,17 @@ void main_game_loop(void) {
         }
         dmacopy_doubleword(gVideoLastFramebuffer, gVideoCurrFramebuffer, (s32) gVideoCurrFramebuffer + framebufferSize);
     }
-    // tempLogicUpdateRate will be set to a value 2 or higher, based on the framerate.
-    // the mul factor is hardcapped at 6, which happens at 10FPS. The mul factor
-    // affects frameskipping, to maintain consistent game speed, through the (many)
-    // dropped frames in DKR.
-    tempLogicUpdateRate = fb_update(gScreenStatus);
-    sLogicUpdateRate = tempLogicUpdateRate;
-    tempLogicUpdateRateMax = LOGIC_10FPS;
-    if (tempLogicUpdateRate > tempLogicUpdateRateMax) {
-        sLogicUpdateRate = tempLogicUpdateRateMax;
+    fb_update(sLogicUpdateRate);
+
+    if (gDrawFrameTimer == 0) {
+        gfxtask_run_fifo(gDisplayLists[gSPTaskNum], gCurrDisplayList);
+        gNumGfxTasksAtScheduler++;
+        gSPTaskNum ^= 1;
     }
+    if (gDrawFrameTimer) {
+        gDrawFrameTimer--;
+    }
+
 #if REGION == REGION_JP
     func_800C78E0_C84E0();
 #endif
@@ -1241,9 +1270,6 @@ s8 is_postrace_viewport_active(void) {
  * Official name: mainResetPressed
  */
 s32 is_reset_pressed(void) {
-    if (gNMIMesgBuf == 0) {
-        gNMIMesgBuf = (s32) ((osRecvMesg(&gNMIMesgQueue, NULL, OS_MESG_NOBLOCK) + 1) != 0);
-    }
     return gNMIMesgBuf;
 }
 

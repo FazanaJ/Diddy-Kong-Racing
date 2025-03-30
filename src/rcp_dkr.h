@@ -71,8 +71,8 @@ void rdp_init(Gfx **dList);
 void rsp_init(Gfx **dList);
 void gfxtask_init(OSSched *sc);
 void bgdraw_texture_init(TextureHeader *tex1, TextureHeader *tex2, u32 shiftX);
-s32 gfxtask_run_xbus(Gfx* dlBegin, Gfx* dlEnd, s32 recvMesg);
-void gfxtask_run_fifo(Gfx* dlBegin, Gfx* dlEnd, s32 recvMesg);
+void gfxtask_run_xbus(Gfx* dlBegin, Gfx* dlEnd);
+void gfxtask_run_fifo(Gfx* dlBegin, Gfx* dlEnd);
 void texrect_draw(Gfx **dList, DrawTexture *element, s32 xPos, s32 yPos, u8 red, u8 green, u8 blue,
                                u8 alpha);
 void bgdraw_chequer(Gfx** dList);

@@ -156,48 +156,86 @@ OSMesgQueue *osScInterruptQ;
 
 /*******************************/
 
+extern OSMesgQueue gGameMesgQueue;
+extern OSSched gMainSched;
+extern s32 gNumGfxTasksAtScheduler;
+
+DKR_OSTask gRdpTaskA = {
+    NULL,                                                // next
+    0,                                                   // state
+    OS_SC_LAST_TASK | OS_SC_NEEDS_RDP | OS_SC_NEEDS_RSP, // flags
+    NULL,                                                // frameBuffer
+    {
+        // task
+        M_GFXTASK,                      // type
+        OS_TASK_DP_WAIT,                // flags
+        (u64 *) rspF3DDKRBootStart,     // ucode_boot
+        0,                              // ucode_boot_size
+        (u64 *) rspF3DDKRXbusStart,     // ucode
+        0,                              // ucode_size
+        (u64 *) rspF3DDKRDataXbusStart, // ucode_data
+        SP_UCODE_DATA_SIZE,             // ucode_data_size
+        (u64 *) gDramStack,             // dram_stack
+        SP_DRAM_STACK_SIZE8,            // dram_stack_size
+        NULL,                           // output_buff
+        0,                              // output_buff_size
+        0,                              // data_ptr
+        0,                              // data_size
+        (u64 *) gGfxTaskYieldData,      // yield_data_ptr
+        sizeof(gGfxTaskYieldData),      // yield_data_size
+    },
+    &gGameMesgQueue, // mesgQueue
+    NULL,            // mesg
+};
+
+DKR_OSTask gRdpTaskB = {
+    NULL,                                                // next
+    0,                                                   // state
+    OS_SC_LAST_TASK | OS_SC_NEEDS_RDP | OS_SC_NEEDS_RSP, // flags
+    NULL,                                                // frameBuffer
+    {
+        // task
+        M_GFXTASK,                      // type
+        OS_TASK_DP_WAIT,                // flags
+        (u64 *) rspF3DDKRBootStart,     // ucode_boot
+        0,                              // ucode_boot_size
+        (u64 *) rspF3DDKRXbusStart,     // ucode
+        0,                              // ucode_size
+        (u64 *) rspF3DDKRDataXbusStart, // ucode_data
+        SP_UCODE_DATA_SIZE,             // ucode_data_size
+        (u64 *) gDramStack,             // dram_stack
+        SP_DRAM_STACK_SIZE8,            // dram_stack_size
+        NULL,                           // output_buff
+        0,                              // output_buff_size
+        0,                              // data_ptr
+        0,                              // data_size
+        (u64 *) gGfxTaskYieldData,      // yield_data_ptr
+        sizeof(gGfxTaskYieldData),      // yield_data_size
+    },
+    &gGameMesgQueue, // mesgQueue
+    NULL,            // mesg
+};
+
+DKR_OSTask *gRdpCurTask = &gRdpTaskA;
+
+/*******************************/
+
 /**
  * Prepare the gfx task for the F3DDKR XBus microcode.
  * Sends a message to the scheduler to start processing an RSP task once set up.
  * Official Name: rcpFast3d
  */
-s32 gfxtask_run_xbus(Gfx *dlBegin, Gfx *dlEnd, UNUSED s32 recvMesg) {
+void gfxtask_run_xbus(Gfx *dlBegin, Gfx *dlEnd) {
     DKR_OSTask *dkrtask;
 
-    gGfxTaskIsRunning = TRUE;
-    dkrtask = &gGfxTaskBuf[gGfxBufCounter];
-    gGfxBufCounter++;
-    if (gGfxBufCounter == 2) {
-        gGfxBufCounter = 0;
-    }
-    dkrtask->flags = OS_SC_LAST_TASK | OS_SC_NEEDS_RDP | OS_SC_NEEDS_RSP;
-    dkrtask->mesgQueue = &gGfxTaskMesgQueue;
-    dkrtask->unused58 = COLOUR_TAG_RED;
-    dkrtask->unused5C = COLOUR_TAG_RED;
+    dkrtask = gRdpCurTask;
     dkrtask->task.data_ptr = (u64 *) dlBegin;
     dkrtask->task.data_size = ((s32) dlEnd - (s32) dlBegin) >> 3; // Shifted by 3, repsenting the size of the Gfx type.
-    dkrtask->task.type = M_GFXTASK;
-    dkrtask->task.flags = OS_TASK_DP_WAIT;
-    dkrtask->task.ucode_boot = (u64 *) rspF3DDKRBootStart;
     dkrtask->task.ucode_boot_size = (s32) (rspF3DDKRDramStart - rspF3DDKRBootStart);
-    dkrtask->task.ucode = (u64 *) rspF3DDKRXbusStart;
-    dkrtask->task.ucode_data = (u64 *) rspF3DDKRDataXbusStart;
-    dkrtask->task.ucode_data_size = SP_UCODE_DATA_SIZE;
-    dkrtask->task.dram_stack = (u64 *) gDramStack;
-    dkrtask->task.dram_stack_size = SP_DRAM_STACK_SIZE8;
-    dkrtask->task.output_buff = (u64 *) gGfxTaskOutputBuffer;
-    dkrtask->task.output_buff_size = (u64 *) &gRCPMesgQueue;
-    dkrtask->task.yield_data_ptr = (u64 *) gGfxTaskYieldData;
-    dkrtask->task.yield_data_size = sizeof(gGfxTaskYieldData);
-    dkrtask->task.output_buff = NULL;
-    dkrtask->task.output_buff_size = NULL;
-    dkrtask->next = NULL;
     dkrtask->frameBuffer = gVideoCurrFramebuffer;
-    dkrtask->unused60 = COLOUR_TAG_BLACK;
-    dkrtask->unused64 = COLOUR_TAG_BLACK;
-    osWritebackDCacheAll();
-    osSendMesg(osScInterruptQ, dkrtask, OS_MESG_BLOCK);
-    return 0;
+
+    osScSubmitTask(&gMainSched, (void *) dkrtask);
+    gRdpCurTask = (DKR_OSTask *) ((u32) gRdpCurTask ^ (u32) &gRdpTaskA ^ (u32) &gRdpTaskB);
 }
 
 /**
@@ -256,40 +294,31 @@ UNUSED void gfxtask_run_xbus2(Gfx *dlBegin, Gfx *dlEnd, s32 recvMesg) {
  * Sends a message to the scheduler to start processing an RSP task once set up.
  * Goes unused, and is broken.
  */
-UNUSED void gfxtask_run_fifo(Gfx *dlBegin, Gfx *dlEnd, s32 recvMesg) {
+void gfxtask_run_fifo(Gfx *dlBegin, Gfx *dlEnd) {
     DKR_OSTask *dkrtask;
+    u64 *taskStart;
+    u64 *taskEnd;
 
-    gGfxTaskIsRunning = TRUE;
-    dkrtask = &gGfxTaskBuf[gGfxBufCounter];
-    gGfxBufCounter++;
-    if (gGfxBufCounter == 2) {
-        gGfxBufCounter = 0;
-    }
-    dkrtask->flags = OS_SC_LAST_TASK | OS_SC_NEEDS_RDP | OS_SC_NEEDS_RSP;
-    dkrtask->mesgQueue = &gGfxTaskMesgQueue;
-    dkrtask->unused58 = COLOUR_TAG_RED;
-    dkrtask->unused5C = COLOUR_TAG_RED;
-    dkrtask->task.data_ptr = (u64 *) dlBegin;
-    dkrtask->task.data_size = (s32) (dlEnd - dlBegin) * sizeof(Gfx);
-    dkrtask->task.type = M_GFXTASK;
-    dkrtask->task.flags = OS_TASK_DP_WAIT;
-    dkrtask->task.ucode_boot = (u64 *) rspF3DDKRBootStart;
-    dkrtask->task.ucode_boot_size = (s32) (rspF3DDKRDramStart - rspF3DDKRBootStart);
+#if EXPANSION_PAK_SUPPORT || defined(FIFO_4MB)
+    taskStart = (u64 *) gGfxSPTaskOutputBuffer;
+    taskEnd = (u64 *) ((u8 *) gGfxSPTaskOutputBuffer + FIFO_BUFFER_SIZE);
+#else
+    taskStart = (u64 *) 0x80680000;
+    taskEnd = (u64 *) 0x806E0000;
+#endif
+
+    dkrtask = gRdpCurTask;
     dkrtask->task.ucode = (u64 *) rspF3DDKRFifoStart;
     dkrtask->task.ucode_data = (u64 *) rspF3DDKRDataFifoStart;
-    dkrtask->task.ucode_data_size = SP_UCODE_DATA_SIZE;
-    dkrtask->task.dram_stack = (u64 *) gDramStack;
-    dkrtask->task.dram_stack_size = SP_DRAM_STACK_SIZE8;
-    dkrtask->task.output_buff = RAM_END;
-    dkrtask->task.output_buff_size = RAM_END + 0x100000;
-    dkrtask->task.yield_data_ptr = (u64 *) gGfxTaskYieldData;
-    dkrtask->task.yield_data_size = sizeof(gGfxTaskYieldData);
-    dkrtask->next = NULL;
+    dkrtask->task.data_ptr = (u64 *) dlBegin;
+    dkrtask->task.data_size = ((s32) dlEnd - (s32) dlBegin) >> 3; // Shifted by 3, repsenting the size of the Gfx type.
+    dkrtask->task.ucode_boot_size = (s32) (rspF3DDKRDramStart - rspF3DDKRBootStart);
+    dkrtask->task.output_buff = (u64 *) taskStart;
+    dkrtask->task.output_buff_size = (u64 *) taskEnd;
     dkrtask->frameBuffer = gVideoCurrFramebuffer;
-    dkrtask->unused60 = 0xFF;
-    dkrtask->unused64 = 0xFF;
-    osWritebackDCacheAll();
-    osSendMesg(osScInterruptQ, dkrtask, OS_MESG_BLOCK);
+
+    osScSubmitTask(&gMainSched, (void *) dkrtask);
+    gRdpCurTask = (DKR_OSTask *) ((u32) gRdpCurTask ^ (u32) &gRdpTaskA ^ (u32) &gRdpTaskB);
 }
 
 /**
@@ -349,13 +378,16 @@ UNUSED void gfxtask_run_fifo2(Gfx *dlBegin, Gfx *dlEnd, s32 recvMesg) {
  * Official Name: rcpWaitDP
  */
 s32 gfxtask_wait(void) {
-    OSMesg *mesg = NULL;
-    if (gGfxTaskIsRunning == FALSE) {
-        return 0;
+    OSMesg mesg;
+
+    while (gNumGfxTasksAtScheduler > 0) {
+        osRecvMesg(&gGameMesgQueue, &mesg, OS_MESG_BLOCK);
+
+        if ((s32) mesg == OS_SC_DONE_MSG) {
+            gNumGfxTasksAtScheduler--;
+        }
     }
-    osRecvMesg(&gGfxTaskMesgQueue, (OSMesg) &mesg, OS_MESG_BLOCK);
-    gGfxTaskIsRunning = FALSE;
-    return (s32) mesg[1];
+    return 0;
 }
 
 /**
@@ -417,7 +449,7 @@ void bgdraw_render(Gfx **dList, MatrixS **mtx, s32 drawBG) {
     gDPFillRectangle((*dList)++, 0, 0, w - 1, h - 1);
     gDPPipeSync((*dList)++);
     gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, w, SEGMENT_FRAMEBUFFER << 24);
-    if (drawBG) {
+    /*if (drawBG) {
         if (check_viewport_background_flag(PLAYER_ONE)) {
             if (gChequerBGEnabled) {
                 bgdraw_chequer(dList); // Unused
@@ -432,11 +464,9 @@ void bgdraw_render(Gfx **dList, MatrixS **mtx, s32 drawBG) {
             // Used for secondary viewport backgrounds. This does not need to be 1 cycle, this could easily work with
             // fillmode.
             if (copy_viewport_background_size_to_coords(0, &x1, &y1, &x2, &y2)) {
-                gDPSetCycleType((*dList)++, G_CYC_1CYCLE);
-                gDPSetPrimColor((*dList)++, 0, 0, sBGPrimColourrR, sBGPrimColourrG, sBGPrimColourrB, 255);
-                gDPSetCombineMode((*dList)++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
-                gDPSetRenderMode((*dList)++, G_RM_OPA_SURF, G_RM_OPA_SURF2);
-                gDPFillRectangle((*dList)++, x1, y1, x2, y2);
+                gDPSetCycleType((*dList)++, G_CYC_FILL);
+                gDPSetRenderMode((*dList)++, G_RM_NOOP, G_RM_NOOP2);
+                goto otherBG;
             }
         } else {
             if (gChequerBGEnabled) {
@@ -446,13 +476,18 @@ void bgdraw_render(Gfx **dList, MatrixS **mtx, s32 drawBG) {
             } else if (gBGDrawFunc.ptr != NULL) {
                 gBGDrawFunc.function(dList, mtx);
             } else {
+                x1 = 0;
+                y1 = 0;
+                x2 = w;
+                y2 = h;
+                otherBG:
                 gDPSetFillColor((*dList)++,
                                 (GPACK_RGBA5551(sBGPrimColourrR, sBGPrimColourrG, sBGPrimColourrB, 1) << 16) |
                                     GPACK_RGBA5551(sBGPrimColourrR, sBGPrimColourrG, sBGPrimColourrB, 1));
-                gDPFillRectangle((*dList)++, 0, 0, w - 1, h - 1);
+                gDPFillRectangle((*dList)++, x1, y1, x2, y2);
             }
         }
-    }
+    }*/
     gDPPipeSync((*dList)++);
     viewport_scissor(dList);
 }
@@ -480,10 +515,8 @@ void rsp_init(Gfx **dList) {
  * Initialise the mesg queues for the gfx tasks, that interface with the scheduler.
  */
 void gfxtask_init(OSSched *sc) {
-    osScInterruptQ = osScGetInterruptQ(sc);
     osCreateMesgQueue(&gRCPMesgQueue, &gRCPMesgBuf, 1);
     osCreateMesgQueue(&gUnusedMesgQueue, gUnusedMesgBuf, ARRAY_COUNT(gUnusedMesgBuf));
-    osCreateMesgQueue(&gGfxTaskMesgQueue, gGfxTaskMesgBuf, ARRAY_COUNT(gGfxTaskMesgBuf));
 }
 
 /**

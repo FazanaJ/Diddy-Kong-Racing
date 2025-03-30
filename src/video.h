@@ -91,6 +91,7 @@ extern u16 *gVideoCurrFramebuffer;
 extern u16 *gVideoLastFramebuffer;
 extern u16 *gVideoCurrDepthBuffer;
 extern u16 *gVideoLastDepthBuffer;
+extern s32 gVideoSkipNextRate;
 
 extern OSViMode osViModeNtscLpn1, osViModePalLpn1, osViModeMpalLpn1, osViModePalLan1, osViModeNtscLan1, osViModeMpalLan1;
 
@@ -112,6 +113,6 @@ void func_8007AB24(u8 arg0);
 s32 vi_refresh_rate(void);
 void fb_swap(void);
 void fb_memcpy(u8 *src, u8 *dest, s32 len);
-s32 fb_update(s32 mesg);
+void fb_update(s32 updateRate);
 
 #endif

@@ -52,6 +52,8 @@
 #define OSMESG_SWAP_BUFFER 0
 #define MESG_SKIP_BUFFER_SWAP 8
 
+#define OS_SC_PRIORITY 13
+
 typedef struct {
     short type;
     char  misc[30];
@@ -107,29 +109,26 @@ typedef struct {
     OSScMsg     retraceMsg;
     OSScMsg     prenmiMsg;
     OSMesgQueue interruptQ;
-    OSMesg      intBuf[OS_SC_MAX_MESGS];
+    OSMesg      intBuf[OS_SC_MAX_MESGS]; //0x8 per OSMesg
     OSMesgQueue cmdQ;
-    OSMesg      cmdMsgBuf[OS_SC_MAX_MESGS];
+    OSMesg      cmdMsgBuf[OS_SC_MAX_MESGS]; //0x8 per OSMesg
     OSThread    thread;
-    OSScClient  *clientList;
-    OSScTask    *audioListHead;
-    OSScTask    *gfxListHead;
-    OSScTask    *audioListTail;
-    OSScTask    *gfxListTail;
+    OSMesgQueue *audmq;
+    OSMesgQueue *gfxmq;
+    OSScTask    *nextAudTask;
     OSScTask    *curRSPTask;
     OSScTask    *curRDPTask;
-   OSScTask    *unkTask;
-    u32         frameCount;
-    s32         doAudio;
-} OSSched;
+    OSScTask    *nextGfxTask;
+    OSScTask    *nextGfxTask2;
+    void        *scheduledFB;
+    void        *queuedFB;
+    u8          audioFlip;
+    u8          retraceCount;
+  } OSSched;
 
-void            osCreateScheduler(OSSched *s, void *stack, OSPri priority,
-                                  u8 mode, u8 numFields);
-void            osScAddClient(OSSched *s, OSScClient *c, OSMesgQueue *msgQ, u8 id);
-OSMesgQueue    *osScGetInterruptQ(OSSched *s);
-void            func_80079760(OSSched *s);
-void            osScRemoveClient(OSSched *s, OSScClient *c);
-OSMesgQueue     *osScGetCmdQ(OSSched *s);
+void osCreateScheduler(OSSched *sc, void *stack, OSPri priority, u8 mode, u8 numFields);
+void osScAddClient(OSSched *sc, OSScClient *c, OSMesgQueue *msgQ, u8 id);
+void osScSubmitTask(OSSched *sc, OSScTask *t);
 
 #endif
 
