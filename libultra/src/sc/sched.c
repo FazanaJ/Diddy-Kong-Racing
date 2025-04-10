@@ -206,12 +206,13 @@ static void __scHandleRSP(OSSched *sc) {
 }
 
 static void __scHandleRDP(OSSched *sc) {
+    OSScTask *t;
     if (sc->curRDPTask == NULL) {
         __scTryDispatch(sc);
         return;
     }
 
-    OSScTask *t = sc->curRDPTask;
+    t = sc->curRDPTask;
     sc->curRDPTask = NULL;
 
     t->state &= ~OS_SC_NEEDS_RDP;

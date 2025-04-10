@@ -348,3 +348,57 @@ void render_epc_lock_up_display(void) {
             return;
     }
 }
+
+#include "video.h"
+#include "string.h"
+#include "stdarg.h"
+
+u64 gCrashThreadStack[0x200];
+OSThread gCrashThread;
+OSMesgQueue gCrashQueue;
+OSMesg gCrashQueueBuf[2];
+u16 *gCrashFB;
+
+const u32 gCrashFont[] = {
+    0xfbeffdfe, 0x4bff5ffb, 0x6dbfadf7, 0xfff002e6,
+    0x6deb6592, 0x54acf6db, 0x62b6da6e, 0x26486d00,
+    0x229461be, 0x5daf4b4f, 0x6fbfab7a, 0x4aa5efeb,
+    0xff4270c6, 0x1f6592d4, 0xacb6cb8a, 0xb7d52a87,
+    0x9aa90800, 0x9461bfef, 0x3dfafb7c, 0x77aead5f,
+    0xffd7f3f1, 0x52466de0
+};
+
+void crash_render(void) {
+}
+
+void crash_screen_sleep(s32 ms) {
+    u32 cycles = ms * 1000 * osClockRate / 1000000U;
+    osSetTime(0);
+    while (osGetTime() < cycles) {}
+}
+
+void crash_thread(UNUSED void *var) {
+    OSMesg msg;
+
+    osSetEventMesg(OS_EVENT_FAULT, &gCrashQueue, (OSMesg) 8);
+    osSetEventMesg(OS_EVENT_CPU_BREAK, &gCrashQueue, (OSMesg) 2);
+
+    osRecvMesg(&gCrashQueue, &msg, OS_MESG_BLOCK);
+    osSetThreadPri(NULL, OS_PRIORITY_MAX);
+    gCrashFB = gVideoCurrFramebuffer;
+    crash_screen_sleep(300);
+
+    switch ((s32) msg) {
+        default:
+            crash_render();
+            break;
+    }
+
+    while (1) {}
+}
+
+void crash_init(void) {
+    osCreateMesgQueue(&gCrashQueue, gCrashQueueBuf, ARRAY_COUNT(gCrashQueueBuf));
+    osCreateThread(&gCrashThread, 1, &crash_thread, 0, &gCrashThreadStack[0x200], 30);
+    osStartThread(&gCrashThread);
+}

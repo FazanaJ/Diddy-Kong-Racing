@@ -96,6 +96,8 @@ void mainproc(void) {
     osStartThread(&gThread1);
 }
 
+void crash_init(void);
+
 /**
  * Initialise the crash handler thread, then initialise the main game thread.
  * Reset the start and endpoint of the game thread stack, then set thread priority to zero, effectively
@@ -103,6 +105,7 @@ void mainproc(void) {
  */
 void thread1_main(UNUSED void *unused) {
     thread0_create();
+    crash_init();
     osCreateThread(&gThread3, 3, &thread3_main, 0, &gThread3Stack[STACKSIZE(STACK_GAME)], 10);
     gThread3Stack[STACKSIZE(STACK_GAME) - 1] = 0;
     gThread3Stack[0] = 0;

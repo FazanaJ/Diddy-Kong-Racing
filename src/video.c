@@ -54,6 +54,7 @@ s32 gVideoSkipNextRate = FALSE;
  * Official Name: viInit
  */
 void video_init(s32 videoModeIndex, OSSched *sc) {
+    s32 i;
     if (osTvType == OS_TV_TYPE_PAL) {
         gVideoRefreshRate = REFRESH_50HZ;
         gVideoAspectRatio = ASPECT_RATIO_PAL;
@@ -69,7 +70,6 @@ void video_init(s32 videoModeIndex, OSSched *sc) {
     }
 
     if (osTvType == OS_TV_TYPE_PAL) {
-        s32 i;
         for (i = 0; i <= NUM_RESOLUTION_MODES; i++) {
             gVideoModeResolutions[i].height += PAL_HEIGHT_DIFFERENCE;
         }
@@ -77,7 +77,7 @@ void video_init(s32 videoModeIndex, OSSched *sc) {
 
     video_delta_reset();
     fb_mode_set(videoModeIndex);
-    for (s32 i = 0; i < 3; i++) {
+    for (i = 0; i < 3; i++) {
         gVideoFramebuffers[0];
         fb_alloc(i);
     }

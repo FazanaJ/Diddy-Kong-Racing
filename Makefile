@@ -371,6 +371,11 @@ distcleanall: cleanall
 	rm -f $(SYMBOLS_DIR)/*auto.us.v80.txt
 	rm -f $(SYMBOLS_DIR)/*auto.pal.v80.txt
 
+ROM := $(TARGET).z64
+
+test_ares: $(ROM) $(VERIFY)
+	/Applications/ares.app/Contents/MacOS/ares "$(TARGET).z64"
+
 #When you just need to wipe old symbol names and re-extract
 cleanextract: distclean extract
 
