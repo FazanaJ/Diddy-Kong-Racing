@@ -19,6 +19,9 @@ u8 gUseExpansionMemory;
 #define SIZE_4MB 0x400000
 #define SIZE_8MB 0x800000
 
+/**
+ * Straight port from Libultra, returns the memory size.
+*/
 u32 osGetMemSize(void) {
     vu32 *ptr;
     u32 size = SIZE_4MB;
@@ -51,6 +54,9 @@ u32 osGetMemSize(void) {
     return size;
 }
 
+/**
+ *  Calls osGetMemSize and sets if the expansion pak exists, and whether or not it can be used.
+*/
 void memsize_init(void) {
     #ifdef FORCE_4MB_MEMORY
         gExpansionPak = FALSE;
