@@ -133,7 +133,7 @@ sound_vehicle_check = 0x80007F94;
 func_80007FA4 = 0x80007FA4;
 
 // audio_spatial.c .text
-func_80008040 = 0x80008040;
+audioline_init = 0x80008040;
 audioline_off = 0x80008140;
 audioline_on = 0x80008168;
 func_80008174 = 0x80008174;
@@ -146,7 +146,7 @@ update_spatial_audio_position = 0x800096D8;
 func_800096F8 = 0x800096F8;
 func_8000974C = 0x8000974C;
 audioline_ambient_create = 0x800098A4;
-func_80009968 = 0x80009968;
+audioline_reverb_create = 0x80009968;
 func_800099EC = 0x800099EC;
 func_80009AB4 = 0x80009AB4;
 func_80009B7C = 0x80009B7C;
@@ -3678,18 +3678,15 @@ gSoundChannelVolume = 0x80119C28;
 D_80119C30 = 0x80119C30;
 gRacerSound = 0x80119C38;
 gSoundRacerObj = 0x80119C3C;
+
+// audio_spatial .bss
 D_80119C40 = 0x80119C40;
 gSoundMaskHeapUsed = 0x80119C44;
 gSoundMaskHeap = 0x80119C48;
 gFreeMasks = 0x80119C4C;
 gSoundMaskHeapFree = 0x80119C50;
-D_80119C54 = 0x80119C54;
-D_80119C58 = 0x80119C58;
-D_80119C5C = 0x80119C5C;
-D_80119C60 = 0x80119C60;
-D_8011A6D8 = 0x8011A6D8;
-D_8011A6DC = 0x8011A6DC;
-D_8011A6E0 = 0x8011A6E0;
+D_80119C58 = 0x80119C58; // size:0xA80
+D_8011A6D8 = 0x8011A6D8; // size:0x540
 gAudioLinesOff = 0x8011AC18;
 D_8011AC1C = 0x8011AC1C;
 

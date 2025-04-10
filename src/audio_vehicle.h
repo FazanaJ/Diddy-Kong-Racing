@@ -5,34 +5,6 @@
 #include "structs.h"
 #include "audio.h"
 
-/* Size: 0x90 / 144 bytes */
-typedef struct unk80119C48 {
-    s32 unk18;
-    s32 unk3C;
-    s32 unk60;
-    s32 unk84;
-} unk80119C48;
-
-/* Size: 0x180 / 384 bytes */
-typedef struct unk80119C58 {
-    union {
-        /* 0x00 */ f32 unk0_01;
-        /* 0x00 */ u8 unk0_02;
-    } unk0;
-    /* 0x004 */ Vec3f *unk4;
-    /* 0x008 */ u8 pad9[0x164];
-    /* 0x16C */ s32 soundID;
-    /* 0x170 */ s32 unk170;
-    /* 0x174 */ u8 unk174;
-    /* 0x175 */ u8 unk175;
-    /* 0x176 */ u8 unk176;
-    /* 0x177 */ u8 unk177;
-    /* 0x178 */ s32 unk178;
-    /* 0x17C */ s8 unk17C;
-    /* 0x17D */ u8 unk17D;
-    /* 0x17E */ u8 unk17E;
-} unk80119C58;
-
 /* Size: 0xE0 / 224 bytes */
 typedef struct VehicleSoundData {
     /* 0x00 */ u16 unk0[2];
@@ -128,15 +100,6 @@ typedef struct unkAudioAsset {
     /* 0x48 */ s16 unk48;
     /* 0x4A */ u8 unk4A;
 } unkAudioAsset;
-
-extern u8 gVehicleSounds;
-extern s32 D_800DC6D8;
-extern s32 D_800DC6DC;
-extern u16 gUsedMasks;
-extern unk80119C48 **gSoundMaskHeap;
-extern SoundMask **gSoundMaskHeapUsed;
-extern SoundMask **gSoundMaskHeapFree;
-extern u8 gFreeMasks;
 
 void racer_sound_update(Object *obj, u32 buttonsPressed, u32 buttonsHeld, s32 updateRate);
 void racer_sound_free(Object *);
