@@ -10,8 +10,68 @@ u64 gThread1Stack[STACKSIZE(STACK_IDLE)];
 u64 gThread3Stack[STACKSIZE(STACK_GAME)];
 OSThread gThread1; // OSThread for thread 1
 OSThread gThread3; // OSThread for thread 3
+u8 gExpansionPak;
+u8 gUseExpansionMemory;
 
 /******************************/
+
+#define STEP 0x100000
+#define SIZE_4MB 0x400000
+#define SIZE_8MB 0x800000
+
+u32 osGetMemSize(void) {
+    vu32 *ptr;
+    u32 size = SIZE_4MB;
+    u32 data0;
+    u32 data1;
+
+    /*if (__osBbIsBb) {
+        return osMemSize;
+    }*/
+
+    while (size < SIZE_8MB) {
+        ptr = (vu32 *) (K1BASE + size);
+
+        data0 = *ptr;
+        data1 = ptr[STEP / 4 - 1];
+
+        *ptr ^= ~0;
+        ptr[STEP / 4 - 1] ^= ~0;
+
+        if ((*ptr != (data0 ^ ~0)) || (ptr[STEP / 4 - 1] != (data1 ^ ~0))) {
+            return size;
+        }
+
+        *ptr = data0;
+        ptr[STEP / 4 - 1] = data1;
+
+        size += STEP;
+    }
+
+    return size;
+}
+
+void memsize_init(void) {
+    #ifdef FORCE_4MB_MEMORY
+        gExpansionPak = FALSE;
+        gUseExpansionMemory = FALSE;
+        //puppyprint_log(LOG_INFO, "4MB Memory Forced.\n");
+        return;
+    #endif
+        if (osGetMemSize() > 0x400000) {
+            gExpansionPak = TRUE;
+            //puppyprint_log(LOG_INFO, "Expansion Pak Detected\n");
+    #if EXPANSION_PAK_SUPPORT == 0
+            gUseExpansionMemory = FALSE;
+    #else
+            gUseExpansionMemory = TRUE;
+    #endif
+        } else {
+            //puppyprint_log(LOG_INFO, "Expansion Pak Missing\n");
+            gExpansionPak = FALSE;
+            gUseExpansionMemory = FALSE;
+        }
+    }
 
 /**
  * Where it all begins.
@@ -22,6 +82,7 @@ OSThread gThread3; // OSThread for thread 3
 void mainproc(void) {
     osInitialize();
     osTvType = OS_TV_NTSC;
+    memsize_init();
 #ifdef AVOID_UB
     bzero(&gMainMemoryPool, RAM_END - (s32) (&gMainMemoryPool));
 #endif

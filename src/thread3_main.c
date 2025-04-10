@@ -381,7 +381,11 @@ void main_game_loop(void) {
     fb_update(sLogicUpdateRate);
 
     if (gDrawFrameTimer == 0) {
-        gfxtask_run_fifo(gDisplayLists[gSPTaskNum], gCurrDisplayList);
+        if (gExpansionPak) {
+            gfxtask_run_fifo(gDisplayLists[gSPTaskNum], gCurrDisplayList);
+        } else {
+            gfxtask_run_xbus(gDisplayLists[gSPTaskNum], gCurrDisplayList);
+        }
         gNumGfxTasksAtScheduler++;
         gSPTaskNum ^= 1;
     }

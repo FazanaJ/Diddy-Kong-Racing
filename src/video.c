@@ -286,8 +286,6 @@ void fb_init_vi(void) {
     osViSetSpecialFeatures(OS_VI_GAMMA_OFF);
 }
 
-#define gUseExpansionMemory 0
-
 /**
  * Allocate the selected framebuffer index from the main pool.
  * Will also allocate the depthbuffer if it does not already exist.

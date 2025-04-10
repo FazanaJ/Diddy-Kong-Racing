@@ -5,6 +5,9 @@
 #include "macros.h"
 #include <ultra64.h>
 
+extern u8 gExpansionPak;
+extern u8 gUseExpansionMemory;
+
 void mainproc(void);
 void thread1_main(void *);
 void thread3_verify_stack(void);
