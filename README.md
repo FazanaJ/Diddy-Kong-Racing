@@ -1,5 +1,10 @@
 # Diddy Kong Racing
 
+This branch will contain extra features and tweaks determined out of scope of the main branch. Anybody familliar with dkrMod will know what this will become.
+dkrMod's state grew unsustainable because of major revisions on the main repo, on top of stability problems from my workflow.
+This branch will instead serve as the stable version of what dkrMod intended to be, while you can find hackerDKR_unstable for wip things.
+This is still very early days however, so most features present on dkrMod are not yet here.
+
 This repo contains a work-in-progress decompilation of Diddy Kong Racing for the N64. You will need to have a original copy of the ROM to extract the game's assets.
 
 All versions are supported, and the US 1.0 version (SHA1 = 0cb115d8716dbbc2922fda38e533b9fe63bb9670) of the game is the default if not specified.
