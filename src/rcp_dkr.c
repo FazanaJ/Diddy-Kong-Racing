@@ -6,6 +6,7 @@
 #include "camera.h"
 #include "set_rsp_segment.h"
 #include "racer.h"
+#include "thread3_main.h"
 
 /************ .data ************/
 
@@ -401,6 +402,25 @@ UNUSED void gfxtask_run_rdp(void *bufPtr, s32 bufSize, UNUSED s32 unused) {
     while (osDpGetStatus() & DPC_CLR_CMD_CTR) {}
 }
 
+s32 bgdraw_init(void) {
+    s32 map = get_current_map_id();
+
+    switch (map) {
+        case ASSET_LEVEL_CENTRALAREAHUB:
+        case ASSET_LEVEL_WHALEBAY:
+        case ASSET_LEVEL_PIRATELAGOON:
+        case ASSET_LEVEL_DINODOMAINHUB:
+        case ASSET_LEVEL_DINODOMAINTROPHYANIM:
+        case ASSET_LEVEL_FRONTEND:
+        case ASSET_LEVEL_WIZPIG2:
+            return TRUE;
+            break;
+        default:
+            return FALSE;
+            break;
+    }
+}
+
 /**
  * Sets the primitive colour for the cyclemode fillrect background.
  * Official name: rcpSetScreenColour
@@ -420,7 +440,7 @@ void bgdraw_fillcolour(s32 red, s32 green, s32 blue) {
     sBackgroundFillColour = GPACK_RGBA5551(red, green, blue, 1);
     sBackgroundFillColour |= (sBackgroundFillColour << 16);
 }
-
+#include "printf.h"
 /**
  * Clears the ZBuffer first, then decides how to draw the background which goes directly
  * over the colour buffer. DrawBG if set to 0 (which never happens) will completely skip
@@ -442,52 +462,52 @@ void bgdraw_render(Gfx **dList, MatrixS **mtx, s32 drawBG) {
 
     gDPPipeSync((*dList)++);
     //!@bug: the scissor does not need the off by one here, despite being intended for fill mode.
-    gDPSetScissor((*dList)++, 0, 0, 0, w - 1, h - 1);
+    gDPSetScissor((*dList)++, 0, 0, 0, w, h);
     gDPSetCycleType((*dList)++, G_CYC_FILL);
     gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, w, SEGMENT_ZBUFFER << 24);
     gDPSetFillColor((*dList)++, GPACK_RGBA5551(255, 255, 240, 0) << 16 | GPACK_RGBA5551(255, 255, 240, 0));
     gDPFillRectangle((*dList)++, 0, 0, w - 1, h - 1);
     gDPPipeSync((*dList)++);
     gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, w, SEGMENT_FRAMEBUFFER << 24);
-    /*if (drawBG) {
-        if (check_viewport_background_flag(PLAYER_ONE)) {
-            if (gChequerBGEnabled) {
-                bgdraw_chequer(dList); // Unused
-            } else if (gTexBGTex1) {
-                bgdraw_texture(dList);
-            } else if (gBGDrawFunc.ptr != NULL) {
-                gBGDrawFunc.function(dList, mtx);
-            } else {
+    if (check_viewport_background_flag(PLAYER_ONE)) {
+        if (gChequerBGEnabled) {
+            bgdraw_chequer(dList); // Unused
+        } else if (gTexBGTex1) {
+            bgdraw_texture(dList);
+        } else if (gBGDrawFunc.ptr != NULL) {
+            gBGDrawFunc.function(dList, mtx);
+        } else {
+            if (drawBG) {
                 gDPSetFillColor((*dList)++, sBackgroundFillColour);
                 gDPFillRectangle((*dList)++, 0, 0, w - 1, h - 1);
             }
-            // Used for secondary viewport backgrounds. This does not need to be 1 cycle, this could easily work with
-            // fillmode.
-            if (copy_viewport_background_size_to_coords(0, &x1, &y1, &x2, &y2)) {
-                gDPSetCycleType((*dList)++, G_CYC_FILL);
-                gDPSetRenderMode((*dList)++, G_RM_NOOP, G_RM_NOOP2);
-                goto otherBG;
-            }
-        } else {
-            if (gChequerBGEnabled) {
-                bgdraw_chequer(dList); // Unused
-            } else if (gTexBGTex1) {
-                bgdraw_texture(dList);
-            } else if (gBGDrawFunc.ptr != NULL) {
-                gBGDrawFunc.function(dList, mtx);
-            } else {
-                x1 = 0;
-                y1 = 0;
-                x2 = w;
-                y2 = h;
-                otherBG:
-                gDPSetFillColor((*dList)++,
-                                (GPACK_RGBA5551(sBGPrimColourrR, sBGPrimColourrG, sBGPrimColourrB, 1) << 16) |
-                                    GPACK_RGBA5551(sBGPrimColourrR, sBGPrimColourrG, sBGPrimColourrB, 1));
-                gDPFillRectangle((*dList)++, x1, y1, x2, y2);
-            }
         }
-    }*/
+        // Used for secondary viewport backgrounds. This does not need to be 1 cycle, this could easily work with
+        // fillmode.
+        if (drawBG && copy_viewport_background_size_to_coords(0, &x1, &y1, &x2, &y2)) {
+            gDPSetCycleType((*dList)++, G_CYC_FILL);
+            gDPSetRenderMode((*dList)++, G_RM_NOOP, G_RM_NOOP2);
+            goto otherBG;
+        }
+    } else {
+        if (gChequerBGEnabled) {
+            bgdraw_chequer(dList); // Unused
+        } else if (gTexBGTex1) {
+            bgdraw_texture(dList);
+        } else if (gBGDrawFunc.ptr != NULL) {
+            gBGDrawFunc.function(dList, mtx);
+        } else if (drawBG) {
+            x1 = 0;
+            y1 = 0;
+            x2 = w;
+            y2 = h;
+            otherBG:
+            gDPSetFillColor((*dList)++,
+                            (GPACK_RGBA5551(sBGPrimColourrR, sBGPrimColourrG, sBGPrimColourrB, 1) << 16) |
+                                GPACK_RGBA5551(sBGPrimColourrR, sBGPrimColourrG, sBGPrimColourrB, 1));
+            gDPFillRectangle((*dList)++, x1, y1, x2, y2);
+        }
+    }
     gDPPipeSync((*dList)++);
     viewport_scissor(dList);
 }

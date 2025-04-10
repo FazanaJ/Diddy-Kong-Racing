@@ -389,7 +389,7 @@ s32 func_80009AB4(u8 arg0) {
     return ret;
 }
 
-#ifdef NON_EQUIVALENT
+#ifdef NON_MATCHING
 u8 func_80009D6C(unk8011A6D8 *, f32, f32, f32);
 // audioline_reverb
 void func_80009B7C(s32 *soundState, f32 x, f32 y, f32 z) {
@@ -411,6 +411,7 @@ void func_80009B7C(s32 *soundState, f32 x, f32 y, f32 z) {
     levelSegmentIndex = get_level_segment_index_from_position(x, y, z);
     volume = 0;
     var_s6 = 400;
+    sound_reverb_set(FALSE);
     for (i = 0; i < ARRAY_COUNT(D_8011A6D8); i++) {
         temp = &D_8011A6D8[i];
         if (temp->unk0.unk0_02 != 0) {
@@ -422,6 +423,7 @@ void func_80009B7C(s32 *soundState, f32 x, f32 y, f32 z) {
                         for (k = 0; k < numOfYVals; k++) {
                             if (y < yVals[k]) {
                                 var_s6 = distBetween;
+                                sound_reverb_set(TRUE);
                                 temp_v0_4 = func_80009D6C(&D_8011A6D8[i], outX, outY, outZ);
                                 if (volume < temp_v0_4) {
                                     volume = temp_v0_4;

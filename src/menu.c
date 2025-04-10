@@ -549,7 +549,7 @@ s32 gTitleScreenLoaded = 0;
 s32 unused_800DF48C = 0;
 s32 unused_800DF490 = 0;
 s32 gIsInAdventureTwo = 0;
-s32 gPlayerHasSeenCautionMenu = 0;
+s32 gPlayerHasSeenCautionMenu = 1;
 s32 *gMenuTextLangTable = NULL;
 
 char **gMenuText = NULL;

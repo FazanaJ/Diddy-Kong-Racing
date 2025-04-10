@@ -83,7 +83,8 @@ void video_init(s32 videoModeIndex, OSSched *sc) {
     }
     gVideoCurrFbIndex = 1;
     fb_swap();
-    fb_init_vi();
+    //fb_init_vi();
+    vi_change(SCREEN_WIDTH, SCREEN_HEIGHT);
     sBlackScreenTimer = 12;
     osViBlack(TRUE);
     gVideoDeltaCounter = 0;
@@ -120,6 +121,72 @@ UNUSED void fb_mode_size(s32 fbIndex) {
  */
 s32 fb_size(void) {
     return (gVideoFbHeights[gVideoCurrFbIndex] << 16) | gVideoFbWidths[gVideoCurrFbIndex];
+}
+
+OSViMode gGlobalVI;
+
+void vi_change(int width, int height) {
+    s32 addPAL = 0;
+    s32 addX = 0;
+    s32 mul;
+    OSViMode *mode = &gGlobalVI;
+    if (osTvType == OS_TV_TYPE_PAL) {
+        gGlobalVI = osViModePalLan1;
+    } else {
+        gGlobalVI = osViModeNtscLan1;
+    }
+
+    /*if (gConfig.screenQuality) {
+        gBitDepth = G_IM_SIZ_32b;
+        mode->comRegs.ctrl = VI_CTRL_TYPE_32 | VI_CTRL_GAMMA_DITHER_ON | VI_CTRL_GAMMA_ON | VI_CTRL_DIVOT_ON | VI_CTRL_ANTIALIAS_MODE_3 | 0x3000;
+        mul = 4;
+    } else {*/
+        //gBitDepth = G_IM_SIZ_16b;
+        mode->comRegs.ctrl = VI_CTRL_TYPE_16 | VI_CTRL_GAMMA_DITHER_ON | VI_CTRL_GAMMA_ON | VI_CTRL_DIVOT_ON | VI_CTRL_ANTIALIAS_MODE_1 | 0x3000;
+        mul = 2;
+    //}
+
+    if (height < 240) {
+        /*if (width == SCREEN_WIDTH_16_10) {
+            addX = 20;
+        } else if (width == SCREEN_WIDTH_WIDE) {
+            addX = 24;
+        } else {*/
+            addX = 16;
+        //}
+        // Y Scale
+        mode->fldRegs[0].yScale = (((height + 16 - (addPAL * 2)) * 1024) / 240);
+        mode->fldRegs[1].yScale = (((height + 16 - (addPAL * 2)) * 1024) / 240);
+
+        mode->comRegs.hStart = (428 - 304 + 0) << 16 | (428 + 304 + 0);
+        mode->fldRegs[0].vStart =
+            (277 - height + 0) << 16 | (271 + height + 0);
+        mode->fldRegs[1].vStart =
+            (277 - height + 0) << 16 | (271 + height + 0);
+    } else if (height == 240) {
+        mode->fldRegs[0].yScale = ((height * 1024) / 240);
+        mode->fldRegs[1].yScale = ((height * 1024) / 240);
+    } else {
+        mode->comRegs.ctrl |= 0x40;
+        mode->fldRegs[0].yScale = 0x2000000 | ((height * 1024) / 240);
+        mode->fldRegs[1].yScale = 0x2000000 | ((height * 1024) / 240);
+        mode->fldRegs[0].vStart = mode->fldRegs[1].vStart - 0x20002;
+    }
+    mode->comRegs.width = width;
+    mode->comRegs.xScale = ((width + addX) * 512) / 320;
+    // Disable VI resampling if frame size is 320.
+    if (width <= 320 && 1) {
+        mode->comRegs.xScale = 0x201;
+        mode->comRegs.ctrl &= ~VI_CTRL_ANTIALIAS_MODE_1;
+        mode->comRegs.ctrl |= VI_CTRL_ANTIALIAS_MODE_3;
+    }
+    mode->fldRegs[0].origin = width * mul;
+    mode->fldRegs[1].origin = width * 4;
+    gVideoAspectRatio = ((f32) width / (f32) height);
+    osViSetMode(mode);
+    osViSetSpecialFeatures(OS_VI_DIVOT_OFF);
+    osViSetSpecialFeatures(OS_VI_DITHER_FILTER_OFF);
+    osViSetSpecialFeatures(OS_VI_GAMMA_OFF);
 }
 
 /**

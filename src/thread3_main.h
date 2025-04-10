@@ -114,6 +114,8 @@ extern s32 gSaveDataFlags;
 #define SAVE_DATA_FLAG_READ_SAVE_FILE_NUMBER(flags) ((flags >> 8) & SAVE_DATA_FLAG_INDEX_VALUE)
 #define SAVE_DATA_FLAG_WRITE_SAVE_FILE_NUMBER(flags) ((flags >> 10) & SAVE_DATA_FLAG_INDEX_VALUE)
 
+extern u8 gShowBG;
+
 void thread3_main(UNUSED void *unused);
 void init_game(void);
 void main_game_loop(void);

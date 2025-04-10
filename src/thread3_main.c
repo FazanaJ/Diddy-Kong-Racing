@@ -144,6 +144,7 @@ OSMesgQueue gGameMesgQueue;
 s32 gNMIMesgBuf;          // Official Name: resetPressed
 UNUSED s32 D_80123568[3]; // BSS Padding
 s32 gNumGfxTasksAtScheduler = 0;
+u8 gShowBG;
 
 /******************************/
 
@@ -307,7 +308,7 @@ void main_game_loop(void) {
     rsp_segment(&gCurrDisplayList, SEGMENT_ZBUFFER, (s32) gVideoLastDepthBuffer);
     rsp_init(&gCurrDisplayList);
     rdp_init(&gCurrDisplayList);
-    bgdraw_render(&gCurrDisplayList, &gGameCurrMatrix, TRUE);
+    bgdraw_render(&gCurrDisplayList, &gGameCurrMatrix, gShowBG);
     gSaveDataFlags = input_update(gSaveDataFlags, sLogicUpdateRate);
     if (get_lockup_status()) {
         render_epc_lock_up_display();
@@ -423,6 +424,7 @@ void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     osSetTime(0);
     mempool_free_timer(2);
     rumble_init(TRUE);
+    gShowBG = bgdraw_init();
 }
 
 /**
@@ -913,6 +915,7 @@ void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     ainode_update();
     osSetTime(0);
     mempool_free_timer(2);
+    gShowBG = bgdraw_init();
 }
 
 /**
@@ -1590,6 +1593,16 @@ void set_frame_blackout_timer(void) {
     gDrawFrameTimer = 2;
 }
 
+#if SKIP_INTRO == SKIP_TITLE
+#define BOOT_LVL MENU_TITLE
+#elif SKIP_INTRO == SKIP_CHARACTER
+#define BOOT_LVL MENU_CHARACTER_SELECT
+#elif SKIP_INTRO == SKIP_MENU
+#define BOOT_LVL MENU_GAME_SELECT
+#else
+#define BOOT_LVL MENU_BOOT
+#endif // SKIP_INTRO
+
 /**
  * Give the player 8 frames to enter the CPak menu with start, then load the intro sequence.
  */
@@ -1603,10 +1616,14 @@ void mode_intro(void) {
     if (buttonInputs & START_BUTTON) {
         gShowControllerPakMenu = TRUE;
     }
+#ifndef SKIP_INTRO
     sBootDelayTimer++;
-    if (sBootDelayTimer >= 8) {
-        load_menu_with_level_background(MENU_BOOT, ASSET_LEVEL_OPTIONSBACKGROUND, 2);
-    }
+#else
+    sBootDelayTimer = 8;
+#endif
+if (sBootDelayTimer >= 8) {
+    load_menu_with_level_background(BOOT_LVL, ASSET_LEVEL_OPTIONSBACKGROUND, 2);
+}
 }
 
 /**

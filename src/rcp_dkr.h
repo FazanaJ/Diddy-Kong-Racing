@@ -80,6 +80,6 @@ void bgdraw_chequer(Gfx** dList);
 void bgdraw_render(Gfx **dList, MatrixS **mtx, s32 drawBG);
 void bgdraw_set_func(void *func);
 void texrect_draw_scaled(Gfx **dList, DrawTexture *element, f32 xPos, f32 yPos, f32 xScale, f32 yScale, u32 colour, s32 flags);
-
+s32 bgdraw_init(void);
 
 #endif

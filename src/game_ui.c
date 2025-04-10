@@ -1189,6 +1189,7 @@ void hud_main_time_trial(s32 arg0, Object *playerRacerObj, s32 updateRate) {
     f32 posZ;
     UNUSED f32 new_var;
     char *SWMessage[3];
+    s32 error;
 
     curRacer = &playerRacerObj->unk64->racer;
     stopwatchTimer = 0;
@@ -1204,7 +1205,7 @@ void hud_main_time_trial(s32 arg0, Object *playerRacerObj, s32 updateRate) {
             ((Object *) gAssetHudElements->entry[20])->segment.animFrame = 0;
         }
     }
-    if (gAssetHudElements->entry[34] == 0) {
+    if (gAssetHudElements->entry[34] == 0 && get_contpak_error() == CONTPAK_ERROR_NONE) {
         ttSWArms.objectID = gAssetHudElementIds[34] & 0xFFFF;
         ttSWArms.size = sizeof(LevelObjectEntryCommon);
         ttSWArms.x = 0;
@@ -1213,6 +1214,7 @@ void hud_main_time_trial(s32 arg0, Object *playerRacerObj, s32 updateRate) {
         gAssetHudElements->entry[34] = spawn_object(&ttSWArms, 0);
         gCurrentHud->entry[HUD_STOPWATCH].rotation.y_rotation = -0x8000;
     }
+    
     ttSWBodyObject = gAssetHudElements->entry[20];
     if (ttSWBodyObject != NULL) {
         ttSWBodyObject->segment.object.animationID = gStopwatchFaceID;
