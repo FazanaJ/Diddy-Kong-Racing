@@ -8972,10 +8972,7 @@ void trackmenu_input(s32 updateRate) {
                 gOpacityDecayTimer = 0;
             }
         } else {
-            gOpacityDecayTimer = gOpacityDecayTimer + updateRate;
-            if (gOpacityDecayTimer > 32) {
-                gOpacityDecayTimer = 32;
-            }
+            gOpacityDecayTimer = 32;
         }
         if (gMenuDelay < -22) {
             bgdraw_set_func(NULL);

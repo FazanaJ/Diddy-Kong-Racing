@@ -413,6 +413,7 @@ s32 bgdraw_init(void) {
         case ASSET_LEVEL_FRONTEND:
         case ASSET_LEVEL_WIZPIG2:
         case ASSET_LEVEL_DARKWATERBEACH:
+        case ASSET_LEVEL_TITLESCREENSEQUENCE:
             return TRUE;
             break;
         default:
