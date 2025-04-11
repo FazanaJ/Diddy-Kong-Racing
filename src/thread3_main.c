@@ -259,6 +259,8 @@ u32 sPrevTime = 0;
 u32 sDeltaTime = 0;
 s32 sTotalTime = 0;
 
+void calculate_and_update_fps(void);
+
 /**
  * The main gameplay loop.
  * Contains all game logic, audio and graphics processing.
@@ -322,6 +324,8 @@ void main_game_loop(void) {
             render_printf(D_800E7134 /* "BBB\n" */);
         }
     }
+
+    calculate_and_update_fps();
 
     switch (gGameMode) {
         case GAMEMODE_INTRO: // Pre-boot screen

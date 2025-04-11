@@ -2372,6 +2372,8 @@ void obj_init_racer(Object *obj, LevelObjectEntry_Racer *racer) {
     tempRacer->lightFlags = 0;
 }
 
+u8 gAutoDrive = FALSE;
+
 /**
  * Main function for handling everything related to the player controlled racer object.
  * Branches off into a different function if the player becomes computer controlled. (Finishing a race)
@@ -2532,7 +2534,11 @@ void update_player_racer(Object *obj, s32 updateRate) {
         gCameraObject = (ObjectCamera *) get_active_camera_segment_no_cutscenes();
         tempRacer->miscAnimCounter++; //!@Delta
         gCurrentPlayerIndex = tempRacer->playerIndex;
-        if (tempRacer->raceFinished == TRUE || context == GAMEMODE_MENU) {
+        if (tempRacer->raceFinished == TRUE || context == GAMEMODE_MENU || gAutoDrive) {
+            if (gAutoDrive) {
+                tempRacer->aiSkill = AI_MASTER;
+                tempRacer->bananas = 20;
+            }
             tempRacer->unk1CA = 1;
             tempRacer->playerIndex = PLAYER_COMPUTER;
             tempRacer->unk1C9 = 0;

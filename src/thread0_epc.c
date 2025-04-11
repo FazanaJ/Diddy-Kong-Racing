@@ -688,8 +688,10 @@ s32 crash_thread_name(s32 threadID) {
  * High chance the framebuffer size doesn't match the crash screens, so copy it with scaling applied.
 */
 void framebuffer_scale(u16 *srcFB, u16 *dstFB, s32 srcW, s32 srcH, s32 dstW, s32 dstH) {
-    for (s32 y = 0; y < dstH; y++) {
-        for (s32 x = 0; x < dstW; x++) {
+    s32 y;
+    s32 x;
+    for (y = 0; y < dstH; y++) {
+        for (x = 0; x < dstW; x++) {
             s32 srcX = x * srcW / dstW;
             s32 srcY = y * srcH / dstH;
             u16 pixel = srcFB[srcY * srcW + srcX];

@@ -3,6 +3,7 @@
 #include "game.h"
 #include "libultra/src/libc/rmonPrintf.h"
 #include "stacks.h"
+#include "printf.h"
 
 /************ .bss ************/
 
@@ -15,6 +16,34 @@ u8 gUseExpansionMemory;
 UserConfig gConfig;
 
 /******************************/
+
+#define FRAMETIME_COUNT 10
+
+u32 frameTimes[FRAMETIME_COUNT];
+u8 curFrameTimeIndex = 0;
+f32 gFPS;
+
+// Call once per frame
+void calculate_and_update_fps(void) {
+    u32 newTime = osGetCount();
+    u32 oldTime = frameTimes[curFrameTimeIndex];
+    f32 divisor;
+    frameTimes[curFrameTimeIndex] = newTime;
+
+    /*if (__osBbIsBb) {
+        divisor = IQUE_DIVISOR;
+    } else {*/
+        divisor = 1.0f;
+    //}
+
+    curFrameTimeIndex++;
+    if (curFrameTimeIndex >= FRAMETIME_COUNT) {
+        curFrameTimeIndex = 0;
+    }
+
+    gFPS = (FRAMETIME_COUNT * 1000000.0f) / (OS_CYCLES_TO_USEC(newTime - oldTime) * divisor);
+    render_printf("FPS: %2.2f\n", (f64) gFPS);
+}
 
 #define STEP 0x100000
 #define SIZE_4MB 0x400000

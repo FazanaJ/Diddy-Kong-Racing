@@ -1,5 +1,9 @@
 #include "joypad.h"
 #include "game.h"
+#include "printf.h"
+#include "objects.h"
+#include "math_util.h"
+#include "macros.h"
 
 s32 sNoControllerPluggedIn =
     FALSE; // Looks to be a boolean for whether a controller is plugged in. FALSE if plugged in, and TRUE if not.
@@ -49,6 +53,162 @@ s32 input_init(void) {
     sNoControllerPluggedIn = TRUE;
 
     return CONTROLLER_MISSING;
+}
+
+extern s32 gCurrentMenuId;
+extern s8 gDoneTalkingToNPC[];
+
+s32 autoplay_drive(f32 x, f32 y, f32 z) {
+    Object *obj = get_racer_object(0);
+    f32 dist;
+    s16 angleDiff;
+    s16 base = obj->segment.trans.rotation.y_rotation + 0x8000;
+
+    render_printf("X: %2.2f\n", obj->segment.trans.x_position);
+    render_printf("Y: %2.2f\n", obj->segment.trans.y_position);
+    render_printf("Z: %2.2f\n", obj->segment.trans.z_position);
+
+    angleDiff = base - atan2s(obj->segment.trans.x_position - x, obj->segment.trans.z_position - z);
+
+    if (ABSF(angleDiff) > 0x400) {
+        if (angleDiff > 0) {
+            gControllerCurrData[sPlayerID[0]].stick_x = -70;
+        } else {
+            gControllerCurrData[sPlayerID[0]].stick_x = 70;
+        }
+    } else {
+        gControllerCurrData[sPlayerID[0]].stick_x = 0;
+    }
+
+    gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
+
+    dist = (((obj->segment.trans.x_position - x) * (obj->segment.trans.x_position - x)) + 
+            ((obj->segment.trans.y_position - y) * (obj->segment.trans.y_position - y)) + 
+            ((obj->segment.trans.z_position - z) * (obj->segment.trans.z_position - z)));
+
+    if (dist < 300.0f * 300.0f) {
+        return 1;
+    }
+
+    return 0;
+}
+
+extern u8 gAutoDrive;
+
+void autoplay_inputs(void) {
+    static u8 sControllerFlip = 0;
+    static u8 sCharSelectInputs = 0;
+    static u8 sTransform = 0;
+    static u8 sCheckpoint = 0;
+    static u8 sCheckpointID = 0;
+    static u8 sBootTime = 0;
+    static u8 sPrevMapID;
+    Object *obj;
+    Object_Racer *racer;
+
+    if (sBootTime < 60) {
+        sBootTime++;
+        return;
+    }
+    sControllerFlip ^= 1;
+    if (get_game_mode() == GAMEMODE_MENU) {
+        switch (gCurrentMenuId) {
+            case MENU_TITLE:
+            case MENU_GAME_SELECT:
+            case MENU_FILE_SELECT:
+                sCharSelectInputs = 0;
+                if (sControllerFlip) {
+                    gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
+                    gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
+                } else {
+                    gControllerButtonsReleased[sPlayerID[0]] |= A_BUTTON;
+                }
+                break;
+            case MENU_CHARACTER_SELECT:
+                if (sControllerFlip) {
+                    if (sCharSelectInputs < 2) {
+                        sCharSelectInputs++;
+                        gControllerCurrData[sPlayerID[0]].stick_y = -70;
+                    } else {
+                        s32 max;
+                        if (is_tt_unlocked()) {
+                            max = 4;
+                        } else {
+                            max = 3;
+                        }
+                        if (sCharSelectInputs >= max) {
+                            gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
+                            gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
+                        } else {
+                            gControllerCurrData[sPlayerID[0]].stick_x = 70;
+                        }
+                        sCharSelectInputs++;
+                    }
+                } else {
+                    gControllerButtonsReleased[sPlayerID[0]] |= A_BUTTON;
+                }
+                break;
+        }
+    } else if (get_game_mode() == GAMEMODE_INGAME) {
+        s32 map = get_current_map_id();
+        if (map != sPrevMapID) {
+            sCheckpointID = 0;
+            sPrevMapID = map;
+        }
+        Settings *settings = get_settings();
+        s32 b = *settings->balloonsPtr;
+        gAutoDrive = FALSE;
+        switch (map) {
+            case ASSET_LEVEL_CENTRALAREAHUB:
+                switch (sCheckpointID) {
+                    case 0:
+                    if (autoplay_drive(-135.0f, 250.0f, 700.0f)) {
+                        sCheckpointID++;
+                    }
+                    break;
+                    case 1:
+                    if (autoplay_drive(-2410.0f, 520.0f, 1500.0f)) {
+                        sCheckpointID++;
+                    }
+                    break;
+                    case 2:
+                    if (autoplay_drive(-4000.0f, 270.0f, 2800.0f)) {
+                        sCheckpointID++;
+                    }
+                    break;
+                }
+                break;
+            case ASSET_LEVEL_DINODOMAINHUB:
+                if (sCheckpointID == 0) {
+                    if (autoplay_drive(-42, -40, 0)) {
+                        sCheckpointID++;
+                    }
+                } else {
+                    switch(b) {
+                        case 1:
+                        autoplay_drive(850, 0, 400);
+                        break;
+                    }
+                }
+                break;
+            default:
+                if (get_race_start_timer() == 0 && get_current_level_race_type() == RACETYPE_DEFAULT) {
+                    gAutoDrive = TRUE;
+                }
+
+                break;
+        }
+        /*gControllerButtonsReleased[sPlayerID[0]] = 0;
+        gControllerCurrData[sPlayerID[0]].button = 0;
+        if (sTransform == 0) {
+            gControllerButtonsPressed[sPlayerID[0]] |= Z_TRIG;
+            if (gDoneTalkingToNPC[0] == FALSE) {
+
+            } else {
+                sTransform = 1;
+            }
+        }*/
+    }
 }
 
 /**
@@ -118,6 +278,9 @@ s32 input_update(s32 saveDataFlags, s32 updateRate) {
             ((gControllerCurrData[i].button ^ gControllerPrevData[i].button) & gControllerPrevData[i].button) &
             gButtonMask;
     }
+#ifdef AUTOPLAY
+    autoplay_inputs();
+#endif
     return saveDataFlags;
 }
 

@@ -14,6 +14,8 @@ extern s32 gPrevRNGSeed;
 extern s16 gSineTable[];
 extern s16 gArcTanTable[];
 
+#undef NON_MATCHING
+
 /**
  * Most files below are handwritten assembly. Because of this, matching C code is impossible.
  * Nonmatching is not, so functionally equivalent C code can be here to replace these handwritten functions in
