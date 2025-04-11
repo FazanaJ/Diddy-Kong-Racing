@@ -79,7 +79,7 @@ void video_init(s32 videoModeIndex, OSSched *sc) {
     video_delta_reset();
     fb_mode_set(videoModeIndex);
     for (i = 0; i < 3; i++) {
-        gVideoFramebuffers[0];
+        gVideoFramebuffers[i] = NULL;
         fb_alloc(i);
     }
     gVideoCurrFbIndex = 1;
@@ -307,30 +307,55 @@ void fb_init_vi(void) {
  * already aligns by 16, it only needs 48 bits of alignment in addition.
  */
 void fb_alloc(s32 index) {
-    if (gVideoFramebuffers[index] != 0) {
-        mempool_locked_unset((u8 *) gVideoFramebuffers[index]); // Effectively unused.
-        mempool_free(gVideoFramebuffers[index]);
+    s32 width = SCREEN_WIDTH;
+    s32 height = SCREEN_HEIGHT;
+    s32 bitSize = 2;
+    u16 *fbAddr;
+    s32 fbSize;
+    u8 *addr;
+#if EXPANSION_PAK_SUPPORT
+    if (gExpansionPak) {
+        width = SCREEN_WIDTH_WIDE;
+        //height = SCREEN_HEIGHT_HIGH;
+        bitSize = 4;
+    }
+#endif
+#if EXPANSION_PAK_SUPPORT || defined(FIFO_4MB)
+    if (gGfxSPTaskOutputBuffer == NULL) {
+        gGfxSPTaskOutputBuffer = mempool_alloc_safe(FIFO_BUFFER_SIZE + 0x10, COLOUR_TAG_WHITE);
+        gGfxSPTaskOutputBuffer = (u64 *) (((s32) gGfxSPTaskOutputBuffer + 0xF) & ~0xF);
+    }
+#endif
+
+    fbSize = (width * height) * bitSize;
+    switch (index) {
+        case 0:
+            addr = (u8 *) 0x80200000;
+        break;
+        case 1:
+            addr = (u8 *) (0x80400000 - (fbSize + 0x40));
+        break;
+        case 2:
+            if (gUseExpansionMemory) {
+                addr = (u8 *) 0x80400000;
+            } else {
+                addr = (u8 *) (0x80300000 - (fbSize + 0x40));
+            }
+        break;
     }
     gVideoFbWidths[index] = gVideoModeResolutions[gVideoModeIndex & NUM_RESOLUTION_MODES].width;
     gVideoFbHeights[index] = gVideoModeResolutions[gVideoModeIndex & NUM_RESOLUTION_MODES].height;
-    if (gVideoModeIndex >= VIDEO_MODE_MIDRES_MASK) {
-        gVideoFramebuffers[index] =
-            mempool_alloc_safe((HIGH_RES_SCREEN_WIDTH * HIGH_RES_SCREEN_HEIGHT * 2) + 0x30, COLOUR_TAG_WHITE);
-        gVideoFramebuffers[index] = FBALIGN(gVideoFramebuffers[index]);
-        if (gVideoDepthBuffer == NULL) {
-            gVideoDepthBuffer =
-                mempool_alloc_safe((HIGH_RES_SCREEN_WIDTH * HIGH_RES_SCREEN_HEIGHT * 2) + 0x30, COLOUR_TAG_WHITE);
-            gVideoDepthBuffer = FBALIGN(gVideoDepthBuffer);
-        }
-    } else {
-        gVideoFramebuffers[index] =
-            mempool_alloc_safe((gVideoFbWidths[index] * gVideoFbHeights[index] * 2) + 0x30, COLOUR_TAG_WHITE);
-        gVideoFramebuffers[index] = FBALIGN(gVideoFramebuffers[index]);
-        if (gVideoDepthBuffer == NULL) {
-            gVideoDepthBuffer =
-                mempool_alloc_safe((gVideoFbWidths[index] * gVideoFbHeights[index] * 2) + 0x30, COLOUR_TAG_WHITE);
-            gVideoDepthBuffer = FBALIGN(gVideoDepthBuffer);
-        }
+    
+    gVideoFramebuffers[index] = mempool_alloc_fixed(fbSize + 0x40, addr, COLOUR_TAG_WHITE);
+    gVideoFramebuffers[index] = FBALIGN(gVideoFramebuffers[index]);
+    bzero(gVideoFramebuffers[index], fbSize);
+    fbAddr = gVideoFramebuffers[index];
+    fbAddr[100] = 0xBEEF;
+    if (gVideoDepthBuffer == NULL) {
+        gVideoDepthBuffer = mempool_alloc_fixed(fbSize + 0x40, (u8 *) (0x80200000 - (fbSize + 0x40)), COLOUR_TAG_WHITE);
+        gVideoDepthBuffer = FBALIGN(gVideoDepthBuffer);
+        fbAddr = gVideoDepthBuffer;
+        fbAddr[100] = 0xBEEF;
     }
 }
 

@@ -45,7 +45,8 @@ typedef struct ConfigBits {
     unsigned multiWaves : 1;
     unsigned multiParticles : 1;
     unsigned multiWeather : 1;
-    unsigned modelQuality : 1;
+    unsigned multiModels : 1;
+    unsigned multiSky : 1;
 } ConfigBits;
 
 typedef struct UserConfig {
@@ -67,7 +68,8 @@ typedef struct UserConfig {
     s8 multiWaves;      // Enable wavegen in multiplayer
     s8 multiParticles;  // Enable single player particles in multiplayer
     s8 multiWeather;    // Enable weather effects in multiplayer
-    s8 modelQuality;    // Use high quality models
+    s8 multiModels;     // Use high quality models
+    s8 multiSky;        // Use skydome rather than gradient
 } UserConfig;
 
 extern u8 gExpansionPak;
