@@ -352,6 +352,7 @@ void render_epc_lock_up_display(void) {
 #include "video.h"
 #include "string.h"
 #include "stdarg.h"
+#include "audiomgr.h"
 
 u64 gCrashThreadStack[0x200];
 OSThread gCrashThread;
@@ -453,7 +454,7 @@ const u32 gCrashScreenFont[7 * 10] = {
     0x00000000,
 };
 
-char *gCauseDesc[18] = {
+char *gCauseDesc[] = {
     "Interrupt",
     "TLB modification",
     "TLB exception on load",
@@ -472,9 +473,10 @@ char *gCauseDesc[18] = {
     "Floating point exception",
     "Watchpoint exception",
     "Virtual coherency on data",
+    "Stack overflow or underflow"
 };
 
-char *gFpcsrDesc[6] = {
+char *gFpcsrDesc[] = {
     "Unimplemented operation", "Invalid operation", "Division by zero", "Overflow", "Underflow",
     "Inexact operation",
 };
@@ -673,10 +675,10 @@ char *sThreadNames[] = {
 
 s32 crash_thread_name(s32 threadID) {
     s32 id = threadID - 2;
-    if (id >= 2) {
-        id = 0;
-    } else if (id == 28) {
+    if (id == 28) {
         id = 4;
+    } else if (id >= 2) {
+        id = 0;
     }
 
     return id;
@@ -749,6 +751,11 @@ s32 crash_check_stack(void) {
     return 0;
 }
 
+extern OSThread gThread1;
+extern OSThread gThread3;
+extern OSSched gMainSched;
+extern OSThread gThread30;
+
 void crash_render(OSThread *t) {
     s32 i;
     s32 x;
@@ -759,8 +766,9 @@ void crash_render(OSThread *t) {
     f64 *regF;
     s32 cause;
     s32 threadID;
-
-    __OSThreadContext *c = &t->context;
+    s32 stackSize;
+    __OSThreadContext *c;
+    
     crash_line(CRASH_BORDER_X - 1, 11, gScreenWidth - CRASH_BORDER_X, 11, 255, 255, 255, 160);
     crash_line(CRASH_BORDER_X - 1, gScreenHeight - 12, gScreenWidth - CRASH_BORDER_X, gScreenHeight - 12, 255, 255, 255, 160);
     crash_line(CRASH_BORDER_X - 1, 12, CRASH_BORDER_X - 1, gScreenHeight - 13, 255, 255, 255, 160);
@@ -771,24 +779,55 @@ void crash_render(OSThread *t) {
     
     crash_rectangle(CRASH_BORDER_X, 46, gScreenWidth - (CRASH_BORDER_X * 2), gScreenHeight - 58, 0, 0, 0, 160);
 
+    // iykyk
     crash_rectangle(9, 4, 8, 6, 255, 0, 0, 255);
     crash_rectangle(10, 5, 6, 4, 255, 255, 255, 255);
 
-    cause = (c->cause >> 2) & 0x1F;
+    if ((threadID = crash_check_stack())) {
+        cause = 18;
+        switch(threadID) {
+            case 1:
+                t = &gThread1;
+                stackSize = STACK_IDLE;
+                break;
+            case 3:
+                t = &gThread3;
+                stackSize = STACK_GAME;
+                break;
+            case 4:
+                t = audioGetThread();
+                stackSize = STACK_AUD;
+                break;
+            case 5:
+                t = &gMainSched.thread;
+                stackSize = STACK_SCHED;
+                break;
+            case 30:
+                t = &gThread30;
+                stackSize = STACK_BGLOAD;
+                break;
+            default:
+                t = NULL;
+        }
+    } else {
+        cause = (c->cause >> 2) & 0x1F;
+    }
+    c = &t->context;
     crash_text(CRASH_BORDER_X + 12, 16, GPACK_RGBA5551(255, 255, 0, 1), "Thread:%s(%d)", sThreadNames[crash_thread_name(t->id)], t->id);
-    crash_text(CRASH_BORDER_X + 12 + 100, 16, GPACK_RGBA5551(255, 255, 0, 1), "PC:0#%8X", c->pc);
-    crash_text(CRASH_BORDER_X + 12 + 200, 16, GPACK_RGBA5551(255, 255, 0, 1), "RA:0#%8X", c->ra);
+    crash_text(CRASH_BORDER_X + 12 + 144, 16, GPACK_RGBA5551(255, 255, 0, 1), "PC:0#%8X", c->pc);
+    crash_text(CRASH_BORDER_X + 12 + 244, 16, GPACK_RGBA5551(255, 255, 0, 1), "RA:0#%8X", c->ra);
     crash_text(CRASH_BORDER_X + 12, 25, GPACK_RGBA5551(255, 255, 0, 1), "Cause:%s", gCauseDesc[cause]);
     if (gCrashFuncName) {
         crash_text(CRASH_BORDER_X + 12, 34, GPACK_RGBA5551(255, 255, 0, 1), "Func Name:%s", gCrashFuncName);
     }
 
-    if ((threadID = crash_check_stack())) {
-        cause = 60;
-    }
-    if (cause == 60) {
-        char *errorMesg = "Thread %d stack overflow\nIncrease stack size.";
-        crash_text((gScreenWidth - crash_strwidth(errorMesg)) / 2, 54, GPACK_RGBA5551(255, 255, 255, 1), errorMesg, threadID);
+    if (cause == 18) {        
+        if (t) {
+            char *errorMesg = "Thread %d stack write out of bounds\nIncrease stack size in stacks.h";
+            crash_text(CRASH_BORDER_X + 8, 54, GPACK_RGBA5551(255, 255, 255, 1), errorMesg, threadID);
+            crash_text(CRASH_BORDER_X + 8, 80, GPACK_RGBA5551(255, 255, 255, 1), "Stack Pos:0#%X", (u32) (crash_stack_pos(threadID) - t->context.sp));
+            crash_text(CRASH_BORDER_X + 8, 89, GPACK_RGBA5551(255, 255, 255, 1), "Stack Size:0#%X", stackSize);
+        }
     } else {
         x = CRASH_BORDER_X + 12;
         midPoint = 0;

@@ -210,6 +210,10 @@ void audioStopThread(void) {
     osStopThread(&__am.thread);
 }
 
+OSThread *audioGetThread(void) {
+    return &__am.thread;
+}
+
 /******************************************************************************
  *
  * Audio Manager implementation. This thread wakes up at every retrace,
