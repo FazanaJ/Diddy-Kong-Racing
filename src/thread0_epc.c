@@ -825,7 +825,7 @@ void crash_render(OSThread *t) {
         if (t) {
             char *errorMesg = "Thread %d stack write out of bounds\nIncrease stack size in stacks.h";
             crash_text(CRASH_BORDER_X + 8, 54, GPACK_RGBA5551(255, 255, 255, 1), errorMesg, threadID);
-            crash_text(CRASH_BORDER_X + 8, 80, GPACK_RGBA5551(255, 255, 255, 1), "Stack Pos:0#%X", (u32) (crash_stack_pos(threadID) - t->context.sp));
+            crash_text(CRASH_BORDER_X + 8, 80, GPACK_RGBA5551(255, 255, 255, 1), "Stack Pos: 0#%X", (u32) (crash_stack_pos(threadID) - t->context.sp));
             crash_text(CRASH_BORDER_X + 8, 89, GPACK_RGBA5551(255, 255, 255, 1), "Stack Size:0#%X", stackSize);
         }
     } else {
