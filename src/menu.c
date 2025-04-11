@@ -8797,6 +8797,7 @@ void func_8008FF1C(UNUSED s32 updateRate) {
                         } else if ((settings->courseFlagsPtr[trackMenuIds[(trackY * 6) + trackX]] & 2)) {
                             cur->visible = 2;
                         }
+
                     } else {
                         cur->trackName = (char *) gQMarkPtr;
                     }
@@ -9254,16 +9255,21 @@ void trackmenu_setup_render(UNUSED s32 updateRate) {
                                     texrect_draw(&sMenuCurrDisplayList, gRaceSelectionImages[(k * 3) + 1],
                                                  gTracksMenuVehicleNamePositions[j + temp2], y, 255, 255, 255,
                                                  sMenuGuiOpacity);
-                                } else if (settings->courseFlagsPtr[gTrackIdForPreview] & 2) {
-                                    // Not highlighted
-                                    texrect_draw(&sMenuCurrDisplayList, gRaceSelectionImages[(k * 3) + 2],
-                                                 gTracksMenuVehicleNamePositions[j + temp2], y, 255, 255, 255,
-                                                 sMenuGuiOpacity);
                                 } else {
+                                    s32 opa;
+#ifdef UNLOCK_ALL
+                                    opa = sMenuGuiOpacity;
+#else
+                                    if (settings->courseFlagsPtr[gTrackIdForPreview] & 2) {
+                                        opa = sMenuGuiOpacity;
+                                    } else {
+                                        opa = sMenuGuiOpacity / 2;
+                                    }
+#endif
                                     // Not available (Ghosted out)
                                     texrect_draw(&sMenuCurrDisplayList, gRaceSelectionImages[(k * 3) + 2],
                                                  gTracksMenuVehicleNamePositions[j + temp2], y, 255, 255, 255,
-                                                 (sMenuGuiOpacity / 2));
+                                                 opa);
                                 }
                             }
                             y += 24;
@@ -9425,6 +9431,7 @@ void func_80092188(s32 updateRate) {
     s32 menuChanged;
     s32 menuDelay;
     Settings *settings;
+    s32 canSelectVehicle;
 
     menuDelay = gMenuDelay;
     settings = get_settings();
@@ -9530,13 +9537,20 @@ void func_80092188(s32 updateRate) {
                             gPlayerSelectConfirm[i] = 0;
                         }
                     } else {
+#ifdef UNLOCK_ALL
+                        canSelectVehicle = TRUE;
+#else
+                        if (settings->courseFlagsPtr[gTrackIdForPreview] & RACE_CLEARED) {
+                            canSelectVehicle = TRUE;
+                        }
+#endif
                         if (gMenuButtons[i] & (A_BUTTON | START_BUTTON)) {
                             if (gPlayerSelectConfirm[i] == 0) {
                                 gPlayerSelectConfirm[i] = 1;
                                 gNumberOfReadyPlayers++;
                                 menuSelected = TRUE;
                             }
-                        } else if (gPlayerSelectConfirm[i] == 0 && settings->courseFlagsPtr[gTrackIdForPreview] & 2) {
+                        } else if (gPlayerSelectConfirm[i] == 0 && canSelectVehicle) {
                             origVehicle = gPlayerSelectVehicle[i];
                             if (gMenuStickY[i] > 0) {
                                 do {
@@ -14788,7 +14802,11 @@ void set_language(s32 language) {
  * Returns TRUE if the player has adventure two unlocked.
  */
 s32 is_adventure_two_unlocked(void) {
+#ifdef UNLOCK_ALL
+    return TRUE;
+#else
     return sEepromSettings & 1;
+#endif
 }
 
 /**
@@ -14813,12 +14831,20 @@ s32 is_in_two_player_adventure(void) {
  * Returns 1 if T.T. is avaliable to use, or 0 if not.
  */
 s32 is_tt_unlocked(void) {
+#ifdef UNLOCK_ALL
+    return TRUE;
+#else
     return gActiveMagicCodes & CHEAT_CONTROL_TT;
+#endif
 }
 
 /**
  * Returns 1 if Drumstick is avaliable to use, or 0 if not.
  */
 s32 is_drumstick_unlocked(void) {
+#ifdef UNLOCK_ALL
+    return TRUE;
+#else
     return gActiveMagicCodes & CHEAT_CONTROL_DRUMSTICK;
+#endif
 }

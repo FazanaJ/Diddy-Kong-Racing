@@ -259,8 +259,6 @@ u32 sPrevTime = 0;
 u32 sDeltaTime = 0;
 s32 sTotalTime = 0;
 
-u8 balls = 0;
-
 /**
  * The main gameplay loop.
  * Contains all game logic, audio and graphics processing.
@@ -270,13 +268,6 @@ void main_game_loop(void) {
     s32 framebufferSize;
     s32 tempLogicUpdateRate, tempLogicUpdateRateMax;
     const f32 divisor = 1.0f;
-
-    balls++;
-
-    if (balls > 30) {
-        //*(volatile int *) 0 = 0;
-    }
-
 
     if (gVideoSkipNextRate) {
         sLogicUpdateRate = LOGIC_60FPS;

@@ -56,9 +56,10 @@ u32 osGetMemSize(void) {
 }
 
 void config_init(void) {
-    gConfig.antiAliasing = 1;
-    gConfig.terrainQuality = 1;
-    gConfig.dedither = TRUE;
+    gConfig.antiAliasing = -1;
+    gConfig.terrainQuality = 0;
+    gConfig.dedither = FALSE;
+    gConfig.frameCap = 1;
 }
 
 /**
@@ -99,7 +100,6 @@ void mainproc(void) {
     bzero(&gMainMemoryPool, RAM_END - (s32) (&gMainMemoryPool));
 #endif
     memsize_init();
-    config_init();
     osCreateThread(&gThread1, 1, &thread1_main, 0, &gThread1Stack[STACKSIZE(STACK_IDLE)], OS_PRIORITY_IDLE);
     osStartThread(&gThread1);
 }
@@ -113,6 +113,7 @@ void crash_init(void);
  */
 void thread1_main(UNUSED void *unused) {
     crash_init();
+    config_init();
     osCreateThread(&gThread3, 3, &thread3_main, 0, &gThread3Stack[STACKSIZE(STACK_GAME)], 10);
     gThread3Stack[STACKSIZE(STACK_GAME) - 1] = 0;
     gThread3Stack[0] = 0;

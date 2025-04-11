@@ -1,5 +1,6 @@
 #include "video.h"
 #include "PRinternal/viint.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -136,15 +137,15 @@ void vi_change(int width, int height) {
         gGlobalVI = osViModeNtscLan1;
     }
 
-    /*if (gConfig.screenQuality) {
-        gBitDepth = G_IM_SIZ_32b;
-        mode->comRegs.ctrl = VI_CTRL_TYPE_32 | VI_CTRL_GAMMA_DITHER_ON | VI_CTRL_GAMMA_ON | VI_CTRL_DIVOT_ON | VI_CTRL_ANTIALIAS_MODE_3 | 0x3000;
-        mul = 4;
-    } else {*/
+    if (gConfig.screenBits == SCREENBITS_16b) {
         //gBitDepth = G_IM_SIZ_16b;
-        mode->comRegs.ctrl = VI_CTRL_TYPE_16 | VI_CTRL_GAMMA_DITHER_ON | VI_CTRL_GAMMA_ON | VI_CTRL_DIVOT_ON | VI_CTRL_ANTIALIAS_MODE_1 | 0x3000;
+        mode->comRegs.ctrl = VI_CTRL_TYPE_16 | VI_CTRL_GAMMA_DITHER_ON | VI_CTRL_GAMMA_ON | VI_CTRL_ANTIALIAS_MODE_1 | 0x3000;
         mul = 2;
-    //}
+    } else {
+        //gBitDepth = G_IM_SIZ_32b;
+        mode->comRegs.ctrl = VI_CTRL_TYPE_32 | VI_CTRL_GAMMA_DITHER_ON | VI_CTRL_GAMMA_ON | VI_CTRL_ANTIALIAS_MODE_3 | 0x3000;
+        mul = 4;
+    }
 
     if (height < 240) {
         /*if (width == SCREEN_WIDTH_16_10) {
@@ -175,17 +176,30 @@ void vi_change(int width, int height) {
     mode->comRegs.width = width;
     mode->comRegs.xScale = ((width + addX) * 512) / 320;
     // Disable VI resampling if frame size is 320.
-    if (width <= 320 && 1) {
-        mode->comRegs.xScale = 0x201;
-        mode->comRegs.ctrl &= ~VI_CTRL_ANTIALIAS_MODE_1;
-        mode->comRegs.ctrl |= VI_CTRL_ANTIALIAS_MODE_3;
+    if (gConfig.antiAliasing == AA_OFF) {
+        if (width <= 320) {
+            mode->comRegs.xScale = 0x201;
+            mode->comRegs.ctrl &= ~VI_CTRL_ANTIALIAS_MODE_1;
+            mode->comRegs.ctrl |= VI_CTRL_ANTIALIAS_MODE_3;
+        }
+    } else {
+        mode->comRegs.ctrl |= VI_CTRL_DIVOT_ON;
     }
     mode->fldRegs[0].origin = width * mul;
     mode->fldRegs[1].origin = width * 4;
     gVideoAspectRatio = ((f32) width / (f32) height);
     osViSetMode(mode);
-    osViSetSpecialFeatures(OS_VI_DIVOT_OFF);
-    osViSetSpecialFeatures(OS_VI_DITHER_FILTER_OFF);
+    vi_dither();
+}
+
+void vi_dither(void) {
+    if (gConfig.dedither) {
+        osViSetSpecialFeatures(OS_VI_DIVOT_ON);
+        osViSetSpecialFeatures(OS_VI_DITHER_FILTER_ON);
+    } else {
+        osViSetSpecialFeatures(OS_VI_DIVOT_OFF);
+        osViSetSpecialFeatures(OS_VI_DITHER_FILTER_OFF);
+    }
     osViSetSpecialFeatures(OS_VI_GAMMA_OFF);
 }
 

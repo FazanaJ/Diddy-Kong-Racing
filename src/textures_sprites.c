@@ -4,6 +4,7 @@
 #include "memory.h"
 #include "math_util.h"
 #include "tracks.h"
+#include "main.h"
 
 #define TEX_HEADER_COUNT 175
 #define TEX_SPRITE_COUNT 50
@@ -339,6 +340,7 @@ TextureHeader *gCurrentTextureHeader;
 s16 gUsingTexture;
 s16 gForceFlags;
 s16 gUsePrimColour;
+u8 gUseAntiAliasing;
 
 /******************************/
 
@@ -658,7 +660,11 @@ void load_and_set_texture(Gfx **dList, TextureHeader *texhead, s32 flags, s32 te
         gUsingTexture = FALSE;
     }
 
-    flags &= ~RENDER_ANTI_ALIASING;
+    if (gUseAntiAliasing && gConfig.antiAliasing != AA_OFF) {
+        flags |= RENDER_ANTI_ALIASING;
+    } else {
+        flags &= ~RENDER_ANTI_ALIASING;
+    }
 
     flags = (gUsePrimColour)
                 ? (flags & (RENDER_DECAL | RENDER_COLOUR_INDEX | RENDER_ANTI_ALIASING | RENDER_Z_COMPARE |

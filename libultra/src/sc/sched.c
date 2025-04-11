@@ -6,6 +6,7 @@
 #include <sched.h>
 #include "PR/os_thread.h"
 #include "PRinternal/osint.h"
+#include "src/main.h"
 
 /*
  * private typedefs and defines
@@ -46,7 +47,7 @@ u8 sWroteRDP;
 
 static void __scTaskComplete(OSSched *sc, OSScTask *t) {
     if (t->list.t.type == M_GFXTASK) {
-        if (sc->retraceCount > 0 && sc->scheduledFB == NULL) {
+        if (sc->retraceCount > gConfig.frameCap && sc->scheduledFB == NULL) {
             sc->scheduledFB = t->framebuffer;
             osViSwapBuffer(t->framebuffer);
             sc->retraceCount = 0;
@@ -135,7 +136,7 @@ static void __scHandlePrenmi(OSSched *sc) {
 static void __scHandleRetrace(OSSched *sc) {
     UNUSED s32 i;
 	sc->retraceCount++;
-    if (sc->retraceCount > 0 && sc->scheduledFB && osViGetCurrentFramebuffer() == sc->scheduledFB) {
+    if (sc->retraceCount > gConfig.frameCap && sc->scheduledFB && osViGetCurrentFramebuffer() == sc->scheduledFB) {
         if (sc->queuedFB) {
             sc->scheduledFB = sc->queuedFB;
             sc->queuedFB = NULL;

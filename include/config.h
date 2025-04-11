@@ -3,12 +3,14 @@
 
 /*** This file should contain defines used for modded repos. ***/
 
+
+#define SKIP_TITLE 1
+
 /* -------------------------Memory------------------------ */
 #define EXPANSION_PAK_SUPPORT 0  // Allow the game to use the expansion pak if it's inserted.
 //#define FORCE_4MB_MEMORY  // Force the game to use 4MB of memory, even if an expansion pak is inserted.
 
-#define SKIP_TITLE 1
-
+#define UNLOCK_ALL
 #define SKIP_INTRO SKIP_TITLE
 
 #ifndef NON_MATCHING

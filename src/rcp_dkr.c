@@ -7,6 +7,7 @@
 #include "set_rsp_segment.h"
 #include "racer.h"
 #include "thread3_main.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -32,7 +33,6 @@ Gfx dRspInit[] = {
                           G_TEXTURE_GEN_LINEAR | G_LOD),
     gsSPTexture(0, 0, 0, 0, 0),
     gsSPSetGeometryMode(G_SHADING_SMOOTH | G_SHADE),
-    gsSPClipRatio(FRUSTRATIO_2),
     gsSPEndDisplayList(),
 };
 
@@ -51,53 +51,48 @@ Gfx dRdpInit[] = {
     gsDPSetAlphaCompare(G_AC_NONE),
     gsDPSetRenderMode(G_RM_OPA_SURF, G_RM_OPA_SURF2),
     gsDPSetColorDither(G_CD_MAGICSQ),
-    gsDPPipeSync(), // Why are we randomly pipesyncing in the middle of setting RDP states?
     gsSPEndDisplayList(),
 };
 
 Gfx dRaceFinishBackgroundSettings[] = {
+    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
     gsDPPipeSync(),
     gsDPSetTextureLOD(G_TL_TILE),
     gsDPSetTextureLUT(G_TT_NONE),
     gsDPSetAlphaCompare(G_AC_NONE),
-    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
-    gsDPPipeSync(), // And here?
     gsDPSetCombineMode(G_CC_DECALRGBA, G_CC_DECALRGBA),
     gsDPSetOtherMode(DKR_OMH_1CYC_POINT_NOPERSP, DKR_OML_COMMON | G_RM_OPA_SURF | G_RM_OPA_SURF2),
     gsSPEndDisplayList(),
 };
 
 Gfx dChequerBGSettings[] = {
+    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
     gsDPPipeSync(),
     gsDPSetTextureLOD(G_TL_TILE),
     gsDPSetTextureLUT(G_TT_NONE),
     gsDPSetAlphaCompare(G_AC_NONE),
-    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
-    gsDPPipeSync(), // Ditto
     gsDPSetCombineMode(G_CC_PRIMITIVE, G_CC_PRIMITIVE),
     gsDPSetOtherMode(DKR_OMH_1CYC_POINT_NOPERSP, DKR_OML_COMMON | G_RM_OPA_SURF | G_RM_OPA_SURF2),
     gsSPEndDisplayList(),
 };
 
 Gfx dTextureRectangleModes[] = {
+    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
     gsDPPipeSync(),
     gsDPSetTextureLOD(G_TL_TILE),
     gsDPSetTextureLUT(G_TT_NONE),
     gsDPSetAlphaCompare(G_AC_NONE),
-    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
-    gsDPPipeSync(), // Ditto
     gsDPSetCombineMode(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM),
     gsDPSetOtherMode(DKR_OMH_1CYC_POINT_NOPERSP, DKR_OML_COMMON | G_RM_XLU_SURF | G_RM_XLU_SURF2),
     gsSPEndDisplayList(),
 };
 
 Gfx dScaledRectangleBaseModes[] = {
+    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
     gsDPPipeSync(),
     gsDPSetTextureLOD(G_TL_TILE),
     gsDPSetTextureLUT(G_TT_NONE),
     gsDPSetAlphaCompare(G_AC_NONE),
-    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
-    gsDPPipeSync(), // Ditto
     gsSPEndDisplayList(),
 };
 
@@ -529,6 +524,11 @@ void rdp_init(Gfx **dList) {
  */
 void rsp_init(Gfx **dList) {
     gSPDisplayList((*dList)++, dRspInit);
+    if (gConfig.terrainQuality) {
+        gSPClipRatio((*dList)++, FRUSTRATIO_1);
+    } else {
+        gSPClipRatio((*dList)++, FRUSTRATIO_2);
+    }
 }
 
 /**
