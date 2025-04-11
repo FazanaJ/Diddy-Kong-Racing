@@ -53,7 +53,7 @@ typedef struct UserConfig {
     s8 sameStats;       // All characters use T.T stats.
     s8 screenRegion;    // What VI mode to base the game off of.
     // Graphics
-    s8 antiAlasing;     // Anti Aliasing mode
+    s8 antiAliasing;     // Anti Aliasing mode
     s8 screenPosX;      // For sub 320 wide framebuffers, shifts it horizontally
     s8 screenPosY;      // For sub 240 high framebuffers, shifts it vertically
     s8 screenRes;       // Framebuffer size
@@ -72,6 +72,7 @@ typedef struct UserConfig {
 
 extern u8 gExpansionPak;
 extern u8 gUseExpansionMemory;
+extern UserConfig gConfig;
 
 void mainproc(void);
 void thread1_main(void *);

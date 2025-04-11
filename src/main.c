@@ -12,6 +12,7 @@ OSThread gThread1; // OSThread for thread 1
 OSThread gThread3; // OSThread for thread 3
 u8 gExpansionPak;
 u8 gUseExpansionMemory;
+UserConfig gConfig;
 
 /******************************/
 
@@ -54,6 +55,12 @@ u32 osGetMemSize(void) {
     return size;
 }
 
+void config_init(void) {
+    gConfig.antiAliasing = 1;
+    gConfig.terrainQuality = 1;
+    gConfig.dedither = TRUE;
+}
+
 /**
  *  Calls osGetMemSize and sets if the expansion pak exists, and whether or not it can be used.
 */
@@ -77,7 +84,7 @@ void memsize_init(void) {
             gExpansionPak = FALSE;
             gUseExpansionMemory = FALSE;
         }
-    }
+}
 
 /**
  * Where it all begins.
@@ -88,10 +95,11 @@ void memsize_init(void) {
 void mainproc(void) {
     osInitialize();
     osTvType = OS_TV_NTSC;
-    memsize_init();
 #ifdef AVOID_UB
     bzero(&gMainMemoryPool, RAM_END - (s32) (&gMainMemoryPool));
 #endif
+    memsize_init();
+    config_init();
     osCreateThread(&gThread1, 1, &thread1_main, 0, &gThread1Stack[STACKSIZE(STACK_IDLE)], OS_PRIORITY_IDLE);
     osStartThread(&gThread1);
 }
@@ -104,7 +112,6 @@ void crash_init(void);
  * stopping this thread, as it's no longer needed.
  */
 void thread1_main(UNUSED void *unused) {
-    thread0_create();
     crash_init();
     osCreateThread(&gThread3, 3, &thread3_main, 0, &gThread3Stack[STACKSIZE(STACK_GAME)], 10);
     gThread3Stack[STACKSIZE(STACK_GAME) - 1] = 0;
