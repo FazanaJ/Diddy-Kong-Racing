@@ -761,6 +761,7 @@ void crash_render(OSThread *t) {
     s32 x;
     s32 y;
     s32 midPoint;
+    s32 midCount;
     s32 initialX;
     u64 *reg;
     f64 *regF;
@@ -783,42 +784,44 @@ void crash_render(OSThread *t) {
     crash_rectangle(9, 4, 8, 6, 255, 0, 0, 255);
     crash_rectangle(10, 5, 6, 4, 255, 255, 255, 255);
 
-    if ((threadID = crash_check_stack())) {
-        cause = 18;
-        switch(threadID) {
-            case 1:
-                t = &gThread1;
-                stackSize = STACK_IDLE;
-                break;
-            case 3:
-                t = &gThread3;
-                stackSize = STACK_GAME;
-                break;
-            case 4:
-                t = audioGetThread();
-                stackSize = STACK_AUD;
-                break;
-            case 5:
-                t = &gMainSched.thread;
-                stackSize = STACK_SCHED;
-                break;
-            case 30:
-                t = &gThread30;
-                stackSize = STACK_BGLOAD;
-                break;
-            default:
-                t = NULL;
-        }
-    } else {
-        cause = (c->cause >> 2) & 0x1F;
+    cause = -1;
+    switch(crash_check_stack()) {
+        case 1:
+            t = &gThread1;
+            stackSize = STACK_IDLE;
+            cause = 18;
+            break;
+        case 3:
+            t = &gThread3;
+            stackSize = STACK_GAME;
+            cause = 18;
+            break;
+        case 4:
+            t = audioGetThread();
+            stackSize = STACK_AUD;
+            cause = 18;
+            break;
+        case 5:
+            t = &gMainSched.thread;
+            stackSize = STACK_SCHED;
+            cause = 18;
+            break;
+        case 30:
+            t = &gThread30;
+            stackSize = STACK_BGLOAD;
+            cause = 18;
+            break;
     }
     c = &t->context;
-    crash_text(CRASH_BORDER_X + 12, 16, GPACK_RGBA5551(255, 255, 0, 1), "Thread:%s(%d)", sThreadNames[crash_thread_name(t->id)], t->id);
-    crash_text(CRASH_BORDER_X + 12 + 144, 16, GPACK_RGBA5551(255, 255, 0, 1), "PC:0#%8X", c->pc);
-    crash_text(CRASH_BORDER_X + 12 + 244, 16, GPACK_RGBA5551(255, 255, 0, 1), "RA:0#%8X", c->ra);
-    crash_text(CRASH_BORDER_X + 12, 25, GPACK_RGBA5551(255, 255, 0, 1), "Cause:%s", gCauseDesc[cause]);
+    if (cause == -1) {
+        cause = (c->cause >> 2) % (ARRAY_COUNT(gCauseDesc));
+    }
+    crash_text(CRASH_BORDER_X + 16, 16, GPACK_RGBA5551(255, 255, 0, 1), "Thread:%s(%d)", sThreadNames[crash_thread_name(t->id)], t->id);
+    crash_text(CRASH_BORDER_X + 16 + 144, 16, GPACK_RGBA5551(255, 255, 0, 1), "PC:0#%8X", c->pc);
+    crash_text(CRASH_BORDER_X + 16 + 288, 16, GPACK_RGBA5551(255, 255, 0, 1), "RA:0#%8X", c->ra);
+    crash_text(CRASH_BORDER_X + 16, 25, GPACK_RGBA5551(255, 255, 0, 1), "Cause:%s", gCauseDesc[cause]);
     if (gCrashFuncName) {
-        crash_text(CRASH_BORDER_X + 12, 34, GPACK_RGBA5551(255, 255, 0, 1), "Func Name:%s", gCrashFuncName);
+        crash_text(CRASH_BORDER_X + 16, 34, GPACK_RGBA5551(255, 255, 0, 1), "Func Name:%s", gCrashFuncName);
     }
 
     if (cause == 18) {        
@@ -830,9 +833,9 @@ void crash_render(OSThread *t) {
         }
     } else {
         x = CRASH_BORDER_X + 12;
-        midPoint = 0;
+        midPoint = 1;
         while (1) {
-            if (x + 144 < gScreenWidth - CRASH_BORDER_X) {
+            if (x + 288 < gScreenWidth - CRASH_BORDER_X) {
                 x += 144;
                 midPoint++;
             } else {
@@ -848,17 +851,23 @@ void crash_render(OSThread *t) {
         crash_text(initialX + 144, 63, GPACK_RGBA5551(255, 255, 255, 1), "SR:0#%08X", (u32) c->sr);
         x = initialX;
         y = 72;
+        midCount = 0;
         if (cause == 15) {
+            crash_text(initialX, y + 4, GPACK_RGBA5551(255, 255, 255, 1), "Cause:%s", gFpcsrDesc[c->fpcsr & 0x1F]);
+            y += 16;
             regF = (f64 *) &c->fp0;
             for (i = 0; i < 32; i += 1) {
                 crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "FPR%02d:%2.4f", i, (f64) regF[i]);
-                if (i % midPoint) {
-                    x += 144;
-                } else {
+                midCount++;
+                if (midCount >= 3) {
+                    midCount = 0;
                     y += 9;
                     x = initialX;
+                } else {
+                    x += 144;
                 }
             }
+
         } else {
             reg = (u64 *) c;
             for (i = 0; i < 26; i++) {
@@ -870,15 +879,17 @@ void crash_render(OSThread *t) {
                 } else {
                     crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "%s:0#%08X (%d)", sGPRegisterNames[i], (u32) val, (s32) reg[i]);
                 }
-                if (i % midPoint) {
-                    x += 144;
-                } else {
+                midCount++;
+                if (midCount >= 3) {
+                    midCount = 0;
                     y += 9;
                     x = initialX;
+                } else {
+                    x += 144;
                 }
             }
         }
-    } 
+    }
     osWritebackDCacheAll();
     osViBlack(FALSE);
     osViSwapBuffer(gCrashFB);
