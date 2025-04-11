@@ -95,6 +95,7 @@ void thread30_bgload(UNUSED void *arg) {
         }
         // -1 means there won't be any racers loaded.
         load_level_for_menu(gThread30LevelIdToLoad, -1, gThread30CutsceneIdToLoad);
+        //*(volatile int *) 0 = 0;
         gThread30NeedToLoadLevel = FALSE;
     }
 }

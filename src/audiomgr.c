@@ -64,7 +64,7 @@ OSSched *gAudioSched;
 ALHeap *gAudioHeap; // Set but not used
 
 AMAudioMgr __am;
-static u64 audioStack[STACKSIZE(STACK_AUD)];
+u64 audioStack[STACKSIZE(STACK_AUD)];
 
 AMDMAState dmaState;
 AMDMABuffer dmaBuffs[NUM_DMA_BUFFERS];

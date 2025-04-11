@@ -546,6 +546,34 @@ void crash_text(s32 x, s32 y, u16 colour, const char *fmt, ...) {
     va_end(args);
 }
 
+s32 crash_strwidth(const char *fmt, ...) {
+    char *ptr;
+    char buf[127];
+    va_list args;
+    s32 len;
+    s32 lenRecord;
+
+    va_start(args, fmt);
+    len = 0;
+    lenRecord = 0;
+    if (_Printf(write_to_buf, buf, fmt, args) > 0) {
+        ptr = buf;
+        while (*ptr) {
+            if (*ptr == '\n') {
+                len = 0;
+            } else {
+                len += 6;
+                if (len > lenRecord) {
+                    lenRecord = len;
+                }
+            }
+            ptr++;
+        }
+    }
+    va_end(args);
+    return lenRecord;
+}
+
 /**
  * Draw a rectangle on screen, supports arbitrary colour and alpha
 */
@@ -675,15 +703,63 @@ char *sGPRegisterNames[] = {
     "s5", "s6", "s7", "t8", "t9",
 };
 
+extern u64 gThread1Stack[STACKSIZE(STACK_IDLE)];
+extern u64 gThread3Stack[STACKSIZE(STACK_GAME)];
+extern u64 audioStack[STACKSIZE(STACK_AUD)];
+extern u64 gSchedStack[STACKSIZE(STACK_SCHED)];
+extern u64 gThread30Stack[STACKSIZE(STACK_BGLOAD)];
+
 #define CRASH_BORDER_X 20
+
+u32 crash_stack_pos(s32 threadID) {
+    switch(threadID) {
+        case 1:
+            return (u32) &gThread1Stack[STACKSIZE(STACK_IDLE) - 1];
+        case 3:
+            return (u32) &gThread3Stack[STACKSIZE(STACK_GAME) - 1];
+        case 4:
+            return (u32) &audioStack[STACKSIZE(STACK_AUD) - 1];
+        case 5:
+            return (u32) &gSchedStack[STACKSIZE(STACK_SCHED) - 1];
+        case 30:
+            return (u32) &gThread30Stack[STACKSIZE(STACK_BGLOAD) - 1];
+        default:
+            return 0;
+    }
+    return 0;
+}
+
+s32 crash_check_stack(void) {
+    if ((gThread1Stack[STACKSIZE(STACK_IDLE) - 1] != gThread1Stack[0])) {
+        return 1;
+    }
+    if ((gThread3Stack[STACKSIZE(STACK_GAME) - 1] != gThread3Stack[0])) {
+        return 3;
+    }
+    if ((audioStack[STACKSIZE(STACK_AUD) - 1] != audioStack[0])) {
+        return 4;
+    }
+    if ((gSchedStack[STACKSIZE(STACK_SCHED) - 1] != gSchedStack[0])) {
+        return 5;
+    }
+    if ((gThread30Stack[STACKSIZE(STACK_BGLOAD) - 1] != gThread30Stack[0])) {
+        return 30;
+    }
+
+    return 0;
+}
 
 void crash_render(OSThread *t) {
     s32 i;
     s32 x;
     s32 y;
+    s32 midPoint;
+    s32 initialX;
     u64 *reg;
     f64 *regF;
     s32 cause;
+    s32 threadID;
+
     __OSThreadContext *c = &t->context;
     crash_line(CRASH_BORDER_X - 1, 11, gScreenWidth - CRASH_BORDER_X, 11, 255, 255, 255, 160);
     crash_line(CRASH_BORDER_X - 1, gScreenHeight - 12, gScreenWidth - CRASH_BORDER_X, gScreenHeight - 12, 255, 255, 255, 160);
@@ -695,6 +771,9 @@ void crash_render(OSThread *t) {
     
     crash_rectangle(CRASH_BORDER_X, 46, gScreenWidth - (CRASH_BORDER_X * 2), gScreenHeight - 58, 0, 0, 0, 160);
 
+    crash_rectangle(9, 4, 8, 6, 255, 0, 0, 255);
+    crash_rectangle(10, 5, 6, 4, 255, 255, 255, 255);
+
     cause = (c->cause >> 2) & 0x1F;
     crash_text(CRASH_BORDER_X + 12, 16, GPACK_RGBA5551(255, 255, 0, 1), "Thread:%s(%d)", sThreadNames[crash_thread_name(t->id)], t->id);
     crash_text(CRASH_BORDER_X + 12 + 100, 16, GPACK_RGBA5551(255, 255, 0, 1), "PC:0#%8X", c->pc);
@@ -704,42 +783,63 @@ void crash_render(OSThread *t) {
         crash_text(CRASH_BORDER_X + 12, 34, GPACK_RGBA5551(255, 255, 0, 1), "Func Name:%s", gCrashFuncName);
     }
 
-    crash_text(CRASH_BORDER_X + 12, 54, GPACK_RGBA5551(255, 255, 255, 1), "GP:0#%08X", (u32) c->gp);
-    crash_text(CRASH_BORDER_X + 12 + 144, 54, GPACK_RGBA5551(255, 255, 255, 1), "SP:0#%08X", (u32) c->sp);
-    crash_text(CRASH_BORDER_X + 12, 63, GPACK_RGBA5551(255, 255, 255, 1), "VA:0#%08X", (u32) c->badvaddr);
-    crash_text(CRASH_BORDER_X + 12 + 144, 63, GPACK_RGBA5551(255, 255, 255, 1), "SR:0#%08X", (u32) c->sr);
-    x = CRASH_BORDER_X + 12;
-    y = 72;
-    if (cause == 15) {
-        regF = (f64 *) &c->fp0;
-        for (i = 0; i < 32; i += 1) {
-            crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "FPR%02d:%2.4f", i, (f64) regF[i]);
-            if ((i % 2) == 0) {
-                x += 144;
-            } else {
-                y += 9;
-                x = CRASH_BORDER_X + 12;
-            }
-        }
-    } else {
-        reg = (u64 *) c;
-        for (i = 0; i < 26; i++) {
-            u32 val = reg[i];
-            if (val >= 0x80000000 && val < 0x80800000) {
-                crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "%s:0#%08X (addr?)", sGPRegisterNames[i], (u32) val);
-            } else if (val > 0x10000000 && val < 0xFFFFFFFF - 0x10000000) {
-                crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "%s:0#%08X", sGPRegisterNames[i], (u32) val);
-            } else {
-                crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "%s:0#%08X (%d)", sGPRegisterNames[i], (u32) val, (s32) reg[i]);
-            }
-            if ((i % 2) == 0) {
-                x += 144;
-            } else {
-                y += 9;
-                x = CRASH_BORDER_X + 12;
-            }
-        }
+    if ((threadID = crash_check_stack())) {
+        cause = 60;
     }
+    if (cause == 60) {
+        char *errorMesg = "Thread %d stack overflow\nIncrease stack size.";
+        crash_text((gScreenWidth - crash_strwidth(errorMesg)) / 2, 54, GPACK_RGBA5551(255, 255, 255, 1), errorMesg, threadID);
+    } else {
+        x = CRASH_BORDER_X + 12;
+        midPoint = 0;
+        while (1) {
+            if (x + 144 < gScreenWidth - CRASH_BORDER_X) {
+                x += 144;
+                midPoint++;
+            } else {
+                break;
+            }
+        }
+        initialX = (gScreenWidth / 2) - ((144 * midPoint) / 2);
+    
+        crash_text(initialX, 54, GPACK_RGBA5551(255, 255, 255, 1), "GP:0#%08X", (u32) c->gp);
+        crash_text(initialX + 144, 54, GPACK_RGBA5551(255, 255, 255, 1), "SP:0#%08X", (u32) c->sp);
+        crash_text(initialX + 288, 54, GPACK_RGBA5551(255, 255, 255, 1), "Stack Pos:0#%X", (u32) (crash_stack_pos(t->id) - c->sp));
+        crash_text(initialX, 63, GPACK_RGBA5551(255, 255, 255, 1), "VA:0#%08X", (u32) c->badvaddr);
+        crash_text(initialX + 144, 63, GPACK_RGBA5551(255, 255, 255, 1), "SR:0#%08X", (u32) c->sr);
+        x = initialX;
+        y = 72;
+        if (cause == 15) {
+            regF = (f64 *) &c->fp0;
+            for (i = 0; i < 32; i += 1) {
+                crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "FPR%02d:%2.4f", i, (f64) regF[i]);
+                if (i % midPoint) {
+                    x += 144;
+                } else {
+                    y += 9;
+                    x = initialX;
+                }
+            }
+        } else {
+            reg = (u64 *) c;
+            for (i = 0; i < 26; i++) {
+                u32 val = reg[i];
+                if (val >= 0x80000000 && val < 0x80800000) {
+                    crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "%s:0#%08X (addr?)", sGPRegisterNames[i], (u32) val);
+                } else if (val > 0x10000000 && val < 0xFFFFFFFF - 0x10000000) {
+                    crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "%s:0#%08X", sGPRegisterNames[i], (u32) val);
+                } else {
+                    crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "%s:0#%08X (%d)", sGPRegisterNames[i], (u32) val, (s32) reg[i]);
+                }
+                if (i % midPoint) {
+                    x += 144;
+                } else {
+                    y += 9;
+                    x = initialX;
+                }
+            }
+        }
+    } 
     osWritebackDCacheAll();
     osViBlack(FALSE);
     osViSwapBuffer(gCrashFB);

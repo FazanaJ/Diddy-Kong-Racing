@@ -7,10 +7,6 @@
 
 .section .bss
 
-glabel entrypointThreadStack
-.space 0x1000
-glabel entrypointThreadStackEnd
-
 .section .text, "ax"
 
 leaf entrypoint
@@ -25,10 +21,10 @@ sw         $zero, 0x4($t0)
 bnez       $t1, .clear_bytes
  addi      $t0, $t0, 0x8
 lui        $t2, %hi(mainproc)
-lui        $sp, %hi(entrypointThreadStackEnd)
+lui        $sp, %hi(gThread3Stack + 0x100)
 addiu      $t2, $t2, %lo(mainproc)
 jr         $t2
- addiu     $sp, $sp, %lo(entrypointThreadStackEnd)
+ addiu     $sp, $sp, %lo(gThread3Stack + 0x100)
 nop
 nop
 nop

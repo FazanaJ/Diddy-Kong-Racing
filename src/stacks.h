@@ -3,7 +3,7 @@
 
 #include "types.h"
 
-#define STACK_IDLE      0x100
+#define STACK_IDLE      0x60
 #define STACK_SCHED     0x200
 #define STACK_AUD       0x1000
 #define STACK_GAME      0x2000

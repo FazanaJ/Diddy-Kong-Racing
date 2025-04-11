@@ -397,6 +397,10 @@ UNUSED void gfxtask_run_rdp(void *bufPtr, s32 bufSize, UNUSED s32 unused) {
     while (osDpGetStatus() & DPC_CLR_CMD_CTR) {}
 }
 
+/**
+ * Checks the current map ID and returns true if the fill background needs to be rendered.
+ * Ideally, you want the level to not.
+*/
 s32 bgdraw_init(void) {
     s32 map = get_current_map_id();
 
@@ -408,6 +412,7 @@ s32 bgdraw_init(void) {
         case ASSET_LEVEL_DINODOMAINTROPHYANIM:
         case ASSET_LEVEL_FRONTEND:
         case ASSET_LEVEL_WIZPIG2:
+        case ASSET_LEVEL_DARKWATERBEACH:
             return TRUE;
             break;
         default:
