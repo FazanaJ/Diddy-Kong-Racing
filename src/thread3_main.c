@@ -1600,15 +1600,17 @@ void set_frame_blackout_timer(void) {
     gDrawFrameTimer = 2;
 }
 
+#ifndef SKIP_INTRO
+#define BOOT_LVL MENU_BOOT
+#else
 #if SKIP_INTRO == SKIP_TITLE
 #define BOOT_LVL MENU_TITLE
 #elif SKIP_INTRO == SKIP_CHARACTER
 #define BOOT_LVL MENU_CHARACTER_SELECT
 #elif SKIP_INTRO == SKIP_MENU
 #define BOOT_LVL MENU_GAME_SELECT
-#else
-#define BOOT_LVL MENU_BOOT
 #endif // SKIP_INTRO
+#endif
 
 /**
  * Give the player 8 frames to enter the CPak menu with start, then load the intro sequence.

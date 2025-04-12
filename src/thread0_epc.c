@@ -582,27 +582,32 @@ s32 crash_strwidth(const char *fmt, ...) {
 void crash_rectangle(s32 x, s32 y, s32 w, s32 h, s32 r, s32 g, s32 b, s32 a) {
     u16 *ptr;
     s32 i, j;
+    u8 alpha;
+    u16 dst;
+    u8 dr, dg, db;
+    u8 br, bg, bb;
+    u16 blended;
 
-    u8 alpha = a;
-
+    alpha = a;
     ptr = gCrashFB + gScreenWidth * y + x;
+
     for (i = 0; i < h; i++) {
         for (j = 0; j < w; j++) {
-            u16 dst = *ptr;
+            dst = *ptr;
 
-            u8 dr = (dst >> 11) & 0x1F;
-            u8 dg = (dst >> 6) & 0x1F;
-            u8 db = (dst >> 1) & 0x1F;
+            dr = (dst >> 11) & 0x1F;
+            dg = (dst >> 6) & 0x1F;
+            db = (dst >> 1) & 0x1F;
 
             dr = (dr << 3) | (dr >> 2);
             dg = (dg << 3) | (dg >> 2);
             db = (db << 3) | (db >> 2);
 
-            u8 br = ((r * alpha) + (dr * (255 - alpha))) / 255;
-            u8 bg = ((g * alpha) + (dg * (255 - alpha))) / 255;
-            u8 bb = ((b * alpha) + (db * (255 - alpha))) / 255;
+            br = ((r * alpha) + (dr * (255 - alpha))) / 255;
+            bg = ((g * alpha) + (dg * (255 - alpha))) / 255;
+            bb = ((b * alpha) + (db * (255 - alpha))) / 255;
 
-            u16 blended = ((br & 0xF8) << 8) | ((bg & 0xF8) << 3) | ((bb & 0xF8) >> 2) | 1;
+            blended = ((br & 0xF8) << 8) | ((bg & 0xF8) << 3) | ((bb & 0xF8) >> 2) | 1;
 
             *ptr++ = blended;
         }
@@ -614,22 +619,29 @@ void crash_rectangle(s32 x, s32 y, s32 w, s32 h, s32 r, s32 g, s32 b, s32 a) {
  *  Draws a line using Bresenham's algorithm. Supports arbitrary colour and alpha
 */
 void crash_line(s32 x0, s32 y0, s32 x1, s32 y1, s32 r, s32 g, s32 b, s32 a) {
-    s32 dx = abs(x1 - x0);
-    s32 dy = abs(y1 - y0);
-    s32 sx = (x0 < x1) ? 1 : -1;
-    s32 sy = (y0 < y1) ? 1 : -1;
-    s32 err = dx - dy;
+    s32 dx, dy, sx, sy, err, e2;
+    u16 *ptr;
+    u16 dst;
+    u8 dr, dg, db;
+    u8 br, bg, bb;
+    u16 blended;
+
+    dx = abs(x1 - x0);
+    dy = abs(y1 - y0);
+    sx = (x0 < x1) ? 1 : -1;
+    sy = (y0 < y1) ? 1 : -1;
+    err = dx - dy;
 
     while (1) {
         // Draw the current pixel
         if (x0 >= 0 && x0 < gScreenWidth && y0 >= 0 && y0 < gScreenHeight) {
-            u16 *ptr = gCrashFB + gScreenWidth * y0 + x0;
-            u16 dst = *ptr;
+            ptr = gCrashFB + gScreenWidth * y0 + x0;
+            dst = *ptr;
 
             // Extract RGB components from the destination color
-            u8 dr = (dst >> 11) & 0x1F;
-            u8 dg = (dst >> 6) & 0x1F;
-            u8 db = (dst >> 1) & 0x1F;
+            dr = (dst >> 11) & 0x1F;
+            dg = (dst >> 6) & 0x1F;
+            db = (dst >> 1) & 0x1F;
 
             // Convert 5-bit components to 8-bit
             dr = (dr << 3) | (dr >> 2);
@@ -637,12 +649,12 @@ void crash_line(s32 x0, s32 y0, s32 x1, s32 y1, s32 r, s32 g, s32 b, s32 a) {
             db = (db << 3) | (db >> 2);
 
             // Blend the colors
-            u8 br = ((r * a) + (dr * (255 - a))) / 255;
-            u8 bg = ((g * a) + (dg * (255 - a))) / 255;
-            u8 bb = ((b * a) + (db * (255 - a))) / 255;
+            br = ((r * a) + (dr * (255 - a))) / 255;
+            bg = ((g * a) + (dg * (255 - a))) / 255;
+            bb = ((b * a) + (db * (255 - a))) / 255;
 
             // Convert back to 5-bit components and combine into a 16-bit color
-            u16 blended = ((br & 0xF8) << 8) | ((bg & 0xF8) << 3) | ((bb & 0xF8) >> 2) | 1;
+            blended = ((br & 0xF8) << 8) | ((bg & 0xF8) << 3) | ((bb & 0xF8) >> 2) | 1;
 
             *ptr = blended;
         }
@@ -653,7 +665,7 @@ void crash_line(s32 x0, s32 y0, s32 x1, s32 y1, s32 r, s32 g, s32 b, s32 a) {
         }
 
         // Update the error term and coordinates
-        s32 e2 = 2 * err;
+        e2 = 2 * err;
         if (e2 > -dy) {
             err -= dy;
             x0 += sx;

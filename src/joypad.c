@@ -67,13 +67,15 @@ s32 autoplay_drive(f32 x, f32 y, f32 z, f32 distCheck) {
     s16 base = obj->segment.trans.rotation.y_rotation - 0x4000;
     static u8 sATap = 0;
     s16 absDiff;
+    static u8 sDrift = FALSE;
 
     angleDiff = base + atan2s(obj->segment.trans.z_position - z, obj->segment.trans.x_position - x);
 
     absDiff = ABS(angleDiff);
 
     if (absDiff > 0x200) {
-        if (absDiff > 0x2000 && racer->vehicleID != VEHICLE_HOVERCRAFT) {
+        if (sDrift || (absDiff > 0x2000 && racer->vehicleID != VEHICLE_HOVERCRAFT)) {
+            sDrift = TRUE;
             if (racer->vehicleID == VEHICLE_CAR) {
                 gControllerCurrData[sPlayerID[0]].button |= B_BUTTON;
             }
@@ -85,6 +87,8 @@ s32 autoplay_drive(f32 x, f32 y, f32 z, f32 distCheck) {
         if (angleDiff < 0) {
             gControllerCurrData[sPlayerID[0]].stick_x *= -1;
         }
+    } else {
+        sDrift = FALSE;
     }
 
 
@@ -97,8 +101,8 @@ s32 autoplay_drive(f32 x, f32 y, f32 z, f32 distCheck) {
     }
 
     if (racer->vehicleID == VEHICLE_PLANE) {
-        f32 mag = MIN(ABSF((y - obj->segment.trans.y_position) / 2.0f), 70);
-        render_printf("B: %2.2f\n", mag);
+        f32 mag = MIN(ABSF((y - obj->segment.trans.y_position) / 4.0f), 70);
+        //render_printf("B: %2.2f\n", mag);
         if (y > obj->segment.trans.y_position) {
             gControllerCurrData[sPlayerID[0]].stick_y = -mag;
         } else {
@@ -174,6 +178,8 @@ extern u8 gAutoDrive;
 extern Settings *gSavefileData[4];
 extern s8 gDialogueSubmenu;
 extern s8 sCurrentMenuID;
+extern s8 gPostraceFinishState;
+extern s32 gMenuOption;
 
 void autoplay_inputs(void) {
     static u8 sControllerFlip = 0;
@@ -195,7 +201,6 @@ void autoplay_inputs(void) {
     }
     
     sControllerFlip ^= 1;
-    settings = get_settings();
     if (get_game_mode() == GAMEMODE_MENU) {
         switch (gCurrentMenuId) {
             case MENU_TITLE:
@@ -262,77 +267,99 @@ void autoplay_inputs(void) {
         }
     } else if (get_game_mode() == GAMEMODE_INGAME) {
         s32 map = get_current_map_id();
+        s32 b;
         if (map != sPrevMapID) {
             sCheckpointID = 0;
             sPrevMapID = map;
         }
-        s32 b = *settings->balloonsPtr;
+        settings = get_settings();
+        if (settings) {
+            b = *settings->balloonsPtr;
+        } else {
+            b = 0;
+        }
+        
+        obj = get_racer_object(0);
+        if (obj) {
+            racer = (Object_Racer *) obj->unk64;
+            render_printf("X: %2.2f\n", obj->segment.trans.x_position);
+            render_printf("Y: %2.2f\n", obj->segment.trans.y_position);
+            render_printf("Z: %2.2f\n", obj->segment.trans.z_position);
+        }
         gAutoDrive = FALSE;
         switch (map) {
             case ASSET_LEVEL_CENTRALAREAHUB:
                 switch (b) {
                     case 0:
-                    obj = get_racer_object(0);
-                    if (obj) {
+                        obj = get_racer_object(0);
+
+                        if (obj == NULL) {
+                            break;
+                        }
                         racer = (Object_Racer *) obj->unk64;
 
-                        balloon = autoplay_find_balloon2(obj->segment.trans.x_position, obj->segment.trans.z_position);
+                        //balloon = autoplay_find_balloon2(obj->segment.trans.x_position, obj->segment.trans.z_position);
 
-                        if (balloon) {
+                        //if (balloon) {
                             //render_printf("%d\n", balloon->segment.level_entry->goldenBalloon.balloonID);
-                        }
-                    }
-                    // dino domain: 10
-                    // cliff: 14
-                    // ocean: 2
-                    // trees: 6
+                        //}
+                        // dino domain: 10
+                        // cliff: 14
+                        // ocean: 2
+                        // trees: 6
 
-                    if (sTransform == 0) {
-                        if (sControllerFlip) {
-                            if (obj && racer->vehicleID == VEHICLE_PLANE) {
-                                gControllerCurrData[sPlayerID[0]].button |= B_BUTTON;
-                                gControllerButtonsPressed[sPlayerID[0]] |= B_BUTTON;
-                                if (sCurrentMenuID == 0) {
-                                    sTransform = 1;
-                                    sCheckpointID = 0;
-                                }
-                            } else if (sCurrentMenuID == 0) {
-                                gControllerCurrData[sPlayerID[0]].button |= Z_TRIG;
-                                gControllerButtonsPressed[sPlayerID[0]] |= Z_TRIG;
-                            } else if (sCurrentMenuID == DIALOGUEPAGE_TAJ_ROOT) {
-                                gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
-                                gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
-                            } else if (sCurrentMenuID == DIALOGUEPAGE_TAJ_VEHICLE_SELECT) {
-                                if (gDialogueSubmenu != 2) {
-                                    gControllerCurrData[sPlayerID[0]].stick_y = -70;
-                                } else {
+                        if (sTransform != 10) {
+                            if (sControllerFlip && sTransform <= 20) {
+                                if (obj && racer->vehicleID == VEHICLE_PLANE) {
+                                    gControllerCurrData[sPlayerID[0]].button |= B_BUTTON;
+                                    gControllerButtonsPressed[sPlayerID[0]] |= B_BUTTON;
+                                    if (sCurrentMenuID == 0) {
+                                        sTransform = 10;
+                                        sCheckpointID = 0;
+                                    }
+                                } else if (sCurrentMenuID == 0) {
+                                    gControllerCurrData[sPlayerID[0]].button |= Z_TRIG;
+                                    gControllerButtonsPressed[sPlayerID[0]] |= Z_TRIG;
+                                } else if (sCurrentMenuID == DIALOGUEPAGE_TAJ_ROOT) {
                                     gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
                                     gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
+                                } else if (sCurrentMenuID == DIALOGUEPAGE_TAJ_VEHICLE_SELECT) {
+                                    if (gDialogueSubmenu != 2) {
+                                        gControllerCurrData[sPlayerID[0]].stick_y = -70;
+                                    } else {
+                                        if (sTransform < 2) {
+                                            sTransform++;
+                                            if (sTransform >= 2) {
+                                                gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
+                                                gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
+                                                sTransform = 50;
+                                            }
+                                        }
+                                    }
                                 }
-                                gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
-                                gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
+                            }
+                            if (sTransform > 20) {
+                                sTransform--;
+                            }
+                        } else {
+                            switch (sCheckpointID) {
+                                case 0:
+                                    if (autoplay_drive(-135.0f, 400.0f, 700.0f, 400.0f)) {
+                                        sCheckpointID++;
+                                    }
+                                    break;
+                                case 1:
+                                    balloon = autoplay_find_balloon(14);
+                                    if (balloon) {
+                                        //render_printf("Balloon X: %2.2f\n", balloon->segment.trans.x_position);
+                                        //render_printf("Balloon Y: %2.2f\n", balloon->segment.trans.y_position);
+                                        //render_printf("Balloon Z: %2.2f\n", balloon->segment.trans.z_position);
+                                        autoplay_drive(balloon->segment.trans.x_position, balloon->segment.trans.y_position + 50.0f, balloon->segment.trans.z_position, 1.0f);
+                                    }
+                                    break;
                             }
                         }
-                    } else {
-                        render_printf("Checkpoint ID: %d\n", sCheckpointID);
-                        switch (sCheckpointID) {
-                            case 0:
-                                if (autoplay_drive(-135.0f, 400.0f, 700.0f, 400.0f)) {
-                                    sCheckpointID++;
-                                }
-                                break;
-                            case 1:
-                                balloon = autoplay_find_balloon(14);
-                                if (balloon) {
-                                    //render_printf("Balloon X: %2.2f\n", balloon->segment.trans.x_position);
-                                    //render_printf("Balloon Y: %2.2f\n", balloon->segment.trans.y_position);
-                                    //render_printf("Balloon Z: %2.2f\n", balloon->segment.trans.z_position);
-                                    autoplay_drive(balloon->segment.trans.x_position, balloon->segment.trans.y_position + 50.0f, balloon->segment.trans.z_position, 1.0f);
-                                }
-                                break;
-                        }
-                    }
-                    break;
+                        break;
                     case 1:
                         switch (sCheckpointID) {
                             case 1:
@@ -351,38 +378,84 @@ void autoplay_inputs(void) {
                                 }
                                 break;
                             case 4:
-                            balloon = autoplay_find_balloon(2);
-                            if (balloon) {
-                                autoplay_drive(balloon->segment.trans.x_position, balloon->segment.trans.y_position + 50.0f, balloon->segment.trans.z_position, 1.0f);
-                            }
+                                balloon = autoplay_find_balloon(2);
+                                if (balloon) {
+                                    autoplay_drive(balloon->segment.trans.x_position, balloon->segment.trans.y_position + 50.0f, balloon->segment.trans.z_position, 1.0f);
+                                }
+                                break;
                         }
                         break;
-
-                    obj = get_racer_object(0);
-                    if (obj) {
-                        racer = (Object_Racer *) obj->unk64;
-    render_printf("X: %2.2f\n", obj->segment.trans.x_position);
-    render_printf("Y: %2.2f\n", obj->segment.trans.y_position);
-    render_printf("Z: %2.2f\n", obj->segment.trans.z_position);
-                    }
-                }
-                /*switch (sCheckpointID) {
-                    case 0:
-                    if (autoplay_drive(-135.0f, 250.0f, 700.0f)) {
-                        sCheckpointID++;
-                    }
-                    break;
-                    case 1:
-                    if (autoplay_drive(-2410.0f, 520.0f, 1500.0f)) {
-                        sCheckpointID++;
-                    }
-                    break;
                     case 2:
-                    if (autoplay_drive(-4000.0f, 270.0f, 2800.0f)) {
-                        sCheckpointID++;
-                    }
+                        switch (sCheckpointID) {
+                            case 4:
+                                if (autoplay_drive(3750.0f, -100.0f, -5866.0f, 300.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 5:
+                                if (autoplay_drive(3776.0f, 200.0f, -2641.0f, 300.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 6:
+                                if (autoplay_drive(3537.0f, 300.0f, -2457.0f, 300.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 7:
+                                balloon = autoplay_find_balloon(6);
+                                if (balloon) {
+                                    autoplay_drive(balloon->segment.trans.x_position, balloon->segment.trans.y_position + 50.0f, balloon->segment.trans.z_position, 1.0f);
+                                }
+                                break;
+                        }
+                        break;
+                    case 3:
+                        switch (sCheckpointID) {
+                            case 7:
+                                if (autoplay_drive(3537.0f, 300.0f, -2457.0f, 300.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 8:
+                                if (autoplay_drive(3776.0f, 200.0f, -2641.0f, 300.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 9:
+                                if (autoplay_drive(3650.0f, 200.0f, 2109.0f, 300.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 10:
+                                if (autoplay_drive(2032.0f, 350.0f, 2040.0f, 300.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 11:
+                                if (autoplay_drive(400.0f, 500.0f, 1257.0f, 300.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 12:
+                                if (autoplay_drive(-2000.0f, 600.0f, 1321.0f, 300.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 13:
+                                balloon = autoplay_find_balloon(10);
+                                if (balloon) {
+                                    autoplay_drive(balloon->segment.trans.x_position, balloon->segment.trans.y_position + 50.0f, balloon->segment.trans.z_position, 1.0f);
+                                }
+                                break;
+                        }
+                        break;
+                    case 4:
+                        if (autoplay_drive(-4000.0f, 270.0f, 2800.0f, 300.0f)) {
+                            sCheckpointID++;
+                        }
                     break;
-                }*/
+                }
                 break;
             case ASSET_LEVEL_DINODOMAINHUB:
                 if (sCheckpointID == 0) {
@@ -391,9 +464,31 @@ void autoplay_inputs(void) {
                     }
                 } else {
                     switch(b) {
-                        case 1:
-                        autoplay_drive(850, 0, 400, 300.0f);
-                        break;
+                        case 4:
+                            autoplay_drive(850, 0, 400, 1.0f);
+                            break;
+                        case 5:
+                        case 9:
+                            autoplay_drive(950, 0, -365, 1.0f);
+                            break;
+                        case 6:
+                        case 10:
+                            autoplay_drive(375, 0, 930, 1.0f);
+                            break;
+                        case 7:
+                        case 11:
+                            autoplay_drive(-360, 0, -910, 1.0f);
+                            break;
+                        case 12:
+                            autoplay_drive(-782, 0, 1620, 1.0f);
+                            break;
+                        case 8:
+                            if (settings->bosses & 2) {
+                                autoplay_drive(850, 0, 400, 1.0f);
+                            } else {
+                                autoplay_drive(-782, 0, 1620, 1.0f);
+                            }
+                            break;
                     }
                 }
                 break;
@@ -406,20 +501,20 @@ void autoplay_inputs(void) {
                         racer->boostType = BOOST_SMALL;
                     }
                     gAutoDrive = TRUE;
+                    if (racer->raceFinished) {
+                        if (sControllerFlip) {
+                            if (gMenuOption < 1 /*&& gPostraceFinishState == POSTRACE_STAGE_OPTIONS*/) {
+                                gControllerCurrData[sPlayerID[0]].stick_y = -70;
+                            } else {
+                                gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
+                                gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
+                            }
+                        }
+                    }
                 }
 
                 break;
         }
-        /*gControllerButtonsReleased[sPlayerID[0]] = 0;
-        gControllerCurrData[sPlayerID[0]].button = 0;
-        if (sTransform == 0) {
-            gControllerButtonsPressed[sPlayerID[0]] |= Z_TRIG;
-            if (gDoneTalkingToNPC[0] == FALSE) {
-
-            } else {
-                sTransform = 1;
-            }
-        }*/
     }
 }
 

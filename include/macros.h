@@ -58,6 +58,8 @@
 #else
 #define inline
 #define ABSF(x) (x < 0.f ? -x : x)
+#define ABS(x) (x < 0 ? -x : x)
+#define abs(x) ABS(x)
 #endif
 
 // convert a virtual address to physical.
