@@ -816,7 +816,7 @@ void crash_render(OSThread *t) {
     }
     c = &t->context;
     if (cause == -1) {
-        cause = (c->cause >> 2) % (ARRAY_COUNT(gCauseDesc));
+        cause = (c->cause >> 2) & 0x1F;
     }
     crash_text(CRASH_BORDER_X + 16, 16, GPACK_RGBA5551(255, 255, 0, 1), "Thread:%s(%d)", sThreadNames[crash_thread_name(t->id)], t->id);
     crash_text(CRASH_BORDER_X + 16 + 144, 16, GPACK_RGBA5551(255, 255, 0, 1), "PC:0#%8X", c->pc);
