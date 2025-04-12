@@ -13,6 +13,7 @@
 #define UNLOCK_ALL
 #define SKIP_INTRO SKIP_TITLE
 #define AUTOPLAY
+#define SKIP_NEW_GAME
 
 #ifndef NON_MATCHING
 #define NON_MATCHING 1

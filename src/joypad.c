@@ -59,7 +59,7 @@ extern s32 gCurrentMenuId;
 extern s8 gDoneTalkingToNPC[];
 extern s32 sLogicUpdateRate;
 
-s32 autoplay_drive(f32 x, f32 y, f32 z) {
+s32 autoplay_drive(f32 x, f32 y, f32 z, f32 distCheck) {
     Object *obj = get_racer_object(0);
     Object_Racer *racer = (Object_Racer *) obj->unk64;
     f32 dist;
@@ -68,17 +68,17 @@ s32 autoplay_drive(f32 x, f32 y, f32 z) {
     static u8 sATap = 0;
     s16 absDiff;
 
-    render_printf("X: %2.2f\n", obj->segment.trans.x_position);
-    render_printf("Y: %2.2f\n", obj->segment.trans.y_position);
-    render_printf("Z: %2.2f\n", obj->segment.trans.z_position);
-
     angleDiff = base + atan2s(obj->segment.trans.z_position - z, obj->segment.trans.x_position - x);
 
     absDiff = ABS(angleDiff);
 
     if (absDiff > 0x200) {
-        if (absDiff > 0x2000) {
-            gControllerCurrData[sPlayerID[0]].button |= R_TRIG | B_BUTTON;
+        if (absDiff > 0x2000 && racer->vehicleID != VEHICLE_HOVERCRAFT) {
+            if (racer->vehicleID == VEHICLE_CAR) {
+                gControllerCurrData[sPlayerID[0]].button |= B_BUTTON;
+            }
+            gControllerCurrData[sPlayerID[0]].button |= R_TRIG;
+            gControllerCurrData[sPlayerID[0]].stick_x = 70;
         } else {
             gControllerCurrData[sPlayerID[0]].stick_x = (MIN(absDiff, 0x400) / 16);
         }
@@ -87,6 +87,8 @@ s32 autoplay_drive(f32 x, f32 y, f32 z) {
         }
     }
 
+
+
     sATap += sLogicUpdateRate;
     if (sATap >= 15 && racer->vehicleID == VEHICLE_CAR) {
         sATap = 0;
@@ -94,19 +96,84 @@ s32 autoplay_drive(f32 x, f32 y, f32 z) {
         gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
     }
 
+    if (racer->vehicleID == VEHICLE_PLANE) {
+        f32 mag = MIN(ABSF((y - obj->segment.trans.y_position) / 2.0f), 70);
+        render_printf("B: %2.2f\n", mag);
+        if (y > obj->segment.trans.y_position) {
+            gControllerCurrData[sPlayerID[0]].stick_y = -mag;
+        } else {
+            gControllerCurrData[sPlayerID[0]].stick_y = mag;
+        }
+    }
+
 
     dist = (((obj->segment.trans.x_position - x) * (obj->segment.trans.x_position - x)) + 
             ((obj->segment.trans.y_position - y) * (obj->segment.trans.y_position - y)) + 
             ((obj->segment.trans.z_position - z) * (obj->segment.trans.z_position - z)));
 
-    if (dist < 300.0f * 300.0f) {
+    if (dist < distCheck * distCheck) {
         return 1;
     }
 
     return 0;
 }
 
+extern s32 gObjectCount;
+extern Object **gObjPtrList;
+
+Object *autoplay_find_balloon(s32 balloonID) {
+    Object *tempObj;
+    s32 i;
+
+    i = 0;
+    if (gObjectCount > 0) {
+        do {
+            tempObj = gObjPtrList[i];
+            if (!(tempObj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && tempObj->behaviorId == BHV_GOLDEN_BALLOON) {
+                Object_NPC *balloon = (Object_NPC *) tempObj->unk64;
+                if (tempObj->segment.level_entry->goldenBalloon.balloonID == balloonID) {
+                    return tempObj;
+                }
+            }
+            i += 1;
+        } while (i < gObjectCount);
+    }
+    return NULL;
+}
+Object *autoplay_find_balloon2(f32 x, f32 z) {
+    Object *tempObj;
+    Object *bestObj;
+    f32 diffX;
+    f32 diffZ;
+    f32 distance;
+    f32 bestDist;
+    s32 i;
+
+    bestDist = 0xFFFFFFFF;
+    i = 0;
+    bestObj = NULL;
+    if (gObjectCount > 0) {
+        do {
+            tempObj = gObjPtrList[i];
+            if (!(tempObj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && tempObj->behaviorId == BHV_GOLDEN_BALLOON) {
+                diffX = tempObj->segment.trans.x_position - x;
+                diffZ = tempObj->segment.trans.z_position - z;
+                distance = sqrtf((diffX * diffX) + (diffZ * diffZ));
+                if (bestDist > distance) {
+                    bestDist = distance;
+                    bestObj = tempObj;
+                }
+            }
+            i += 1;
+        } while (i < gObjectCount);
+    }
+    return bestObj;
+}
+
 extern u8 gAutoDrive;
+extern Settings *gSavefileData[4];
+extern s8 gDialogueSubmenu;
+extern s8 sCurrentMenuID;
 
 void autoplay_inputs(void) {
     static u8 sControllerFlip = 0;
@@ -115,26 +182,57 @@ void autoplay_inputs(void) {
     static u8 sCheckpoint = 0;
     static u8 sCheckpointID = 0;
     static u8 sBootTime = 0;
+    static u8 sFileSelectInputs = 0;
     static u8 sPrevMapID;
     Object *obj;
     Object_Racer *racer;
+    Settings *settings;
+    Object *balloon;
 
     if (sBootTime < 60) {
         sBootTime++;
         return;
     }
+    
     sControllerFlip ^= 1;
+    settings = get_settings();
     if (get_game_mode() == GAMEMODE_MENU) {
         switch (gCurrentMenuId) {
             case MENU_TITLE:
             case MENU_GAME_SELECT:
-            case MENU_FILE_SELECT:
                 sCharSelectInputs = 0;
+                sFileSelectInputs = 0;
                 if (sControllerFlip) {
                     gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
                     gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
                 } else {
                     gControllerButtonsReleased[sPlayerID[0]] |= A_BUTTON;
+                }
+                break;
+            case MENU_FILE_SELECT:
+                sCharSelectInputs = 0;
+                if (sControllerFlip) {
+                    if (sFileSelectInputs < 3) {
+                        gControllerCurrData[sPlayerID[0]].stick_x = 70;
+                        sFileSelectInputs++;
+                    } else if (sFileSelectInputs >= 10) {
+                        if (sFileSelectInputs == 10) {
+                            gControllerCurrData[sPlayerID[0]].stick_y = -70;
+                            sFileSelectInputs++;
+                        } else if (gSavefileData[2]->newGame == FALSE) {
+                            gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
+                            gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
+                        } else {
+                            sFileSelectInputs = 3;
+                        }
+                    } else {
+                        if (gSavefileData[2]->newGame == FALSE) {
+                            sFileSelectInputs = 10;
+                        } else {
+                            gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
+                            gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
+                        }
+                    }
                 }
                 break;
             case MENU_CHARACTER_SELECT:
@@ -168,12 +266,107 @@ void autoplay_inputs(void) {
             sCheckpointID = 0;
             sPrevMapID = map;
         }
-        Settings *settings = get_settings();
         s32 b = *settings->balloonsPtr;
         gAutoDrive = FALSE;
         switch (map) {
             case ASSET_LEVEL_CENTRALAREAHUB:
-                switch (sCheckpointID) {
+                switch (b) {
+                    case 0:
+                    obj = get_racer_object(0);
+                    if (obj) {
+                        racer = (Object_Racer *) obj->unk64;
+
+                        balloon = autoplay_find_balloon2(obj->segment.trans.x_position, obj->segment.trans.z_position);
+
+                        if (balloon) {
+                            //render_printf("%d\n", balloon->segment.level_entry->goldenBalloon.balloonID);
+                        }
+                    }
+                    // dino domain: 10
+                    // cliff: 14
+                    // ocean: 2
+                    // trees: 6
+
+                    if (sTransform == 0) {
+                        if (sControllerFlip) {
+                            if (obj && racer->vehicleID == VEHICLE_PLANE) {
+                                gControllerCurrData[sPlayerID[0]].button |= B_BUTTON;
+                                gControllerButtonsPressed[sPlayerID[0]] |= B_BUTTON;
+                                if (sCurrentMenuID == 0) {
+                                    sTransform = 1;
+                                    sCheckpointID = 0;
+                                }
+                            } else if (sCurrentMenuID == 0) {
+                                gControllerCurrData[sPlayerID[0]].button |= Z_TRIG;
+                                gControllerButtonsPressed[sPlayerID[0]] |= Z_TRIG;
+                            } else if (sCurrentMenuID == DIALOGUEPAGE_TAJ_ROOT) {
+                                gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
+                                gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
+                            } else if (sCurrentMenuID == DIALOGUEPAGE_TAJ_VEHICLE_SELECT) {
+                                if (gDialogueSubmenu != 2) {
+                                    gControllerCurrData[sPlayerID[0]].stick_y = -70;
+                                } else {
+                                    gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
+                                    gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
+                                }
+                                gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
+                                gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
+                            }
+                        }
+                    } else {
+                        render_printf("Checkpoint ID: %d\n", sCheckpointID);
+                        switch (sCheckpointID) {
+                            case 0:
+                                if (autoplay_drive(-135.0f, 400.0f, 700.0f, 400.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 1:
+                                balloon = autoplay_find_balloon(14);
+                                if (balloon) {
+                                    //render_printf("Balloon X: %2.2f\n", balloon->segment.trans.x_position);
+                                    //render_printf("Balloon Y: %2.2f\n", balloon->segment.trans.y_position);
+                                    //render_printf("Balloon Z: %2.2f\n", balloon->segment.trans.z_position);
+                                    autoplay_drive(balloon->segment.trans.x_position, balloon->segment.trans.y_position + 50.0f, balloon->segment.trans.z_position, 1.0f);
+                                }
+                                break;
+                        }
+                    }
+                    break;
+                    case 1:
+                        switch (sCheckpointID) {
+                            case 1:
+                                if (autoplay_drive(2032.0f, 350.0f, 2040.0f, 300.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 2:
+                                if (autoplay_drive(3650.0f, 350.0f, 2109.0f, 300.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 3:
+                                if (autoplay_drive(4073.0f, 0.0f, -2103.0f, 300.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 4:
+                            balloon = autoplay_find_balloon(2);
+                            if (balloon) {
+                                autoplay_drive(balloon->segment.trans.x_position, balloon->segment.trans.y_position + 50.0f, balloon->segment.trans.z_position, 1.0f);
+                            }
+                        }
+                        break;
+
+                    obj = get_racer_object(0);
+                    if (obj) {
+                        racer = (Object_Racer *) obj->unk64;
+    render_printf("X: %2.2f\n", obj->segment.trans.x_position);
+    render_printf("Y: %2.2f\n", obj->segment.trans.y_position);
+    render_printf("Z: %2.2f\n", obj->segment.trans.z_position);
+                    }
+                }
+                /*switch (sCheckpointID) {
                     case 0:
                     if (autoplay_drive(-135.0f, 250.0f, 700.0f)) {
                         sCheckpointID++;
@@ -189,17 +382,17 @@ void autoplay_inputs(void) {
                         sCheckpointID++;
                     }
                     break;
-                }
+                }*/
                 break;
             case ASSET_LEVEL_DINODOMAINHUB:
                 if (sCheckpointID == 0) {
-                    if (autoplay_drive(-42, -40, 0)) {
+                    if (autoplay_drive(-42, -40, 0, 300.0f)) {
                         sCheckpointID++;
                     }
                 } else {
                     switch(b) {
                         case 1:
-                        autoplay_drive(850, 0, 400);
+                        autoplay_drive(850, 0, 400, 300.0f);
                         break;
                     }
                 }
