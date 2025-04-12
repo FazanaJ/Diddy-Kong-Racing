@@ -635,6 +635,9 @@ void obj_loop_trophycab(Object *obj, s32 updateRate) {
         if (worldBalloons) {
             worldBalloons = ((1 << (settings->worldId + 6)) & bossFlags) != 0;
         }
+#ifdef OPEN_ALL_DOORS
+        worldBalloons = TRUE;
+#endif
         if (obj->properties.trophyCabinet.action == NULL && textbox_visible() == FALSE) {
             if (obj->unk5C->unk100 != NULL) {
                 if (gfxData->unk4 == 0) {
@@ -2375,6 +2378,22 @@ void obj_init_exit(Object *obj, LevelObjectEntry_Exit *entry) {
     obj->interactObj->unk11 = 0;
     obj->interactObj->hitboxRadius = entry->radius;
     obj->interactObj->pushForce = 0;
+
+#ifndef OPEN_ALL_DOORS
+    settings = get_settings();
+    // Disable the warp if it's for the first boss encounter, having collected every balloon.
+    if (exit->bossFlag == WARP_BOSS_FIRST && settings->balloonsPtr[settings->worldId] == 8) {
+        free_object(obj);
+    }
+    // Disable the warp if it's for the second boss encounter, having not collected every balloon.
+    if (exit->bossFlag == WARP_BOSS_REMATCH && settings->balloonsPtr[settings->worldId] < 8) {
+        free_object(obj);
+    }
+#else
+    if (exit->bossFlag == WARP_BOSS_FIRST) {
+        free_object(obj);
+    }
+#endif
 }
 
 /**
@@ -2386,31 +2405,19 @@ void obj_loop_exit(Object *obj, UNUSED s32 updateRate) {
     Object *racerObj;
     Object_Racer *racer;
     s32 numberOfRacers;
-    Settings *settings;
     f32 diffX;
     f32 diffZ;
     f32 dist;
     f32 diffY;
     Object_Exit *exit;
-    s32 enableWarp;
     Object **racerObjects;
     s32 i;
     f32 rotDiff;
 
     exit = &obj->unk64->exit;
-    enableWarp = TRUE;
-    settings = get_settings();
-    // Disable the warp if it's for the first boss encounter, having collected every balloon.
-    if (exit->bossFlag == WARP_BOSS_FIRST && settings->balloonsPtr[settings->worldId] == 8) {
-        enableWarp = FALSE;
-    }
-    // Disable the warp if it's for the second boss encounter, having not collected every balloon.
-    if (exit->bossFlag == WARP_BOSS_REMATCH && settings->balloonsPtr[settings->worldId] < 8) {
-        enableWarp = FALSE;
-    }
     // The above ensures only one of the boss warps is active so they don't overlap. This could also probably have been
     // done in the initialiser.
-    if (enableWarp && obj->interactObj->distance < exit->radius) {
+    if (obj->interactObj->distance < exit->radius) {
         dist = exit->radius;
         racerObjects = get_racer_objects(&numberOfRacers);
         for (i = 0; i < numberOfRacers; i++) {
@@ -3550,7 +3557,11 @@ void obj_loop_door(Object *doorObj, s32 updateRate) {
         updateRateF *= 1.2;
     }
     settings = get_settings();
+#ifndef OPEN_ALL_DOORS
     playSound = settings->courseFlagsPtr[settings->courseId];
+#else
+    playSound = 0xFFFFFFFF;
+#endif
     door = &doorObj->unk64->door;
     if (door->doorID >= 0) {
         doorIDFlag = 0x10000 << door->doorID;
@@ -3560,6 +3571,7 @@ void obj_loop_door(Object *doorObj, s32 updateRate) {
             dist = 0; // Door is forced open
         }
         sp28 = playSound & doorIDFlag;
+#ifndef OPEN_ALL_DOORS
         if (sp28 == 0 && racerObjInter->distance < door->radius) {
             racerObj = racerObjInter->obj;
             if (racerObj != NULL && racerObj->segment.header->behaviorId == BHV_RACER) {
@@ -3596,6 +3608,7 @@ void obj_loop_door(Object *doorObj, s32 updateRate) {
         } else {
             door->jingleCooldown = 0;
         }
+#endif
         racerObjInter = doorObj->interactObj;
         keyBits = 0;
         if (racerObjInter->distance < door->radius) {
@@ -3787,6 +3800,7 @@ void obj_loop_ttdoor(Object *obj, s32 updateRate) {
     } else {
         obj->segment.object.modelIndex = D_800DCA9C[settings->ttAmulet];
     }
+#ifndef OPEN_ALL_DOORS
     if (obj->interactObj->distance < ttDoor->radius && (settings->ttAmulet < 4 || *settings->balloonsPtr < 47)) {
         racerObj = obj->interactObj->obj;
         if (racerObj != NULL && racerObj->segment.header->behaviorId == BHV_RACER) {
@@ -3806,6 +3820,7 @@ void obj_loop_ttdoor(Object *obj, s32 updateRate) {
             }
         }
     }
+#endif
     if (ttDoor->jingleTimer && music_jingle_playing() == SEQUENCE_NONE) {
         if (updateRate < ttDoor->jingleTimer) {
             ttDoor->jingleTimer -= updateRate;
@@ -3821,7 +3836,11 @@ void obj_loop_ttdoor(Object *obj, s32 updateRate) {
         ttDoor->jingleCooldown = 0;
     }
     openDoor = TRUE;
+#ifndef OPEN_ALL_DOORS
     if (settings->ttAmulet >= 4 && obj->interactObj->distance < ttDoor->radius && *settings->balloonsPtr >= 47) {
+#else
+    if (obj->interactObj->distance < ttDoor->radius) {
+#endif
         angle = obj->segment.trans.rotation.y_rotation - obj->properties.door.openAngle;
     } else {
         angle = obj->segment.trans.rotation.y_rotation - obj->properties.door.closeAngle;

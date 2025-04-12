@@ -14,6 +14,7 @@
 #define SKIP_INTRO SKIP_TITLE
 #define AUTOPLAY
 #define SKIP_NEW_GAME
+#define OPEN_ALL_DOORS
 
 #ifndef NON_MATCHING
 #define NON_MATCHING 1
