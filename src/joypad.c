@@ -298,10 +298,11 @@ void autoplay_inputs(void) {
         obj = get_racer_object(0);
         if (obj) {
             racer = (Object_Racer *) obj->unk64;
-            render_printf("X: %2.2f\n", obj->segment.trans.x_position);
+            render_printf("\n\n\n\nX: %2.2f\n", obj->segment.trans.x_position);
             render_printf("Y: %2.2f\n", obj->segment.trans.y_position);
             render_printf("Z: %2.2f\n", obj->segment.trans.z_position);
         }
+        //return;
         gAutoDrive = FALSE;
         switch (map) {
             case ASSET_LEVEL_CENTRALAREAHUB:
@@ -540,7 +541,7 @@ void autoplay_inputs(void) {
                     } else if (override == 5) {
                         switch (sCheckpointID) {
                             case 0:
-                                if (autoplay_drive(-4187.0f, 300.0f, 1382.0f, 300.0f)) {
+                                if (autoplay_drive(4187.0f, 300.0f, 1382.0f, 300.0f)) {
                                     sCheckpointID++;
                                 }
                                 break;
@@ -565,7 +566,7 @@ void autoplay_inputs(void) {
                                 }
                                 break;
                             case 5:
-                                if (autoplay_drive(568.0f, 600.0f, 4151.0f, 300.0f)) {
+                                if (autoplay_drive(620.0f, 600.0f, 4451.0f, 2.0f)) {
                                     sCheckpointID++;
                                 }
                                 break;
@@ -649,6 +650,8 @@ void autoplay_inputs(void) {
                         sCheckpointID++;
                     }
                 } else {
+                    sCheckpointID = 10;
+                    goto actuallyJustLeave3;
                     s32 flag;
                     if ((settings->bosses & 4) == 0) {
                         flag = RACE_CLEARED;
@@ -672,7 +675,7 @@ void autoplay_inputs(void) {
                     actuallyJustLeave3:
                     if (sCheckpointID == 10) {
                         override = 5;
-                        if (autoplay_drive(1790, 125, -474, 1.0f)) {
+                        if (autoplay_drive(-1790, 125, -474, 1.0f)) {
                             sCheckpointID++;
                         }
                     }
@@ -685,7 +688,7 @@ void autoplay_inputs(void) {
                     }
                 } else {
                     s32 flag;
-                    if ((settings->bosses & 4) == 0) {
+                    if ((settings->bosses & 0x10) == 0) {
                         flag = RACE_CLEARED;
                     } else {
                         sCheckpointID = 10;
@@ -695,7 +698,7 @@ void autoplay_inputs(void) {
                     if ((settings->courseFlagsPtr[ASSET_LEVEL_BOULDERCANYON] & flag) == 0) {
                         autoplay_drive(1024, 0, 396, 50.0f);
                     } else if ((settings->courseFlagsPtr[ASSET_LEVEL_WINDMILLPLAINS] & flag) == 0) {
-                        autoplay_drive(-441, 0, 1034, 50.0f);
+                        autoplay_drive(-441, 0, -1034, 50.0f);
                     } else if ((settings->courseFlagsPtr[ASSET_LEVEL_GREENWOODVILLAGE] & flag) == 0) {
                         autoplay_drive(1003, 0, -451, 50.0f);
                     } else if ((settings->courseFlagsPtr[ASSET_LEVEL_HAUNTEDWOODS] & flag) == 0) {
@@ -706,7 +709,7 @@ void autoplay_inputs(void) {
                     return;
                     actuallyJustLeave4:
                     if (sCheckpointID == 10) {
-                        override = 4;
+                        override = 6;
                         if (autoplay_drive(-2430, 0, -1035, 1.0f)) {
                             sCheckpointID++;
                         }
@@ -727,6 +730,10 @@ void autoplay_inputs(void) {
                         if (racer->balloon_type == WEAPON_NITRO_LEVEL_1 && sControllerFlip) {
                             gControllerCurrData[sPlayerID[0]].button |= Z_TRIG;
                             gControllerButtonsPressed[sPlayerID[0]] |= Z_TRIG;
+                        }
+                        if (get_current_level_race_type() == RACETYPE_BOSS) {
+                            racer->boostTimer = 1;
+                            racer->boostType = BOOST_SMALL;
                         }
                         if (racer->raceFinished) {
                             if (sControllerFlip) {
