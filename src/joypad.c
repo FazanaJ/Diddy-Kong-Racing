@@ -55,6 +55,8 @@ s32 input_init(void) {
     return CONTROLLER_MISSING;
 }
 
+#ifdef AUTOPLAY
+
 extern s32 gCurrentMenuId;
 extern s8 gDoneTalkingToNPC[];
 extern s32 sLogicUpdateRate;
@@ -634,7 +636,7 @@ void autoplay_inputs(void) {
                     return;
                     actuallyJustLeave2:
                     if (sCheckpointID == 10) {
-                        override = 2;
+                        override = 3;
                         if (autoplay_drive(1311, 125, 1952, 1.0f)) {
                             sCheckpointID++;
                         }
@@ -669,7 +671,7 @@ void autoplay_inputs(void) {
                     return;
                     actuallyJustLeave3:
                     if (sCheckpointID == 10) {
-                        override = 4;
+                        override = 5;
                         if (autoplay_drive(1790, 125, -474, 1.0f)) {
                             sCheckpointID++;
                         }
@@ -752,6 +754,8 @@ void autoplay_inputs(void) {
         }
     }
 }
+
+#endif
 
 /**
  * Reads arg0 for a set of flags on whether to read, write, or erase any save data.
