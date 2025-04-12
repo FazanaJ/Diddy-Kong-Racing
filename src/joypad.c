@@ -57,30 +57,43 @@ s32 input_init(void) {
 
 extern s32 gCurrentMenuId;
 extern s8 gDoneTalkingToNPC[];
+extern s32 sLogicUpdateRate;
 
 s32 autoplay_drive(f32 x, f32 y, f32 z) {
     Object *obj = get_racer_object(0);
+    Object_Racer *racer = (Object_Racer *) obj->unk64;
     f32 dist;
     s16 angleDiff;
-    s16 base = obj->segment.trans.rotation.y_rotation + 0x8000;
+    s16 base = obj->segment.trans.rotation.y_rotation - 0x4000;
+    static u8 sATap = 0;
+    s16 absDiff;
 
     render_printf("X: %2.2f\n", obj->segment.trans.x_position);
     render_printf("Y: %2.2f\n", obj->segment.trans.y_position);
     render_printf("Z: %2.2f\n", obj->segment.trans.z_position);
 
-    angleDiff = base - atan2s(obj->segment.trans.x_position - x, obj->segment.trans.z_position - z);
+    angleDiff = base + atan2s(obj->segment.trans.z_position - z, obj->segment.trans.x_position - x);
 
-    if (ABSF(angleDiff) > 0x400) {
-        if (angleDiff > 0) {
-            gControllerCurrData[sPlayerID[0]].stick_x = -70;
+    absDiff = ABS(angleDiff);
+
+    if (absDiff > 0x200) {
+        if (absDiff > 0x2000) {
+            gControllerCurrData[sPlayerID[0]].button |= R_TRIG | B_BUTTON;
         } else {
-            gControllerCurrData[sPlayerID[0]].stick_x = 70;
+            gControllerCurrData[sPlayerID[0]].stick_x = (MIN(absDiff, 0x400) / 16);
         }
-    } else {
-        gControllerCurrData[sPlayerID[0]].stick_x = 0;
+        if (angleDiff < 0) {
+            gControllerCurrData[sPlayerID[0]].stick_x *= -1;
+        }
     }
 
-    gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
+    sATap += sLogicUpdateRate;
+    if (sATap >= 15 && racer->vehicleID == VEHICLE_CAR) {
+        sATap = 0;
+    } else {
+        gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
+    }
+
 
     dist = (((obj->segment.trans.x_position - x) * (obj->segment.trans.x_position - x)) + 
             ((obj->segment.trans.y_position - y) * (obj->segment.trans.y_position - y)) + 
@@ -193,6 +206,12 @@ void autoplay_inputs(void) {
                 break;
             default:
                 if (get_race_start_timer() == 0 && get_current_level_race_type() == RACETYPE_DEFAULT) {
+                    obj = get_racer_object(0);
+                    racer = (Object_Racer *) obj->unk64;
+                    if (racer->racePosition > 1) {
+                        racer->boostTimer = 1;
+                        racer->boostType = BOOST_SMALL;
+                    }
                     gAutoDrive = TRUE;
                 }
 
