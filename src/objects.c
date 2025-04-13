@@ -1979,9 +1979,11 @@ void objFreeAssets(Object *obj, s32 count, s32 objType) {
  */
 void light_setup_light_sources(Object *obj) {
     s32 i;
+#ifdef USE_DYNLIGHTS
     for (i = 0; i < obj->segment.header->numLightSources; i++) {
         obj->lightData[i] = (Object_LightData *) add_object_light(obj, &obj->segment.header->unk24[i]);
     }
+#endif
 }
 
 /**
@@ -2370,6 +2372,7 @@ void func_80010994(s32 updateRate) {
         }
     }
     do { // FAKEMATCH
+#ifdef USE_DYNLIGHTS
         lightUpdateLights(updateRate);
         if (get_light_count() > 0) {
             for (i = gObjectListStart; i < gObjectCount; i++) {
@@ -2379,6 +2382,7 @@ void func_80010994(s32 updateRate) {
                 }
             }
         }
+#endif
         func_8001E6EC(0);
         if (gTajRaceInit != 0) {
             mode_init_taj_race();
@@ -6890,9 +6894,11 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
         case BHV_BANANA:
             obj_init_banana(obj, (LevelObjectEntry_Banana *) entry);
             break;
+#ifdef USE_DYNLIGHTS
         case BHV_LIGHT_RGBA:
             obj_init_rgbalight(obj, (LevelObjectEntry_RgbaLight *) entry, param);
             break;
+#endif
         case BHV_BUOY_PIRATE_SHIP:
             obj_init_buoy_pirateship(obj, (LevelObjectEntry_Buoy_PirateShip *) entry, param);
             break;

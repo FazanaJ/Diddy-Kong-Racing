@@ -5588,10 +5588,12 @@ void obj_loop_texscroll(Object *obj, s32 updateRate) {
     }
 }
 
+#ifdef USE_DYNLIGHTS
 /* Official name: rgbalightInit */
 void obj_init_rgbalight(Object *obj, LevelObjectEntry_RgbaLight *entry, UNUSED s32 arg2) {
     obj->unk64 = (Object_64 *) func_80031CAC(obj, entry);
 }
+#endif
 
 /**
  * Floating buoy init behaviour.

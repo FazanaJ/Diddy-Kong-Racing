@@ -15,6 +15,7 @@
 //#define AUTOPLAY
 #define SKIP_NEW_GAME
 #define OPEN_ALL_DOORS
+//#define USE_DYNLIGHTS     // Not used in vanilla, so optionally stubbed out until somebody figures out how they work
 
 #ifndef NON_MATCHING
 #define NON_MATCHING 1

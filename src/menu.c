@@ -3488,9 +3488,11 @@ s32 menu_title_screen_loop(s32 updateRate) {
                 if (gTitleAudioCounter > 0.67f && gMenuStage == TITLESCREEN_START) {
                     sound_play(SOUND_VOICE_TT_DIDDY_KONG_RACING, 0);
                     gMenuStage = TITLESCREEN_NAME;
+                    init_title_screen_variables();
                 } else if (gTitleAudioCounter > 2.83f && gMenuStage == TITLESCREEN_NAME) {
                     sound_play(SOUND_VOICE_TT_PRESS_START, 0);
                     gMenuStage = TITLESCREEN_PRESS_START;
+                    init_title_screen_variables();
                 }
             }
         }

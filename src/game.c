@@ -530,7 +530,9 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
     }
     music_voicelimit_set(gCurrentLevelHeader->voiceLimit);
     music_volume_reset();
+#ifdef USE_DYNLIGHTS
     setup_lights(32);
+#endif
     var_s0 = VEHICLE_CAR;
     if (vehicleId >= VEHICLE_CAR && vehicleId < NUMBER_OF_PLAYER_VEHICLES) {
         var_s0 = gCurrentLevelHeader->unk4F[vehicleId];
@@ -726,7 +728,9 @@ void clear_audio_and_track(void) {
     music_stop();
     music_jingle_stop();
     music_channel_reset_all();
+#ifdef USE_DYNLIGHTS
     free_lights();
+#endif
     free_track();
     func_80008174();
     sound_volume_change(VOLUME_NORMAL);
