@@ -12,7 +12,7 @@
 
 #define UNLOCK_ALL
 #define SKIP_INTRO SKIP_TITLE
-#define AUTOPLAY
+//#define AUTOPLAY
 #define SKIP_NEW_GAME
 #define OPEN_ALL_DOORS
 

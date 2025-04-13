@@ -2330,9 +2330,13 @@ void obj_init_teleport(Object *obj, UNUSED LevelObjectEntry_Teleport *entry) {
     obj->interactObj->unk11 = 0;
     obj->interactObj->hitboxRadius = 15;
     obj->interactObj->pushForce = 0;
-    if (get_settings()->cutsceneFlags & CUTSCENE_LIGHTHOUSE_ROCKET) {
-        obj->properties.lighthouse.active = TRUE;
-    }
+#ifndef OPEN_ALL_DOORS
+if (get_settings()->cutsceneFlags & CUTSCENE_LIGHTHOUSE_ROCKET) {
+    obj->properties.lighthouse.active = TRUE;
+}
+#else
+    obj->properties.lighthouse.active = TRUE;
+#endif
 }
 
 /**
@@ -4783,6 +4787,7 @@ void obj_loop_weaponballoon(Object *weaponBalloonObj, s32 updateRate) {
                                 hud_sound_play_delayed(SOUND_VOICE_TT_POWERUP, 1.0f, racer->playerIndex);
                             }
                             sound_play(SOUND_COLLECT_ITEM + racer->balloon_level, NULL);
+                            gReverbOverride = 30;
                         }
                     }
                     weaponBalloonObj->particleEmitFlags = OBJ_EMIT_PARTICLE_1;

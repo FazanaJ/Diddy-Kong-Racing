@@ -359,6 +359,30 @@ s32 check_if_in_race(void) {
 }
 
 /**
+ * Minor func that overrides the user fps cap in certain scenarios because it's not important.
+ * FPS is uncapped in menus, and conditionally ingame.
+*/
+void levelinit_framecap(s32 levelID) {
+    s32 cap;
+    if (get_game_mode() == GAMEMODE_INGAME) {
+        switch (levelID) {
+            case ASSET_LEVEL_OPTIONSBACKGROUND:
+            case ASSET_LEVEL_WIZPIGAMULETSEQUENCE:
+            case ASSET_LEVEL_TTAMULETSEQUENCE:
+            case ASSET_LEVEL_FRONTEND:
+                cap = 0;
+                break;
+            default:
+                cap = gConfig.frameCap;
+                break;
+        }
+    } else {
+        cap = 0;
+    }
+    sched_framecap(cap);
+}
+
+/**
  * Loads and sets up the level header, then loads and sets of the level geometry.
  * Sets weather, fog and active cutscenes where applicable.
  */
@@ -609,6 +633,7 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
                       gCurrentLevelHeader->bgColorBlue);
     video_delta_reset();
     func_8007AB24(gCurrentLevelHeader->unk4[numberOfPlayers]);
+    levelinit_framecap(levelId);
 }
 
 /**

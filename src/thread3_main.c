@@ -291,14 +291,14 @@ void main_game_loop(void) {
             sTotalTime -= 16666;
             sLogicUpdateRate++;
         }
-#ifdef AUTOPLAY
+/*#ifdef AUTOPLAY
         if (get_current_level_race_type() == RACETYPE_HUBWORLD) {
             sLogicUpdateRate = 2;
         } else {
             sLogicUpdateRate = LOGIC_12FPS;
         }
         gConfig.frameCap = 0;
-#endif
+#endif*/
         if (sLogicUpdateRate >= LOGIC_12FPS) {
             sTotalTime = 0;
             sLogicUpdateRate = LOGIC_12FPS;
@@ -1445,10 +1445,6 @@ void alloc_displaylist_heap(s32 numberOfPlayers) {
         gCurrNumHudVertsPerPlayer = gNumHudVertsPerPlayer[num];
         mempool_free_timer(2);
     }
-    gCurrDisplayList = gDisplayLists[gSPTaskNum];
-    gGameCurrMatrix = gMatrixHeap[gSPTaskNum];
-    gGameCurrTriList = gTriangleHeap[gSPTaskNum];
-    gGameCurrVertexList = gVertexHeap[gSPTaskNum];
 
     gDPFullSync(gCurrDisplayList++);
     gSPEndDisplayList(gCurrDisplayList++);
@@ -1546,8 +1542,12 @@ void begin_trophy_race_teleport(void) {
  */
 void begin_lighthouse_rocket_cutscene(void) {
     if (gLevelLoadTimer == 0) {
+#ifndef OPEN_ALL_DOORS
         if ((gSettingsPtr->trophies & 0xFF) == 0xFF && !(gSettingsPtr->cutsceneFlags & CUTSCENE_LIGHTHOUSE_ROCKET) &&
             gSettingsPtr->bosses & 1) {
+#else
+        if (!(gSettingsPtr->cutsceneFlags & CUTSCENE_LIGHTHOUSE_ROCKET)) {
+#endif
             gSettingsPtr->cutsceneFlags |= CUTSCENE_LIGHTHOUSE_ROCKET;
             transition_begin(&gLevelFadeOutTransition);
             gLevelLoadTimer = 40;
@@ -1638,9 +1638,9 @@ void mode_intro(void) {
 #else
     sBootDelayTimer = 8;
 #endif
-if (sBootDelayTimer >= 8) {
-    load_menu_with_level_background(BOOT_LVL, ASSET_LEVEL_OPTIONSBACKGROUND, 2);
-}
+    if (sBootDelayTimer >= 8) {
+        load_menu_with_level_background(BOOT_LVL, ASSET_LEVEL_OPTIONSBACKGROUND, 2);
+    }
 }
 
 /**

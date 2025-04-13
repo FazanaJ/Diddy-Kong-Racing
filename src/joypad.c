@@ -298,9 +298,11 @@ void autoplay_inputs(void) {
         obj = get_racer_object(0);
         if (obj) {
             racer = (Object_Racer *) obj->unk64;
-            render_printf("\n\n\n\nX: %2.2f\n", obj->segment.trans.x_position);
-            render_printf("Y: %2.2f\n", obj->segment.trans.y_position);
-            render_printf("Z: %2.2f\n", obj->segment.trans.z_position);
+            //render_printf("\n\n\n\nX: %2.2f\n", obj->segment.trans.x_position);
+            //render_printf("Y: %2.2f\n", obj->segment.trans.y_position);
+            //render_printf("Z: %2.2f\n", obj->segment.trans.z_position);
+        } else {
+            return;
         }
         //return;
         gAutoDrive = FALSE;
@@ -571,6 +573,39 @@ void autoplay_inputs(void) {
                                 }
                                 break;
                         }
+                    } else if (override == 6) {
+                        switch (sCheckpointID) {
+                            case 0:
+                                if (autoplay_drive(640.0f, 500.0f, 3553.0f, 250.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 1:
+                                if (autoplay_drive(866.0f, 250.0f, 2959.0f, 250.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 2:
+                                if (autoplay_drive(1472.0f, 350.0f, 2232.0f, 250.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 3:
+                                if (autoplay_drive(2318.0f, 300.0f, 2064.0f, 250.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 4:
+                                if (autoplay_drive(3368.0f, -25.0f, 2132.0f, 250.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 5:
+                                if (autoplay_drive(3676.0f, -100.0f, 2222.0f, 1.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                        }
                     }
                 }
                 break;
@@ -588,16 +623,16 @@ void autoplay_inputs(void) {
                         goto actuallyJustLeave;
                         flag = RACE_CLEARED_SILVER_COINS;
                     }
-                    if ((settings->courseFlagsPtr[ASSET_LEVEL_ANCIENTLAKE] & flag) == 0) {
+                    if ((settings->courseFlagsPtr[ASSET_LEVEL_ANCIENTLAKE]) == 0) {
                         autoplay_drive(850, 0, 400, 50.0f);
-                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_FOSSILCANYON] & flag) == 0) {
+                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_FOSSILCANYON]) == 0) {
                         autoplay_drive(950, 0, -365, 50.0f);
-                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_JUNGLEFALLS] & flag) == 0) {
+                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_JUNGLEFALLS]) == 0) {
                         autoplay_drive(375, 0, 930, 50.0f);
-                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_HOTTOPVOLCANO] & flag) == 0) {
+                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_HOTTOPVOLCANO]) == 0) {
                         autoplay_drive(-360, 0, -910, 50.0f);
                     } else {
-                        autoplay_drive(-782, 0, 1620, 50.0f);
+                        autoplay_drive(-800, 0, 1800, 50.0f);
                     }
                     return;
                     actuallyJustLeave:
@@ -623,13 +658,13 @@ void autoplay_inputs(void) {
                         goto actuallyJustLeave2;
                         flag = RACE_CLEARED_SILVER_COINS;
                     }
-                    if ((settings->courseFlagsPtr[ASSET_LEVEL_WALRUSCOVE] & flag) == 0) {
+                    if ((settings->courseFlagsPtr[ASSET_LEVEL_WALRUSCOVE]) == 0) {
                         autoplay_drive(-608, 125, -938, 50.0f);
-                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_FROSTYVILLAGE] & flag) == 0) {
+                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_FROSTYVILLAGE]) == 0) {
                         autoplay_drive(-247, 125, 1168, 50.0f);
-                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_EVERFROSTPEAK] & flag) == 0) {
+                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_EVERFROSTPEAK]) == 0) {
                         autoplay_drive(-1208, 125, -254, 50.0f);
-                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_SNOWBALLVALLEY] & flag) == 0) {
+                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_SNOWBALLVALLEY]) == 0) {
                         autoplay_drive(-1020, 125, 515, 50.0f);
                     } else {
                         autoplay_drive(1965, 200, -1401, 50.0f);
@@ -650,8 +685,6 @@ void autoplay_inputs(void) {
                         sCheckpointID++;
                     }
                 } else {
-                    sCheckpointID = 10;
-                    goto actuallyJustLeave3;
                     s32 flag;
                     if ((settings->bosses & 4) == 0) {
                         flag = RACE_CLEARED;
@@ -660,13 +693,13 @@ void autoplay_inputs(void) {
                         goto actuallyJustLeave3;
                         flag = RACE_CLEARED_SILVER_COINS;
                     }
-                    if ((settings->courseFlagsPtr[ASSET_LEVEL_WHALEBAY] & flag) == 0) {
+                    if ((settings->courseFlagsPtr[ASSET_LEVEL_WHALEBAY]) == 0) {
                         autoplay_drive(1274, 75, 715, 50.0f);
-                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_TREASURECAVES] & flag) == 0) {
+                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_TREASURECAVES]) == 0) {
                         autoplay_drive(-1263, 75, 750, 50.0f);
-                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_CRESCENTISLAND] & flag) == 0) {
+                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_CRESCENTISLAND]) == 0) {
                         autoplay_drive(730, 75, 1276, 50.0f);
-                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_PIRATELAGOON] & flag) == 0) {
+                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_PIRATELAGOON]) == 0) {
                         autoplay_drive(-716, 75, 1318, 50.0f);
                     } else {
                         autoplay_drive(33, 150, -3766, 50.0f);
@@ -695,13 +728,13 @@ void autoplay_inputs(void) {
                         goto actuallyJustLeave4;
                         flag = RACE_CLEARED_SILVER_COINS;
                     }
-                    if ((settings->courseFlagsPtr[ASSET_LEVEL_BOULDERCANYON] & flag) == 0) {
+                    if ((settings->courseFlagsPtr[ASSET_LEVEL_BOULDERCANYON]) == 0) {
                         autoplay_drive(1024, 0, 396, 50.0f);
-                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_WINDMILLPLAINS] & flag) == 0) {
+                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_WINDMILLPLAINS]) == 0) {
                         autoplay_drive(-441, 0, -1034, 50.0f);
-                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_GREENWOODVILLAGE] & flag) == 0) {
+                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_GREENWOODVILLAGE]) == 0) {
                         autoplay_drive(1003, 0, -451, 50.0f);
-                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_HAUNTEDWOODS] & flag) == 0) {
+                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_HAUNTEDWOODS]) == 0) {
                         autoplay_drive(460, 0, 1027, 50.0f);
                     } else {
                         autoplay_drive(-786, 0, 1866, 50.0f);
@@ -716,40 +749,84 @@ void autoplay_inputs(void) {
                     }
                 }
                 break;
+            case ASSET_LEVEL_FUTUREFUNLANDHUB:
+                if (sCheckpointID == 0) {
+                    if (autoplay_drive(1699, -150, 1387, 300.0f)) {
+                        sCheckpointID++;
+                    }
+                } else {
+                    s32 flag;
+                    if ((settings->bosses & 0x20) == 0) {
+                        flag = RACE_CLEARED;
+                    } else {
+                        sCheckpointID = 10;
+                        goto actuallyJustLeave5;
+                        flag = RACE_CLEARED_SILVER_COINS;
+                    }
+                    if ((settings->courseFlagsPtr[ASSET_LEVEL_SPACEDUSTALLEY]) == 0) {
+                        autoplay_drive(2600, -150, 2062, 50.0f);
+                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_DARKMOONCAVERNS]) == 0) {
+                        autoplay_drive(2085, -150, 2670, 50.0f);
+                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_SPACEPORTALPHA]) == 0) {
+                        autoplay_drive(775, -150, 2428, 50.0f);
+                    } else if ((settings->courseFlagsPtr[ASSET_LEVEL_STARCITY]) == 0) {
+                        autoplay_drive(468, -150, 1621, 50.0f);
+                    } else {
+                        autoplay_drive(3104, -150, -2074, 50.0f);
+                    }
+                    return;
+                    actuallyJustLeave5:
+                    if (sCheckpointID == 10) {
+                        override = 6;
+                        if (autoplay_drive(-2430, 0, -1035, 1.0f)) {
+                            sCheckpointID++;
+                        }
+                    }
+                }
+                break;
             default:
                 if (get_current_level_race_type() != RACETYPE_HUBWORLD) {
                     if (get_race_start_timer() == 0) {
-                        sPauseStage = 0;
                         obj = get_racer_object(0);
                         racer = (Object_Racer *) obj->unk64;
                         if (racer->racePosition > 1) {
                             racer->boostTimer = 1;
                             racer->boostType = BOOST_SMALL;
                         }
+                        if (racer->lap_times[racer->lap] > 2 * (60 * 60)) {
+                            if (sControllerFlip) {
+                                switch (sPauseStage) {
+                                    case 0:
+                                        gControllerCurrData[sPlayerID[0]].button |= START_BUTTON;
+                                        gControllerButtonsPressed[sPlayerID[0]] |= START_BUTTON;
+                                        sPauseStage++;
+                                    break;
+                                    case 1:
+                                        gControllerCurrData[sPlayerID[0]].stick_y = -70;
+                                        sPauseStage++;
+                                    break;
+                                    case 2:
+                                        gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
+                                        gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
+                                        sPauseStage++;
+                                    break;
+                                }
+                            }
+                        } else {
+                            sPauseStage = 0;
+                        }
                         gAutoDrive = TRUE;
                         if (racer->balloon_type == WEAPON_NITRO_LEVEL_1 && sControllerFlip) {
                             gControllerCurrData[sPlayerID[0]].button |= Z_TRIG;
                             gControllerButtonsPressed[sPlayerID[0]] |= Z_TRIG;
                         }
-                        if (get_current_level_race_type() == RACETYPE_BOSS) {
+                        if (get_current_level_race_type() == RACETYPE_BOSS && map != ASSET_LEVEL_TRICKYTOPS1 && map != ASSET_LEVEL_TRICKYTOPS2 && map != ASSET_LEVEL_SMOKEY1 && map != ASSET_LEVEL_SMOKEY2) {
                             racer->boostTimer = 1;
                             racer->boostType = BOOST_SMALL;
                         }
                         if (racer->raceFinished) {
                             if (sControllerFlip) {
                                 gMenuOption = 1;
-                                gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
-                                gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
-                            }
-                        }
-                    } else {
-                        if (sControllerFlip && (settings->courseFlagsPtr[settings->courseId] & RACE_VISITED) == 0) {
-                            if (sPauseStage == 0) {
-                                gControllerCurrData[sPlayerID[0]].button |= START_BUTTON;
-                                gControllerButtonsPressed[sPlayerID[0]] |= START_BUTTON;
-                            } else if (sPauseStage == 1) {
-                                gControllerCurrData[sPlayerID[0]].stick_y = -70;
-                            } else {
                                 gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
                                 gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
                             }

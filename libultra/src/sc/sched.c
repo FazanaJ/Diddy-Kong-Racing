@@ -45,9 +45,20 @@ u8 sTimerChecks[4];
 u8 sWroteRDP;
 #endif
 
+u8 gSchedFrameCap;
+
+void sched_framecap(s32 cap) {
+    if (cap < 0) {
+        cap = 0;
+    } else if (cap > 2) {
+        cap = 2;
+    }
+    gSchedFrameCap = cap;
+}
+
 static void __scTaskComplete(OSSched *sc, OSScTask *t) {
     if (t->list.t.type == M_GFXTASK) {
-        if (sc->retraceCount > gConfig.frameCap && sc->scheduledFB == NULL) {
+        if (sc->scheduledFB == NULL) {
             sc->scheduledFB = t->framebuffer;
             osViSwapBuffer(t->framebuffer);
             sc->retraceCount = 0;
@@ -136,7 +147,7 @@ static void __scHandlePrenmi(OSSched *sc) {
 static void __scHandleRetrace(OSSched *sc) {
     UNUSED s32 i;
 	sc->retraceCount++;
-    if (sc->retraceCount > gConfig.frameCap && sc->scheduledFB && osViGetCurrentFramebuffer() == sc->scheduledFB) {
+    if (sc->retraceCount > gSchedFrameCap && sc->scheduledFB && osViGetCurrentFramebuffer() == sc->scheduledFB) {
         if (sc->queuedFB) {
             sc->scheduledFB = sc->queuedFB;
             sc->queuedFB = NULL;

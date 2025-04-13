@@ -43,6 +43,8 @@ typedef struct DelayedSound {
     /* 0x04 */ SoundMask *soundMask;
 } DelayedSound;
 
+extern s8 gReverbOverride;
+
 void  alCSPNew(ALCSPlayer *seqp, ALSeqpConfig *config); //lib/src/al/csplayer.c
 void  alCSPSetBank(ALCSPlayer *seqp, ALBank *b); //lib/src/unknown_0C8660.c
 void set_voice_limit(ALCSPlayer *seqp, u8 voiceLimit); //lib/src/mips1/alseqplayer.c

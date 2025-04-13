@@ -5440,6 +5440,7 @@ void menu_boot_init(void) {
     // Reset variables for menu_boot_loop()
     gBootMenuPhase = 0;
     gBootMenuTimer = 0;
+    gShowBG = TRUE;
 }
 
 /**
