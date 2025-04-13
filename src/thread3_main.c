@@ -291,14 +291,14 @@ void main_game_loop(void) {
             sTotalTime -= 16666;
             sLogicUpdateRate++;
         }
-/*#ifdef AUTOPLAY
+#ifdef AUTOPLAY
         if (get_current_level_race_type() == RACETYPE_HUBWORLD) {
             sLogicUpdateRate = 2;
         } else {
             sLogicUpdateRate = LOGIC_12FPS;
         }
         gConfig.frameCap = 0;
-#endif*/
+#endif
         if (sLogicUpdateRate >= LOGIC_12FPS) {
             sTotalTime = 0;
             sLogicUpdateRate = LOGIC_12FPS;
