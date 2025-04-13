@@ -404,6 +404,10 @@ UNUSED void gfxtask_run_rdp(void *bufPtr, s32 bufSize, UNUSED s32 unused) {
 s32 bgdraw_init(void) {
     s32 map = get_current_map_id();
 
+    if (gCurrentMenuId == MENU_CREDITS) {
+        return TRUE;
+    }
+
     switch (map) {
         case ASSET_LEVEL_CENTRALAREAHUB:
         case ASSET_LEVEL_WHALEBAY:

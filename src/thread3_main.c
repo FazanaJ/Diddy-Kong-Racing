@@ -292,12 +292,20 @@ void main_game_loop(void) {
             sLogicUpdateRate++;
         }
 #ifdef AUTOPLAY
-        if (get_current_level_race_type() == RACETYPE_HUBWORLD) {
+        if (get_current_map_id() == ASSET_LEVEL_CENTRALAREAHUB) {
             sLogicUpdateRate = 2;
         } else {
-            sLogicUpdateRate = LOGIC_12FPS;
+            sLogicUpdateRate = 2;
         }
-        gConfig.frameCap = 0;
+        if (get_current_map_id() == ASSET_LEVEL_PARTYSEQUENCE ||
+            get_current_map_id() == ASSET_LEVEL_LASTBIT ||
+            get_current_map_id() == ASSET_LEVEL_LASTBITB || gCurrentMenuId == MENU_CREDITS) {
+            sched_framecap(1);
+            gConfig.frameCap = 1;
+        } else {
+            sched_framecap(0);
+            gConfig.frameCap = 0;
+        }
 #endif
         if (sLogicUpdateRate >= LOGIC_12FPS) {
             sTotalTime = 0;

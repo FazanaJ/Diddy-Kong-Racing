@@ -377,7 +377,16 @@ void levelinit_framecap(s32 levelID) {
                 break;
         }
     } else {
-        cap = 0;
+        switch (levelID) {
+            case ASSET_LEVEL_PARTYSEQUENCE:
+            case ASSET_LEVEL_LASTBIT:
+            case ASSET_LEVEL_LASTBITB:
+                cap = 0;
+                break;
+            default:
+                cap = 0;
+                break;
+        }
     }
     sched_framecap(cap);
 }
