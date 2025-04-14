@@ -507,7 +507,7 @@ void bgdraw_render(Gfx **dList, MatrixS **mtx, s32 drawBG) {
                     GPACK_RGBA5551(0, 0, 0, 1));
 
                 gDPFillRectangle((*dList)++, 0, 0, w, y1 - 1);
-                gDPFillRectangle((*dList)++, 0, y2, w, h - 1);
+                gDPFillRectangle((*dList)++, 0, y2, w, h);
             }
         }
     } else {
@@ -541,7 +541,7 @@ void rdp_init(Gfx **dList) {
     s32 width = GET_VIDEO_WIDTH(fb_size());
     gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, width, SEGMENT_FRAMEBUFFER << 24);
     gDPSetDepthImage((*dList)++, SEGMENT_ZBUFFER << 24);
-    gSPDisplayList((*dList)++, dRdpInit);
+    //gSPDisplayList((*dList)++, dRdpInit);
 }
 
 /**
@@ -549,7 +549,7 @@ void rdp_init(Gfx **dList) {
  * Official name: rcpInitSp or rcpInitDpNoSize
  */
 void rsp_init(Gfx **dList) {
-    gSPDisplayList((*dList)++, dRspInit);
+    //gSPDisplayList((*dList)++, dRspInit);
     if (gConfig.terrainQuality) {
         gSPClipRatio((*dList)++, FRUSTRATIO_1);
     } else {
