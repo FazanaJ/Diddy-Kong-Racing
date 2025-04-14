@@ -4,6 +4,7 @@
 #include "objects.h"
 #include "math_util.h"
 #include "macros.h"
+#include "main.h"
 
 s32 sNoControllerPluggedIn =
     FALSE; // Looks to be a boolean for whether a controller is plugged in. FALSE if plugged in, and TRUE if not.
@@ -41,6 +42,7 @@ s32 input_init(void) {
     osContInit(&sSIMesgQueue, &bitpattern, gControllerStatus);
     osContStartReadData(&sSIMesgQueue);
     input_assign_players();
+    get_platform();
 
     sNoControllerPluggedIn = FALSE;
 

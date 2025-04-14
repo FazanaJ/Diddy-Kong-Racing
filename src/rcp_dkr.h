@@ -56,6 +56,8 @@ extern s32 gGfxBufCounter;
 extern s32 gGfxBufCounter2;
 extern s32 gGfxTaskIsRunning;
 
+extern u8 gInvertBG;
+
 // Defined in dkr.ld
 extern s8 rspF3DDKRDramStart[];
 extern s8 rspF3DDKRBootStart[];

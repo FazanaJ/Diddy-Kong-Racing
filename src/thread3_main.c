@@ -401,7 +401,11 @@ void main_game_loop(void) {
 
     if (gDrawFrameTimer == 0) {
         if (gExpansionPak) {
-            gfxtask_run_fifo(gDisplayLists[gSPTaskNum], gCurrDisplayList);
+            if (gPlatform & (CONSOLE | ARES | SIMPLE64)) {
+                gfxtask_run_fifo(gDisplayLists[gSPTaskNum], gCurrDisplayList);
+            } else {
+                gfxtask_run_xbus(gDisplayLists[gSPTaskNum], gCurrDisplayList);
+            }
         } else {
             gfxtask_run_xbus(gDisplayLists[gSPTaskNum], gCurrDisplayList);
         }

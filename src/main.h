@@ -25,6 +25,24 @@
 
 #define MAGIC_NUMBER 0x14   // Magic Number for a magic man
 
+enum PlatformFlags {
+    CONSOLE =           (1 << 0), // Original Nintendo 64 hardware
+    EMULATOR =          (1 << 1), // Generic N64 emulator
+    IQUE =              (1 << 3), // iQue Player.
+    ARES =              (1 << 4), // More accurate N64 Emulator.
+    CF_2 =              (1 << 5), // Counter factor 2 is enabled.
+    FBE =               (1 << 6), // Framebuffer emulation is enabled.
+    DBE =               (1 << 7), // Depthbuffer emulation is enabled.
+    PJ64_1 =            (1 << 8), // Sound the alarms, defcon1, PJ64 has been detected behind enemy lines.
+    PJ64_3 =            (1 << 9),
+    PJ64_4 =            (1 << 10),
+    MUPEN_OLD =         (1 << 11),
+    MUPEN_NEXT =        (1 << 12),
+    SIMPLE64 =          (1 << 13),
+    PARALLEL_LAUNCHER = (1 << 14),
+};
+
+
 typedef struct ConfigBits {
     unsigned magic : 8;     // Checksum-ish
     // General
@@ -75,9 +93,11 @@ typedef struct UserConfig {
 extern u8 gExpansionPak;
 extern u8 gUseExpansionMemory;
 extern UserConfig gConfig;
+extern u16 gPlatform;
 
 void mainproc(void);
 void thread1_main(void *);
 void thread3_verify_stack(void);
+void get_platform(void);
 
 #endif

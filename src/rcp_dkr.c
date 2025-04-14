@@ -144,6 +144,7 @@ u8 gChequerBGColourB2;
 u8 gChequerBGColourA2;
 s32 gChequerBGWidth;
 s32 gChequerBGHeight;
+u8 gInvertBG;
 
 DKR_OSTask gGfxTaskBuf[2];
 DKR_OSTask gGfxTaskBuf2[2];
@@ -404,8 +405,10 @@ UNUSED void gfxtask_run_rdp(void *bufPtr, s32 bufSize, UNUSED s32 unused) {
 s32 bgdraw_init(void) {
     s32 map = get_current_map_id();
 
-    if (gCurrentMenuId == MENU_CREDITS) {
-        return TRUE;
+    if (gCurrentMenuId == MENU_CREDITS || gCurrentMenuId == MENU_LOGOS) {
+        gInvertBG = TRUE;
+    } else {
+        gInvertBG = FALSE;
     }
 
     switch (map) {
@@ -414,7 +417,7 @@ s32 bgdraw_init(void) {
         case ASSET_LEVEL_PIRATELAGOON:
         case ASSET_LEVEL_DINODOMAINHUB:
         case ASSET_LEVEL_DINODOMAINTROPHYANIM:
-        case ASSET_LEVEL_FRONTEND:
+        //case ASSET_LEVEL_FRONTEND:
         case ASSET_LEVEL_WIZPIG2:
         case ASSET_LEVEL_DARKWATERBEACH:
         case ASSET_LEVEL_TITLESCREENSEQUENCE:
@@ -460,20 +463,22 @@ void bgdraw_render(Gfx **dList, MatrixS **mtx, s32 drawBG) {
     s32 y1;
     s32 x2;
     s32 y2;
+    s32 wP;
 
     widthAndHeight = fb_size();
-    w = GET_VIDEO_WIDTH(widthAndHeight);
-    h = GET_VIDEO_HEIGHT(widthAndHeight);
+    w = GET_VIDEO_WIDTH(widthAndHeight) - 1;
+    h = GET_VIDEO_HEIGHT(widthAndHeight) - 1;
+    wP = w + 1;
 
     gDPPipeSync((*dList)++);
     //!@bug: the scissor does not need the off by one here, despite being intended for fill mode.
-    gDPSetScissor((*dList)++, 0, 0, 0, w, h);
+    gDPSetScissor((*dList)++, 0, 0, 0, wP, h + 1);
     gDPSetCycleType((*dList)++, G_CYC_FILL);
-    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, w, SEGMENT_ZBUFFER << 24);
+    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, wP, SEGMENT_ZBUFFER << 24);
     gDPSetFillColor((*dList)++, GPACK_RGBA5551(255, 255, 240, 0) << 16 | GPACK_RGBA5551(255, 255, 240, 0));
-    gDPFillRectangle((*dList)++, 0, 0, w - 1, h - 1);
+    gDPFillRectangle((*dList)++, 0, 0, w, h);
     gDPPipeSync((*dList)++);
-    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, w, SEGMENT_FRAMEBUFFER << 24);
+    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, wP, SEGMENT_FRAMEBUFFER << 24);
     if (check_viewport_background_flag(PLAYER_ONE)) {
         if (gChequerBGEnabled) {
             bgdraw_chequer(dList); // Unused
@@ -484,15 +489,26 @@ void bgdraw_render(Gfx **dList, MatrixS **mtx, s32 drawBG) {
         } else {
             if (drawBG) {
                 gDPSetFillColor((*dList)++, sBackgroundFillColour);
-                gDPFillRectangle((*dList)++, 0, 0, w - 1, h - 1);
+                gDPFillRectangle((*dList)++, 0, 0, w, h);
             }
         }
         // Used for secondary viewport backgrounds. This does not need to be 1 cycle, this could easily work with
         // fillmode.
-        if (drawBG && copy_viewport_background_size_to_coords(0, &x1, &y1, &x2, &y2)) {
+        if ((drawBG || gInvertBG) && copy_viewport_background_size_to_coords(0, &x1, &y1, &x2, &y2)) {
             gDPSetCycleType((*dList)++, G_CYC_FILL);
             gDPSetRenderMode((*dList)++, G_RM_NOOP, G_RM_NOOP2);
-            goto otherBG;
+            x2--;
+            if (drawBG) {
+                y2--;
+                goto otherBG;
+            } else {
+                gDPSetFillColor((*dList)++,
+                (GPACK_RGBA5551(0, 0, 0, 1) << 16) |
+                    GPACK_RGBA5551(0, 0, 0, 1));
+
+                gDPFillRectangle((*dList)++, 0, 0, w, y1 - 1);
+                gDPFillRectangle((*dList)++, 0, y2, w, h - 1);
+            }
         }
     } else {
         if (gChequerBGEnabled) {

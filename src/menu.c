@@ -13001,6 +13001,7 @@ void menu_credits_init(void) {
     music_change_off();
     enable_new_screen_transitions();
     set_gIntDisFlag(TRUE);
+    gShowBG = TRUE;
 }
 
 /**
@@ -13018,7 +13019,6 @@ void credits_fade(s32 x1, s32 y1, s32 x2, s32 y2, s32 a) {
     gDPSetPrimColor(sMenuCurrDisplayList++, 0, 0, 0, 0, 0, a);
     gDPSetCombineMode(sMenuCurrDisplayList++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
     gDPFillRectangle(sMenuCurrDisplayList++, x1, y1, x1 + x2, y1 + y2);
-    gDPPipeSync(sMenuCurrDisplayList++);
     gDPSetPrimColor(sMenuCurrDisplayList++, 0, 0, 255, 255, 255, 255);
 
     reset_render_settings(&sMenuCurrDisplayList);
@@ -13088,7 +13088,9 @@ s32 menu_credits_loop(s32 updateRate) {
     }
 
     if (D_80126BE0 != FALSE) {
-        D_80126BE0 = postrace_render(updateRate) == MENU_RESULT_CONTINUE;
+        if (gMenuDelay == 0) {
+            D_80126BE0 = postrace_render(updateRate) == MENU_RESULT_CONTINUE;
+        }
     }
 
     if (D_80126BD8 == FALSE && D_80126BE0 == FALSE) {
@@ -13187,7 +13189,9 @@ s32 menu_credits_loop(s32 updateRate) {
 
                     gCreditsMenuElements[creditsMenuElementInex].t.element = NULL;
                     postrace_offsets(gCreditsMenuElements, 0.5f, (f32) D_80126BE8 / 60.0f, 0.5f, 0, 0);
-                    D_80126BE0 = postrace_render(0) == MENU_RESULT_CONTINUE;
+                    if (gMenuDelay == 0) {
+                        D_80126BE0 = postrace_render(0) == MENU_RESULT_CONTINUE;
+                    }
                     breakLoop = TRUE;
                     break;
 
@@ -13225,7 +13229,9 @@ s32 menu_credits_loop(s32 updateRate) {
                     // 1 name (+ 1 title) it would not properly clear the second name of the previous page
                     gCreditsMenuElements[var_s4 - nextIndex + 1].t.asciiText = NULL;
                     postrace_offsets(gCreditsMenuElements, 0.5f, (f32) D_80126BE8 / 60.0f, 0.5f, 0, 0);
-                    D_80126BE0 = postrace_render(0) == MENU_RESULT_CONTINUE;
+                    if (gMenuDelay == 0) {
+                        D_80126BE0 = postrace_render(0) == MENU_RESULT_CONTINUE;
+                    }
                     breakLoop = TRUE;
                     break;
 
