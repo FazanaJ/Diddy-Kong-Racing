@@ -3638,6 +3638,8 @@ void optionscreen_render(UNUSED s32 updateRate) {
     }
 }
 
+#undef REGION
+#define REGION REGION_PAL
 /**
  * Draw the text list and accept input for going to specific option menus.
  */
@@ -3780,6 +3782,9 @@ s32 menu_options_loop(s32 updateRate) {
     gIgnorePlayerInputTime = 0;
     return MENU_RESULT_CONTINUE;
 }
+
+#undef REGION
+#define REGION REGION_NA
 
 /**
  * Unloads all assets associated with the options menu.
