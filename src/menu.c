@@ -3488,9 +3488,11 @@ s32 menu_title_screen_loop(s32 updateRate) {
                 if (gTitleAudioCounter > 0.67f && gMenuStage == TITLESCREEN_START) {
                     sound_play(SOUND_VOICE_TT_DIDDY_KONG_RACING, 0);
                     gMenuStage = TITLESCREEN_NAME;
+                    init_title_screen_variables();
                 } else if (gTitleAudioCounter > 2.83f && gMenuStage == TITLESCREEN_NAME) {
                     sound_play(SOUND_VOICE_TT_PRESS_START, 0);
                     gMenuStage = TITLESCREEN_PRESS_START;
+                    init_title_screen_variables();
                 }
             }
         }
@@ -5440,6 +5442,7 @@ void menu_boot_init(void) {
     // Reset variables for menu_boot_loop()
     gBootMenuPhase = 0;
     gBootMenuTimer = 0;
+    gShowBG = TRUE;
 }
 
 /**
@@ -8079,9 +8082,11 @@ s32 menu_file_select_loop(s32 updateRate) {
             if (gIsInAdventureTwo) {
                 settings->cutsceneFlags |= CUTSCENE_ADVENTURE_TWO;
             }
+#ifndef SKIP_NEW_GAME
             cinematic_start((s8 *) get_misc_asset(ASSET_MISC_CINEMATIC_RACE), 0, gNumberOfActivePlayers, 0, 0, NULL);
             menu_init(MENU_NEWGAME_CINEMATIC);
             return MENU_RESULT_CONTINUE;
+#endif
         }
         if (settings->cutsceneFlags & CUTSCENE_ADVENTURE_TWO) {
             gIsInAdventureTwo = TRUE;
@@ -8797,6 +8802,7 @@ void func_8008FF1C(UNUSED s32 updateRate) {
                         } else if ((settings->courseFlagsPtr[trackMenuIds[(trackY * 6) + trackX]] & 2)) {
                             cur->visible = 2;
                         }
+
                     } else {
                         cur->trackName = (char *) gQMarkPtr;
                     }
@@ -8971,10 +8977,7 @@ void trackmenu_input(s32 updateRate) {
                 gOpacityDecayTimer = 0;
             }
         } else {
-            gOpacityDecayTimer = gOpacityDecayTimer + updateRate;
-            if (gOpacityDecayTimer > 32) {
-                gOpacityDecayTimer = 32;
-            }
+            gOpacityDecayTimer = 32;
         }
         if (gMenuDelay < -22) {
             bgdraw_set_func(NULL);
@@ -9254,16 +9257,21 @@ void trackmenu_setup_render(UNUSED s32 updateRate) {
                                     texrect_draw(&sMenuCurrDisplayList, gRaceSelectionImages[(k * 3) + 1],
                                                  gTracksMenuVehicleNamePositions[j + temp2], y, 255, 255, 255,
                                                  sMenuGuiOpacity);
-                                } else if (settings->courseFlagsPtr[gTrackIdForPreview] & 2) {
-                                    // Not highlighted
-                                    texrect_draw(&sMenuCurrDisplayList, gRaceSelectionImages[(k * 3) + 2],
-                                                 gTracksMenuVehicleNamePositions[j + temp2], y, 255, 255, 255,
-                                                 sMenuGuiOpacity);
                                 } else {
+                                    s32 opa;
+#ifdef UNLOCK_ALL
+                                    opa = sMenuGuiOpacity;
+#else
+                                    if (settings->courseFlagsPtr[gTrackIdForPreview] & 2) {
+                                        opa = sMenuGuiOpacity;
+                                    } else {
+                                        opa = sMenuGuiOpacity / 2;
+                                    }
+#endif
                                     // Not available (Ghosted out)
                                     texrect_draw(&sMenuCurrDisplayList, gRaceSelectionImages[(k * 3) + 2],
                                                  gTracksMenuVehicleNamePositions[j + temp2], y, 255, 255, 255,
-                                                 (sMenuGuiOpacity / 2));
+                                                 opa);
                                 }
                             }
                             y += 24;
@@ -9425,6 +9433,7 @@ void func_80092188(s32 updateRate) {
     s32 menuChanged;
     s32 menuDelay;
     Settings *settings;
+    s32 canSelectVehicle;
 
     menuDelay = gMenuDelay;
     settings = get_settings();
@@ -9530,13 +9539,20 @@ void func_80092188(s32 updateRate) {
                             gPlayerSelectConfirm[i] = 0;
                         }
                     } else {
+#ifdef UNLOCK_ALL
+                        canSelectVehicle = TRUE;
+#else
+                        if (settings->courseFlagsPtr[gTrackIdForPreview] & RACE_CLEARED) {
+                            canSelectVehicle = TRUE;
+                        }
+#endif
                         if (gMenuButtons[i] & (A_BUTTON | START_BUTTON)) {
                             if (gPlayerSelectConfirm[i] == 0) {
                                 gPlayerSelectConfirm[i] = 1;
                                 gNumberOfReadyPlayers++;
                                 menuSelected = TRUE;
                             }
-                        } else if (gPlayerSelectConfirm[i] == 0 && settings->courseFlagsPtr[gTrackIdForPreview] & 2) {
+                        } else if (gPlayerSelectConfirm[i] == 0 && canSelectVehicle) {
                             origVehicle = gPlayerSelectVehicle[i];
                             if (gMenuStickY[i] > 0) {
                                 do {
@@ -12985,6 +13001,7 @@ void menu_credits_init(void) {
     music_change_off();
     enable_new_screen_transitions();
     set_gIntDisFlag(TRUE);
+    gShowBG = TRUE;
 }
 
 /**
@@ -13002,7 +13019,6 @@ void credits_fade(s32 x1, s32 y1, s32 x2, s32 y2, s32 a) {
     gDPSetPrimColor(sMenuCurrDisplayList++, 0, 0, 0, 0, 0, a);
     gDPSetCombineMode(sMenuCurrDisplayList++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
     gDPFillRectangle(sMenuCurrDisplayList++, x1, y1, x1 + x2, y1 + y2);
-    gDPPipeSync(sMenuCurrDisplayList++);
     gDPSetPrimColor(sMenuCurrDisplayList++, 0, 0, 255, 255, 255, 255);
 
     reset_render_settings(&sMenuCurrDisplayList);
@@ -13072,7 +13088,9 @@ s32 menu_credits_loop(s32 updateRate) {
     }
 
     if (D_80126BE0 != FALSE) {
-        D_80126BE0 = postrace_render(updateRate) == MENU_RESULT_CONTINUE;
+        if (gMenuDelay == 0) {
+            D_80126BE0 = postrace_render(updateRate) == MENU_RESULT_CONTINUE;
+        }
     }
 
     if (D_80126BD8 == FALSE && D_80126BE0 == FALSE) {
@@ -13171,7 +13189,9 @@ s32 menu_credits_loop(s32 updateRate) {
 
                     gCreditsMenuElements[creditsMenuElementInex].t.element = NULL;
                     postrace_offsets(gCreditsMenuElements, 0.5f, (f32) D_80126BE8 / 60.0f, 0.5f, 0, 0);
-                    D_80126BE0 = postrace_render(0) == MENU_RESULT_CONTINUE;
+                    if (gMenuDelay == 0) {
+                        D_80126BE0 = postrace_render(0) == MENU_RESULT_CONTINUE;
+                    }
                     breakLoop = TRUE;
                     break;
 
@@ -13209,7 +13229,9 @@ s32 menu_credits_loop(s32 updateRate) {
                     // 1 name (+ 1 title) it would not properly clear the second name of the previous page
                     gCreditsMenuElements[var_s4 - nextIndex + 1].t.asciiText = NULL;
                     postrace_offsets(gCreditsMenuElements, 0.5f, (f32) D_80126BE8 / 60.0f, 0.5f, 0, 0);
-                    D_80126BE0 = postrace_render(0) == MENU_RESULT_CONTINUE;
+                    if (gMenuDelay == 0) {
+                        D_80126BE0 = postrace_render(0) == MENU_RESULT_CONTINUE;
+                    }
                     breakLoop = TRUE;
                     break;
 
@@ -14788,7 +14810,11 @@ void set_language(s32 language) {
  * Returns TRUE if the player has adventure two unlocked.
  */
 s32 is_adventure_two_unlocked(void) {
+#ifdef UNLOCK_ALL
+    return TRUE;
+#else
     return sEepromSettings & 1;
+#endif
 }
 
 /**
@@ -14813,12 +14839,20 @@ s32 is_in_two_player_adventure(void) {
  * Returns 1 if T.T. is avaliable to use, or 0 if not.
  */
 s32 is_tt_unlocked(void) {
+#ifdef UNLOCK_ALL
+    return TRUE;
+#else
     return gActiveMagicCodes & CHEAT_CONTROL_TT;
+#endif
 }
 
 /**
  * Returns 1 if Drumstick is avaliable to use, or 0 if not.
  */
 s32 is_drumstick_unlocked(void) {
+#ifdef UNLOCK_ALL
+    return TRUE;
+#else
     return gActiveMagicCodes & CHEAT_CONTROL_DRUMSTICK;
+#endif
 }

@@ -7,6 +7,8 @@
 #include "game.h"
 #include "math_util.h"
 
+#ifdef USE_DYNLIGHTS
+
 /************ .data ************/
 
 ObjectLight **gActiveLights = NULL;
@@ -689,3 +691,7 @@ f32 light_direction_calc(ObjectLight *light) {
     }
     return distance;
 }
+#else
+void func_80032BAC(ObjectLight *light) {
+}
+#endif

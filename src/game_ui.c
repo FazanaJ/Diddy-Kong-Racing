@@ -982,7 +982,7 @@ void hud_main_battle(s32 countdown, Object *obj, s32 updateRate) {
     }
 }
 
-#ifdef NON_MATCHING
+#ifdef NON_EQUIVALENT
 // hud_lives
 void func_800A1E48(Object *racerObj, s32 updateRate) {
     f32 temp;

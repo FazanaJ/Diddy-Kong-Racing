@@ -1,5 +1,6 @@
 #include "video.h"
 #include "PRinternal/viint.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -54,6 +55,7 @@ s32 gVideoSkipNextRate = FALSE;
  * Official Name: viInit
  */
 void video_init(s32 videoModeIndex, OSSched *sc) {
+    s32 i;
     if (osTvType == OS_TV_TYPE_PAL) {
         gVideoRefreshRate = REFRESH_50HZ;
         gVideoAspectRatio = ASPECT_RATIO_PAL;
@@ -69,7 +71,6 @@ void video_init(s32 videoModeIndex, OSSched *sc) {
     }
 
     if (osTvType == OS_TV_TYPE_PAL) {
-        s32 i;
         for (i = 0; i <= NUM_RESOLUTION_MODES; i++) {
             gVideoModeResolutions[i].height += PAL_HEIGHT_DIFFERENCE;
         }
@@ -77,8 +78,8 @@ void video_init(s32 videoModeIndex, OSSched *sc) {
 
     video_delta_reset();
     fb_mode_set(videoModeIndex);
-    for (s32 i = 0; i < 3; i++) {
-        gVideoFramebuffers[0];
+    for (i = 0; i < 3; i++) {
+        gVideoFramebuffers[i] = NULL;
         fb_alloc(i);
     }
     gVideoCurrFbIndex = 1;
@@ -136,15 +137,15 @@ void vi_change(int width, int height) {
         gGlobalVI = osViModeNtscLan1;
     }
 
-    /*if (gConfig.screenQuality) {
-        gBitDepth = G_IM_SIZ_32b;
-        mode->comRegs.ctrl = VI_CTRL_TYPE_32 | VI_CTRL_GAMMA_DITHER_ON | VI_CTRL_GAMMA_ON | VI_CTRL_DIVOT_ON | VI_CTRL_ANTIALIAS_MODE_3 | 0x3000;
-        mul = 4;
-    } else {*/
+    if (gConfig.screenBits == SCREENBITS_16b) {
         //gBitDepth = G_IM_SIZ_16b;
-        mode->comRegs.ctrl = VI_CTRL_TYPE_16 | VI_CTRL_GAMMA_DITHER_ON | VI_CTRL_GAMMA_ON | VI_CTRL_DIVOT_ON | VI_CTRL_ANTIALIAS_MODE_1 | 0x3000;
+        mode->comRegs.ctrl = VI_CTRL_TYPE_16 | VI_CTRL_GAMMA_DITHER_ON | VI_CTRL_GAMMA_ON | VI_CTRL_ANTIALIAS_MODE_1 | 0x3000;
         mul = 2;
-    //}
+    } else {
+        //gBitDepth = G_IM_SIZ_32b;
+        mode->comRegs.ctrl = VI_CTRL_TYPE_32 | VI_CTRL_GAMMA_DITHER_ON | VI_CTRL_GAMMA_ON | VI_CTRL_ANTIALIAS_MODE_3 | 0x3000;
+        mul = 4;
+    }
 
     if (height < 240) {
         /*if (width == SCREEN_WIDTH_16_10) {
@@ -175,17 +176,30 @@ void vi_change(int width, int height) {
     mode->comRegs.width = width;
     mode->comRegs.xScale = ((width + addX) * 512) / 320;
     // Disable VI resampling if frame size is 320.
-    if (width <= 320 && 1) {
-        mode->comRegs.xScale = 0x201;
-        mode->comRegs.ctrl &= ~VI_CTRL_ANTIALIAS_MODE_1;
-        mode->comRegs.ctrl |= VI_CTRL_ANTIALIAS_MODE_3;
+    if (gConfig.antiAliasing == AA_OFF) {
+        if (width <= 320) {
+            mode->comRegs.xScale = 0x201;
+            mode->comRegs.ctrl &= ~VI_CTRL_ANTIALIAS_MODE_1;
+            mode->comRegs.ctrl |= VI_CTRL_ANTIALIAS_MODE_3;
+        }
+    } else {
+        mode->comRegs.ctrl |= VI_CTRL_DIVOT_ON;
     }
     mode->fldRegs[0].origin = width * mul;
     mode->fldRegs[1].origin = width * 4;
     gVideoAspectRatio = ((f32) width / (f32) height);
     osViSetMode(mode);
-    osViSetSpecialFeatures(OS_VI_DIVOT_OFF);
-    osViSetSpecialFeatures(OS_VI_DITHER_FILTER_OFF);
+    vi_dither();
+}
+
+void vi_dither(void) {
+    if (gConfig.dedither) {
+        osViSetSpecialFeatures(OS_VI_DIVOT_ON);
+        osViSetSpecialFeatures(OS_VI_DITHER_FILTER_ON);
+    } else {
+        osViSetSpecialFeatures(OS_VI_DIVOT_OFF);
+        osViSetSpecialFeatures(OS_VI_DITHER_FILTER_OFF);
+    }
     osViSetSpecialFeatures(OS_VI_GAMMA_OFF);
 }
 
@@ -293,13 +307,45 @@ void fb_init_vi(void) {
  * already aligns by 16, it only needs 48 bits of alignment in addition.
  */
 void fb_alloc(s32 index) {
-    if (gVideoFramebuffers[index] != 0) {
-        mempool_locked_unset((u8 *) gVideoFramebuffers[index]); // Effectively unused.
-        mempool_free(gVideoFramebuffers[index]);
+    s32 width = SCREEN_WIDTH;
+    s32 height = SCREEN_HEIGHT;
+    s32 bitSize = 2;
+    u16 *fbAddr;
+    s32 fbSize;
+    u8 *addr;
+#if EXPANSION_PAK_SUPPORT
+    if (gExpansionPak) {
+        width = SCREEN_WIDTH_WIDE;
+        //height = SCREEN_HEIGHT_HIGH;
+        bitSize = 4;
+    }
+#endif
+#if EXPANSION_PAK_SUPPORT || defined(FIFO_4MB)
+    if (gGfxSPTaskOutputBuffer == NULL) {
+        gGfxSPTaskOutputBuffer = mempool_alloc_safe(FIFO_BUFFER_SIZE + 0x10, COLOUR_TAG_WHITE);
+        gGfxSPTaskOutputBuffer = (u64 *) (((s32) gGfxSPTaskOutputBuffer + 0xF) & ~0xF);
+    }
+#endif
+
+    fbSize = (width * height) * bitSize;
+    switch (index) {
+        case 0:
+            addr = (u8 *) 0x80200000;
+        break;
+        case 1:
+            addr = (u8 *) (0x80400000 - (fbSize + 0x40));
+        break;
+        case 2:
+            if (gUseExpansionMemory) {
+                addr = (u8 *) 0x80400000;
+            } else {
+                addr = (u8 *) (0x80300000 - (fbSize + 0x40));
+            }
+        break;
     }
     gVideoFbWidths[index] = gVideoModeResolutions[gVideoModeIndex & NUM_RESOLUTION_MODES].width;
     gVideoFbHeights[index] = gVideoModeResolutions[gVideoModeIndex & NUM_RESOLUTION_MODES].height;
-    if (gVideoModeIndex >= VIDEO_MODE_MIDRES_MASK) {
+    /*if (gVideoModeIndex >= VIDEO_MODE_MIDRES_MASK) {
         gVideoFramebuffers[index] =
             mempool_alloc_safe((HIGH_RES_SCREEN_WIDTH * HIGH_RES_SCREEN_HEIGHT * 2) + 0x30, COLOUR_TAG_WHITE);
         gVideoFramebuffers[index] = FBALIGN(gVideoFramebuffers[index]);
@@ -317,6 +363,18 @@ void fb_alloc(s32 index) {
                 mempool_alloc_safe((gVideoFbWidths[index] * gVideoFbHeights[index] * 2) + 0x30, COLOUR_TAG_WHITE);
             gVideoDepthBuffer = FBALIGN(gVideoDepthBuffer);
         }
+    }*/
+
+    gVideoFramebuffers[index] = mempool_alloc_fixed(fbSize + 0x40, addr, COLOUR_TAG_WHITE);
+    gVideoFramebuffers[index] = FBALIGN(gVideoFramebuffers[index]);
+    bzero(gVideoFramebuffers[index], fbSize);
+    fbAddr = gVideoFramebuffers[index];
+    fbAddr[100] = 0xBEEF;
+    if (gVideoDepthBuffer == NULL) {
+        gVideoDepthBuffer = mempool_alloc_fixed(fbSize + 0x40, (u8 *) (0x80200000 - (fbSize + 0x40)), COLOUR_TAG_WHITE);
+        gVideoDepthBuffer = FBALIGN(gVideoDepthBuffer);
+        fbAddr = gVideoDepthBuffer;
+        fbAddr[100] = 0xBEEF;
     }
 }
 

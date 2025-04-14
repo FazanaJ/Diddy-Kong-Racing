@@ -1320,7 +1320,9 @@ void render_skydome(void) {
 
     matrix_world_origin(&gSceneCurrDisplayList, &gSceneCurrMatrix);
     if (gSceneRenderSkyDome) {
+        gUseAntiAliasing = FALSE;
         render_object(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, gSkydomeSegment);
+        gUseAntiAliasing = TRUE;
     }
 }
 
@@ -1591,7 +1593,7 @@ void render_level_segment(s32 segmentId, s32 nonOpaque) {
         }
         batchFlags |= BATCH_FLAGS_UNK00000008 | BATCH_FLAGS_UNK00000002;
         if (!(batchFlags & BATCH_FLAGS_DEPTH_WRITE) && !(batchFlags & BATCH_FLAGS_RECEIVE_SHADOWS)) {
-            batchFlags |= gAntiAliasing;
+            batchFlags |= gUseAntiAliasing;
         }
         if ((!(textureFlags & RENDER_SEMI_TRANSPARENT) && !(batchFlags & BATCH_FLAGS_WATER)) ||
             batchFlags & BATCH_FLAGS_RECEIVE_SHADOWS) {

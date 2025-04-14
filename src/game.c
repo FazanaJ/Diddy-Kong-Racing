@@ -359,6 +359,39 @@ s32 check_if_in_race(void) {
 }
 
 /**
+ * Minor func that overrides the user fps cap in certain scenarios because it's not important.
+ * FPS is uncapped in menus, and conditionally ingame.
+*/
+void levelinit_framecap(s32 levelID) {
+    s32 cap;
+    if (get_game_mode() == GAMEMODE_INGAME) {
+        switch (levelID) {
+            case ASSET_LEVEL_OPTIONSBACKGROUND:
+            case ASSET_LEVEL_WIZPIGAMULETSEQUENCE:
+            case ASSET_LEVEL_TTAMULETSEQUENCE:
+            case ASSET_LEVEL_FRONTEND:
+                cap = 0;
+                break;
+            default:
+                cap = gConfig.frameCap;
+                break;
+        }
+    } else {
+        switch (levelID) {
+            case ASSET_LEVEL_PARTYSEQUENCE:
+            case ASSET_LEVEL_LASTBIT:
+            case ASSET_LEVEL_LASTBITB:
+                cap = 0;
+                break;
+            default:
+                cap = 0;
+                break;
+        }
+    }
+    sched_framecap(cap);
+}
+
+/**
  * Loads and sets up the level header, then loads and sets of the level geometry.
  * Sets weather, fog and active cutscenes where applicable.
  */
@@ -506,7 +539,9 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
     }
     music_voicelimit_set(gCurrentLevelHeader->voiceLimit);
     music_volume_reset();
+#ifdef USE_DYNLIGHTS
     setup_lights(32);
+#endif
     var_s0 = VEHICLE_CAR;
     if (vehicleId >= VEHICLE_CAR && vehicleId < NUMBER_OF_PLAYER_VEHICLES) {
         var_s0 = gCurrentLevelHeader->unk4F[vehicleId];
@@ -609,6 +644,7 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
                       gCurrentLevelHeader->bgColorBlue);
     video_delta_reset();
     func_8007AB24(gCurrentLevelHeader->unk4[numberOfPlayers]);
+    levelinit_framecap(levelId);
 }
 
 /**
@@ -701,7 +737,9 @@ void clear_audio_and_track(void) {
     music_stop();
     music_jingle_stop();
     music_channel_reset_all();
+#ifdef USE_DYNLIGHTS
     free_lights();
+#endif
     free_track();
     func_80008174();
     sound_volume_change(VOLUME_NORMAL);

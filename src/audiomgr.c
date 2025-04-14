@@ -64,7 +64,7 @@ OSSched *gAudioSched;
 ALHeap *gAudioHeap; // Set but not used
 
 AMAudioMgr __am;
-static u64 audioStack[STACKSIZE(STACK_AUD)];
+u64 audioStack[STACKSIZE(STACK_AUD)];
 
 AMDMAState dmaState;
 AMDMABuffer dmaBuffs[NUM_DMA_BUFFERS];
@@ -181,7 +181,7 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
         __am.ACMDList[i] = (Acmd *) alHeapAlloc(c->heap, 1, 0xA000); // sizeof(Acmd) * DMA_BUFFER_LENGTH * 5?
     }
 
-    asset = mempool_alloc((maxFrameSize * 12), COLOUR_TAG_CYAN);
+    asset = (uintptr_t *) mempool_alloc((maxFrameSize * 12), COLOUR_TAG_CYAN);
 
     /**** initialize the done messages ****/
     for (i = 0; i < NUM_ACMD_LISTS + 1; i++) {
@@ -208,6 +208,10 @@ void audioStartThread(void) {
  */
 void audioStopThread(void) {
     osStopThread(&__am.thread);
+}
+
+OSThread *audioGetThread(void) {
+    return &__am.thread;
 }
 
 /******************************************************************************

@@ -259,6 +259,8 @@ u32 sPrevTime = 0;
 u32 sDeltaTime = 0;
 s32 sTotalTime = 0;
 
+void calculate_and_update_fps(void);
+
 /**
  * The main gameplay loop.
  * Contains all game logic, audio and graphics processing.
@@ -268,7 +270,6 @@ void main_game_loop(void) {
     s32 framebufferSize;
     s32 tempLogicUpdateRate, tempLogicUpdateRateMax;
     const f32 divisor = 1.0f;
-
 
     if (gVideoSkipNextRate) {
         sLogicUpdateRate = LOGIC_60FPS;
@@ -290,6 +291,22 @@ void main_game_loop(void) {
             sTotalTime -= 16666;
             sLogicUpdateRate++;
         }
+#ifdef AUTOPLAY
+        if (get_current_map_id() == ASSET_LEVEL_CENTRALAREAHUB) {
+            sLogicUpdateRate = 2;
+        } else {
+            sLogicUpdateRate = 2;
+        }
+        if (get_current_map_id() == ASSET_LEVEL_PARTYSEQUENCE ||
+            get_current_map_id() == ASSET_LEVEL_LASTBIT ||
+            get_current_map_id() == ASSET_LEVEL_LASTBITB || gCurrentMenuId == MENU_CREDITS) {
+            sched_framecap(1);
+            gConfig.frameCap = 1;
+        } else {
+            sched_framecap(0);
+            gConfig.frameCap = 0;
+        }
+#endif
         if (sLogicUpdateRate >= LOGIC_12FPS) {
             sTotalTime = 0;
             sLogicUpdateRate = LOGIC_12FPS;
@@ -323,6 +340,8 @@ void main_game_loop(void) {
             render_printf(D_800E7134 /* "BBB\n" */);
         }
     }
+
+    calculate_and_update_fps();
 
     switch (gGameMode) {
         case GAMEMODE_INTRO: // Pre-boot screen
@@ -382,7 +401,11 @@ void main_game_loop(void) {
 
     if (gDrawFrameTimer == 0) {
         if (gExpansionPak) {
-            gfxtask_run_fifo(gDisplayLists[gSPTaskNum], gCurrDisplayList);
+            if (gPlatform & (CONSOLE | ARES | SIMPLE64)) {
+                gfxtask_run_fifo(gDisplayLists[gSPTaskNum], gCurrDisplayList);
+            } else {
+                gfxtask_run_xbus(gDisplayLists[gSPTaskNum], gCurrDisplayList);
+            }
         } else {
             gfxtask_run_xbus(gDisplayLists[gSPTaskNum], gCurrDisplayList);
         }
@@ -1434,10 +1457,6 @@ void alloc_displaylist_heap(s32 numberOfPlayers) {
         gCurrNumHudVertsPerPlayer = gNumHudVertsPerPlayer[num];
         mempool_free_timer(2);
     }
-    gCurrDisplayList = gDisplayLists[gSPTaskNum];
-    gGameCurrMatrix = gMatrixHeap[gSPTaskNum];
-    gGameCurrTriList = gTriangleHeap[gSPTaskNum];
-    gGameCurrVertexList = gVertexHeap[gSPTaskNum];
 
     gDPFullSync(gCurrDisplayList++);
     gSPEndDisplayList(gCurrDisplayList++);
@@ -1535,8 +1554,12 @@ void begin_trophy_race_teleport(void) {
  */
 void begin_lighthouse_rocket_cutscene(void) {
     if (gLevelLoadTimer == 0) {
+#ifndef OPEN_ALL_DOORS
         if ((gSettingsPtr->trophies & 0xFF) == 0xFF && !(gSettingsPtr->cutsceneFlags & CUTSCENE_LIGHTHOUSE_ROCKET) &&
             gSettingsPtr->bosses & 1) {
+#else
+        if (!(gSettingsPtr->cutsceneFlags & CUTSCENE_LIGHTHOUSE_ROCKET)) {
+#endif
             gSettingsPtr->cutsceneFlags |= CUTSCENE_LIGHTHOUSE_ROCKET;
             transition_begin(&gLevelFadeOutTransition);
             gLevelLoadTimer = 40;
@@ -1597,15 +1620,17 @@ void set_frame_blackout_timer(void) {
     gDrawFrameTimer = 2;
 }
 
+#ifndef SKIP_INTRO
+#define BOOT_LVL MENU_BOOT
+#else
 #if SKIP_INTRO == SKIP_TITLE
 #define BOOT_LVL MENU_TITLE
 #elif SKIP_INTRO == SKIP_CHARACTER
 #define BOOT_LVL MENU_CHARACTER_SELECT
 #elif SKIP_INTRO == SKIP_MENU
 #define BOOT_LVL MENU_GAME_SELECT
-#else
-#define BOOT_LVL MENU_BOOT
 #endif // SKIP_INTRO
+#endif
 
 /**
  * Give the player 8 frames to enter the CPak menu with start, then load the intro sequence.
@@ -1625,9 +1650,9 @@ void mode_intro(void) {
 #else
     sBootDelayTimer = 8;
 #endif
-if (sBootDelayTimer >= 8) {
-    load_menu_with_level_background(BOOT_LVL, ASSET_LEVEL_OPTIONSBACKGROUND, 2);
-}
+    if (sBootDelayTimer >= 8) {
+        load_menu_with_level_background(BOOT_LVL, ASSET_LEVEL_OPTIONSBACKGROUND, 2);
+    }
 }
 
 /**

@@ -129,6 +129,7 @@ typedef struct {
 void osCreateScheduler(OSSched *sc, void *stack, OSPri priority, u8 mode, u8 numFields);
 void osScAddClient(OSSched *sc, OSScClient *c, OSMesgQueue *msgQ, u8 id);
 void osScSubmitTask(OSSched *sc, OSScTask *t);
+void sched_framecap(s32 cap);
 
 #endif
 

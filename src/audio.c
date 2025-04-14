@@ -60,6 +60,7 @@ s32 sMusicDelayTimer;
 s32 sMusicDelayLength;
 u8 gMusicPlaying;
 u8 gJinglePlaying;
+s8 gReverbOverride;
 DelayedSound gDelayedSounds[8];
 ALCSeq gMusicSequence;
 ALCSeq gJingleSequence;
@@ -1046,6 +1047,9 @@ void music_sequence_stop(ALCSPlayer *seqPlayer) {
  * This includes reverb and echo.
  */
 void sound_reverb_set(u8 setting) {
+    if (gReverbOverride) {
+        setting = TRUE;
+    }
     alFxReverbSet(setting);
 }
 

@@ -6,6 +6,7 @@
 #include <sched.h>
 #include "PR/os_thread.h"
 #include "PRinternal/osint.h"
+#include "src/main.h"
 
 /*
  * private typedefs and defines
@@ -44,9 +45,20 @@ u8 sTimerChecks[4];
 u8 sWroteRDP;
 #endif
 
+u8 gSchedFrameCap;
+
+void sched_framecap(s32 cap) {
+    if (cap < 0) {
+        cap = 0;
+    } else if (cap > 2) {
+        cap = 2;
+    }
+    gSchedFrameCap = cap;
+}
+
 static void __scTaskComplete(OSSched *sc, OSScTask *t) {
     if (t->list.t.type == M_GFXTASK) {
-        if (sc->retraceCount > 0 && sc->scheduledFB == NULL) {
+        if (sc->scheduledFB == NULL) {
             sc->scheduledFB = t->framebuffer;
             osViSwapBuffer(t->framebuffer);
             sc->retraceCount = 0;
@@ -135,7 +147,7 @@ static void __scHandlePrenmi(OSSched *sc) {
 static void __scHandleRetrace(OSSched *sc) {
     UNUSED s32 i;
 	sc->retraceCount++;
-    if (sc->retraceCount > 0 && sc->scheduledFB && osViGetCurrentFramebuffer() == sc->scheduledFB) {
+    if (sc->retraceCount > gSchedFrameCap && sc->scheduledFB && osViGetCurrentFramebuffer() == sc->scheduledFB) {
         if (sc->queuedFB) {
             sc->scheduledFB = sc->queuedFB;
             sc->queuedFB = NULL;
@@ -206,12 +218,13 @@ static void __scHandleRSP(OSSched *sc) {
 }
 
 static void __scHandleRDP(OSSched *sc) {
+    OSScTask *t;
     if (sc->curRDPTask == NULL) {
         __scTryDispatch(sc);
         return;
     }
 
-    OSScTask *t = sc->curRDPTask;
+    t = sc->curRDPTask;
     sc->curRDPTask = NULL;
 
     t->state &= ~OS_SC_NEEDS_RDP;

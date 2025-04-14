@@ -115,5 +115,6 @@ void fb_swap(void);
 void fb_memcpy(u8 *src, u8 *dest, s32 len);
 void fb_update(s32 updateRate);
 void vi_change(int width, int height);
+void vi_dither(void);
 
 #endif

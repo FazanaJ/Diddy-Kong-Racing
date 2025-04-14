@@ -50,5 +50,6 @@ extern s8 rspF3DDKRDramStart[];
 void audioStartThread(void);
 void audioStopThread(void);
 void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched);
+OSThread *audioGetThread(void);
 
 #endif
