@@ -270,6 +270,7 @@ void main_game_loop(void) {
     s32 framebufferSize;
     s32 tempLogicUpdateRate, tempLogicUpdateRateMax;
     const f32 divisor = 1.0f;
+    debug_thread(THREAD3_START, 0);
 
     if (gVideoSkipNextRate) {
         sLogicUpdateRate = LOGIC_60FPS;
@@ -341,8 +342,6 @@ void main_game_loop(void) {
         }
     }
 
-    calculate_and_update_fps();
-
     switch (gGameMode) {
         case GAMEMODE_INTRO: // Pre-boot screen
             mode_intro();
@@ -374,10 +373,15 @@ void main_game_loop(void) {
         menu_missing_controller(&gCurrDisplayList, sLogicUpdateRate);
     }
 
+    debug_thread(THREAD3_END, 0);
+    debug_render(&gCurrDisplayList, sLogicUpdateRate);
+
     gDPFullSync(gCurrDisplayList++);
     gSPEndDisplayList(gCurrDisplayList++);
+    debug_thread(THREAD3_START, 0);
 
     copy_viewports_to_stack();
+    debug_thread(THREAD3_END, 0);
     if (gDrawFrameTimer != 1) {
         if (gSkipGfxTask == FALSE) {
             gfxtask_wait();
@@ -385,6 +389,7 @@ void main_game_loop(void) {
     } else {
         gDrawFrameTimer = 0;
     }
+    debug_thread(THREAD3_START, 0);
     gSkipGfxTask = FALSE;
     mempool_free_queue_clear();
     if (!gIsPaused) {
@@ -397,6 +402,9 @@ void main_game_loop(void) {
         }
         dmacopy_doubleword(gVideoLastFramebuffer, gVideoCurrFramebuffer, (s32) gVideoCurrFramebuffer + framebufferSize);
     }
+    debug_thread(THREAD3_END, 0);
+    calculate_and_update_fps();
+    debug_update(sLogicUpdateRate);
     fb_update(sLogicUpdateRate);
 
     if (gDrawFrameTimer == 0) {

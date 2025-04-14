@@ -3,6 +3,7 @@
 #include "thread0_epc.h"
 #include "joypad.h"
 #include "math_util.h"
+#include "main.h"
 
 /************ .bss ************/
 
@@ -34,6 +35,7 @@ void mempool_init_main(void) {
         ramEnd = RAM_END;
     }
     mempool_init(&gMainMemoryPool, ramEnd - (s32) (&gMainMemoryPool), MAIN_POOL_SLOT_COUNT);
+    debug_ram(K0_TO_PHYS((u32) &gMainMemoryPool), COLOUR_TAG_WHITE);
     mempool_free_timer(2);
     gFreeQueueCount = 0;
 }
@@ -66,6 +68,7 @@ MemoryPoolSlot *mempool_init(MemoryPoolSlot *slots, s32 poolSize, s32 numSlots) 
     s32 i;
     s32 firstSlotSize;
 
+    debug_ram(numSlots * sizeof(MemoryPoolSlot), COLOUR_TAG_WHITE);
     poolCount = ++gNumberOfMemoryPools;
     firstSlotSize = poolSize - (numSlots * sizeof(MemoryPoolSlot));
     gMemoryPools[poolCount].maxNumSlots = numSlots;
@@ -161,6 +164,7 @@ MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag
     if (currIndex != MEMSLOT_NONE) {
         mempool_slot_assign(poolIndex, (s32) currIndex, size, 1, 0, colourTag);
         interrupts_enable(intFlags);
+        debug_ram(size, colourTag);
         return (MemoryPoolSlot *) (slots + currIndex)->data;
     }
     interrupts_enable(intFlags);
@@ -213,11 +217,13 @@ void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag) {
                     if (address == (u8 *) curSlot->data) {
                         mempool_slot_assign(POOL_MAIN, i, size, 1, 0, colorTag);
                         interrupts_enable(intFlags);
+                        debug_ram(size, colorTag);
                         return curSlot->data;
                     } else {
                         i = mempool_slot_assign(POOL_MAIN, i, (u32) address - (u32) curSlot->data, 0, 1, colorTag);
                         mempool_slot_assign(POOL_MAIN, i, size, 1, 0, colorTag);
                         interrupts_enable(intFlags);
+                        debug_ram(size, colorTag);
                         return (slots + i)->data;
                     }
                 }
@@ -225,6 +231,7 @@ void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag) {
         }
         interrupts_enable(intFlags);
     }
+    *(volatile int *) 0 = 0;
     stubbed_printf("\n*** mm Error *** ---> Can't allocate memory at desired address.\n");
     return NULL;
 }
@@ -471,6 +478,7 @@ void mempool_slot_clear(MemoryPools poolIndex, s32 slotIndex) {
     nextSlot = &slots[nextIndex];
     prevSlot = &slots[prevIndex];
     slot->flags = SLOT_FREE;
+    debug_ram(-slot->size, slot->colourTag);
     if (nextIndex != MEMSLOT_NONE) {
         if (nextSlot->flags == SLOT_FREE) {
             slot->size += nextSlot->size;

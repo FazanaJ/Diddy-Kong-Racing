@@ -9,6 +9,8 @@
 
 /************ .data ************/
 
+#ifdef DEBUG
+
 s32 D_800E2EF0 = FALSE;
 
 // Char width is (v - u) + 1
@@ -553,3 +555,15 @@ void debug_text_newline(void) {
 
 UNUSED void func_800B6F30(UNUSED int arg0, UNUSED int arg1, UNUSED int arg2) {
 }
+#else
+void set_render_printf_position(u16 x, u16 y) {
+
+}
+
+s32 render_printf(const char *format, ...) {
+    va_list args;
+    s32 written;
+    va_start(args, format);
+    return 0;
+}
+#endif
