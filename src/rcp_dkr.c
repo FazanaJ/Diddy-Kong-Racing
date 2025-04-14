@@ -562,7 +562,7 @@ void rsp_init(Gfx **dList) {
  */
 void gfxtask_init(OSSched *sc) {
     osCreateMesgQueue(&gRCPMesgQueue, &gRCPMesgBuf, 1);
-    osCreateMesgQueue(&gUnusedMesgQueue, gUnusedMesgBuf, ARRAY_COUNT(gUnusedMesgBuf));
+    //osCreateMesgQueue(&gUnusedMesgQueue, gUnusedMesgBuf, ARRAY_COUNT(gUnusedMesgBuf));
 }
 
 /**
@@ -607,11 +607,9 @@ void bgdraw_texture(Gfx **dList) {
         for (xOffset = 0, uly = 0; uly < videoHeight; uly += texHeight) {
             for (ulx = -xOffset; ulx < videoWidth; ulx += texWidth) {
                 if (ulx < 0) {
-                    gSPTextureRectangle((*dList)++, 0, uly, ulx + texWidth, uly + texHeight, G_TX_RENDERTILE,
-                                        -(ulx << 3), 0, 1024, 1024);
+                    gSPTextureRectangle((*dList)++, 0, uly, ulx + texWidth, uly + texHeight, G_TX_RENDERTILE, -(ulx << 3), 0, 1024, 1024);
                 } else {
-                    gSPTextureRectangle((*dList)++, ulx, uly, ulx + texWidth, uly + texHeight, G_TX_RENDERTILE, 0, 0,
-                                        1024, 1024);
+                    gSPTextureRectangle((*dList)++, ulx, uly, ulx + texWidth, uly + texHeight, G_TX_RENDERTILE, 0, 0, 1024, 1024);
                 }
             }
             xOffset = (xOffset + gTexBGShiftX) & (texWidth - 1);
@@ -768,7 +766,7 @@ void texrect_draw(Gfx **dList, DrawTexture *element, s32 xPos, s32 yPos, u8 red,
             gSPTextureRectangle((*dList)++, ulx, uly, lrx, lry, G_TX_RENDERTILE, s, t, 1024, 1024);
         }
     }
-    gDPPipeSync((*dList)++);
+    //gDPPipeSync((*dList)++);
     gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
 }
 
@@ -870,6 +868,6 @@ void texrect_draw_scaled(Gfx **dList, DrawTexture *element, f32 xPos, f32 yPos, 
         }
     }
 
-    gDPPipeSync((*dList)++);
+    //gDPPipeSync((*dList)++);
     gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
 }

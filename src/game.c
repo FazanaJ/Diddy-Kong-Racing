@@ -747,7 +747,7 @@ void clear_audio_and_track(void) {
         weather_free();
     }
     //! @bug this will never be true because skyDome is signed.
-    if (gCurrentLevelHeader->skyDome == 0xFF) {
+    if (gCurrentLevelHeader->skyDome == -1) {
         free_texture(gCurrentLevelHeader->unkA4);
     }
 }

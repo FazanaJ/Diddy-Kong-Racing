@@ -2627,7 +2627,7 @@ s32 move_object(Object *obj, f32 xPos, f32 yPos, f32 zPos) {
     outOfBounds = FALSE;
     x2 = (levelModel->upperXBounds + 1000.0);
     //!@bug should've campared against "obj->segment.trans.x_position"
-    if (newXPos > x2) {
+    if (obj->segment.trans.x_position > x2) {
         outOfBounds = TRUE;
     }
     x1 = (levelModel->lowerXBounds - 1000.0);
@@ -3891,7 +3891,9 @@ void sort_objects_by_dist(s32 startIndex, s32 lastIndex) {
         } else {
             //!@bug obj is NULL here, so it would probably cause a crash. Thankfully, gObjPtrList shouldn't have NULL
             //! objects in it.
-            obj->segment.object.distanceToCamera = 0.0f;
+            if (obj != NULL) {
+                obj->segment.object.distanceToCamera = 0.0f;
+            }
         }
     }
 

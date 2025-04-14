@@ -939,7 +939,7 @@ CharacterSelectData gCharacterSelectBytesComplete[] = {
     /*Drumstick*/
     { { NONE, NONE }, { TICTOC_9, NONE }, { DIDDY, KRUNCH, NONE, NONE }, { BUMPER, BANJO, NONE, NONE }, 0x0006 },
     /*T.T*/
-    { { DRUMSTICK, NONE }, { TIPTUP, NONE }, { TIPTUP, CONKER, NONE, NONE }, { PIPSY, TIMBER, NONE, NONE }, 0x0008 }
+    { { DRUMSTICK, NONE }, { NONE, NONE }, { TIPTUP, CONKER, NONE, NONE }, { PIPSY, TIMBER, NONE, NONE }, 0x0008 }
     //!@bug T.T's down input selects Tiptup. It should be set to NONE.
 };
 
@@ -6877,7 +6877,7 @@ void charselect_pick(void) {
         transition_begin(&sMenuTransitionFadeIn);
         characterSelected = -1;
         //!@bug: This loop condition is doing a bitwise & instead of a boolean &&
-        for (i = 0; (i < MAXCONTROLLERS) & (characterSelected < 0); i++) {
+        for (i = 0; (i < MAXCONTROLLERS) && (characterSelected < 0); i++) {
             if (gMenuButtons[i] & (A_BUTTON | START_BUTTON)) {
                 characterSelected = i;
             }
