@@ -1488,7 +1488,7 @@ void hud_speedometre(Object *obj, UNUSED s32 updateRate) {
         if (!check_if_showing_cutscene_camera()) {
             racer = (Object_Racer *) obj->unk64;
             if (racer->raceFinished == FALSE) {
-                if (racer->vehicleID == VEHICLE_PLANE) {
+                if (racer->vehicleID != VEHICLE_CAR && racer->vehicleID != VEHICLE_HOVERCRAFT) {
                     vel = sqrtf((obj->segment.x_velocity * obj->segment.x_velocity) +
                                 (obj->segment.y_velocity * obj->segment.y_velocity) +
                                 (obj->segment.z_velocity * obj->segment.z_velocity));
@@ -1501,7 +1501,7 @@ void hud_speedometre(Object *obj, UNUSED s32 updateRate) {
                 }
                 vel *= 4.0f;
                 //!@Bug: Planes and hovercraft use drift_direction for something else, applying this unintentionally.
-                if (racer->drift_direction != 0) {
+                if (racer->drift_direction != 0 && racer->vehicleID == VEHICLE_CAR) {
                     vel += 7.0f;
                 }
                 if (vel > 100.0f) {
