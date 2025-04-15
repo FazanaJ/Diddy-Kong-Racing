@@ -21,38 +21,10 @@ s32 sBackgroundFillColour = GPACK_RGBA5551(0, 0, 0, 1) | (GPACK_RGBA5551(0, 0, 0
 u32 gTexBGShiftX = 64;
 TextureHeader *gTexBGTex1 = NULL;
 TextureHeader *gTexBGTex2 = NULL;
-s32 gChequerBGEnabled = FALSE;
 
 BackgroundFunction gBGDrawFunc = { NULL };
 s32 gGfxBufCounter = 0;
-s32 gGfxBufCounter2 = 0;
 s32 gGfxTaskIsRunning = FALSE;
-
-Gfx dRspInit[] = {
-    gsSPClearGeometryMode(G_SHADE | G_SHADING_SMOOTH | G_CULL_FRONT | G_CULL_BACK | G_FOG | G_LIGHTING | G_TEXTURE_GEN |
-                          G_TEXTURE_GEN_LINEAR | G_LOD),
-    gsSPTexture(0, 0, 0, 0, 0),
-    gsSPSetGeometryMode(G_SHADING_SMOOTH | G_SHADE),
-    gsSPEndDisplayList(),
-};
-
-// Default RDP settings
-Gfx dRdpInit[] = {
-    gsDPSetCycleType(G_CYC_1CYCLE),
-    gsDPPipelineMode(G_PM_1PRIMITIVE),
-    gsDPSetTextureLOD(G_TL_TILE),
-    gsDPSetTextureLUT(G_TT_NONE),
-    gsDPSetTextureDetail(G_TD_CLAMP),
-    gsDPSetTexturePersp(G_TP_PERSP),
-    gsDPSetTextureFilter(G_TF_BILERP),
-    gsDPSetTextureConvert(G_TC_FILT),
-    gsDPSetCombineMode(G_CC_DECALRGB, G_CC_DECALRGB),
-    gsDPSetCombineKey(G_CK_NONE),
-    gsDPSetAlphaCompare(G_AC_NONE),
-    gsDPSetRenderMode(G_RM_OPA_SURF, G_RM_OPA_SURF2),
-    gsDPSetColorDither(G_CD_MAGICSQ),
-    gsSPEndDisplayList(),
-};
 
 Gfx dRaceFinishBackgroundSettings[] = {
     gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
@@ -61,17 +33,6 @@ Gfx dRaceFinishBackgroundSettings[] = {
     gsDPSetTextureLUT(G_TT_NONE),
     gsDPSetAlphaCompare(G_AC_NONE),
     gsDPSetCombineMode(G_CC_DECALRGBA, G_CC_DECALRGBA),
-    gsDPSetOtherMode(DKR_OMH_1CYC_POINT_NOPERSP, DKR_OML_COMMON | G_RM_OPA_SURF | G_RM_OPA_SURF2),
-    gsSPEndDisplayList(),
-};
-
-Gfx dChequerBGSettings[] = {
-    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
-    gsDPPipeSync(),
-    gsDPSetTextureLOD(G_TL_TILE),
-    gsDPSetTextureLUT(G_TT_NONE),
-    gsDPSetAlphaCompare(G_AC_NONE),
-    gsDPSetCombineMode(G_CC_PRIMITIVE, G_CC_PRIMITIVE),
     gsDPSetOtherMode(DKR_OMH_1CYC_POINT_NOPERSP, DKR_OML_COMMON | G_RM_OPA_SURF | G_RM_OPA_SURF2),
     gsSPEndDisplayList(),
 };
@@ -132,20 +93,8 @@ OSMesgQueue gRCPMesgQueue;
 OSMesg gRCPMesgBuf;
 OSMesgQueue gGfxTaskMesgQueue;
 OSMesg gGfxTaskMesgBuf[8];
-u8 gChequerBGColourR1;
-u8 gChequerBGColourG1;
-u8 gChequerBGColourB1;
-u8 gChequerBGColourA1;
-u8 gChequerBGColourR2;
-u8 gChequerBGColourG2;
-u8 gChequerBGColourB2;
-u8 gChequerBGColourA2;
-s32 gChequerBGWidth;
-s32 gChequerBGHeight;
 u8 gInvertBG;
-
 DKR_OSTask gGfxTaskBuf[2];
-
 OSMesgQueue *osScInterruptQ;
 
 /*******************************/
