@@ -939,13 +939,20 @@ void crash_thread(UNUSED void *var) {
 
     osRecvMesg(&gCrashQueue, &msg, OS_MESG_BLOCK);
     osSetThreadPri(NULL, OS_PRIORITY_APPMAX);
-    gCrashFB = gVideoDepthBuffer;
+    if (gVideoDepthBuffer == NULL) {
+        gCrashFB = (u16 *) 0x803000000;
+    } else {
+        gCrashFB = gVideoDepthBuffer;
+    }
     crash_screen_sleep(500);
     oldW = gScreenWidth;
     oldH = gScreenHeight;
     gScreenWidth = 512;
     gScreenHeight = 240;
     vi_change(gScreenWidth, gScreenHeight);
+    if (gVideoCurrFramebuffer == NULL) {
+        gVideoCurrFramebuffer = 0x802000000;
+    }
     framebuffer_scale(gVideoCurrFramebuffer, gCrashFB, oldW, oldH, gScreenWidth, gScreenHeight);
 
     crash_render(crash_error_thread());
