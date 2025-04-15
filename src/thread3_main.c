@@ -45,6 +45,7 @@
 #include "PRinternal/viint.h"
 #include "font.h"
 #include "stacks.h"
+#include "usb/usb.h"
 
 /************ .rodata ************/
 
@@ -197,6 +198,7 @@ void init_game(void) {
 
     stubbed_printf(sDebugRomBuildInfo);
     mempool_init_main();
+    //init_usb_thread();
     gzip_init();
 #ifdef ANTI_TAMPER
     sAntiPiracyTriggered = TRUE;
@@ -360,6 +362,7 @@ void main_game_loop(void) {
     // This is a good spot to place custom text if you want it to overlay it over ALL the
     // menus & gameplay.
 
+    //tick_usb_thread();
     sound_update_queue(sLogicUpdateRate);
     debug_text_print(&gCurrDisplayList);
     render_dialogue_boxes(&gCurrDisplayList, &gGameCurrMatrix, &gGameCurrVertexList);

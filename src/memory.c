@@ -665,6 +665,7 @@ UNUSED s32 get_memory_colour_tag_count(u32 colourTag) {
     s32 i, count;
     MemoryPoolSlot *slot;
     count = 0;
+    colourTag = debug_tag_index(colourTag);
     slot = &gMemoryPools[POOL_MAIN].slots[0];
     for (i = 0; i < MAIN_POOL_SLOT_COUNT; i++) {
         if (slot->flags != SLOT_FREE) {

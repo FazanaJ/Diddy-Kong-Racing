@@ -160,8 +160,40 @@ typedef enum DebugRam {
     PP_RAM_BLACK,
     PP_RAM_LIGHT_ORANGE,
 
+    PP_RAM_CODE,
+    PP_RAM_FRAMEBUFFERS,
+    PP_RAM_ZBUFFER,
+    PP_RAM_TASKBUFFER,
+    PP_RAM_ANIMATIONS,
+    PP_RAM_WEATHER,
+    PP_RAM_LEVELTEX,
+    PP_RAM_LEVELMDL,
+    PP_RAM_OBJTEX,
+    PP_RAM_OBJMDL,
+    PP_RAM_MISCTEX,
+    PP_RAM_MISCMDL,
+    PP_RAM_SPRITES,
+    PP_RAM_SLOTS,
+    PP_RAM_CMDBUF,
+    PP_RAM_SAVES,
+    PP_RAM_TEMP,
+
     PP_RAM_TOTAL,
 } DebugRam;
+
+#define MEMSTRINGS \
+    "Red", \
+    "Green", \
+    "Blue", \
+    "Yellow", \
+    "Magenta", \
+    "Cyan", \
+    "White", \
+    "Grey", \
+    "GreyXLU", \
+    "Orange", \
+    "Black", \
+    "L. Orange"
 
 #define NUM_PERF_ITERATIONS 60
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS
@@ -213,6 +245,7 @@ void debug_thread(s32 field, s32 offset);
 void debug_newframe(s32 updateRate);
 void debug_ram(s32 size, s32 tag);
 s32 debug_tag_index(s32 colourTag);
+void debug_printf(const char* message, ...);
 #else
 #define debug_init()
 #define debug_render(dList, updateRate)
@@ -225,8 +258,10 @@ s32 debug_tag_index(s32 colourTag);
 #define debug_tag_index(colourTag)
 #if defined(__sgi)
 #define debug_log
+#define debug_printf
 #else
 #define debug_log(logLevel, str, ...)
+#define debug_printf(str, ...)
 #endif
 #endif
 

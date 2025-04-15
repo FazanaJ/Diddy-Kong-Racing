@@ -7,6 +7,7 @@
 #include "joypad.h"
 #include "PR/os_internal_reg.h"
 #include "PRinternal/piint.h"
+#include "usb/usb.h"
 
 /************ .bss ************/
 
@@ -620,6 +621,53 @@ void debug_newframe(s32 updateRate) {
     //}
 }
 
+char *sMemDumpStrings[] = {
+    "Allocated",
+    "Fixed\t"
+};
+
+char *sPuppyprintMemColours[] = {
+    MEMSTRINGS
+};
+
+void debug_ram_dump(void) {
+    int flags;
+    int nextIndex;
+    int i;
+    s32 colourTag;
+    MemoryPoolSlot *slot;
+    u32 ramTotal = osGetMemSize();
+
+    for (i = 0; i <= gNumberOfMemoryPools; i++) {
+        debug_printf("------------- Pool: %d\t Size: %X (%2.3fKiB)\t %2.2f%%\t Slots: %d/%d -------------\n", i, 
+        gMemoryPools[i].size, (double) gMemoryPools[i].size / 1024.0, 
+        (double) ((f32) gMemoryPools[i].size / (f32) ramTotal) * 100.0, gMemoryPools[i].curNumSlots, gMemoryPools[i].maxNumSlots);
+        slot = &gMemoryPools[i].slots[0];
+        
+        do {
+            flags = slot->flags;
+            nextIndex = slot->nextIndex;
+
+            colourTag = debug_tag_index(slot->colourTag);
+
+            if (flags == SLOT_FREE) {
+                debug_printf("Pool: %d Idx: %d   \t Free Slot\t\t\t\t\t Size: 0x%X\t (%2.3fKiB) \t %2.2f%%\t Addr: %X\n", i, slot->index, slot->size, (double) slot->size / 1024.0, 
+                (double) ((f32) slot->size / (f32) ramTotal) * 100.0, slot->data);
+            } else {
+                debug_printf("Pool: %d Idx: %d   \t %s\t Tag: %s \t\t Size: 0x%X\t (%2.3fKiB) \t %2.2f%% \t Addr: %X\n", i, slot->index, sMemDumpStrings[flags], 
+                sPuppyprintMemColours[colourTag], slot->size, (double) slot->size / 1024.0, (double) ((f32) slot->size / (f32) ramTotal) * 100.0, slot->data);
+            }
+
+            skip:
+            if (nextIndex == -1) {
+                continue;
+            } else {
+                slot = &gMemoryPools[i].slots[slot->nextIndex];
+            }
+        } while (nextIndex != -1);
+    }
+    }
+
 void debug_update(s32 updateRate) {
     s32 i;
     s32 j;
@@ -639,6 +687,10 @@ void debug_update(s32 updateRate) {
 
     if (inputPressed & L_TRIG) {
         d->enabled ^= 1;
+    }
+
+    if (inputPressed & R_JPAD) {
+        debug_ram_dump();
     }
 
     d->cpuTotal = 0;
@@ -687,5 +739,9 @@ void debug_update(s32 updateRate) {
     }
     debug_newframe(updateRate);
 }
+
+#include "usb/dkr_usb.c"
+#include "usb/usb.c"
+#include "usb/reset.c"
 
 #endif

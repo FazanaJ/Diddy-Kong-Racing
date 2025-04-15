@@ -6,6 +6,9 @@
 
 /************ .bss ************/
 
+#undef VERSION
+#define VERSION VERSION_80
+
 OSIoMesg gAssetsDmaIoMesg;
 OSMesg gDmaMesg;
 OSMesgQueue gDmaMesgQueue;

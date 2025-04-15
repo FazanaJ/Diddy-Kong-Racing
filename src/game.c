@@ -391,6 +391,8 @@ void levelinit_framecap(s32 levelID) {
     sched_framecap(cap);
 }
 
+#include "usb/usb.h"
+
 /**
  * Loads and sets up the level header, then loads and sets of the level geometry.
  * Sets weather, fog and active cutscenes where applicable.
