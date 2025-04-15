@@ -18,6 +18,7 @@ typedef enum MemoryPools {
 typedef enum MempoolFlags {
     SLOT_FREE = 0,             // The slot is free.
     SLOT_USED = (1 << 0),      // The slot is used.
+    SLOT_FIXED = (1 << 1),
 } MempoolFlags;
 
 #define RAM_END 0x80400000

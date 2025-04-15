@@ -628,8 +628,14 @@ void debug_newframe(s32 updateRate) {
 }
 
 char *sMemDumpStrings[] = {
+    "",
     "Allocated",
-    "Fixed\t"
+    "Fixed\t",
+    "FixedAlloc",
+    "4\t",
+    "4 Allocated",
+    "4 Fixed\t",
+    "4 FixedAlloc"
 };
 
 char *sPuppyprintMemColours[] = {
@@ -657,7 +663,7 @@ void debug_ram_dump(void) {
             colourTag = debug_tag_index(slot->colourTag);
 
             if (flags == SLOT_FREE) {
-                debug_printf("Pool: %d Idx: %d   \t Free Slot\t\t\t\t\t Size: 0x%X\t (%2.3fKiB) \t %2.2f%%\t Addr: %X\n", i, slot->index, slot->size, (double) slot->size / 1024.0, 
+                debug_printf("Pool: %d Idx: %d   \t Free Slot\t\t\t\t Size: 0x%X\t (%2.3fKiB) \t %2.2f%%\t Addr: %X\n", i, slot->index, slot->size, (double) slot->size / 1024.0, 
                 (double) ((f32) slot->size / (f32) ramTotal) * 100.0, slot->data);
             } else {
                 debug_printf("Pool: %d Idx: %d   \t %s\t Tag: %s \t\t Size: 0x%X\t (%2.3fKiB) \t %2.2f%% \t Addr: %X\n", i, slot->index, sMemDumpStrings[flags], 
@@ -672,7 +678,7 @@ void debug_ram_dump(void) {
             }
         } while (nextIndex != -1);
     }
-    }
+}
 
 void debug_update(s32 updateRate) {
     s32 i;

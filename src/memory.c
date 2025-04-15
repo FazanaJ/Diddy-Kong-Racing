@@ -217,12 +217,14 @@ void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag) {
                         mempool_slot_assign(POOL_MAIN, i, size, 1, 0, colorTag);
                         interrupts_enable(intFlags);
                         debug_ram(size, colorTag);
+                        curSlot->flags = 2;
                         return curSlot->data;
                     } else {
                         i = mempool_slot_assign(POOL_MAIN, i, (u32) address - (u32) curSlot->data, 0, 1, colorTag);
                         mempool_slot_assign(POOL_MAIN, i, size, 1, 0, colorTag);
                         interrupts_enable(intFlags);
                         debug_ram(size, colorTag);
+                        (slots + i)->flags = 2;
                         return (slots + i)->data;
                     }
                 }
@@ -312,7 +314,7 @@ void mempool_free_addr(u8 *address) {
         slot = &slots[slotIndex];
 
         if (address == (u8 *) slot->data) {
-            if (slot->flags == SLOT_USED) {
+            if (slot->flags) {
                 mempool_slot_clear(poolIndex, slotIndex);
             }
             break;
