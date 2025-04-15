@@ -486,6 +486,8 @@ s32 debug_tag_index(s32 colourTag) {
         case COLOUR_TAG_LIGHT_ORANGE:
             return PP_RAM_LIGHT_ORANGE;
             break;
+        default:
+            return colourTag % PP_RAM_TOTAL;
     }
     return PP_RAM_WHITE;
 }

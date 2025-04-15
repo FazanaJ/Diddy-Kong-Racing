@@ -7,8 +7,14 @@
 
 /************ .bss ************/
 
+#define MEMALIGN 0x8
+
 #ifndef _ALIGN16
 #define _ALIGN16(a) (((u32) (a) & ~0xF) + 0x10)
+#endif
+#ifndef _ALIGN8
+#define ALIGNCHECK (MEMALIGN - 1)
+#define _ALIGN8(a) (((u32) (a) & ~ALIGNCHECK) + MEMALIGN)
 #endif
 
 MemoryPool gMemoryPools[POOL_COUNT]; // Only two are used.
@@ -82,8 +88,8 @@ MemoryPoolSlot *mempool_init(MemoryPoolSlot *slots, s32 poolSize, s32 numSlots) 
     }
     firstSlot = &gMemoryPools[poolCount].slots[0];
     slots += numSlots;
-    if ((s32) slots & 0xF) {
-        firstSlot->data = (u8 *) _ALIGN16(slots);
+    if ((s32) slots & ALIGNCHECK) {
+        firstSlot->data = (u8 *) _ALIGN8(slots);
     } else {
         firstSlot->data = (u8 *) slots;
     }
@@ -144,9 +150,8 @@ MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag
         return NULL;
     }
     currIndex = MEMSLOT_NONE;
-    if (size & 0xF) {
-        size = (size & ~0xF);
-        size += 0x10;
+    if (size & ALIGNCHECK) {
+        size = _ALIGN8(size);
     }
     slots = pool->slots;
     slotSize = 0x7FFFFFFF;
@@ -205,8 +210,8 @@ void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag) {
         interrupts_enable(intFlags);
         stubbed_printf("\n*** mm Error *** ---> No more slots available.\n");
     } else {
-        if (size & 0xF) {
-            size = _ALIGN16(size);
+        if (size & ALIGNCHECK) {
+            size = _ALIGN8(size);
         }
         slots = gMemoryPools[POOL_MAIN].slots;
         for (i = 0; i != MEMSLOT_NONE; i = curSlot->nextIndex) {
@@ -531,7 +536,9 @@ s32 mempool_slot_assign(MemoryPools poolIndex, s32 slotIndex, s32 size, s32 slot
     poolSlots[slotIndex].flags = slotIsTaken;
     poolSize = poolSlots[slotIndex].size;
     poolSlots[slotIndex].size = size;
-    poolSlots[slotIndex].colourTag = colourTag;
+#ifdef DEBUG
+    poolSlots[slotIndex].colourTag = debug_tag_index(colourTag);
+#endif
     index = poolSlots[pool->curNumSlots].index;
     if (size < poolSize) {
         index = (pool->curNumSlots + poolSlots)->index;

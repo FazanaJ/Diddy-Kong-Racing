@@ -293,10 +293,10 @@ void main_game_loop(void) {
             sLogicUpdateRate++;
         }
 #ifdef AUTOPLAY
-        if (get_current_map_id() == ASSET_LEVEL_CENTRALAREAHUB) {
+        if (get_current_map_id() == ASSET_LEVEL_CENTRALAREAHUB || get_current_map_id() == ASSET_LEVEL_SNOWFLAKEMOUNTAINHUB) {
             sLogicUpdateRate = 2;
         } else {
-            sLogicUpdateRate = 2;
+            sLogicUpdateRate = 5;
         }
         if (get_current_map_id() == ASSET_LEVEL_PARTYSEQUENCE ||
             get_current_map_id() == ASSET_LEVEL_LASTBIT ||

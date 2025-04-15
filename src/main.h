@@ -212,15 +212,17 @@ void debug_rdp(void);
 void debug_thread(s32 field, s32 offset);
 void debug_newframe(s32 updateRate);
 void debug_ram(s32 size, s32 tag);
+s32 debug_tag_index(s32 colourTag);
 #else
 #define debug_init()
 #define debug_render(dList, updateRate)
 #define debug_update(updateRate)
-#define debug_rsp(context);
-#define debug_rdp();
+#define debug_rsp(context)
+#define debug_rdp()
 #define debug_thread(field, offset)
 #define debug_newframe(updateRate)
 #define debug_ram(size, tag)
+#define debug_tag_index(colourTag)
 #if defined(__sgi)
 #define debug_log
 #else
