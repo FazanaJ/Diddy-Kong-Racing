@@ -75,7 +75,6 @@ ObjectSegment gCameraSegment[8];
 s32 gNumberOfViewports;
 s32 gActiveCameraID;
 s32 gViewportCap;
-UNUSED s32 D_80120CEC;
 ObjectTransform gCameraTransform;
 s32 gMatrixType;
 s32 gSpriteAnimOff;
@@ -85,7 +84,6 @@ s8 gAdjustViewportHeight;
 s32 D_80120D18;
 s32 gModelMatrixStackPos;
 s32 gCameraMatrixPos;
-UNUSED s32 D_80120D24;
 f32 gModelMatrixViewX[6];
 f32 gModelMatrixViewY[6];
 f32 gModelMatrixViewZ[5];
@@ -98,7 +96,6 @@ Matrix gViewMatrixF;
 Matrix gCameraMatrixF;
 Matrix gProjectionMatrixF;
 MatrixS gProjectionMatrixS;
-UNUSED MatrixS gUnusedProjectionMatrixS; // Copied to the same way as gProjectionMatrixS, but not actually used.
 Matrix gCurrentModelMatrixF;
 Matrix gCurrentModelMatrixS;
 
@@ -970,8 +967,6 @@ void viewport_reset(Gfx **dList) {
     }
     gActiveCameraID = 0;
 }
-
-UNUSED const char D_800E6F44[] = "cameraPushSprMtx: model stack overflow!!\n";
 
 /**
  * Sets the matrix position to the world origin (0, 0, 0)

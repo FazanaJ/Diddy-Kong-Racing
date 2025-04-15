@@ -19,7 +19,6 @@
 
 MemoryPool gMemoryPools[POOL_COUNT]; // Only two are used.
 s32 gNumberOfMemoryPools;
-UNUSED s32 D_801235C4;
 FreeQueueSlot gFreeQueue[FREE_QUEUE_SIZE];
 s32 gFreeQueueCount;
 s32 gFreeQueueTimer; // Official Name: mmDelay

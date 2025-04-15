@@ -23,9 +23,6 @@
 
 /************ .data ************/
 
-// Unused?
-UNUSED s32 D_800E1E60 = 0;
-
 // Base positions of all onscreen hud elements
 HudElement gHudElementBase[HUD_ELEMENT_COUNT] = {
     { 0, 0, 0, HUD_ASSET_0, 1.0f, 53.0f, 16.0f, 0.0f, 0, 0, 127, 0, 0 },
@@ -171,8 +168,6 @@ char D_800E4300_E4F00[] = { 0x80, 0x90, 0x80, 0x4A, 0x80, 0x57 };
 char D_800E4308_E4F08[] = { 0x80, 0xD5, 0x80, 0xE1, 0x80, 0xB7, 0x80, 0xBC, 0x00, 0x00 };
 #endif
 
-UNUSED f32 sRecordVel = 0.0f; // Set to whatever the highest velocity recorded is, but never actually used.
-
 // Unused?
 s32 D_800E283C[] = { 0x06FFFFFF, 0x000FFFFF, 0x06000000, 0x0014FFFF };
 
@@ -258,7 +253,6 @@ u8 gMinimapOpacityTarget;
 s32 gStopwatchErrorX;
 s32 gStopwatchErrorY;
 LevelHeader_70 *D_80127194;
-UNUSED s32 D_80127198[4];
 
 /******************************/
 

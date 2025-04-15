@@ -27,8 +27,6 @@ s32 gMusicSliderVolume = 256;
 s32 gDelayedSoundsCount = 0;
 u8 gMusicNextSeqID = SEQUENCE_NONE;
 u8 gJingleNextSeqID = SEQUENCE_NONE;
-UNUSED s32 D_800DC664 = 0;
-UNUSED s32 D_800DC668 = 0;
 s32 gGlobalMusicVolume = 256; // This is never not 256...
 u8 gBlockVoiceLimitChange = FALSE;
 

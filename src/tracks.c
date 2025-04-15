@@ -627,16 +627,15 @@ void func_8002581C(u8 *segmentIds, s32 numberOfSegments, s32 viewportIndex) {
 void func_80026070(LevelModelSegmentBoundingBox *arg0, f32 arg1, f32 arg2, f32 arg3) {
     f32 sp80[4];
     f32 sp70[4];
-    s16 temp2;
-    s32 pad;
-    f32 sp60[2];
-    s16 index;
-    s16 nextIndex;
+    f32 sp60[4];
+    f32 temp;
     f32 sp54[2];
     f32 sp4C[2];
-    f32 temp;
+    s16 index;
+    s16 nextIndex;
     s16 sp40[4];
     s16 var_t0;
+    s16 temp2;
 
     sp80[0] = arg0->x1;
     sp70[0] = arg0->z1;

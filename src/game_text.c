@@ -27,10 +27,8 @@ s8 D_8012A787;
 s8 D_8012A788;
 u8 gShowOnscreenMessage;
 u8 D_8012A78A;
-UNUSED s16 D_8012A78C; // Set to -1, never read.
 s16 D_8012A78E;
 s16 gTextTableEntries;
-UNUSED s16 D_8012A792;
 char *gGameTextTableEntries[2]; // 960 x2 bytes
 char *D_8012A7A0;
 s32 D_8012A7A4;
@@ -44,7 +42,6 @@ s16 gDialogueYPos2; // The Lower Right Y Coord of the Dialogue Box. Changes for 
 s16 gShowSubtitles;
 s16 gSubtitleLineCount;
 s16 gCurrentTextID;
-UNUSED s16 D_8012A7BC;
 char *gSubtitleProperties[1];
 char *gCurrentMessageText[2];
 char *gCurrentTextProperties;
@@ -237,7 +234,6 @@ void process_subtitles(s32 updateRate) {
  * Assign the entries to a pointer table, then calculate the number of entries.
  */
 void load_game_text_table(void) {
-    D_8012A78C = -1;
     gGameTextTable[0] = (GameTextTableStruct *) mempool_alloc_safe(0x800, COLOUR_TAG_GREEN);
     gGameTextTableEntries[0] = (char *) &gGameTextTable[0]->entries[32];
     gGameTextTableEntries[1] = &gGameTextTableEntries[0][960];

@@ -196,7 +196,6 @@ s16 gTransformAngleY;
 s16 gRaceEndTimer;
 s8 gRaceEndStage;
 s8 gNumRacersSaved;
-UNUSED s8 unused_D_8011AD52;
 s8 D_8011AD53;
 s32 D_8011AD54;
 Object *(*gSpawnObjectHeap)[sizeof(Object)];
