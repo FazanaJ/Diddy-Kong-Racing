@@ -1,26 +1,11 @@
 #include "video.h"
 #include "PRinternal/viint.h"
 #include "main.h"
+#include "rcp_dkr.h"
 
 /************ .data ************/
 
 u16 *gVideoDepthBuffer = NULL;
-UNUSED s32 D_800DE774 = 0;
-UNUSED s8 D_800DE778 = 2;
-
-VideoModeResolution gVideoModeResolutions[] = {
-    { SCREEN_WIDTH, SCREEN_HEIGHT },                   // 320x240
-    { SCREEN_WIDTH, SCREEN_HEIGHT },                   // 320x240
-    { HIGH_RES_SCREEN_WIDTH, SCREEN_HEIGHT },          // 640x240
-    { HIGH_RES_SCREEN_WIDTH, SCREEN_HEIGHT },          // 640x240
-    { HIGH_RES_SCREEN_WIDTH, HIGH_RES_SCREEN_HEIGHT }, // 640x480
-    { HIGH_RES_SCREEN_WIDTH, HIGH_RES_SCREEN_HEIGHT }, // 640x480
-    { HIGH_RES_SCREEN_WIDTH, HIGH_RES_SCREEN_HEIGHT }, // 640x480
-    { HIGH_RES_SCREEN_WIDTH, HIGH_RES_SCREEN_HEIGHT }, // 640x480
-};
-
-// This value exists in order to make sure there are no out of bounds accesses of gVideoModeResolutions
-#define NUM_RESOLUTION_MODES ((s32) (sizeof(gVideoModeResolutions) / sizeof(VideoModeResolution)) - 1)
 
 /*******************************/
 
@@ -41,7 +26,6 @@ u16 *gVideoLastFramebuffer; // Official Name: otherScreen
 u16 *gVideoCurrDepthBuffer;
 u16 *gVideoLastDepthBuffer; // Official Name: otherZbuf
 u8 D_801262E4;
-UNUSED OSMesg D_801262E8[8];
 u8 gVideoDeltaCounter;
 u8 gVideoDeltaTime;
 OSScClient gVideoSched;
@@ -70,12 +54,6 @@ void video_init(s32 videoModeIndex, OSSched *sc) {
         gVideoHeightRatio = HEIGHT_RATIO_NTSC;
     }
 
-    if (osTvType == OS_TV_TYPE_PAL) {
-        for (i = 0; i <= NUM_RESOLUTION_MODES; i++) {
-            gVideoModeResolutions[i].height += PAL_HEIGHT_DIFFERENCE;
-        }
-    }
-
     video_delta_reset();
     fb_mode_set(videoModeIndex);
     for (i = 0; i < 3; i++) {
@@ -100,28 +78,12 @@ void fb_mode_set(s32 videoModeIndex) {
 }
 
 /**
- * Unused function that would return the current video mode index.
- */
-UNUSED s32 fb_mode(void) {
-    return gVideoModeIndex;
-}
-
-/**
- * Unused function that would change the framebuffer dimensions.
- * Since only one kind of video mode is ever used, this function is never called.
- */
-UNUSED void fb_mode_size(s32 fbIndex) {
-    gVideoFbWidths[fbIndex] = gVideoModeResolutions[gVideoModeIndex & NUM_RESOLUTION_MODES].width;
-    gVideoFbHeights[fbIndex] = gVideoModeResolutions[gVideoModeIndex & NUM_RESOLUTION_MODES].height;
-}
-
-/**
  * Return the current framebuffer dimensions as a single s32 value.
  * The high 16 bits are the height of the frame, and the low 16 bits are the width.
  * Official Name: viGetCurrentSize
  */
 s32 fb_size(void) {
-    return (gVideoFbHeights[gVideoCurrFbIndex] << 16) | gVideoFbWidths[gVideoCurrFbIndex];
+    return (SCREEN_HEIGHT << 16) | SCREEN_WIDTH;
 }
 
 OSViMode gGlobalVI;
@@ -204,103 +166,6 @@ void vi_dither(void) {
 }
 
 /**
- * Initialise the VI settings.
- * It first checks the TV type ad then will set the properties of the VI
- * depending on the gVideoModeIndex value.
- * Most of these go unused, as the value is always 1.
- */
-void fb_init_vi(void) {
-    s32 viModeTableIndex;
-    OSViMode *tvViMode;
-
-    viModeTableIndex = OS_VI_NTSC_LPN1;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        viModeTableIndex = OS_VI_PAL_LPN1;
-    } else if (osTvType == OS_TV_TYPE_MPAL) {
-        viModeTableIndex = OS_VI_MPAL_LPN1;
-    }
-
-    switch (gVideoModeIndex & NUM_RESOLUTION_MODES) {
-        case VIDEO_MODE_LOWRES_LAN:
-            stubbed_printf("320 by 240 Point sampled, Non interlaced.\n");
-            osViSetMode(&osViModeTable[viModeTableIndex]);
-            break;
-        case VIDEO_MODE_LOWRES_LPN:
-            //!@bug: The video mode being set here is Point sampled
-            // but the printf implies it was intended to be Anti-aliased.
-            // By my understanding, this is the case we will always hit in code,
-            // So maybe it was swapped out late in development?
-            stubbed_printf("320 by 240 Anti-aliased, Non interlaced.\n");
-            tvViMode = &osViModeNtscLpn1;
-            if (osTvType == OS_TV_TYPE_PAL) {
-                tvViMode = &osViModePalLpn1;
-            } else if (osTvType == OS_TV_TYPE_MPAL) {
-                tvViMode = &osViModeMpalLpn1;
-            }
-            fb_memcpy((u8 *) tvViMode, (u8 *) &gTvViMode, sizeof(OSViMode));
-            if (osTvType == OS_TV_TYPE_PAL) {
-                // A simple osViExtendVStart to add an additional 24 scanlines?
-                gTvViMode.fldRegs[0].vStart -= (PAL_HEIGHT_DIFFERENCE << 16);
-                gTvViMode.fldRegs[1].vStart -= (PAL_HEIGHT_DIFFERENCE << 16);
-                gTvViMode.fldRegs[0].vStart += PAL_HEIGHT_DIFFERENCE;
-                gTvViMode.fldRegs[1].vStart += PAL_HEIGHT_DIFFERENCE;
-            }
-            osViSetMode(&gTvViMode);
-            break;
-        case VIDEO_MODE_MEDRES_LPN:
-            stubbed_printf("640 by 240 Point sampled, Non interlaced.\n");
-            tvViMode = &osViModeNtscLpn1;
-            if (osTvType == OS_TV_TYPE_PAL) {
-                tvViMode = &osViModePalLpn1;
-            } else if (osTvType == OS_TV_TYPE_MPAL) {
-                tvViMode = &osViModeMpalLpn1;
-            }
-
-            fb_memcpy((u8 *) tvViMode, (u8 *) &gTvViMode, sizeof(OSViMode));
-            gTvViMode.comRegs.width = WIDTH(HIGH_RES_SCREEN_WIDTH);
-            gTvViMode.comRegs.xScale = SCALE(1, 0);
-            gTvViMode.fldRegs[0].origin = ORIGIN(HIGH_RES_SCREEN_WIDTH * 2);
-            gTvViMode.fldRegs[1].origin = ORIGIN(HIGH_RES_SCREEN_WIDTH * 2);
-            osViSetMode(&gTvViMode);
-            break;
-        case VIDEO_MODE_MEDRES_LAN:
-            stubbed_printf("640 by 240 Anti-aliased, Non interlaced.\n");
-            tvViMode = &osViModeNtscLan1;
-            if (osTvType == OS_TV_TYPE_PAL) {
-                tvViMode = &osViModePalLan1;
-            } else if (osTvType == OS_TV_TYPE_MPAL) {
-                tvViMode = &osViModeMpalLan1;
-            }
-            fb_memcpy((u8 *) tvViMode, (u8 *) &gTvViMode, sizeof(OSViMode));
-            gTvViMode.comRegs.width = WIDTH(HIGH_RES_SCREEN_WIDTH);
-            gTvViMode.comRegs.xScale = SCALE(1, 0);
-            gTvViMode.fldRegs[0].origin = ORIGIN(HIGH_RES_SCREEN_WIDTH * 2);
-            gTvViMode.fldRegs[1].origin = ORIGIN(HIGH_RES_SCREEN_WIDTH * 2);
-            osViSetMode(&gTvViMode);
-            break;
-        case VIDEO_MODE_HIGHRES_HPN:
-            stubbed_printf("640 by 480 Point sampled, Interlaced.\n");
-            osViSetMode(&osViModeTable[viModeTableIndex + OS_VI_NTSC_HPN1]);
-            break;
-        case VIDEO_MODE_HIGHRES_HAN:
-            stubbed_printf("640 by 480 Anti-aliased, Interlaced.\n");
-            osViSetMode(&osViModeTable[viModeTableIndex + OS_VI_NTSC_HAN1]);
-            break;
-        case VIDEO_MODE_HIGHRES_HPF:
-            stubbed_printf("640 by 480 Point sampled, Interlaced, De-flickered.\n");
-            osViSetMode(&osViModeTable[viModeTableIndex + OS_VI_NTSC_HPF1]);
-            break;
-        case VIDEO_MODE_HIGHRES_HAF:
-            stubbed_printf("640 by 480 Anti-aliased, Interlaced, De-flickered.\n");
-            osViSetMode(&osViModeTable[viModeTableIndex + OS_VI_NTSC_HAF1]);
-            break;
-    }
-    osViSetSpecialFeatures(OS_VI_DIVOT_OFF);
-    osViSetSpecialFeatures(OS_VI_DITHER_FILTER_OFF);
-    osViSetSpecialFeatures(OS_VI_GAMMA_OFF);
-}
-
-/**
  * Allocate the selected framebuffer index from the main pool.
  * Will also allocate the depthbuffer if it does not already exist.
  * Framebuffers should be 64 bit aligned, but since the memory allocator
@@ -315,14 +180,14 @@ void fb_alloc(s32 index) {
     u8 *addr;
 #if EXPANSION_PAK_SUPPORT
     if (gExpansionPak) {
-        width = SCREEN_WIDTH_WIDE;
+        //width = SCREEN_WIDTH_WIDE;
         //height = SCREEN_HEIGHT_HIGH;
-        bitSize = 4;
+        //bitSize = 4;
     }
 #endif
 #if EXPANSION_PAK_SUPPORT || defined(FIFO_4MB)
     if (gGfxSPTaskOutputBuffer == NULL) {
-        gGfxSPTaskOutputBuffer = mempool_alloc_safe(FIFO_BUFFER_SIZE + 0x10, COLOUR_TAG_WHITE);
+        gGfxSPTaskOutputBuffer = mempool_alloc_safe(OUTPUT_BUFFER_SIZE + 0x10, COLOUR_TAG_WHITE);
         gGfxSPTaskOutputBuffer = (u64 *) (((s32) gGfxSPTaskOutputBuffer + 0xF) & ~0xF);
     }
 #endif
@@ -343,8 +208,6 @@ void fb_alloc(s32 index) {
             }
         break;
     }
-    gVideoFbWidths[index] = gVideoModeResolutions[gVideoModeIndex & NUM_RESOLUTION_MODES].width;
-    gVideoFbHeights[index] = gVideoModeResolutions[gVideoModeIndex & NUM_RESOLUTION_MODES].height;
     /*if (gVideoModeIndex >= VIDEO_MODE_MIDRES_MASK) {
         gVideoFramebuffers[index] =
             mempool_alloc_safe((HIGH_RES_SCREEN_WIDTH * HIGH_RES_SCREEN_HEIGHT * 2) + 0x30, COLOUR_TAG_WHITE);
@@ -413,19 +276,6 @@ void fb_update(s32 updateRate) {
             detect_framebuffer();
         }
     }*/
-}
-
-void func_8007AB24(u8 arg0) {
-    D_801262E4 = arg0;
-}
-
-/**
- * Unused function that returns the refresh rate, after performance.
- * A fully performant game would return 60.
- * Perhaps may have been used originally to calculate the factor in which to handle frameskipping with.
- */
-UNUSED s32 vi_refresh_rate(void) {
-    return (s32) ((f32) gVideoRefreshRate / (f32) gVideoDeltaTime);
 }
 
 #define NUM_FRAMEBUFFERS 3

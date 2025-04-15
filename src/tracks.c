@@ -72,9 +72,6 @@ ObjectSegment *gSceneActiveCamera;
 
 s32 gSceneCurrentPlayerID;
 Object *gSkydomeSegment;
-UNUSED s32 gIsNearCurrBBox; // Set to true if the current visible segment is close to the camera.
-UNUSED s32 D_8011B0C0;      // Set to 0 then never read.
-UNUSED s32 gDisableShadows; // Never not 0.
 s32 gShadowHeapFlip;        // Flips between 0 and 1 to prevent incorrect access between frames.
 s32 D_8011B0CC;
 s32 gShadowIndex;
@@ -134,15 +131,10 @@ WaterProperties *gTrackWaves[20];
 s8 D_8011D308;
 LevelModel *gTrackModelHeap;
 s32 *gLevelModelTable;
-UNUSED f32 gPrevCameraX; // Set but never read
-UNUSED f32 gPrevCameraY; // Set but never read
-UNUSED f32 gPrevCameraZ; // Set but never read
 Triangle *gShadowHeapTris[4];
 Triangle *gCurrentShadowTris;
-UNUSED s32 D_8011D334;
 Vertex *gShadowHeapVerts[4];
 Vertex *gCurrentShadowVerts;
-UNUSED s32 D_8011D34C;
 DrawTexture *gShadowHeapTextures[4];
 DrawTexture *gCurrentShadowTexture;
 s32 D_8011D364;
@@ -152,7 +144,6 @@ u16 **D_8011D370; // Allocated 0x7D0
 s32 *D_8011D374;
 s32 D_8011D378;
 s32 gScenePlayerViewports;
-UNUSED f32 gCurrBBoxDistanceToCamera; // Used in a comparison check, but functionally unused.
 u32 gWaveBlockCount;
 FogData gFogData[4];
 Vec3i gScenePerspectivePos;
@@ -300,9 +291,6 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, Triangle **tris, s32
     gSceneCurrVertexList = *vtx;
     gSceneCurrTriList = *tris;
     gSceneRenderSkyDome = TRUE;
-    gDisableShadows = FALSE;
-    D_8011B0C0 = 0;
-    gIsNearCurrBBox = FALSE;
     numViewports = set_active_viewports_and_max(gScenePlayerViewports);
     if (is_game_paused()) {
         tempUpdateRate = 0;
@@ -456,8 +444,6 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, Triangle **tris, s32
 }
 
 /************ .rodata ************/
-UNUSED const char gTrackClippingErrorString[] = "Solid Clipping x0=x1 Error!!!\n";
-UNUSED const char gTrackHeightOverflowString[] = "TrackGetHeight() - Overflow!!!\n";
 
 #pragma GLOBAL_ASM("asm/nonmatchings/tracks/func_80025510.s")
 
@@ -1349,9 +1335,6 @@ void initialise_player_viewport_vars(s32 updateRate) {
     } else {
         gSceneStartSegment = -1;
     }
-    gPrevCameraX = gSceneActiveCamera->trans.x_position;
-    gPrevCameraY = gSceneActiveCamera->trans.y_position;
-    gPrevCameraZ = gSceneActiveCamera->trans.z_position;
     if (gWaveBlockCount != 0) {
         func_800B8B8C();
         racers = get_racer_objects(&numRacers);
@@ -1715,29 +1698,6 @@ void add_segment_to_order(s32 segmentIndex, s32 *segmentsOrderIndex, u8 *segment
 }
 
 /**
- * Checks if the active camera is currently inside this segment.
- * Has a small inner margin where it doesn't consider the camera inside.
- * Goes unused.
- */
-UNUSED s32 check_if_inside_segment(Object *obj, s32 segmentIndex) {
-    LevelModelSegmentBoundingBox *bb;
-    s32 x, y, z;
-    if (segmentIndex >= gCurrentLevelModel->numberOfSegments) {
-        return FALSE;
-    }
-    bb = &gCurrentLevelModel->segmentsBoundingBoxes[segmentIndex];
-    x = obj->segment.trans.x_position;
-    y = obj->segment.trans.y_position;
-    z = obj->segment.trans.z_position;
-    if ((x < (bb->x2 + 25)) && ((bb->x1 - 25) < x) && (z < (bb->z2 + 25)) && ((bb->z1 - 25) < z) &&
-        (y < (bb->y2 + 25)) && ((bb->y1 - 25) < y)) {
-        return TRUE;
-    }
-
-    return FALSE;
-}
-
-/**
  * Iterates through every existing segment to see which one the active camera is inside.
  * Uses mainly a two dimensional axis check here, instead of the function above.
  * Returns the segment currently inside.
@@ -1919,7 +1879,6 @@ void func_8002A31C(void) {
  * There's a large unused portion at the bottom writing to two vars, that are never later read.
  */
 s32 should_segment_be_visible(LevelModelSegmentBoundingBox *bb) {
-    UNUSED u8 unknown[0x28];
     s64 sp48;
     s32 i, j;
     s32 isVisible;
@@ -1961,12 +1920,6 @@ s32 should_segment_be_visible(LevelModelSegmentBoundingBox *bb) {
     x = (bb->x2 + bb->x1) >> 1;
     y = (bb->y2 + bb->y1) >> 1;
     z = (bb->z2 + bb->z1) >> 1;
-    gCurrBBoxDistanceToCamera = get_distance_to_active_camera(x, y, z);
-    if (gCurrBBoxDistanceToCamera < 1000.0) {
-        gIsNearCurrBBox = TRUE;
-    } else {
-        gIsNearCurrBBox = FALSE;
-    }
     return TRUE;
 }
 
@@ -2057,30 +2010,6 @@ s32 check_if_in_draw_range(Object *obj) {
         }
     }
     return TRUE;
-}
-
-UNUSED void func_8002AC00(s32 arg0, s32 arg1, s32 arg2) {
-    s32 index;
-    s32 index2;
-    u8 temp;
-
-    if (arg0 < gCurrentLevelModel->numberOfSegments && arg1 < gCurrentLevelModel->numberOfSegments) {
-        index = gCurrentLevelModel->segments[arg0].unk28;
-        index2 = arg1 >> 3;
-        temp = 1 << (arg1 & 7);
-        if (arg2 != 0) {
-            (&gCurrentLevelModel->segmentsBitfields[index])[index2] |= temp;
-        } else {
-            (&gCurrentLevelModel->segmentsBitfields[index])[index2] &= ~temp;
-        }
-    }
-}
-
-// These types are probably wrong because the vars are likely still unidentified structs, but the code matches still.
-UNUSED void dayGetTrackFade(s32 *arg0, s32 *arg1, s32 *arg2) {
-    *arg0 = (unsigned) D_8011D378;
-    *arg1 = (unsigned) D_8011D370;
-    *arg2 = (unsigned) D_8011D374;
 }
 
 void func_8002ACC8(s32 arg0) {
@@ -2597,7 +2526,7 @@ void render_object_shadow(Object *obj, ShadowData *shadow) {
     s32 alpha;
 
     if (obj->segment.header->shadowGroup) {
-        if (shadow->meshStart != -1 && gDisableShadows == FALSE) {
+        if (shadow->meshStart != -1) {
             D_8011B0CC = gShadowHeapFlip;
             if (obj->segment.header->shadowGroup == SHADOW_SCENERY) {
                 D_8011B0CC += 2;
@@ -2651,7 +2580,7 @@ void render_object_water_effects(Object *obj, WaterEffect *effect) {
     UNUSED s32 offsetY;
 
     if (obj->segment.header->waterEffectGroup) {
-        if (effect->meshStart != -1 && gDisableShadows == FALSE) {
+        if (effect->meshStart != -1) {
             gShadowIndex = gShadowHeapFlip;
             i = effect->meshStart;
             if (obj->segment.header->waterEffectGroup == SHADOW_SCENERY) {
@@ -3380,16 +3309,6 @@ void slowly_change_fog(s32 fogIdx, s32 red, s32 green, s32 blue, s32 near, s32 f
     fogData->addFog.far = ((far << 16) - fogData->fog.far) / switchTimer;
     fogData->switchTimer = switchTimer;
     fogData->fogChanger = NULL;
-}
-
-/**
- * Updates the stored perspective of the camera, as well as the envmap values derived from it.
- */
-UNUSED void update_perspective_and_envmap(void) {
-    gSceneActiveCamera = get_active_camera_segment();
-    compute_scene_camera_transform_matrix();
-    update_envmap_position((f32) gScenePerspectivePos.x / 65536.0f, (f32) gScenePerspectivePos.y / 65536.0f,
-                           (f32) gScenePerspectivePos.z / 65536.0f);
 }
 
 /**

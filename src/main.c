@@ -512,6 +512,7 @@ void debug_page_minimal(DebugData *d, Gfx **dList, s32 updateRate) {
     f32 ram;
     char *ramStr[] = {"KB", "MB"};
     s32 lol;
+    u32 ramCount;
 
     if (d->pageViewMode == 0) {
         debug_fillrect(dList, 8, 8, 112, 60 + 2, 0x0000007F);
@@ -535,7 +536,12 @@ void debug_page_minimal(DebugData *d, Gfx **dList, s32 updateRate) {
             y += 10;
         }
         lol = 0;
-        ram = ((u32) 0x400000 - gDebug.ramTotal) / 1024.0f;
+        if (gUseExpansionMemory) {
+            ramCount = 0x800000;
+        } else {
+            ramCount = 0x400000;
+        }
+        ram = ((u32) ramCount - gDebug.ramTotal) / 1024.0f;
         if (ram < 0.0f) {
             ram = 0.0f;
         }

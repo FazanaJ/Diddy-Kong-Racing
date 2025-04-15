@@ -112,8 +112,6 @@ FadeTransition gDoorFadeTransition = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_
 /************ .rodata ************/
 
 const char gRacerDebugCoords[] = "%.1f,%.1f,%.1f\n";
-UNUSED const char gChecksumOverflowString[] = "Chk ovflow!!\n";
-UNUSED const char gRacerBackString[] = "Back\n";
 
 /*********************************/
 

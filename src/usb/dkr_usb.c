@@ -42,7 +42,7 @@
     
 #define HASHTABLE_SIZE 7
 #define COMMAND_TOKENS 10
-#define BUFFER_SIZE    256
+#define BUFFER_SIZE    512
 
 // Copied from Thread30
 OSThread gThreadUsb;

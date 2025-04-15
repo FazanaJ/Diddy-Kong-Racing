@@ -47,27 +47,7 @@
 #include "stacks.h"
 #include "usb/usb.h"
 
-/************ .rodata ************/
-
-#if VERSION >= VERSION_79
-UNUSED char *sDebugRomBuildInfo[] = { "1.1634", "17/10/97 11:19", "pmountain" };
-#elif VERSION == VERSION_77
-UNUSED char *sDebugRomBuildInfo[] = { "1.1605", "02/10/97 16:03", "pmountain" };
-#endif
-
-const char D_800E7134[] = "BBB\n"; // Functionally unused.
-
-/*********************************/
-
 /************ .data ************/
-
-#if VERSION == VERSION_80
-UNUSED char gBuildString[] = "Version 8.0 27/10/97 12.30 L.Schuneman";
-#elif VERSION == VERSION_79
-UNUSED char gBuildString[] = "Version 7.9 14/10/97 19.40 L.Schuneman";
-#elif VERSION == VERSION_77
-UNUSED char gBuildString[] = "Version 7.7 29/09/97 15.00 L.Schuneman";
-#endif
 
 s8 sAntiPiracyTriggered = FALSE;
 UNUSED s32 D_800DD378 = 1;
@@ -87,12 +67,10 @@ s32 gNumHudMatPerPlayer[MAXCONTROLLERS] = { 300, 400, 550, 600 };
 s32 gNumHudTrisPerPlayer[MAXCONTROLLERS] = { 20, 30, 40, 50 };
 s8 gDrawFrameTimer = 0;
 FadeTransition D_800DD3F4 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_BLACK, 20, 0);
-UNUSED FadeTransition D_800DD3FC = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_WHITE, 20, FADE_STAY);
 s32 sLogicUpdateRate = LOGIC_5FPS;
 f32 sLogicUpdateRateF = LOGIC_5FPS;
 FadeTransition gDrumstickSceneTransition =
     FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_WHITE, 30, FADE_STAY);
-UNUSED char *D_800DD410[3] = { "CAR", "HOV", "PLN" };
 FadeTransition gLevelFadeOutTransition =
     FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_BLACK, 30, FADE_STAY);
 FadeTransition D_800DD424 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_BLACK, 260, FADE_STAY);
@@ -103,14 +81,12 @@ FadeTransition D_800DD424 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FAD
 
 Gfx *gDisplayLists[2];
 Gfx *gCurrDisplayList;
-UNUSED s32 D_801211FC;
 MatrixS *gMatrixHeap[2];
 MatrixS *gGameCurrMatrix;
 Vertex *gVertexHeap[2];
 Vertex *gGameCurrVertexList;
 Triangle *gTriangleHeap[2];
 Triangle *gGameCurrTriList;
-UNUSED s32 D_80121230[8];
 s8 gLevelSettings[16];
 OSSched gMainSched; // 0x288 / 648 bytes
 u64 gSchedStack[STACKSIZE(STACK_SCHED)];
@@ -134,7 +110,6 @@ Vehicle gMenuVehicleID; // Looks to be the current level's vehicle ID.
 s32 sBootDelayTimer;
 s8 gLevelLoadType;
 s8 gNextMap;
-UNUSED s8 D_80123526; // Set to 0 then never used.
 s32 gCurrNumF3dCmdsPerPlayer;
 s32 gCurrNumHudMatPerPlayer;
 s32 gCurrNumHudTrisPerPlayer;
@@ -143,7 +118,6 @@ OSScClient *gNMISched[3];
 OSMesg gGameMesgBuf[3];
 OSMesgQueue gGameMesgQueue;
 s32 gNMIMesgBuf;          // Official Name: resetPressed
-UNUSED s32 D_80123568[3]; // BSS Padding
 s32 gNumGfxTasksAtScheduler = 0;
 u8 gShowBG;
 
@@ -330,19 +304,6 @@ void main_game_loop(void) {
     rdp_init(&gCurrDisplayList);
     bgdraw_render(&gCurrDisplayList, &gGameCurrMatrix, gShowBG);
     gSaveDataFlags = input_update(gSaveDataFlags, sLogicUpdateRate);
-    if (get_lockup_status()) {
-        render_epc_lock_up_display();
-        gGameMode = GAMEMODE_LOCKUP;
-    }
-    if (gDmemInvalid) {
-        debugLoopCounter = 0;
-        while (debugLoopCounter != 10000000) {
-            debugLoopCounter++;
-        }
-        if (debugLoopCounter > 20000000) { // This shouldn't ever be true?
-            render_printf(D_800E7134 /* "BBB\n" */);
-        }
-    }
 
     switch (gGameMode) {
         case GAMEMODE_INTRO: // Pre-boot screen
@@ -353,9 +314,6 @@ void main_game_loop(void) {
             break;
         case GAMEMODE_INGAME: // In game (Controlling a character)
             mode_game(sLogicUpdateRate);
-            break;
-        case GAMEMODE_LOCKUP: // EPC (lockup display)
-            mode_lockup(sLogicUpdateRate);
             break;
     }
 
@@ -882,14 +840,6 @@ GameMode get_game_mode(void) {
 }
 
 /**
- *  Sets the current game mode.
- *  Official Name: mainSetMode?
- */
-UNUSED void set_game_mode(s32 changeTo) {
-    gGameMode = changeTo;
-}
-
-/**
  * Sets up and loads a level to be used in the background of the menu that's about to be set up.
  * Used for every kind of menu that's not ingame.
  */
@@ -1277,14 +1227,6 @@ void clear_game_progress(Settings *settings) {
 }
 
 /**
- * Call functions to set all game save data to the default.
- */
-UNUSED void reset_save_data(void) {
-    clear_lap_records(gSettingsPtr, 3);
-    clear_game_progress(gSettingsPtr);
-}
-
-/**
  * Return the global game settings.
  * This is where global game records and perferences are stored.
  */
@@ -1319,20 +1261,6 @@ s32 is_reset_pressed(void) {
  */
 s32 get_ingame_map_id(void) {
     return gPlayableMapId;
-}
-
-/**
- * Marks a flag to read flap times from the eeprom
- */
-UNUSED void mark_to_read_flap_times(void) {
-    gSaveDataFlags |= SAVE_DATA_FLAG_READ_FLAP_TIMES;
-}
-
-/**
- * Marks a flag to read course times from the eeprom
- */
-UNUSED void mark_to_read_course_times(void) {
-    gSaveDataFlags |= SAVE_DATA_FLAG_READ_COURSE_TIMES;
 }
 
 /**
@@ -1409,15 +1337,6 @@ void safe_mark_write_save_file(s32 saveFileIndex) {
 void mark_save_file_to_erase(s32 saveFileIndex) {
     // Set bit 7 and and place saveFileIndex into bits 10 and 11 while wiping everything else
     gSaveDataFlags = SAVE_DATA_FLAG_ERASE_SAVE_DATA | ((saveFileIndex & 3) << 10);
-}
-
-/**
- * Marks a flag to read eeprom settings from flash later
- * @bug: Because this is the same bit used for reading save files,
- *       it will change the save file number to read from
- */
-UNUSED void mark_read_eeprom_settings(void) {
-    gSaveDataFlags |= SAVE_DATA_FLAG_READ_EEPROM_SETTINGS; // Set bit 8
 }
 
 /**
@@ -1524,7 +1443,6 @@ void level_transition_begin(s32 type) {
     if (gLevelLoadTimer == 0) {
         gLevelLoadTimer = 40;
         gLevelLoadType = LEVEL_LOAD_NORMAL;
-        D_80123526 = 0;
         if (type == 1) { // FADE_BARNDOOR_HORIZONTAL?
             transition_begin(&gLevelFadeOutTransition);
         }
@@ -1539,14 +1457,6 @@ void level_transition_begin(s32 type) {
         if (type == 0) { // FADE_FULLSCREEN?
             gLevelLoadTimer = 2;
         }
-    }
-}
-
-UNUSED void func_8006F20C(void) {
-    if (gLevelLoadTimer == 0) {
-        transition_begin(&gLevelFadeOutTransition);
-        gLevelLoadTimer = 40;
-        gLevelLoadType = LEVEL_LOAD_UNK1;
     }
 }
 

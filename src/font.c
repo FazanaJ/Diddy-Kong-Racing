@@ -264,35 +264,6 @@ void set_text_font(s32 fontID) {
 }
 
 /**
- * Returns the address of the loaded font ID if it exists.
- * Goes unused.
- */
-UNUSED TextureHeader *get_loaded_font(s32 font, u8 index) {
-#if REGION == REGION_JP
-    return NULL;
-#else
-    FontData *fontData;
-    u8 pointerIndex;
-
-    if (font < gNumberOfFonts) {
-        fontData = &gFonts[font];
-        if (fontData->loadedFonts[0] != 0) {
-            index -= 32;
-            pointerIndex = fontData->letter[index].textureID;
-            if (pointerIndex != 0xFF) {
-                return fontData->texturePointers[pointerIndex];
-            }
-            return NULL;
-        }
-    }
-    //!@bug: No return statement. The function will return whatever happens to be in v0 before this function was called.
-#ifdef AVOID_UB
-    return NULL;
-#endif
-#endif
-}
-
-/**
  * Sets the colour of the current dialogue box's text.
  * Official Name: fontColour
  */
@@ -316,13 +287,6 @@ void set_text_background_colour(s32 red, s32 green, s32 blue, s32 alpha) {
 }
 
 /**
- * Unused text draw function that just calls the function without any modifications.
- */
-UNUSED void draw_text_plain_unused(Gfx **displayList, char *text, AlignmentFlags alignmentFlags) {
-    render_text_string(displayList, &gDialogueBoxBackground[0], text, alignmentFlags, 1.0f);
-}
-
-/**
  * Builds the background settings, then renders the given text at a given position.
  * Official Name: fontPrintWindowXY?
  */
@@ -331,30 +295,6 @@ void draw_text(Gfx **displayList, s32 xpos, s32 ypos, char *text, AlignmentFlags
     temp->xpos = (xpos == POS_CENTRED) ? temp->width >> 1 : xpos;
     temp->ypos = (ypos == POS_CENTRED) ? temp->height >> 1 : ypos;
     render_text_string(displayList, temp, text, alignmentFlags, 1.0f);
-}
-
-/**
- * Unused text draw function that would draw text in the current dialogue box.
- */
-UNUSED void draw_dialogue_text_unused(Gfx **displayList, s32 dialogueBoxID, char *text, AlignmentFlags alignmentFlags) {
-    if (dialogueBoxID >= 0 && dialogueBoxID < DIALOGUEBOXBACKGROUND_COUNT) {
-        DialogueBoxBackground *temp = &gDialogueBoxBackground[dialogueBoxID];
-        render_text_string(displayList, temp, text, alignmentFlags, 1.0f);
-    }
-}
-
-/**
- * Unused text draw function that would draw text in the current dialogue box while overriding position.
- * Official Name: fontPrintWindowXY
- */
-UNUSED void draw_dialogue_text_pos_unused(Gfx **displayList, s32 dialogueBoxID, s32 xpos, s32 ypos, char *text,
-                                          AlignmentFlags alignmentFlags) {
-    if (dialogueBoxID >= 0 && dialogueBoxID < DIALOGUEBOXBACKGROUND_COUNT) {
-        DialogueBoxBackground *temp = &gDialogueBoxBackground[dialogueBoxID];
-        temp->xpos = (xpos == POS_CENTRED) ? temp->width >> 1 : xpos;
-        temp->ypos = (ypos == POS_CENTRED) ? temp->height >> 1 : ypos;
-        render_text_string(displayList, temp, text, alignmentFlags, 1.0f);
-    }
 }
 
 /**
@@ -874,43 +814,6 @@ void set_current_text_background_colour(s32 dialogueBoxID, s32 red, s32 green, s
 }
 
 /**
- * Sets the positional text offset of the current dialogue box.
- * Goes unused.
- */
-UNUSED void set_current_text_offset(s32 dialogueBoxID, s32 x, s32 y) {
-    DialogueBoxBackground *dialogueBox;
-    if (dialogueBoxID <= 0 || dialogueBoxID >= DIALOGUEBOXBACKGROUND_COUNT) {
-        return;
-    }
-    dialogueBox = &gDialogueBoxBackground[dialogueBoxID];
-    dialogueBox->textOffsetX += x;
-    dialogueBox->textOffsetY += y;
-}
-
-/**
- * Resets the positional text offset of the current dialogue box.
- * Goes unused.
- */
-UNUSED void reset_current_text_offset(s32 dialogueBoxID) {
-    DialogueBoxBackground *dialogueBox;
-    if (dialogueBoxID <= 0 || dialogueBoxID >= DIALOGUEBOXBACKGROUND_COUNT) {
-        return;
-    }
-    dialogueBox = &gDialogueBoxBackground[dialogueBoxID];
-    dialogueBox->textOffsetX = 0;
-    dialogueBox->textOffsetY = 0;
-}
-
-/**
- * Calls the basic dialogue text draw function passing through the global dialogue box ID.
- * Goes unused.
- */
-UNUSED void func_800C510C(s32 dialogueBoxID, char *text, s32 number, s32 flags) {
-    render_dialogue_text(dialogueBoxID, gDialogueBoxBackground[dialogueBoxID].xpos,
-                         gDialogueBoxBackground[dialogueBoxID].ypos, text, number, flags);
-}
-
-/**
  * Draws the text portion of a dialogue box that's passed through.
  * Binds the text to the box, then returns it.
  * Official Name: fontWindowAddStringXY
@@ -998,27 +901,6 @@ void *render_dialogue_text(s32 dialogueBoxID, s32 posX, s32 posY, char *text, s3
 }
 
 /**
- * Unused function that moved a dialogue box ID to the front of the stack.
- */
-UNUSED void move_dialogue_box_to_front(s32 dialogueBoxID, DialogueBox *dialogueBox) {
-    DialogueBoxBackground *dialogueBoxTemp;
-    DialogueBox *dialogueTextBox;
-    DialogueBox **dialogueTextBoxTemp;
-
-    dialogueBoxTemp = &gDialogueBoxBackground[dialogueBoxID];
-    dialogueTextBoxTemp = &dialogueBoxTemp->textBox;
-    dialogueTextBox = dialogueBoxTemp->textBox;
-    while ((dialogueTextBox != NULL) && (dialogueTextBox != dialogueBox)) {
-        dialogueTextBoxTemp = &dialogueTextBox->nextBox;
-        dialogueTextBox = dialogueTextBox->nextBox;
-    }
-    if (dialogueTextBox != NULL) {
-        *dialogueTextBoxTemp = dialogueTextBox->nextBox;
-        dialogueBox->textNum = DIALOGUE_NUM_NULL;
-    }
-}
-
-/**
  * Clear all strings from this dialogue box ID.
  * Official Name: fontWindowFlushStrings
  */
@@ -1039,39 +921,6 @@ void dialogue_clear(s32 dialogueBoxID) {
 }
 
 /**
- * Unused function that set the offset of the text in the current dialogue box based on alignment flags.
- * Goes unused, as does the whole text offset system.
- */
-UNUSED void align_text_in_box(s32 dialogueBoxID, DialogueTextElement *box, s32 x, s32 y, s32 flags) {
-    FontData *fontData;
-    DialogueBoxBackground *dialogueBox;
-
-    dialogueBox = &gDialogueBoxBackground[dialogueBoxID];
-
-    if (box != NULL) {
-        if (box->font != FONT_UNK_FF) {
-            fontData = &gFonts[box->font];
-            if (flags != ALIGN_TOP_CENTER) {
-                switch (flags) {
-                    case ALIGN_TOP_RIGHT:
-                        y *= fontData->y;
-                        break;
-                    case ALIGN_BOTTOM_LEFT:
-                        y *= (dialogueBox->height / fontData->y) * fontData->y;
-                        break;
-                }
-                box->offsetX += x;
-                box->offsetY += y;
-                return;
-            }
-            box->offsetX = 0;
-            box->offsetY = 0;
-            return;
-        }
-    }
-}
-
-/**
  * Mark the selected dialogue box as open
  */
 void open_dialogue_box(s32 dialogueBoxID) {
@@ -1084,27 +933,6 @@ void open_dialogue_box(s32 dialogueBoxID) {
  */
 void dialogue_close(s32 dialogueBoxID) {
     gDialogueBoxBackground[dialogueBoxID].flags &= DIALOGUE_BOX_CLOSED;
-}
-
-/**
- * Mark the selected dialogue box as an unknown value
- */
-UNUSED void set_dialogue_box_unused_flag(s32 dialogueBoxID) {
-    gDialogueBoxBackground[dialogueBoxID].flags |= DIALOGUE_BOX_UNUSED_01;
-}
-
-/**
- * Clear DIALOGUE_BOX_UNUSED_01 from the dialogue box.
- */
-UNUSED void dialogue_box_clear_unused_flag(s32 dialogueBoxID) {
-    gDialogueBoxBackground[dialogueBoxID].flags &= (0xFFFF & ~DIALOGUE_BOX_UNUSED_01);
-}
-
-/**
- * Mark the selected dialogue box as using triangles to draw.
- */
-UNUSED void enable_dialogue_box_vertices(s32 dialogueBoxID) {
-    gDialogueBoxBackground[dialogueBoxID].flags |= DIALOGUE_BOX_VERTS;
 }
 
 /**

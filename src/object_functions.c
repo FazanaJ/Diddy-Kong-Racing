@@ -1874,9 +1874,6 @@ void obj_loop_dooropener(Object *obj, s32 updateRate) {
 void obj_init_overridepos(UNUSED Object *obj, UNUSED LevelObjectEntry_OverridePos *entry) {
 }
 
-UNUSED void obj_loop_overridepos(UNUSED Object *obj, UNUSED s32 arg1) {
-}
-
 /**
  * Wizpig ship initilisation.
  * Does nothing.
@@ -2034,13 +2031,6 @@ void obj_loop_snowball(Object *obj, s32 updateRate) {
     func_8001F460(obj, updateRate, obj);
 }
 
-/**
- * Character select init behaviour.
- * Does nothing. Not even called.
- */
-UNUSED void obj_init_char_select(UNUSED s32 arg0, UNUSED s32 arg1) {
-}
-
 void obj_loop_char_select(Object *charSelectObj, s32 updateRate) {
     s32 i2;
     s32 i;
@@ -2164,13 +2154,6 @@ void obj_loop_animcamera(Object *obj, s32 updateRate) {
                                          obj->segment.trans.rotation.z_rotation);
         }
     }
-}
-
-/**
- * Racer cutscene target init behaviour.
- * Does nothing. Not even called.
- */
-UNUSED void obj_init_animcar(UNUSED Object *obj, UNUSED s32 arg1) {
 }
 
 /**

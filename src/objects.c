@@ -169,26 +169,7 @@ FadeTransition gRaceEndTransition = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_O
 
 /*******************************/
 
-/************ .rodata ************/
-
-UNUSED const char sObjectOutofMemString[] = "Objects out of ram(1) !!\n";
-UNUSED const char sDoorNumberErrorString[] = "Door numbering error %d!!\n";
-UNUSED const char sObjectScopeErrorString[] = "objGetScope: Unknown scope for object %d\n";
-UNUSED const char sObjectListDataOverflowString[] = "ObjList (Part) Overflow %d!!!\n";
-UNUSED const char sObjectSetupError1String[] = "ObjSetupObject(1) Memory fail!!\n";
-UNUSED const char sObjectSetupError2String[] = "ObjSetupObject(2) Memory fail!!\n";
-UNUSED const char sObjectSetupError5String[] = "ObjSetupObject(5) Memory fail!!\n";
-UNUSED const char sObjectSetupError6String[] = "ObjSetupObject(6) Memory fail!!\n";
-UNUSED const char sObjectSetupError3String[] = "ObjSetupObject(3) Memory fail!!\n";
-UNUSED const char sObjectListOverflowString[] = "ObjList Overflow %d!!!\n";
-UNUSED const char sObjectSetupError4String[] = "ObjSetupObject(4) Memory fail!!\n";
 UNUSED const char sDuplicateCheckpointString[] = "Error: Multiple checkpoint no: %d !!\n";
-UNUSED const char sErrorChannelString[] = "ERROR Channel %d\n";
-UNUSED const char sReadOutErrorString[] = "RO error %d!!\n";
-UNUSED const char sPureAnguishString[] = "ARGHHHHHHHHH\n";
-
-/*********************************/
-
 /************ .bss ************/
 
 s16 D_8011AC20[128];
@@ -1534,68 +1515,8 @@ u8 is_in_time_trial(void) {
     return gIsTimeTrial;
 }
 
-UNUSED void func_8000E4E8(s32 index) {
-    s32 *temp_v0;
-    s32 i;
-    u8 *temp_a1;
-
-    temp_v0 = D_8011AEB0[index];
-    temp_v0[0] = D_8011AEA0[index];
-    temp_v0[3] = 0;
-    temp_v0[2] = 0;
-    temp_v0[1] = 0;
-    temp_a1 = &D_8011AE98[index][D_8011AEA0[index]];
-
-    // The backslash here is needed to match. And no, a for loop doesn't match.
-    // clang-format off
-    i = 0; \
-    while (i < 16) {
-        temp_a1[i] = 0;
-        i++;
-    }
-    // clang-format on
-}
-
-UNUSED s32 func_8000E558(Object *arg0) {
-    s32 temp_v0;
-    s32 new_var, new_var2;
-    if (arg0->segment.level_entry == NULL) {
-        return TRUE;
-    }
-    temp_v0 = (s32) arg0->segment.level_entry;
-    new_var2 = (s32) D_8011AE98[0];
-    if ((temp_v0 >= new_var2) && (((D_8011AEA0[0] * 8) + new_var2) >= temp_v0)) {
-        return FALSE;
-    }
-    new_var = (s32) D_8011AE98[1];
-    // Why even bother with this check?
-    if (temp_v0 >= new_var && temp_v0 <= ((D_8011AEA0[1] * 8) + new_var)) {
-        return TRUE;
-    }
-    return TRUE;
-}
-
 #pragma GLOBAL_ASM("asm/nonmatchings/objects/func_8000E5EC.s")
 #pragma GLOBAL_ASM("asm/nonmatchings/objects/func_8000E79C.s")
-
-UNUSED u8 *func_8000E898(u8 *arg0, s32 arg1) {
-    s32 temp_t6;
-    s32 i;
-    u8 *temp_v1;
-    u8 *new_var;
-    u8 *new_var2;
-
-    temp_t6 = arg0[1] & 0x3F;
-    new_var = arg0;
-    new_var = &D_8011AE98[arg1][D_8011AEA0[arg1]];
-    new_var2 = arg0;
-    temp_v1 = new_var;
-    D_8011AEA0[arg1] += temp_t6;
-    for (i = 0; i < temp_t6; i++) {
-        temp_v1[i] = new_var2[i];
-    }
-    return temp_v1;
-}
 
 /**
  * Returns the object at the current offset by ID.
@@ -1615,20 +1536,6 @@ Object **objGetObjList(s32 *arg0, s32 *cnt) {
     *arg0 = gObjectListStart;
     *cnt = gObjectCount;
     return gObjPtrList;
-}
-
-/**
- * Return the number of objects currently existing.
- */
-UNUSED s32 obj_count(void) {
-    return gObjectCount;
-}
-
-/**
- * Return the number of particles currently existing.
- */
-UNUSED s32 particle_count(void) {
-    return gParticleCount;
 }
 
 void func_8000E9D0(Object *obj) {
@@ -2217,20 +2124,6 @@ void free_object(Object *object) {
     gFreeListCount++;
 }
 
-/**
- * Return the length of the object ID table.
- */
-UNUSED s32 obj_table_ids(void) {
-    return gAssetsLvlObjTranslationTableLength;
-}
-
-/**
- * Return true if the object ID is not higher than the header table length.
- */
-UNUSED s32 obj_id_valid(s32 arg0) {
-    return (gAssetsLvlObjTranslationTable[arg0] < gAssetsObjectHeadersTableLength);
-}
-
 /*
  * Clears all existing particles from the object list
  */
@@ -2500,26 +2393,6 @@ void func_80011264(ObjectModel *model, Object *obj) {
 #endif
 
 /**
- * Do nothing. Unused.
- */
-UNUSED void do_nothing_func_80011364(UNUSED s32 unused) {
-}
-
-/**
- * Return true if paths are intended to be updated.
- * The variable they use here is backwards in terms of use.
- * Yes means no, no means yes.
- */
-UNUSED s32 path_update_check(void) {
-    // Ever hear of return !gPathUpdateOff?
-    if (gPathUpdateOff) {
-        return FALSE;
-    } else {
-        return TRUE;
-    }
-}
-
-/**
  * Signal to the game that checkpoints should be updated.
  */
 void path_enable(void) {
@@ -2540,11 +2413,6 @@ s32 get_race_countdown(void) {
  */
 s32 get_race_start_timer(void) {
     return gEventStartTimer;
-}
-
-// Unused function, purpose currently unknown.
-UNUSED s32 func_800113BC(void) {
-    return D_8011ADBC;
 }
 
 /**
@@ -3718,25 +3586,6 @@ s32 get_first_active_object(s32 *retObjCount) {
     return i;
 }
 
-UNUSED void func_800149C0(unk800149C0 *arg0, UNUSED s32 arg1, s32 arg2, s32 arg3, s32 *arg4, s32 *arg5, s32 arg6) {
-    UNUSED s32 pad;
-    s32 endVal;
-    s32 startVal;
-    f32 temp_f0;
-    s32 i;
-
-    temp_f0 = arg0->unk6;
-    endVal = func_80014B50(arg2, arg3, temp_f0, arg0->unk4);
-    startVal = func_80014B50(arg2, endVal - 1, temp_f0, arg0->unk4 + 8);
-
-    for (i = startVal; i < endVal; i++) {
-        gObjPtrList[i]->segment.object.unk38 += arg6;
-    }
-
-    *arg4 = startVal;
-    *arg5 = endVal - 1;
-}
-
 // Only used in the unused function func_800149C0
 s32 func_80014B50(s32 arg0, s32 arg1, f32 arg2, u32 arg3) {
     Object *swapTemp;
@@ -4341,13 +4190,6 @@ void set_taj_challenge_type(s32 vehicleID) {
     gPathUpdateOff = FALSE;
 }
 
-/**
- * Returns which Taj challenge is currently active.
- */
-UNUSED s16 get_taj_challenge_type(void) {
-    return gTajChallengeType;
-}
-
 #pragma GLOBAL_ASM("asm/nonmatchings/objects/func_80017E98.s")
 #pragma GLOBAL_ASM("asm/nonmatchings/objects/func_800185E4.s")
 
@@ -4463,7 +4305,6 @@ s8 set_course_finish_flags(Settings *settings) {
 void race_finish_adventure(UNUSED s32 unusedArg) {
     gRaceEndTimer = 300;
     gRaceEndStage = 0;
-    unused_D_8011AD52 = unusedArg;
 }
 
 /**
@@ -4966,25 +4807,6 @@ f32 func_8001B834(Object_Racer *racer1, Object_Racer *racer2) {
     return var_f2;
 }
 
-UNUSED f32 func_8001B954(Object_Racer *racer) {
-    f32 distLeft;
-    s32 checkpointID;
-
-    if (gNumberOfCheckpoints <= 0) {
-        return 0.0f;
-    }
-    distLeft = 0.0f;
-    for (checkpointID = racer->checkpoint; checkpointID < gNumberOfCheckpoints; checkpointID++) {
-        distLeft += gTrackCheckpoints[checkpointID].distance;
-    }
-    checkpointID = racer->checkpoint - 1;
-    if (checkpointID < 0) {
-        checkpointID = gNumberOfCheckpoints - 1;
-    }
-    distLeft += (gTrackCheckpoints[checkpointID].distance * racer->checkpoint_distance);
-    return distLeft;
-}
-
 /**
  * Returns a pointer to a specific checkpoint.
  */
@@ -5059,34 +4881,6 @@ Object *get_racer_object_by_port(s32 index) {
         return NULL;
     }
     return gRacersByPort[index];
-}
-
-/**
- * Unused function that would've iterated through all active checkpoints to render their visual nodes.
- * The function it calls is completely stubbed out.
- */
-UNUSED void debug_render_checkpoints(Gfx **dList, MatrixS **mtx, Vertex **vtx) {
-    s32 i;
-
-    load_and_set_texture_no_offset(dList, NULL, RENDER_Z_COMPARE);
-    if (gNumberOfCheckpoints > 3) {
-        for (i = 0; i < gNumberOfCheckpoints; i++) {
-            // Ground path
-            debug_render_checkpoint_node(i, 0, dList, mtx, vtx);
-        }
-        for (i = 0; i < gNumberOfCheckpoints; i++) {
-            // Air path
-            debug_render_checkpoint_node(i, 1, dList, mtx, vtx);
-        }
-    }
-}
-
-/**
- * Would've rendered an individual checkpoint node. On https://noclip.website, with dev objects enabled, you can see a
- * visual representation of what these checkpoints would've looked like ingame.
- */
-UNUSED void debug_render_checkpoint_node(UNUSED s32 checkpointID, UNUSED s32 pathID, UNUSED Gfx **dList,
-                                         UNUSED MatrixS **mtx, UNUSED Vertex **vtx) {
 }
 
 /**
@@ -5565,14 +5359,6 @@ void ainode_tail_set(s32 nodeID) {
 }
 
 /**
- * Return the last created AI node.
- */
-UNUSED Object *ainode_tail(s32 *nodeID) {
-    *nodeID = gAINodeTail[1];
-    return gAINodes[0][gAINodeTail[1]];
-}
-
-/**
  * Return the AI node assigned to the given ID.
  */
 Object *ainode_get(s32 nodeID) {
@@ -5582,50 +5368,12 @@ Object *ainode_get(s32 nodeID) {
     return NULL;
 }
 
-UNUSED void func_8001D248(UNUSED s32 arg0, UNUSED s32 arg1, UNUSED s32 arg2) {
-}
-
 /**
  * Applies shading properties to a global variable.
  * Presumably intended for level geometry, which supports shading, but never uses it.
  */
 void set_world_shading(f32 brightness, f32 ambient, s16 angleX, s16 angleY, s16 angleZ) {
     set_shading_properties((ShadeProperties *) &gWorldShading, brightness, ambient, angleX, angleY, angleZ);
-}
-
-/**
- * Add values onto the existing properties of an objects shading.
- * Resets the shading based off the new values.
- */
-UNUSED void add_shading_properties(Object *obj, f32 brightnessChange, f32 ambientChange, s16 angleX, s16 angleY,
-                                   s16 angleZ) {
-    if (obj->shading != NULL) {
-        obj->shading->brightness += brightnessChange;
-        if (obj->shading->brightness < 0.0f) {
-            obj->shading->brightness = 0.0f;
-        } else if (obj->shading->brightness > 1.0f) {
-            obj->shading->brightness = 1.0f;
-        }
-        obj->shading->ambient += ambientChange;
-        if (obj->shading->ambient < 0.0f) {
-            obj->shading->ambient = 0.0f;
-        }
-        if (obj->shading->ambient >= 2.0f) {
-            obj->shading->ambient = 1.99f;
-        }
-        set_shading_properties(obj->shading, obj->shading->brightness, obj->shading->ambient,
-                               (obj->shading->unk22 + angleX), (obj->shading->unk24 + angleY),
-                               (obj->shading->unk26 + angleZ));
-        if (obj->segment.header->unk3D != 0) {
-            obj->shading->unk4 = obj->segment.header->unk3A;
-            obj->shading->unk5 = obj->segment.header->unk3B;
-            obj->shading->unk6 = obj->segment.header->unk3C;
-            obj->shading->unk7 = obj->segment.header->unk3D;
-            obj->shading->unk8 = -(obj->shading->unk1C >> 1);
-            obj->shading->unkA = -(obj->shading->unk1E >> 1);
-            obj->shading->unkC = -(obj->shading->unk20 >> 1);
-        }
-    }
 }
 
 void set_shading_properties(ShadeProperties *arg0, f32 brightness, f32 ambient, s16 angleX, s16 angleY, s16 angleZ) {
@@ -5715,33 +5463,6 @@ void obj_shade_fancy(ObjectModel *model, Object *object, s32 arg2, f32 intensity
 #pragma GLOBAL_ASM("asm/nonmatchings/objects/calc_env_mapping_for_object.s")
 
 /**
- * Find the racer object representing the player and directly set position and angle to new values.
- */
-UNUSED void set_racer_position_and_angle(s16 player, s16 *x, s16 *y, s16 *z, s16 *angleZ, s16 *angleX, s16 *angleY) {
-    Object *obj;
-    Object_Racer *racer;
-    s32 i;
-
-    for (i = 0; i < gObjectCount; i++) {
-        obj = gObjPtrList[i];
-        if (!(obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED)) {
-            if (obj->behaviorId == BHV_RACER) {
-                racer = &obj->unk64->racer;
-                if (player == racer->playerIndex) {
-                    *x = obj->segment.trans.x_position;
-                    *y = obj->segment.trans.y_position;
-                    *z = obj->segment.trans.z_position;
-                    *angleZ = obj->segment.trans.rotation.z_rotation;
-                    *angleX = obj->segment.trans.rotation.x_rotation;
-                    *angleY = obj->segment.trans.rotation.y_rotation;
-                    i = gObjectCount; // Feels like it should be a break instead.
-                }
-            }
-        }
-    }
-}
-
-/**
  * Returns a pointer to the asset in the misc. section. If index is out of range, then this
  * function just returns the pointer to gAssetsMiscSection.
  * Official name: objGetTable
@@ -5813,14 +5534,6 @@ void func_8001E45C(s32 cutsceneID) {
             set_frame_blackout_timer();
         }
     }
-}
-
-/**
- * Returns the index of the standard object list.
- * Goes unused, since objGetObjList exists
- */
-UNUSED s32 get_object_list_index(void) {
-    return gObjectListStart;
 }
 
 void func_8001E4C4(void) {
@@ -7453,9 +7166,6 @@ void run_object_loop_func(Object *obj, s32 updateRate) {
             break;
     }
     update_object_stack_trace(OBJECT_UPDATE, OBJECT_CLEAR);
-}
-
-UNUSED void func_8002458C(UNUSED s32 arg0) {
 }
 
 s16 *func_80024594(s32 *currentCount, s32 *maxCount) {

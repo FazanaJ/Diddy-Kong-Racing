@@ -931,27 +931,6 @@ void func_80006FC8(Object **objs, s32 numRacers, ObjectSegment *segment, u8 arg3
 #pragma GLOBAL_ASM("asm/nonmatchings/audio_vehicle/func_80006FC8.s")
 #endif
 
-/**
- * Enable the vehicle sounds made during gameplay.
- */
-UNUSED void sound_vehicle_enable(void) {
-    gVehicleSounds = TRUE;
-}
-
-/**
- * Disable the vehicle sounds made during gameplay.
- */
-UNUSED void sound_vehicle_disable(void) {
-    gVehicleSounds = FALSE;
-}
-
-/**
- * Return whether vehicle sounds should be playing during gameplay.
- */
-UNUSED u8 sound_vehicle_check(void) {
-    return gVehicleSounds;
-}
-
 // This is likely an arctanh function.
 f32 func_80007FA4(f32 arg0) {
     f32 temp_f0;

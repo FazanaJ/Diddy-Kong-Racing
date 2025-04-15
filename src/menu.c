@@ -2204,14 +2204,6 @@ void func_8007FFEC(s32 arg0) {
 #pragma GLOBAL_ASM("asm/nonmatchings/menu/func_8007FFEC.s")
 #endif
 
-/**
- * Resize the UV's of the menu panels.
- */
-UNUSED void menu_button_uvs(f32 u, f32 v) {
-    gWoodPanelTexScaleU = u * 32.0f;
-    gWoodPanelTexScaleV = v * 32.0f;
-}
-
 void func_80080580(Gfx **dList, s32 startX, s32 startY, s32 width, s32 height, s32 borderWidth, s32 borderHeight,
                    s32 colour, TextureHeader *tex) {
     s32 uVals[4];
@@ -13425,9 +13417,6 @@ void menu_camera_centre(void) {
     cam->trans.z_position = posZ;
 }
 
-UNUSED void func_8009BE54(void) {
-}
-
 /**
  * Reset all menu related joystick inputs for each player.
  */
@@ -13689,13 +13678,6 @@ Settings **get_all_save_files_ptr(void) {
 }
 
 /**
- * Reset the seen status for the title screen popup.
- */
-UNUSED void menu_title_reset(void) {
-    gTitleScreenLoaded = FALSE;
-}
-
-/**
  * Loops through each asset in the group and frees it from memory.
  */
 void menu_assetgroup_free(s16 *assetGroup) {
@@ -13833,12 +13815,6 @@ void menu_image_load(s32 imageID) {
     gMenuImages[imageID].unk1B = get_random_number_from_range(0, 0xFFFF);
     gMenuImages[imageID].unk1C = get_random_number_from_range(0, 0xFFFF);
     gMenuImages[imageID].unk1D = sMenuImageProperties[imageID].unk1D;
-}
-
-/**
- * Educated guess says this was the mass free function for menu images.
- */
-UNUSED void menu_imagegroup_free(void) {
 }
 
 /**
@@ -14069,10 +14045,6 @@ void handle_menu_joystick_input(void) {
     if (gDialogueSubmenu >= sDialogueOptionMax) {
         gDialogueSubmenu = 0;
     }
-}
-
-UNUSED void func_8009D324(void) {
-    unused_800DF4D8 = FALSE;
 }
 
 /**

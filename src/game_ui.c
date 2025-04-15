@@ -1496,9 +1496,6 @@ void hud_speedometre(Object *obj, UNUSED s32 updateRate) {
                     vel = sqrtf((obj->segment.x_velocity * obj->segment.x_velocity) +
                                 (obj->segment.z_velocity * obj->segment.z_velocity));
                 }
-                if (sRecordVel < vel) {
-                    sRecordVel = vel;
-                }
                 vel *= 4.0f;
                 //!@Bug: Planes and hovercraft use drift_direction for something else, applying this unintentionally.
                 if (racer->drift_direction != 0 && racer->vehicleID == VEHICLE_CAR) {
@@ -1838,9 +1835,6 @@ void hud_race_finish_1player(Object_Racer *racer, s32 updateRate) {
         hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, position2);
         gDPSetPrimColor(gHudDL++, 0, 0, 255, 255, 255, 255);
     }
-}
-
-UNUSED void func_800A4C34(UNUSED s32 countdown, UNUSED Object_Racer *racer, UNUSED s32 updateRate) {
 }
 
 /**
@@ -2660,16 +2654,6 @@ void hud_balloons(UNUSED Object_Racer *racer) {
     sprite_opaque(FALSE);
     set_viewport_tv_type(OS_TV_TYPE_PAL);
     hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_BALLOON_COUNT_X]);
-}
-
-/**
- * Unused function that plays whichever T.T voice line is passed through.
- * Only if the game is currently running and no voice line is already playing.
- */
-UNUSED void hud_sound_play(u16 soundId) {
-    if (gHUDVoiceSoundMask == NULL && !(is_game_paused())) {
-        sound_play(soundId, &gHUDVoiceSoundMask);
-    }
 }
 
 /**
@@ -3539,13 +3523,6 @@ void minimap_fade(s32 setting) {
 void minimap_opacity_set(s32 setting) {
     gMinimapOpacity = gMinimapOpacityTarget;
     gMinimapXlu = setting;
-}
-
-/**
- * Sets the race start HUD procedure to the first step.
- */
-UNUSED void hud_reset_race_start(void) {
-    gRaceStartShowHudStep = 0;
 }
 
 /**

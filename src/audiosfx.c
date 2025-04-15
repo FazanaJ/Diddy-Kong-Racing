@@ -301,17 +301,6 @@ void func_80004604(ALSoundState *sndp, u8 priority) {
     }
 }
 
-/**
- * Official Name: gsSndpGetState
- */
-UNUSED u8 func_8000461C(ALSoundState *sndp) {
-    if (sndp != NULL) {
-        return sndp->soundState;
-    } else {
-        return 0;
-    }
-}
-
 s32 func_80004638(ALBank *bnk, s16 sndIndx, SoundMask *soundMask) {
     return func_80004668(bnk, sndIndx, 0, soundMask);
 }
@@ -360,20 +349,6 @@ void func_800048D8(u8 event) {
         queue = queue->next;
     }
     osSetIntMask(mask);
-}
-
-/**
- * Official Name: gsSndpStopAll
- */
-UNUSED void func_80004998(void) {
-    func_800048D8(AL_SNDP_PLAY_EVT);
-}
-
-/**
- * Official Name: gsSndpStopAllRetrigger
- */
-UNUSED void func_800049B8(void) {
-    func_800048D8(AL_SNDP_PLAY_EVT | AL_SNDP_PITCH_EVT);
 }
 
 /**

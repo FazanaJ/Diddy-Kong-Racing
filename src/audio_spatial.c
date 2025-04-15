@@ -17,21 +17,6 @@ u16 gUsedMasks = 0;
 
 /*******************************/
 
-/************ .rodata ************/
-
-UNUSED const char D_800E4D00[] = "OUT OF AUDIO POINTS\n";
-UNUSED const char D_800E4D18[] = "amAudioLineAddVertex: Exceeded maximum number of lines (%d)\n";
-UNUSED const char D_800E4D58[] = "amAudioLineAddVertex: Exceeded maximum number of line vertices (%d)\n";
-UNUSED const char D_800E4DA0[] = "amReverbLineAddVertex: Exceeded maximum number of lines (%d)\n";
-UNUSED const char D_800E4DE0[] = "amReverbLineAddVertex: Exceeded maximum number of line vertices (%d)\n";
-
-UNUSED const char D_800E4E28[] = "Audio line definition error (less than 2 vertices on line %d)\n";
-UNUSED const char D_800E4E68[] = "Audio line definition error (line=%d, vertex=%d)\n";
-UNUSED const char D_800E4E9C[] = "Reverb line definition error (less than 2 vertices on line %d)\n";
-UNUSED const char D_800E4EDC[] = "Reverb line definition error (line=%d, vertex=%d)\n";
-
-/*********************************/
-
 /************ .bss ************/
 
 SoundData *D_80119C40;

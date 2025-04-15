@@ -10,12 +10,6 @@
 #include "PRinternal/piint.h"
 #include "PRinternal/viint.h"
 
-/************ .rodata ************/
-
-UNUSED const char D_800E6F00[] = "Camera Error: Illegal mode!\n";
-
-/*********************************/
-
 /************ .data ************/
 
 s8 gAntiPiracyViewport = FALSE;
@@ -178,14 +172,6 @@ void func_800660D0(void) {
 }
 
 /**
- * Unused function that will return the current camera's FoV.
- * Official Name: camGetFOV
- */
-UNUSED f32 get_current_camera_fov(void) {
-    return gCurCamFOV;
-}
-
-/**
  * Set the FoV of the viewspace, then recalculate the perspective matrix.
  * Official Name: camSetFOV
  */
@@ -196,22 +182,6 @@ void update_camera_fov(f32 camFieldOfView) {
                        CAMERA_SCALE);
         f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gProjectionMatrixS);
     }
-}
-
-/**
- * Unused function that recalculates the perspective matrix.
- */
-UNUSED void calculate_camera_perspective(void) {
-    guPerspectiveF(gPerspectiveMatrixF, &perspNorm, CAMERA_DEFAULT_FOV, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR,
-                   CAMERA_SCALE);
-    f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gProjectionMatrixS);
-}
-
-/**
- * Return the current fixed point model matrix.
- */
-UNUSED Matrix *matrix_get_model_s16(void) {
-    return &gCurrentModelMatrixS;
 }
 
 /**
@@ -592,18 +562,6 @@ void copy_viewport_frame_size_to_coords(s32 viewPortIndex, s32 *x1, s32 *y1, s32
     *y2 = gScreenViewports[viewPortIndex].y2;
 }
 
-/**
- * Unused function that sets the passed values to the framebuffer's size in coordinates.
- * Official name: camGetWindowLimits
- */
-UNUSED void copy_framebuffer_size_to_coords(s32 *x1, s32 *y1, s32 *x2, s32 *y2) {
-    u32 widthAndHeight = fb_size();
-    *x1 = 0;
-    *y1 = 0;
-    *x2 = GET_VIDEO_WIDTH(widthAndHeight);
-    *y2 = GET_VIDEO_HEIGHT(widthAndHeight);
-}
-
 #ifdef NON_MATCHING
 
 #define SCISSOR_INTERLACE G_SC_NON_INTERLACE
@@ -908,7 +866,6 @@ void func_80067D3C(Gfx **dList, UNUSED MatrixS **mats) {
     gCameraTransform.z_position = gCameraSegment[gActiveCameraID].trans.z_position;
 
     object_transform_to_matrix(gProjectionMatrixF, &gCameraTransform);
-    f32_matrix_to_s16_matrix(&gProjectionMatrixF, &gUnusedProjectionMatrixS);
 
     gActiveCameraID = temp;
 }
@@ -1436,15 +1393,6 @@ void apply_head_turning_matrix(Gfx **dList, MatrixS **mtx, Object_68 *objGfx, s1
 }
 
 /**
- * Writes the model matrix vector to the arguments.
- */
-UNUSED void get_modelmatrix_vector(f32 *x, f32 *y, f32 *z) {
-    *x = gModelMatrixViewX[gCameraMatrixPos];
-    *y = gModelMatrixViewY[gCameraMatrixPos];
-    *z = gModelMatrixViewZ[gCameraMatrixPos];
-}
-
-/**
  * Run a matrix from the top of the stack and pop it.
  * If the stack pos is less than zero, add a matrix instead.
  */
@@ -1467,46 +1415,6 @@ void apply_matrix_from_stack(Gfx **dList) {
     } else {
         gDkrInsertMatrix((*dList)++, G_MWO_MATRIX_XX_XY_I, G_MTX_DKR_INDEX_0);
     }
-}
-
-/**
- * Move the camera with the given velocities.
- * Also recalculates which block it's in.
- */
-UNUSED void translate_camera_segment(f32 x, f32 y, f32 z) {
-    gCameraSegment[gActiveCameraID].trans.x_position += x;
-    gCameraSegment[gActiveCameraID].trans.y_position += y;
-    gCameraSegment[gActiveCameraID].trans.z_position += z;
-    gCameraSegment[gActiveCameraID].object.cameraSegmentID = get_level_segment_index_from_position(
-        gCameraSegment[gActiveCameraID].trans.x_position, gCameraSegment[gActiveCameraID].trans.y_position,
-        gCameraSegment[gActiveCameraID].trans.z_position);
-}
-
-/**
- * Move the camera with velocities accounting for face direction.
- * Also recalculates which block it's in.
- */
-UNUSED void transform_camera_segment(f32 x, UNUSED f32 y, f32 z) {
-    gCameraSegment[gActiveCameraID].trans.x_position -=
-        x * coss_f(gCameraSegment[gActiveCameraID].trans.rotation.y_rotation);
-    gCameraSegment[gActiveCameraID].trans.z_position -=
-        x * sins_f(gCameraSegment[gActiveCameraID].trans.rotation.y_rotation);
-    gCameraSegment[gActiveCameraID].trans.x_position -=
-        z * sins_f(gCameraSegment[gActiveCameraID].trans.rotation.y_rotation);
-    gCameraSegment[gActiveCameraID].trans.z_position +=
-        z * coss_f(gCameraSegment[gActiveCameraID].trans.rotation.y_rotation);
-    gCameraSegment[gActiveCameraID].object.cameraSegmentID = get_level_segment_index_from_position(
-        gCameraSegment[gActiveCameraID].trans.x_position, gCameraSegment[gActiveCameraID].trans.y_position,
-        gCameraSegment[gActiveCameraID].trans.z_position);
-}
-
-/**
- * Rotate the camera with the given angles.
- */
-UNUSED void rotate_camera_segment(s32 angleX, s32 angleY, s32 angleZ) {
-    gCameraSegment[gActiveCameraID].trans.rotation.y_rotation += angleX;
-    gCameraSegment[gActiveCameraID].trans.rotation.x_rotation += angleY;
-    gCameraSegment[gActiveCameraID].trans.rotation.z_rotation += angleZ;
 }
 
 /**
@@ -1600,38 +1508,3 @@ void set_camera_shake(f32 magnitude) {
     }
 }
 
-/**
- * Unused function that prints out the passed matrix values to the debug output.
- * This function prints in fixed point.
- */
-UNUSED void debug_print_fixed_matrix_values(s16 *mtx) {
-    s32 i, j;
-    s32 val;
-    for (i = 0; i < 4; i++) {
-        for (j = 0; j < 4; j++) {
-            val = mtx[i * 4 + j];
-            rmonPrintf("%x.", val);
-            val = mtx[((i + 4) * 4 + j)];
-            rmonPrintf("%x  ", (u16) val & 0xFFFF);
-        }
-        rmonPrintf("\n");
-        if (!val) {} // Fakematch
-    }
-    rmonPrintf("\n");
-}
-
-/**
- * Unused function that prints out the passed matrix values to the debug output.
- * This function prints in floating point.
- */
-UNUSED void debug_print_float_matrix_values(f32 *mtx) {
-    s32 i, j;
-
-    for (i = 0; i < 4; i++) {
-        for (j = 0; j < 4; j++) {
-            rmonPrintf("%f  ", mtx[i * 4 + j]);
-        }
-        rmonPrintf("\n");
-    }
-    rmonPrintf("\n");
-}
