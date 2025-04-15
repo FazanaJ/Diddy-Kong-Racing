@@ -131,11 +131,11 @@ WaterProperties *gTrackWaves[20];
 s8 D_8011D308;
 LevelModel *gTrackModelHeap;
 s32 *gLevelModelTable;
-Triangle *gShadowHeapTris[4];
+Triangle *gShadowHeapTris[3];
 Triangle *gCurrentShadowTris;
-Vertex *gShadowHeapVerts[4];
+Vertex *gShadowHeapVerts[3];
 Vertex *gCurrentShadowVerts;
-DrawTexture *gShadowHeapTextures[4];
+DrawTexture *gShadowHeapTextures[3];
 DrawTexture *gCurrentShadowTexture;
 s32 D_8011D364;
 s32 D_8011D368;   // xOffset?
@@ -252,17 +252,21 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
 
     numberOfPlayers = gScenePlayerViewports;
     gAntiAliasing = FALSE;
-    for (i = 0; i < ARRAY_COUNT(gShadowHeapTextures); i++) {
-        gShadowHeapTextures[i] = (DrawTexture *) mempool_alloc_safe(sizeof(DrawTexture) * 400, COLOUR_TAG_YELLOW);
-        gShadowHeapTris[i] = (Triangle *) mempool_alloc_safe(sizeof(Triangle) * 800, COLOUR_TAG_YELLOW);
-        gShadowHeapVerts[i] = (Vertex *) mempool_alloc_safe(sizeof(Vertex) * 2000, COLOUR_TAG_YELLOW);
+    // Dynamic Shadows
+    for (i = 0; i < 2; i++) {
+        gShadowHeapTextures[i] = (DrawTexture *) mempool_alloc_safe(sizeof(DrawTexture) * 75, COLOUR_TAG_YELLOW);
+        gShadowHeapTris[i] = (Triangle *) mempool_alloc_safe(sizeof(Triangle) * 150, COLOUR_TAG_YELLOW);
+        gShadowHeapVerts[i] = (Vertex *) mempool_alloc_safe(sizeof(Vertex) * 400, COLOUR_TAG_YELLOW);
     }
+    // Static Shadows
+    gShadowHeapTextures[2] = (DrawTexture *) mempool_alloc_safe(sizeof(DrawTexture) * 200, COLOUR_TAG_YELLOW);
+    gShadowHeapTris[2] = (Triangle *) mempool_alloc_safe(sizeof(Triangle) * 400, COLOUR_TAG_YELLOW);
+    gShadowHeapVerts[2] = (Vertex *) mempool_alloc_safe(sizeof(Vertex) * 1000, COLOUR_TAG_YELLOW);
 
     gShadowHeapFlip = 0;
     update_shadows(SHADOW_SCENERY, SHADOW_SCENERY, LOGIC_NULL);
     update_shadows(SHADOW_ACTORS, SHADOW_ACTORS, LOGIC_NULL);
     gShadowHeapFlip = 1;
-    update_shadows(SHADOW_SCENERY, SHADOW_SCENERY, LOGIC_NULL);
     update_shadows(SHADOW_ACTORS, SHADOW_ACTORS, LOGIC_NULL);
     gShadowHeapFlip = 0;
     if (gCurrentLevelHeader2->unkB7) {
@@ -2386,7 +2390,7 @@ void free_track(void) {
     mempool_free(D_8011D370);
     mempool_free(D_8011D374);
     free_sprite((Sprite *) gCurrentLevelModel->minimapSpriteIndex);
-    for (i = 0; i < MAXCONTROLLERS; i++) {
+    for (i = 0; i < ARRAY_COUNT(gShadowHeapTextures); i++) {
         mempool_free(gShadowHeapTextures[i]);
         mempool_free(gShadowHeapTris[i]);
         mempool_free(gShadowHeapVerts[i]);
@@ -2526,9 +2530,10 @@ void render_object_shadow(Object *obj, ShadowData *shadow) {
 
     if (obj->segment.header->shadowGroup) {
         if (shadow->meshStart != -1) {
-            D_8011B0CC = gShadowHeapFlip;
             if (obj->segment.header->shadowGroup == SHADOW_SCENERY) {
-                D_8011B0CC += 2;
+                D_8011B0CC = 2;
+            } else {
+                D_8011B0CC = gShadowHeapFlip;
             }
             i = shadow->meshStart;
             gCurrentShadowTexture = gShadowHeapTextures[D_8011B0CC];
@@ -2546,12 +2551,12 @@ void render_object_shadow(Object *obj, ShadowData *shadow) {
             while (i < shadow->meshEnd) {
                 load_and_set_texture_no_offset(&gSceneCurrDisplayList, gCurrentShadowTexture[i].texture, flags);
                 // I hope we can clean this part up.
-                offsetX_2 = offsetX = gCurrentShadowTexture[i].xOffset; // Fakematch
-                offsetY_2 = offsetY = gCurrentShadowTexture[i].yOffset;
+                offsetX = gCurrentShadowTexture[i].xOffset;
+                offsetY = gCurrentShadowTexture[i].yOffset;
                 numTris = gCurrentShadowTexture[i + 1].xOffset - offsetX;
                 numVerts = gCurrentShadowTexture[i + 1].yOffset - offsetY;
                 tri = &gCurrentShadowTris[offsetX];
-                vtx = &gCurrentShadowVerts[offsetY_2];
+                vtx = &gCurrentShadowVerts[offsetY];
                 gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
                 gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
                 i++;
@@ -2583,12 +2588,12 @@ void render_object_water_effects(Object *obj, WaterEffect *effect) {
             gShadowIndex = gShadowHeapFlip;
             i = effect->meshStart;
             if (obj->segment.header->waterEffectGroup == SHADOW_SCENERY) {
-                gShadowIndex = gShadowHeapFlip;
-                gShadowIndex += 2;
-                if (get_distance_to_active_camera(obj->segment.trans.x_position, obj->segment.trans.y_position,
-                                                  obj->segment.trans.z_position) > 768.0f) {
-                    i = effect->meshEnd; // Just return.
+                gShadowIndex = 2;
+                if (get_distance_to_active_camera(obj->segment.trans.x_position, obj->segment.trans.y_position, obj->segment.trans.z_position) > 768.0f) {
+                    return;
                 }
+            } else {
+                gShadowIndex = gShadowHeapFlip;
             }
             flags = RENDER_FOG_ACTIVE | RENDER_Z_COMPARE;
             gCurrentShadowTexture = gShadowHeapTextures[gShadowIndex];
@@ -2596,8 +2601,6 @@ void render_object_water_effects(Object *obj, WaterEffect *effect) {
             gCurrentShadowVerts = gShadowHeapVerts[gShadowIndex];
             while (i < effect->meshEnd) {
                 load_and_set_texture_no_offset(&gSceneCurrDisplayList, gCurrentShadowTexture[i].texture, flags);
-                offsetX = gCurrentShadowTexture[i].xOffset; // Fakematch
-                offsetY = gCurrentShadowTexture[i].yOffset; // Fakematch
                 numTris = gCurrentShadowTexture[i + 1].xOffset - gCurrentShadowTexture[i].xOffset;
                 numVerts = gCurrentShadowTexture[i + 1].yOffset - gCurrentShadowTexture[i].yOffset;
                 tri = &gCurrentShadowTris[gCurrentShadowTexture[i].xOffset];
@@ -2630,9 +2633,10 @@ void update_shadows(s32 group, s32 waterGroup, s32 updateRate) {
     WaterEffect *waterEffect;
     s32 playerIndex;
 
-    D_8011B0CC = gShadowHeapFlip;
     if (group == SHADOW_SCENERY) {
-        D_8011B0CC += 2;
+        D_8011B0CC = 2;
+    } else {
+        D_8011B0CC = gShadowHeapFlip;
     }
     gCurrentShadowTris = (Triangle *) gShadowHeapTris[D_8011B0CC];
     gCurrentShadowVerts = (Vertex *) gShadowHeapVerts[D_8011B0CC];
