@@ -35,7 +35,7 @@ void mempool_init_main(void) {
     s32 ramEnd;
 
     gNumberOfMemoryPools = -1;
-    if (EXPANSION_PAK_SUPPORT) {
+    if (gUseExpansionMemory) {
         ramEnd = EXPANSION_RAM_END;
     } else {
         ramEnd = RAM_END;
