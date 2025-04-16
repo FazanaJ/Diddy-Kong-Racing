@@ -3268,8 +3268,6 @@ void func_80083098(f32 updateRateF) {
         }
     }
 
-    if (gTitleCinematicTextColours) {}
-
     if (!didUpdate) {
         return;
     }
@@ -7661,7 +7659,7 @@ void fileselect_render(UNUSED s32 updateRate) {
             if (!gSavefileInfo[i].isStarted) {
                 filename_trim(gFilenames[i], trimmedFilename);
             }
-            if (trimmedFilename) {
+            if (1) {
                 draw_text(&sMenuCurrDisplayList, gFileSelectButtons[i].x + gFileSelectElementPos[0],
                           gFileSelectButtons[i].y + gFileSelectElementPos[1] + yPos, trimmedFilename,
                           ALIGN_MIDDLE_CENTER);
@@ -13909,7 +13907,7 @@ void render_track_selection_viewport_border(ObjectModel *objMdl) {
             verts = &objMdl->vertices[vertOffset];
             tris = &objMdl->triangles[triOffset];
             //!@bug Never true, since textureIndex is unsigned. This should've been either `== (u8)-1` or `== 0xFF`.
-            if (objMdl->batches[i].textureIndex == -1) {
+            if (objMdl->batches[i].textureIndex == 0xFF) {
                 tex = NULL;
                 texEnabled = FALSE;
                 texOffset = 0;

@@ -807,7 +807,7 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
     if (assetSize != 0) {
         compressedAsset = (u8 *) mem;
         compressedAsset =
-            ((compressedAsset + get_asset_uncompressed_size(ASSET_LEVEL_OBJECT_MAPS, assetOffset)) - (0, assetSize)) +
+            ((compressedAsset + get_asset_uncompressed_size(ASSET_LEVEL_OBJECT_MAPS, assetOffset)) - (assetSize)) +
             0x20;
         load_asset_to_address(ASSET_LEVEL_OBJECT_MAPS, (u32) compressedAsset, assetOffset, assetSize);
         gzip_inflate(compressedAsset, (u8 *) mem);
@@ -2645,13 +2645,7 @@ void render_3d_billboard(Object *obj) {
     }
 
     if (obj->behaviorId == BHV_BOMB_EXPLOSION) {
-        //!@bug Never true, because the type is u8.
-        if (obj->segment.object.opacity > 255) {
-            obj->segment.object.opacity = obj->properties.bombExplosion.unk4 & 0xFF;
-        } else {
-            obj->segment.object.opacity =
-                (obj->segment.object.opacity * (obj->properties.bombExplosion.unk4 & 0xFF)) >> 8;
-        }
+        obj->segment.object.opacity = (obj->segment.object.opacity * (obj->properties.bombExplosion.unk4 & 0xFF)) >> 8;
     }
 
     alpha = obj->segment.object.opacity;

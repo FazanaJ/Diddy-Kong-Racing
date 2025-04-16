@@ -623,7 +623,7 @@ void crash_thread(UNUSED void *var) {
     gScreenHeight = 240;
     vi_change(gScreenWidth, gScreenHeight);
     if (gVideoCurrFramebuffer == NULL) {
-        gVideoCurrFramebuffer = 0x802000000;
+        gVideoCurrFramebuffer = (u16 *) 0x802000000;
     }
     framebuffer_scale(gVideoCurrFramebuffer, gCrashFB, oldW, oldH, gScreenWidth, gScreenHeight);
 

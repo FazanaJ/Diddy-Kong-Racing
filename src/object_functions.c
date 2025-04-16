@@ -2100,7 +2100,7 @@ void obj_loop_char_select(Object *charSelectObj, s32 updateRate) {
                     for (i2 = 0; i2 < objMdl->numberOfBatches; i2++) {
                         // Unneccessary check for textureIndex to be greater than or equal to zero since it's a u8 and
                         // can't be less.
-                        if (objMdl->batches[i2].textureIndex >= 0 && objMdl->batches[i2].textureIndex < 4) {
+                        if (objMdl->batches[i2].textureIndex < 4) {
                             objMdl->batches[i2].textureIndex = sp50[D_800DCA88[i]];
                         }
                     }

@@ -1091,16 +1091,16 @@ void func_800278E8(s32 updateRate) {
         xzSqr = sqrtf((xDelta * xDelta) + (zDelta * zDelta));
         if (D_8011B108 != 0) {
             angleDiff = ((s32) (-atan2s(xDelta, zDelta) - segment->trans.rotation.y_rotation) + 0x8000);
-            //!@bug Never true, since angleDiff is signed. Should be >=.
-            if (angleDiff > 0x8000) {
+            /*//!@bug Never true, since angleDiff is signed. Should be >=.
+            if (angleDiff >= 0x8000) {
                 angleDiff = -(0xFFFF - angleDiff);
-            }
+            }*/
             segment->trans.rotation.y_rotation += ((s32) (angleDiff / (16.0f * (D_8011B108 / 180.0f)))) & 0xFFFF;
             angleDiff = atan2s(yDelta, xzSqr) - segment->trans.rotation.x_rotation;
-            //!@bug Never true, since angleDiff is signed. Should be >=.
-            if (angleDiff > 0x8000) {
+            /*//!@bug Never true, since angleDiff is signed. Should be >=.
+            if (angleDiff >= 0x8000) {
                 angleDiff = -(0xFFFF - angleDiff);
-            }
+            }*/
             segment->trans.rotation.x_rotation += ((s32) (angleDiff / (16.0f * (D_8011B108 / 180.0f)))) & 0xFFFF;
             D_8011B108 -= updateRate;
             if (D_8011B108 < 0) {
@@ -1919,10 +1919,6 @@ s32 should_segment_be_visible(LevelModelSegmentBoundingBox *bb) {
             return FALSE;
         }
     }
-    // From here until the "return TRUE" goes completely unused, functionally.
-    x = (bb->x2 + bb->x1) >> 1;
-    y = (bb->y2 + bb->y1) >> 1;
-    z = (bb->z2 + bb->z1) >> 1;
     return TRUE;
 }
 

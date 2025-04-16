@@ -1908,7 +1908,7 @@ void hud_lap_count(Object_Racer *racer, s32 updateRate) {
     if (racer->raceFinished == FALSE &&
         (gHUDNumPlayers <= ONE_PLAYER || racer->lap <= 0 || racer->lap_times[racer->lap] >= 180) &&
         (gHUDNumPlayers <= ONE_PLAYER || D_800E2794[gHUDNumPlayers][racer->playerIndex] == 3)) {
-        if (gHudLevelHeader->laps == (0, racer->countLap + 1) && gHUDNumPlayers < THREE_PLAYERS) {
+        if (gHudLevelHeader->laps == (racer->countLap + 1) && gHUDNumPlayers < THREE_PLAYERS) {
             gCurrentHud->entry[HUD_LAP_COUNT_FLAG].lapCountFlag.visualCounter += updateRate;
             if (gCurrentHud->entry[HUD_LAP_COUNT_FLAG].lapCountFlag.visualCounter > 6) {
                 gCurrentHud->entry[HUD_LAP_COUNT_FLAG].spriteOffset++;
@@ -1968,7 +1968,7 @@ void hud_lap_count(Object_Racer *racer, s32 updateRate) {
                         }
                         break;
                 }
-            } else if (gHudLevelHeader->laps == (0, racer->lap + 1) && racer->lap != 0) {
+            } else if (gHudLevelHeader->laps == (racer->lap + 1) && racer->lap != 0) {
                 gCurrentHud->entry[HUD_LAP_TEXT_LAP].lapText.status = LAPTEXT_UNK3;
                 gCurrentHud->entry[HUD_LAP_TEXT_LAP].lapText.direction = LAPTEXT_IN;
                 gCurrentHud->entry[HUD_LAP_TEXT_LAP].lapText.soundPlayed = FALSE;

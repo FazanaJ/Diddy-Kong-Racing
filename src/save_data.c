@@ -1582,7 +1582,7 @@ void init_controller_paks(void) {
     osPfsIsPlug(sControllerMesgQueue, &pakPattern);
 
     for (controllerIndex = 0, controllerBit = 1, maxControllers = MAXCONTROLLERS;
-         (0, controllerIndex) != maxControllers; controllerIndex++, controllerBit <<= 1) {
+         (controllerIndex) != maxControllers; controllerIndex++, controllerBit <<= 1) {
         gRumble[controllerIndex].initialStrength = 0;
         gRumble[controllerIndex].timer = -1;
         gRumble[controllerIndex].rumbleType = -1;

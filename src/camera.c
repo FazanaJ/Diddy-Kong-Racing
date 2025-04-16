@@ -1304,7 +1304,7 @@ void camera_push_model_mtx(Gfx **dList, MatrixS **mtx, ObjectTransform *trans, f
     f32_matrix_mult(gModelMatrixF[gModelMatrixStackPos + 1], &gViewMatrixF, &gCurrentModelMatrixS);
     f32_matrix_to_s16_matrix(&gCurrentModelMatrixS, *mtx);
     gModelMatrixStackPos++;
-    gModelMatrixS[0, gModelMatrixStackPos] = *mtx; // Should be [gModelMatrixStackPos]
+    gModelMatrixS[gModelMatrixStackPos] = *mtx; // Should be [gModelMatrixStackPos]
     if (gModelMatrixStackPos >= ARRAY_COUNT(gModelMatrixS)) {
         stubbed_printf("cameraPushModelMtx: model stack overflow!!\n");
     }
