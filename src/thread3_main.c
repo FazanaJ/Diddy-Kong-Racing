@@ -46,6 +46,7 @@
 #include "font.h"
 #include "stacks.h"
 #include "usb/usb.h"
+#include "autoplay.h"
 
 /************ .data ************/
 
@@ -268,20 +269,20 @@ void main_game_loop(void) {
             sTotalTime -= 16666;
             sLogicUpdateRate++;
         }
-#ifdef AUTOPLAY
-        if (get_current_map_id() == ASSET_LEVEL_CENTRALAREAHUB || get_current_map_id() == ASSET_LEVEL_SNOWFLAKEMOUNTAINHUB) {
-            sLogicUpdateRate = 2;
-        } else {
-            sLogicUpdateRate = 5;
-        }
-        if (get_current_map_id() == ASSET_LEVEL_PARTYSEQUENCE ||
-            get_current_map_id() == ASSET_LEVEL_LASTBIT ||
-            get_current_map_id() == ASSET_LEVEL_LASTBITB || gCurrentMenuId == MENU_CREDITS) {
-            sched_framecap(1);
-            gConfig.frameCap = 1;
-        } else {
-            sched_framecap(0);
-            gConfig.frameCap = 0;
+#ifdef DEBUG
+        if (gAutoplayTest != AUTOPLAY_OFF) {
+            if (get_current_map_id() == ASSET_LEVEL_CENTRALAREAHUB || get_current_map_id() == ASSET_LEVEL_SNOWFLAKEMOUNTAINHUB) {
+                sLogicUpdateRate = 2;
+            } else {
+                sLogicUpdateRate = 5;
+            }
+            if (get_current_map_id() == ASSET_LEVEL_PARTYSEQUENCE ||
+                get_current_map_id() == ASSET_LEVEL_LASTBIT ||
+                get_current_map_id() == ASSET_LEVEL_LASTBITB || gCurrentMenuId == MENU_CREDITS) {
+                sched_framecap(1);
+            } else {
+                sched_framecap(0);
+            }
         }
 #endif
         if (sLogicUpdateRate >= LOGIC_12FPS) {

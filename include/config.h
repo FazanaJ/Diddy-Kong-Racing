@@ -14,7 +14,8 @@
 
 #define UNLOCK_ALL
 #define SKIP_INTRO SKIP_TITLE
-//#define AUTOPLAY
+#define AUTOPLAY
+#define AUTOPLAY_DEFAULT AUTOPLAY_OFF
 #define SKIP_NEW_GAME
 #define OPEN_ALL_DOORS
 //#define USE_DYNLIGHTS     // Not used in vanilla, so optionally stubbed out until somebody figures out how they work

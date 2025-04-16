@@ -13917,16 +13917,9 @@ void render_track_selection_viewport_border(ObjectModel *objMdl) {
             numTris = objMdl->batches[i + 1].facesOffset - triOffset;
             verts = &objMdl->vertices[vertOffset];
             tris = &objMdl->triangles[triOffset];
-            //!@bug Never true, since textureIndex is unsigned. This should've been either `== (u8)-1` or `== 0xFF`.
-            if (objMdl->batches[i].textureIndex == 0xFF) {
-                tex = NULL;
-                texEnabled = FALSE;
-                texOffset = 0;
-            } else {
-                tex = objMdl->textures[objMdl->batches[i].textureIndex].texture;
-                texEnabled = TRUE;
-                texOffset = objMdl->batches[i].unk7 << 14;
-            }
+            tex = objMdl->textures[objMdl->batches[i].textureIndex].texture;
+            texEnabled = TRUE;
+            texOffset = objMdl->batches[i].unk7 << 14;
             load_and_set_texture(&sMenuCurrDisplayList, tex, flags, texOffset);
 
             gSPVertexDKR(sMenuCurrDisplayList++, OS_PHYSICAL_TO_K0(verts), numVerts, 0);

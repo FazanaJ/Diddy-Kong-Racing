@@ -2533,10 +2533,6 @@ void update_player_racer(Object *obj, s32 updateRate) {
         tempRacer->miscAnimCounter++; //!@Delta
         gCurrentPlayerIndex = tempRacer->playerIndex;
         if (tempRacer->raceFinished == TRUE || context == GAMEMODE_MENU || gAutoDrive) {
-            if (gAutoDrive) {
-                tempRacer->aiSkill = AI_MASTER;
-                tempRacer->bananas = 20;
-            }
             tempRacer->unk1CA = 1;
             tempRacer->playerIndex = PLAYER_COMPUTER;
             tempRacer->unk1C9 = 0;
