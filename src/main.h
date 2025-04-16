@@ -248,6 +248,7 @@ void debug_newframe(s32 updateRate);
 void debug_ram(s32 size, s32 tag);
 s32 debug_tag_index(s32 colourTag);
 void debug_printf(const char* message, ...);
+void crash_assert(s32 cond, const char *str, ...);
 #else
 #define debug_init()
 #define debug_render(dList, updateRate)

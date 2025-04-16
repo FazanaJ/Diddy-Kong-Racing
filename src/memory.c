@@ -107,7 +107,7 @@ MemoryPoolSlot *mempool_init(MemoryPoolSlot *slots, s32 poolSize, s32 numSlots) 
  */
 void *mempool_alloc_safe(s32 size, u32 colourTag) {
     void *addr;
-    addr = mempool_slot_find(POOL_MAIN, size, colourTag);
+    addr = mempool_slot_find(POOL_MAIN, size, colourTag, 0);
     return addr;
 }
 
@@ -115,14 +115,23 @@ void *mempool_alloc_safe(s32 size, u32 colourTag) {
  * Reserves and returns memory from the main memory pool. Has no assert checks.
  */
 MemoryPoolSlot *mempool_alloc(s32 size, u32 colourTag) {
-    return mempool_slot_find(POOL_MAIN, size, colourTag);
+    return mempool_slot_find(POOL_MAIN, size, colourTag, 0);
 }
+
+/**
+ * Find the largest existing slot and then allocate it.
+*/
+MemoryPoolSlot *mempool_alloc_largest(u32 colourTag) {
+    return mempool_slot_find(POOL_MAIN, 0x10, colourTag, 1);
+}
+
+u32 biggestSize = 0;
 
 /**
  * Search the existing empty slots and try to find one that can meet the size requirement.
  * Afterwards, write the new allocation data to the slot in question and return the address.
  */
-MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag) {
+MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag, s32 findLargest) {
     s32 slotSize;
     MemoryPoolSlot *curSlot;
     UNUSED s32 pad;
@@ -147,18 +156,37 @@ MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag
         size = _ALIGN8(size);
     }
     slots = pool->slots;
-    slotSize = 0x7FFFFFFF;
     nextIndex = 0;
-    do {
-        curSlot = &slots[nextIndex];
-        if (curSlot->flags == SLOT_FREE) {
-            if (curSlot->size >= size && curSlot->size < slotSize) {
-                slotSize = curSlot->size;
-                currIndex = nextIndex;
+    if (findLargest == FALSE) {
+        slotSize = 0x7FFFFFFF;
+        do {
+            curSlot = &slots[nextIndex];
+            if (curSlot->flags == SLOT_FREE) {
+                if (curSlot->size >= size && curSlot->size < slotSize) {
+                    slotSize = curSlot->size;
+                    currIndex = nextIndex;
+                }
             }
+            nextIndex = curSlot->nextIndex;
+        } while (nextIndex != MEMSLOT_NONE);
+    } else {
+        slotSize = 0;
+        do {
+            curSlot = &slots[nextIndex];
+            if (curSlot->flags == SLOT_FREE) {
+                if (curSlot->size > slotSize) {
+                    slotSize = curSlot->size;
+                    currIndex = nextIndex;
+                }
+            }
+            nextIndex = curSlot->nextIndex;
+        } while (nextIndex != MEMSLOT_NONE);
+        size = slotSize;
+        if (size & ALIGNCHECK) {
+            size = _ALIGN8(size);
         }
-        nextIndex = curSlot->nextIndex;
-    } while (nextIndex != MEMSLOT_NONE);
+        crash_assert(slotSize == 0, "Couldn't find memory???");
+    }
     if (currIndex != MEMSLOT_NONE) {
         mempool_slot_assign(poolIndex, (s32) currIndex, size, 1, 0, colourTag);
         interrupts_enable(intFlags);
@@ -178,7 +206,7 @@ void *mempool_alloc_pool(MemoryPoolSlot *slots, s32 size) {
     s32 i;
     for (i = gNumberOfMemoryPools; i != 0; i--) {
         if (slots == gMemoryPools[i].slots) {
-            return mempool_slot_find(i, size, 0);
+            return mempool_slot_find(i, size, 0, 0);
         }
     }
     return (void *) NULL;

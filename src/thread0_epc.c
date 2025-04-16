@@ -32,6 +32,8 @@ OSMesgQueue gCrashQueue;
 OSMesg gCrashQueueBuf[2];
 u16 *gCrashFB;
 char *gCrashFuncName;
+char gCrashAssert[127];
+u8 gCrashAssetTripped;
 
 u16 gScreenWidth = 320;
 u16 gScreenHeight = 240;
@@ -145,7 +147,8 @@ char *gCauseDesc[] = {
     "Floating point exception",
     "Watchpoint exception",
     "Virtual coherency on data",
-    "Stack overflow or underflow"
+    "Stack overflow or underflow",
+    "Asset tripped"
 };
 
 char *gFpcsrDesc[] = {
@@ -161,6 +164,26 @@ char *write_to_buf(char *buffer, const char *data, size_t size) {
 
 typedef char *outfun(char*,const char*,size_t);
 s32 _Printf(outfun prout, char *dst, const char *fmt, va_list args);
+
+void crash_assert(s32 cond, const char *str, ...) {
+    char *ptr;
+    va_list args;
+    s32 len;
+
+    if (cond == FALSE) {
+        return;
+    }
+
+    va_start(args, str);
+    if ((_Printf(write_to_buf, gCrashAssert, str, args)) <= 0) {
+        va_end(args);
+        return;
+    }
+    va_end(args);
+    gCrashAssetTripped = TRUE;
+    *(volatile int *) 0 = 0;
+}
+
 
 void crash_screen_draw_glyph(s32 x, s32 y, s32 glyph, u16 colour) {
     const u32 *data;
@@ -470,33 +493,37 @@ void crash_render(OSThread *t) {
     crash_rectangle(9, 4, 8, 6, 255, 0, 0, 255);
     crash_rectangle(10, 5, 6, 4, 255, 255, 255, 255);
 
-    cause = -1;
-    switch(crash_check_stack()) {
-        case 1:
-            t = &gThread1;
-            stackSize = STACK_IDLE;
-            cause = 18;
-            break;
-        case 3:
-            t = &gThread3;
-            stackSize = STACK_GAME;
-            cause = 18;
-            break;
-        case 4:
-            t = audioGetThread();
-            stackSize = STACK_AUD;
-            cause = 18;
-            break;
-        case 5:
-            t = &gMainSched.thread;
-            stackSize = STACK_SCHED;
-            cause = 18;
-            break;
-        case 30:
-            t = &gThread30;
-            stackSize = STACK_BGLOAD;
-            cause = 18;
-            break;
+    if (gCrashAssetTripped == FALSE) {
+        cause = -1;
+        switch(crash_check_stack()) {
+            case 1:
+                t = &gThread1;
+                stackSize = STACK_IDLE;
+                cause = 18;
+                break;
+            case 3:
+                t = &gThread3;
+                stackSize = STACK_GAME;
+                cause = 18;
+                break;
+            case 4:
+                t = audioGetThread();
+                stackSize = STACK_AUD;
+                cause = 18;
+                break;
+            case 5:
+                t = &gMainSched.thread;
+                stackSize = STACK_SCHED;
+                cause = 18;
+                break;
+            case 30:
+                t = &gThread30;
+                stackSize = STACK_BGLOAD;
+                cause = 18;
+                break;
+        }
+    } else {
+        cause = 19;
     }
     c = &t->context;
     if (cause == -1) {
@@ -510,7 +537,9 @@ void crash_render(OSThread *t) {
         crash_text(CRASH_BORDER_X + 16, 34, GPACK_RGBA5551(255, 255, 0, 1), "Func Name:%s", gCrashFuncName);
     }
 
-    if (cause == 18) {        
+    if (cause == 19) {
+        crash_text(CRASH_BORDER_X + 8, 54, GPACK_RGBA5551(255, 255, 255, 1), gCrashAssert);
+    } else if (cause == 18) {        
         if (t) {
             crash_text(CRASH_BORDER_X + 8, 54, GPACK_RGBA5551(255, 255, 255, 1), "Thread %d stack write out of bounds\nIncrease stack size in stacks.h", threadID);
             crash_text(CRASH_BORDER_X + 8, 80, GPACK_RGBA5551(255, 255, 255, 1), "Stack Pos: 0#%X", (u32) (crash_stack_pos(threadID) - t->context.sp));
@@ -608,6 +637,8 @@ void crash_thread(UNUSED void *var) {
 
     osSetEventMesg(OS_EVENT_CPU_BREAK, &gCrashQueue, (OSMesg) 2);
     osSetEventMesg(OS_EVENT_FAULT, &gCrashQueue, (OSMesg) 8);
+
+    gCrashAssetTripped = FALSE;
 
     osRecvMesg(&gCrashQueue, &msg, OS_MESG_BLOCK);
     osSetThreadPri(NULL, OS_PRIORITY_APPMAX);

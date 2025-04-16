@@ -2264,7 +2264,8 @@ void func_8002C0C4(s32 modelId) {
     LevelModel *mdl;
 
     set_texture_colour_tag(COLOUR_TAG_GREEN);
-    gTrackModelHeap = mempool_alloc_safe(LEVEL_MODEL_MAX_SIZE, COLOUR_TAG_YELLOW);
+    //gTrackModelHeap = mempool_alloc_safe(LEVEL_MODEL_MAX_SIZE, COLOUR_TAG_YELLOW);
+    gTrackModelHeap = (LevelModel *) mempool_alloc_largest(COLOUR_TAG_YELLOW);
     gCurrentLevelModel = gTrackModelHeap;
     D_8011D370 = mempool_alloc_safe(0x7D0, COLOUR_TAG_YELLOW);
     D_8011D374 = mempool_alloc_safe(0x1F4, COLOUR_TAG_YELLOW);
@@ -2328,9 +2329,7 @@ void func_8002C0C4(s32 modelId) {
         j = (s32) align16(((u8 *) (gCurrentLevelModel->segments[k].unk32 * 2)) + j);
     }
     temp_s4 = j - (s32) gCurrentLevelModel;
-    if (temp_s4 > LEVEL_MODEL_MAX_SIZE) {
-        rmonPrintf("ERROR!! TrackMem overflow .. %d\n", temp_s4);
-    }
+    crash_assert(temp_s4 > LEVEL_MODEL_MAX_SIZE, "Track Heap out of memory!\nHeap Size: %X\nMemory Used: %X", LEVEL_MODEL_MAX_SIZE, temp_s4);
     mempool_free_timer(0);
     mempool_free(gTrackModelHeap);
     mempool_alloc_fixed(temp_s4, (u8 *) gTrackModelHeap, COLOUR_TAG_YELLOW);
@@ -2745,6 +2744,16 @@ void shadow_update(s32 group, s32 waterGroup, s32 updateRate) {
                 }
             }
         }
+    }
+    
+    if (gShadowIndex == 2) {
+        crash_assert(gNewShadowTriCount >= 400, "Static Shadow tricount over capacity.\nCapacity: %d\nAmount: %d\nVar name: gShadowHeapTris", 400, gNewShadowTriCount);
+        crash_assert(gNewShadowVtxCount >= 1000, "Static Shadow vtxcount over capacity.\nCapacity: %d\nAmount: %d\nVar name: gShadowHeapVerts", 1000, gNewShadowVtxCount);
+        crash_assert(gShadowTail >= 200, "Static Shadow number over capacity.\nCapacity: %d\nAmount: %d\nVar name: gShadowHeapData", 200, gShadowTail);
+    } else {
+        crash_assert(gNewShadowTriCount >= 150, "Object Shadow tricount over capacity.\nCapacity: %d\nAmount: %d\nVar name: gShadowHeapTris", 150, gNewShadowTriCount);
+        crash_assert(gNewShadowVtxCount >= 400, "Object Shadow vtxcount over capacity.\nCapacity: %d\nAmount: %d\n Var name: gShadowHeapVerts", 400, gNewShadowVtxCount);
+        crash_assert(gShadowTail >= 75, "Object Shadow number over capacity.\nCapacity: %d\nAmount: %d\nVar name: gShadowHeapData", 75, gShadowTail);
     }
     gCurrShadowHeapData[gShadowTail].triCount = gNewShadowTriCount;
     gCurrShadowHeapData[gShadowTail].vtxCount = gNewShadowVtxCount;
