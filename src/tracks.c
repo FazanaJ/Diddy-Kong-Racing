@@ -22,6 +22,7 @@
 #include "collision.h"
 #include "PRinternal/viint.h"
 #include "common.h"
+#include "main.h"
 
 // Maximum size for a level model is 522.5 KiB
 #define LEVEL_MODEL_MAX_SIZE 0x82A00
@@ -88,7 +89,6 @@ f32 D_8011B0EC;
 s32 D_8011B0F0;
 s32 D_8011B0F4;
 s32 D_8011B0F8; // gIsInCutscene?
-s32 gAntiAliasing;
 s32 D_8011B100;
 s32 D_8011B104;
 s32 D_8011B108;
@@ -163,6 +163,7 @@ f32 D_8011D4A8;
 f32 D_8011D4AC;
 f32 D_8011D4B0;
 s8 D_8011D4B4;
+s8 gAntiAliasing;
 typedef struct Unk8011D4B6 {
     union {
         struct {
@@ -251,7 +252,6 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     set_active_viewports_and_max(gScenePlayerViewports);
 
     numberOfPlayers = gScenePlayerViewports;
-    gAntiAliasing = FALSE;
     // Dynamic Shadows
     for (i = 0; i < 2; i++) {
         gShadowHeapData[i] = (ShadowHeapProperties *) mempool_alloc_safe(sizeof(ShadowHeapProperties) * 75, COLOUR_TAG_YELLOW);
@@ -274,6 +274,28 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
         D_8011B0E2 = gCurrentLevelHeader2->unkB5;
         D_8011B0E3 = gCurrentLevelHeader2->unkB6;
         func_80025510(numberOfPlayers + 1);
+    }
+}
+
+void aa_manage(s32 mode) {
+    s32 aaMode;
+    if (mode == AA_OFF || gConfig.antiAliasing == AA_OFF) {
+        gAntiAliasing = AA_OFF;
+        return;
+    }
+    if (gScenePlayerViewports == ONE_PLAYER) {
+        aaMode = gConfig.antiAliasing;
+    } else {
+        aaMode = gConfig.multiAA;
+    }
+    if (aaMode == AA_FANCY) {
+        gAntiAliasing = AA_FANCY;
+    } else {
+        if (mode == TRACKAA_LEVEL) {
+            gAntiAliasing = AA_FAST;
+        } else {
+            gAntiAliasing = AA_FANCY;
+        }
     }
 }
 
@@ -316,10 +338,6 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, Triangle **tris, s32
     gDrawLevelSegments = TRUE;
     if (gCurrentLevelHeader2->race_type == RACETYPE_CUTSCENE_2) {
         gDrawLevelSegments = FALSE;
-        gAntiAliasing = TRUE;
-    }
-    if (gCurrentLevelHeader2->race_type == RACETYPE_CUTSCENE_1 || gCurrentLevelHeader2->unkBD) {
-        gAntiAliasing = TRUE;
     }
     if (gCurrentLevelHeader2->skyDome == -1) {
         i = (gCurrentLevelHeader2->unkA4->width << 9) - 1;
@@ -362,6 +380,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, Triangle **tris, s32
         if (flip) {
             gSPSetGeometryMode(gSceneCurrDisplayList++, G_CULL_FRONT);
         }
+        aa_manage(AA_OFF);
         apply_fog(gSceneCurrentPlayerID);
         gDPPipeSync(gSceneCurrDisplayList++);
         set_active_camera(gSceneCurrentPlayerID);
@@ -383,6 +402,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, Triangle **tris, s32
         }
         gDPPipeSync(gSceneCurrDisplayList++);
         initialise_player_viewport_vars(updateRate);
+        aa_manage(AA_OFF);
         weather_clip_planes(-1, -512);
         // Show weather effects in single player.
         if (gCurrentLevelHeader2->weatherEnable > 0 && numViewports < 2) {
@@ -399,6 +419,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, Triangle **tris, s32
         get_current_level_race_type() != RACETYPE_CHALLENGE_BATTLE &&
         get_current_level_race_type() != RACETYPE_CHALLENGE_BANANAS) {
         if (hud_setting() == 0) {
+            aa_manage(AA_OFF);
             if (flip) {
                 gSPSetGeometryMode(gSceneCurrDisplayList++, G_CULL_FRONT);
             }
@@ -1309,9 +1330,7 @@ void render_skydome(void) {
 
     matrix_world_origin(&gSceneCurrDisplayList, &gSceneCurrMatrix);
     if (gSceneRenderSkyDome) {
-        gUseAntiAliasing = FALSE;
         render_object(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, gSkydomeSegment);
-        gUseAntiAliasing = TRUE;
     }
 }
 
@@ -1362,8 +1381,7 @@ void initialise_player_viewport_vars(s32 updateRate) {
  * Enable or disable anti aliasing.
  * Improves visual quality at the cost of performance.
  */
-void set_anti_aliasing(s32 setting) {
-    gAntiAliasing = setting;
+void set_anti_aliasing(UNUSED s32 setting) {
 }
 
 /**
@@ -1385,10 +1403,6 @@ void render_level_geometry_and_objects(void) {
 
     func_80012C30();
 
-    if (get_settings()->courseId == ASSET_LEVEL_OPENINGSEQUENCE) {
-        gAntiAliasing = TRUE;
-    }
-
     sp160 = get_first_active_object(&objCount);
 
     if (gCurrentLevelModel->numberOfSegments > 1) {
@@ -1405,12 +1419,14 @@ void render_level_geometry_and_objects(void) {
 
     objectsVisible[0] = TRUE;
 
+    aa_manage(TRACKAA_LEVEL);
     if (gDrawLevelSegments) {
         for (i = 0; i < numberOfSegments; i++) {
             render_level_segment(segmentIds[i], FALSE); // Render opaque segments
             objectsVisible[segmentIds[i] + 1] = TRUE;
         }
     }
+    aa_manage(TRACKAA_OBJECT);
 
     if (gCurrentLevelModel->numberOfSegments < 2) {
         objectsVisible[1] = TRUE;
@@ -1470,11 +1486,13 @@ void render_level_geometry_and_objects(void) {
         }
     }
 
+    aa_manage(TRACKAA_LEVEL);
     if (gDrawLevelSegments) {
         for (i = numberOfSegments - 1; i >= 0; i--) {
             render_level_segment(segmentIds[i], TRUE); // Render transparent segments
         }
     }
+    aa_manage(AA_OFF);
 
     if (gWaveBlockCount != 0) {
         func_800BA8E4(&gSceneCurrDisplayList, &gSceneCurrMatrix, get_current_viewport());
@@ -1525,7 +1543,6 @@ void render_level_geometry_and_objects(void) {
     if (D_800DC924 && func_80027568()) {
         func_8002581C(segmentIds, numberOfSegments, get_current_viewport());
     }
-    gAntiAliasing = FALSE;
 }
 
 /**

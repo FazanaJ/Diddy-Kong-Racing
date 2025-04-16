@@ -143,6 +143,14 @@ enum WaveTypes {
     WATER_UNK_F = 15
 };
 
+enum TrackAA {
+    // AA_OFF = -1, - defined in main.h
+    TRACKAA_LEVEL,
+    TRACKAA_OBJECT
+};
+
+extern s8 gAntiAliasing;
+
 s32 set_scene_viewport_num(s32 numPorts);
 void func_800257D0(void);
 void spawn_skydome(s32 objectID);

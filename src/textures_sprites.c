@@ -647,7 +647,7 @@ void load_and_set_texture(Gfx **dList, TextureHeader *texhead, s32 flags, s32 te
         gUsingTexture = FALSE;
     }
 
-    if (gUseAntiAliasing && gConfig.antiAliasing != AA_OFF) {
+    if (gAntiAliasing > -1) {
         flags |= RENDER_ANTI_ALIASING;
     } else {
         flags &= ~RENDER_ANTI_ALIASING;

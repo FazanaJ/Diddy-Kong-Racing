@@ -266,10 +266,11 @@ u32 osGetMemSize(void) {
 }
 
 void config_init(void) {
-    gConfig.antiAliasing = -1;
+    gConfig.antiAliasing = AA_OFF;
     gConfig.terrainQuality = 0;
     gConfig.dedither = FALSE;
     gConfig.frameCap = 1;
+    gConfig.multiAA = AA_OFF;
 }
 
 /**
