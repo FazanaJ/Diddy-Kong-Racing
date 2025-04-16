@@ -113,7 +113,11 @@ s32 input_update(s32 saveDataFlags, s32 updateRate) {
         osContStartReadData(&sSIMesgQueue);
     }
     for (i = 0; i < MAXCONTROLLERS; i++) {
+#ifdef DEBUG
         if (sNoControllerPluggedIn || (gAutoplayTest != AUTOPLAY_OFF && i != 0)) {
+#else
+        if (sNoControllerPluggedIn) {
+#endif
             gControllerCurrData[i].button = 0;
         }
         // XOR the diff between the last read of the controller data with the current read to see what buttons have been

@@ -262,9 +262,11 @@ void crash_assert(s32 cond, const char *str, ...);
 #if defined(__sgi)
 #define debug_log
 #define debug_printf
+#define crash_assert 
 #else
 #define debug_log(logLevel, str, ...)
 #define debug_printf(str, ...)
+#define crash_assert(cond, str, ...);
 #endif
 #endif
 

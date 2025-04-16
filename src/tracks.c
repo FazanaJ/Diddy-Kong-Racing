@@ -2450,7 +2450,6 @@ void func_8002C0C4(s32 modelId) {
         j = (s32) align16(((u8 *) (gCurrentLevelModel->segments[k].unk32 * 2)) + j);
     }
     temp_s4 = j - (s32) gCurrentLevelModel;
-    crash_assert(temp_s4 > LEVEL_MODEL_MAX_SIZE, "Track Heap out of memory!\nHeap Size: %X\nMemory Used: %X", LEVEL_MODEL_MAX_SIZE, temp_s4);
     mempool_free_timer(0);
     mempool_free(gTrackModelHeap);
     mempool_alloc_fixed(temp_s4, (u8 *) gTrackModelHeap, COLOUR_TAG_YELLOW);
