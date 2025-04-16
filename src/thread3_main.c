@@ -271,8 +271,10 @@ void main_game_loop(void) {
         }
 #ifdef DEBUG
         if (gAutoplayTest != AUTOPLAY_OFF) {
-            if (get_current_map_id() == ASSET_LEVEL_CENTRALAREAHUB || get_current_map_id() == ASSET_LEVEL_SNOWFLAKEMOUNTAINHUB) {
+            if (get_current_map_id() == ASSET_LEVEL_CENTRALAREAHUB) {
                 sLogicUpdateRate = 2;
+            } else if (get_current_map_id() == ASSET_LEVEL_SNOWFLAKEMOUNTAINHUB) {
+                sLogicUpdateRate = 3;
             } else {
                 sLogicUpdateRate = 5;
             }
