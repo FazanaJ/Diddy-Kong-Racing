@@ -3340,6 +3340,7 @@ void menu_title_screen_init(void) {
     gTitleCinematicTextColourCount = 0;
     gOpacityDecayTimer = 0;
     gIsInTracksMode = FALSE;
+    osContSetMask(CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4);
 }
 
 /**
@@ -6756,6 +6757,7 @@ void menu_character_select_init(void) {
 
     breakTheLoop = FALSE;
     input_assign_players();
+    osContSetMask(CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4);
     if (is_drumstick_unlocked()) {
         if (is_tt_unlocked()) {
             gCurrCharacterSelectData = (CharacterSelectData(*)[10]) & gCharacterSelectBytesComplete;
@@ -7070,6 +7072,7 @@ s32 menu_character_select_loop(s32 updateRate) {
     s32 confirmOffset;
     s8 activePlayers[4];
     s32 j;
+    s32 contMask;
 
     charselect_render_text(updateRate);
     charselect_music_channels(updateRate);
@@ -7116,6 +7119,14 @@ s32 menu_character_select_loop(s32 updateRate) {
 
             charselect_assign_ai(charSlot);
             charselect_assign_players(gActivePlayersArray);
+
+            contMask = 0;
+            for (j = 0; j < 4; j++) {
+                if (gActivePlayersArray[j]) {
+                    contMask |= (1 << j);
+                }
+            }
+            osContSetMask(contMask);
 
             gIsInTracksMode = TRUE;
             if (confirmOffset >= gNumberOfActivePlayers) {
