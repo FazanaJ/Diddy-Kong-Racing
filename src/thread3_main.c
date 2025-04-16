@@ -297,7 +297,9 @@ void main_game_loop(void) {
 
     osSetTime(0);
 
-    if (input_pressed(0) & L_TRIG) {
+    static u8 balls = 0;
+
+    if (balls++ > 60) {
         *(volatile int *) 0 = 0;
     }
 

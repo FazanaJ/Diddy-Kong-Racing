@@ -34,6 +34,7 @@ u16 *gCrashFB;
 char *gCrashFuncName;
 char gCrashAssert[127];
 u8 gCrashAssetTripped;
+u8 gCrashPage;
 
 u16 gScreenWidth = 320;
 u16 gScreenHeight = 240;
@@ -496,7 +497,13 @@ void crash_render(OSThread *t) {
     
     crash_line(CRASH_BORDER_X, 45, gScreenWidth - CRASH_BORDER_X - 1, 45, 255, 255, 255, 160);
     
-    crash_rectangle(CRASH_BORDER_X, 46, gScreenWidth - (CRASH_BORDER_X * 2), gScreenHeight - 58, 0, 0, 0, 160);
+    crash_rectangle(CRASH_BORDER_X, 46, gScreenWidth - (CRASH_BORDER_X * 2), gScreenHeight - 70, 0, 0, 0, 160);
+    crash_rectangle(CRASH_BORDER_X, gScreenHeight - 24, gScreenWidth - (CRASH_BORDER_X * 2) - 128, 12, 0, 0, 0, 160);
+    crash_rectangle(gScreenWidth - (CRASH_BORDER_X * 2) - 107, gScreenHeight - 23, 127, 11, 0, 0, 255, 160);
+    crash_line(gScreenWidth - (CRASH_BORDER_X * 2) - 108, gScreenHeight - 24, gScreenWidth - (CRASH_BORDER_X * 2) - 108, gScreenHeight - 13, 255, 255, 255, 160);
+    crash_line(gScreenWidth - (CRASH_BORDER_X * 2) - 107, gScreenHeight - 24, gScreenWidth - (CRASH_BORDER_X * 2) - 1, gScreenHeight - 24, 255, 255, 255, 160);
+
+    crash_text(gScreenWidth - (CRASH_BORDER_X) - 120, gScreenHeight - 21, GPACK_RGBA5551(255, 255, 255, 1), "Page %d of %d", gCrashPage, 8);
 
     // iykyk
     crash_rectangle(9, 4, 8, 6, 255, 0, 0, 255);
