@@ -623,6 +623,7 @@ void crash_render(OSThread *t) {
     osWritebackDCacheAll();
     osViBlack(FALSE);
     osViSwapBuffer(gCrashFB);
+    vi_change(gScreenWidth, gScreenHeight);
 }
 
 void crash_screen_sleep(s32 ms) {
@@ -668,7 +669,6 @@ void crash_thread(UNUSED void *var) {
     oldH = gScreenHeight;
     gScreenWidth = 512;
     gScreenHeight = 240;
-    vi_change(gScreenWidth, gScreenHeight);
     if (gVideoCurrFramebuffer == NULL) {
         gVideoCurrFramebuffer = (u16 *) 0x802000000;
     }
