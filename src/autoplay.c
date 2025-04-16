@@ -785,6 +785,8 @@ void autoplay_single_player(void) {
                                 gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
                             }
                         }
+                            gAutoplayTest = AUTOPLAY_OFF;
+                        }
                     }
                 }
 

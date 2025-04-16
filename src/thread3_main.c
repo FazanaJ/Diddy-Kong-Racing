@@ -280,7 +280,7 @@ void main_game_loop(void) {
             }
             if (get_current_map_id() == ASSET_LEVEL_PARTYSEQUENCE ||
                 get_current_map_id() == ASSET_LEVEL_LASTBIT ||
-                get_current_map_id() == ASSET_LEVEL_LASTBITB || gCurrentMenuId == MENU_CREDITS) {
+                get_current_map_id() == ASSET_LEVEL_LASTBITB) {
                 sched_framecap(1);
             } else {
                 sched_framecap(0);

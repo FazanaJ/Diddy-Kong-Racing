@@ -6,7 +6,7 @@
 
 #define SKIP_TITLE 1
 
-//#define DEBUG
+#define DEBUG
 
 /* -------------------------Memory------------------------ */
 #define EXPANSION_PAK_SUPPORT 0  // Allow the game to use the expansion pak if it's inserted.
@@ -14,7 +14,6 @@
 
 #define UNLOCK_ALL
 #define SKIP_INTRO SKIP_TITLE
-#define AUTOPLAY
 #define AUTOPLAY_DEFAULT AUTOPLAY_OFF
 #define SKIP_NEW_GAME
 #define OPEN_ALL_DOORS
