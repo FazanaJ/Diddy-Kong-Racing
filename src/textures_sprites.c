@@ -294,20 +294,6 @@ Gfx D_800DF410[][2] = {
 
 /*******************************/
 
-/************ .rodata ************/
-
-const char D_800E7B30[] = "Error: Texture no %x out of range on load. !!\n";
-const char D_800E7B60[] = "TEX Error: Palette memory overflow!!\n";
-const char D_800E7B88[] = "TEX Error: TexTab overflow!!\n";
-const char D_800E7BA8[] = "texFreeTexture: NULL tex!!\n";
-const char D_800E7BC4[] = "TEX Error: Tryed to deallocate non-existent texture!!\n";
-const char D_800E7BFC[] = "SRPBUF overflow!!\n";
-const char D_800E7C10[] = "Error: Sprite table overflow!!\n";
-const char D_800E7C30[] = "texFreeSprite: NULL sprite!!\n";
-const char D_800E7C50[] = "TEXSPR Error: Tryed to deallocate non-existent sprite!!\n";
-
-/*********************************/
-
 /************ .bss ************/
 
 s32 *gTextureAssetTable[2];

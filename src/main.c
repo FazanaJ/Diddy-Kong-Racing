@@ -86,7 +86,7 @@ static void get_pj64_version() {
     for (i = 0; i < 15; i++) pifRam32[i] = 0;
     pifRam32[15] = 2;    
 
-    memcpy(&__osContPifRam[46], cicTest, 17);
+    bcopy(cicTest, &__osContPifRam[46], 17);
 
     __osSiRawStartDma(OS_WRITE, __osContPifRam);
     osRecvMesg(si_mesg(), NULL, OS_MESG_BLOCK);

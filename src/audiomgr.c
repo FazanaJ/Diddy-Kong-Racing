@@ -100,10 +100,6 @@ static u32 __amHandleFrameMsg(AudioInfo *info, AudioInfo *lastInfo);
 static void __amHandleDoneMsg(AudioInfo *info);
 static void __clearAudioDMA(void);
 
-/**** Debug strings ****/
-const char D_800E49F0[] =
-    "audio manager: RCP audio interface bug caused DMA from bad address - move audiomgr.c in the makelist!\n";
-
 /******************************************************************************
  * Audio Manager API
  *****************************************************************************/

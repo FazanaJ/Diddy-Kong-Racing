@@ -44,7 +44,7 @@ void _Litob(_Pft *args, char type) {
 
     args->n1 = BUFF_LEN - i;
 
-    memcpy(args->s, buff + i, args->n1);
+    bcopy(buff + i, args->s, args->n1);
 
     if (args->n1 < args->prec) {
         args->nz0 = args->prec - args->n1;

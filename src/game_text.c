@@ -390,7 +390,7 @@ void process_onscreen_textbox(s32 updateRate) {
                     gCloseTextMessage = TRUE;
                 }
             }
-            npc_dialogue_loop(DIALOGUE_CHALLENGE);
+            npc_dialogue_loop(DIALOGUE_CHALLENGE, updateRate);
         }
     }
 }

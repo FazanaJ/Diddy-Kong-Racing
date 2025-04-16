@@ -2584,7 +2584,7 @@ s32 menu_loop(Gfx **currDisplayList, MatrixS **currHudMat, Vertex **currHudVerts
     sMenuCurrHudVerts = *currHudVerts;
     sMenuCurrHudTris = *currHudTris;
 
-    update_controller_sticks();
+    update_controller_sticks(updateRate);
     switch (gCurrentMenuId) {
         case MENU_LOGOS:
             ret = menu_logo_screen_loop(updateRate);
@@ -4684,16 +4684,19 @@ SIDeviceStatus savemenu_load_destinations(void) {
 void savemenu_move(s32 updateRate) {
     f32 optUpper, optLower;
     f32 lerpUpper, lerpLower;
+    f32 updateRateF;
+
+    updateRateF = updateRate;
     optUpper = gSaveMenuOptionSource;
     optLower = gSaveMenuOptionDest;
     while (updateRate > 0) {
         if (gSaveMenuOptionCountUpper > 0) {
             lerpUpper = optUpper - gSaveMenuScrollSource;
-            gSaveMenuScrollSource += 0.1f * lerpUpper; //!@Delta
+            gSaveMenuScrollSource += (0.1f * lerpUpper) * updateRateF;
         }
         if (gMenuStage > SAVEMENU_ENTER && gSaveMenuOptionCountLower > 0) {
             lerpLower = optLower - gSaveMenuScrollDest;
-            gSaveMenuScrollDest += 0.1f * lerpLower; //!@Delta
+            gSaveMenuScrollDest += (0.1f * lerpLower) * updateRateF;
         }
         updateRate--;
     }
@@ -10302,7 +10305,7 @@ s32 menu_pause_loop(UNUSED Gfx **dl, s32 updateRate) {
 
     sound_volume_change(VOLUME_LOWER);
     gOptionBlinkTimer = (gOptionBlinkTimer + updateRate) & 0x3F;
-    update_controller_sticks();
+    update_controller_sticks(updateRate);
 
     buttonsPressed = 0;
     if (gIgnorePlayerInputTime == 0) {
@@ -10883,7 +10886,7 @@ s32 menu_postrace(Gfx **dList, MatrixS **matrices, Vertex **vertices, s32 update
     } else {
         bgdraw_texture_init(NULL, NULL, 0);
     }
-    update_controller_sticks();
+    update_controller_sticks(updateRate);
     buttonsPressed = 0;
     if (gIgnorePlayerInputTime == FALSE && gPostRace.unk0_s32 < 0) {
         for (i = 0; i < numPlayers; i++) {
@@ -12297,7 +12300,7 @@ s32 menu_trophy_race_rankings_loop(s32 updateRate) {
     if (gMenuDelay > -20 && gMenuDelay < 20) {
         rankings_render_order(updateRate);
     }
-    update_controller_sticks();
+    update_controller_sticks(updateRate);
     switch (gMenuStage) { // gMenuStage = current Trophy Race Rankings state?
         case POSTRACE_ENTER:
             if (postrace_render(updateRate)) {
@@ -13448,7 +13451,7 @@ void reset_controller_sticks(void) {
  * Reads the stick inputs, then with the aid of a maximum range and a deadzone, writes it to the menu inputs.
  * Stick input delay is not time corrected, meaning holding the stick is slower at lower framerates.
  */
-void update_controller_sticks(void) {
+void update_controller_sticks(s32 updateRate) {
     s32 XClamp, YClamp;
     s32 i;
     for (i = 0; i < 4; i++) {
@@ -13476,9 +13479,9 @@ void update_controller_sticks(void) {
 
         gControllersYAxis[i] = YClamp;
         if (gControllersYAxis[i] < -STICK_DEADZONE) {
-            gControllersYAxisDelay[i]++; //!@Delta
+            gControllersYAxisDelay[i] += updateRate;
         } else if (gControllersYAxis[i] > STICK_DEADZONE) {
-            gControllersYAxisDelay[i]++; //!@Delta
+            gControllersYAxisDelay[i] += updateRate;
         } else {
             gControllersYAxisDelay[i] = 0;
         }
@@ -13490,9 +13493,9 @@ void update_controller_sticks(void) {
 
         gControllersXAxis[i] = XClamp;
         if (gControllersXAxis[i] < -STICK_DEADZONE) {
-            gControllersXAxisDelay[i]++; //!@Delta
+            gControllersXAxisDelay[i] += updateRate;
         } else if (gControllersXAxis[i] > STICK_DEADZONE) {
-            gControllersXAxisDelay[i]++; //!@Delta
+            gControllersXAxisDelay[i] += updateRate;
         } else {
             gControllersXAxisDelay[i] = 0;
         }
@@ -13959,7 +13962,7 @@ void dialogue_try_close(void) {
  * Top level function for controlling dialogue with NPC's.
  * Returning nonzero will trigger those NPC's to stop dialogue.
  */
-s32 npc_dialogue_loop(u32 dialogueOption) {
+s32 npc_dialogue_loop(u32 dialogueOption, s32 updateRate) {
     s32 result;
 
     gDoneTalkingToNPC[dialogueOption] = FALSE;
@@ -13973,7 +13976,7 @@ s32 npc_dialogue_loop(u32 dialogueOption) {
         set_pause_lockout_timer(1);
     }
     result = 0;
-    update_controller_sticks();
+    update_controller_sticks(updateRate);
     dialogue_clear(1);
     open_dialogue_box(1);
     set_current_dialogue_background_colour(1, 0, 0, 0, 128);

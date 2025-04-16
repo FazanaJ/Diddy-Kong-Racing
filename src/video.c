@@ -295,14 +295,3 @@ void fb_swap(void) {
     gVideoLastDepthBuffer = gVideoDepthBuffer;
     gVideoCurrDepthBuffer = gVideoDepthBuffer;
 }
-
-/**
- * Copy byte-by-byte a region from one address to another.
- */
-void fb_memcpy(u8 *src, u8 *dest, s32 len) {
-    s32 i;
-
-    for (i = 0; i < len; i++) {
-        *dest++ = *src++;
-    }
-}

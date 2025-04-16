@@ -676,7 +676,7 @@ void obj_loop_trophycab(Object *obj, s32 updateRate) {
         if (obj->properties.trophyCabinet.action == 1) {
             minimap_opacity_set(3);
             hud_visibility(0);
-            dialogueID = npc_dialogue_loop(DIALOGUE_TROPHY);
+            dialogueID = npc_dialogue_loop(DIALOGUE_TROPHY, updateRate);
             if (dialogueID) {
                 obj->properties.trophyCabinet.action = 0;
                 dialogue_npc_finish(4);
@@ -1274,7 +1274,7 @@ void obj_loop_stopwatchman(Object *obj, s32 updateRate) {
         minimap_fade(3);
     }
     if (obj->properties.npc.action >= TT_MODE_TURN_TOWARDS_PLAYER) {
-        index = npc_dialogue_loop(DIALOGUE_TT);
+        index = npc_dialogue_loop(DIALOGUE_TT, updateRate);
     } else {
         dialogue_npc_finish(2);
         index = 0;
@@ -2642,7 +2642,7 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
         case TAJ_MODE_DIALOGUE:
         case TAJ_MODE_TRANSFORM_BEGIN:
         case TAJ_MODE_TRANSFORM_END:
-            dialogueID = npc_dialogue_loop(DIALOGUE_TAJ);
+            dialogueID = npc_dialogue_loop(DIALOGUE_TAJ, updateRate);
             break;
         default:
             dialogue_npc_finish(0);

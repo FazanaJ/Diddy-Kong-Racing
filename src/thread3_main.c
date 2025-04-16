@@ -370,7 +370,11 @@ void main_game_loop(void) {
     fb_update(sLogicUpdateRate);
 
     if (gDrawFrameTimer == 0) {
+#ifndef FIFO_4MB
         if (gExpansionPak) {
+#else
+        if (1) {
+#endif
             if (gPlatform & (CONSOLE | ARES | SIMPLE64)) {
                 gfxtask_run_fifo(gDisplayLists[gSPTaskNum], gCurrDisplayList);
             } else {

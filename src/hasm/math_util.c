@@ -671,7 +671,7 @@ GLOBAL_ASM("asm/math_util/set_breakpoint.s")
 #ifdef NON_MATCHING
 void dmacopy_doubleword(void *src, void *dst, s32 end) {
     s32 size = end - (u32) dst;
-    memcpy(dst, src, size);
+    bcopy(src, dst, size);
 }
 #else
 GLOBAL_ASM("asm/math_util/dmacopy_doubleword.s")
