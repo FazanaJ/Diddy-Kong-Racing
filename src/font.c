@@ -7,12 +7,11 @@
 /************ .data ************/
 
 Gfx dDialogueBoxBegin[] = {
+    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
     gsDPPipeSync(),
     gsDPSetTextureLOD(G_TL_TILE),
     gsDPSetTextureLUT(G_TT_NONE),
     gsDPSetAlphaCompare(G_AC_NONE),
-    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
-    gsDPPipeSync(),
     gsSPEndDisplayList(),
 };
 

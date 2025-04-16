@@ -636,6 +636,7 @@ void load_and_set_texture(Gfx **dList, TextureHeader *texhead, s32 flags, s32 te
     s32 forceFlags;
     s32 doPipeSync;
     s32 dlIndex;
+    Gfx *cmd;
 
     forceFlags = gForceFlags;
     doPipeSync = TRUE;
@@ -699,19 +700,11 @@ void load_and_set_texture(Gfx **dList, TextureHeader *texhead, s32 flags, s32 te
         gCurrentRenderFlags = flags;
         if (!gUsingTexture) {
             if (flags & RENDER_VTX_ALPHA) {
-                gDkrDmaDisplayList(
-                    (*dList)++,
-                    OS_PHYSICAL_TO_K0(
-                        dRenderSettingsSolidColourVtxAlpha[flags & (RENDER_ANTI_ALIASING | RENDER_Z_COMPARE)]),
-                    numberOfGfxCommands(dRenderSettingsSolidColourVtxAlpha[0]));
-                return;
+                cmd = dRenderSettingsSolidColourVtxAlpha[flags & (RENDER_ANTI_ALIASING | RENDER_Z_COMPARE)];
+                goto run;
             }
-            gDkrDmaDisplayList(
-                (*dList)++,
-                OS_PHYSICAL_TO_K0(dRenderSettingsSolidColour[flags & (RENDER_FOG_ACTIVE | RENDER_SEMI_TRANSPARENT |
-                                                                      RENDER_Z_COMPARE | RENDER_ANTI_ALIASING)]),
-                numberOfGfxCommands(dRenderSettingsSolidColour[0]));
-            return;
+            cmd = dRenderSettingsSolidColour[flags & (RENDER_FOG_ACTIVE | RENDER_SEMI_TRANSPARENT | RENDER_Z_COMPARE | RENDER_ANTI_ALIASING)];
+            goto run;
         }
 
         if (gUsePrimColour) {
@@ -726,16 +719,14 @@ void load_and_set_texture(Gfx **dList, TextureHeader *texhead, s32 flags, s32 te
                 if (flags & RENDER_COLOUR_INDEX) {
                     dlIndex |= 4; // Colour Index
                 }
-                gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(dRenderSettingsPrimOverlay[dlIndex]),
-                                   numberOfGfxCommands(dRenderSettingsPrimOverlay[0]));
-                return;
+                cmd = dRenderSettingsPrimOverlay[dlIndex];
+                goto run;
             }
             if (flags & RENDER_COLOUR_INDEX) {
                 flags = (flags ^ RENDER_COLOUR_INDEX) | RENDER_FOG_ACTIVE;
             }
-            gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(dRenderSettingsPrimCol[flags]),
-                               numberOfGfxCommands(dRenderSettingsPrimCol[0]));
-            return;
+            cmd = dRenderSettingsPrimCol[flags];
+            goto run;
         }
 
         if (flags & RENDER_DECAL && flags & RENDER_Z_COMPARE) {
@@ -752,9 +743,8 @@ void load_and_set_texture(Gfx **dList, TextureHeader *texhead, s32 flags, s32 te
             if (flags & RENDER_COLOUR_INDEX) {
                 dlIndex |= 8; // Colour Index
             }
-            gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(dRenderSettingsDecal[dlIndex]),
-                               numberOfGfxCommands(dRenderSettingsDecal[0]));
-            return;
+            cmd = dRenderSettingsDecal[dlIndex];
+            goto run;
         }
 
         if (flags & RENDER_CUTOUT) {
@@ -762,9 +752,8 @@ void load_and_set_texture(Gfx **dList, TextureHeader *texhead, s32 flags, s32 te
             if (flags & RENDER_FOG_ACTIVE) {
                 dlIndex |= 8; // Fog
             }
-            gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(dRenderSettingsCutout[dlIndex]),
-                               numberOfGfxCommands(dRenderSettingsCutout[0]));
-            return;
+            cmd = dRenderSettingsCutout[dlIndex];
+            goto run;
         }
 
         flags &= ~RENDER_DECAL;
@@ -776,14 +765,13 @@ void load_and_set_texture(Gfx **dList, TextureHeader *texhead, s32 flags, s32 te
                 gSPSetGeometryMode((*dList)++, G_ZBUFFER);
                 gCurrentRenderFlags |= RENDER_Z_COMPARE;
             }
-            gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(dRenderSettingsVtxAlpha[dlIndex]),
-                               numberOfGfxCommands(dRenderSettingsVtxAlpha[0]));
-            return;
+            cmd = dRenderSettingsVtxAlpha[dlIndex];
+            goto run;
         }
 
-        gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(dRenderSettingsCommon[flags]),
-                           numberOfGfxCommands(dRenderSettingsCommon[0]));
-        return;
+        cmd = dRenderSettingsCommon[flags];
+        run:
+        gDkrDmaDisplayList((*dList)++, cmd, numberOfGfxCommands(dRenderSettingsCommon[0]));
     }
 }
 
@@ -793,24 +781,29 @@ void load_and_set_texture(Gfx **dList, TextureHeader *texhead, s32 flags, s32 te
 void load_blinking_lights_texture(Gfx **dList, TextureHeader *texture_list, u32 flags, s32 texture_index) {
     u16 *mblock;
     u16 *tblock;
+    s32 width;
+    s32 height;
+    s32 maskW;
+    s32 maskH;
     if ((texture_index != 0) && (texture_index < (texture_list->numOfTextures * 256))) {
         texture_list = (TextureHeader *) ((s32) texture_list + ((texture_index >> 16) * texture_list->textureSize));
     }
     mblock = (u16 *) (texture_list + 1);
     tblock = mblock + 0x400;
     if (texture_list->width == 64) {
-        gDPLoadMultiBlock((*dList)++, OS_K0_TO_PHYSICAL(mblock), 256, 1, G_IM_FMT_RGBA, G_IM_SIZ_16b, 64, 16, 0, 0, 0,
-                          6, 4, 0, 0);
-        gDPLoadTextureBlock((*dList)++, OS_K0_TO_PHYSICAL(tblock), G_IM_FMT_RGBA, G_IM_SIZ_16b, 64, 16, 0, 0, 0, 6, 4,
-                            0, 0);
+        width = 64;
+        height = 16;
+        maskW = 6;
+        maskH = 4;
     } else {
-        gDPLoadMultiBlock((*dList)++, OS_K0_TO_PHYSICAL(mblock), 256, 1, G_IM_FMT_RGBA, G_IM_SIZ_16b, 32, 32, 0, 0, 0,
-                          5, 5, 0, 0);
-        gDPLoadTextureBlock((*dList)++, OS_K0_TO_PHYSICAL(tblock), G_IM_FMT_RGBA, G_IM_SIZ_16b, 32, 32, 0, 0, 0, 5, 5,
-                            0, 0);
+        width = 32;
+        height = 32;
+        maskW = 5;
+        maskH = 5;
     }
+    gDPLoadMultiBlock((*dList)++, OS_K0_TO_PHYSICAL(mblock), 256, 1, G_IM_FMT_RGBA, G_IM_SIZ_16b, width, height, 0, 0, 0, maskW, maskH, 0, 0);
+    gDPLoadTextureBlock((*dList)++, OS_K0_TO_PHYSICAL(tblock), G_IM_FMT_RGBA, G_IM_SIZ_16b, width, height, 0, 0, 0, maskW, maskH, 0, 0);
 
-    gDPPipeSync((*dList)++);
     gCurrentTextureHeader = 0;
     flags &= (RENDER_ANTI_ALIASING | RENDER_Z_COMPARE | RENDER_SEMI_TRANSPARENT | RENDER_FOG_ACTIVE | RENDER_CUTOUT);
     gSPSetGeometryMode((*dList)++, G_FOG);
@@ -835,6 +828,7 @@ void sprite_opaque(s32 setting) {
 }
 
 void func_8007BF34(Gfx **dList, s32 flags) {
+    Gfx *cmd;
     if ((flags != gCurrentRenderFlags) || gForceFlags) {
         gDPPipeSync((*dList)++);
         if ((gCurrentRenderFlags & RENDER_VTX_ALPHA) || gForceFlags) {
@@ -854,17 +848,14 @@ void func_8007BF34(Gfx **dList, s32 flags) {
         flags &= ~RENDER_DECAL;
         if (gSpriteOpaque == FALSE) {
             if ((gCurrentRenderFlags & RENDER_PRESERVE_COVERAGE)) {
-                gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(dRenderSettingsSpriteCld[(flags >> 1) & 1]),
-                                   numberOfGfxCommands(dRenderSettingsSpriteCld[0]));
+                cmd = dRenderSettingsSpriteCld[(flags >> 1) & 1];
             } else {
-                // fake ^ 0 required for some reason
-                gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(dRenderSettingsSpriteXlu[(flags - 16) ^ 0]),
-                                   numberOfGfxCommands(dRenderSettingsSpriteXlu[0]));
+                cmd = dRenderSettingsSpriteXlu[(flags - 16)];
             }
         } else {
-            gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(dRenderSettingsCommon[flags]),
-                               numberOfGfxCommands(dRenderSettingsCommon[0]));
+            cmd = dRenderSettingsCommon[flags];
         }
+        gDkrDmaDisplayList((*dList)++, cmd, numberOfGfxCommands(dRenderSettingsCommon[0]));
         gCurrentTextureHeader = NULL;
         gUsingTexture = TRUE;
     }
@@ -946,20 +937,6 @@ UNUSED u8 func_8007C660(s32 arg0) {
         }
     }
     return D_80126370[arg0];
-}
-
-UNUSED s32 func_8007C860(s32 spriteIndex) {
-    if ((spriteIndex < 0) || (spriteIndex >= gNumberOfLoadedTextures)) {
-        return -1;
-    }
-    return gTextureCache[spriteIndex << 1];
-}
-
-UNUSED s32 func_8007C8A0(s32 spriteIndex) {
-    if ((spriteIndex < 0) || (spriteIndex >= D_80126358)) {
-        return -1;
-    }
-    return gSpriteCache[spriteIndex << 1];
 }
 
 s32 load_sprite_info(s32 spriteIndex, s32 *numOfInstancesOut, s32 *unkOut, s32 *numFramesOut, s32 *formatOut,
@@ -1080,31 +1057,15 @@ void func_8007CDC0(Sprite *sprite1, Sprite *sprite2, s32 arg2) {
         vertices[0].x = x0;
         vertices[0].y = y0;
         vertices[0].z = 0;
-        vertices[0].r = 255;
-        vertices[0].g = 255;
-        vertices[0].b = 255;
-        vertices[0].a = 255;
         vertices[1].x = x1;
         vertices[1].y = y0;
         vertices[1].z = 0;
-        vertices[1].r = 255;
-        vertices[1].g = 255;
-        vertices[1].b = 255;
-        vertices[1].a = 255;
         vertices[2].x = x1;
         vertices[2].y = y1;
         vertices[2].z = 0;
-        vertices[2].r = 255;
-        vertices[2].g = 255;
-        vertices[2].b = 255;
-        vertices[2].a = 255;
         vertices[3].x = x0;
         vertices[3].y = y1;
         vertices[3].z = 0;
-        vertices[3].r = 255;
-        vertices[3].g = 255;
-        vertices[3].b = 255;
-        vertices[3].a = 255;
         vertices += 4;
         gDkrDmaDisplayList(dlptr++, OS_K0_TO_PHYSICAL(tex->cmd), tex->numberOfCommands);
         if (var_t5 == 0) {

@@ -288,9 +288,6 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
         gSnowPhysics[i].x_position = get_random_number_from_range(0, gSnowGfx.radiusX);
         gSnowPhysics[i].y_position = get_random_number_from_range(0, gSnowGfx.radiusY);
         gSnowPhysics[i].z_position = get_random_number_from_range(0, gSnowGfx.radiusZ);
-        gSnowPhysics[i].unused_C = 1 << (get_random_number_from_range(0, 32) + 5);
-        gSnowPhysics[i].unused_D = 1 << (get_random_number_from_range(0, 32) + 5);
-        gSnowPhysics[i].unused_E = 1 << (get_random_number_from_range(0, 32) + 5);
         gSnowPhysics[i].index = get_random_number_from_range(0, gSnowGfx.size - 1);
     }
 
