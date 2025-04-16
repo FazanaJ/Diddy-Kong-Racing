@@ -377,13 +377,16 @@ char *sThreadNames[] = {
     "Main",
     "Audio",
     "Sched",
-    "BGLoad"
+    "BGLoad",
+    "USB"
 };
 
 s32 crash_thread_name(s32 threadID) {
     s32 id = threadID - 2;
     if (id == 28) {
         id = 4;
+    } else if (id == 67) {
+        id = 5;
     } else if (id >= 2) {
         id = 0;
     }
@@ -419,6 +422,7 @@ extern u64 gThread3Stack[STACKSIZE(STACK_GAME)];
 extern u64 audioStack[STACKSIZE(STACK_AUD)];
 extern u64 gSchedStack[STACKSIZE(STACK_SCHED)];
 extern u64 gThread30Stack[STACKSIZE(STACK_BGLOAD)];
+extern u64 gThreadUsbStack[STACKSIZE(STACK_USB)];
 
 #define CRASH_BORDER_X 20
 
@@ -434,6 +438,8 @@ u32 crash_stack_pos(s32 threadID) {
             return (u32) &gSchedStack[STACKSIZE(STACK_SCHED) - 1];
         case 30:
             return (u32) &gThread30Stack[STACKSIZE(STACK_BGLOAD) - 1];
+        case 69:
+            return (u32) &gThreadUsbStack[STACKSIZE(STACK_USB) - 1];
         default:
             return 0;
     }
@@ -495,7 +501,7 @@ void crash_render(OSThread *t) {
 
     if (gCrashAssetTripped == FALSE) {
         cause = -1;
-        switch(crash_check_stack()) {
+        /*switch(crash_check_stack()) {
             case 1:
                 t = &gThread1;
                 stackSize = STACK_IDLE;
@@ -521,7 +527,7 @@ void crash_render(OSThread *t) {
                 stackSize = STACK_BGLOAD;
                 cause = 18;
                 break;
-        }
+        }*/
     } else {
         cause = 19;
     }

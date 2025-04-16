@@ -8,6 +8,7 @@
 #include "reset.h"
 #include "string.h"
 #include "stdarg.h"
+#include "src/stacks.h"
 
 /*
     TODO:
@@ -28,8 +29,6 @@
 // Copied from UNFLoader debug.h
 #define THREADUSB_PRIORITY 126
 
-#define THREADUSB_STACK 0x200
-
 #define MSG_FAULT 0x10
 #define MSG_READ  0x11
 #define MSG_WRITE 0x12
@@ -48,7 +47,7 @@
 OSThread gThreadUsb;
 OSMesgQueue gThreadUsbMesgQueue;
 OSMesg gThreadUsbMessage;
-u64 gThreadUsbStack[THREADUSB_STACK / sizeof(u64)];
+u64 gThreadUsbStack[STACKSIZE(STACK_USB)];
 ALIGNED16 char debug_buffer[BUFFER_SIZE];
 u8 sUSBEnabled = FALSE;
 int usbState = -1;
@@ -104,7 +103,7 @@ void init_usb_thread(void) {
 
     // Create USB thread.
     osCreateMesgQueue(&gThreadUsbMesgQueue, &gThreadUsbMessage, 1);
-    osCreateThread(&gThreadUsb, USB_THREAD_ID, &threadusb_loop, NULL, &gThreadUsbStack[THREADUSB_STACK / sizeof(u64)],
+    osCreateThread(&gThreadUsb, USB_THREAD_ID, &threadusb_loop, NULL, &gThreadUsbStack[STACKSIZE(STACK_USB)],
                    THREADUSB_PRIORITY);
     osStartThread(&gThreadUsb);
 }
@@ -182,6 +181,10 @@ void check_hot_reload(void) {
 }
 #endif
 
+void game_reset(void) {
+    osSendMesg(&gThreadUsbMesgQueue, (OSMesg) 50, OS_MESG_BLOCK);
+}
+
 void threadusb_loop(UNUSED void *arg) {
     usbMesg *mesg = NULL;
     sUSBEnabled = TRUE;
@@ -198,12 +201,16 @@ void threadusb_loop(UNUSED void *arg) {
 #else
         dkr_usb_poll();
 #endif
+        
         switch ((s32) mesg->msgtype) {
         case MSG_WRITE:
             if (usb_timedout()) {
                 usb_sendheartbeat();
             }
             usb_write(mesg->datatype, mesg->buff, mesg->size);
+            break;
+        case 50:
+            reset();
             break;
         }
     }

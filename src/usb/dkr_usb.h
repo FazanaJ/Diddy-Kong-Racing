@@ -14,5 +14,6 @@ typedef struct  {
 void init_usb_thread(void);
 void tick_usb_thread(void);
 void render_usb_info(void);
+void game_reset(void);
 
 #endif
