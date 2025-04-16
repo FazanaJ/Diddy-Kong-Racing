@@ -785,6 +785,7 @@ void autoplay_single_player(void) {
                                 gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
                             }
                         }
+                        if (map == ASSET_LEVEL_WIZPIG2 && racer->raceFinished && racer->finishPosition == 1) {
                             gAutoplayTest = AUTOPLAY_OFF;
                         }
                     }
