@@ -81,6 +81,8 @@ s32 bgload_start(s32 levelId, s32 cutsceneId) {
             gThread30Stack = (u64 *) align16((u8 *) gThread30Stack);
         }
         osCreateThread(&gThread30, 30, &thread30_bgload, NULL, gThread30Stack + STACKSIZE(STACK_BGLOAD), 8);
+        gThread30Stack[STACKSIZE(STACK_BGLOAD) - 1] = 0;
+        gThread30Stack[0] = 0;
         osStartThread(&gThread30);
         return TRUE;
     }

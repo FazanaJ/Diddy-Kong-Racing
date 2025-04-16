@@ -421,7 +421,7 @@ extern u64 gThread1Stack[STACKSIZE(STACK_IDLE)];
 extern u64 gThread3Stack[STACKSIZE(STACK_GAME)];
 extern u64 audioStack[STACKSIZE(STACK_AUD)];
 extern u64 gSchedStack[STACKSIZE(STACK_SCHED)];
-extern u64 gThread30Stack[STACKSIZE(STACK_BGLOAD)];
+extern u64 *gThread30Stack;
 extern u64 gThreadUsbStack[STACKSIZE(STACK_USB)];
 
 #define CRASH_BORDER_X 20
@@ -459,8 +459,11 @@ s32 crash_check_stack(void) {
     if ((gSchedStack[STACKSIZE(STACK_SCHED) - 1] != gSchedStack[0])) {
         return 5;
     }
-    if ((gThread30Stack[STACKSIZE(STACK_BGLOAD) - 1] != gThread30Stack[0])) {
+    if (gThread30Stack && (gThread30Stack[STACKSIZE(STACK_BGLOAD) - 1] != gThread30Stack[0])) {
         return 30;
+    }
+    if ((gThreadUsbStack[STACKSIZE(STACK_USB) - 1] != gThreadUsbStack[0])) {
+        return 69;
     }
 
     return 0;
@@ -501,7 +504,7 @@ void crash_render(OSThread *t) {
 
     if (gCrashAssetTripped == FALSE) {
         cause = -1;
-        /*switch(crash_check_stack()) {
+        switch(crash_check_stack()) {
             case 1:
                 t = &gThread1;
                 stackSize = STACK_IDLE;
@@ -527,7 +530,7 @@ void crash_render(OSThread *t) {
                 stackSize = STACK_BGLOAD;
                 cause = 18;
                 break;
-        }*/
+        }
     } else {
         cause = 19;
     }
@@ -536,8 +539,8 @@ void crash_render(OSThread *t) {
         cause = (c->cause >> 2) & 0x1F;
     }
     crash_text(CRASH_BORDER_X + 16, 16, GPACK_RGBA5551(255, 255, 0, 1), "Thread:%s(%d)", sThreadNames[crash_thread_name(t->id)], t->id);
-    crash_text(CRASH_BORDER_X + 16 + 144, 16, GPACK_RGBA5551(255, 255, 0, 1), "PC:0#%8X", c->pc);
-    crash_text(CRASH_BORDER_X + 16 + 288, 16, GPACK_RGBA5551(255, 255, 0, 1), "RA:0#%8X", c->ra);
+    crash_text(CRASH_BORDER_X + 16 + 144, 16, GPACK_RGBA5551(255, 255, 0, 1), "PC:0#%8X", (u32) c->pc);
+    crash_text(CRASH_BORDER_X + 16 + 288, 16, GPACK_RGBA5551(255, 255, 0, 1), "RA:0#%8X", (u32) c->ra);
     crash_text(CRASH_BORDER_X + 16, 25, GPACK_RGBA5551(255, 255, 0, 1), "Cause:%s", gCauseDesc[cause]);
     if (gCrashFuncName) {
         crash_text(CRASH_BORDER_X + 16, 34, GPACK_RGBA5551(255, 255, 0, 1), "Func Name:%s", gCrashFuncName);

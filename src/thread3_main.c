@@ -192,6 +192,8 @@ void init_game(void) {
         viMode = OS_VI_MPAL_LPN1;
     }
     osCreateScheduler(&gMainSched, &gSchedStack[STACKSIZE(STACK_SCHED)], /*priority*/ 13, viMode, 1);
+    gSchedStack[0] = 0;
+    gSchedStack[STACKSIZE(STACK_SCHED) - 1] = 0;
 #ifdef ANTI_TAMPER
     // Antipiracy measure.
     gDmemInvalid = FALSE;
@@ -294,6 +296,10 @@ void main_game_loop(void) {
     }
 
     osSetTime(0);
+
+    if (input_pressed(0) & L_TRIG) {
+        *(volatile int *) 0 = 0;
+    }
 
     gCurrDisplayList = gDisplayLists[gSPTaskNum];
     gGameCurrMatrix = gMatrixHeap[gSPTaskNum];

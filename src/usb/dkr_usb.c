@@ -105,6 +105,8 @@ void init_usb_thread(void) {
     osCreateMesgQueue(&gThreadUsbMesgQueue, &gThreadUsbMessage, 1);
     osCreateThread(&gThreadUsb, USB_THREAD_ID, &threadusb_loop, NULL, &gThreadUsbStack[STACKSIZE(STACK_USB)],
                    THREADUSB_PRIORITY);
+    gThreadUsbStack[STACKSIZE(STACK_USB) - 1] = 0;
+    gThreadUsbStack[0] = 0;
     osStartThread(&gThreadUsb);
 }
 
@@ -210,7 +212,7 @@ void threadusb_loop(UNUSED void *arg) {
             usb_write(mesg->datatype, mesg->buff, mesg->size);
             break;
         case 50:
-            reset();
+            //reset();
             break;
         }
     }

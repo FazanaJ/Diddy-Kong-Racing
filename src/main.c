@@ -314,6 +314,8 @@ void mainproc(void) {
     memsize_init();
     debug_init();
     osCreateThread(&gThread1, 1, &thread1_main, 0, &gThread1Stack[STACKSIZE(STACK_IDLE)], OS_PRIORITY_IDLE);
+    gThread1Stack[STACKSIZE(STACK_IDLE) - 1] = 0;
+    gThread1Stack[0] = 0;
     osStartThread(&gThread1);
 }
 
@@ -341,11 +343,6 @@ void thread1_main(UNUSED void *unused) {
  * Official Name: bootCheckStack
  */
 void thread3_verify_stack(void) {
-    gThread3Stack[STACKSIZE(STACK_GAME) - 1]++;
-    gThread3Stack[0]++;
-    if ((gThread3Stack[STACKSIZE(STACK_GAME) - 1] != gThread3Stack[0])) {
-        rmonPrintf("WARNING: Stack overflow/underflow!!!\n");
-    }
 }
 
 #ifdef DEBUG
