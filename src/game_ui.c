@@ -23,9 +23,6 @@
 
 /************ .data ************/
 
-// Unused?
-UNUSED s32 D_800E1E60 = 0;
-
 // Base positions of all onscreen hud elements
 HudElement gHudElementBase[HUD_ELEMENT_COUNT] = {
     { 0, 0, 0, HUD_ASSET_0, 1.0f, 53.0f, 16.0f, 0.0f, 0, 0, 127, 0, 0 },
@@ -171,8 +168,6 @@ char D_800E4300_E4F00[] = { 0x80, 0x90, 0x80, 0x4A, 0x80, 0x57 };
 char D_800E4308_E4F08[] = { 0x80, 0xD5, 0x80, 0xE1, 0x80, 0xB7, 0x80, 0xBC, 0x00, 0x00 };
 #endif
 
-UNUSED f32 sRecordVel = 0.0f; // Set to whatever the highest velocity recorded is, but never actually used.
-
 // Unused?
 s32 D_800E283C[] = { 0x06FFFFFF, 0x000FFFFF, 0x06000000, 0x0014FFFF };
 
@@ -258,7 +253,6 @@ u8 gMinimapOpacityTarget;
 s32 gStopwatchErrorX;
 s32 gStopwatchErrorY;
 LevelHeader_70 *D_80127194;
-UNUSED s32 D_80127198[4];
 
 /******************************/
 
@@ -1488,7 +1482,7 @@ void hud_speedometre(Object *obj, UNUSED s32 updateRate) {
         if (!check_if_showing_cutscene_camera()) {
             racer = (Object_Racer *) obj->unk64;
             if (racer->raceFinished == FALSE) {
-                if (racer->vehicleID == VEHICLE_PLANE) {
+                if (racer->vehicleID != VEHICLE_CAR && racer->vehicleID != VEHICLE_HOVERCRAFT) {
                     vel = sqrtf((obj->segment.x_velocity * obj->segment.x_velocity) +
                                 (obj->segment.y_velocity * obj->segment.y_velocity) +
                                 (obj->segment.z_velocity * obj->segment.z_velocity));
@@ -1496,12 +1490,9 @@ void hud_speedometre(Object *obj, UNUSED s32 updateRate) {
                     vel = sqrtf((obj->segment.x_velocity * obj->segment.x_velocity) +
                                 (obj->segment.z_velocity * obj->segment.z_velocity));
                 }
-                if (sRecordVel < vel) {
-                    sRecordVel = vel;
-                }
                 vel *= 4.0f;
                 //!@Bug: Planes and hovercraft use drift_direction for something else, applying this unintentionally.
-                if (racer->drift_direction != 0) {
+                if (racer->drift_direction != 0 && racer->vehicleID == VEHICLE_CAR) {
                     vel += 7.0f;
                 }
                 if (vel > 100.0f) {
@@ -1840,9 +1831,6 @@ void hud_race_finish_1player(Object_Racer *racer, s32 updateRate) {
     }
 }
 
-UNUSED void func_800A4C34(UNUSED s32 countdown, UNUSED Object_Racer *racer, UNUSED s32 updateRate) {
-}
-
 /**
  * Render the current race position of the racer.
  * Scales up and down when the position changes.
@@ -1920,7 +1908,7 @@ void hud_lap_count(Object_Racer *racer, s32 updateRate) {
     if (racer->raceFinished == FALSE &&
         (gHUDNumPlayers <= ONE_PLAYER || racer->lap <= 0 || racer->lap_times[racer->lap] >= 180) &&
         (gHUDNumPlayers <= ONE_PLAYER || D_800E2794[gHUDNumPlayers][racer->playerIndex] == 3)) {
-        if (gHudLevelHeader->laps == (0, racer->countLap + 1) && gHUDNumPlayers < THREE_PLAYERS) {
+        if (gHudLevelHeader->laps == (racer->countLap + 1) && gHUDNumPlayers < THREE_PLAYERS) {
             gCurrentHud->entry[HUD_LAP_COUNT_FLAG].lapCountFlag.visualCounter += updateRate;
             if (gCurrentHud->entry[HUD_LAP_COUNT_FLAG].lapCountFlag.visualCounter > 6) {
                 gCurrentHud->entry[HUD_LAP_COUNT_FLAG].spriteOffset++;
@@ -1980,7 +1968,7 @@ void hud_lap_count(Object_Racer *racer, s32 updateRate) {
                         }
                         break;
                 }
-            } else if (gHudLevelHeader->laps == (0, racer->lap + 1) && racer->lap != 0) {
+            } else if (gHudLevelHeader->laps == (racer->lap + 1) && racer->lap != 0) {
                 gCurrentHud->entry[HUD_LAP_TEXT_LAP].lapText.status = LAPTEXT_UNK3;
                 gCurrentHud->entry[HUD_LAP_TEXT_LAP].lapText.direction = LAPTEXT_IN;
                 gCurrentHud->entry[HUD_LAP_TEXT_LAP].lapText.soundPlayed = FALSE;
@@ -2660,16 +2648,6 @@ void hud_balloons(UNUSED Object_Racer *racer) {
     sprite_opaque(FALSE);
     set_viewport_tv_type(OS_TV_TYPE_PAL);
     hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_BALLOON_COUNT_X]);
-}
-
-/**
- * Unused function that plays whichever T.T voice line is passed through.
- * Only if the game is currently running and no voice line is already playing.
- */
-UNUSED void hud_sound_play(u16 soundId) {
-    if (gHUDVoiceSoundMask == NULL && !(is_game_paused())) {
-        sound_play(soundId, &gHUDVoiceSoundMask);
-    }
 }
 
 /**
@@ -3539,13 +3517,6 @@ void minimap_fade(s32 setting) {
 void minimap_opacity_set(s32 setting) {
     gMinimapOpacity = gMinimapOpacityTarget;
     gMinimapXlu = setting;
-}
-
-/**
- * Sets the race start HUD procedure to the first step.
- */
-UNUSED void hud_reset_race_start(void) {
-    gRaceStartShowHudStep = 0;
 }
 
 /**

@@ -10,29 +10,6 @@
 #include "math_util.h"
 #include "tracks.h"
 
-/************ .rodata ************/
-
-const char D_800E8840[] = "\n\nUnknown trigger type in initParticleTrigger %d, Max %d.\n\n";
-const char D_800E887C[] = "\n\nUnknown particle type in initParticleTrigger %d, Max %d.\n\n";
-const char D_800E88BC[] = "\n\nUnknown trigger type in initParticleTrigger %d, Max %d.\n\n";
-const char D_800E88F8[] = "Sprite Particle buffer is full.\n";
-const char D_800E891C[] = "Triangle Particle buffer is full.\n";
-const char D_800E8940[] = "Rectangle Particle buffer is full.\n";
-const char D_800E8964[] = "Line Particle buffer is full.\n";
-const char D_800E8980[] = "Point Particle buffer is full.\n";
-const char D_800E89A4[] = "\n\nCan't allocate space for unknown particle type.";
-const char D_800E89D8[] = "\n\nParticle has been freed twice, this is Super Safe, Honest!\n";
-const char D_800E8A18[] = "\n\nSprite Particle Buffer is empty.\n\n";
-const char D_800E8A40[] = "\n\nTriangle Particle Buffer is empty.\n\n";
-const char D_800E8A68[] = "\n\nRectangle Particle Buffer is empty.\n\n";
-const char D_800E8A90[] = "\n\nLine Particle buffer is empty.\n\n";
-const char D_800E8AB4[] = "\n\nPoint Particle buffer is empty.\n\n";
-const char D_800E8AD8[] = "\n\nCan't deallocate space for unknown particle type.\n\n";
-const char D_800E8B10[] = "\nError :: trigger %x has no reference to point %x";
-const char D_800E8B44[] = "\nError :: particle %x is not indexed correctly in trigger list %x (%d >> %p)";
-
-/*********************************/
-
 /************ .data ************/
 
 // I woundn't be suprised if most of these zeroes are really just null pointers.
@@ -2009,26 +1986,6 @@ void move_particle_with_velocity(Particle *particle) {
 }
 
 /**
- * Iterate through every object and render it as particle if applicable.
- */
-UNUSED void render_active_particles(Gfx **dList, MatrixS **arg1, Vertex **arg2) {
-    UNUSED s32 pad;
-    UNUSED s32 pad2;
-    Object **objects;
-    s32 iObj;
-    s32 nObjs;
-
-    objects = objGetObjList(&iObj, &nObjs);
-    for (; iObj < nObjs; iObj++) {
-        if (objects[iObj]->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) {
-            if ((s32) objects[iObj]->segment.header & 0x8000) {
-                render_particle((Particle *) objects[iObj], dList, arg1, arg2, 0);
-            }
-        }
-    }
-}
-
-/**
  * Load a texture then render a sprite or a billboard.
  */
 void render_particle(Particle *particle, Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 flags) {
@@ -2041,7 +1998,7 @@ void render_particle(Particle *particle, Gfx **dList, MatrixS **mtx, Vertex **vt
     renderFlags = (RENDER_FOG_ACTIVE | RENDER_Z_COMPARE);
 
     // Never true
-    if (particle->segment.unk40 & flags && D_800E2CDC < 512) {
+    if (particle->segment.unk40 & flags) {
         return;
     }
     alpha = (particle->opacity >> 8) & 0xFF;
@@ -2250,66 +2207,6 @@ void func_800B3E64(Object *obj) {
             }
         }
     }
-}
-
-/**
- * Return a specific particle asset table from the main table.
- */
-UNUSED ParticleProperties *get_particle_asset_table(s32 idx) {
-    if (idx < gParticlesAssetTableCount) {
-        return gParticlesAssetTable[idx];
-    }
-    return gParticlesAssetTable[gParticlesAssetTableCount - 1];
-}
-
-/**
- * Return the next particle table after the index.
- * Make sure the index is in range by wrapping it.
- */
-UNUSED ParticleProperties *get_next_particle_table(s32 *idx) {
-    *idx = *idx + 1;
-    while (*idx >= gParticlesAssetTableCount) {
-        *idx = *idx - gParticlesAssetTableCount;
-    }
-    return gParticlesAssetTable[*idx];
-}
-
-/**
- * Return the previous particle table before the index.
- * Make sure the index is in range by wrapping it.
- */
-UNUSED ParticleProperties *get_previous_particle_table(s32 *idx) {
-    *idx = *idx - 1;
-    while (*idx < 0) {
-        *idx += gParticlesAssetTableCount;
-    }
-    return gParticlesAssetTable[*idx];
-}
-
-/**
- * Return the particle behaviour ID from the behaviour table.
- */
-UNUSED ParticleBehavior *get_particle_behaviour(s32 idx) {
-    if (idx < gParticleBehavioursAssetTableCount) {
-        return gParticleBehavioursAssetTable[idx];
-    }
-    return gParticleBehavioursAssetTable[gParticleBehavioursAssetTableCount - 1];
-}
-
-UNUSED ParticleBehavior *func_800B45C4(s32 *idx) {
-    *idx += 1;
-    while (*idx >= gParticleBehavioursAssetTableCount) {
-        *idx -= gParticleBehavioursAssetTableCount;
-    }
-    return gParticleBehavioursAssetTable[*idx];
-}
-
-UNUSED ParticleBehavior *func_800B461C(s32 *idx) {
-    *idx -= 1;
-    while (*idx < 0) {
-        *idx += gParticleBehavioursAssetTableCount;
-    }
-    return gParticleBehavioursAssetTable[*idx];
 }
 
 void func_800B4668(Object *obj, s32 idx, s32 arg2, s32 arg3) {

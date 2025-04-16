@@ -63,7 +63,7 @@ void _Ldtob(_Pft* px, char code) {
 
     err = _Ldunscale(&xexp, px);
     if (err > 0) {
-        memcpy(px->s, err == 2 ? "NaN" : "Inf", px->n1 = 3);
+        bcopy(err == 2 ? "NaN" : "Inf", px->s, px->n1 = 3);
         return;
     } else if (err == 0) {
         nsig = 0;
@@ -218,10 +218,10 @@ void _Genld(_Pft* px, char code, u8* p, s16 nsig, s16 xexp) {
                 nsig = px->prec;
             }
 
-            memcpy(&px->s[px->n1], p, px->n2 = nsig);
+            bcopy(p, &px->s[px->n1], px->n2 = nsig);
             px->nz2 = px->prec - nsig;
         } else if (nsig < xexp) {
-            memcpy(&px->s[px->n1], p, nsig);
+            bcopy(p, &px->s[px->n1], nsig);
             px->n1 += nsig;
             px->nz1 = xexp - nsig;
             if (px->prec > 0 || (px->flags & 8)) {
@@ -231,7 +231,7 @@ void _Genld(_Pft* px, char code, u8* p, s16 nsig, s16 xexp) {
 
             px->nz2 = px->prec;
         } else {
-            memcpy(&px->s[px->n1], p, xexp);
+            bcopy(p, &px->s[px->n1], xexp);
             px->n1 += xexp;
             nsig -= xexp;
 
@@ -243,7 +243,7 @@ void _Genld(_Pft* px, char code, u8* p, s16 nsig, s16 xexp) {
                 nsig = px->prec;
             }
 
-            memcpy(&px->s[px->n1], &p[xexp], nsig);
+            bcopy(&p[xexp], &px->s[px->n1], nsig);
             px->n1 += nsig;
             px->nz1 = px->prec - nsig;
         }
@@ -271,7 +271,7 @@ void _Genld(_Pft* px, char code, u8* p, s16 nsig, s16 xexp) {
                 nsig = px->prec;
             }
 
-            memcpy(&px->s[px->n1], p, nsig);
+            bcopy(p, &px->s[px->n1], nsig);
             px->n1 += nsig;
             px->nz1 = px->prec - nsig;
         }

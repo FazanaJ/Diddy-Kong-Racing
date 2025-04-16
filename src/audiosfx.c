@@ -14,14 +14,6 @@ s32 sfxVolumeSlider = 256;
 s16 D_800DC6C4 = 0;
 u16 *gSoundChannelVolume;
 
-/**** Debug strings ****/
-const char D_800E4AB0[] = "Bad soundState: voices =%d, states free =%d, states busy =%d, type %d data %x\n";
-const char D_800E4B00[] = "playing a playing sound\n";
-const char D_800E4B1C[] = "Nonsense sndp event\n";
-const char D_800E4B34[] = "Sound state allocate failed - sndId %d\n";
-const char D_800E4B5C[] = "Don't worry - game should cope OK\n";
-const char D_800E4B80[] = "WARNING: Attempt to stop NULL sound aborted\n";
-
 static void _removeEvents(ALEventQueue *, ALSoundState *, u16);
 
 void set_sfx_volume_slider(u32 volume) {
@@ -301,17 +293,6 @@ void func_80004604(ALSoundState *sndp, u8 priority) {
     }
 }
 
-/**
- * Official Name: gsSndpGetState
- */
-UNUSED u8 func_8000461C(ALSoundState *sndp) {
-    if (sndp != NULL) {
-        return sndp->soundState;
-    } else {
-        return 0;
-    }
-}
-
 s32 func_80004638(ALBank *bnk, s16 sndIndx, SoundMask *soundMask) {
     return func_80004668(bnk, sndIndx, 0, soundMask);
 }
@@ -360,20 +341,6 @@ void func_800048D8(u8 event) {
         queue = queue->next;
     }
     osSetIntMask(mask);
-}
-
-/**
- * Official Name: gsSndpStopAll
- */
-UNUSED void func_80004998(void) {
-    func_800048D8(AL_SNDP_PLAY_EVT);
-}
-
-/**
- * Official Name: gsSndpStopAllRetrigger
- */
-UNUSED void func_800049B8(void) {
-    func_800048D8(AL_SNDP_PLAY_EVT | AL_SNDP_PITCH_EVT);
 }
 
 /**

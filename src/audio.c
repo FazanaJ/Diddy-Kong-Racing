@@ -8,6 +8,7 @@
 #include "audio_internal.h"
 #include "audiomgr.h"
 #include "audiosfx.h"
+#include "audio_spatial.h"
 #include "sched.h"
 #include "libultra/src/audio/seqchannel.h"
 
@@ -26,8 +27,6 @@ s32 gMusicSliderVolume = 256;
 s32 gDelayedSoundsCount = 0;
 u8 gMusicNextSeqID = SEQUENCE_NONE;
 u8 gJingleNextSeqID = SEQUENCE_NONE;
-UNUSED s32 D_800DC664 = 0;
-UNUSED s32 D_800DC668 = 0;
 s32 gGlobalMusicVolume = 256; // This is never not 256...
 u8 gBlockVoiceLimitChange = FALSE;
 
@@ -280,10 +279,6 @@ void music_jingle_voicelimit_set(u8 voiceLimit) {
     set_voice_limit(gJinglePlayer, voiceLimit);
 }
 
-UNUSED void func_80000C68(u8 arg0) {
-    func_80063A90(gMusicPlayer, arg0);
-}
-
 /**
  * Enables the timer to start fading in or out the background music.
  * Give it a positive number to fade in, otherwise, give it a negative one to fade out.
@@ -454,18 +449,6 @@ void music_channel_volume_set(u8 channel, u8 volume) {
 }
 
 /**
- * Return the volume of the given channel in the music player.
- * Official name: musicGetChlVol
- */
-UNUSED u8 music_channel_volume(u8 channel) {
-    if (channel >= AUDIO_CHANNELS) {
-        return 0;
-    } else {
-        return alCSPGetChlVol(gMusicPlayer, channel);
-    }
-}
-
-/**
  * Set this channel to fade in over time.
  */
 void music_channel_fade_set(u8 channel, ALPan fade) {
@@ -496,40 +479,6 @@ void music_channel_reset_all(void) {
             music_channel_fade_set(channel, 127);
             music_channel_volume_set(channel, 127);
         }
-    }
-}
-
-UNUSED u8 func_80001358(u8 arg0, u8 arg1, s32 arg2) {
-    u8 val_1f;
-    u8 val_1e;
-    s32 updatedVol;
-
-    // u8 fadeIn_chan = arg0;
-    if (!(arg0 == 100)) {
-        val_1f = arg2 + alCSPGetChlVol(gMusicPlayer, arg0);
-        if (val_1f > 127) {
-            val_1f = 127;
-        }
-        alCSPSetChlVol(gMusicPlayer, arg0, val_1f);
-    }
-
-    if (arg1 != 100) {
-        updatedVol = alCSPGetChlVol(gMusicPlayer, arg1);
-        val_1e = (updatedVol > arg2) ? updatedVol - arg2 : 0;
-        alCSPSetChlVol(gMusicPlayer, arg1, val_1e);
-        return val_1e;
-    } else {
-        return 127 - val_1f;
-    }
-}
-
-UNUSED void func_80001440(u8 *arg0) {
-    s32 s0 = 0;
-    if (gMusicPlayer->maxChannels > 0) {
-        do {
-            arg0[s0] = alSeqpGetChlFXMix((ALSeqPlayer *) gMusicPlayer, s0);
-            s0++;
-        } while (s0 < gMusicPlayer->maxChannels);
     }
 }
 
@@ -592,15 +541,6 @@ f32 music_animation_fraction(void) {
 }
 
 /**
- * Writes the music and sound tempo, as well as the volume to the arguments.
- */
-UNUSED void sound_get_properties(u8 poolID, u8 *tempo, u8 *volume, u8 *reverb) {
-    *tempo = gSeqSoundTable[poolID].tempo;
-    *volume = gSeqSoundTable[poolID].volume;
-    *reverb = gSeqSoundTable[poolID].reverb;
-}
-
-/**
  * Play a jingle, but only if there isn't one playing already.
  */
 void music_jingle_play_safe(u8 jingleID) {
@@ -624,21 +564,6 @@ void sound_jingle_tempo_set(s32 tempo) {
 void music_stop(void) {
     if (gBlockMusicChange == FALSE) {
         music_sequence_stop(gMusicPlayer);
-    }
-}
-
-/**
- * Set background music to play or not.
- * If the setting changed, then either stop or start music.
- */
-UNUSED void music_enabled_set(u8 setting) {
-    if (setting != gCanPlayMusic) {
-        gCanPlayMusic = setting;
-        if (setting) {
-            music_play(gCurrentSequenceID);
-        } else {
-            music_stop();
-        }
     }
 }
 
@@ -668,18 +593,6 @@ u8 music_current_sequence(void) {
         return gCurrentSequenceID;
     } else {
         return SEQUENCE_NONE;
-    }
-}
-
-/**
- * Return the next music sequence to be played if there is one.
- * Otherwise, return what's currently playing.
- */
-UNUSED u8 music_next(void) {
-    if (gMusicNextSeqID) {
-        return gMusicNextSeqID;
-    } else {
-        return gCurrentSequenceID;
     }
 }
 
@@ -770,18 +683,6 @@ u32 music_jingle_playing(void) {
 }
 
 /**
- * Sets the volume for every sound channel.
- * Tries to set up to 64, regardless of if there are 64 sound channels or not.
- * !@bug: This can cause an out of bounds array index.
- */
-UNUSED void sound_channel_volume_all(u16 volume) {
-    u32 i;
-    for (i = 0; i < 64; i++) {
-        set_sound_channel_volume(i, volume << 8);
-    }
-}
-
-/**
  * Return the audible distance of the sound effect.
  */
 u16 sound_distance(u16 soundId) {
@@ -843,7 +744,7 @@ void sound_play_spatial(u16 soundID, f32 x, f32 y, f32 z, s32 **soundMask) {
     sound_play(soundID, (s32 *) soundMask);
 
     if (*soundMask != NULL) {
-        func_80009B7C(*soundMask, x, y, z);
+        audioline_reverb(*soundMask, x, y, z);
     }
 }
 
@@ -869,26 +770,6 @@ void sound_volume_set_relative(u16 soundID, void *soundState, u8 volume) {
     s32 newVolume = ((s32) (gSoundTable[soundID].volume * (volume / 127.0f))) * 256;
     if (soundState) {
         sound_event_update((s32) soundState, AL_SNDP_VOL_EVT, newVolume);
-    }
-}
-
-/**
- * Updates the volume of the given sound mask.
- */
-UNUSED void sound_volume_set(SoundMask *soundMask, u8 arg1) {
-    if (soundMask != NULL) {
-        sound_event_update((s32) soundMask, AL_SNDP_VOL_EVT, arg1 * 256);
-    }
-}
-
-/**
- * Updates the pitch of the given sound mask.
- * Official name: amSndSetPitchDirect
- */
-UNUSED void sound_pitch_set(SoundMask *soundMask, u32 pitch) {
-    u32 *pitchAddr = &pitch;
-    if (soundMask != NULL) {
-        sound_event_update((s32) soundMask, AL_SNDP_PITCH_EVT, *pitchAddr);
     }
 }
 
@@ -919,21 +800,6 @@ void sound_table_properties(SoundData **table, s32 *size, s32 *count) {
     }
     if (count != NULL) {
         *count = gSoundCount;
-    }
-}
-
-/**
- * Writes the music sound table address, size and element count into the arguments.
- */
-UNUSED void music_table_properties(MusicData **table, s32 *size, s32 *count) {
-    if (table != NULL) {
-        *table = gSeqSoundTable;
-    }
-    if (size != NULL) {
-        *size = gSeqSoundTableSize;
-    }
-    if (count != NULL) {
-        *count = gSeqSoundCount;
     }
 }
 
@@ -994,7 +860,7 @@ void music_sequence_init(ALCSPlayer *seqp, void *sequence, u8 *seqID, ALCSeq *se
         load_asset_to_address(ASSET_AUDIO, (u32) sequence,
                               gSequenceTable->seqArray[*seqID].offset - get_rom_offset_of_asset(ASSET_AUDIO, 0),
                               (s32) gSeqLengthTable[*seqID]);
-        alCSeqNew(seq, sequence);
+                              alCSeqNew(seq, sequence);
         alCSPSetSeq(seqp, seq);
         alCSPPlay(seqp);
         if (seqp == gMusicPlayer) {
@@ -1053,9 +919,3 @@ void sound_reverb_set(u8 setting) {
     alFxReverbSet(setting);
 }
 
-/**
- * Returns whether or not reverb is currently enabled.
- */
-UNUSED u8 sound_reverb_enabled(void) {
-    return gSeqSoundTable[gCurrentSequenceID].reverb;
-}

@@ -45,9 +45,6 @@
 #include "cseq.h"
 #include "synthInternals.h"
 
-/************ .rodata ************/
-const char D_800E6C20[] = "CSP: oh oh \n";
-
 // TODO: this comes from a header
 #ident "$Revision: 1.17 $"
 static ALMicroTime      __CSPVoiceHandler(void *node);

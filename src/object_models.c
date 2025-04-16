@@ -10,6 +10,9 @@
 #include "save_data.h"
 #include "objects.h"
 
+#undef VERSION
+#define VERSION VERSION_80
+
 #define MODEL_LOADED_MAX 70
 
 /************ .data ************/
@@ -18,17 +21,6 @@ s32 gTractionTableChecksum = TractionTableChecksum;
 s32 gTrackRenderFuncLength = 1980;
 
 /*******************************/
-
-/************ .rodata ************/
-
-UNUSED const char D_800E6B20[] = "Error: Model no. out of range on load. !!\n";
-UNUSED const char D_800E6B4C[] = "TEXTURE ERROR!!\n%d,%d\n";
-UNUSED const char D_800E6B64[] = "Error: Model table overflow!!\n";
-UNUSED const char D_800E6B84[] = "WARNING :: createModelInstance called with NULL pointer\n";
-UNUSED const char D_800E6BC0[] = "ModFreeModel : NULL mod_inst!!\n";
-UNUSED const char D_800E6BE0[] = "MOD Error: Tryed to deallocate non-existent model!!\n";
-
-/*********************************/
 
 /************ .bss ************/
 
@@ -100,7 +92,6 @@ Object_68 *object_model_init(s32 modelID, s32 flags) {
     s32 modelSize;
 
     if (modelID >= gNumModelIDs) {
-        stubbed_printf(D_800E6B20);
         modelID = 0;
     }
 
@@ -178,7 +169,6 @@ Object_68 *object_model_init(s32 modelID, s32 flags) {
         for (i = 0; i < objMdl->numberOfBatches; i++) {
             if ((objMdl->batches[i].textureIndex != 0xFF) &&
                 (objMdl->batches[i].textureIndex >= objMdl->numberOfTextures)) {
-                stubbed_printf(D_800E6B4C);
                 goto block_30;
             }
         }
@@ -191,7 +181,6 @@ Object_68 *object_model_init(s32 modelID, s32 flags) {
                     ret->animUpdateTimer = 0;
                     return ret;
                 } else {
-                    stubbed_printf(D_800E6B64);
                 }
             }
         }
@@ -301,7 +290,6 @@ void free_3d_model(ObjectModel **modelPtr) {
     s32 i;
 
     if (modelPtr == 0) {
-        stubbed_printf(D_800E6BC0);
         return;
     }
 

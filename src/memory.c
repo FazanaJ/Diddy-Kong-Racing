@@ -3,16 +3,22 @@
 #include "thread0_epc.h"
 #include "joypad.h"
 #include "math_util.h"
+#include "main.h"
 
 /************ .bss ************/
+
+#define MEMALIGN 0x8
 
 #ifndef _ALIGN16
 #define _ALIGN16(a) (((u32) (a) & ~0xF) + 0x10)
 #endif
+#ifndef _ALIGN8
+#define ALIGNCHECK (MEMALIGN - 1)
+#define _ALIGN8(a) (((u32) (a) & ~ALIGNCHECK) + MEMALIGN)
+#endif
 
 MemoryPool gMemoryPools[POOL_COUNT]; // Only two are used.
 s32 gNumberOfMemoryPools;
-UNUSED s32 D_801235C4;
 FreeQueueSlot gFreeQueue[FREE_QUEUE_SIZE];
 s32 gFreeQueueCount;
 s32 gFreeQueueTimer; // Official Name: mmDelay
@@ -28,12 +34,13 @@ void mempool_init_main(void) {
     s32 ramEnd;
 
     gNumberOfMemoryPools = -1;
-    if (EXPANSION_PAK_SUPPORT) {
+    if (gUseExpansionMemory) {
         ramEnd = EXPANSION_RAM_END;
     } else {
         ramEnd = RAM_END;
     }
     mempool_init(&gMainMemoryPool, ramEnd - (s32) (&gMainMemoryPool), MAIN_POOL_SLOT_COUNT);
+    debug_ram(K0_TO_PHYS((u32) &gMainMemoryPool), COLOUR_TAG_WHITE);
     mempool_free_timer(2);
     gFreeQueueCount = 0;
 }
@@ -66,6 +73,7 @@ MemoryPoolSlot *mempool_init(MemoryPoolSlot *slots, s32 poolSize, s32 numSlots) 
     s32 i;
     s32 firstSlotSize;
 
+    debug_ram(numSlots * sizeof(MemoryPoolSlot), COLOUR_TAG_WHITE);
     poolCount = ++gNumberOfMemoryPools;
     firstSlotSize = poolSize - (numSlots * sizeof(MemoryPoolSlot));
     gMemoryPools[poolCount].maxNumSlots = numSlots;
@@ -79,8 +87,8 @@ MemoryPoolSlot *mempool_init(MemoryPoolSlot *slots, s32 poolSize, s32 numSlots) 
     }
     firstSlot = &gMemoryPools[poolCount].slots[0];
     slots += numSlots;
-    if ((s32) slots & 0xF) {
-        firstSlot->data = (u8 *) _ALIGN16(slots);
+    if ((s32) slots & ALIGNCHECK) {
+        firstSlot->data = (u8 *) _ALIGN8(slots);
     } else {
         firstSlot->data = (u8 *) slots;
     }
@@ -99,13 +107,7 @@ MemoryPoolSlot *mempool_init(MemoryPoolSlot *slots, s32 poolSize, s32 numSlots) 
  */
 void *mempool_alloc_safe(s32 size, u32 colourTag) {
     void *addr;
-    if (size == 0) {
-        dump_memory_to_cpak(stack_pointer()->sp, size, colourTag);
-    }
-    addr = mempool_slot_find(POOL_MAIN, size, colourTag);
-    if (addr == NULL) {
-        dump_memory_to_cpak(stack_pointer()->sp, size, colourTag);
-    }
+    addr = mempool_slot_find(POOL_MAIN, size, colourTag, 0);
     return addr;
 }
 
@@ -113,14 +115,23 @@ void *mempool_alloc_safe(s32 size, u32 colourTag) {
  * Reserves and returns memory from the main memory pool. Has no assert checks.
  */
 MemoryPoolSlot *mempool_alloc(s32 size, u32 colourTag) {
-    return mempool_slot_find(POOL_MAIN, size, colourTag);
+    return mempool_slot_find(POOL_MAIN, size, colourTag, 0);
 }
+
+/**
+ * Find the largest existing slot and then allocate it.
+*/
+MemoryPoolSlot *mempool_alloc_largest(u32 colourTag) {
+    return mempool_slot_find(POOL_MAIN, 0x10, colourTag, 1);
+}
+
+u32 biggestSize = 0;
 
 /**
  * Search the existing empty slots and try to find one that can meet the size requirement.
  * Afterwards, write the new allocation data to the slot in question and return the address.
  */
-MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag) {
+MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag, s32 findLargest) {
     s32 slotSize;
     MemoryPoolSlot *curSlot;
     UNUSED s32 pad;
@@ -141,26 +152,45 @@ MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag
         return NULL;
     }
     currIndex = MEMSLOT_NONE;
-    if (size & 0xF) {
-        size = (size & ~0xF);
-        size += 0x10;
+    if (size & ALIGNCHECK) {
+        size = _ALIGN8(size);
     }
     slots = pool->slots;
-    slotSize = 0x7FFFFFFF;
     nextIndex = 0;
-    do {
-        curSlot = &slots[nextIndex];
-        if (curSlot->flags == SLOT_FREE) {
-            if (curSlot->size >= size && curSlot->size < slotSize) {
-                slotSize = curSlot->size;
-                currIndex = nextIndex;
+    if (findLargest == FALSE) {
+        slotSize = 0x7FFFFFFF;
+        do {
+            curSlot = &slots[nextIndex];
+            if (curSlot->flags == SLOT_FREE) {
+                if (curSlot->size >= size && curSlot->size < slotSize) {
+                    slotSize = curSlot->size;
+                    currIndex = nextIndex;
+                }
             }
+            nextIndex = curSlot->nextIndex;
+        } while (nextIndex != MEMSLOT_NONE);
+    } else {
+        slotSize = 0;
+        do {
+            curSlot = &slots[nextIndex];
+            if (curSlot->flags == SLOT_FREE) {
+                if (curSlot->size > slotSize) {
+                    slotSize = curSlot->size;
+                    currIndex = nextIndex;
+                }
+            }
+            nextIndex = curSlot->nextIndex;
+        } while (nextIndex != MEMSLOT_NONE);
+        size = slotSize;
+        if (size & ALIGNCHECK) {
+            size = _ALIGN8(size);
         }
-        nextIndex = curSlot->nextIndex;
-    } while (nextIndex != MEMSLOT_NONE);
+        crash_assert(slotSize == 0, "Couldn't find memory???");
+    }
     if (currIndex != MEMSLOT_NONE) {
         mempool_slot_assign(poolIndex, (s32) currIndex, size, 1, 0, colourTag);
         interrupts_enable(intFlags);
+        debug_ram(size, colourTag);
         return (MemoryPoolSlot *) (slots + currIndex)->data;
     }
     interrupts_enable(intFlags);
@@ -176,7 +206,7 @@ void *mempool_alloc_pool(MemoryPoolSlot *slots, s32 size) {
     s32 i;
     for (i = gNumberOfMemoryPools; i != 0; i--) {
         if (slots == gMemoryPools[i].slots) {
-            return mempool_slot_find(i, size, 0);
+            return mempool_slot_find(i, size, 0, 0);
         }
     }
     return (void *) NULL;
@@ -201,8 +231,8 @@ void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag) {
         interrupts_enable(intFlags);
         stubbed_printf("\n*** mm Error *** ---> No more slots available.\n");
     } else {
-        if (size & 0xF) {
-            size = _ALIGN16(size);
+        if (size & ALIGNCHECK) {
+            size = _ALIGN8(size);
         }
         slots = gMemoryPools[POOL_MAIN].slots;
         for (i = 0; i != MEMSLOT_NONE; i = curSlot->nextIndex) {
@@ -213,11 +243,15 @@ void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag) {
                     if (address == (u8 *) curSlot->data) {
                         mempool_slot_assign(POOL_MAIN, i, size, 1, 0, colorTag);
                         interrupts_enable(intFlags);
+                        debug_ram(size, colorTag);
+                        curSlot->flags = 2;
                         return curSlot->data;
                     } else {
                         i = mempool_slot_assign(POOL_MAIN, i, (u32) address - (u32) curSlot->data, 0, 1, colorTag);
                         mempool_slot_assign(POOL_MAIN, i, size, 1, 0, colorTag);
                         interrupts_enable(intFlags);
+                        debug_ram(size, colorTag);
+                        (slots + i)->flags = 2;
                         return (slots + i)->data;
                     }
                 }
@@ -225,6 +259,7 @@ void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag) {
         }
         interrupts_enable(intFlags);
     }
+    *(volatile int *) 0 = 0;
     stubbed_printf("\n*** mm Error *** ---> Can't allocate memory at desired address.\n");
     return NULL;
 }
@@ -306,7 +341,7 @@ void mempool_free_addr(u8 *address) {
         slot = &slots[slotIndex];
 
         if (address == (u8 *) slot->data) {
-            if (slot->flags == SLOT_USED || slot->flags == SLOT_SAFEGUARD) {
+            if (slot->flags) {
                 mempool_slot_clear(poolIndex, slotIndex);
             }
             break;
@@ -314,45 +349,6 @@ void mempool_free_addr(u8 *address) {
         slot = &slots[slotIndex];
     }
     stubbed_printf("\n*** mm Error *** ---> No match found for mmFree.\n");
-}
-
-/**
- * Clears all memory pools.
- * When clearing a pool, it checks if the slot uses the 0x04 flag.
- * It calls an early return if that flag is set and more slots remain after.
- */
-UNUSED void mempool_clear(void) {
-    MemoryPoolSlot *slotPos;
-    MemoryPool *pool;
-    UNUSED s32 pad;
-    u32 intFlags;
-    s32 poolIndex;
-    s32 slotIndex;
-
-    intFlags = interrupts_disable();
-    poolIndex = gNumberOfMemoryPools;
-    while (poolIndex != -1) {
-        pool = &gMemoryPools[poolIndex];
-        slotPos = pool->slots;
-        slotIndex = 0;
-        do {
-            if ((slotPos + slotIndex)->flags == SLOT_USED) {
-                mempool_slot_clear(poolIndex, slotIndex);
-            }
-            if ((slotPos + slotIndex)->flags == SLOT_SAFEGUARD) {
-                if (pool->curNumSlots == 1) {
-                    mempool_slot_clear(poolIndex, slotIndex);
-                } else {
-                    interrupts_enable(intFlags);
-                    stubbed_printf("*** Slots still in use in region ***\n");
-                    return;
-                }
-            }
-            slotIndex = (slotPos + slotIndex)->nextIndex;
-        } while (slotIndex != MEMSLOT_NONE);
-        poolIndex--;
-    }
-    interrupts_enable(intFlags);
 }
 
 /**
@@ -366,66 +362,6 @@ void mempool_free_queue(void *dataAddress) {
     if (gFreeQueueCount >= ARRAY_COUNT(gFreeQueue)) {
         stubbed_printf("\n*** mm Error *** ---> stbf stack too deep!\n");
     }
-}
-
-/**
- * Search the memory pool for the current address.
- * Check if the slot is used, then set the 0x02 slot flag.
- * Return 1 if successful, otherwise return 0.
- */
-s32 mempool_locked_set(u8 *address) {
-    s32 slotIndex;
-    MemoryPoolSlot *slot;
-    MemoryPool *pool;
-    u32 intFlags;
-
-    intFlags = interrupts_disable();
-    pool = &gMemoryPools[mempool_get_pool(address)];
-    slotIndex = 0;
-    while (slotIndex != MEMSLOT_NONE) {
-        slot = slotIndex + pool->slots; // `slot = &pool->slots[slotIndex];` does not match.
-        if (address == (u8 *) slot->data) {
-            if (slot->flags == SLOT_USED || slot->flags == SLOT_SAFEGUARD) {
-                slot->flags |= SLOT_LOCKED;
-                interrupts_enable(intFlags);
-                return 1;
-            }
-        }
-        slotIndex = slot->nextIndex;
-    }
-    stubbed_printf("\n*** mm Error *** ---> Can't fix the specified block.\n");
-    interrupts_enable(intFlags);
-    return 0;
-}
-
-/**
- * Search the memory pool for the current address.
- * Check if the slot is marked with 0x02.
- * Unset that flag and return 1 if so, otherwise 0.
- */
-s32 mempool_locked_unset(u8 *address) {
-    s32 slotIndex;
-    MemoryPoolSlot *slot;
-    MemoryPool *pool;
-    u32 intFlags;
-
-    intFlags = interrupts_disable();
-    pool = &gMemoryPools[mempool_get_pool(address)];
-    slotIndex = 0;
-    while (slotIndex != MEMSLOT_NONE) {
-        slot = slotIndex + pool->slots; // `slot = &pool->slots[slotIndex];` does not match.
-        if (address == (u8 *) slot->data) {
-            if (slot->flags & SLOT_LOCKED) {
-                slot->flags ^= SLOT_LOCKED;
-                interrupts_enable(intFlags);
-                return 1;
-            }
-        }
-        slotIndex = slot->nextIndex;
-    }
-    stubbed_printf("\n*** mm Error *** ---> Can't unfix the specified block.\n");
-    interrupts_enable(intFlags);
-    return 0;
 }
 
 /**
@@ -471,6 +407,7 @@ void mempool_slot_clear(MemoryPools poolIndex, s32 slotIndex) {
     nextSlot = &slots[nextIndex];
     prevSlot = &slots[prevIndex];
     slot->flags = SLOT_FREE;
+    debug_ram(-slot->size, slot->colourTag);
     if (nextIndex != MEMSLOT_NONE) {
         if (nextSlot->flags == SLOT_FREE) {
             slot->size += nextSlot->size;
@@ -498,13 +435,6 @@ void mempool_slot_clear(MemoryPools poolIndex, s32 slotIndex) {
 }
 
 /**
- * Return the address of the first slot of a given memory pool.
- */
-UNUSED MemoryPoolSlot *get_memory_pool_address(MemoryPools poolIndex) {
-    return gMemoryPools[poolIndex].slots;
-}
-
-/**
  * Initialise and attempts to fit the new memory block in the slot given.
  * Updates the linked list with any entries before and after then returns the new slot index.
  * If the region cannot fit, return the old slot instead.
@@ -523,7 +453,9 @@ s32 mempool_slot_assign(MemoryPools poolIndex, s32 slotIndex, s32 size, s32 slot
     poolSlots[slotIndex].flags = slotIsTaken;
     poolSize = poolSlots[slotIndex].size;
     poolSlots[slotIndex].size = size;
-    poolSlots[slotIndex].colourTag = colourTag;
+#ifdef DEBUG
+    poolSlots[slotIndex].colourTag = debug_tag_index(colourTag);
+#endif
     index = poolSlots[pool->curNumSlots].index;
     if (size < poolSize) {
         index = (pool->curNumSlots + poolSlots)->index;
@@ -555,199 +487,4 @@ u8 *align16(u8 *address) {
         address = (u8 *) (((s32) address - remainder) + 16);
     }
     return address;
-}
-
-/**
- * Returns the passed in address aligned to the next 8-byte boundary.
- * Official name: mmAlign8
- */
-UNUSED u8 *align8(u8 *address) {
-    s32 remainder = (s32) address & 0x7;
-    if (remainder > 0) {
-        address = (u8 *) (((s32) address - remainder) + 8);
-    }
-    return address;
-}
-
-/**
- * Returns the passed in address aligned to the next 4-byte boundary.
- * Official name: mmAlign4
- */
-UNUSED u8 *align4(u8 *address) {
-    s32 remainder = (s32) address & 0x3;
-    if (remainder > 0) {
-        address = (u8 *) (((s32) address - remainder) + 4);
-    }
-    return address;
-}
-
-/**
- * Iterate through all active memory pool slots and categorise them by colour.
- * Tally how many colours there are, then how many colours are in use.
- * Afterwards, print out the results.
- * Since the function only has space for 64 different colours, make sure
- * any missed tallies are at least reported.
- */
-UNUSED s32 find_active_pool_slot_colours(void) {
-    u32 colours[64];
-    u32 colourCounts[64];
-    MemoryPoolSlot *curSlot;
-    s32 numOverflows;
-    s32 i;
-    s32 j;
-    s32 colourIndex;
-    s32 slotColour;
-    u32 curColour;
-
-    numOverflows = 0;
-    for (j = 0; j < 64; j++) {
-        colours[j] = 0;
-        colourCounts[j] = 0;
-    }
-    for (i = 0; i < gNumberOfMemoryPools; i++) {
-        curSlot = gMemoryPools[i].slots;
-        do {
-            if (curSlot->flags != SLOT_FREE) {
-                slotColour = curSlot->colourTag;
-                if (slotColour != 0) {
-                    curColour = slotColour;
-                    colourIndex = 0;
-                    while (colourIndex < 64 && curColour != colours[colourIndex] && colours[colourIndex] != 0) {
-                        slotColour = colours[colourIndex];
-                        colourIndex++;
-                    }
-                    if (colourIndex < 64) {
-                        colours[colourIndex] = curColour;
-                        colourCounts[colourIndex]++;
-                    } else {
-                        numOverflows++;
-                    }
-                }
-            }
-            slotColour = curSlot->nextIndex;
-            if (slotColour != MEMSLOT_NONE) {
-                curSlot = &gMemoryPools[i].slots[curSlot->nextIndex];
-            }
-        } while (slotColour != MEMSLOT_NONE);
-    }
-    slotColour = 0;
-    for (j = 0; colours[j] != 0 && j < 64; j++) {
-        stubbed_printf("Colour %x >> %d\n", colours[j], colourCounts[j]);
-    }
-    slotColour = 0;
-    if (numOverflows) {
-        stubbed_printf("Unable to record %d slots, colours overflowed table.\n", numOverflows);
-    }
-    numOverflows = slotColour;
-    return 0;
-}
-
-/**
- * Search through each memory pool, counting up the slots that match the colour tag looking to be found.
- * Marked as unused, since the functions calling it is also unused.
- */
-UNUSED s32 get_memory_colour_tag_count(u32 colourTag) {
-    s32 i, count;
-    MemoryPoolSlot *slot;
-    count = 0;
-    slot = &gMemoryPools[POOL_MAIN].slots[0];
-    for (i = 0; i < MAIN_POOL_SLOT_COUNT; i++) {
-        if (slot->flags != SLOT_FREE) {
-            if (colourTag == slot->colourTag) {
-                count++;
-            }
-        }
-        slot++;
-    }
-    return count;
-}
-
-/**
- * Prints out the counts for each color tag in the main pool.
- */
-UNUSED void mempool_print_tags_usb(void) {
-    stubbed_printf("RED %d\n", get_memory_colour_tag_count(COLOUR_TAG_RED));
-    stubbed_printf("GREEN %d\n", get_memory_colour_tag_count(COLOUR_TAG_GREEN));
-    stubbed_printf("BLUE %d\n", get_memory_colour_tag_count(COLOUR_TAG_BLUE));
-    stubbed_printf("YELLOW %d\n", get_memory_colour_tag_count(COLOUR_TAG_YELLOW));
-    stubbed_printf("MAGENTA %d\n", get_memory_colour_tag_count(COLOUR_TAG_MAGENTA));
-    stubbed_printf("CYAN %d\n", get_memory_colour_tag_count(COLOUR_TAG_CYAN));
-    stubbed_printf("WHITE %d\n", get_memory_colour_tag_count(COLOUR_TAG_WHITE));
-    stubbed_printf("GREY %d\n", get_memory_colour_tag_count(COLOUR_TAG_GREY));
-    stubbed_printf("ORANGE %d\n\n", get_memory_colour_tag_count(COLOUR_TAG_ORANGE));
-}
-
-/**
- * Draws the counts for each color tag in the main pool.
- * See: https://tcrf.net/Diddy_Kong_Racing#Current_Colors
- */
-UNUSED void mempool_print_tags_screen(void) {
-    set_render_printf_background_colour(0, 0, 0, 128);
-    render_printf("RED %d\n", get_memory_colour_tag_count(COLOUR_TAG_RED));
-    render_printf("GREEN %d\n", get_memory_colour_tag_count(COLOUR_TAG_GREEN));
-    render_printf("BLUE %d\n", get_memory_colour_tag_count(COLOUR_TAG_BLUE));
-    render_printf("YELLOW %d\n", get_memory_colour_tag_count(COLOUR_TAG_YELLOW));
-    render_printf("MAGENTA %d\n", get_memory_colour_tag_count(COLOUR_TAG_MAGENTA));
-    render_printf("CYAN %d\n", get_memory_colour_tag_count(COLOUR_TAG_CYAN));
-    render_printf("WHITE %d\n", get_memory_colour_tag_count(COLOUR_TAG_WHITE));
-    render_printf("GREY %d\n", get_memory_colour_tag_count(COLOUR_TAG_GREY));
-    render_printf("ORANGE %d\n\n", get_memory_colour_tag_count(COLOUR_TAG_ORANGE));
-}
-
-/**
- * Prints out the status of each memory pool slot.
- * Will mark based on what flags the slot has.
- * Official name: mmSlotPrint
- */
-UNUSED void mempool_print_slots(void) {
-    int flags;
-    int nextIndex;
-    int i;
-    MemoryPoolSlot *slot;
-
-    for (i = 0; i <= gNumberOfMemoryPools; i++) {
-        stubbed_printf("Region = %d	 loc = %x	 size = %x\t", i, gMemoryPools[i].slots, gMemoryPools[i].size);
-        slot = &gMemoryPools[i].slots[0];
-
-        do {
-            flags = slot->flags;
-            nextIndex = slot->nextIndex;
-
-            switch (flags) {
-                case 0:
-                    stubbed_printf("FREE");
-                    break;
-                case 1:
-                    stubbed_printf("ALLOCATED");
-                    break;
-                case 2:
-                    stubbed_printf("ALLOCATED,FIXED");
-                    break;
-                default:
-                    stubbed_printf("\n");
-                    break;
-            }
-            stubbed_printf("\n");
-            if (nextIndex == -1) {
-                continue;
-            } else {
-                slot = &gMemoryPools[i].slots[slot->nextIndex];
-            }
-        } while (nextIndex != -1);
-    }
-}
-
-/**
- * Print out the current status of each existing memory pool.
- */
-UNUSED void mempool_print_data(void) {
-    s32 i;
-    for (i = gNumberOfMemoryPools; i != -1; i--) {
-        stubbed_printf("Region number = %d\t", i);
-        stubbed_printf("maxSlots = %d\t", gMemoryPools[i].maxNumSlots);
-        stubbed_printf("slotsUsed = %d\t", gMemoryPools[i].curNumSlots);
-        stubbed_printf("loc = %x\t", gMemoryPools[i].slots);
-        stubbed_printf("size = %x\n", gMemoryPools[i].size);
-        stubbed_printf("\n");
-    }
 }

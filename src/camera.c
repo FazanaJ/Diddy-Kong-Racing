@@ -10,12 +10,6 @@
 #include "PRinternal/piint.h"
 #include "PRinternal/viint.h"
 
-/************ .rodata ************/
-
-UNUSED const char D_800E6F00[] = "Camera Error: Illegal mode!\n";
-
-/*********************************/
-
 /************ .data ************/
 
 s8 gAntiPiracyViewport = FALSE;
@@ -81,7 +75,6 @@ ObjectSegment gCameraSegment[8];
 s32 gNumberOfViewports;
 s32 gActiveCameraID;
 s32 gViewportCap;
-UNUSED s32 D_80120CEC;
 ObjectTransform gCameraTransform;
 s32 gMatrixType;
 s32 gSpriteAnimOff;
@@ -91,7 +84,6 @@ s8 gAdjustViewportHeight;
 s32 D_80120D18;
 s32 gModelMatrixStackPos;
 s32 gCameraMatrixPos;
-UNUSED s32 D_80120D24;
 f32 gModelMatrixViewX[6];
 f32 gModelMatrixViewY[6];
 f32 gModelMatrixViewZ[5];
@@ -104,7 +96,6 @@ Matrix gViewMatrixF;
 Matrix gCameraMatrixF;
 Matrix gProjectionMatrixF;
 MatrixS gProjectionMatrixS;
-UNUSED MatrixS gUnusedProjectionMatrixS; // Copied to the same way as gProjectionMatrixS, but not actually used.
 Matrix gCurrentModelMatrixF;
 Matrix gCurrentModelMatrixS;
 
@@ -139,13 +130,6 @@ void camera_init(void) {
     gAdjustViewportHeight = 0;
     gAntiPiracyViewport = FALSE;
 
-    WAIT_ON_IOBUSY(stat);
-
-    // 0xB0000578 is a direct read from the ROM as opposed to RAM
-    if (((D_B0000578 & 0xFFFF) & 0xFFFF) != 0x8965) {
-        gAntiPiracyViewport = TRUE;
-    }
-
     guPerspectiveF(gPerspectiveMatrixF, &perspNorm, CAMERA_DEFAULT_FOV, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR,
                    CAMERA_SCALE);
     f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gProjectionMatrixS);
@@ -178,14 +162,6 @@ void func_800660D0(void) {
 }
 
 /**
- * Unused function that will return the current camera's FoV.
- * Official Name: camGetFOV
- */
-UNUSED f32 get_current_camera_fov(void) {
-    return gCurCamFOV;
-}
-
-/**
  * Set the FoV of the viewspace, then recalculate the perspective matrix.
  * Official Name: camSetFOV
  */
@@ -196,22 +172,6 @@ void update_camera_fov(f32 camFieldOfView) {
                        CAMERA_SCALE);
         f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gProjectionMatrixS);
     }
-}
-
-/**
- * Unused function that recalculates the perspective matrix.
- */
-UNUSED void calculate_camera_perspective(void) {
-    guPerspectiveF(gPerspectiveMatrixF, &perspNorm, CAMERA_DEFAULT_FOV, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR,
-                   CAMERA_SCALE);
-    f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gProjectionMatrixS);
-}
-
-/**
- * Return the current fixed point model matrix.
- */
-UNUSED Matrix *matrix_get_model_s16(void) {
-    return &gCurrentModelMatrixS;
 }
 
 /**
@@ -545,7 +505,7 @@ void set_viewport_properties(s32 viewPortIndex, s32 posX, s32 posY, s32 width, s
     if (posY != VIEWPORT_AUTO) {
         //!@bug Viewport Y writes to the X value. Luckily, all cases this function is called use VIEWPORT_AUTO,
         // so this bug doesn't happen in practice.
-        gScreenViewports[viewPortIndex].posX = posY;
+        gScreenViewports[viewPortIndex].posY = posY;
         gScreenViewports[viewPortIndex].flags |= VIEWPORT_Y_CUSTOM;
     } else {
         gScreenViewports[viewPortIndex].flags &= ~VIEWPORT_Y_CUSTOM;
@@ -592,39 +552,20 @@ void copy_viewport_frame_size_to_coords(s32 viewPortIndex, s32 *x1, s32 *y1, s32
     *y2 = gScreenViewports[viewPortIndex].y2;
 }
 
-/**
- * Unused function that sets the passed values to the framebuffer's size in coordinates.
- * Official name: camGetWindowLimits
- */
-UNUSED void copy_framebuffer_size_to_coords(s32 *x1, s32 *y1, s32 *x2, s32 *y2) {
-    u32 widthAndHeight = fb_size();
-    *x1 = 0;
-    *y1 = 0;
-    *x2 = GET_VIDEO_WIDTH(widthAndHeight);
-    *y2 = GET_VIDEO_HEIGHT(widthAndHeight);
-}
-
-#ifdef NON_MATCHING
-
-#define SCISSOR_INTERLACE G_SC_NON_INTERLACE
-
 // viewport_main
-void func_80066CDC(Gfx **dList, MatrixS **mats) {
-    u32 y;
-    u32 x;
-    u32 pad0;
-    u32 sp58_height;
-    u32 sp54_width;
-    u32 posY;
-    u32 posX; // sp4C
-    u32 pad1;
-    u32 videoHeight;
-    u32 videoWidth;
-    u32 widthAndHeight;
+void func_80066CDC(Gfx **dlist, MatrixS **mats) {
+    s32 videoHeight;
+    s32 videoWidth;
+    s32 savedCameraID;
+    s32 originalCameraID;
+    s32 tempCameraID;
     s32 viewports;
-    s32 originalCameraID; // sp34
-    s32 savedCameraID;    // sp30
-    s32 tempCameraID;     // sp2C
+    s32 x1;
+    s32 y1;
+    s32 x2;
+    s32 y2;
+    s32 pos[2];
+    s32 size[2];
 
     originalCameraID = gActiveCameraID;
     savedCameraID = gActiveCameraID;
@@ -633,148 +574,100 @@ void func_80066CDC(Gfx **dList, MatrixS **mats) {
         gActiveCameraID = 1;
         savedCameraID = 0;
     }
-    widthAndHeight = fb_size();
-    videoHeight = GET_VIDEO_HEIGHT(widthAndHeight);
-    videoWidth = GET_VIDEO_WIDTH(widthAndHeight);
+    videoHeight = SCREEN_HEIGHT;
+    videoWidth = SCREEN_WIDTH;
     if (gScreenViewports[savedCameraID].flags & VIEWPORT_EXTRA_BG) {
         tempCameraID = gActiveCameraID;
         gActiveCameraID = savedCameraID;
-        gDPSetScissor((*dList)++, SCISSOR_INTERLACE, gScreenViewports[gActiveCameraID].scissorX1,
+        gDPSetScissor((*dlist)++, G_SC_NON_INTERLACE, gScreenViewports[gActiveCameraID].scissorX1,
                       gScreenViewports[gActiveCameraID].scissorY1, gScreenViewports[gActiveCameraID].scissorX2,
                       gScreenViewports[gActiveCameraID].scissorY2);
-        viewport_rsp_set(dList, 0, 0, 0, 0);
+        viewport_rsp_set(dlist, 0, 0, 0, 0);
         gActiveCameraID = tempCameraID;
-        if (mats != NULL) {
-            func_80067D3C(dList, mats);
+        if (mats != 0) {
+            func_80067D3C(dlist, mats);
         }
         gActiveCameraID = originalCameraID;
         return;
     }
-
     viewports = gNumberOfViewports;
     if (viewports == VIEWPORTS_COUNT_3_PLAYERS) {
         viewports = VIEWPORTS_COUNT_4_PLAYERS;
-        // Fake match
-        if ((x && x) && x) {}
-    }
-    y = (videoHeight >> 1) & 0xFFFFFFFFFFFFFFFF;
-    x = videoWidth >> 1;
-    sp54_width = x;
-    sp58_height = y;
-
-    if (osTvType == OS_TV_TYPE_PAL) {
-        sp58_height = 145;
     }
 
-    switch (viewports ^ 0) {
+    pos[0] = videoWidth / 2;
+    pos[1] = videoHeight / 2;
+    size[0] = pos[0];
+    size[1] = pos[1];
+
+    // Cursed usage of the pos vars, but that's to save redoing width and height divide by 2.
+    switch (viewports) {
         case VIEWPORTS_COUNT_1_PLAYER:
-            posY = sp58_height;
-            if (osTvType == OS_TV_TYPE_PAL) {
-                posY -= 18;
-                // Fake match
-                if (!gScreenViewports[gActiveCameraID].scissorX2) {}
-            }
-            gDPSetScissor((*dList)++, SCISSOR_INTERLACE, 0, 0, videoWidth, videoHeight);
-            posX = x;
+            x1 = 0;
+            y1 = 0;
+            x2 = videoWidth;
+            y2 = videoHeight;
             break;
         case VIEWPORTS_COUNT_2_PLAYERS:
-            // 2 players = split screen horizontally
-            // first player has top half
+            x1 = 0;
+            x2 = videoWidth;
             if (gActiveCameraID == 0) {
-                posY = videoHeight >> 2;
-                if (osTvType == OS_TV_TYPE_PAL) {
-                    posY -= 12;
-                }
-                gDPSetScissor((*dList)++, SCISSOR_INTERLACE, 0, 0, videoWidth, y - (videoHeight >> 7));
+                y1 = 0;
+                y2 = pos[1] - 1;
+                pos[1] /= 2;
             } else {
-                // second player has bottom half
-                posY = sp58_height;
-                posY += videoHeight >> 2;
-                gDPSetScissor((*dList)++, SCISSOR_INTERLACE, 0, y + (videoHeight >> 7), videoWidth,
-                              videoHeight - (videoHeight >> 7));
-            }
-            posX = x;
-            break;
-        // this is probably never reached because of an if above that sets the viewport to 4 players if its currently 3
-        // players
-        case VIEWPORTS_COUNT_3_PLAYERS:
-            posY = sp58_height;
-            // 3 player splits screen in 4 parts, first player = top left, second = top right, third = bottom left and
-            // bottom right has map of race track
-            if (gActiveCameraID == 0) {
-                posX = videoWidth >> 2;
-                gDPSetScissor((*dList)++, SCISSOR_INTERLACE, 0, 0, x - (videoWidth >> 8), videoHeight);
-            } else {
-                posX = x + (videoWidth >> 2);
-                gDPSetScissor((*dList)++, SCISSOR_INTERLACE, x + (videoWidth >> 8), 0, videoWidth - (videoWidth >> 8),
-                              videoHeight);
+                y1 = pos[1] + 1;
+                y2 = videoHeight;
+                pos[1] += size[1] / 2;
             }
             break;
         case VIEWPORTS_COUNT_4_PLAYERS:
-            sp58_height >>= 1;
-            sp54_width >>= 1;
-            posX = 0;
-            posY = 0;
+            size[0] /= 2;
+            size[1] /= 2;
             switch (gActiveCameraID) {
                 case 0:
-                    // Using posX and posY here is not smart since IDO can't optimize out the zero now.
-                    // Why here of all places did they do this instead of just setting zero like everywhere else?
-                    gDPSetScissor((*dList)++, SCISSOR_INTERLACE, posX, posY, x - (videoWidth >> 8),
-                                  y - (videoHeight >> 7));
+                    x1 = 0;
+                    y1 = 0;
+                    x2 = pos[0] - 1;
+                    y2 = pos[1] - 1;
+                    pos[0] /= 2;
+                    pos[1] /= 2;
                     break;
                 case 1:
-                    posX = x;
-                    gDPSetScissor((*dList)++, SCISSOR_INTERLACE, x + (videoWidth >> 8), 0, (x + x) - (videoWidth >> 8),
-                                  y - (videoHeight >> 7));
-
-                    // Fake
-                    if (1) {}
-                    if (1) {}
-                    if (1) {}
-                    if (1) {}
-
+                    x1 = pos[0] + 1;
+                    y1 = 0;
+                    x2 = videoWidth;
+                    y2 = pos[1] - 1;
+                    pos[0] += size[0];
+                    pos[1] /= 2;
                     break;
                 case 2:
-                    posY = y;
-                    gDPSetScissor((*dList)++, SCISSOR_INTERLACE, 0, y + (videoHeight >> 7), x - (videoWidth >> 8),
-                                  (y + y) - (videoHeight >> 7));
+                    x1 = 0;
+                    y1 = pos[1] + 1;
+                    x2 = pos[0] - 1;
+                    y2 = videoHeight;
+                    pos[0] /= 2;
+                    pos[1] += size[1];
                     break;
                 case 3:
-                    posX = x;
-                    posY = y;
-                    gDPSetScissor((*dList)++, SCISSOR_INTERLACE, x + (videoWidth >> 8), y + (videoHeight >> 7),
-                                  (x + x) - (videoWidth >> 8), (y + y) - (videoHeight >> 7));
+                    x1 = pos[0] + 1;
+                    y1 = pos[1] + 1;
+                    x2 = videoWidth;
+                    y2 = videoHeight;
+                    pos[0] += size[0];
+                    pos[1] += size[1];
                     break;
             }
-            // This should probably assign to a temp variable first?
-            posY += sp58_height;
-            posX += sp54_width;
-            if (osTvType == OS_TV_TYPE_PAL) {
-                if (gActiveCameraID <= 3) {
-                    posY -= 20;
-                } else {
-                    posY -= 6;
-                }
-            }
-            break;
-        default:
-            posY = sp58_height;
-            posX = x;
             break;
     }
+    gDPSetScissor((*dlist)++, G_SC_NON_INTERLACE, x1, y1, x2, y2);
 
-    if (osTvType == OS_TV_TYPE_PAL) {
-        posX -= 4;
-    }
-    viewport_rsp_set(dList, sp54_width, sp58_height, posX, posY);
+    viewport_rsp_set(dlist, size[0], size[1], pos[0], pos[1]);
     if (mats != NULL) {
-        func_80067D3C(dList, mats);
+        func_80067D3C(dlist, mats);
     }
     gActiveCameraID = originalCameraID;
 }
-#else
-#pragma GLOBAL_ASM("asm/nonmatchings/camera/func_80066CDC.s")
-#endif
 
 /**
  * Takes the size of the screen as depicted by the active menu viewport, then sets the RDP scissor to match it.
@@ -908,7 +801,6 @@ void func_80067D3C(Gfx **dList, UNUSED MatrixS **mats) {
     gCameraTransform.z_position = gCameraSegment[gActiveCameraID].trans.z_position;
 
     object_transform_to_matrix(gProjectionMatrixF, &gCameraTransform);
-    f32_matrix_to_s16_matrix(&gProjectionMatrixF, &gUnusedProjectionMatrixS);
 
     gActiveCameraID = temp;
 }
@@ -1005,7 +897,7 @@ void viewport_reset(Gfx **dList) {
     height = GET_VIDEO_HEIGHT(widthAndHeight);
     width = GET_VIDEO_WIDTH(widthAndHeight);
     if (!(gScreenViewports[gActiveCameraID].flags & VIEWPORT_EXTRA_BG)) {
-        gDPSetScissor((*dList)++, G_SC_NON_INTERLACE, 0, 0, width - 1, height - 1);
+        gDPSetScissor((*dList)++, G_SC_NON_INTERLACE, 0, 0, width, height);
         viewport_rsp_set(dList, width >> 1, height >> 1, width >> 1, height >> 1);
     } else {
         viewport_scissor(dList);
@@ -1013,8 +905,6 @@ void viewport_reset(Gfx **dList) {
     }
     gActiveCameraID = 0;
 }
-
-UNUSED const char D_800E6F44[] = "cameraPushSprMtx: model stack overflow!!\n";
 
 /**
  * Sets the matrix position to the world origin (0, 0, 0)
@@ -1352,7 +1242,7 @@ void camera_push_model_mtx(Gfx **dList, MatrixS **mtx, ObjectTransform *trans, f
     f32_matrix_mult(gModelMatrixF[gModelMatrixStackPos + 1], &gViewMatrixF, &gCurrentModelMatrixS);
     f32_matrix_to_s16_matrix(&gCurrentModelMatrixS, *mtx);
     gModelMatrixStackPos++;
-    gModelMatrixS[0, gModelMatrixStackPos] = *mtx; // Should be [gModelMatrixStackPos]
+    gModelMatrixS[gModelMatrixStackPos] = *mtx; // Should be [gModelMatrixStackPos]
     if (gModelMatrixStackPos >= ARRAY_COUNT(gModelMatrixS)) {
         stubbed_printf("cameraPushModelMtx: model stack overflow!!\n");
     }
@@ -1436,15 +1326,6 @@ void apply_head_turning_matrix(Gfx **dList, MatrixS **mtx, Object_68 *objGfx, s1
 }
 
 /**
- * Writes the model matrix vector to the arguments.
- */
-UNUSED void get_modelmatrix_vector(f32 *x, f32 *y, f32 *z) {
-    *x = gModelMatrixViewX[gCameraMatrixPos];
-    *y = gModelMatrixViewY[gCameraMatrixPos];
-    *z = gModelMatrixViewZ[gCameraMatrixPos];
-}
-
-/**
  * Run a matrix from the top of the stack and pop it.
  * If the stack pos is less than zero, add a matrix instead.
  */
@@ -1467,46 +1348,6 @@ void apply_matrix_from_stack(Gfx **dList) {
     } else {
         gDkrInsertMatrix((*dList)++, G_MWO_MATRIX_XX_XY_I, G_MTX_DKR_INDEX_0);
     }
-}
-
-/**
- * Move the camera with the given velocities.
- * Also recalculates which block it's in.
- */
-UNUSED void translate_camera_segment(f32 x, f32 y, f32 z) {
-    gCameraSegment[gActiveCameraID].trans.x_position += x;
-    gCameraSegment[gActiveCameraID].trans.y_position += y;
-    gCameraSegment[gActiveCameraID].trans.z_position += z;
-    gCameraSegment[gActiveCameraID].object.cameraSegmentID = get_level_segment_index_from_position(
-        gCameraSegment[gActiveCameraID].trans.x_position, gCameraSegment[gActiveCameraID].trans.y_position,
-        gCameraSegment[gActiveCameraID].trans.z_position);
-}
-
-/**
- * Move the camera with velocities accounting for face direction.
- * Also recalculates which block it's in.
- */
-UNUSED void transform_camera_segment(f32 x, UNUSED f32 y, f32 z) {
-    gCameraSegment[gActiveCameraID].trans.x_position -=
-        x * coss_f(gCameraSegment[gActiveCameraID].trans.rotation.y_rotation);
-    gCameraSegment[gActiveCameraID].trans.z_position -=
-        x * sins_f(gCameraSegment[gActiveCameraID].trans.rotation.y_rotation);
-    gCameraSegment[gActiveCameraID].trans.x_position -=
-        z * sins_f(gCameraSegment[gActiveCameraID].trans.rotation.y_rotation);
-    gCameraSegment[gActiveCameraID].trans.z_position +=
-        z * coss_f(gCameraSegment[gActiveCameraID].trans.rotation.y_rotation);
-    gCameraSegment[gActiveCameraID].object.cameraSegmentID = get_level_segment_index_from_position(
-        gCameraSegment[gActiveCameraID].trans.x_position, gCameraSegment[gActiveCameraID].trans.y_position,
-        gCameraSegment[gActiveCameraID].trans.z_position);
-}
-
-/**
- * Rotate the camera with the given angles.
- */
-UNUSED void rotate_camera_segment(s32 angleX, s32 angleY, s32 angleZ) {
-    gCameraSegment[gActiveCameraID].trans.rotation.y_rotation += angleX;
-    gCameraSegment[gActiveCameraID].trans.rotation.x_rotation += angleY;
-    gCameraSegment[gActiveCameraID].trans.rotation.z_rotation += angleZ;
 }
 
 /**
@@ -1600,38 +1441,3 @@ void set_camera_shake(f32 magnitude) {
     }
 }
 
-/**
- * Unused function that prints out the passed matrix values to the debug output.
- * This function prints in fixed point.
- */
-UNUSED void debug_print_fixed_matrix_values(s16 *mtx) {
-    s32 i, j;
-    s32 val;
-    for (i = 0; i < 4; i++) {
-        for (j = 0; j < 4; j++) {
-            val = mtx[i * 4 + j];
-            rmonPrintf("%x.", val);
-            val = mtx[((i + 4) * 4 + j)];
-            rmonPrintf("%x  ", (u16) val & 0xFFFF);
-        }
-        rmonPrintf("\n");
-        if (!val) {} // Fakematch
-    }
-    rmonPrintf("\n");
-}
-
-/**
- * Unused function that prints out the passed matrix values to the debug output.
- * This function prints in floating point.
- */
-UNUSED void debug_print_float_matrix_values(f32 *mtx) {
-    s32 i, j;
-
-    for (i = 0; i < 4; i++) {
-        for (j = 0; j < 4; j++) {
-            rmonPrintf("%f  ", mtx[i * 4 + j]);
-        }
-        rmonPrintf("\n");
-    }
-    rmonPrintf("\n");
-}

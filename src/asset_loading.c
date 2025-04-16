@@ -6,6 +6,9 @@
 
 /************ .bss ************/
 
+#undef VERSION
+#define VERSION VERSION_80
+
 OSIoMesg gAssetsDmaIoMesg;
 OSMesg gDmaMesg;
 OSMesgQueue gDmaMesgQueue;
@@ -44,7 +47,6 @@ void init_PI_mesg_queue(void) {
 
     assetTableSize = __ASSETS_LUT_END - __ASSETS_LUT_START;
     gAssetsLookupTable = (u32 *) mempool_alloc_safe(assetTableSize, COLOUR_TAG_GREY);
-    mempool_locked_set((u8 *) gAssetsLookupTable);
     dmacopy_internal((u32) __ASSETS_LUT_START, (u32) gAssetsLookupTable, (s32) assetTableSize);
 }
 
@@ -82,83 +84,6 @@ u32 *load_asset_section_from_rom(u32 assetIndex) {
 #endif
 
     return out;
-}
-
-/**
- * Loads a gzip compressed asset from the ROM file.
- * Returns a pointer to the decompressed data.
- * Official name: piRomLoadCompressed
- */
-UNUSED u8 *load_compressed_asset_from_rom(u32 assetIndex, s32 extraMemory) {
-    s32 size;
-    s32 start;
-    s32 totalSpace;
-    u8 *gzipHeaderRamPos;
-    u8 *out;
-
-#if VERSION >= VERSION_79
-    OSMesg msg = NULL;
-    osRecvMesg(&gDmaMesgQueueV2, &msg, OS_MESG_BLOCK);
-#endif
-
-    if (gAssetsLookupTable[0] < assetIndex) {
-        return NULL;
-    }
-    assetIndex++;
-    out = (u8 *) (assetIndex + gAssetsLookupTable);
-    start = ((s32 *) out)[0];
-    size = ((s32 *) out)[1] - start;
-    gzipHeaderRamPos = (u8 *) mempool_alloc_safe(8, COLOUR_TAG_WHITE);
-
-    dmacopy_internal((u32) (start + __ASSETS_LUT_END), (u32) gzipHeaderRamPos, 8);
-
-    totalSpace = byteswap32(gzipHeaderRamPos) + extraMemory;
-    mempool_free(gzipHeaderRamPos);
-    out = (u8 *) mempool_alloc_safe(totalSpace + extraMemory, COLOUR_TAG_GREY);
-    if (out == NULL) {
-        return NULL;
-    }
-    gzipHeaderRamPos = (out + totalSpace) - size;
-    if (1) {} // Fakematch
-    dmacopy_internal((u32) (start + __ASSETS_LUT_END), (u32) gzipHeaderRamPos, size);
-    gzip_inflate(gzipHeaderRamPos, out);
-
-#if VERSION >= VERSION_79
-    osSendMesg(&gDmaMesgQueueV2, (OSMesg) 1, OS_MESG_NOBLOCK);
-#endif
-
-    return out;
-}
-
-/**
- * Loads an asset section to a specific memory address.
- * Returns the size of asset section.
- */
-UNUSED s32 load_asset_section_from_rom_to_address(u32 assetIndex, u32 address) {
-    u32 start;
-    s32 size;
-    u32 *index;
-
-#if VERSION >= VERSION_79
-    OSMesg msg = NULL;
-    osRecvMesg(&gDmaMesgQueueV2, &msg, OS_MESG_BLOCK);
-#endif
-
-    if (gAssetsLookupTable[0] < assetIndex) {
-        return 0;
-    }
-    assetIndex++;
-    index = assetIndex + gAssetsLookupTable;
-    start = *index;
-    size = *(index + 1) - start;
-
-    dmacopy_internal((u32) (start + __ASSETS_LUT_END), address, size);
-
-#if VERSION >= VERSION_79
-    osSendMesg(&gDmaMesgQueueV2, (OSMesg) 1, OS_MESG_NOBLOCK);
-#endif
-
-    return size;
 }
 
 /**

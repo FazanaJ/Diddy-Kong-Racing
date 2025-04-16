@@ -2,6 +2,7 @@
 #define _MACROS_H_
 
 #include <PRinternal/macros.h>
+#include "config.h"
 
 #ifndef __sgi
 #define GLOBAL_ASM(...)

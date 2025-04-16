@@ -65,6 +65,7 @@ typedef struct ConfigBits {
     unsigned multiWeather : 1;
     unsigned multiModels : 1;
     unsigned multiSky : 1;
+    signed multiAA : 2;
 } ConfigBits;
 
 typedef struct UserConfig {
@@ -88,6 +89,7 @@ typedef struct UserConfig {
     s8 multiWeather;    // Enable weather effects in multiplayer
     s8 multiModels;     // Use high quality models
     s8 multiSky;        // Use skydome rather than gradient
+    s8 multiAA;         // Multiplayer anti aliasing setting
 } UserConfig;
 
 extern u8 gExpansionPak;
@@ -99,5 +101,173 @@ void mainproc(void);
 void thread1_main(void *);
 void thread3_verify_stack(void);
 void get_platform(void);
+
+#ifdef DEBUG
+
+typedef enum DebugPages {
+    PAGE_MINIMAL,
+} DebugPages;
+
+typedef enum DebugProfiles {
+    PP_THREAD5,
+    PP_THREAD4,
+    PP_THREAD3,
+    PP_YIELD3,
+
+    PP_RSP_GFX,
+    PP_RSP_AUD,
+
+    PP_RDP_BUF,
+    PP_RDP_TMM,
+    PP_RDP_BUS,
+    PP_RDP_CLK,
+
+    PP_TOTAL
+} DebugProfiles;
+
+typedef enum DebugRSP {
+    RSP_GFX_START,
+    RSP_GFX_END,
+    RSP_AUD_START,
+    RSP_AUD_END,
+    RSP_GFX_YIELD,
+    RSP_GFX_RESUME,
+
+    RSP_CONTEXT_COUNT
+} DebugRSP;
+
+// Entries must be ordered in thread priority, the profiler will compare times with higher prio threads
+typedef enum DebugThreads {
+    THREAD5_START,
+    THREAD5_END,
+    THREAD4_START,
+    THREAD4_END,
+    THREAD3_START,
+    THREAD3_END,
+
+    THREAD_CONTEXT_COUNT
+} DebugThreads;
+
+typedef enum DebugRam {
+    PP_RAM_RED,
+    PP_RAM_GREEN,
+    PP_RAM_BLUE,
+    PP_RAM_YELLOW,
+    PP_RAM_MAGENTA,
+    PP_RAM_CYAN,
+    PP_RAM_WHITE,
+    PP_RAM_GREY,
+    PP_RAM_GREY_XLU,
+    PP_RAM_ORANGE,
+    PP_RAM_BLACK,
+    PP_RAM_LIGHT_ORANGE,
+
+    PP_RAM_CODE,
+    PP_RAM_FRAMEBUFFERS,
+    PP_RAM_ZBUFFER,
+    PP_RAM_TASKBUFFER,
+    PP_RAM_ANIMATIONS,
+    PP_RAM_WEATHER,
+    PP_RAM_LEVELTEX,
+    PP_RAM_LEVELMDL,
+    PP_RAM_OBJTEX,
+    PP_RAM_OBJMDL,
+    PP_RAM_MISCTEX,
+    PP_RAM_MISCMDL,
+    PP_RAM_SPRITES,
+    PP_RAM_SLOTS,
+    PP_RAM_CMDBUF,
+    PP_RAM_SAVES,
+    PP_RAM_TEMP,
+
+    PP_RAM_TOTAL,
+} DebugRam;
+
+#define MEMSTRINGS \
+    "Red", \
+    "Green", \
+    "Blue", \
+    "Yellow", \
+    "Magenta", \
+    "Cyan", \
+    "White", \
+    "Grey", \
+    "GreyXLU", \
+    "Orange", \
+    "Black", \
+    "L. Orange"
+
+#define NUM_PERF_ITERATIONS 60
+#define PERF_AGGREGATE NUM_PERF_ITERATIONS
+#define PERF_TOTAL (NUM_PERF_ITERATIONS + 1)
+#define NUM_THREAD_ITERATIONS 12
+#define NUM_LOG_CHARACTERS 2048
+
+typedef u32 DebugTimer[NUM_PERF_ITERATIONS + 2];
+
+typedef struct DebugData {
+    u8 enabled;
+    u8 pageCurrent;
+    u8 pagePrev;
+    u8 pageSelected;
+    u8 pageScroll;
+    u8 pageViewMode;
+    u8 logLine;
+    u8 logLevel;
+    u8 iter;
+    u8 prevIter;
+    u8 rspGfxIter;
+    u8 rspAudIter;
+    u8 threadIter[THREAD_CONTEXT_COUNT];
+    u8 threadReset[THREAD_CONTEXT_COUNT];
+
+    u16 logLen;
+    u16 logStart;
+    char logText[NUM_LOG_CHARACTERS];
+
+    u32 cpuTotal;
+    u32 rspTotal;
+    u32 rdpTotal;
+    u32 rspTimers[RSP_CONTEXT_COUNT][4];
+    u32 threadTimers[THREAD_CONTEXT_COUNT][NUM_THREAD_ITERATIONS];
+    DebugTimer timers[PP_TOTAL];
+    u32 ramSegments[PP_RAM_TOTAL];
+    u32 ramTotal;
+} DebugData;
+
+extern DebugData gDebug;
+
+void debug_init();
+void debug_log(s32 logLevel, char *str, ...);
+void debug_render(Gfx **dList, s32 updateRate);
+void debug_update(s32 updateRate);
+void debug_rsp(s32 context);
+void debug_rdp(void);
+void debug_thread(s32 field, s32 offset);
+void debug_newframe(s32 updateRate);
+void debug_ram(s32 size, s32 tag);
+s32 debug_tag_index(s32 colourTag);
+void debug_printf(const char* message, ...);
+void crash_assert(s32 cond, const char *str, ...);
+#else
+#define debug_init()
+#define debug_render(dList, updateRate)
+#define debug_update(updateRate)
+#define debug_rsp(context)
+#define debug_rdp()
+#define debug_thread(field, offset)
+#define debug_newframe(updateRate)
+#define debug_ram(size, tag)
+#define debug_tag_index(colourTag)
+#if defined(__sgi)
+#define debug_log
+#define debug_printf
+#define crash_assert 
+#else
+#define debug_log(logLevel, str, ...)
+#define debug_printf(str, ...)
+#define crash_assert(cond, str, ...);
+#endif
+#endif
 
 #endif

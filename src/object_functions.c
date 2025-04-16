@@ -49,8 +49,6 @@ VertexPosition D_800DC9A8[6] = {
     { 0, 64, -64 }, { 0, -64, -64 }, { 0, 64, 32 }, { 0, -64, 32 }, { 0, 64, 64 }, { 0, -64, 64 },
 };
 
-UNUSED s32 D_800DC9CC = 0;
-
 // Fish Object Related
 Triangle D_800DC9D0[8] = {
     { { { 0, 0, 3, 1 } }, { { { 4, 0 } } }, { { { 1, 4 } } }, { { { 4, 4 } } } },
@@ -678,7 +676,7 @@ void obj_loop_trophycab(Object *obj, s32 updateRate) {
         if (obj->properties.trophyCabinet.action == 1) {
             minimap_opacity_set(3);
             hud_visibility(0);
-            dialogueID = npc_dialogue_loop(DIALOGUE_TROPHY);
+            dialogueID = npc_dialogue_loop(DIALOGUE_TROPHY, updateRate);
             if (dialogueID) {
                 obj->properties.trophyCabinet.action = 0;
                 dialogue_npc_finish(4);
@@ -1276,7 +1274,7 @@ void obj_loop_stopwatchman(Object *obj, s32 updateRate) {
         minimap_fade(3);
     }
     if (obj->properties.npc.action >= TT_MODE_TURN_TOWARDS_PLAYER) {
-        index = npc_dialogue_loop(DIALOGUE_TT);
+        index = npc_dialogue_loop(DIALOGUE_TT, updateRate);
     } else {
         dialogue_npc_finish(2);
         index = 0;
@@ -1874,9 +1872,6 @@ void obj_loop_dooropener(Object *obj, s32 updateRate) {
 void obj_init_overridepos(UNUSED Object *obj, UNUSED LevelObjectEntry_OverridePos *entry) {
 }
 
-UNUSED void obj_loop_overridepos(UNUSED Object *obj, UNUSED s32 arg1) {
-}
-
 /**
  * Wizpig ship initilisation.
  * Does nothing.
@@ -2034,13 +2029,6 @@ void obj_loop_snowball(Object *obj, s32 updateRate) {
     func_8001F460(obj, updateRate, obj);
 }
 
-/**
- * Character select init behaviour.
- * Does nothing. Not even called.
- */
-UNUSED void obj_init_char_select(UNUSED s32 arg0, UNUSED s32 arg1) {
-}
-
 void obj_loop_char_select(Object *charSelectObj, s32 updateRate) {
     s32 i2;
     s32 i;
@@ -2112,7 +2100,7 @@ void obj_loop_char_select(Object *charSelectObj, s32 updateRate) {
                     for (i2 = 0; i2 < objMdl->numberOfBatches; i2++) {
                         // Unneccessary check for textureIndex to be greater than or equal to zero since it's a u8 and
                         // can't be less.
-                        if (objMdl->batches[i2].textureIndex >= 0 && objMdl->batches[i2].textureIndex < 4) {
+                        if (objMdl->batches[i2].textureIndex < 4) {
                             objMdl->batches[i2].textureIndex = sp50[D_800DCA88[i]];
                         }
                     }
@@ -2164,13 +2152,6 @@ void obj_loop_animcamera(Object *obj, s32 updateRate) {
                                          obj->segment.trans.rotation.z_rotation);
         }
     }
-}
-
-/**
- * Racer cutscene target init behaviour.
- * Does nothing. Not even called.
- */
-UNUSED void obj_init_animcar(UNUSED Object *obj, UNUSED s32 arg1) {
 }
 
 /**
@@ -2661,7 +2642,7 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
         case TAJ_MODE_DIALOGUE:
         case TAJ_MODE_TRANSFORM_BEGIN:
         case TAJ_MODE_TRANSFORM_END:
-            dialogueID = npc_dialogue_loop(DIALOGUE_TAJ);
+            dialogueID = npc_dialogue_loop(DIALOGUE_TAJ, updateRate);
             break;
         default:
             dialogue_npc_finish(0);

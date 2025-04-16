@@ -11,7 +11,7 @@
 #include "video.h"
 
 // Recommended size is around 100KB, or 0x19000. This is unused though so it doesn't matter.
-#define OUTPUT_BUFFER_SIZE 0x1800
+#define OUTPUT_BUFFER_SIZE 0x18000
 
 enum TextureRectangleFlags {
     TEXRECT_BILERP,
@@ -33,12 +33,6 @@ typedef struct DKR_OSTask {
     OSTask_t task; // Size: 0x40 bytes
     OSMesgQueue *mesgQueue;
     OSMesg mesg;
-    s32 unused58;
-    s32 unused5C;
-    s32 unused60;
-    s32 unused64;
-    u32 unk68;
-    s32 unused6C;
 } DKR_OSTask;
 
 extern s16 gGfxTaskMesgNums[16];
@@ -65,6 +59,8 @@ extern s8 rspF3DDKRXbusStart[];
 extern s8 rspF3DDKRDataXbusStart[];
 extern s8 rspF3DDKRFifoStart[];
 extern s8 rspF3DDKRDataFifoStart[];
+
+extern u64 *gGfxSPTaskOutputBuffer;
 
 s32 gfxtask_wait(void);
 void bgdraw_primcolour(u8 red, u8 green, u8 blue);

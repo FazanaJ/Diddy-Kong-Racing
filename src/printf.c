@@ -9,6 +9,8 @@
 
 /************ .data ************/
 
+#ifdef DEBUG
+
 s32 D_800E2EF0 = FALSE;
 
 // Char width is (v - u) + 1
@@ -196,7 +198,7 @@ void func_800B4A08(s32 setting) {
 }
 
 /* Official name: sprintf */
-UNUSED int sprintf(char *s, const char *format, ...) {
+int sprintf(char *s, const char *format, ...) {
     s32 ret;
     va_list args;
     va_start(args, format);
@@ -276,14 +278,6 @@ void debug_text_print(Gfx **dList) {
 }
 
 /**
- * Clears the text buffer, then sets the position back to the top left.
- */
-UNUSED void debug_text_reset(void) {
-    gDebugPrintBufferEnd = gDebugPrintBufferStart;
-    debug_text_origin();
-}
-
-/**
  * Set the colour of the current debug text.
  * Official Name: diPrintfSetCol
  */
@@ -304,52 +298,6 @@ void set_render_printf_background_colour(u8 red, u8 green, u8 blue, u8 alpha) {
  * Official name: diPrintfSetXY
  */
 void set_render_printf_position(u16 x, u16 y){ RENDER_PRINTF_CMD_SET_POSITION(x, y) }
-
-/**
- * Definitely has some fakematch shenanigans.
- * This will return the length in pixels of a given string using the debug small font.
- */
-UNUSED s32 debug_text_width(const char *format, ...) {
-    s32 pad;
-    s32 fontCharU;
-    s32 stringLength;
-    char s[255];
-    u8 *ch;
-    va_list args;
-    va_start(args, format);
-
-    stringLength = 0;
-    func_800B4A08(TRUE);
-    vsprintf(s, format, args);
-    func_800B4A08(FALSE);
-    for (ch = (u8 *) &s[0]; *ch != '\0'; ch++) {
-        pad = *ch;
-        if (*ch != (0, '\n')) {
-            if (pad == ' ') {
-                stringLength += 6;
-                if (1) {}
-            } else {
-                if (*ch < '@') {
-                    // Character is a symbol or number and not a letter
-                    gDebugFontTexture = 0;
-                    *ch -= '!';
-                } else if (*ch < '`') {
-                    // Character is a upper case letter
-                    gDebugFontTexture = 1;
-                    *ch -= '@';
-                } else if (*ch <= 0x7F) {
-                    // Character is a lower case letter
-                    gDebugFontTexture = 2;
-                    *ch -= '`';
-                }
-                fontCharU = gDebugFontCoords[gDebugFontTexture][*ch].u;
-                stringLength = ((stringLength + gDebugFontCoords[gDebugFontTexture][*ch].v) - fontCharU) + (pad = 1);
-            }
-        }
-    }
-    va_end(args);
-    return stringLength;
-}
 
 #ifdef NON_EQUIVALENT
 s32 func_800B653C(Gfx **dList, char *buffer) {
@@ -551,5 +499,15 @@ void debug_text_newline(void) {
     gDebugTextY += 11;
 }
 
-UNUSED void func_800B6F30(UNUSED int arg0, UNUSED int arg1, UNUSED int arg2) {
+#else
+void set_render_printf_position(u16 x, u16 y) {
+
 }
+
+s32 render_printf(const char *format, ...) {
+    va_list args;
+    s32 written;
+    va_start(args, format);
+    return 0;
+}
+#endif

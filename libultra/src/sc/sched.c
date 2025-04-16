@@ -45,6 +45,10 @@ u8 sTimerChecks[4];
 u8 sWroteRDP;
 #endif
 
+#ifdef DEBUG
+u8 sWroteRDP;
+#endif
+
 u8 gSchedFrameCap;
 
 void sched_framecap(s32 cap) {
@@ -72,24 +76,13 @@ static void __scTaskComplete(OSSched *sc, OSScTask *t) {
 }
 
 static void __scExec(OSSched *sc, OSScTask *t) {
-    if (t->list.t.type == M_AUDTASK) {
-#ifdef PUPPYPRINT_DEBUG
-        if (sTimerChecks[0] == FALSE && gPlatform & CONSOLE) {
-            osSetTimer(&sRSPAudHangTimer, OS_USEC_TO_CYCLES(350000), (OSTime) 0, &gCrashScreen.mesgQueue, (OSMesg) MESG_RSP_AUD_HUNG);
-            sTimerChecks[0] = TRUE;
-        }
-        puppyprint_update_rsp(RSP_AUDIO_START);
-#endif
-    } else {
-#ifdef PUPPYPRINT_DEBUG
-        if (sTimerChecks[1] == FALSE && gPlatform & CONSOLE) {
-            osSetTimer(&sRSPGfxHangTimer, OS_USEC_TO_CYCLES(300000), (OSTime) 0, &gCrashScreen.mesgQueue, (OSMesg) MESG_RSP_GFX_HUNG);
-            sTimerChecks[1] = TRUE;
-        }
-        puppyprint_update_rsp(RSP_GFX_START);
-#endif
-    }
     osWritebackDCacheAll();
+
+    if (t->list.t.type == M_AUDTASK) {
+        debug_rsp(RSP_AUD_START);
+    } else {
+        debug_rsp(RSP_GFX_START);
+    }
 
     t->state &= ~(OS_SC_YIELD | OS_SC_YIELDED);
     osSpTaskLoad(&t->list);
@@ -102,12 +95,8 @@ static void __scExec(OSSched *sc, OSScTask *t) {
 
     if (t->state & OS_SC_NEEDS_RDP) {
         sc->curRDPTask = t;
-#ifdef PUPPYPRINT_DEBUG
+#ifdef DEBUG
         if (sWroteRDP) {
-            if (sTimerChecks[2] == FALSE && gPlatform & CONSOLE) {
-                osSetTimer(&sRDPHangTimer, OS_USEC_TO_CYCLES(300000), (OSTime) 0, &gCrashScreen.mesgQueue, (OSMesg) MESG_RDP_HUNG);
-                sTimerChecks[2] = TRUE;
-            }
             IO_WRITE(DPC_STATUS_REG, DPC_CLR_CLOCK_CTR | DPC_CLR_CMD_CTR | DPC_CLR_PIPE_CTR | DPC_CLR_TMEM_CTR);
             sWroteRDP = 0;
         }
@@ -184,19 +173,13 @@ static void __scHandleRetrace(OSSched *sc) {
 
 static void __scHandleRSP(OSSched *sc) {
     OSScTask *t = sc->curRSPTask;
-#ifdef PUPPYPRINT_DEBUG
     if (sc->curRSPTask) {
         if (sc->curRSPTask->list.t.type == M_GFXTASK) {
-            sTimerChecks[1] = FALSE;
-            osStopTimer(&sRSPGfxHangTimer);
-            puppyprint_update_rsp(RSP_GFX_FINISHED);
+            debug_rsp(RSP_GFX_END);
         } else {
-            sTimerChecks[0] = FALSE;
-            osStopTimer(&sRSPAudHangTimer);
-            puppyprint_update_rsp(RSP_AUDIO_FINISHED);
+            debug_rsp(RSP_AUD_END);
         }
     }
-#endif
     sc->curRSPTask = NULL;
 
     if ((t->state & OS_SC_YIELD) && osSpTaskYielded(&t->list)) {
@@ -228,8 +211,8 @@ static void __scHandleRDP(OSSched *sc) {
     sc->curRDPTask = NULL;
 
     t->state &= ~OS_SC_NEEDS_RDP;
-#ifdef PUPPYPRINT_DEBUG
-    update_rdp_profiling();
+#ifdef DEBUG
+    debug_rdp();
     sWroteRDP = 1;
 #endif
 
@@ -250,19 +233,9 @@ static void __scMain(void *arg) {
 
     while (1) {
         osRecvMesg(&sc->interruptQ, (OSMesg *)&msg, OS_MESG_BLOCK);
-#ifdef PUPPYPRINT_DEBUG
-        profiler_snapshot(THREAD5_START);
-        if (sTimerChecks[3] == FALSE && gPlatform & CONSOLE) {
-            osSetTimer(&sSchedHangTimer, OS_USEC_TO_CYCLES(20000), (OSTime) 0, &gCrashScreen.mesgQueue, (OSMesg) MESG_TASK_FAILED);
-            sTimerChecks[3] = TRUE;
-        }
-#endif
+        debug_thread(THREAD5_START, 0);
         msg(sc);
-#ifdef PUPPYPRINT_DEBUG
-        sTimerChecks[3] = FALSE;
-        osStopTimer(&sSchedHangTimer);
-        profiler_snapshot(THREAD5_END);
-#endif
+        debug_thread(THREAD5_END, 0);
     }
 }
 
@@ -339,7 +312,7 @@ void osCreateScheduler(OSSched *sc, void *stack, OSPri priority, UNUSED u8 mode,
 
     osCreateThread(&sc->thread, 5, __scMain, (void *)sc, stack, priority);
     osStartThread(&sc->thread);
-#ifdef PUPPYPRINT_DEBUG
+#ifdef DEBUG
     sWroteRDP = 1;
 #endif
 }

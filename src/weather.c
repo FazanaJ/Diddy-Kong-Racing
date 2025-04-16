@@ -17,10 +17,8 @@
 /************ .data ************/
 
 SnowGfxData gWeatherPresets[3] = {
-    { 0, 0x40, { WEATHER_SNOW }, 0xFE000000, 0xFE000000, 0xFE000000, 0x03FFFFFF, 0x03FFFFFF, 0x03FFFFFF, 4, 4, 8, 8 },
+    { 0, 0x40, { WEATHER_SNOW }, 0xFE000000, 0xFE000000, 0xFE000000, 0x03FFFFFF, 0x03FFFFFF, 0x03FFFFFF, 6, 6, 12, 8 },
     { 0, 0x100, { WEATHER_RAIN }, 0xFE000000, 0xFE000000, 0xFE000000, 0x03FFFFFF, 0x03FFFFFF, 0x03FFFFFF, 4, 4, 8, 8 },
-    // Unused, game crashes with this.
-    { 0, 0x08, { WEATHER_UNK }, 0xFE000000, 0xFE000000, 0xFE000000, 0x03FFFFFF, 0x03FFFFFF, 0x03FFFFFF, 4, 4, 8, 8 },
 };
 
 SnowPosData *gSnowPhysics = NULL;
@@ -156,8 +154,8 @@ void weather_init(void) {
     gSnowPhysics = NULL;
     gSnowDensity = 0;
     gSnowVertOffset = 6;
-    gSnowVertOffset <<= 2;
-    gSnowTriCount = gSnowVertOffset >> 1; // One triangle per two verts
+    gSnowVertOffset *= 3;
+    gSnowTriCount = gSnowVertOffset / 3;
     gSnowVertexData[0] = 0;
     gSnowVertexData[1] = 0;
     gSnowTriangles = 0;
@@ -234,8 +232,8 @@ void weather_free(void) {
  * Afterwards, allocate and set the defaults for snow model data.
  */
 void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s32 intensity, s32 opacity) {
-    s16 width;
-    s16 height;
+    s32 width;
+    s32 height;
     s32 numOfElements;
     s32 allocSize;
     s32 i;
@@ -290,13 +288,10 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
         gSnowPhysics[i].x_position = get_random_number_from_range(0, gSnowGfx.radiusX);
         gSnowPhysics[i].y_position = get_random_number_from_range(0, gSnowGfx.radiusY);
         gSnowPhysics[i].z_position = get_random_number_from_range(0, gSnowGfx.radiusZ);
-        gSnowPhysics[i].unused_C = 1 << (get_random_number_from_range(0, 32) + 5);
-        gSnowPhysics[i].unused_D = 1 << (get_random_number_from_range(0, 32) + 5);
-        gSnowPhysics[i].unused_E = 1 << (get_random_number_from_range(0, 32) + 5);
         gSnowPhysics[i].index = get_random_number_from_range(0, gSnowGfx.size - 1);
     }
 
-    numOfElements = numOfElements * 4;
+    numOfElements = numOfElements * 3;
     allocSize = sizeof(Vertex);
     allocSize *= numOfElements;
     gSnowVertexData[0] = mempool_alloc_safe(allocSize, COLOUR_TAG_LIGHT_ORANGE);
@@ -314,27 +309,17 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
     width = (gSnowGfx.texture->width << 5) - 1;
     height = (gSnowGfx.texture->height << 5) - 1;
     gSnowTriangles = (Triangle *) mempool_alloc_safe(gSnowTriCount * (sizeof(Triangle)), COLOUR_TAG_LIGHT_ORANGE);
-    for (i = 0; i < gSnowTriCount; i += 2) {
-        gSnowTriangles[i].flags = 0;
-        gSnowTriangles[i].vi0 = (i << 1) + 3;
-        gSnowTriangles[i].uv0.u = 0;
-        gSnowTriangles[i].uv0.v = height;
-        gSnowTriangles[i].vi1 = (i << 1) + 1;
+    for (i = 0; i < gSnowTriCount; i++) {
+        gSnowTriangles[i].flags = BACKFACE_CULL;
+        gSnowTriangles[i].vi0 = (i * 3) + 2;
+        gSnowTriangles[i].uv0.u = width / 2;
+        gSnowTriangles[i].uv0.v = height * 1.5f;
+        gSnowTriangles[i].vi1 = (i * 3) + 1;
         gSnowTriangles[i].uv1.u = width;
         gSnowTriangles[i].uv1.v = 0;
-        gSnowTriangles[i].vi2 = (i << 1) + 0;
-        gSnowTriangles[i].uv2.u = 0;
+        gSnowTriangles[i].vi2 = (i * 3) + 0;
+        gSnowTriangles[i].uv2.u = -width / 4;
         gSnowTriangles[i].uv2.v = 0;
-        gSnowTriangles[i + 1].flags = 0;
-        gSnowTriangles[i + 1].vi0 = (i << 1) + 3;
-        gSnowTriangles[i + 1].uv0.u = 0;
-        gSnowTriangles[i + 1].uv0.v = height;
-        gSnowTriangles[i + 1].vi1 = (i << 1) + 2;
-        gSnowTriangles[i + 1].uv1.u = width;
-        gSnowTriangles[i + 1].uv1.v = height;
-        gSnowTriangles[i + 1].vi2 = (i << 1) + 1;
-        gSnowTriangles[i + 1].uv2.u = width;
-        gSnowTriangles[i + 1].uv2.v = 0;
     }
 
     gSnowVertexFlip = 0;
@@ -498,15 +483,12 @@ void snow_vertices(void) {
             verts[1].x = pos[0] + gSnowGfx.vertOffsetW;
             verts[1].y = pos[1] + gSnowGfx.vertOffsetH;
             verts[1].z = pos[2];
-            verts[2].x = pos[0] + gSnowGfx.vertOffsetW;
+            verts[2].x = pos[0];
             verts[2].y = pos[1] - gSnowGfx.vertOffsetH;
             verts[2].z = pos[2];
-            verts[3].x = pos[0] - gSnowGfx.vertOffsetW;
-            verts[3].y = pos[1] - gSnowGfx.vertOffsetH;
-            verts[3].z = pos[2];
-            verts += 4;
-            gSnowVertCount += 4;
-            gSnowTriIndices[gSnowVertCount >> 2] = i;
+            verts += 3;
+            gSnowVertCount += 3;
+            gSnowTriIndices[gSnowVertCount / 3] = i;
         }
     }
 }
@@ -520,12 +502,12 @@ void snow_render(void) {
     u32 vtx;
 
     if (gSnowGfx.texture != NULL) {
-        gSnowVertOffset = 4;
-        gSnowTriCount = 2;
-        if (gSnowVertCount >= 4) {
+        gSnowVertOffset = 3;
+        gSnowTriCount = 1;
+        if (gSnowVertCount >= 3) {
             i = 0;
             mtx = (u32) get_projection_matrix_s16();
-            gSPMatrix(gCurrWeatherDisplayList++, OS_PHYSICAL_TO_K0(mtx ^ 0), G_MTX_DKR_INDEX_0);
+            gSPMatrix(gCurrWeatherDisplayList++, OS_PHYSICAL_TO_K0(mtx), G_MTX_DKR_INDEX_0);
             gDkrInsertMatrix(gCurrWeatherDisplayList++, G_MTX_DKR_INDEX_0, 0);
             load_and_set_texture_no_offset(&gCurrWeatherDisplayList, gSnowGfx.texture, RENDER_Z_COMPARE);
             while (i + gSnowVertOffset < gSnowVertCount) {
@@ -536,7 +518,7 @@ void snow_render(void) {
             }
             vtx = (u32) &gSnowVerts[i];
             gSPVertexDKR(gCurrWeatherDisplayList++, OS_PHYSICAL_TO_K0(vtx), (gSnowVertCount - i), 0);
-            gSPPolygon(gCurrWeatherDisplayList++, OS_PHYSICAL_TO_K0(gSnowTriangles), ((s32) (gSnowVertCount - i) >> 1),
+            gSPPolygon(gCurrWeatherDisplayList++, OS_PHYSICAL_TO_K0(gSnowTriangles), ((s32) (gSnowVertCount - i) / 3),
                        1);
         }
     }
@@ -668,9 +650,9 @@ void lensflare_render(Gfx **dList, MatrixS **mats, Vertex **verts, ObjectSegment
                 trans.rotation.y_rotation = 0;
                 trans.rotation.x_rotation = 0;
                 trans.rotation.z_rotation = 0;
-                pos[1].x = (pos[1].x * (0, (2 * magnitude))) - gLensFlarePos.x;
-                pos[1].y = (pos[1].y * (0, (2 * magnitude))) - gLensFlarePos.y;
-                pos[1].z = (pos[1].z * (0, (2 * magnitude))) - gLensFlarePos.z;
+                pos[1].x = (pos[1].x * ((2 * magnitude))) - gLensFlarePos.x;
+                pos[1].y = (pos[1].y * ((2 * magnitude))) - gLensFlarePos.y;
+                pos[1].z = (pos[1].z * ((2 * magnitude))) - gLensFlarePos.z;
                 for (i = 0; i < 3; i++) {
                     if (i == 0) {
                         lensFlareData = gLensFlareLarge;
@@ -701,7 +683,7 @@ void lensflare_render(Gfx **dList, MatrixS **mats, Vertex **verts, ObjectSegment
                     }
                     if (i == 1) {
                         mag2 = (((pos[1].x * gLensFlarePos.x) + (pos[1].y * gLensFlarePos.y)) +
-                                (pos[1].z * ((0, gLensFlarePos.z)))) *
+                                (pos[1].z * ((gLensFlarePos.z)))) *
                                2;
                         pos[1].x = (mag2 * gLensFlarePos.x) - pos[1].x;
                         pos[1].y = (mag2 * gLensFlarePos.y) - pos[1].y;
@@ -1082,8 +1064,7 @@ void render_rain_overlay(RainGfxData *rainGfx, s32 time) {
     s32 i;
     f32 zSin;
     f32 zCos;
-    int unused;
-    int unused2;
+    UNUSED s32 pad[2];
     TextureHeader *tex;
     Gfx *curDL;
     Triangle *tri;

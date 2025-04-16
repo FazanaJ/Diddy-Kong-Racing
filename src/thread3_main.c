@@ -45,28 +45,10 @@
 #include "PRinternal/viint.h"
 #include "font.h"
 #include "stacks.h"
-
-/************ .rodata ************/
-
-#if VERSION >= VERSION_79
-UNUSED char *sDebugRomBuildInfo[] = { "1.1634", "17/10/97 11:19", "pmountain" };
-#elif VERSION == VERSION_77
-UNUSED char *sDebugRomBuildInfo[] = { "1.1605", "02/10/97 16:03", "pmountain" };
-#endif
-
-const char D_800E7134[] = "BBB\n"; // Functionally unused.
-
-/*********************************/
+#include "usb/usb.h"
+#include "autoplay.h"
 
 /************ .data ************/
-
-#if VERSION == VERSION_80
-UNUSED char gBuildString[] = "Version 8.0 27/10/97 12.30 L.Schuneman";
-#elif VERSION == VERSION_79
-UNUSED char gBuildString[] = "Version 7.9 14/10/97 19.40 L.Schuneman";
-#elif VERSION == VERSION_77
-UNUSED char gBuildString[] = "Version 7.7 29/09/97 15.00 L.Schuneman";
-#endif
 
 s8 sAntiPiracyTriggered = FALSE;
 UNUSED s32 D_800DD378 = 1;
@@ -80,18 +62,16 @@ s8 gPauseLockTimer = 0; // If this is above zero, the player cannot pause the ga
 s8 gFutureFunLandLevelTarget = FALSE;
 s8 gDmemInvalid = FALSE;
 UNUSED s32 D_800DD3A4[] = { 0, 0, 0 };
-s32 gNumF3dCmdsPerPlayer[MAXCONTROLLERS] = { 4500, 7000, 11000, 11000 };
-s32 gNumHudVertsPerPlayer[MAXCONTROLLERS] = { 300, 600, 850, 900 };
-s32 gNumHudMatPerPlayer[MAXCONTROLLERS] = { 300, 400, 550, 600 };
-s32 gNumHudTrisPerPlayer[MAXCONTROLLERS] = { 20, 30, 40, 50 };
+s32 gNumF3dCmdsPerPlayer[MAXCONTROLLERS] = {3000 + GFX_ADD, 4000 + GFX_ADD, 5000 + GFX_ADD, 5000 + GFX_ADD};
+s32 gNumHudVertsPerPlayer[MAXCONTROLLERS] = {200, 300, 400, 500};
+s32 gNumHudMatPerPlayer[MAXCONTROLLERS] = {200, 300, 400, 500};
+s32 gNumHudTrisPerPlayer[MAXCONTROLLERS] = {20, 30, 40, 50};
 s8 gDrawFrameTimer = 0;
 FadeTransition D_800DD3F4 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_BLACK, 20, 0);
-UNUSED FadeTransition D_800DD3FC = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_WHITE, 20, FADE_STAY);
 s32 sLogicUpdateRate = LOGIC_5FPS;
 f32 sLogicUpdateRateF = LOGIC_5FPS;
 FadeTransition gDrumstickSceneTransition =
     FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_WHITE, 30, FADE_STAY);
-UNUSED char *D_800DD410[3] = { "CAR", "HOV", "PLN" };
 FadeTransition gLevelFadeOutTransition =
     FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_BLACK, 30, FADE_STAY);
 FadeTransition D_800DD424 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_BLACK, 260, FADE_STAY);
@@ -102,14 +82,12 @@ FadeTransition D_800DD424 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FAD
 
 Gfx *gDisplayLists[2];
 Gfx *gCurrDisplayList;
-UNUSED s32 D_801211FC;
 MatrixS *gMatrixHeap[2];
 MatrixS *gGameCurrMatrix;
 Vertex *gVertexHeap[2];
 Vertex *gGameCurrVertexList;
 Triangle *gTriangleHeap[2];
 Triangle *gGameCurrTriList;
-UNUSED s32 D_80121230[8];
 s8 gLevelSettings[16];
 OSSched gMainSched; // 0x288 / 648 bytes
 u64 gSchedStack[STACKSIZE(STACK_SCHED)];
@@ -133,7 +111,6 @@ Vehicle gMenuVehicleID; // Looks to be the current level's vehicle ID.
 s32 sBootDelayTimer;
 s8 gLevelLoadType;
 s8 gNextMap;
-UNUSED s8 D_80123526; // Set to 0 then never used.
 s32 gCurrNumF3dCmdsPerPlayer;
 s32 gCurrNumHudMatPerPlayer;
 s32 gCurrNumHudTrisPerPlayer;
@@ -142,7 +119,6 @@ OSScClient *gNMISched[3];
 OSMesg gGameMesgBuf[3];
 OSMesgQueue gGameMesgQueue;
 s32 gNMIMesgBuf;          // Official Name: resetPressed
-UNUSED s32 D_80123568[3]; // BSS Padding
 s32 gNumGfxTasksAtScheduler = 0;
 u8 gShowBG;
 
@@ -197,6 +173,7 @@ void init_game(void) {
 
     stubbed_printf(sDebugRomBuildInfo);
     mempool_init_main();
+    //init_usb_thread();
     gzip_init();
 #ifdef ANTI_TAMPER
     sAntiPiracyTriggered = TRUE;
@@ -270,6 +247,7 @@ void main_game_loop(void) {
     s32 framebufferSize;
     s32 tempLogicUpdateRate, tempLogicUpdateRateMax;
     const f32 divisor = 1.0f;
+    debug_thread(THREAD3_START, 0);
 
     if (gVideoSkipNextRate) {
         sLogicUpdateRate = LOGIC_60FPS;
@@ -291,20 +269,22 @@ void main_game_loop(void) {
             sTotalTime -= 16666;
             sLogicUpdateRate++;
         }
-#ifdef AUTOPLAY
-        if (get_current_map_id() == ASSET_LEVEL_CENTRALAREAHUB) {
-            sLogicUpdateRate = 2;
-        } else {
-            sLogicUpdateRate = 2;
-        }
-        if (get_current_map_id() == ASSET_LEVEL_PARTYSEQUENCE ||
-            get_current_map_id() == ASSET_LEVEL_LASTBIT ||
-            get_current_map_id() == ASSET_LEVEL_LASTBITB || gCurrentMenuId == MENU_CREDITS) {
-            sched_framecap(1);
-            gConfig.frameCap = 1;
-        } else {
-            sched_framecap(0);
-            gConfig.frameCap = 0;
+#ifdef DEBUG
+        if (gAutoplayTest != AUTOPLAY_OFF) {
+            if (get_current_map_id() == ASSET_LEVEL_CENTRALAREAHUB) {
+                sLogicUpdateRate = 2;
+            } else if (get_current_map_id() == ASSET_LEVEL_SNOWFLAKEMOUNTAINHUB) {
+                sLogicUpdateRate = 3;
+            } else {
+                sLogicUpdateRate = 5;
+            }
+            if (get_current_map_id() == ASSET_LEVEL_PARTYSEQUENCE ||
+                get_current_map_id() == ASSET_LEVEL_LASTBIT ||
+                get_current_map_id() == ASSET_LEVEL_LASTBITB || gCurrentMenuId == MENU_CREDITS) {
+                sched_framecap(1);
+            } else {
+                sched_framecap(0);
+            }
         }
 #endif
         if (sLogicUpdateRate >= LOGIC_12FPS) {
@@ -327,21 +307,6 @@ void main_game_loop(void) {
     rdp_init(&gCurrDisplayList);
     bgdraw_render(&gCurrDisplayList, &gGameCurrMatrix, gShowBG);
     gSaveDataFlags = input_update(gSaveDataFlags, sLogicUpdateRate);
-    if (get_lockup_status()) {
-        render_epc_lock_up_display();
-        gGameMode = GAMEMODE_LOCKUP;
-    }
-    if (gDmemInvalid) {
-        debugLoopCounter = 0;
-        while (debugLoopCounter != 10000000) {
-            debugLoopCounter++;
-        }
-        if (debugLoopCounter > 20000000) { // This shouldn't ever be true?
-            render_printf(D_800E7134 /* "BBB\n" */);
-        }
-    }
-
-    calculate_and_update_fps();
 
     switch (gGameMode) {
         case GAMEMODE_INTRO: // Pre-boot screen
@@ -353,14 +318,12 @@ void main_game_loop(void) {
         case GAMEMODE_INGAME: // In game (Controlling a character)
             mode_game(sLogicUpdateRate);
             break;
-        case GAMEMODE_LOCKUP: // EPC (lockup display)
-            mode_lockup(sLogicUpdateRate);
-            break;
     }
 
     // This is a good spot to place custom text if you want it to overlay it over ALL the
     // menus & gameplay.
 
+    //tick_usb_thread();
     sound_update_queue(sLogicUpdateRate);
     debug_text_print(&gCurrDisplayList);
     render_dialogue_boxes(&gCurrDisplayList, &gGameCurrMatrix, &gGameCurrVertexList);
@@ -374,10 +337,15 @@ void main_game_loop(void) {
         menu_missing_controller(&gCurrDisplayList, sLogicUpdateRate);
     }
 
+    debug_thread(THREAD3_END, 0);
+    debug_render(&gCurrDisplayList, sLogicUpdateRate);
+
     gDPFullSync(gCurrDisplayList++);
     gSPEndDisplayList(gCurrDisplayList++);
+    debug_thread(THREAD3_START, 0);
 
     copy_viewports_to_stack();
+    debug_thread(THREAD3_END, 0);
     if (gDrawFrameTimer != 1) {
         if (gSkipGfxTask == FALSE) {
             gfxtask_wait();
@@ -385,6 +353,7 @@ void main_game_loop(void) {
     } else {
         gDrawFrameTimer = 0;
     }
+    debug_thread(THREAD3_START, 0);
     gSkipGfxTask = FALSE;
     mempool_free_queue_clear();
     if (!gIsPaused) {
@@ -397,10 +366,17 @@ void main_game_loop(void) {
         }
         dmacopy_doubleword(gVideoLastFramebuffer, gVideoCurrFramebuffer, (s32) gVideoCurrFramebuffer + framebufferSize);
     }
+    debug_thread(THREAD3_END, 0);
+    calculate_and_update_fps();
+    debug_update(sLogicUpdateRate);
     fb_update(sLogicUpdateRate);
 
     if (gDrawFrameTimer == 0) {
+#ifndef FIFO_4MB
         if (gExpansionPak) {
+#else
+        if (1) {
+#endif
             if (gPlatform & (CONSOLE | ARES | SIMPLE64)) {
                 gfxtask_run_fifo(gDisplayLists[gSPTaskNum], gCurrDisplayList);
             } else {
@@ -871,14 +847,6 @@ GameMode get_game_mode(void) {
 }
 
 /**
- *  Sets the current game mode.
- *  Official Name: mainSetMode?
- */
-UNUSED void set_game_mode(s32 changeTo) {
-    gGameMode = changeTo;
-}
-
-/**
  * Sets up and loads a level to be used in the background of the menu that's about to be set up.
  * Used for every kind of menu that's not ingame.
  */
@@ -1266,14 +1234,6 @@ void clear_game_progress(Settings *settings) {
 }
 
 /**
- * Call functions to set all game save data to the default.
- */
-UNUSED void reset_save_data(void) {
-    clear_lap_records(gSettingsPtr, 3);
-    clear_game_progress(gSettingsPtr);
-}
-
-/**
  * Return the global game settings.
  * This is where global game records and perferences are stored.
  */
@@ -1308,20 +1268,6 @@ s32 is_reset_pressed(void) {
  */
 s32 get_ingame_map_id(void) {
     return gPlayableMapId;
-}
-
-/**
- * Marks a flag to read flap times from the eeprom
- */
-UNUSED void mark_to_read_flap_times(void) {
-    gSaveDataFlags |= SAVE_DATA_FLAG_READ_FLAP_TIMES;
-}
-
-/**
- * Marks a flag to read course times from the eeprom
- */
-UNUSED void mark_to_read_course_times(void) {
-    gSaveDataFlags |= SAVE_DATA_FLAG_READ_COURSE_TIMES;
 }
 
 /**
@@ -1381,13 +1327,14 @@ void force_mark_write_save_file(s32 saveFileIndex) {
 
 /**
  * Marks a flag to write a save file to flash as long as we're not in tracks mode, and we're in the draw game render
- * context. This should prevent save data from being overwritten outside of Adventure Mode. Official Name: mainSaveGame2
+ * context. This should prevent save data from being overwritten outside of Adventure Mode.
+ * Official Name: mainSaveGame2
  */
 void safe_mark_write_save_file(s32 saveFileIndex) {
     if (gGameMode == GAMEMODE_INGAME && !is_in_tracks_mode()) {
         gSaveDataFlags &= ~SAVE_DATA_FLAG_WRITE_SAVE_FILE_NUMBER_BITS; // Wipe out bits 10 and 11
-        gSaveDataFlags |= (SAVE_DATA_FLAG_WRITE_SAVE_DATA | ((saveFileIndex & 3) << 10));
-        ; // Set bit 6 and place saveFileIndex into bits 10 and 11
+        gSaveDataFlags |= (SAVE_DATA_FLAG_WRITE_SAVE_DATA |
+                           ((saveFileIndex & 3) << 10)); // Set bit 6 and place saveFileIndex into bits 10 and 11
     }
 }
 
@@ -1397,15 +1344,6 @@ void safe_mark_write_save_file(s32 saveFileIndex) {
 void mark_save_file_to_erase(s32 saveFileIndex) {
     // Set bit 7 and and place saveFileIndex into bits 10 and 11 while wiping everything else
     gSaveDataFlags = SAVE_DATA_FLAG_ERASE_SAVE_DATA | ((saveFileIndex & 3) << 10);
-}
-
-/**
- * Marks a flag to read eeprom settings from flash later
- * @bug: Because this is the same bit used for reading save files,
- *       it will change the save file number to read from
- */
-UNUSED void mark_read_eeprom_settings(void) {
-    gSaveDataFlags |= SAVE_DATA_FLAG_READ_EEPROM_SETTINGS; // Set bit 8
 }
 
 /**
@@ -1512,7 +1450,6 @@ void level_transition_begin(s32 type) {
     if (gLevelLoadTimer == 0) {
         gLevelLoadTimer = 40;
         gLevelLoadType = LEVEL_LOAD_NORMAL;
-        D_80123526 = 0;
         if (type == 1) { // FADE_BARNDOOR_HORIZONTAL?
             transition_begin(&gLevelFadeOutTransition);
         }
@@ -1527,14 +1464,6 @@ void level_transition_begin(s32 type) {
         if (type == 0) { // FADE_FULLSCREEN?
             gLevelLoadTimer = 2;
         }
-    }
-}
-
-UNUSED void func_8006F20C(void) {
-    if (gLevelLoadTimer == 0) {
-        transition_begin(&gLevelFadeOutTransition);
-        gLevelLoadTimer = 40;
-        gLevelLoadType = LEVEL_LOAD_UNK1;
     }
 }
 

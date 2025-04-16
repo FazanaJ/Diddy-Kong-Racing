@@ -28,6 +28,8 @@
 #define CINEMATIC_PLAYERS   1
 #define CINEMATIC_CUTSCENE  2
 
+#define MAX_INITIALS_LENGTH 3
+
 enum PauseMenuResults {
     PAUSE_NONE,
     PAUSE_CONTINUE,
@@ -576,7 +578,7 @@ void menu_image_load(s32 imageID);
 void menu_imagegroup_free(void);
 void dialogue_npc_finish(s32 npcID);
 void dialogue_try_close(void);
-s32 npc_dialogue_loop(u32 dialogueOption);
+s32 npc_dialogue_loop(u32 dialogueOption, s32 updateRate);
 void set_option_text_colour(s32 condition);
 void render_dialogue_option(char *text, s32 yOffset, s32 optionID);
 void handle_menu_joystick_input(void);
@@ -674,7 +676,7 @@ void func_8008FF1C(s32 updateRate);
 void trackmenu_input(s32 updateRate);
 void filename_trim(char *input, char *output);
 void menu_ghost_data_init(void);
-void update_controller_sticks(void);
+void update_controller_sticks(s32 updateRate);
 s32 tt_menu_loop(void);
 void menu_track_select_init(void);
 void dialogue_tt_gamestatus(void);

@@ -7,12 +7,11 @@
 /************ .data ************/
 
 Gfx dDialogueBoxBegin[] = {
+    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
     gsDPPipeSync(),
     gsDPSetTextureLOD(G_TL_TILE),
     gsDPSetTextureLUT(G_TT_NONE),
     gsDPSetAlphaCompare(G_AC_NONE),
-    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
-    gsDPPipeSync(),
     gsSPEndDisplayList(),
 };
 
@@ -113,9 +112,9 @@ typedef struct Unk8012C2D4_JP {
     Gfx *dList;
 } Unk8012C2D4_JP;
 
-FontData_JP *D_8012C2A4_EE5E4;
-FontJpSpacing *D_8012C2A8_EE5E8[4]; // 4 tables for spacing in different fonts?
-s32 D_8012C2B8_EE5F8;
+FontData_JP *D_8012C2A4_EE5E4;                       // Official Name: dxTable
+FontJpSpacing *D_8012C2A8_EE5E8[NUMBER_OF_JP_FONTS]; // 4 tables for spacing in different fonts?
+s32 fontInUse;                                       // Official Name: fontInUse
 Unk8012C2D4_JP (*D_8012C2BC_EE5FC)[128];
 JpCharHeader (*D_8012C2C0_EE600)[18];
 Gfx *D_8012C2C4_EE604;
@@ -255,40 +254,11 @@ void unload_font(s32 fontID) {
  */
 void set_text_font(s32 fontID) {
 #if REGION == REGION_JP
-    gDialogueBoxBackground[0].font = D_8012C2B8_EE5F8 = fontID;
+    gDialogueBoxBackground[0].font = fontInUse = fontID;
 #else
     if (fontID < gNumberOfFonts) {
         gDialogueBoxBackground[0].font = fontID;
     }
-#endif
-}
-
-/**
- * Returns the address of the loaded font ID if it exists.
- * Goes unused.
- */
-UNUSED TextureHeader *get_loaded_font(s32 font, u8 index) {
-#if REGION == REGION_JP
-    return NULL;
-#else
-    FontData *fontData;
-    u8 pointerIndex;
-
-    if (font < gNumberOfFonts) {
-        fontData = &gFonts[font];
-        if (fontData->loadedFonts[0] != 0) {
-            index -= 32;
-            pointerIndex = fontData->letter[index].textureID;
-            if (pointerIndex != 0xFF) {
-                return fontData->texturePointers[pointerIndex];
-            }
-            return NULL;
-        }
-    }
-    //!@bug: No return statement. The function will return whatever happens to be in v0 before this function was called.
-#ifdef AVOID_UB
-    return NULL;
-#endif
 #endif
 }
 
@@ -316,13 +286,6 @@ void set_text_background_colour(s32 red, s32 green, s32 blue, s32 alpha) {
 }
 
 /**
- * Unused text draw function that just calls the function without any modifications.
- */
-UNUSED void draw_text_plain_unused(Gfx **displayList, char *text, AlignmentFlags alignmentFlags) {
-    render_text_string(displayList, &gDialogueBoxBackground[0], text, alignmentFlags, 1.0f);
-}
-
-/**
  * Builds the background settings, then renders the given text at a given position.
  * Official Name: fontPrintWindowXY?
  */
@@ -331,30 +294,6 @@ void draw_text(Gfx **displayList, s32 xpos, s32 ypos, char *text, AlignmentFlags
     temp->xpos = (xpos == POS_CENTRED) ? temp->width >> 1 : xpos;
     temp->ypos = (ypos == POS_CENTRED) ? temp->height >> 1 : ypos;
     render_text_string(displayList, temp, text, alignmentFlags, 1.0f);
-}
-
-/**
- * Unused text draw function that would draw text in the current dialogue box.
- */
-UNUSED void draw_dialogue_text_unused(Gfx **displayList, s32 dialogueBoxID, char *text, AlignmentFlags alignmentFlags) {
-    if (dialogueBoxID >= 0 && dialogueBoxID < DIALOGUEBOXBACKGROUND_COUNT) {
-        DialogueBoxBackground *temp = &gDialogueBoxBackground[dialogueBoxID];
-        render_text_string(displayList, temp, text, alignmentFlags, 1.0f);
-    }
-}
-
-/**
- * Unused text draw function that would draw text in the current dialogue box while overriding position.
- * Official Name: fontPrintWindowXY
- */
-UNUSED void draw_dialogue_text_pos_unused(Gfx **displayList, s32 dialogueBoxID, s32 xpos, s32 ypos, char *text,
-                                          AlignmentFlags alignmentFlags) {
-    if (dialogueBoxID >= 0 && dialogueBoxID < DIALOGUEBOXBACKGROUND_COUNT) {
-        DialogueBoxBackground *temp = &gDialogueBoxBackground[dialogueBoxID];
-        temp->xpos = (xpos == POS_CENTRED) ? temp->width >> 1 : xpos;
-        temp->ypos = (ypos == POS_CENTRED) ? temp->height >> 1 : ypos;
-        render_text_string(displayList, temp, text, alignmentFlags, 1.0f);
-    }
 }
 
 /**
@@ -550,13 +489,13 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
         return;
     }
 
-    func_800C7864_C8464(text, otherText);
-    prevFont = D_8012C2B8_EE5F8;
-    D_8012C2B8_EE5F8 = box->font;
+    fontConvertString(text, otherText);
+    prevFont = fontInUse;
+    fontInUse = box->font;
     xpos = box->xpos;
     ypos = box->ypos;
 
-    fontData = (FontData_JP *) &D_8012C2A4_EE5E4[D_8012C2B8_EE5F8];
+    fontData = (FontData_JP *) &D_8012C2A4_EE5E4[fontInUse];
     gSPDisplayList((*dList)++, dDialogueBoxBegin);
     if (box != gDialogueBoxBackground) {
         scisOffset = (((box->y2 - box->y1) + 1) / (f32) 2) * scisScale;
@@ -642,7 +581,7 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
             uly = box->y1 + ypos;
             lrx = ulx + fontData->x;
             lry = uly + fontData->y;
-            charSpace = D_8012C2A8_EE5E8[D_8012C2B8_EE5F8]->spacing[jpCharValue];
+            charSpace = D_8012C2A8_EE5E8[fontInUse]->spacing[jpCharValue];
             if ((lrx > 0) && (lry > 0) && (ulx < box->x2) && (uly < box->y2)) {
                 someIndexForJpChar =
                     func_800C7744_C8344(dList, jpCharValue, &textureS, &textureT, &textureS2, &textureT2);
@@ -698,7 +637,7 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
     }
     box->xpos = xpos - box->textOffsetX;
     box->ypos = ypos - box->textOffsetY;
-    D_8012C2B8_EE5F8 = prevFont; // Put previous font index back.
+    fontInUse = prevFont; // Put previous font index back.
     if (box != gDialogueBoxBackground) {
         viewport_scissor(dList);
     }
@@ -874,43 +813,6 @@ void set_current_text_background_colour(s32 dialogueBoxID, s32 red, s32 green, s
 }
 
 /**
- * Sets the positional text offset of the current dialogue box.
- * Goes unused.
- */
-UNUSED void set_current_text_offset(s32 dialogueBoxID, s32 x, s32 y) {
-    DialogueBoxBackground *dialogueBox;
-    if (dialogueBoxID <= 0 || dialogueBoxID >= DIALOGUEBOXBACKGROUND_COUNT) {
-        return;
-    }
-    dialogueBox = &gDialogueBoxBackground[dialogueBoxID];
-    dialogueBox->textOffsetX += x;
-    dialogueBox->textOffsetY += y;
-}
-
-/**
- * Resets the positional text offset of the current dialogue box.
- * Goes unused.
- */
-UNUSED void reset_current_text_offset(s32 dialogueBoxID) {
-    DialogueBoxBackground *dialogueBox;
-    if (dialogueBoxID <= 0 || dialogueBoxID >= DIALOGUEBOXBACKGROUND_COUNT) {
-        return;
-    }
-    dialogueBox = &gDialogueBoxBackground[dialogueBoxID];
-    dialogueBox->textOffsetX = 0;
-    dialogueBox->textOffsetY = 0;
-}
-
-/**
- * Calls the basic dialogue text draw function passing through the global dialogue box ID.
- * Goes unused.
- */
-UNUSED void func_800C510C(s32 dialogueBoxID, char *text, s32 number, s32 flags) {
-    render_dialogue_text(dialogueBoxID, gDialogueBoxBackground[dialogueBoxID].xpos,
-                         gDialogueBoxBackground[dialogueBoxID].ypos, text, number, flags);
-}
-
-/**
  * Draws the text portion of a dialogue box that's passed through.
  * Binds the text to the box, then returns it.
  * Official Name: fontWindowAddStringXY
@@ -998,27 +900,6 @@ void *render_dialogue_text(s32 dialogueBoxID, s32 posX, s32 posY, char *text, s3
 }
 
 /**
- * Unused function that moved a dialogue box ID to the front of the stack.
- */
-UNUSED void move_dialogue_box_to_front(s32 dialogueBoxID, DialogueBox *dialogueBox) {
-    DialogueBoxBackground *dialogueBoxTemp;
-    DialogueBox *dialogueTextBox;
-    DialogueBox **dialogueTextBoxTemp;
-
-    dialogueBoxTemp = &gDialogueBoxBackground[dialogueBoxID];
-    dialogueTextBoxTemp = &dialogueBoxTemp->textBox;
-    dialogueTextBox = dialogueBoxTemp->textBox;
-    while ((dialogueTextBox != NULL) && (dialogueTextBox != dialogueBox)) {
-        dialogueTextBoxTemp = &dialogueTextBox->nextBox;
-        dialogueTextBox = dialogueTextBox->nextBox;
-    }
-    if (dialogueTextBox != NULL) {
-        *dialogueTextBoxTemp = dialogueTextBox->nextBox;
-        dialogueBox->textNum = DIALOGUE_NUM_NULL;
-    }
-}
-
-/**
  * Clear all strings from this dialogue box ID.
  * Official Name: fontWindowFlushStrings
  */
@@ -1039,39 +920,6 @@ void dialogue_clear(s32 dialogueBoxID) {
 }
 
 /**
- * Unused function that set the offset of the text in the current dialogue box based on alignment flags.
- * Goes unused, as does the whole text offset system.
- */
-UNUSED void align_text_in_box(s32 dialogueBoxID, DialogueTextElement *box, s32 x, s32 y, s32 flags) {
-    FontData *fontData;
-    DialogueBoxBackground *dialogueBox;
-
-    dialogueBox = &gDialogueBoxBackground[dialogueBoxID];
-
-    if (box != NULL) {
-        if (box->font != FONT_UNK_FF) {
-            fontData = &gFonts[box->font];
-            if (flags != ALIGN_TOP_CENTER) {
-                switch (flags) {
-                    case ALIGN_TOP_RIGHT:
-                        y *= fontData->y;
-                        break;
-                    case ALIGN_BOTTOM_LEFT:
-                        y *= (dialogueBox->height / fontData->y) * fontData->y;
-                        break;
-                }
-                box->offsetX += x;
-                box->offsetY += y;
-                return;
-            }
-            box->offsetX = 0;
-            box->offsetY = 0;
-            return;
-        }
-    }
-}
-
-/**
  * Mark the selected dialogue box as open
  */
 void open_dialogue_box(s32 dialogueBoxID) {
@@ -1084,27 +932,6 @@ void open_dialogue_box(s32 dialogueBoxID) {
  */
 void dialogue_close(s32 dialogueBoxID) {
     gDialogueBoxBackground[dialogueBoxID].flags &= DIALOGUE_BOX_CLOSED;
-}
-
-/**
- * Mark the selected dialogue box as an unknown value
- */
-UNUSED void set_dialogue_box_unused_flag(s32 dialogueBoxID) {
-    gDialogueBoxBackground[dialogueBoxID].flags |= DIALOGUE_BOX_UNUSED_01;
-}
-
-/**
- * Clear DIALOGUE_BOX_UNUSED_01 from the dialogue box.
- */
-UNUSED void dialogue_box_clear_unused_flag(s32 dialogueBoxID) {
-    gDialogueBoxBackground[dialogueBoxID].flags &= (0xFFFF & ~DIALOGUE_BOX_UNUSED_01);
-}
-
-/**
- * Mark the selected dialogue box as using triangles to draw.
- */
-UNUSED void enable_dialogue_box_vertices(s32 dialogueBoxID) {
-    gDialogueBoxBackground[dialogueBoxID].flags |= DIALOGUE_BOX_VERTS;
 }
 
 /**
@@ -1306,8 +1133,7 @@ void parse_string_with_number(char *input, char *output, s32 number) {
 void parse_string_with_number(char *input, char *output, s32 number) {
     char currentChar;
 
-    currentChar = *input++;
-    while (currentChar) {
+    while ((currentChar = *input++)) {
         if (currentChar & 0x80) {
             char nextChar = *input++;
             if (nextChar == 0xE) {
@@ -1321,8 +1147,6 @@ void parse_string_with_number(char *input, char *output, s32 number) {
         } else {
             *output++ = currentChar;
         }
-        currentChar = *input;
-        input++;
     }
     *output = '\0'; // null terminator
 }
@@ -1366,7 +1190,7 @@ void func_800C6464_C7064(void) {
     }
 
     mempool_free(jpFontData);
-    D_8012C2B8_EE5F8 = 0;
+    fontInUse = 0;
 }
 
 void func_800C663C_C723C(void) {
@@ -1428,8 +1252,8 @@ s32 func_800C68CC_C74CC(u16 arg0) {
     u16 glyphIndex;
     Unk8012C2D4_JP *asset;
 
-    glyphIndex = ((D_8012C2B8_EE5F8 << 12) | (arg0 & 0xFFF));
-    var_a3 = (D_8012C2A4_EE5E4[D_8012C2B8_EE5F8].bytesPerCharacter + 0x11F) / 0x120;
+    glyphIndex = ((fontInUse << 12) | (arg0 & 0xFFF));
+    var_a3 = (D_8012C2A4_EE5E4[fontInUse].bytesPerCharacter + 0x11F) / 0x120;
     D_8012C2BC_EE5FC = D_8012C2C8_EE608;
     D_8012C2C0_EE600 = D_8012C2CC_EE60C;
     curIndex = -1;
@@ -1477,18 +1301,21 @@ s32 func_800C68CC_C74CC(u16 arg0) {
             }
             asset = &D_8012C2C0_EE600[curIndex];
             load_asset_to_address(ASSET_BINARY_46, (u32) asset,
-                                  D_8012C2A4_EE5E4[D_8012C2B8_EE5F8].offsetToData +
-                                      (D_8012C2A4_EE5E4[D_8012C2B8_EE5F8].bytesPerCharacter * arg0),
-                                  D_8012C2A4_EE5E4[D_8012C2B8_EE5F8].bytesPerCharacter);
-            func_800C6DD4_C79D4((*D_8012C2BC_EE5FC)[curIndex].dList, asset, D_8012C2A4_EE5E4[D_8012C2B8_EE5F8].x,
-                                D_8012C2A4_EE5E4[D_8012C2B8_EE5F8].y);
+                                  D_8012C2A4_EE5E4[fontInUse].offsetToData +
+                                      (D_8012C2A4_EE5E4[fontInUse].bytesPerCharacter * arg0),
+                                  D_8012C2A4_EE5E4[fontInUse].bytesPerCharacter);
+            fontCreateDisplayList((*D_8012C2BC_EE5FC)[curIndex].dList, asset, D_8012C2A4_EE5E4[fontInUse].x,
+                                  D_8012C2A4_EE5E4[fontInUse].y);
         }
 
         return curIndex;
     }
 }
 
-void func_800C6DD4_C79D4(Gfx *dList, Asset46 *asset, s32 width, s32 height) {
+/**
+ * Official Name: fontCreateDisplayList
+ */
+void fontCreateDisplayList(Gfx *dList, Asset46 *asset, s32 width, s32 height) {
     if (asset->unk0 != -1) {
         asset->unk0 = (s32) asset + asset->unk0;
     } else {
@@ -1616,7 +1443,7 @@ void func_800C7804_C8404(s32 arg0) {
     }
 }
 
-u8 D_800E5234_E5E34[] = {
+u8 gFontConversionTable[] = {
     0x0F, 0x34, 0x0A, 0x36, 0x02, 0x06, 0x0D, 0x37, 0x03, 0x04, 0x38, 0x39, 0x3A, 0x3B, 0x3C, 0x3D,
     0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x3E, 0x05, 0x0B, 0x3F, 0x0C, 0x40,
     0x41, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
@@ -1625,11 +1452,13 @@ u8 D_800E5234_E5E34[] = {
     0xA4, 0xA5, 0xA6, 0xA7, 0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAE, 0x03, 0x0F, 0x04, 0x0E, 0x0F,
 };
 
-void func_800C7864_C8464(char *inString, char *outString) {
+/**
+ * Official Name: fontConvertString
+ */
+void fontConvertString(char *inString, char *outString) {
     char currentChar;
 
-    currentChar = *inString++;
-    while (currentChar) {
+    while ((currentChar = *inString++)) {
         if (currentChar & 0x80) {
             *outString++ = currentChar;
             *outString++ = *inString++;
@@ -1637,10 +1466,8 @@ void func_800C7864_C8464(char *inString, char *outString) {
             *outString++ = currentChar;
         } else {
             *outString++ = 0x80;
-            *outString++ = D_800E5234_E5E34[currentChar - 32];
+            *outString++ = gFontConversionTable[currentChar - 32];
         }
-        currentChar = *inString;
-        inString++;
     }
     *outString = '\0';
 }

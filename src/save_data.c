@@ -33,7 +33,6 @@ s32 gRumbleEnable = TRUE;
 /************ .bss ************/
 
 OSMesgQueue *sControllerMesgQueue;
-UNUSED s32 D_80124014;
 
 OSPfs pfs[MAXCONTROLLERS];
 
@@ -93,18 +92,6 @@ void rumble_init(u8 canRumble) {
         return;
     }
     rumble_kill();
-}
-
-/**
- * Check if the controller has a rumble pak inserted.
- */
-UNUSED s32 rumble_exists(s16 controllerIndex) {
-    s32 cont;
-    if (controllerIndex < 0 || controllerIndex >= 4) {
-        return FALSE;
-    }
-    cont = ((1 << input_get_id(controllerIndex)) & 0xFF);
-    return gRumblePresent & cont;
 }
 
 /**
@@ -176,21 +163,6 @@ void rumble_start(s16 controllerIndex, s16 strength, s16 timer) {
         gRumble[index].lingeringStrength = ((strength * strength) * 0.1);
         gRumble[index].initialStrength = ((strength * strength) * 0.1);
         gRumble[index].timer = timer;
-    }
-}
-
-/**
- * Stop ongoing rumble for the given controller.
- */
-UNUSED void rumble_stop(s16 controllerIndex) {
-    s16 index;
-
-    if (controllerIndex >= 0 && controllerIndex < 4) {
-        index = input_get_id(controllerIndex);
-        gRumbleActive |= 1 << index;
-        gRumble[index].timer = -1;
-        gRumble[index].rumbleType = -1;
-        gRumble[index].spinTime = 0;
     }
 }
 
@@ -1610,7 +1582,7 @@ void init_controller_paks(void) {
     osPfsIsPlug(sControllerMesgQueue, &pakPattern);
 
     for (controllerIndex = 0, controllerBit = 1, maxControllers = MAXCONTROLLERS;
-         (0, controllerIndex) != maxControllers; controllerIndex++, controllerBit <<= 1) {
+         (controllerIndex) != maxControllers; controllerIndex++, controllerBit <<= 1) {
         gRumble[controllerIndex].initialStrength = 0;
         gRumble[controllerIndex].timer = -1;
         gRumble[controllerIndex].rumbleType = -1;

@@ -8,6 +8,7 @@
 #include "PR/abi.h"
 #include "common.h"
 #include "stacks.h"
+#include "main.h"
 
 /****  type define's for structures unique to audiomgr ****/
 typedef union {
@@ -98,10 +99,6 @@ static ALDMAproc __amDmaNew(AMDMAState **state);
 static u32 __amHandleFrameMsg(AudioInfo *info, AudioInfo *lastInfo);
 static void __amHandleDoneMsg(AudioInfo *info);
 static void __clearAudioDMA(void);
-
-/**** Debug strings ****/
-const char D_800E49F0[] =
-    "audio manager: RCP audio interface bug caused DMA from bad address - move audiomgr.c in the makelist!\n";
 
 /******************************************************************************
  * Audio Manager API
@@ -241,10 +238,14 @@ static void __amMain(UNUSED void *arg) {
         switch (msg->gen.type) {
             case OS_SC_RETRACE_MSG:
                 // TODO: Check type of ACMDList?
+                debug_thread(THREAD4_START, 0);
                 __amHandleFrameMsg((AudioInfo *) __am.ACMDList[(((u32) audFrameCt % 3)) + 2], lastInfo);
+                debug_thread(THREAD4_END, 0);
                 /* wait for done message */
                 osRecvMesg(&__am.audioReplyMsgQ, (OSMesg *) &lastInfo, OS_MESG_BLOCK);
+                debug_thread(THREAD4_START, 0);
                 __amHandleDoneMsg(lastInfo);
+                debug_thread(THREAD4_END, 0);
                 break;
             case OS_SC_PRE_NMI_MSG:
                 /* what should we really do here? quit? ramp down volume? */

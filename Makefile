@@ -194,7 +194,7 @@ CFLAGS += $(C_DEFINES)
 CFLAGS += $(INCLUDE_CFLAGS)
 
 CHECK_WARNINGS := -Wall -Wextra -Werror-implicit-function-declaration -Wno-format-security -Wno-unknown-pragmas -Wno-unused-parameter -Wno-missing-braces \
-                  -Wno-main -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -Wno-switch -Wno-pointer-sign
+                  -Wno-main -Wno-pointer-to-int-cast -Wno-int-to-pointer-cast -Wno-switch -Wno-pointer-sign -Wno-unused-variable
 ifeq ($(DETECTED_OS), macos)
 	CHECK_WARNINGS += -Wno-constant-conversion -Wno-for-loop-analysis
 	# Disable GCC complaining about fakematches necessary to match if building a matching ROM. Example: "var2 = (0, var1)"

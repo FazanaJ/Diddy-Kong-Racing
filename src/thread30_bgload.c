@@ -18,7 +18,7 @@ s32 gThread30LoadDelay = 0;
 OSThread gThread30;
 OSMesgQueue gThread30MesgQueue;
 OSMesg gThread30Message[2];
-u64 gThread30Stack[STACKSIZE(STACK_BGLOAD)];
+u64 *gThread30Stack;
 
 /*****************************/
 
@@ -27,8 +27,6 @@ u64 gThread30Stack[STACKSIZE(STACK_BGLOAD)];
  */
 void bgload_init(void) {
     osCreateMesgQueue(&gThread30MesgQueue, gThread30Message, ARRAY_COUNT(gThread30Message));
-    osCreateThread(&gThread30, 30, &thread30_bgload, NULL, &gThread30Stack[STACKSIZE(STACK_BGLOAD)], 8);
-    osStartThread(&gThread30);
 }
 
 /**
@@ -37,6 +35,9 @@ void bgload_init(void) {
  */
 void bgload_kill(void) {
     osStopThread(&gThread30);
+    osDestroyThread(&gThread30);
+    mempool_free(gThread30Stack);
+    gThread30Stack = NULL;
 }
 
 /**
@@ -58,13 +59,11 @@ void bgload_tick(void) {
             osSendMesg(&gThread30MesgQueue, (OSMesg *) OS_MESG_TYPE_LOOPBACK, OS_MESG_NOBLOCK);
         }
     }
-}
 
-/**
- * Returns the value in gThread30LoadDelay.
- */
-UNUSED s32 bgload_timer(void) {
-    return gThread30LoadDelay;
+    // Kill the thread and everything involved if not in use.
+    if (gThread30NeedToLoadLevel == FALSE && gThread30Stack != NULL) {
+        bgload_kill();
+    }
 }
 
 /**
@@ -77,6 +76,12 @@ s32 bgload_start(s32 levelId, s32 cutsceneId) {
         gThread30LevelIdToLoad = levelId;
         gThread30CutsceneIdToLoad = cutsceneId;
         gThread30NeedToLoadLevel = TRUE;
+        gThread30Stack = mempool_alloc_safe(STACK_BGLOAD + 0x10, COLOUR_TAG_WHITE);
+        if ((u32) gThread30Stack & 0xF) {
+            gThread30Stack = (u64 *) align16((u8 *) gThread30Stack);
+        }
+        osCreateThread(&gThread30, 30, &thread30_bgload, NULL, gThread30Stack + STACKSIZE(STACK_BGLOAD), 8);
+        osStartThread(&gThread30);
         return TRUE;
     }
     return FALSE;
@@ -95,7 +100,6 @@ void thread30_bgload(UNUSED void *arg) {
         }
         // -1 means there won't be any racers loaded.
         load_level_for_menu(gThread30LevelIdToLoad, -1, gThread30CutsceneIdToLoad);
-        //*(volatile int *) 0 = 0;
         gThread30NeedToLoadLevel = FALSE;
     }
 }

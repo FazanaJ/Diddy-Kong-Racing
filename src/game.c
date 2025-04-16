@@ -152,139 +152,6 @@ void init_level_globals(void) {
 #endif
 }
 
-UNUSED s16 func_8006ABB4(s32 levelID) {
-    if (levelID < 0) {
-        return 0xE10;
-    }
-    if (levelID >= gNumberOfLevelHeaders) {
-        return 0xE10;
-    }
-    return gGlobalLevelTable[levelID].unk4;
-}
-
-/**
- * Iterates through the level property table and attempts to find a level ID that matches the properties you want.
- * Iterates Forwards.
- */
-UNUSED s32 search_level_properties_forwards(s32 levelID, s8 raceType, s8 worldID) {
-    if (levelID < 0) {
-        levelID = 0;
-    } else {
-        levelID++;
-    }
-    if (raceType != RACETYPE_CHALLENGE) {
-        if (worldID == -1) {
-            for (; levelID < gNumberOfLevelHeaders; levelID++) {
-                if (raceType == gGlobalLevelTable[levelID].raceType) {
-                    return levelID;
-                }
-            }
-        } else if (raceType == -1) {
-            for (; levelID < gNumberOfLevelHeaders; levelID++) {
-                if (worldID == gGlobalLevelTable[levelID].world) {
-                    return levelID;
-                }
-            }
-        } else {
-            for (; levelID < gNumberOfLevelHeaders; levelID++) {
-                if ((raceType == gGlobalLevelTable[levelID].raceType) &&
-                    (worldID == gGlobalLevelTable[levelID].world)) {
-                    return levelID;
-                }
-            }
-        }
-    } else {
-        if (worldID == -1) {
-            for (; levelID < gNumberOfLevelHeaders; levelID++) {
-                if (gGlobalLevelTable[levelID].raceType & RACETYPE_CHALLENGE) {
-                    return levelID;
-                }
-            }
-        } else {
-            for (; levelID < gNumberOfLevelHeaders; levelID++) {
-                if ((gGlobalLevelTable[levelID].raceType & RACETYPE_CHALLENGE) &&
-                    (worldID == gGlobalLevelTable[levelID].world)) {
-                    return levelID;
-                }
-            }
-        }
-    }
-    return -1;
-}
-
-/**
- * Iterates through the level property table and attempts to find a level ID that matches the properties you want.
- * Iterates Backwards.
- */
-UNUSED s32 search_level_properties_backwards(s32 levelID, s8 raceType, s8 worldID) {
-    if (levelID >= gNumberOfLevelHeaders) {
-        levelID = gNumberOfLevelHeaders;
-    }
-    levelID--;
-    if (raceType != RACETYPE_CHALLENGE) {
-        if (worldID == -1) {
-            for (; levelID >= 0; levelID--) {
-                if (raceType == gGlobalLevelTable[levelID].raceType) {
-                    return levelID;
-                }
-            }
-        } else if (raceType == -1) {
-            for (; levelID >= 0; levelID--) {
-                if (worldID == gGlobalLevelTable[levelID].world) {
-                    return levelID;
-                }
-            }
-        } else {
-            for (; levelID >= 0; levelID--) {
-                if ((raceType == gGlobalLevelTable[levelID].raceType) &&
-                    (worldID == gGlobalLevelTable[levelID].world)) {
-                    return levelID;
-                }
-            }
-        }
-    } else {
-        if (worldID == -1) {
-            for (; levelID >= 0; levelID--) {
-                if (gGlobalLevelTable[levelID].raceType & RACETYPE_CHALLENGE) {
-                    return levelID;
-                }
-            }
-        } else {
-            for (; levelID >= 0; levelID--) {
-                if ((gGlobalLevelTable[levelID].raceType & RACETYPE_CHALLENGE) &&
-                    (worldID == gGlobalLevelTable[levelID].world)) {
-                    return levelID;
-                }
-            }
-        }
-    }
-    return -1;
-}
-
-/**
- * Return the number of tracks that fall under a certain race type.
- */
-UNUSED s32 get_race_type_count(s8 raceType) {
-    if (raceType >= 0 && raceType < 16) {
-        return gRaceTypeCountTable[raceType];
-    }
-    return 0;
-}
-
-/**
- * Returns the number of levels that belong to one hub world.
- */
-UNUSED s32 get_world_level_count(s8 worldID) {
-    s32 out, i;
-    out = 0;
-    for (i = 0; i < gNumberOfLevelHeaders; i++) {
-        if (worldID == gGlobalLevelTable[i].world) {
-            out++;
-        }
-    }
-    return out;
-}
-
 /**
  * Returns the default vehicle from the set map ID.
  */
@@ -390,6 +257,8 @@ void levelinit_framecap(s32 levelID) {
     }
     sched_framecap(cap);
 }
+
+#include "usb/usb.h"
 
 /**
  * Loads and sets up the level header, then loads and sets of the level geometry.
@@ -643,7 +512,6 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
     bgdraw_primcolour(gCurrentLevelHeader->bgColorRed, gCurrentLevelHeader->bgColorGreen,
                       gCurrentLevelHeader->bgColorBlue);
     video_delta_reset();
-    func_8007AB24(gCurrentLevelHeader->unk4[numberOfPlayers]);
     levelinit_framecap(levelId);
 }
 
@@ -679,13 +547,6 @@ u8 get_current_level_race_type(void) {
  */
 LevelHeader *get_current_level_header(void) {
     return gCurrentLevelHeader;
-}
-
-/**
- * Returns the amount of level headers there are in the game.
- */
-UNUSED u8 get_total_level_header_count(void) {
-    return gNumberOfLevelHeaders - 1;
 }
 
 /**
@@ -747,7 +608,7 @@ void clear_audio_and_track(void) {
         weather_free();
     }
     //! @bug this will never be true because skyDome is signed.
-    if (gCurrentLevelHeader->skyDome == 0xFF) {
+    if (gCurrentLevelHeader->skyDome == -1) {
         free_texture(gCurrentLevelHeader->unkA4);
     }
 }
