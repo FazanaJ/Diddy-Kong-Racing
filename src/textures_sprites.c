@@ -379,26 +379,6 @@ void tex_enable_modes(s32 flags) {
     gBlockedRenderFlags &= ~flags;
 }
 
-/**
- * Return the texture asset ID table for 2D textures.
- * Goes unused.
- */
-UNUSED s32 get_loaded_2D_textures(void) {
-    return gTextureAssetID[TEX_TABLE_2D];
-}
-
-/**
- * Return the texture asset ID table for 3D textures.
- * Goes unused.
- */
-UNUSED s32 get_loaded_3D_textures(void) {
-    return gTextureAssetID[TEX_TABLE_3D];
-}
-
-UNUSED s32 func_8007AE64(void) {
-    return gSpriteTableNum;
-}
-
 #ifdef NON_EQUIVALENT
 // Minor matching issues with loops, but should be functionally the same.
 // Official Name: texLoadTexture

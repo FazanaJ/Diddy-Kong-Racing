@@ -185,38 +185,40 @@ void fb_alloc(s32 index) {
         //bitSize = 4;
     }
 #endif
-#if EXPANSION_PAK_SUPPORT || defined(FIFO_4MB)
-    if (gGfxSPTaskOutputBuffer == NULL) {
-        gGfxSPTaskOutputBuffer = mempool_alloc_safe(OUTPUT_BUFFER_SIZE + 0x10, PP_RAM_TASKBUFFER);
-        gGfxSPTaskOutputBuffer = (u64 *) (((s32) gGfxSPTaskOutputBuffer + 0xF) & ~0xF);
-    }
-#endif
 
     fbSize = (width * height) * bitSize;
+    if (fbSize & 0x3F) {
+        fbSize = (s32) FBALIGN(fbSize);
+    }
     switch (index) {
         case 0:
             addr = (u8 *) 0x80200000;
         break;
         case 1:
-            addr = (u8 *) (0x80400000 - (fbSize + 0x40));
+            addr = (u8 *) (0x80400000 - (fbSize));
         break;
         case 2:
             if (gUseExpansionMemory) {
                 addr = (u8 *) 0x80400000;
             } else {
-                addr = (u8 *) (0x80300000 - (fbSize + 0x40));
+                addr = (u8 *) (0x80300000 - (fbSize));
             }
         break;
     }
+  
+#if EXPANSION_PAK_SUPPORT || defined(FIFO_4MB)
+    if (gGfxSPTaskOutputBuffer == NULL) {
+        gGfxSPTaskOutputBuffer = mempool_alloc_fixed(OUTPUT_BUFFER_SIZE, (u8 *) (0x80200000 + fbSize), PP_RAM_TASKBUFFER);
+        gGfxSPTaskOutputBuffer = (u64 *) (((s32) gGfxSPTaskOutputBuffer + 0xF) & ~0xF);
+    }
+#endif
 
-    gVideoFramebuffers[index] = mempool_alloc_fixed(fbSize + 0x40, addr, PP_RAM_FRAMEBUFFERS);
-    gVideoFramebuffers[index] = FBALIGN(gVideoFramebuffers[index]);
+    gVideoFramebuffers[index] = mempool_alloc_fixed(fbSize, addr, PP_RAM_FRAMEBUFFERS);
     bzero(gVideoFramebuffers[index], fbSize);
     fbAddr = gVideoFramebuffers[index];
     fbAddr[100] = 0xBEEF;
     if (gVideoDepthBuffer == NULL) {
-        gVideoDepthBuffer = mempool_alloc_fixed(fbSize + 0x40, (u8 *) (0x80200000 - (fbSize + 0x40)), PP_RAM_FRAMEBUFFERS);
-        gVideoDepthBuffer = FBALIGN(gVideoDepthBuffer);
+        gVideoDepthBuffer = mempool_alloc_fixed(fbSize, (u8 *) (0x80200000 - (fbSize)), PP_RAM_FRAMEBUFFERS);
         fbAddr = gVideoDepthBuffer;
         fbAddr[100] = 0xBEEF;
     }

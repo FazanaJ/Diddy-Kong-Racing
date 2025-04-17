@@ -90,7 +90,7 @@ Triangle *gTriangleHeap[2];
 Triangle *gGameCurrTriList;
 s8 gLevelSettings[16];
 OSSched gMainSched; // 0x288 / 648 bytes
-u64 gSchedStack[STACKSIZE(STACK_SCHED)];
+u64 *gSchedStack;
 s32 gSPTaskNum;
 s32 gGameMode;
 s32 gRenderMenu; // I don't think this is ever not 1
@@ -171,8 +171,6 @@ void thread3_main(UNUSED void *unused) {
 void init_game(void) {
     s32 viMode;
 
-    stubbed_printf(sDebugRomBuildInfo);
-    mempool_init_main();
     init_usb_thread();
     gzip_init();
 #ifdef ANTI_TAMPER
@@ -191,11 +189,10 @@ void init_game(void) {
     } else if (osTvType == OS_TV_TYPE_MPAL) {
         viMode = OS_VI_MPAL_LPN1;
     }
-    osCreateScheduler(&gMainSched, &gSchedStack[STACKSIZE(STACK_SCHED)], /*priority*/ 13, viMode, 1);
+    gSchedStack = mempool_alloc_safe(STACK_SCHED, PP_RAM_STACK);
+    osCreateScheduler(&gMainSched, gSchedStack + STACKSIZE(STACK_SCHED), /*priority*/ 13, viMode, 1);
     gSchedStack[0] = 0;
     gSchedStack[STACKSIZE(STACK_SCHED) - 1] = 0;
-    debug_ram(-STACK_SCHED, PP_RAM_CODE);
-    debug_ram(STACK_SCHED, PP_RAM_STACK);
 #ifdef ANTI_TAMPER
     // Antipiracy measure.
     gDmemInvalid = FALSE;

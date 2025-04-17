@@ -21,10 +21,10 @@ sw         $zero, 0x4($t0)
 bnez       $t1, .clear_bytes
  addi      $t0, $t0, 0x8
 lui        $t2, %hi(mainproc)
-lui        $sp, %hi(gThread3Stack + 0x100)
+lui        $sp, %hi(gThread1Stack + 40)
 addiu      $t2, $t2, %lo(mainproc)
 jr         $t2
- addiu     $sp, $sp, %lo(gThread3Stack + 0x100)
+ addiu     $sp, $sp, %lo(gThread1Stack + 40)
 nop
 nop
 nop

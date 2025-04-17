@@ -2392,6 +2392,7 @@ void func_8002C0C4(s32 modelId) {
     D_8011D374 = mempool_alloc_safe(0x1F4, PP_RAM_LEVELMDL);
     D_8011D378 = 0;
     gLevelModelTable = (s32 *) load_asset_section_from_rom(ASSET_LEVEL_MODELS_TABLE);
+    ghost_alloc();
 
     for (i = 0; gLevelModelTable[i] != -1; i++) {}
     i--;
@@ -2533,6 +2534,7 @@ void free_track(void) {
         gParticlePtrList_flush();
     }
     free_all_objects();
+    ghost_free();
     gCurrentLevelModel = NULL;
 }
 

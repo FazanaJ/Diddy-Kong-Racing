@@ -2456,7 +2456,7 @@ void init_save_data(void) {
     saveFileSize += sizeof(Settings);
     saveFileSize = (saveFileSize + 3) & ~3; // align to a 4-byte boundary
 
-    *gSavefileData = mempool_alloc_safe(saveFileSize * ARRAY_COUNT(gSavefileData), PP_RAM_MENU);
+    *gSavefileData = mempool_alloc_safe(saveFileSize * ARRAY_COUNT(gSavefileData), PP_RAM_SAVES);
 
     for (index = 0, offset = 0; index < ARRAY_COUNT(gSavefileData); index++) {
         gSavefileData[index] = (Settings *) ((u8 *) *gSavefileData + offset);

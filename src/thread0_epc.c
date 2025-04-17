@@ -13,6 +13,7 @@
 #include "PRinternal/osint.h"
 #include "math_util.h"
 #include "main.h"
+#include "usb/usb.h"
 
 /**
  * Mark the object type given, so if the game crashes while processing it, the debug screen will tell you which object
@@ -261,7 +262,7 @@ void crash_text(s32 x, s32 y, u16 colour, const char *fmt, ...) {
                 x = startX;
             } else if (*ptr == ' ') {
                 x += 6;
-            } else {
+            } else if (*ptr != '\t') {
                 glyph = gCrashScreenCharToGlyph[(*ptr - '!') % (sizeof(gCrashScreenCharToGlyph))];
                 if (glyph != 0xFF) {
                     crash_screen_draw_glyph(x, y, glyph, colour);
@@ -455,10 +456,10 @@ char *sGPRegisterNames[] = {
 
 extern u64 gThread1Stack[STACKSIZE(STACK_IDLE)];
 extern u64 gThread3Stack[STACKSIZE(STACK_GAME)];
-extern u64 audioStack[STACKSIZE(STACK_AUD)];
-extern u64 gSchedStack[STACKSIZE(STACK_SCHED)];
+extern u64 *audioStack;
+extern u64 *gSchedStack;
 extern u64 *gThread30Stack;
-extern u64 gThreadUsbStack[STACKSIZE(STACK_USB)];
+extern u64 *gThreadUsbStack;
 
 #define CRASH_BORDER_X 20
 
@@ -471,9 +472,17 @@ u32 crash_stack_pos(s32 threadID) {
         case 3:
             return (u32) &gThread3Stack[STACKSIZE(STACK_GAME) - 1];
         case 4:
-            return (u32) &audioStack[STACKSIZE(STACK_AUD) - 1];
+            if (audioStack) {
+                return (u32) &audioStack[STACKSIZE(STACK_AUD) - 1];
+            } else {
+                return 0;
+            }
         case 5:
-            return (u32) &gSchedStack[STACKSIZE(STACK_SCHED) - 1];
+            if (gSchedStack) {
+                return (u32) &gSchedStack[STACKSIZE(STACK_SCHED) - 1];
+            } else {
+                return 0;
+            }
         case 30:
             if (gThread30Stack) {
                 return (u32) gThread30Stack[STACKSIZE(STACK_BGLOAD) - 1];
@@ -481,7 +490,11 @@ u32 crash_stack_pos(s32 threadID) {
                 return 0;
             }
         case 69:
-            return (u32) &gThreadUsbStack[STACKSIZE(STACK_USB) - 1];
+            if (gThreadUsbStack) {
+                return (u32) &gThreadUsbStack[STACKSIZE(STACK_USB) - 1];
+            } else {
+                return 0;
+            }
         default:
             return 0;
     }
@@ -495,16 +508,16 @@ s32 crash_check_stack(void) {
     if ((gThread3Stack[STACKSIZE(STACK_GAME) - 1] != gThread3Stack[0])) {
         return 3;
     }
-    if ((audioStack[STACKSIZE(STACK_AUD) - 1] != audioStack[0])) {
+    if (audioStack && (audioStack[STACKSIZE(STACK_AUD) - 1] != audioStack[0])) {
         return 4;
     }
-    if ((gSchedStack[STACKSIZE(STACK_SCHED) - 1] != gSchedStack[0])) {
+    if (gSchedStack && (gSchedStack[STACKSIZE(STACK_SCHED) - 1] != gSchedStack[0])) {
         return 5;
     }
     if (gThread30Stack && (gThread30Stack[STACKSIZE(STACK_BGLOAD) - 1] != gThread30Stack[0])) {
         return 30;
     }
-    if ((gThreadUsbStack[STACKSIZE(STACK_USB) - 1] != gThreadUsbStack[0])) {
+    if (gThreadUsbStack && (gThreadUsbStack[STACKSIZE(STACK_USB) - 1] != gThreadUsbStack[0])) {
         return 69;
     }
 
@@ -720,7 +733,7 @@ const char *sMemLabels[] = {
     "MB"
 };
 
-const u16 sMemColour5s[76] = {
+const u16 sMemColour5s[] = {
     // Original 12 colors
     GPACK_RGBA5551(255, 0, 0, 1),    // Bright red
     GPACK_RGBA5551(0, 255, 0, 1),    // Bright green
@@ -737,8 +750,8 @@ const u16 sMemColour5s[76] = {
 
     // Additional 64 vibrant colors
     GPACK_RGBA5551(255, 64, 64, 1),   // Light red
-    GPACK_RGBA5551(64, 255, 64, 1),   // Light green
     GPACK_RGBA5551(64, 64, 255, 1),   // Light blue
+    GPACK_RGBA5551(64, 255, 64, 1),   // Light green
     GPACK_RGBA5551(255, 128, 0, 1),   // Bright orange
     GPACK_RGBA5551(255, 0, 128, 1),   // Hot pink
     GPACK_RGBA5551(128, 0, 255, 1),   // Bright purple
@@ -970,12 +983,13 @@ void crash_mem_details(void) {
                             if (gCrashAltSelection + 1 == scrollSize && gCrashAltView == 1) {
                                 crash_rectangle(x + 37, y - 1, 192, 9, 255, 255, 255, 144);
                                 col = GPACK_RGBA5551(0, 0, 0, 1);
+                                crash_text(x + 166, y, col, "0#%X", (u32) slot->data);
                             } else {
                                 col = GPACK_RGBA5551(255, 255, 255, 1);
+                                size = memsize_float(slot->size, &tag);
+                                crash_text(x + 172, y, col, "%2.3f%s", (f64) size, sMemLabels[tag]);
                             }
                             crash_text(x + 40, y, col, "ID:%d", slot->index);
-                            size = memsize_float(slot->size, &tag);
-                            crash_text(x + 172, y, col, "%2.3f%s", (f64) size, sMemLabels[tag]);
                             y += 9;
                             numSlots++;
                         }
@@ -1031,14 +1045,21 @@ void crash_mem_details(void) {
                             slot = &gMemoryPools[i].slots[slot->nextIndex];
                             continue;
                         }
+                        if (gCrashAltSelection + 1 == scrollSize && gCrashAltView == 1) {
+                            crash_rectangle(x + 37, y - 1, 192, 9, 255, 255, 255, 144);
+                            col = GPACK_RGBA5551(0, 0, 0, 1);
+                            crash_text(x + 166, y, col, "0#%X", (u32) slot->data);
+                        } else {
+                            col = GPACK_RGBA5551(255, 255, 255, 1);
+                            size = memsize_float(slot->size, &tag);
+                            crash_text(x + 172, y, col, "%2.3f%s", (f64) size, sMemLabels[tag]);
+                        }
                         if ((u32)slot->data <= 0x80300000) {
-                            crash_text(x + 40, y, GPACK_RGBA5551(255, 255, 255, 1), "Colour Buffer");
+                            crash_text(x + 40, y, col, "Colour Buffer");
 
                         } else {
-                            crash_text(x + 40, y, GPACK_RGBA5551(255, 255, 255, 1), "Depth Buffer");
+                            crash_text(x + 40, y, col, "Depth Buffer");
                         }
-                        size = memsize_float(slot->size, &tag);
-                        crash_text(x + 172, y, GPACK_RGBA5551(255, 255, 255, 1), "%2.3f%s", (f64) size, sMemLabels[tag]);
                         y += 9;
                         numSlots++;
                     }
@@ -1064,6 +1085,7 @@ void crash_mem_details(void) {
     }
     
     crash_text(x + 100, 66, GPACK_RGBA5551(255, 255, 255, 1), "Entries:%d", scrollSize);
+    crash_text(CRASH_BORDER_X + 128, gScreenHeight - 20, GPACK_RGBA5551(255, 255, 255, 1), "Press A to dump RAM over USB");
 }
 
 void crash_page_memory(void) {
@@ -1146,8 +1168,6 @@ void crash_page_memory(void) {
             textWidth = crash_strwidth(sPuppyprintMemColours[gCrashMemPrintOrder[i]]);
             if (gMemoryCapID == gCrashMemPrintOrder[i]) {
                 col = GPACK_RGBA5551(255, 0, 0, 1);
-            } else {
-                col = GPACK_RGBA5551(255, 255, 255, 1);
             }
             crash_text(x + 45 - (textWidth / 2), y, col, sPuppyprintMemColours[gCrashMemPrintOrder[i]]);
             crash_text(x + 90, y, col, "%2.3f%s", (f64) size, sMemLabels[tag]);
@@ -1165,10 +1185,6 @@ void crash_page_memory(void) {
     }
 
     crash_mem_details();
-
-    if (gCrashInput & A_BUTTON) {
-        debug_ram_dump();
-    }
 
     crash_memory_chart(32, gScreenHeight - 40, gScreenWidth - 64, 12);
 }
@@ -1227,6 +1243,9 @@ void crash_render(OSThread *t) {
             break;
         case CRASH_PAGE_MEMORY:
             numValids = 0;
+            if (gCrashInput & A_BUTTON) {
+                debug_ram_dump();
+            }
             for (i = 0; i < PP_RAM_TOTAL; i++) {
                 if (gDebug.ramSegments[i] != 0) {
                     numValids++;
@@ -1488,5 +1507,7 @@ void crash_thread(UNUSED void *var) {
 void crash_init(void) {
     osCreateMesgQueue(&gCrashQueue, gCrashQueueBuf, ARRAY_COUNT(gCrashQueueBuf));
     osCreateThread(&gCrashThread, 2, &crash_thread, 0, &gCrashThreadStack[STACKSIZE(STACK_CRASH)], 30);
+    debug_ram(-STACK_CRASH, PP_RAM_CODE);
+    debug_ram(STACK_CRASH, PP_RAM_STACK);
     osStartThread(&gCrashThread);
 }

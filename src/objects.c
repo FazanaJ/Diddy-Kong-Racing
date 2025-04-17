@@ -539,23 +539,23 @@ void allocate_object_pools(void) {
 
     set_world_shading(0.67f, 0.33f, 0, -0x2000, 0);
     gObjectMemoryPool = (Object *) mempool_new_sub(OBJECT_POOL_SIZE, OBJECT_SLOT_COUNT);
-    gParticlePtrList = mempool_alloc_safe(sizeof(uintptr_t) * 200, PP_RAM_OBJECTS);
-    D_8011AE6C = mempool_alloc_safe(sizeof(uintptr_t) * 20, COLOUR_TAG_BLUE);
-    D_8011AE74 = mempool_alloc_safe(sizeof(uintptr_t) * 128, COLOUR_TAG_BLUE);
-    gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, PP_RAM_OBJECTS);
-    gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * CAMCONTROL_COUNT, PP_RAM_OBJECTS);
-    gRacers = mempool_alloc_safe(sizeof(uintptr_t) * 10, PP_RAM_OBJECTS);
-    gRacersByPort = mempool_alloc_safe(sizeof(uintptr_t) * 10, PP_RAM_OBJECTS);
-    gRacersByPosition = mempool_alloc_safe(sizeof(uintptr_t) * 10, PP_RAM_OBJECTS);
-    gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, COLOUR_TAG_BLUE);
-    D_8011ADCC = mempool_alloc_safe(8, COLOUR_TAG_BLUE);
-    D_8011AFF4 = mempool_alloc_safe(sizeof(unk800179D0) * 16, COLOUR_TAG_BLUE);
+    gParticlePtrList = mempool_alloc_safe(sizeof(uintptr_t) * 200, PP_RAM_OBJLISTS);
+    D_8011AE6C = mempool_alloc_safe(sizeof(uintptr_t) * 20, PP_RAM_OBJLISTS);
+    D_8011AE74 = mempool_alloc_safe(sizeof(uintptr_t) * 128, PP_RAM_OBJLISTS);
+    gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, PP_RAM_OBJLISTS);
+    gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * CAMCONTROL_COUNT, PP_RAM_OBJLISTS);
+    gRacers = mempool_alloc_safe(sizeof(uintptr_t) * 10, PP_RAM_OBJLISTS);
+    gRacersByPort = mempool_alloc_safe(sizeof(uintptr_t) * 10, PP_RAM_OBJLISTS);
+    gRacersByPosition = mempool_alloc_safe(sizeof(uintptr_t) * 10, PP_RAM_OBJLISTS);
+    gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, PP_RAM_OBJLISTS);
+    D_8011ADCC = mempool_alloc_safe(8, PP_RAM_OBJLISTS);
+    D_8011AFF4 = mempool_alloc_safe(sizeof(unk800179D0) * 16, PP_RAM_OBJLISTS);
     gAssetsLvlObjTranslationTable = (s16 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE);
     gAssetsLvlObjTranslationTableLength = (get_size_of_asset_section(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE) >> 1) - 1;
     while (gAssetsLvlObjTranslationTable[gAssetsLvlObjTranslationTableLength] == 0) {
         gAssetsLvlObjTranslationTableLength--;
     }
-    gSpawnObjectHeap = mempool_alloc_safe(sizeof(uintptr_t) * 512, PP_RAM_OBJECTS);
+    gSpawnObjectHeap = mempool_alloc_safe(sizeof(uintptr_t) * 512, PP_RAM_OBJLISTS);
     gAssetsObjectHeadersTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_HEADERS_TABLE);
     gAssetsObjectHeadersTableLength = 0;
     while (-1 != gAssetsObjectHeadersTable[gAssetsObjectHeadersTableLength]) {
@@ -719,7 +719,7 @@ ObjectHeader *load_object_header(s32 index) {
     }
     assetOffset = gAssetsObjectHeadersTable[index];
     size = gAssetsObjectHeadersTable[index + 1] - assetOffset;
-    address = mempool_alloc_pool((MemoryPoolSlot *) gObjectMemoryPool, size);
+    address = mempool_alloc_pool_tag((MemoryPoolSlot *) gObjectMemoryPool, size, PP_RAM_OBJHEADERS);
     if (address != NULL) {
         load_asset_to_address(ASSET_OBJECTS, (u32) address, assetOffset, size);
         address->unk24 = (ObjectHeader24 *) ((uintptr_t) address + (uintptr_t) address->unk24);
@@ -791,7 +791,7 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
     }
 
     D_8011AD3E = 0;
-    mem = mempool_alloc_safe(0x3000, COLOUR_TAG_BLUE);
+    mem = mempool_alloc_safe(0x3000, PP_RAM_OBJLISTS);
     D_8011AEB0[arg1] = mem;
     D_8011AE98[arg1] = (u8 *) (D_8011AEB0[arg1] + 4);
     D_8011AEA0[arg1] = 0;
@@ -2068,7 +2068,7 @@ Object *func_8000FD54(s32 objectHeaderIndex) {
         return NULL;
     }
     objSize = (objHeader->numberOfModelIds * 4) + 0x80;
-    object = (Object *) mempool_alloc(objSize, COLOUR_TAG_BLUE);
+    object = (Object *) mempool_alloc(objSize, PP_RAM_OBJECTS);
     if (object == NULL) {
         try_free_object_header(objectHeaderIndex);
         return NULL;

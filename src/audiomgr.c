@@ -65,7 +65,7 @@ OSSched *gAudioSched;
 ALHeap *gAudioHeap; // Set but not used
 
 AMAudioMgr __am;
-u64 audioStack[STACKSIZE(STACK_AUD)];
+u64 *audioStack;
 
 AMDMAState dmaState;
 AMDMABuffer dmaBuffs[NUM_DMA_BUFFERS];
@@ -190,11 +190,10 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
     osCreateMesgQueue(&__am.audioReplyMsgQ, __am.audioReplyMsgBuf, MAX_MESGS);
     osCreateMesgQueue(&__am.audioFrameMsgQ, __am.audioFrameMsgBuf, MAX_MESGS);
     osCreateMesgQueue(&audDMAMessageQ, audDMAMessageBuf, NUM_DMA_MESSAGES);
+    audioStack = mempool_alloc_safe(STACK_AUD, PP_RAM_STACK);
     osCreateThread(&__am.thread, 4, __amMain, 0, (void *) (audioStack + STACKSIZE(STACK_AUD)), pri);
     audioStack[STACKSIZE(STACK_AUD) - 1] = 0;
     audioStack[0] = 0;
-    debug_ram(-STACK_AUD, PP_RAM_CODE);
-    debug_ram(STACK_AUD, PP_RAM_STACK);
 }
 
 /**

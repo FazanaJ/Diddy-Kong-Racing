@@ -198,60 +198,68 @@ typedef enum DebugRam {
     PP_RAM_GHOSTS,
     PP_RAM_SKY,
     PP_RAM_MENU,
+    PP_RAM_TRANSITIONS,
+    PP_RAM_UNKNOWN,
+    PP_RAM_OBJLISTS,
+    PP_RAM_OBJHEADERS,
 
     PP_RAM_TOTAL,
 } DebugRam;
 
 #define MEMSTRINGS \
-    "Red", \
-    "Green", \
-    "Blue", \
-    "Yellow", \
-    "Magenta", \
-    "Cyan", \
-    "White", \
-    "Grey", \
-    "GreyXLU", \
-    "Orange", \
-    "Black", \
+    "Red\t", \
+    "Green\t", \
+    "Blue\t", \
+    "Yellow\t", \
+    "Magenta\t", \
+    "Cyan\t", \
+    "White\t", \
+    "Grey\t", \
+    "GreyXLU\t", \
+    "Orange\t", \
+    "Black\t", \
     "L. Orange", \
             \
-    "Code", \
+    "Code\t", \
     "Framebuffers", \
     "Task Buffer", \
     "Animations", \
-    "Weather", \
+    "Weather\t", \
     "Lvl Textures", \
     "Lvl Models", \
     "Obj Textures", \
     "Obj Models", \
     "Misc Textures", \
     "Misc Models", \
-    "Sprites", \
-    "Slots", \
+    "Sprites\t", \
+    "Slots\t", \
     "Gfx Buffer", \
-    "Saves", \
-    "Temp", \
-    "Shadows", \
-    "Subpools", \
+    "Saves\t", \
+    "Temp\t", \
+    "Shadows\t", \
+    "Subpools\t", \
     "Audio Heap", \
     "Asset Tables", \
-    "Stack", \
+    "Stack\t", \
     "SFX Emitters", \
     "Aud Table", \
     "Sequences", \
     "Sound Banks", \
-    "HUD", \
-    "Fonts", \
-    "Text", \
-    "Lights", \
+    "HUD\t", \
+    "Fonts\t", \
+    "Text\t", \
+    "Lights\t", \
     "Asset Cache", \
-    "Objects", \
-    "Cpak", \
-    "Waves", \
+    "Objects\t", \
+    "Cpak\t", \
+    "Waves\t", \
     "Ghost Data", \
-    "Sky", \
-    "Menu"
+    "Sky\t", \
+    "Menu\t", \
+    "Transitions", \
+    "Unknown\t", \
+    "Obj Lists", \
+    "Obj Headers"
 
 #define NUM_PERF_ITERATIONS 60
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS

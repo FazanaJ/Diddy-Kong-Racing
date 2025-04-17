@@ -9,7 +9,7 @@
 #define STACK_GAME      0x2000
 #define STACK_BGLOAD    0x3000
 #define STACK_USB       0x200
-#define STACK_CRASH     0x200
+#define STACK_CRASH     0x400
 
 #define STACKSIZE(x) (x / sizeof(u64))
 

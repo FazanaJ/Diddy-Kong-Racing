@@ -134,7 +134,7 @@ void init_level_globals(void) {
     i--;
     size = gTempAssetTable[i] - gTempAssetTable[0];
     gLevelNames = mempool_alloc_safe(i * sizeof(s32), PP_RAM_ASSETTABLE);
-    gTempLevelNames = mempool_alloc_safe(size, PP_RAM_TEMP);
+    gTempLevelNames = mempool_alloc_safe(size, PP_RAM_ASSETTABLE);
     load_asset_to_address(ASSET_LEVEL_NAMES, (u32) gTempLevelNames, 0, size);
     for (size = 0; size < i; size++) {
         gLevelNames[size] = (char *) &gTempLevelNames[gTempAssetTable[size]];

@@ -329,6 +329,7 @@ void crash_init(void);
  * stopping this thread, as it's no longer needed.
  */
 void thread1_main(UNUSED void *unused) {
+    mempool_init_main();
     crash_init();
     config_init();
     osCreateThread(&gThread3, 3, &thread3_main, 0, &gThread3Stack[STACKSIZE(STACK_GAME)], 10);
@@ -455,44 +456,37 @@ s32 debug_tag_index(s32 colourTag) {
     switch (colourTag) {
         case COLOUR_TAG_RED:
             return PP_RAM_RED;
-            break;
         case COLOUR_TAG_GREEN:
             return PP_RAM_GREEN;
-            break;
         case COLOUR_TAG_BLUE:
             return PP_RAM_BLUE;
-            break;
         case COLOUR_TAG_YELLOW:
             return PP_RAM_YELLOW;
-            break;
         case COLOUR_TAG_MAGENTA:
             return PP_RAM_MAGENTA;
-            break;
         case COLOUR_TAG_CYAN:
             return PP_RAM_CYAN;
-            break;
         case COLOUR_TAG_WHITE:
             return PP_RAM_WHITE;
-            break;
         case COLOUR_TAG_GREY:
             return PP_RAM_GREY;
-            break;
         case COLOUR_TAG_SEMITRANS_GREY:
             return PP_RAM_GREY_XLU;
-            break;
         case COLOUR_TAG_ORANGE:
             return PP_RAM_ORANGE;
-            break;
         case COLOUR_TAG_BLACK:
             return PP_RAM_BLACK;
-            break;
         case COLOUR_TAG_LIGHT_ORANGE:
             return PP_RAM_LIGHT_ORANGE;
-            break;
+        case COLOUR_TAG_LIME:
+            return PP_RAM_SPRITES;
         default:
-            return colourTag % PP_RAM_TOTAL;
+            if (colourTag >= PP_RAM_TOTAL) {
+                return PP_RAM_UNKNOWN;
+            } else {
+                return colourTag % PP_RAM_TOTAL;
+            }
     }
-    return PP_RAM_WHITE;
 }
 
 void debug_ram(s32 size, s32 tag) {
@@ -667,7 +661,7 @@ void debug_ram_dump(void) {
             colourTag = debug_tag_index(slot->colourTag);
 
             if (flags == SLOT_FREE) {
-                debug_printf("Pool: %d Idx: %d   \t Free Slot\t\t\t\t Size: 0x%X\t (%2.3fKiB) \t %2.2f%%\t Addr: %X\n", i, slot->index, slot->size, (double) slot->size / 1024.0, 
+                debug_printf("Pool: %d Idx: %d   \t Free Slot\t\t\t\t\t Size: 0x%X\t (%2.3fKiB) \t %2.2f%%\t Addr: %X\n", i, slot->index, slot->size, (double) slot->size / 1024.0, 
                 (double) ((f32) slot->size / (f32) ramTotal) * 100.0, slot->data);
             } else {
                 debug_printf("Pool: %d Idx: %d   \t %s\t Tag: %s \t\t Size: 0x%X\t (%2.3fKiB) \t %2.2f%% \t Addr: %X\n", i, slot->index, sMemDumpStrings[flags], 

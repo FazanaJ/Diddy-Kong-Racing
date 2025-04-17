@@ -6538,14 +6538,27 @@ void get_timestamp_from_frames(s32 frameCount, s32 *minutes, s32 *seconds, s32 *
     *hundredths = (((frameCount - (*minutes * (REFRESH_60HZ * 60))) - (*seconds * REFRESH_60HZ)) * 100) / REFRESH_60HZ;
 }
 
+void ghost_alloc(void) {
+    if (is_time_trial_enabled()) {
+        gGhostData[0] = mempool_alloc_safe( (sizeof(GhostNode) * 2) * MAX_NUMBER_OF_GHOST_NODES, PP_RAM_GHOSTS);
+        gGhostData[1] = ((GhostNode *) gGhostData[0] + MAX_NUMBER_OF_GHOST_NODES);
+    }
+}
+
+void ghost_free(void) {
+    if (gGhostData[0]) {
+        mempool_free(gGhostData[0]);
+    }
+}
+
 /**
  * Allocate the ghost data heap into memory.
  * The path node pool is globally loaded, despite only being used in time trial.
  */
 void allocate_ghost_data(void) {
     // Allocate two sets of ghost data. One for the current playing ghost, and one for the new ghost being written.
-    gGhostData[0] = mempool_alloc_safe((sizeof(GhostNode) * 2) * MAX_NUMBER_OF_GHOST_NODES, PP_RAM_GHOSTS);
-    gGhostData[1] = ((GhostNode *) gGhostData[0] + MAX_NUMBER_OF_GHOST_NODES);
+    gGhostData[0] = NULL;
+    gGhostData[1] = NULL;
     gGhostData[GHOST_STAFF] = NULL; // T.T. Ghost
     gGhostNodeCount[0] = 0;
     gGhostNodeCount[1] = 0;

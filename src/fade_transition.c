@@ -9,6 +9,7 @@
 #include "textures_sprites.h"
 #include "math_util.h"
 #include "PRinternal/viint.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -451,7 +452,7 @@ void transition_init_shape(FadeTransition *transition, s32 numVerts, s32 numTris
     sizeTris = numTris * sizeof(Triangle);
     i = j * 12;
 
-    sTransitionVtx[0] = mempool_alloc_safe(((sizeVerts + sizeTris) * 2) + (i * 3), COLOUR_TAG_YELLOW);
+    sTransitionVtx[0] = mempool_alloc_safe(((sizeVerts + sizeTris) * 2) + (i * 3), PP_RAM_TRANSITIONS);
     sTransitionVtx[1] = sTransitionVtx[0] + j;
     sTransitionTris[0] = (Triangle *) (sTransitionVtx[1] + j);
     sTransitionTris[1] = (Triangle *) (((u8 *) sTransitionTris[0]) + sizeTris);
@@ -585,7 +586,7 @@ void transition_init_circle(FadeTransition *transition) {
 
     sizeVerts = 72 * sizeof(Vertex);
     sizeTris = 64 * sizeof(Triangle);
-    sTransitionVtx[0] = (Vertex *) mempool_alloc_safe((sizeVerts + sizeTris) * 2, COLOUR_TAG_YELLOW);
+    sTransitionVtx[0] = (Vertex *) mempool_alloc_safe((sizeVerts + sizeTris) * 2, PP_RAM_TRANSITIONS);
     sTransitionVtx[1] = sTransitionVtx[0] + 72;
     sTransitionTris[0] = (Triangle *) (sTransitionVtx[1] + 72);
     sTransitionTris[1] = sTransitionTris[0] + 64;
