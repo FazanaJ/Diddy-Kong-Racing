@@ -336,8 +336,8 @@ u8 gUseAntiAliasing;
 void tex_init_textures(void) {
     s32 i;
 
-    gTextureCache = mempool_alloc_safe(sizeof(TextureHeader) * TEX_HEADER_COUNT, COLOUR_TAG_MAGENTA);
-    gCiPalettes = mempool_alloc_safe(0x280, COLOUR_TAG_MAGENTA);
+    gTextureCache = mempool_alloc_safe(sizeof(TextureHeader) * TEX_HEADER_COUNT, PP_RAM_ASSET_CACHE);
+    gCiPalettes = mempool_alloc_safe(0x280, PP_RAM_ASSET_CACHE);
     gNumberOfLoadedTextures = 0;
     gCiPalettesSize = 0;
     gTextureAssetTable[TEX_TABLE_2D] = (s32 *) load_asset_section_from_rom(ASSET_TEXTURES_2D_TABLE);
@@ -349,8 +349,8 @@ void tex_init_textures(void) {
     for (i = 0; gTextureAssetTable[TEX_TABLE_3D][i] != -1; i++) {}
     gTextureAssetID[TEX_TABLE_3D] = --i;
 
-    gSpriteCache = mempool_alloc_safe(sizeof(Sprite) * TEX_SPRITE_COUNT, COLOUR_TAG_MAGENTA);
-    gCurrentSprite = mempool_alloc_safe(sizeof(Sprite) * 32, COLOUR_TAG_MAGENTA);
+    gSpriteCache = mempool_alloc_safe(sizeof(Sprite) * TEX_SPRITE_COUNT, PP_RAM_ASSET_CACHE);
+    gCurrentSprite = mempool_alloc_safe(sizeof(Sprite) * 32, PP_RAM_ASSET_CACHE);
     D_80126358 = 0;
     gSpriteOffsetTable = (s32 *) load_asset_section_from_rom(ASSET_SPRITES_TABLE);
     gSpriteTableNum = 0;
@@ -359,7 +359,7 @@ void tex_init_textures(void) {
     }
     gSpriteTableNum--;
 
-    gTempTextureHeader = mempool_alloc_safe(0x28, COLOUR_TAG_MAGENTA);
+    gTempTextureHeader = mempool_alloc_safe(0x28, PP_RAM_ASSETTABLE);
     D_80126344 = 0;
 }
 
@@ -947,7 +947,9 @@ s32 load_sprite_info(s32 spriteIndex, s32 *numOfInstancesOut, s32 *unkOut, s32 *
     new_var2 = gCurrentSprite;
     new_var = size;
     load_asset_to_address(ASSET_SPRITES, (u32) new_var2, start, new_var);
+    set_texture_colour_tag(PP_RAM_SPRITES);
     tex = load_texture(new_var2->unkC.val[0] + new_var2->baseTextureId);
+    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
     if (tex != NULL) {
         *formatOut = tex->format & 0xF;
         free_texture(tex);

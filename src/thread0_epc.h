@@ -107,5 +107,6 @@ void write_epc_data_to_cpak(void);
 void dump_memory_to_cpak(s32 epc, s32 size, u32 colourTag);
 void thread0_Main(UNUSED void *unused);
 void render_epc_lock_up_display(void);
+void crash_nomemory(s32 size, s32 colourTag);
 
 #endif

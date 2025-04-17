@@ -3,6 +3,7 @@
 #include <ultra64.h>
 #include "game.h"
 #include "stacks.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -76,7 +77,7 @@ s32 bgload_start(s32 levelId, s32 cutsceneId) {
         gThread30LevelIdToLoad = levelId;
         gThread30CutsceneIdToLoad = cutsceneId;
         gThread30NeedToLoadLevel = TRUE;
-        gThread30Stack = mempool_alloc_safe(STACK_BGLOAD + 0x10, COLOUR_TAG_WHITE);
+        gThread30Stack = mempool_alloc_safe(STACK_BGLOAD + 0x10, PP_RAM_STACK);
         if ((u32) gThread30Stack & 0xF) {
             gThread30Stack = (u64 *) align16((u8 *) gThread30Stack);
         }

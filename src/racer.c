@@ -27,6 +27,7 @@
 #include "particles.h"
 #include "PRinternal/viint.h"
 #include "common.h"
+#include "main.h"
 
 #define MAX_NUMBER_OF_GHOST_NODES 360
 
@@ -6543,7 +6544,7 @@ void get_timestamp_from_frames(s32 frameCount, s32 *minutes, s32 *seconds, s32 *
  */
 void allocate_ghost_data(void) {
     // Allocate two sets of ghost data. One for the current playing ghost, and one for the new ghost being written.
-    gGhostData[0] = mempool_alloc_safe((sizeof(GhostNode) * 2) * MAX_NUMBER_OF_GHOST_NODES, COLOUR_TAG_RED);
+    gGhostData[0] = mempool_alloc_safe((sizeof(GhostNode) * 2) * MAX_NUMBER_OF_GHOST_NODES, PP_RAM_GHOSTS);
     gGhostData[1] = ((GhostNode *) gGhostData[0] + MAX_NUMBER_OF_GHOST_NODES);
     gGhostData[GHOST_STAFF] = NULL; // T.T. Ghost
     gGhostNodeCount[0] = 0;
@@ -6610,13 +6611,13 @@ s32 timetrial_load_player_ghost(s32 controllerID, s32 mapId, s16 arg2, s16 *char
  * Returns 0 if successful, or 1 if an error occured.
  */
 s32 load_tt_ghost(s32 ghostOffset, s32 size, s16 *outTime) {
-    GhostHeader *ghost = mempool_alloc_safe(size, COLOUR_TAG_RED);
+    GhostHeader *ghost = mempool_alloc_safe(size, PP_RAM_GHOSTS);
     if (ghost != NULL) {
         load_asset_to_address(ASSET_TTGHOSTS, (u32) ghost, ghostOffset, size);
         if (gGhostData[GHOST_STAFF] != NULL) {
             mempool_free(gGhostData[GHOST_STAFF]);
         }
-        gGhostData[GHOST_STAFF] = mempool_alloc_safe(size - sizeof(GhostHeader), COLOUR_TAG_WHITE);
+        gGhostData[GHOST_STAFF] = mempool_alloc_safe(size - sizeof(GhostHeader), PP_RAM_GHOSTS);
         if (gGhostData[GHOST_STAFF] != NULL) {
             *outTime = ghost->time;
             gGhostNodeCount[GHOST_STAFF] = ghost->nodeCount;

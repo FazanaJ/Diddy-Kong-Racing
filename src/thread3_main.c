@@ -173,7 +173,7 @@ void init_game(void) {
 
     stubbed_printf(sDebugRomBuildInfo);
     mempool_init_main();
-    //init_usb_thread();
+    init_usb_thread();
     gzip_init();
 #ifdef ANTI_TAMPER
     sAntiPiracyTriggered = TRUE;
@@ -194,6 +194,8 @@ void init_game(void) {
     osCreateScheduler(&gMainSched, &gSchedStack[STACKSIZE(STACK_SCHED)], /*priority*/ 13, viMode, 1);
     gSchedStack[0] = 0;
     gSchedStack[STACKSIZE(STACK_SCHED) - 1] = 0;
+    debug_ram(-STACK_SCHED, PP_RAM_CODE);
+    debug_ram(STACK_SCHED, PP_RAM_STACK);
 #ifdef ANTI_TAMPER
     // Antipiracy measure.
     gDmemInvalid = FALSE;
@@ -299,7 +301,7 @@ void main_game_loop(void) {
 
     static u8 balls = 0;
 
-    if (balls++ > 60) {
+    if (input_pressed(0) & L_TRIG) {
         *(volatile int *) 0 = 0;
     }
 
@@ -331,7 +333,7 @@ void main_game_loop(void) {
     // This is a good spot to place custom text if you want it to overlay it over ALL the
     // menus & gameplay.
 
-    //tick_usb_thread();
+    tick_usb_thread();
     sound_update_queue(sLogicUpdateRate);
     debug_text_print(&gCurrDisplayList);
     render_dialogue_boxes(&gCurrDisplayList, &gGameCurrMatrix, &gGameCurrVertexList);
@@ -1132,7 +1134,7 @@ void calc_and_alloc_heap_for_settings(void) {
     sizes[13] = sizes[12] + dataSize; // courseTimesPtr[2]
     sizes[14] = sizes[13] + dataSize; // total size
 
-    gSettingsPtr = mempool_alloc_safe(sizes[14], COLOUR_TAG_WHITE);
+    gSettingsPtr = mempool_alloc_safe(sizes[14], PP_RAM_SAVES);
     gSettingsPtr->courseFlagsPtr = (s32 *) ((u8 *) gSettingsPtr + sizes[0]);
     gSettingsPtr->balloonsPtr = (s16 *) ((u8 *) gSettingsPtr + sizes[1]);
     gSettingsPtr->tajFlags = 0;
@@ -1379,8 +1381,8 @@ void alloc_displaylist_heap(s32 numberOfPlayers) {
         mempool_free(gDisplayLists[1]);
         totalSize = ((gNumF3dCmdsPerPlayer[num] * sizeof(Gwords))) + ((gNumHudMatPerPlayer[num] * sizeof(Matrix))) +
                     ((gNumHudVertsPerPlayer[num] * sizeof(Vertex))) + ((gNumHudTrisPerPlayer[num] * sizeof(Triangle)));
-        gDisplayLists[0] = (Gfx *) mempool_alloc_fixed(totalSize, (u8 *) gDisplayLists[0], COLOUR_TAG_RED);
-        gDisplayLists[1] = (Gfx *) mempool_alloc_fixed(totalSize, (u8 *) gDisplayLists[1], COLOUR_TAG_YELLOW);
+        gDisplayLists[0] = (Gfx *) mempool_alloc_fixed(totalSize, (u8 *) gDisplayLists[0], PP_RAM_CMDBUF);
+        gDisplayLists[1] = (Gfx *) mempool_alloc_fixed(totalSize, (u8 *) gDisplayLists[1], PP_RAM_CMDBUF);
         if ((gDisplayLists[0] == NULL) || gDisplayLists[1] == NULL) {
             if (gDisplayLists[0] != NULL) {
                 mempool_free(gDisplayLists[0]);
@@ -1435,12 +1437,12 @@ void default_alloc_displaylist_heap(void) {
                 (gNumHudVertsPerPlayer[numberOfPlayers] * sizeof(Vertex)) +
                 (gNumHudTrisPerPlayer[numberOfPlayers] * sizeof(Triangle));
 
-    gDisplayLists[0] = (Gfx *) mempool_alloc_safe(totalSize, COLOUR_TAG_RED);
+    gDisplayLists[0] = (Gfx *) mempool_alloc_safe(totalSize, PP_RAM_CMDBUF);
     gMatrixHeap[0] = (MatrixS *) ((u8 *) gDisplayLists[0] + (gNumF3dCmdsPerPlayer[numberOfPlayers] * sizeof(Gwords)));
     gVertexHeap[0] = (Vertex *) ((u8 *) gMatrixHeap[0] + (gNumHudMatPerPlayer[numberOfPlayers] * sizeof(Matrix)));
     gTriangleHeap[0] = (Triangle *) ((u8 *) gVertexHeap[0] + (gNumHudVertsPerPlayer[numberOfPlayers] * sizeof(Vertex)));
 
-    gDisplayLists[1] = (Gfx *) mempool_alloc_safe(totalSize, COLOUR_TAG_YELLOW);
+    gDisplayLists[1] = (Gfx *) mempool_alloc_safe(totalSize, PP_RAM_CMDBUF);
     gMatrixHeap[1] = (MatrixS *) ((u8 *) gDisplayLists[1] + (gNumF3dCmdsPerPlayer[numberOfPlayers] * sizeof(Gwords)));
     gVertexHeap[1] = (Vertex *) ((u8 *) gMatrixHeap[1] + (gNumHudMatPerPlayer[numberOfPlayers] * sizeof(Matrix)));
     gTriangleHeap[1] = (Triangle *) ((u8 *) gVertexHeap[1] + (gNumHudVertsPerPlayer[numberOfPlayers] * sizeof(Vertex)));

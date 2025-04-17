@@ -187,7 +187,7 @@ void fb_alloc(s32 index) {
 #endif
 #if EXPANSION_PAK_SUPPORT || defined(FIFO_4MB)
     if (gGfxSPTaskOutputBuffer == NULL) {
-        gGfxSPTaskOutputBuffer = mempool_alloc_safe(OUTPUT_BUFFER_SIZE + 0x10, COLOUR_TAG_WHITE);
+        gGfxSPTaskOutputBuffer = mempool_alloc_safe(OUTPUT_BUFFER_SIZE + 0x10, PP_RAM_TASKBUFFER);
         gGfxSPTaskOutputBuffer = (u64 *) (((s32) gGfxSPTaskOutputBuffer + 0xF) & ~0xF);
     }
 #endif
@@ -208,33 +208,14 @@ void fb_alloc(s32 index) {
             }
         break;
     }
-    /*if (gVideoModeIndex >= VIDEO_MODE_MIDRES_MASK) {
-        gVideoFramebuffers[index] =
-            mempool_alloc_safe((HIGH_RES_SCREEN_WIDTH * HIGH_RES_SCREEN_HEIGHT * 2) + 0x30, COLOUR_TAG_WHITE);
-        gVideoFramebuffers[index] = FBALIGN(gVideoFramebuffers[index]);
-        if (gVideoDepthBuffer == NULL) {
-            gVideoDepthBuffer =
-                mempool_alloc_safe((HIGH_RES_SCREEN_WIDTH * HIGH_RES_SCREEN_HEIGHT * 2) + 0x30, COLOUR_TAG_WHITE);
-            gVideoDepthBuffer = FBALIGN(gVideoDepthBuffer);
-        }
-    } else {
-        gVideoFramebuffers[index] =
-            mempool_alloc_safe((gVideoFbWidths[index] * gVideoFbHeights[index] * 2) + 0x30, COLOUR_TAG_WHITE);
-        gVideoFramebuffers[index] = FBALIGN(gVideoFramebuffers[index]);
-        if (gVideoDepthBuffer == NULL) {
-            gVideoDepthBuffer =
-                mempool_alloc_safe((gVideoFbWidths[index] * gVideoFbHeights[index] * 2) + 0x30, COLOUR_TAG_WHITE);
-            gVideoDepthBuffer = FBALIGN(gVideoDepthBuffer);
-        }
-    }*/
 
-    gVideoFramebuffers[index] = mempool_alloc_fixed(fbSize + 0x40, addr, COLOUR_TAG_WHITE);
+    gVideoFramebuffers[index] = mempool_alloc_fixed(fbSize + 0x40, addr, PP_RAM_FRAMEBUFFERS);
     gVideoFramebuffers[index] = FBALIGN(gVideoFramebuffers[index]);
     bzero(gVideoFramebuffers[index], fbSize);
     fbAddr = gVideoFramebuffers[index];
     fbAddr[100] = 0xBEEF;
     if (gVideoDepthBuffer == NULL) {
-        gVideoDepthBuffer = mempool_alloc_fixed(fbSize + 0x40, (u8 *) (0x80200000 - (fbSize + 0x40)), COLOUR_TAG_WHITE);
+        gVideoDepthBuffer = mempool_alloc_fixed(fbSize + 0x40, (u8 *) (0x80200000 - (fbSize + 0x40)), PP_RAM_FRAMEBUFFERS);
         gVideoDepthBuffer = FBALIGN(gVideoDepthBuffer);
         fbAddr = gVideoDepthBuffer;
         fbAddr[100] = 0xBEEF;

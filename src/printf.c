@@ -6,6 +6,7 @@
 #include "stdarg.h"
 #include "textures_sprites.h"
 #include "rcp_dkr.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -215,9 +216,11 @@ int sprintf(char *s, const char *format, ...) {
  * Official Name: diPrintfInit
  */
 void debug_text_init(void) {
+    set_texture_colour_tag(PP_RAM_FONTS);
     gTexture[0] = load_texture(ASSET_TEX2D_SMALLFONT_0);
     gTexture[1] = load_texture(ASSET_TEX2D_SMALLFONT_1);
     gTexture[2] = load_texture(ASSET_TEX2D_SMALLFONT_2);
+    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
     gDebugPrintBufferEnd = gDebugPrintBufferStart;
 }
 

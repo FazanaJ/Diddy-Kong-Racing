@@ -11,6 +11,7 @@
 #include "objects.h"
 #include "PRinternal/viint.h"
 #include "common.h"
+#include "main.h"
 
 #define WEATHER_OVERRIDE_COUNT 16
 
@@ -264,7 +265,7 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
         rain_init(intensity + 1, opacity + 1);
         return;
     }
-    pos = (Vec3i *) mempool_alloc_safe(gWeatherPresets[weatherType].size * (sizeof(Vec3i)), COLOUR_TAG_LIGHT_ORANGE);
+    pos = (Vec3i *) mempool_alloc_safe(gWeatherPresets[weatherType].size * (sizeof(Vec3i)), PP_RAM_WEATHER);
     gSnowGfx.pos = pos;
     gSnowGfx.size = gWeatherPresets[weatherType].size;
     gSnowGfx.offsetX = gWeatherPresets[weatherType].offsetX;
@@ -282,8 +283,8 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
     }
     numOfElements = density;
     gSnowDensity = numOfElements;
-    gSnowTriIndices = (s16 *) mempool_alloc_safe(numOfElements * (sizeof(s16)), COLOUR_TAG_LIGHT_ORANGE);
-    gSnowPhysics = (SnowPosData *) mempool_alloc_safe(numOfElements * (sizeof(SnowPosData)), COLOUR_TAG_LIGHT_ORANGE);
+    gSnowTriIndices = (s16 *) mempool_alloc_safe(numOfElements * (sizeof(s16)), PP_RAM_WEATHER);
+    gSnowPhysics = (SnowPosData *) mempool_alloc_safe(numOfElements * (sizeof(SnowPosData)), PP_RAM_WEATHER);
     for (i = 0; i < gSnowDensity; i++) {
         gSnowPhysics[i].x_position = get_random_number_from_range(0, gSnowGfx.radiusX);
         gSnowPhysics[i].y_position = get_random_number_from_range(0, gSnowGfx.radiusY);
@@ -294,8 +295,8 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
     numOfElements = numOfElements * 3;
     allocSize = sizeof(Vertex);
     allocSize *= numOfElements;
-    gSnowVertexData[0] = mempool_alloc_safe(allocSize, COLOUR_TAG_LIGHT_ORANGE);
-    gSnowVertexData[1] = mempool_alloc_safe(allocSize, COLOUR_TAG_LIGHT_ORANGE);
+    gSnowVertexData[0] = mempool_alloc_safe(allocSize, PP_RAM_WEATHER);
+    gSnowVertexData[1] = mempool_alloc_safe(allocSize, PP_RAM_WEATHER);
     for (j = 0; j < 2; j++) {
         gSnowVerts = gSnowVertexData[j];
         for (i = 0; i < numOfElements; i++) {
@@ -308,7 +309,7 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
 
     width = (gSnowGfx.texture->width << 5) - 1;
     height = (gSnowGfx.texture->height << 5) - 1;
-    gSnowTriangles = (Triangle *) mempool_alloc_safe(gSnowTriCount * (sizeof(Triangle)), COLOUR_TAG_LIGHT_ORANGE);
+    gSnowTriangles = (Triangle *) mempool_alloc_safe(gSnowTriCount * (sizeof(Triangle)), PP_RAM_WEATHER);
     for (i = 0; i < gSnowTriCount; i++) {
         gSnowTriangles[i].flags = BACKFACE_CULL;
         gSnowTriangles[i].vi0 = (i * 3) + 2;
@@ -344,7 +345,9 @@ void snow_init(void) {
         offset += step;
     }
 
+    set_texture_colour_tag(PP_RAM_WEATHER);
     gSnowGfx.texture = load_texture(*gWeatherAssetTable);
+    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
 }
 
 /**
@@ -786,8 +789,10 @@ void rain_init(s32 intensity, s32 opacity) {
     gThunderTimer = 0;
     gRainSplashDelay = 0;
     gRainVertexFlip = 0;
+    set_texture_colour_tag(PP_RAM_WEATHER);
     gRainGfx[0].tex = load_texture(gWeatherAssetTable[1]);
     gRainGfx[1].tex = load_texture(gWeatherAssetTable[1]);
+    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
     gRainSplashGfx = (Sprite *) func_8007C12C(gWeatherAssetTable[3], 0);
     gWeatherType = WEATHER_RAIN;
 }

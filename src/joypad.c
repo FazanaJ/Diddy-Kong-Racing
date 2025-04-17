@@ -20,6 +20,7 @@ OSContPad gControllerPrevData[MAXCONTROLLERS];
 u16 gControllerButtonsPressed[MAXCONTROLLERS];
 u16 gControllerButtonsReleased[MAXCONTROLLERS];
 u8 sPlayerID[16];
+u8 sInputInit = FALSE;
 
 /**
  * Return the serial interface message queue.
@@ -38,6 +39,11 @@ s32 input_init(void) {
     u8 bitpattern;
     UNUSED s32 *temp2;
 
+    if (sInputInit) {
+        return CONTROLLER_EXISTS;
+    }
+    
+    sInputInit = TRUE;
     osCreateMesgQueue(&sSIMesgQueue, &sSIMesgBuf, 1);
     osSetEventMesg(OS_EVENT_SI, &sSIMesgQueue, gSIMesg);
     osContInit(&sSIMesgQueue, &bitpattern, gControllerStatus);

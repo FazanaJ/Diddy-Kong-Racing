@@ -138,7 +138,7 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
     if (c->fxType[0] == AL_FX_CUSTOM) {
         assetAudioTable = load_asset_section_from_rom(ASSET_AUDIO_TABLE);
         assetSize = assetAudioTable[ASSET_AUDIO_9] - assetAudioTable[ASSET_AUDIO_8];
-        asset8 = mempool_alloc_safe(assetSize, COLOUR_TAG_CYAN);
+        asset8 = mempool_alloc_safe(assetSize, PP_RAM_AUD_TABLE);
         load_asset_to_address(ASSET_AUDIO, (u32) asset8, assetAudioTable[ASSET_AUDIO_8], assetSize);
         c->params = asset8;
         c[1].maxVVoices = 0;
@@ -178,7 +178,7 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
         __am.ACMDList[i] = (Acmd *) alHeapAlloc(c->heap, 1, 0xA000); // sizeof(Acmd) * DMA_BUFFER_LENGTH * 5?
     }
 
-    asset = (uintptr_t *) mempool_alloc((maxFrameSize * 12), COLOUR_TAG_CYAN);
+    asset = (uintptr_t *) mempool_alloc((maxFrameSize * 12), PP_RAM_AUDIOHEAP);
 
     /**** initialize the done messages ****/
     for (i = 0; i < NUM_ACMD_LISTS + 1; i++) {
@@ -193,6 +193,8 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
     osCreateThread(&__am.thread, 4, __amMain, 0, (void *) (audioStack + STACKSIZE(STACK_AUD)), pri);
     audioStack[STACKSIZE(STACK_AUD) - 1] = 0;
     audioStack[0] = 0;
+    debug_ram(-STACK_AUD, PP_RAM_CODE);
+    debug_ram(STACK_AUD, PP_RAM_STACK);
 }
 
 /**

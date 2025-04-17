@@ -51,6 +51,8 @@ typedef enum MempoolFlags {
 #define COLOUR_TAG_BLACK 0x000000FF
 // Weather
 #define COLOUR_TAG_LIGHT_ORANGE 0xFFAA55FF
+
+#define COLOUR_TAG_NONE 999
     
 /* Size: 0x10 bytes */
 typedef struct MemoryPoolSlot {

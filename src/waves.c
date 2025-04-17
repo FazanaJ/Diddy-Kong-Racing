@@ -8,6 +8,7 @@
 #include "tracks.h"
 #include "math_util.h"
 #include "PRinternal/viint.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -150,36 +151,38 @@ void wave_init(void) {
     s32 i;
 
     free_waves();
-    D_800E3040 = (f32 *) mempool_alloc_safe(D_80129FC8.unk20 << 2, COLOUR_TAG_CYAN);
-    D_800E3044 = (Vec2s *) mempool_alloc_safe((D_80129FC8.unk4 << 2) * D_80129FC8.unk4, COLOUR_TAG_CYAN);
-    D_800E3048 = (Vec2s *) mempool_alloc_safe(((D_80129FC8.unk0 + 1) << 2) * (D_80129FC8.unk0 + 1), COLOUR_TAG_CYAN);
+    D_800E3040 = (f32 *) mempool_alloc_safe(D_80129FC8.unk20 << 2, PP_RAM_WAVES);
+    D_800E3044 = (Vec2s *) mempool_alloc_safe((D_80129FC8.unk4 << 2) * D_80129FC8.unk4, PP_RAM_WAVES);
+    D_800E3048 = (Vec2s *) mempool_alloc_safe(((D_80129FC8.unk0 + 1) << 2) * (D_80129FC8.unk0 + 1), PP_RAM_WAVES);
     allocSize = ((D_80129FC8.unk0 + 1) << 2) * (D_80129FC8.unk0 + 1);
-    D_800E304C[0] = mempool_alloc_safe(allocSize * ARRAY_COUNT(D_800E304C), COLOUR_TAG_CYAN);
+    D_800E304C[0] = mempool_alloc_safe(allocSize * ARRAY_COUNT(D_800E304C), PP_RAM_WAVES);
     for (i = 1; i < ARRAY_COUNT(D_800E304C); i++) {
         D_800E304C[i] = (f32 *) (((u32) D_800E304C[0]) + (allocSize * i));
     }
     temp = (D_80129FC8.unk0 + 1);
     allocSize = (temp * 250 * (D_80129FC8.unk0 + 1));
     if (D_8012A078 != 2) {
-        D_800E3070[0] = (Vertex *) mempool_alloc_safe(allocSize << 1, COLOUR_TAG_CYAN);
+        D_800E3070[0] = (Vertex *) mempool_alloc_safe(allocSize << 1, PP_RAM_WAVES);
         D_800E3070[1] = (Vertex *) (((u32) D_800E3070[0]) + allocSize);
     } else {
-        D_800E3070[0] = (Vertex *) mempool_alloc_safe(allocSize << 2, COLOUR_TAG_CYAN);
+        D_800E3070[0] = (Vertex *) mempool_alloc_safe(allocSize << 2, PP_RAM_WAVES);
         D_800E3070[1] = (Vertex *) (((u32) D_800E3070[0]) + allocSize);
         D_800E3070[2] = (Vertex *) (((u32) D_800E3070[1]) + allocSize);
         D_800E3070[3] = (Vertex *) (((u32) D_800E3070[2]) + allocSize);
     }
     allocSize = (D_80129FC8.unk0 * 32) * D_80129FC8.unk0;
     if (D_8012A078 != 2) {
-        D_800E3080[0][0] = mempool_alloc_safe(allocSize << 1, COLOUR_TAG_CYAN);
+        D_800E3080[0][0] = mempool_alloc_safe(allocSize << 1, PP_RAM_WAVES);
         D_800E3080[1][0] = (Triangle *) (((u32) D_800E3080[0][0]) + allocSize);
     } else {
-        D_800E3080[0][0] = (Triangle *) mempool_alloc_safe(allocSize << 2, COLOUR_TAG_CYAN);
+        D_800E3080[0][0] = (Triangle *) mempool_alloc_safe(allocSize << 2, PP_RAM_WAVES);
         D_800E3080[1][0] = (Triangle *) (((u32) D_800E3080[0][0]) + allocSize);
         D_800E3080[2][0] = (Triangle *) (((u32) D_800E3080[1][0]) + allocSize);
         D_800E3080[3][0] = (Triangle *) (((u32) D_800E3080[2][0]) + allocSize);
     }
+    set_texture_colour_tag(PP_RAM_WAVES);
     D_800E30D0 = load_texture(D_80129FC8.unk2C);
+    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
 }
 
 void func_800B8134(LevelHeader *header) {

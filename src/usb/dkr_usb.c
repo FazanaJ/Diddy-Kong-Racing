@@ -107,6 +107,8 @@ void init_usb_thread(void) {
                    THREADUSB_PRIORITY);
     gThreadUsbStack[STACKSIZE(STACK_USB) - 1] = 0;
     gThreadUsbStack[0] = 0;
+    debug_ram(-STACK_USB, PP_RAM_CODE);
+    debug_ram(STACK_USB, PP_RAM_STACK);
     osStartThread(&gThreadUsb);
 }
 

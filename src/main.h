@@ -164,7 +164,6 @@ typedef enum DebugRam {
 
     PP_RAM_CODE,
     PP_RAM_FRAMEBUFFERS,
-    PP_RAM_ZBUFFER,
     PP_RAM_TASKBUFFER,
     PP_RAM_ANIMATIONS,
     PP_RAM_WEATHER,
@@ -179,6 +178,26 @@ typedef enum DebugRam {
     PP_RAM_CMDBUF,
     PP_RAM_SAVES,
     PP_RAM_TEMP,
+    PP_RAM_SHADOWS,
+    PP_RAM_SUBPOOLS,
+    PP_RAM_AUDIOHEAP,
+    PP_RAM_ASSETTABLE,
+    PP_RAM_STACK,
+    PP_RAM_AUD_EMITTERS,
+    PP_RAM_AUD_TABLE,
+    PP_RAM_SEQUENCES,
+    PP_RAM_SOUNDBANK,
+    PP_RAM_HUD,
+    PP_RAM_FONTS,
+    PP_RAM_TEXT,
+    PP_RAM_LIGHTS,
+    PP_RAM_ASSET_CACHE,
+    PP_RAM_OBJECTS,
+    PP_RAM_CPAK,
+    PP_RAM_WAVES,
+    PP_RAM_GHOSTS,
+    PP_RAM_SKY,
+    PP_RAM_MENU,
 
     PP_RAM_TOTAL,
 } DebugRam;
@@ -197,7 +216,42 @@ typedef enum DebugRam {
     "Black", \
     "L. Orange", \
             \
-    "Code"
+    "Code", \
+    "Framebuffers", \
+    "Task Buffer", \
+    "Animations", \
+    "Weather", \
+    "Lvl Textures", \
+    "Lvl Models", \
+    "Obj Textures", \
+    "Obj Models", \
+    "Misc Textures", \
+    "Misc Models", \
+    "Sprites", \
+    "Slots", \
+    "Gfx Buffer", \
+    "Saves", \
+    "Temp", \
+    "Shadows", \
+    "Subpools", \
+    "Audio Heap", \
+    "Asset Tables", \
+    "Stack", \
+    "SFX Emitters", \
+    "Aud Table", \
+    "Sequences", \
+    "Sound Banks", \
+    "HUD", \
+    "Fonts", \
+    "Text", \
+    "Lights", \
+    "Asset Cache", \
+    "Objects", \
+    "Cpak", \
+    "Waves", \
+    "Ghost Data", \
+    "Sky", \
+    "Menu"
 
 #define NUM_PERF_ITERATIONS 60
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS
@@ -251,6 +305,7 @@ void debug_ram(s32 size, s32 tag);
 s32 debug_tag_index(s32 colourTag);
 void debug_printf(const char* message, ...);
 void crash_assert(s32 cond, const char *str, ...);
+void debug_ram_dump(void);
 #else
 #define debug_init()
 #define debug_render(dList, updateRate)

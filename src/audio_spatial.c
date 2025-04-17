@@ -10,6 +10,7 @@
 #include "audiosfx.h"
 #include "tracks.h"
 #include "math_util.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -37,9 +38,9 @@ void audioline_init(void) {
     s32 i;
 
     sound_table_properties(&D_80119C40, NULL, NULL);
-    gSoundMaskHeap = mempool_alloc_safe(sizeof(SoundMask) * SOUND_MASK_HEAP_COUNT, COLOUR_TAG_CYAN);
-    gSoundMaskHeapFree = mempool_alloc_safe(sizeof(uintptr_t) * SOUND_MASK_HEAP_COUNT, COLOUR_TAG_CYAN);
-    gSoundMaskHeapUsed = mempool_alloc_safe(sizeof(uintptr_t) * SOUND_MASK_HEAP_COUNT, COLOUR_TAG_CYAN);
+    gSoundMaskHeap = mempool_alloc_safe(sizeof(SoundMask) * SOUND_MASK_HEAP_COUNT, PP_RAM_AUD_EMITTERS);
+    gSoundMaskHeapFree = mempool_alloc_safe(sizeof(uintptr_t) * SOUND_MASK_HEAP_COUNT, PP_RAM_AUD_EMITTERS);
+    gSoundMaskHeapUsed = mempool_alloc_safe(sizeof(uintptr_t) * SOUND_MASK_HEAP_COUNT, PP_RAM_AUD_EMITTERS);
     gUsedMasks = 0;
     for (i = 0; i < ARRAY_COUNT(D_80119C58); i++) {
         D_80119C58[i].soundPtr = NULL;

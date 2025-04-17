@@ -254,14 +254,14 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     numberOfPlayers = gScenePlayerViewports;
     // Dynamic Shadows
     for (i = 0; i < 2; i++) {
-        gShadowHeapData[i] = (ShadowHeapProperties *) mempool_alloc_safe(sizeof(ShadowHeapProperties) * 75, COLOUR_TAG_YELLOW);
-        gShadowHeapTris[i] = (Triangle *) mempool_alloc_safe(sizeof(Triangle) * 150, COLOUR_TAG_YELLOW);
-        gShadowHeapVerts[i] = (Vertex *) mempool_alloc_safe(sizeof(Vertex) * 400, COLOUR_TAG_YELLOW);
+        gShadowHeapData[i] = (ShadowHeapProperties *) mempool_alloc_safe(sizeof(ShadowHeapProperties) * 75, PP_RAM_SHADOWS);
+        gShadowHeapTris[i] = (Triangle *) mempool_alloc_safe(sizeof(Triangle) * 150, PP_RAM_SHADOWS);
+        gShadowHeapVerts[i] = (Vertex *) mempool_alloc_safe(sizeof(Vertex) * 400, PP_RAM_SHADOWS);
     }
     // Static Shadows
-    gShadowHeapData[2] = (ShadowHeapProperties *) mempool_alloc_safe(sizeof(ShadowHeapProperties) * 200, COLOUR_TAG_YELLOW);
-    gShadowHeapTris[2] = (Triangle *) mempool_alloc_safe(sizeof(Triangle) * 400, COLOUR_TAG_YELLOW);
-    gShadowHeapVerts[2] = (Vertex *) mempool_alloc_safe(sizeof(Vertex) * 1000, COLOUR_TAG_YELLOW);
+    gShadowHeapData[2] = (ShadowHeapProperties *) mempool_alloc_safe(sizeof(ShadowHeapProperties) * 200, PP_RAM_SHADOWS);
+    gShadowHeapTris[2] = (Triangle *) mempool_alloc_safe(sizeof(Triangle) * 400, PP_RAM_SHADOWS);
+    gShadowHeapVerts[2] = (Vertex *) mempool_alloc_safe(sizeof(Vertex) * 1000, PP_RAM_SHADOWS);
 
     gShadowHeapFlip = 0;
     shadow_update(SHADOW_SCENERY, SHADOW_SCENERY, LOGIC_NULL);
@@ -2384,12 +2384,12 @@ void func_8002C0C4(s32 modelId) {
     s32 temp;
     LevelModel *mdl;
 
-    set_texture_colour_tag(COLOUR_TAG_GREEN);
+    set_texture_colour_tag(PP_RAM_LEVELTEX);
     //gTrackModelHeap = mempool_alloc_safe(LEVEL_MODEL_MAX_SIZE, COLOUR_TAG_YELLOW);
-    gTrackModelHeap = (LevelModel *) mempool_alloc_largest(COLOUR_TAG_YELLOW);
+    gTrackModelHeap = (LevelModel *) mempool_alloc_largest(PP_RAM_LEVELMDL);
     gCurrentLevelModel = gTrackModelHeap;
-    D_8011D370 = mempool_alloc_safe(0x7D0, COLOUR_TAG_YELLOW);
-    D_8011D374 = mempool_alloc_safe(0x1F4, COLOUR_TAG_YELLOW);
+    D_8011D370 = mempool_alloc_safe(0x7D0, PP_RAM_LEVELMDL);
+    D_8011D374 = mempool_alloc_safe(0x1F4, PP_RAM_LEVELMDL);
     D_8011D378 = 0;
     gLevelModelTable = (s32 *) load_asset_section_from_rom(ASSET_LEVEL_MODELS_TABLE);
 
@@ -2452,7 +2452,7 @@ void func_8002C0C4(s32 modelId) {
     temp_s4 = j - (s32) gCurrentLevelModel;
     mempool_free_timer(0);
     mempool_free(gTrackModelHeap);
-    mempool_alloc_fixed(temp_s4, (u8 *) gTrackModelHeap, COLOUR_TAG_YELLOW);
+    mempool_alloc_fixed(temp_s4, (u8 *) gTrackModelHeap, PP_RAM_LEVELMDL);
     mempool_free_timer(2);
     minimap_init(gCurrentLevelModel);
 

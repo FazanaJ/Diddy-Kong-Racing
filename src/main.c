@@ -316,6 +316,8 @@ void mainproc(void) {
     osCreateThread(&gThread1, 1, &thread1_main, 0, &gThread1Stack[STACKSIZE(STACK_IDLE)], OS_PRIORITY_IDLE);
     gThread1Stack[STACKSIZE(STACK_IDLE) - 1] = 0;
     gThread1Stack[0] = 0;
+    debug_ram(-STACK_IDLE, PP_RAM_CODE);
+    debug_ram(STACK_IDLE, PP_RAM_STACK);
     osStartThread(&gThread1);
 }
 
@@ -332,6 +334,8 @@ void thread1_main(UNUSED void *unused) {
     osCreateThread(&gThread3, 3, &thread3_main, 0, &gThread3Stack[STACKSIZE(STACK_GAME)], 10);
     gThread3Stack[STACKSIZE(STACK_GAME) - 1] = 0;
     gThread3Stack[0] = 0;
+    debug_ram(-STACK_GAME, PP_RAM_CODE);
+    debug_ram(STACK_GAME, PP_RAM_STACK);
     osStartThread(&gThread3);
     osSetThreadPri(NULL, OS_PRIORITY_IDLE);
     while (1) {}
@@ -492,7 +496,9 @@ s32 debug_tag_index(s32 colourTag) {
 }
 
 void debug_ram(s32 size, s32 tag) {
-    gDebug.ramTotal += size;
+    if (tag != PP_RAM_SUBPOOLS) {
+        gDebug.ramTotal += size;
+    }
     gDebug.ramSegments[debug_tag_index(tag)] += size;
 }
 

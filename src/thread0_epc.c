@@ -30,18 +30,33 @@ void update_object_stack_trace(s32 index, s32 value) {
 #include "audiomgr.h"
 
 u64 gCrashThreadStack[STACKSIZE(STACK_CRASH)];
-ALIGNED16 OSThread gCrashThread;
+OSThread gCrashThread;
 OSMesgQueue gCrashQueue;
 OSMesg gCrashQueueBuf[2];
 u16 *gCrashFB;
 char *gCrashFuncName;
 char gCrashAssert[127];
+s32 gCrashInput;
 u8 gCrashAssetTripped;
 u8 gCrashPage;
-u8 gCrashCause;
+u8 gCrashCause = -1;
 u8 gCrashFBFlip;
 u8 gCrashFBUpdate;
+s16 gCrashSelection;
+s8 gCrashScrollCursor;
+s16 gCrashAltView;
+s16 gCrashScroll;
+s16 gMaxScroll;
+s16 gScrollSize;
+s16 gCrashAltSelection;
+s16 gCrashAltScrollCursor;
+s16 gCrashAltScroll;
+s16 gMaxAltScroll;
+s16 gAltScrollSize;
+s16 gAltNumValids;
+s8 gMemoryCapID = -1;
 u16 gThreadStackSize;
+u32 gMemoryCapOffset;
 
 
 u16 gScreenWidth = 320;
@@ -157,7 +172,8 @@ char *gCauseDesc[] = {
     "Watchpoint exception",
     "Virtual coherency on data",
     "Stack overflow or underflow",
-    "Asset tripped"
+    "Asset tripped",
+    "Out of memory"
 };
 
 char *gFpcsrDesc[] = {
@@ -193,6 +209,15 @@ void crash_assert(s32 cond, const char *str, ...) {
     *(volatile int *) 0 = 0;
 }
 
+void crash_nomemory(s32 size, s32 colourTag) {
+    if (colourTag != COLOUR_TAG_NONE) {
+        gMemoryCapID = colourTag;
+        gMemoryCapOffset = size;
+        debug_ram(size, colourTag);
+    }
+    gCrashCause = 20;
+    *(volatile int *) 0 = 0;
+}
 
 void crash_screen_draw_glyph(s32 x, s32 y, s32 glyph, u16 colour) {
     const u32 *data;
@@ -503,7 +528,7 @@ void crash_reg_common(OSThread *t, s32 x) {
     crash_text(x + 144, 63, GPACK_RGBA5551(255, 255, 255, 1), "SR:0#%08X", (u32) c->sr);
 }
 
-s32 crash_page_gpregs(OSThread *t) {
+void crash_page_gpregs(OSThread *t) {
     __OSThreadContext *c;
     s32 initialX;
     s32 x;
@@ -528,8 +553,6 @@ s32 crash_page_gpregs(OSThread *t) {
 
     crash_reg_common(t, initialX);
 
-    return 0;
-
     x = initialX;
     y = 72;
     midCount = 0;
@@ -552,11 +575,9 @@ s32 crash_page_gpregs(OSThread *t) {
             x += 144;
         }
     }
-
-    return FALSE;
 }
 
-s32 crash_page_fpregs(OSThread *t) {
+void crash_page_fpregs(OSThread *t) {
     __OSThreadContext *c;
     s32 initialX;
     s32 x;
@@ -600,8 +621,6 @@ s32 crash_page_fpregs(OSThread *t) {
             x += 144;
         }
     }
-
-    return FALSE;
 }
 
 u8 gStackThreadIDs[] = {
@@ -650,7 +669,7 @@ OSThread *crash_thread_id(s32 threadID) {
     }
 }
 
-s32 crash_page_stacks(OSThread *t) {
+void crash_page_stacks(OSThread *t) {
     s32 i;
     u32 colour;
     s32 y;
@@ -683,17 +702,14 @@ s32 crash_page_stacks(OSThread *t) {
         }
         y += 9;
     }
-
-    return FALSE;
 }
 
-s32 crash_page_assert(void) {
+void crash_page_assert(void) {
     if (gCrashAssetTripped) {
         crash_text(CRASH_BORDER_X + 16, 54, GPACK_RGBA5551(255, 255, 255, 1), gCrashAssert);
     } else {
         crash_text(CRASH_BORDER_X + 16, 54, GPACK_RGBA5551(255, 255, 255, 1), "No assert triggered.");
     }
-    return FALSE;
 }
 
 extern char *sPuppyprintMemColours[];
@@ -704,20 +720,82 @@ const char *sMemLabels[] = {
     "MB"
 };
 
-const u16 sMemColour5s[PP_RAM_TOTAL] = {
-    GPACK_RGBA5551(255, 0, 0, 1),
-    GPACK_RGBA5551(0, 255, 0, 1),
-    GPACK_RGBA5551(0, 0, 255, 1),
-    GPACK_RGBA5551(255, 255, 0, 1),
-    GPACK_RGBA5551(255, 0, 255, 1),
-    GPACK_RGBA5551(0, 255, 255, 1),
-    GPACK_RGBA5551(255, 255, 255, 1),
-    GPACK_RGBA5551(127, 127, 127, 1),
-    GPACK_RGBA5551(127, 127, 0, 1),
-    GPACK_RGBA5551(255, 127, 0, 1),
-    GPACK_RGBA5551(0, 0, 0, 1),
-    GPACK_RGBA5551(255, 127, 64, 1),
-    GPACK_RGBA5551(0, 127, 255, 1),
+const u16 sMemColour5s[76] = {
+    // Original 12 colors
+    GPACK_RGBA5551(255, 0, 0, 1),    // Bright red
+    GPACK_RGBA5551(0, 255, 0, 1),    // Bright green
+    GPACK_RGBA5551(0, 0, 255, 1),    // Bright blue
+    GPACK_RGBA5551(255, 255, 0, 1),  // Bright yellow
+    GPACK_RGBA5551(255, 0, 255, 1),  // Bright magenta
+    GPACK_RGBA5551(0, 255, 255, 1),  // Bright cyan
+    GPACK_RGBA5551(255, 255, 255, 1),// White
+    GPACK_RGBA5551(127, 127, 127, 1),// Gray
+    GPACK_RGBA5551(127, 127, 0, 1),  // Olive
+    GPACK_RGBA5551(255, 127, 0, 1),  // Orange
+    GPACK_RGBA5551(0, 0, 0, 1),      // Black
+    GPACK_RGBA5551(255, 127, 64, 1), // Peach
+
+    // Additional 64 vibrant colors
+    GPACK_RGBA5551(255, 64, 64, 1),   // Light red
+    GPACK_RGBA5551(64, 255, 64, 1),   // Light green
+    GPACK_RGBA5551(64, 64, 255, 1),   // Light blue
+    GPACK_RGBA5551(255, 128, 0, 1),   // Bright orange
+    GPACK_RGBA5551(255, 0, 128, 1),   // Hot pink
+    GPACK_RGBA5551(128, 0, 255, 1),   // Bright purple
+    GPACK_RGBA5551(0, 128, 255, 1),   // Sky blue
+    GPACK_RGBA5551(0, 255, 128, 1),   // Bright teal
+    GPACK_RGBA5551(128, 255, 0, 1),   // Lime green
+    GPACK_RGBA5551(255, 255, 128, 1), // Light yellow
+    GPACK_RGBA5551(255, 128, 255, 1), // Light magenta
+    GPACK_RGBA5551(128, 255, 255, 1), // Light cyan
+    GPACK_RGBA5551(192, 0, 0, 1),     // Deep red
+    GPACK_RGBA5551(0, 192, 0, 1),     // Deep green
+    GPACK_RGBA5551(0, 0, 192, 1),     // Deep blue
+    GPACK_RGBA5551(192, 192, 0, 1),   // Deep yellow
+    GPACK_RGBA5551(192, 0, 192, 1),   // Deep magenta
+    GPACK_RGBA5551(0, 192, 192, 1),   // Deep cyan
+    GPACK_RGBA5551(255, 96, 0, 1),    // Bright tangerine
+    GPACK_RGBA5551(255, 0, 96, 1),    // Bright rose
+    GPACK_RGBA5551(96, 0, 255, 1),    // Bright indigo
+    GPACK_RGBA5551(0, 96, 255, 1),    // Bright azure
+    GPACK_RGBA5551(0, 255, 96, 1),    // Bright aquamarine
+    GPACK_RGBA5551(96, 255, 0, 1),    // Bright chartreuse
+    GPACK_RGBA5551(255, 192, 0, 1),   // Goldenrod
+    GPACK_RGBA5551(255, 0, 192, 1),   // Fuchsia
+    GPACK_RGBA5551(192, 0, 255, 1),   // Violet
+    GPACK_RGBA5551(0, 192, 255, 1),   // Cerulean
+    GPACK_RGBA5551(0, 255, 192, 1),   // Turquoise
+    GPACK_RGBA5551(192, 255, 0, 1),   // Yellow-green
+    GPACK_RGBA5551(255, 255, 192, 1), // Pale yellow
+    GPACK_RGBA5551(255, 192, 255, 1), // Pale magenta
+    GPACK_RGBA5551(192, 255, 255, 1), // Pale cyan
+    GPACK_RGBA5551(255, 160, 0, 1),   // Amber
+    GPACK_RGBA5551(255, 0, 160, 1),   // Bright raspberry
+    GPACK_RGBA5551(160, 0, 255, 1),   // Bright lavender
+    GPACK_RGBA5551(0, 160, 255, 1),   // Bright sky blue
+    GPACK_RGBA5551(0, 255, 160, 1),   // Bright sea green
+    GPACK_RGBA5551(160, 255, 0, 1),   // Bright lime
+    GPACK_RGBA5551(255, 96, 96, 1),   // Light coral
+    GPACK_RGBA5551(96, 255, 96, 1),   // Light mint
+    GPACK_RGBA5551(96, 96, 255, 1),   // Light periwinkle
+    GPACK_RGBA5551(255, 192, 128, 1), // Light peach
+    GPACK_RGBA5551(255, 128, 192, 1), // Light pink
+    GPACK_RGBA5551(192, 255, 128, 1), // Light lime
+    GPACK_RGBA5551(128, 255, 192, 1), // Light aqua
+    GPACK_RGBA5551(192, 128, 255, 1), // Light lavender
+    GPACK_RGBA5551(128, 192, 255, 1), // Light sky blue
+    GPACK_RGBA5551(255, 64, 128, 1),  // Bright rose pink
+    GPACK_RGBA5551(128, 64, 255, 1),  // Bright violet
+    GPACK_RGBA5551(64, 128, 255, 1),  // Bright azure
+    GPACK_RGBA5551(64, 255, 128, 1),  // Bright mint
+    GPACK_RGBA5551(128, 255, 64, 1),  // Bright lime yellow
+    GPACK_RGBA5551(255, 128, 64, 1),  // Bright orange peach
+    GPACK_RGBA5551(255, 64, 192, 1),  // Bright fuchsia pink
+    GPACK_RGBA5551(192, 64, 255, 1),  // Bright purple lavender
+    GPACK_RGBA5551(64, 192, 255, 1),  // Bright cerulean blue
+    GPACK_RGBA5551(64, 255, 192, 1),  // Bright turquoise green
+    GPACK_RGBA5551(192, 255, 64, 1),  // Bright yellow-green
+    GPACK_RGBA5551(255, 192, 64, 1),  // Bright goldenrod
 };
 
 f32 memsize_float(s32 size, s32 *tag) {
@@ -738,13 +816,17 @@ f32 memsize_float(s32 size, s32 *tag) {
 
 u8 gCrashMemPrintOrder[PP_RAM_TOTAL];
 
-void draw_memory_bar_chart(s32 x, s32 y, s32 width, s32 height) {
+void crash_memory_chart(s32 x, s32 y, s32 width, s32 height) {
     DebugData *d = &gDebug;
     u32 ramSize;
     s32 i;
     s32 totalHeight = 0;
     s32 barHeight;
     s32 tag;
+    s32 r;
+    s32 g;
+    s32 b;
+    s32 a;
 
     // Determine total RAM size
     if (gUseExpansionMemory) {
@@ -756,6 +838,9 @@ void draw_memory_bar_chart(s32 x, s32 y, s32 width, s32 height) {
     // Calculate the total height of the bar chart
     for (i = 0; i < PP_RAM_TOTAL; i++) {
         if (d->ramSegments[gCrashMemPrintOrder[i]]) {
+            if (gCrashMemPrintOrder[i] == gMemoryCapID) {
+                d->ramSegments[gCrashMemPrintOrder[i]] -= gMemoryCapOffset;
+            }
             totalHeight += d->ramSegments[gCrashMemPrintOrder[i]];
         }
     }
@@ -775,20 +860,28 @@ void draw_memory_bar_chart(s32 x, s32 y, s32 width, s32 height) {
             // Calculate the height of the bar proportional to the memory segment size
             barHeight = (d->ramSegments[gCrashMemPrintOrder[i]] * width) / ramSize;
 
-            // Draw the bar with the corresponding color
-            crash_rectangle(
-                x, 
-                y, 
-                barHeight, 
-                height, 
-                (sMemColour5s[gCrashMemPrintOrder[i]] >> 8) & 0xF8, // Extract red component
-                (sMemColour5s[gCrashMemPrintOrder[i]] >> 3) & 0xF8,  // Extract green component
-                (sMemColour5s[gCrashMemPrintOrder[i]] << 2) & 0xF8,  // Extract blue component
-                255                             // Full alpha
-            );
+            if (gCrashSelection == i) {
+                r = ((sMemColour5s[gCrashMemPrintOrder[i]] >> 8) & 0xF8);
+                g = ((sMemColour5s[gCrashMemPrintOrder[i]] >> 3) & 0xF8);
+                b = ((sMemColour5s[gCrashMemPrintOrder[i]] << 2) & 0xF8);
+                a = 255;
+                crash_rectangle(x, y, barHeight, height, 255, 255, 255, 255);
+                crash_rectangle(x + 1, y + 1, barHeight - 2, height - 2, r, g, b, a);
+            } else {
+                r = ((sMemColour5s[gCrashMemPrintOrder[i]] >> 8) & 0xF8) / 2;
+                g = ((sMemColour5s[gCrashMemPrintOrder[i]] >> 3) & 0xF8) / 2;
+                b = ((sMemColour5s[gCrashMemPrintOrder[i]] << 2) & 0xF8) / 2;
+                a = 160;
+                crash_rectangle(x, y, barHeight, height, r, g, b, a);
+            }
+
+
 
             // Move the y-coordinate down for the next bar
             x += barHeight;
+        }
+        if (gCrashMemPrintOrder[i] == gMemoryCapID) {
+            d->ramSegments[gCrashMemPrintOrder[i]] += gMemoryCapOffset;
         }
     }
 }
@@ -814,15 +907,182 @@ void crash_reorder_ram(DebugData *d) {
     }
 }
 
-s32 crash_page_memory(void) {
+extern u8 *main_TEXT_START[];
+extern u8 *main_TEXT_END[];
+extern u8 *main_DATA_START[];
+extern u8 *main_DATA_END[];
+extern u8 *main_RODATA_START[];
+extern u8 *main_RODATA_END[];
+extern u8 *main_BSS_START[];
+extern u8 *main_BSS_END[];
+
+extern u8 *main_TEXT_SIZE[];
+extern u8 *main_DATA_SIZE[];
+extern u8 *main_RODATA_SIZE[];
+extern u8 *main_BSS_SIZE[];
+
+void crash_mem_details(void) {
+    s32 x;
+    s32 y;
+    s32 numSlots;
+    s32 stopCounting;
+    s32 i;
+    int flags;
+    int nextIndex;
+    MemoryPoolSlot *slot;
+    f32 size;
+    s32 tag;
+    s32 col;
+    s32 useScroll;
+    f32 scrollLen;
+    s32 scrollSize;
+
+    x = 240;
+    y = 77 - (gCrashAltScroll * 9);
+    numSlots = 0;
+    stopCounting = FALSE;
+    scrollSize = 0;
+    useScroll = FALSE;
+    switch (gCrashMemPrintOrder[gCrashSelection]) {
+        default:
+            for (i = 0; i <= gNumberOfMemoryPools; i++) {
+                slot = &gMemoryPools[i].slots[0];
+                
+                do {
+                    flags = slot->flags;
+                    nextIndex = slot->nextIndex;
+        
+                    if (flags != SLOT_FREE) {
+                        if (debug_tag_index(slot->colourTag) == gCrashMemPrintOrder[gCrashSelection]) {
+                            scrollSize++;
+                            if (y < 77) {
+                                y += 9;
+                                useScroll = TRUE;
+                                slot = &gMemoryPools[i].slots[slot->nextIndex];
+                                continue;
+                            }
+                            if (y > gScreenHeight - 50 || stopCounting) {
+                                useScroll = TRUE;
+                                stopCounting = TRUE;
+                                slot = &gMemoryPools[i].slots[slot->nextIndex];
+                                continue;
+                            }
+                            if (gCrashAltSelection + 1 == scrollSize && gCrashAltView == 1) {
+                                crash_rectangle(x + 37, y - 1, 192, 9, 255, 255, 255, 144);
+                                col = GPACK_RGBA5551(0, 0, 0, 1);
+                            } else {
+                                col = GPACK_RGBA5551(255, 255, 255, 1);
+                            }
+                            crash_text(x + 40, y, col, "ID:%d", slot->index);
+                            size = memsize_float(slot->size, &tag);
+                            crash_text(x + 172, y, col, "%2.3f%s", (f64) size, sMemLabels[tag]);
+                            y += 9;
+                            numSlots++;
+                        }
+                    }
+        
+                    if (nextIndex == -1) {
+                        continue;
+                    } else {
+                        slot = &gMemoryPools[i].slots[slot->nextIndex];
+                    }
+                } while (nextIndex != -1);
+            }
+            break;
+        case PP_RAM_CODE:
+        numSlots += 4;
+        crash_text(x + 40, y, GPACK_RGBA5551(255, 255, 255, 1), "text", (f64) size, sMemLabels[tag]);
+        size = memsize_float((u32) main_TEXT_SIZE, &tag);
+        crash_text(x + 180, y, GPACK_RGBA5551(255, 255, 255, 1), "%2.3f%s", (f64) size, sMemLabels[tag]);
+        y += 9;
+        crash_text(x + 40, y, GPACK_RGBA5551(255, 255, 255, 1), "data", (f64) size, sMemLabels[tag]);
+        size = memsize_float((u32) main_DATA_SIZE, &tag);
+        crash_text(x + 180, y, GPACK_RGBA5551(255, 255, 255, 1), "%2.3f%s", (f64) size, sMemLabels[tag]);
+        y += 9;
+        crash_text(x + 40, y, GPACK_RGBA5551(255, 255, 255, 1), "rodata", (f64) size, sMemLabels[tag]);
+        size = memsize_float((u32) main_RODATA_SIZE, &tag);
+        crash_text(x + 180, y, GPACK_RGBA5551(255, 255, 255, 1), "%2.3f%s", (f64) size, sMemLabels[tag]);
+        y += 9;
+        crash_text(x + 40, y, GPACK_RGBA5551(255, 255, 255, 1), "bss", (f64) size, sMemLabels[tag]);
+        size = memsize_float((u32) main_BSS_SIZE, &tag);
+        crash_text(x + 180, y, GPACK_RGBA5551(255, 255, 255, 1), "%2.3f%s", (f64) size, sMemLabels[tag]);
+        y += 9;
+        break;
+        case PP_RAM_FRAMEBUFFERS:
+        for (i = 0; i <= gNumberOfMemoryPools; i++) {
+            slot = &gMemoryPools[i].slots[0];
+            
+            do {
+                flags = slot->flags;
+                nextIndex = slot->nextIndex;
+    
+                if (flags != SLOT_FREE) {
+                    if (debug_tag_index(slot->colourTag) == gCrashMemPrintOrder[gCrashSelection]) {
+                        scrollSize++;
+                        if (y < 77) {
+                            y += 9;
+                            useScroll = TRUE;
+                            slot = &gMemoryPools[i].slots[slot->nextIndex];
+                            continue;
+                        }
+                        if (y > gScreenHeight - 50 || stopCounting) {
+                            useScroll = TRUE;
+                            stopCounting = TRUE;
+                            slot = &gMemoryPools[i].slots[slot->nextIndex];
+                            continue;
+                        }
+                        if ((u32)slot->data <= 0x80300000) {
+                            crash_text(x + 40, y, GPACK_RGBA5551(255, 255, 255, 1), "Colour Buffer");
+
+                        } else {
+                            crash_text(x + 40, y, GPACK_RGBA5551(255, 255, 255, 1), "Depth Buffer");
+                        }
+                        size = memsize_float(slot->size, &tag);
+                        crash_text(x + 172, y, GPACK_RGBA5551(255, 255, 255, 1), "%2.3f%s", (f64) size, sMemLabels[tag]);
+                        y += 9;
+                        numSlots++;
+                    }
+                }
+    
+                if (nextIndex == -1) {
+                    continue;
+                } else {
+                    slot = &gMemoryPools[i].slots[slot->nextIndex];
+                }
+            } while (nextIndex != -1);
+        }
+        break;
+    }
+
+    gAltNumValids = scrollSize;
+    if (useScroll) {
+        gMaxAltScroll = scrollSize - numSlots;
+        gAltScrollSize = numSlots;
+        crash_rectangle(x + 232, 68, 8, gScreenHeight - 50 - 68, 127, 127, 127, 144);
+        scrollLen =  (f32) (gScreenHeight - 50 - 68) / (f32) scrollSize;
+        crash_rectangle(x + 232, 68 + (scrollLen * gCrashAltScroll), 8, scrollLen * numSlots, 255, 255, 255, 255);
+    }
+    
+    crash_text(x + 100, 66, GPACK_RGBA5551(255, 255, 255, 1), "Entries:%d", scrollSize);
+}
+
+void crash_page_memory(void) {
     s32 i;
     DebugData *d = &gDebug;
     f32 size;
     s32 y;
     s32 x;
-    s32 originX;
     u32 ramSize;
     s32 tag;
+    s32 textWidth;
+    s32 col;
+    s32 useScroll;
+    s32 scrollNum;
+    s32 scrollSize;
+    f32 scrollLen;
+    s32 stopCounting;
+    s32 numValids;
+    s32 prevOpt;
 
     if (gUseExpansionMemory) {
         ramSize = 0x800000;
@@ -831,64 +1091,218 @@ s32 crash_page_memory(void) {
     }
 
     x = CRASH_BORDER_X + 16;
-
     size = memsize_float(ramSize, &tag);
     crash_text(x, 54, GPACK_RGBA5551(255, 255, 255, 1), "Total: %2.3f%s", (f64) size, sMemLabels[tag]);
     size = memsize_float(d->ramTotal, &tag);
-    crash_text(x + 112, 54, GPACK_RGBA5551(255, 255, 255, 1), "Used: %2.3f%s", (f64) size, sMemLabels[tag]);
+    if (d->ramTotal >= ramSize) {
+        col = GPACK_RGBA5551(255, 0, 0, 1);
+    } else {
+        col = GPACK_RGBA5551(255, 255, 255, 1);
+    }
+    crash_text(x + 112, 54, col, "Used: %2.3f%s", (f64) size, sMemLabels[tag]);
     size = memsize_float(ramSize - d->ramTotal, &tag);
-    crash_text(x + 224, 54, GPACK_RGBA5551(255, 255, 255, 1), "Free: %2.3f%s", (f64) size, sMemLabels[tag]);
-
+    if (size < 0.0f) {
+        size = 0.0f;
+    }
+    crash_text(x + 224, 54, col, "Free: %2.3f%s", (f64) size, sMemLabels[tag]);
+    if (gMemoryPools[POOL_MAIN].curNumSlots >= gMemoryPools[POOL_MAIN].maxNumSlots) {
+        col = GPACK_RGBA5551(255, 0, 0, 1);
+    } else {
+        col = GPACK_RGBA5551(255, 255, 255, 1);
+    }
+    crash_text(x + 336, 54, col, "Slots:%d of %d", gMemoryPools[POOL_MAIN].curNumSlots, gMemoryPools[POOL_MAIN].maxNumSlots);
     crash_reorder_ram(d);
-    y = 68;
-    originX = x;
+
+    scrollNum = 0;
+    scrollSize = 0;
+    useScroll = FALSE;
+    stopCounting = FALSE;
+    y = 68 - (gCrashScroll * 9);
     for (i = 0; i < PP_RAM_TOTAL; i++) {
         if (d->ramSegments[gCrashMemPrintOrder[i]]) {
-            crash_rectangle(
-                x - 12, 
-                y, 
-                9, 
-                7, 
-                (sMemColour5s[gCrashMemPrintOrder[i]] >> 8) & 0xF8, // Extract red component
-                (sMemColour5s[gCrashMemPrintOrder[i]] >> 3) & 0xF8,  // Extract green component
-                (sMemColour5s[gCrashMemPrintOrder[i]] << 2) & 0xF8,  // Extract blue component
-                255                             // Full alpha
-            );
+            scrollSize++;
+            if (y < 68) {
+                y += 9;
+                useScroll = TRUE;
+                continue;
+            }
+            if (y > gScreenHeight - 50 || stopCounting) {
+                stopCounting = TRUE;
+                useScroll = TRUE;
+                continue;
+            }
+            scrollNum++;
+            if (gCrashSelection == i && gCrashAltView == 0) {
+                crash_rectangle(x - 13, y - 1, 224, 9, 255, 255, 255, 144);
+                col = GPACK_RGBA5551(0, 0, 0, 1);
+            } else {
+                col = GPACK_RGBA5551(255, 255, 255, 1);
+            }
+            crash_rectangle(x - 12, y, 9, 7, 
+                (sMemColour5s[gCrashMemPrintOrder[i]] >> 8) & 0xF8,
+                (sMemColour5s[gCrashMemPrintOrder[i]] >> 3) & 0xF8,
+                (sMemColour5s[gCrashMemPrintOrder[i]] << 2) & 0xF8, 255);
             size = memsize_float(d->ramSegments[gCrashMemPrintOrder[i]], &tag);
-            crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "%s", sPuppyprintMemColours[gCrashMemPrintOrder[i]]);
-            crash_text(x + 90, y, GPACK_RGBA5551(255, 255, 255, 1), "%2.3f%s", (f64) size, sMemLabels[tag]);
-            crash_text(x + 156, y, GPACK_RGBA5551(255, 255, 255, 1), "(%2.3f%%)", (f64) (((f32) d->ramSegments[gCrashMemPrintOrder[i]] / (f32) ramSize) * 100.0f));
+            textWidth = crash_strwidth(sPuppyprintMemColours[gCrashMemPrintOrder[i]]);
+            if (gMemoryCapID == gCrashMemPrintOrder[i]) {
+                col = GPACK_RGBA5551(255, 0, 0, 1);
+            } else {
+                col = GPACK_RGBA5551(255, 255, 255, 1);
+            }
+            crash_text(x + 45 - (textWidth / 2), y, col, sPuppyprintMemColours[gCrashMemPrintOrder[i]]);
+            crash_text(x + 90, y, col, "%2.3f%s", (f64) size, sMemLabels[tag]);
+            crash_text(x + 156, y, col, "(%2.3f%%)", (f64) (((f32) d->ramSegments[gCrashMemPrintOrder[i]] / (f32) ramSize) * 100.0f));
             y += 9;
         }
     }
     
-    draw_memory_bar_chart(32, gScreenHeight - 48, gScreenWidth - 64, 12);
+    if (useScroll) {
+        gMaxScroll = scrollSize - scrollNum;
+        gScrollSize = scrollNum;
+        crash_rectangle(x + 216, 68, 8, gScreenHeight - 50 - 68, 127, 127, 127, 144);
+        scrollLen =  (f32) (gScreenHeight - 50 - 68) / (f32) scrollSize;
+        crash_rectangle(x + 216, 68 + (scrollLen * gCrashScroll), 8, scrollLen * scrollNum, 255, 255, 255, 255);
+    }
 
-    return FALSE;
+    crash_mem_details();
+
+    if (gCrashInput & A_BUTTON) {
+        debug_ram_dump();
+    }
+
+    crash_memory_chart(32, gScreenHeight - 40, gScreenWidth - 64, 12);
 }
+
+void crash_screen_sleep(s32 ms) {
+    u32 cycles = ms * 1000 * osClockRate / 1000000;
+    osSetTime(0);
+    while (osGetTime() < cycles) {}
+}
+
+u8 viSetOnce = 0;
 
 void crash_render(OSThread *t) {
     s32 i;
     __OSThreadContext *c;
-    u32 input;
+    s32 prevOpt;
+    s32 numValids;
     u32 first = osGetCount();
 
     c = &t->context;
 
-    input = input_pressed(0);
+    gCrashInput = 0;
+    for (i = 0; i < 4; i++) {
+        gCrashInput |= input_pressed(i);
+    }
 
-    if (input & R_TRIG) {
+    if (gCrashInput & R_TRIG) {
         gCrashFBUpdate = TRUE;
+        gCrashSelection = 0;
+        gCrashAltView = 0;
+        gCrashScroll = 0;
         gCrashPage++;
         if (gCrashPage == CRASH_PAGE_COUNT) {
             gCrashPage = 0;
         }
-    } else if (input & L_TRIG) {
+    } else if (gCrashInput & L_TRIG) {
         gCrashPage--;
         if (gCrashPage >= CRASH_PAGE_COUNT) {
             gCrashPage = CRASH_PAGE_COUNT - 1;
         }
         gCrashFBUpdate = TRUE;
+        gCrashSelection = 0;
+        gCrashAltView = 0;
+        gCrashScroll = 0;
+        gCrashScrollCursor = 0;
+    }
+
+    switch (gCrashPage) {
+        case CRASH_PAGE_GPREGS:
+            break;
+        case CRASH_PAGE_FPREGS:
+            break;
+        case CRASH_PAGE_STACKS:
+            break;
+        case CRASH_PAGE_ASSERTS:
+            break;
+        case CRASH_PAGE_MEMORY:
+            numValids = 0;
+            for (i = 0; i < PP_RAM_TOTAL; i++) {
+                if (gDebug.ramSegments[i] != 0) {
+                    numValids++;
+                }
+            }
+            if (gCrashInput & U_JPAD) {
+                if (gCrashAltView == 0) {
+                    prevOpt = gCrashSelection;
+                    if (gCrashSelection > 0) {
+                        gCrashSelection--;
+                        gCrashAltSelection = 0;
+                        gCrashAltScrollCursor = 0;
+                        gCrashAltScroll = 0;
+                        if (numValids > gScrollSize && gCrashSelection < gCrashScroll + 4 && gCrashScroll > 0) {
+                            gCrashScroll--;
+                        }
+                        gCrashScrollCursor = gCrashSelection;
+                    }
+                    if (prevOpt != gCrashSelection) {
+                        gCrashFBUpdate = TRUE;
+                    }
+                } else {
+                    prevOpt = gCrashAltSelection;
+                    if (gCrashAltSelection > 0) {
+                        gCrashAltSelection--;
+                        if (gAltNumValids > gAltScrollSize && gCrashAltSelection < gCrashAltScroll + 4 && gCrashAltScroll > 0) {
+                            gCrashAltScroll--;
+                        }
+                        gCrashAltScrollCursor = gCrashAltSelection;
+                    }
+                    if (prevOpt != gCrashAltSelection) {
+                        gCrashFBUpdate = TRUE;
+                    }
+                }
+            } else if (gCrashInput & D_JPAD) {
+                if (gCrashAltView == 0) {
+                    prevOpt = gCrashSelection;
+                    if (gCrashSelection < numValids - 1) {
+                        gCrashSelection++;
+                        gCrashAltSelection = 0;
+                        gCrashAltScrollCursor = 0;
+                        gCrashAltScroll = 0;
+                        if (numValids > gScrollSize && gCrashSelection >= gCrashScroll + gScrollSize - 4 && gCrashScroll < gMaxScroll) {
+                            gCrashScroll++;
+                        }
+                        gCrashScrollCursor = gCrashSelection;
+                    }
+                    if (prevOpt != gCrashSelection) {
+                        gCrashFBUpdate = TRUE;
+                    }
+                } else {
+                    prevOpt = gCrashAltSelection;
+                    if (gCrashAltSelection < gAltNumValids - 1) {
+                        gCrashAltSelection++;
+                        if (gAltNumValids > gAltScrollSize && gCrashAltSelection >= gCrashAltScroll + gAltScrollSize - 4 && gCrashAltScroll < gMaxAltScroll) {
+                            gCrashAltScroll++;
+                        }
+                        gCrashAltScrollCursor = gCrashAltSelection;
+                    }
+                    if (prevOpt != gCrashAltSelection) {
+                        gCrashFBUpdate = TRUE;
+                    }
+                }
+            }
+            if (gCrashInput & L_JPAD) {
+                if (gCrashAltView != 0) {
+                    gCrashAltView = 0;
+                    gCrashFBUpdate = TRUE;
+                }
+            } else if (gCrashInput & R_JPAD) {
+                if (gCrashAltView != 1) {
+                    gCrashAltView = 1;
+                    gCrashFBUpdate = TRUE;
+                }
+            } 
+            break;
     }
 
     if (gCrashFBUpdate == FALSE) {
@@ -927,38 +1341,36 @@ void crash_render(OSThread *t) {
         }
     }
 
+
     switch (gCrashPage) {
         case CRASH_PAGE_GPREGS:
-            gCrashFBUpdate = crash_page_gpregs(t);
+            crash_page_gpregs(t);
             break;
         case CRASH_PAGE_FPREGS:
-            gCrashFBUpdate = crash_page_fpregs(t);
+            crash_page_fpregs(t);
             break;
         case CRASH_PAGE_STACKS:
-            gCrashFBUpdate = crash_page_stacks(t);
+            crash_page_stacks(t);
             break;
         case CRASH_PAGE_ASSERTS:
-            gCrashFBUpdate = crash_page_assert();
+            crash_page_assert();
             break;
         case CRASH_PAGE_MEMORY:
-            gCrashFBUpdate = crash_page_memory();
+            crash_page_memory();
+            break;
     }
-
 
     crash_text(CRASH_BORDER_X + 16, gScreenHeight - 20, GPACK_RGBA5551(255, 255, 255, 1), "%2.3fms", (f64) ((f32) OS_CYCLES_TO_USEC(osGetCount() - first) / 1000.0f));
 
     osWritebackDCacheAll();
-    osViBlack(FALSE);
     osViSwapBuffer(gCrashFB);
-    vi_change(gScreenWidth, gScreenHeight);
+    if (viSetOnce == 0) {
+        osViBlack(FALSE);
+        vi_change(gScreenWidth, gScreenHeight);
+    }
+    viSetOnce = 1;
     gCrashFB = gVideoFramebuffers[(gCrashFBFlip ^= 1) + 1];
     gCrashFBUpdate = FALSE;
-}
-
-void crash_screen_sleep(s32 ms) {
-    u32 cycles = ms * 1000 * osClockRate / 1000000;
-    osSetTime(0);
-    while (osGetTime() < cycles) {}
 }
 
 extern OSThread *__osFaultedThread;
@@ -982,6 +1394,8 @@ void crash_default_page(OSThread *t) {
 
     if (gCrashAssetTripped) {
         gCrashPage = CRASH_PAGE_ASSERTS;
+    } else if (gCrashCause == 20) {
+        gCrashPage = CRASH_PAGE_MEMORY;
     } else {
         threadID = crash_check_stack();
         if (threadID) {
@@ -1044,21 +1458,21 @@ void crash_thread(UNUSED void *var) {
     osStopThread(&gMainSched.thread);
     while (__osDpDeviceBusy() == 1) {}
     while (__osSpDeviceBusy() == 1) {}
-    //crash_screen_sleep(500);
+    crash_screen_sleep(50);
+    input_init();
     gCrashFBUpdate = TRUE;
     oldW = gScreenWidth;
     oldH = gScreenHeight;
     gScreenWidth = 512;
     gScreenHeight = 240;
-    if (gVideoCurrFramebuffer == NULL) {
-        gVideoCurrFramebuffer = (u16 *) 0x80200000;
+    if (gVideoCurrFramebuffer != NULL) {
+        framebuffer_scale(gVideoCurrFramebuffer, gVideoDepthBuffer, oldW, oldH, gScreenWidth, gScreenHeight);
     }
-    framebuffer_scale(gVideoCurrFramebuffer, gVideoDepthBuffer, oldW, oldH, gScreenWidth, gScreenHeight);
     if (gVideoFramebuffers[1] == NULL) {
-        gVideoFramebuffers[1] = (u16 *) 0x80200000;
+        gVideoFramebuffers[1] = (u16 *) 0x80300000;
     }
     if (gVideoFramebuffers[2] == NULL) {
-        gVideoFramebuffers[2] = (u16 *) 0x80280000;
+        gVideoFramebuffers[2] = (u16 *) 0x80380000;
     }
     gCrashFB = gVideoFramebuffers[1];
 

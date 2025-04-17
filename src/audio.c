@@ -11,6 +11,7 @@
 #include "audio_spatial.h"
 #include "sched.h"
 #include "libultra/src/audio/seqchannel.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -86,39 +87,39 @@ void audio_init(OSSched *sc) {
     audioMgrConfig audConfig;
 
     seqLength = 0;
-    gAudioHeapStack = (u8 *) mempool_alloc(AUDIO_HEAP_SIZE, COLOUR_TAG_CYAN);
+    gAudioHeapStack = (u8 *) mempool_alloc(AUDIO_HEAP_SIZE, PP_RAM_AUDIOHEAP);
     if ((s32) gAudioHeapStack & 0xF) {
         gAudioHeapStack = align16(gAudioHeapStack);
     }
     alHeapInit(&gALHeap, gAudioHeapStack, AUDIO_HEAP_SIZE);
 
     addrPtr = (s32 *) load_asset_section_from_rom(ASSET_AUDIO_TABLE);
-    gSoundBank = (ALBankFile *) mempool_alloc_safe(addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1], COLOUR_TAG_CYAN);
+    gSoundBank = (ALBankFile *) mempool_alloc_safe(addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1], PP_RAM_SOUNDBANK);
     load_asset_to_address(ASSET_AUDIO, (u32) gSoundBank, addrPtr[ASSET_AUDIO_1],
                           addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1]);
     alBnkfNew(gSoundBank, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_2]));
 
     gSoundTableSize = addrPtr[ASSET_AUDIO_7] - addrPtr[ASSET_AUDIO_6];
-    gSoundTable = (SoundData *) mempool_alloc_safe(gSoundTableSize, COLOUR_TAG_CYAN);
+    gSoundTable = (SoundData *) mempool_alloc_safe(gSoundTableSize, PP_RAM_AUD_TABLE);
     load_asset_to_address(ASSET_AUDIO, (u32) gSoundTable, addrPtr[ASSET_AUDIO_6], gSoundTableSize);
     gSoundCount = gSoundTableSize / sizeof(SoundData);
 
     gSeqSoundTableSize = addrPtr[ASSET_AUDIO_6] - addrPtr[ASSET_AUDIO_5];
-    gSeqSoundTable = (MusicData *) mempool_alloc_safe(gSeqSoundTableSize, COLOUR_TAG_CYAN);
+    gSeqSoundTable = (MusicData *) mempool_alloc_safe(gSeqSoundTableSize, PP_RAM_AUD_TABLE);
     load_asset_to_address(ASSET_AUDIO, (u32) gSeqSoundTable, addrPtr[ASSET_AUDIO_5], gSeqSoundTableSize);
     gSeqSoundCount = gSeqSoundTableSize / sizeof(MusicData);
 
-    gSequenceBank = (ALBankFile *) mempool_alloc_safe(addrPtr[ASSET_AUDIO_0], COLOUR_TAG_CYAN);
+    gSequenceBank = (ALBankFile *) mempool_alloc_safe(addrPtr[ASSET_AUDIO_0], PP_RAM_SOUNDBANK);
     load_asset_to_address(ASSET_AUDIO, (u32) gSequenceBank, 0, addrPtr[ASSET_AUDIO_0]);
     alBnkfNew(gSequenceBank, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_0]));
     gSequenceTable = (ALSeqFile *) alHeapAlloc(&gALHeap, 1, 4);
     load_asset_to_address(ASSET_AUDIO, (u32) gSequenceTable, addrPtr[ASSET_AUDIO_4], 4);
 
     seqfSize = (gSequenceTable->seqCount) * 8 + 4;
-    gSequenceTable = mempool_alloc_safe(seqfSize, COLOUR_TAG_CYAN);
+    gSequenceTable = mempool_alloc_safe(seqfSize, PP_RAM_AUD_TABLE);
     load_asset_to_address(ASSET_AUDIO, (u32) gSequenceTable, addrPtr[ASSET_AUDIO_4], seqfSize);
     alSeqFileNew(gSequenceTable, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_4]));
-    gSeqLengthTable = (u32 *) mempool_alloc_safe((gSequenceTable->seqCount) * 4, COLOUR_TAG_CYAN);
+    gSeqLengthTable = (u32 *) mempool_alloc_safe((gSequenceTable->seqCount) * 4, PP_RAM_AUD_TABLE);
 
     for (i = 0; i < gSequenceTable->seqCount; i++) {
         pad = (u32) (gSequenceTable + 8 + i * 8); // Fakematch
@@ -143,8 +144,8 @@ void audio_init(OSSched *sc) {
     gMusicPlayer = sound_seqplayer_init(24, 120);
     set_voice_limit(gMusicPlayer, 18);
     gJinglePlayer = sound_seqplayer_init(16, 50);
-    gMusicSequenceData = mempool_alloc_safe(seqLength, COLOUR_TAG_CYAN);
-    gJingleSequenceData = mempool_alloc_safe(seqLength, COLOUR_TAG_CYAN);
+    gMusicSequenceData = mempool_alloc_safe(seqLength, PP_RAM_SEQUENCES);
+    gJingleSequenceData = mempool_alloc_safe(seqLength, PP_RAM_SEQUENCES);
     audConfig.unk04 = 150;
     audConfig.unk00 = 32;
     audConfig.maxChannels = AUDIO_CHANNELS;

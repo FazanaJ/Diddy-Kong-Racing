@@ -28,6 +28,7 @@
 #include "audio_vehicle.h"
 #include "vehicle_misc.h"
 #include "PRinternal/viint.h"
+#include "main.h"
 
 #define MAX_CHECKPOINTS 60
 #define OBJECT_POOL_SIZE 0x15800
@@ -322,7 +323,7 @@ void func_8000B020(s32 numberOfVertices, s32 numberOfTriangles) {
     LevelObjectEntry_unk8000B020 objEntry;
     s32 i;
 
-    D_800DC754[0] = (s32) mempool_alloc_safe(((numberOfTriangles * 16) + (numberOfVertices * 10)) * 2, COLOUR_TAG_BLUE);
+    D_800DC754[0] = (s32) mempool_alloc_safe(((numberOfTriangles * 16) + (numberOfVertices * 10)) * 2, PP_RAM_OBJMDL);
     D_800DC754[1] = D_800DC754[0] + (numberOfTriangles * 16);
     D_800DC74C[0] = D_800DC754[1] + (numberOfTriangles * 16);
     D_800DC74C[1] = D_800DC74C[0] + (numberOfVertices * 10);
@@ -538,14 +539,14 @@ void allocate_object_pools(void) {
 
     set_world_shading(0.67f, 0.33f, 0, -0x2000, 0);
     gObjectMemoryPool = (Object *) mempool_new_sub(OBJECT_POOL_SIZE, OBJECT_SLOT_COUNT);
-    gParticlePtrList = mempool_alloc_safe(sizeof(uintptr_t) * 200, COLOUR_TAG_BLUE);
+    gParticlePtrList = mempool_alloc_safe(sizeof(uintptr_t) * 200, PP_RAM_OBJECTS);
     D_8011AE6C = mempool_alloc_safe(sizeof(uintptr_t) * 20, COLOUR_TAG_BLUE);
     D_8011AE74 = mempool_alloc_safe(sizeof(uintptr_t) * 128, COLOUR_TAG_BLUE);
-    gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, COLOUR_TAG_BLUE);
-    gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * CAMCONTROL_COUNT, COLOUR_TAG_BLUE);
-    gRacers = mempool_alloc_safe(sizeof(uintptr_t) * 10, COLOUR_TAG_BLUE);
-    gRacersByPort = mempool_alloc_safe(sizeof(uintptr_t) * 10, COLOUR_TAG_BLUE);
-    gRacersByPosition = mempool_alloc_safe(sizeof(uintptr_t) * 10, COLOUR_TAG_BLUE);
+    gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, PP_RAM_OBJECTS);
+    gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * CAMCONTROL_COUNT, PP_RAM_OBJECTS);
+    gRacers = mempool_alloc_safe(sizeof(uintptr_t) * 10, PP_RAM_OBJECTS);
+    gRacersByPort = mempool_alloc_safe(sizeof(uintptr_t) * 10, PP_RAM_OBJECTS);
+    gRacersByPosition = mempool_alloc_safe(sizeof(uintptr_t) * 10, PP_RAM_OBJECTS);
     gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, COLOUR_TAG_BLUE);
     D_8011ADCC = mempool_alloc_safe(8, COLOUR_TAG_BLUE);
     D_8011AFF4 = mempool_alloc_safe(sizeof(unk800179D0) * 16, COLOUR_TAG_BLUE);
@@ -554,15 +555,15 @@ void allocate_object_pools(void) {
     while (gAssetsLvlObjTranslationTable[gAssetsLvlObjTranslationTableLength] == 0) {
         gAssetsLvlObjTranslationTableLength--;
     }
-    gSpawnObjectHeap = mempool_alloc_safe(sizeof(uintptr_t) * 512, COLOUR_TAG_BLUE);
+    gSpawnObjectHeap = mempool_alloc_safe(sizeof(uintptr_t) * 512, PP_RAM_OBJECTS);
     gAssetsObjectHeadersTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_HEADERS_TABLE);
     gAssetsObjectHeadersTableLength = 0;
     while (-1 != gAssetsObjectHeadersTable[gAssetsObjectHeadersTableLength]) {
         gAssetsObjectHeadersTableLength++;
     }
     gAssetsObjectHeadersTableLength--;
-    gLoadedObjectHeaders = mempool_alloc_safe(gAssetsObjectHeadersTableLength * 4, COLOUR_TAG_WHITE);
-    gObjectHeaderReferences = mempool_alloc_safe(gAssetsObjectHeadersTableLength, COLOUR_TAG_WHITE);
+    gLoadedObjectHeaders = mempool_alloc_safe(gAssetsObjectHeadersTableLength * 4, PP_RAM_ASSETTABLE);
+    gObjectHeaderReferences = mempool_alloc_safe(gAssetsObjectHeadersTableLength, PP_RAM_ASSETTABLE);
 
     for (i = 0; i < gAssetsObjectHeadersTableLength; i++) {
         (*gObjectHeaderReferences)[i] = 0;
@@ -579,7 +580,7 @@ void allocate_object_pools(void) {
         &gAssetsMiscSection[gAssetsMiscTable[ASSET_MISC_MAGIC_CODES]],
         (gAssetsMiscTable[ASSET_MISC_TITLE_SCREEN_DEMO_IDS] - gAssetsMiscTable[ASSET_MISC_MAGIC_CODES]) *
             sizeof(s32 *));
-    gObjPtrList = mempool_alloc_safe(sizeof(uintptr_t) * OBJECT_SLOT_COUNT, COLOUR_TAG_BLUE);
+    gObjPtrList = mempool_alloc_safe(sizeof(uintptr_t) * OBJECT_SLOT_COUNT, PP_RAM_OBJECTS);
     gFirstTimeFinish = 0;
     gTimeTrialEnabled = 0;
     gIsTimeTrial = FALSE;
@@ -1993,10 +1994,12 @@ s32 init_object_shadow(Object *obj, ShadowData *shadow) {
     obj->shadow = shadow;
     shadow->texture = NULL;
     objHeader = ((ObjectSegment *) obj)->header;
+    set_texture_colour_tag(PP_RAM_SHADOWS);
     if (objHeader->shadowGroup) {
         shadow->texture = load_texture((s32) ((ObjectHeader *) objHeader)->unk34);
         objHeader = ((ObjectSegment *) obj)->header;
     }
+    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
     shadow->scale = objHeader->shadowScale;
     shadow->meshStart = -1;
     D_8011AE50 = shadow->texture;
@@ -2016,9 +2019,11 @@ s32 init_object_water_effect(Object *obj, WaterEffect *waterEffect) {
     waterEffect->textureFrame = 0;
     waterEffect->animationSpeed = obj->segment.header->unk0 >> 8;
     waterEffect->texture = NULL;
+    set_texture_colour_tag(PP_RAM_SHADOWS);
     if (obj->segment.header->waterEffectGroup) {
         waterEffect->texture = load_texture(obj->segment.header->unk38);
     }
+    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
     waterEffect->meshStart = -1;
     D_8011AE54 = waterEffect->texture;
     if (obj->segment.header->waterEffectGroup && waterEffect->texture == NULL) {

@@ -30,6 +30,7 @@
 #include "math_util.h"
 #include "PRinternal/viint.h"
 #include "save_layout.h"
+#include "main.h"
 
 /**
  * @file Contains all the code used for every menu in the game.
@@ -2455,7 +2456,7 @@ void init_save_data(void) {
     saveFileSize += sizeof(Settings);
     saveFileSize = (saveFileSize + 3) & ~3; // align to a 4-byte boundary
 
-    *gSavefileData = mempool_alloc_safe(saveFileSize * ARRAY_COUNT(gSavefileData), COLOUR_TAG_WHITE);
+    *gSavefileData = mempool_alloc_safe(saveFileSize * ARRAY_COUNT(gSavefileData), PP_RAM_MENU);
 
     for (index = 0, offset = 0; index < ARRAY_COUNT(gSavefileData); index++) {
         gSavefileData[index] = (Settings *) ((u8 *) *gSavefileData + offset);
@@ -2467,9 +2468,9 @@ void init_save_data(void) {
     gCheatsAssetData = (u16(*)[30]) get_misc_asset(ASSET_MISC_MAGIC_CODES);
     gNumberOfCheats = (*gCheatsAssetData)[0];
 #if VERSION >= VERSION_79
-    gMenuText = mempool_alloc_safe(1280 * sizeof(char *), COLOUR_TAG_WHITE);
+    gMenuText = mempool_alloc_safe(1280 * sizeof(char *), PP_RAM_TEXT);
 #else
-    gMenuText = mempool_alloc_safe(1024 * sizeof(char *), COLOUR_TAG_WHITE);
+    gMenuText = mempool_alloc_safe(1024 * sizeof(char *), PP_RAM_TEXT);
 #endif
     load_menu_text(LANGUAGE_ENGLISH);
 
@@ -4085,8 +4086,8 @@ void menu_save_options_init(void) {
     gMenuDelay = 0;
     gMenuStage = SAVEMENU_WAIT;
     gOpacityDecayTimer = 0;
-    D_80126A64 = (char *) mempool_alloc_safe(0x800, COLOUR_TAG_WHITE);
-    gSaveMenuFilesSource = (SaveFileData *) mempool_alloc_safe(0xA00, COLOUR_TAG_WHITE);
+    D_80126A64 = (char *) mempool_alloc_safe(0x800, PP_RAM_CPAK);
+    gSaveMenuFilesSource = (SaveFileData *) mempool_alloc_safe(0xA00, PP_RAM_CPAK);
     gSaveMenuFilesDest = &gSaveMenuFilesSource[80];
     gSaveMenuOptionCountUpper = 0;
     gSaveMenuOptionSource = 0;
@@ -5523,7 +5524,7 @@ void bootscreen_init_cpak(void) {
     s32 i;
 
     // Starting point
-    gBootPakData[0] = mempool_alloc_safe(CPAK_HEAP_SIZE, COLOUR_TAG_WHITE);
+    gBootPakData[0] = mempool_alloc_safe(CPAK_HEAP_SIZE, PP_RAM_CPAK);
 
     // Fills in the table.
     for (i = 1; i < ARRAY_COUNT(gBootPakData); i++) {
@@ -6667,7 +6668,7 @@ void cheatmenu_checksum(void) {
         blockOffs = 0x1000;
         numLeft = (s32) &__ROM_END;
         numLeft -= 0x1000;
-        tempBuffer = mempool_alloc_safe(size, COLOUR_TAG_BLACK);
+        tempBuffer = mempool_alloc_safe(size, PP_RAM_TEMP);
 
         while (numLeft != 0) {
             numBytes = numLeft;
@@ -8280,7 +8281,7 @@ void menu_track_select_init(void) {
     }
 
     i = 40;
-    gTrackSelectBgTriangles[0] = mempool_alloc_safe(0xB40, COLOUR_TAG_YELLOW);
+    gTrackSelectBgTriangles[0] = mempool_alloc_safe(0xB40, PP_RAM_MENU);
     gTrackSelectBgTriangles[1] = gTrackSelectBgTriangles[0] + i;
     gTrackSelectBgVertices[0] = (Vertex *) (gTrackSelectBgTriangles[1] + i);
     gTrackSelectBgVertices[1] = gTrackSelectBgVertices[0] + i * 2;
@@ -13811,7 +13812,7 @@ void menu_imagegroup_load(s16 *imageSet) {
  */
 void menu_image_load(s32 imageID) {
     if (gMenuImages == NULL) {
-        gMenuImages = mempool_alloc_safe(sizeof(MenuAsset) * 18, COLOUR_TAG_RED);
+        gMenuImages = mempool_alloc_safe(sizeof(MenuAsset) * 18, PP_RAM_MENU);
     }
 
     gMenuImages[imageID].y_rotation = sMenuImageProperties[imageID].y_rotation;
