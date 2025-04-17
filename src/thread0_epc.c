@@ -747,6 +747,7 @@ const u16 sMemColour5s[] = {
     GPACK_RGBA5551(255, 127, 0, 1),  // Orange
     GPACK_RGBA5551(0, 0, 0, 1),      // Black
     GPACK_RGBA5551(255, 127, 64, 1), // Peach
+    GPACK_RGBA5551(00, 255, 64, 1),  // Lime
 
     // Additional 64 vibrant colors
     GPACK_RGBA5551(255, 64, 64, 1),   // Light red
@@ -933,6 +934,87 @@ extern u8 *main_TEXT_SIZE[];
 extern u8 *main_DATA_SIZE[];
 extern u8 *main_RODATA_SIZE[];
 extern u8 *main_BSS_SIZE[];
+extern s32 *gTextureCache;
+extern s32 gNumberOfLoadedTextures;
+extern s32 *gSpriteCache;
+extern s32 D_80126358;
+extern s32 *gModelCache;
+extern s32 gModelCacheCount;
+
+void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
+    s32 i;
+    s32 texID;
+    s32 tag = slot->colourTag;
+    TextureHeader *texHeader;
+    Sprite *sprite;
+    Sprite *compareSprite;
+    ObjectHeader *objHeader;
+    Object *obj;
+    ObjectModel *objModel;
+    Object_68 *objGfx;
+
+    switch (tag) {
+        case PP_RAM_FRAMEBUFFERS:
+            if ((u32)slot->data <= 0x80300000) {
+                crash_text(x + 40, y, col, "Colour Buffer");
+
+            } else {
+                crash_text(x + 40, y, col, "Depth Buffer");
+            }
+            break;
+        case PP_RAM_OBJHEADERS:
+            objHeader = (ObjectHeader *) slot->data;
+            crash_text(x + 40, y, col, "%s", objHeader->internalName);
+            break;
+        case PP_RAM_OBJECTS:
+            obj = (Object *) slot->data;
+            crash_text(x + 40, y, col, "%s", obj->segment.header->internalName);
+            break;
+        default:
+            texHeader = (TextureHeader *) slot->data;
+            texID = -200;
+            // First see if it's a texture
+            for (i = 0; i < gNumberOfLoadedTextures; i++) {
+                if ((TextureHeader *) gTextureCache[(i << 1) + 1] == texHeader) {
+                    texID = gTextureCache[i << 1];
+                }
+            }
+            if (texID != -200) {
+                if (texID & 0x8000) {
+                    crash_text(x + 40, y, col, "Tex3D ID:%d", texID & 0x7FFF);
+                } else {
+                    crash_text(x + 40, y, col, "Tex2D ID:%d", texID & 0x7FFF);
+                }
+                return;
+            }
+            // Okay, lets try for a sprite?
+            sprite = (Sprite *) slot->data;
+            for (i = 0; i < D_80126358; i++) {
+                compareSprite = (Sprite *) gSpriteCache[(i << 1) + 1];
+                if (compareSprite->frames == sprite->frames) {
+                    texID = gSpriteCache[i << 1];
+                }
+            }
+            if (texID != -200) {
+                crash_text(x + 40, y, col, "Sprite ID:%d", texID);
+                return;
+            }
+            // Try object models
+            objModel = (ObjectModel *) slot->data;
+            for (i = 0; i < D_80126358; i++) {
+                if ((ObjectModel *) gModelCache[(i << 1) + 1] == objModel) {
+                    texID = gModelCache[i << 1];
+                }
+            }
+            if (texID != -200) {
+                crash_text(x + 40, y, col, "Obj Mdl:%d", texID);
+                return;
+            }
+            // I give up :(
+            crash_text(x + 40, y, col, "Unknown");
+            break;
+    }
+}
 
 void crash_mem_details(void) {
     s32 x;
@@ -949,6 +1031,7 @@ void crash_mem_details(void) {
     s32 useScroll;
     f32 scrollLen;
     s32 scrollSize;
+    s32 j;
 
     x = 240;
     y = 77 - (gCrashAltScroll * 9);
@@ -956,54 +1039,7 @@ void crash_mem_details(void) {
     stopCounting = FALSE;
     scrollSize = 0;
     useScroll = FALSE;
-    switch (gCrashMemPrintOrder[gCrashSelection]) {
-        default:
-            for (i = 0; i <= gNumberOfMemoryPools; i++) {
-                slot = &gMemoryPools[i].slots[0];
-                
-                do {
-                    flags = slot->flags;
-                    nextIndex = slot->nextIndex;
-        
-                    if (flags != SLOT_FREE) {
-                        if (debug_tag_index(slot->colourTag) == gCrashMemPrintOrder[gCrashSelection]) {
-                            scrollSize++;
-                            if (y < 77) {
-                                y += 9;
-                                useScroll = TRUE;
-                                slot = &gMemoryPools[i].slots[slot->nextIndex];
-                                continue;
-                            }
-                            if (y > gScreenHeight - 50 || stopCounting) {
-                                useScroll = TRUE;
-                                stopCounting = TRUE;
-                                slot = &gMemoryPools[i].slots[slot->nextIndex];
-                                continue;
-                            }
-                            if (gCrashAltSelection + 1 == scrollSize && gCrashAltView == 1) {
-                                crash_rectangle(x + 37, y - 1, 192, 9, 255, 255, 255, 144);
-                                col = GPACK_RGBA5551(0, 0, 0, 1);
-                                crash_text(x + 166, y, col, "0#%X", (u32) slot->data);
-                            } else {
-                                col = GPACK_RGBA5551(255, 255, 255, 1);
-                                size = memsize_float(slot->size, &tag);
-                                crash_text(x + 172, y, col, "%2.3f%s", (f64) size, sMemLabels[tag]);
-                            }
-                            crash_text(x + 40, y, col, "ID:%d", slot->index);
-                            y += 9;
-                            numSlots++;
-                        }
-                    }
-        
-                    if (nextIndex == -1) {
-                        continue;
-                    } else {
-                        slot = &gMemoryPools[i].slots[slot->nextIndex];
-                    }
-                } while (nextIndex != -1);
-            }
-            break;
-        case PP_RAM_CODE:
+    if (gCrashMemPrintOrder[gCrashSelection] == PP_RAM_CODE) {
         numSlots += 4;
         crash_text(x + 40, y, GPACK_RGBA5551(255, 255, 255, 1), "text", (f64) size, sMemLabels[tag]);
         size = memsize_float((u32) main_TEXT_SIZE, &tag);
@@ -1021,8 +1057,7 @@ void crash_mem_details(void) {
         size = memsize_float((u32) main_BSS_SIZE, &tag);
         crash_text(x + 180, y, GPACK_RGBA5551(255, 255, 255, 1), "%2.3f%s", (f64) size, sMemLabels[tag]);
         y += 9;
-        break;
-        case PP_RAM_FRAMEBUFFERS:
+    } else {
         for (i = 0; i <= gNumberOfMemoryPools; i++) {
             slot = &gMemoryPools[i].slots[0];
             
@@ -1054,12 +1089,7 @@ void crash_mem_details(void) {
                             size = memsize_float(slot->size, &tag);
                             crash_text(x + 172, y, col, "%2.3f%s", (f64) size, sMemLabels[tag]);
                         }
-                        if ((u32)slot->data <= 0x80300000) {
-                            crash_text(x + 40, y, col, "Colour Buffer");
-
-                        } else {
-                            crash_text(x + 40, y, col, "Depth Buffer");
-                        }
+                        crash_mem_info_text(slot, x, y, col);
                         y += 9;
                         numSlots++;
                     }
@@ -1072,7 +1102,6 @@ void crash_mem_details(void) {
                 }
             } while (nextIndex != -1);
         }
-        break;
     }
 
     gAltNumValids = scrollSize;
@@ -1154,8 +1183,12 @@ void crash_page_memory(void) {
                 continue;
             }
             scrollNum++;
-            if (gCrashSelection == i && gCrashAltView == 0) {
-                crash_rectangle(x - 13, y - 1, 224, 9, 255, 255, 255, 144);
+            if (gCrashSelection == i) {
+                if (gCrashAltView == 0) {
+                    crash_rectangle(x - 13, y - 1, 224, 9, 255, 255, 255, 144);
+                } else {
+                    crash_rectangle(x - 13, y - 1, 224, 9, 127, 127, 127, 144);
+                }
                 col = GPACK_RGBA5551(0, 0, 0, 1);
             } else {
                 col = GPACK_RGBA5551(255, 255, 255, 1);

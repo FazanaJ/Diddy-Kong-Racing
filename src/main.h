@@ -161,6 +161,7 @@ typedef enum DebugRam {
     PP_RAM_ORANGE,
     PP_RAM_BLACK,
     PP_RAM_LIGHT_ORANGE,
+    PP_RAM_LIME,
 
     PP_RAM_CODE,
     PP_RAM_FRAMEBUFFERS,
@@ -219,6 +220,7 @@ typedef enum DebugRam {
     "Orange\t", \
     "Black\t", \
     "L. Orange", \
+    "Lime\t", \
             \
     "Code\t", \
     "Framebuffers", \

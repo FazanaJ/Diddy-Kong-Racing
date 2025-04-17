@@ -580,7 +580,7 @@ void allocate_object_pools(void) {
         &gAssetsMiscSection[gAssetsMiscTable[ASSET_MISC_MAGIC_CODES]],
         (gAssetsMiscTable[ASSET_MISC_TITLE_SCREEN_DEMO_IDS] - gAssetsMiscTable[ASSET_MISC_MAGIC_CODES]) *
             sizeof(s32 *));
-    gObjPtrList = mempool_alloc_safe(sizeof(uintptr_t) * OBJECT_SLOT_COUNT, PP_RAM_OBJECTS);
+    gObjPtrList = mempool_alloc_safe(sizeof(uintptr_t) * OBJECT_SLOT_COUNT, PP_RAM_OBJLISTS);
     gFirstTimeFinish = 0;
     gTimeTrialEnabled = 0;
     gIsTimeTrial = FALSE;
