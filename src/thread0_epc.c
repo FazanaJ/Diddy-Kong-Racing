@@ -10,6 +10,9 @@
 #include "game.h"
 #include "stacks.h"
 #include "PR/os_internal_thread.h"
+#include "PRinternal/osint.h"
+#include "math_util.h"
+#include "main.h"
 
 /**
  * Mark the object type given, so if the game crashes while processing it, the debug screen will tell you which object
@@ -27,7 +30,7 @@ void update_object_stack_trace(s32 index, s32 value) {
 #include "audiomgr.h"
 
 u64 gCrashThreadStack[STACKSIZE(STACK_CRASH)];
-OSThread gCrashThread;
+ALIGNED16 OSThread gCrashThread;
 OSMesgQueue gCrashQueue;
 OSMesg gCrashQueueBuf[2];
 u16 *gCrashFB;
@@ -487,6 +490,7 @@ extern OSThread gThread1;
 extern OSThread gThread3;
 extern OSSched gMainSched;
 extern OSThread gThread30;
+extern OSThread gThreadUsb;
 
 void crash_reg_common(OSThread *t, s32 x) {
     __OSThreadContext *c;
@@ -640,7 +644,7 @@ OSThread *crash_thread_id(s32 threadID) {
         case 30:
             return &gThread30;
         case 69:
-            return &gThread30;
+            return &gThreadUsb;
         default:
             return 0;
     }
@@ -657,17 +661,208 @@ s32 crash_page_stacks(OSThread *t) {
     y = 54;
     for (i = 0; i < 7; i++) {
         stackT = crash_thread_id(gStackThreadIDs[i]);
-        stackMin = (u32) (crash_stack_pos(gStackThreadIDs[i]) - stackT->context.sp);
+        if (stackT->context.sp < 0x80000000) {
+            stackMin = 0;
+        } else {
+            stackMin = (u32) (crash_stack_pos(gStackThreadIDs[i]) - stackT->context.sp);
+            if (stackMin > 0xFFFF) {
+                stackMin = 0xFFFF;
+            }
+        }
         stackMax = (u32) crash_stack_size(gStackThreadIDs[i]);
         if (stackMin >= stackMax) {
             colour = GPACK_RGBA5551(255, 64, 64, 1);
         } else {
             colour = GPACK_RGBA5551(255, 255, 255, 1);
         }
-        crash_text(CRASH_BORDER_X + 8, y, colour, "Thread:%s(%d)", sThreadNames[crash_thread_name(gStackThreadIDs[i])], gStackThreadIDs[i]);
-        crash_text(CRASH_BORDER_X + 128, y, colour, "Stack Pos:0#%04X - Size:0#%04X", stackMin, stackMax);
+        crash_text((gScreenWidth / 2) - 148, y, colour, "Thread:%s(%d)", sThreadNames[crash_thread_name(gStackThreadIDs[i])], gStackThreadIDs[i]);
+        if (stackMin != 0) {
+            crash_text((gScreenWidth / 2) - 40, y, colour, "Stack Pos:0#%04X - Size:0#%04X", stackMin, stackMax);
+        } else {
+            crash_text((gScreenWidth / 2) + 16, y, colour, "--Inactive--");
+        }
         y += 9;
     }
+
+    return FALSE;
+}
+
+s32 crash_page_assert(void) {
+    if (gCrashAssetTripped) {
+        crash_text(CRASH_BORDER_X + 16, 54, GPACK_RGBA5551(255, 255, 255, 1), gCrashAssert);
+    } else {
+        crash_text(CRASH_BORDER_X + 16, 54, GPACK_RGBA5551(255, 255, 255, 1), "No assert triggered.");
+    }
+    return FALSE;
+}
+
+extern char *sPuppyprintMemColours[];
+
+const char *sMemLabels[] = {
+    "B",
+    "KB",
+    "MB"
+};
+
+const u16 sMemColour5s[PP_RAM_TOTAL] = {
+    GPACK_RGBA5551(255, 0, 0, 1),
+    GPACK_RGBA5551(0, 255, 0, 1),
+    GPACK_RGBA5551(0, 0, 255, 1),
+    GPACK_RGBA5551(255, 255, 0, 1),
+    GPACK_RGBA5551(255, 0, 255, 1),
+    GPACK_RGBA5551(0, 255, 255, 1),
+    GPACK_RGBA5551(255, 255, 255, 1),
+    GPACK_RGBA5551(127, 127, 127, 1),
+    GPACK_RGBA5551(127, 127, 0, 1),
+    GPACK_RGBA5551(255, 127, 0, 1),
+    GPACK_RGBA5551(0, 0, 0, 1),
+    GPACK_RGBA5551(255, 127, 64, 1),
+    GPACK_RGBA5551(0, 127, 255, 1),
+};
+
+f32 memsize_float(s32 size, s32 *tag) {
+    f32 sizeF = size;
+    if (size < 1024) {
+        *tag = 0;
+        return size;
+    } else {
+        if (size < (1024 * 1024)) {
+            *tag = 1;
+            return ((f32) size) / 1024.0f;
+        } else {
+            *tag = 2;
+            return ((f32) size) / (1024.0f * 1024.0f);
+        }
+    }
+}
+
+u8 gCrashMemPrintOrder[PP_RAM_TOTAL];
+
+void draw_memory_bar_chart(s32 x, s32 y, s32 width, s32 height) {
+    DebugData *d = &gDebug;
+    u32 ramSize;
+    s32 i;
+    s32 totalHeight = 0;
+    s32 barHeight;
+    s32 tag;
+
+    // Determine total RAM size
+    if (gUseExpansionMemory) {
+        ramSize = 0x800000; // 8 MB
+    } else {
+        ramSize = 0x400000; // 4 MB
+    }
+
+    // Calculate the total height of the bar chart
+    for (i = 0; i < PP_RAM_TOTAL; i++) {
+        if (d->ramSegments[gCrashMemPrintOrder[i]]) {
+            totalHeight += d->ramSegments[gCrashMemPrintOrder[i]];
+        }
+    }
+
+    crash_rectangle(x, y, width, 2, 0, 0, 0, 255);
+    crash_rectangle(x, y + height - 2, width, 2, 0, 0, 0, 255);
+    crash_rectangle(x, y + 2, 2, height - 4, 0, 0, 0, 255);
+    crash_rectangle(x + width - 2, y + 2, 2, height - 4, 0, 0, 0, 255);
+
+    x += 2;
+    y += 2;
+    width -= 4;
+    height -= 4;
+    // Draw each segment as a bar
+    for (i = 0; i < PP_RAM_TOTAL; i++) {
+        if (d->ramSegments[gCrashMemPrintOrder[i]]) {
+            // Calculate the height of the bar proportional to the memory segment size
+            barHeight = (d->ramSegments[gCrashMemPrintOrder[i]] * width) / ramSize;
+
+            // Draw the bar with the corresponding color
+            crash_rectangle(
+                x, 
+                y, 
+                barHeight, 
+                height, 
+                (sMemColour5s[gCrashMemPrintOrder[i]] >> 8) & 0xF8, // Extract red component
+                (sMemColour5s[gCrashMemPrintOrder[i]] >> 3) & 0xF8,  // Extract green component
+                (sMemColour5s[gCrashMemPrintOrder[i]] << 2) & 0xF8,  // Extract blue component
+                255                             // Full alpha
+            );
+
+            // Move the y-coordinate down for the next bar
+            x += barHeight;
+        }
+    }
+}
+
+void crash_reorder_ram(DebugData *d) {
+    s32 i, j;
+
+    // Initialize the gCrashMemPrintOrder array with indices
+    for (i = 0; i < PP_RAM_TOTAL; i++) {
+        gCrashMemPrintOrder[i] = i;
+    }
+
+    // Sort the indices in gCrashMemPrintOrder based on the size of d->ramSegments
+    for (i = 0; i < PP_RAM_TOTAL - 1; i++) {
+        for (j = i + 1; j < PP_RAM_TOTAL; j++) {
+            if (d->ramSegments[gCrashMemPrintOrder[i]] < d->ramSegments[gCrashMemPrintOrder[j]]) {
+                // Swap the indices to order by descending size
+                u8 temp = gCrashMemPrintOrder[i];
+                gCrashMemPrintOrder[i] = gCrashMemPrintOrder[j];
+                gCrashMemPrintOrder[j] = temp;
+            }
+        }
+    }
+}
+
+s32 crash_page_memory(void) {
+    s32 i;
+    DebugData *d = &gDebug;
+    f32 size;
+    s32 y;
+    s32 x;
+    s32 originX;
+    u32 ramSize;
+    s32 tag;
+
+    if (gUseExpansionMemory) {
+        ramSize = 0x800000;
+    } else {
+        ramSize = 0x400000;
+    }
+
+    x = CRASH_BORDER_X + 16;
+
+    size = memsize_float(ramSize, &tag);
+    crash_text(x, 54, GPACK_RGBA5551(255, 255, 255, 1), "Total: %2.3f%s", (f64) size, sMemLabels[tag]);
+    size = memsize_float(d->ramTotal, &tag);
+    crash_text(x + 112, 54, GPACK_RGBA5551(255, 255, 255, 1), "Used: %2.3f%s", (f64) size, sMemLabels[tag]);
+    size = memsize_float(ramSize - d->ramTotal, &tag);
+    crash_text(x + 224, 54, GPACK_RGBA5551(255, 255, 255, 1), "Free: %2.3f%s", (f64) size, sMemLabels[tag]);
+
+    crash_reorder_ram(d);
+    y = 68;
+    originX = x;
+    for (i = 0; i < PP_RAM_TOTAL; i++) {
+        if (d->ramSegments[gCrashMemPrintOrder[i]]) {
+            crash_rectangle(
+                x - 12, 
+                y, 
+                9, 
+                7, 
+                (sMemColour5s[gCrashMemPrintOrder[i]] >> 8) & 0xF8, // Extract red component
+                (sMemColour5s[gCrashMemPrintOrder[i]] >> 3) & 0xF8,  // Extract green component
+                (sMemColour5s[gCrashMemPrintOrder[i]] << 2) & 0xF8,  // Extract blue component
+                255                             // Full alpha
+            );
+            size = memsize_float(d->ramSegments[gCrashMemPrintOrder[i]], &tag);
+            crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "%s", sPuppyprintMemColours[gCrashMemPrintOrder[i]]);
+            crash_text(x + 90, y, GPACK_RGBA5551(255, 255, 255, 1), "%2.3f%s", (f64) size, sMemLabels[tag]);
+            crash_text(x + 156, y, GPACK_RGBA5551(255, 255, 255, 1), "(%2.3f%%)", (f64) (((f32) d->ramSegments[gCrashMemPrintOrder[i]] / (f32) ramSize) * 100.0f));
+            y += 9;
+        }
+    }
+    
+    draw_memory_bar_chart(32, gScreenHeight - 48, gScreenWidth - 64, 12);
 
     return FALSE;
 }
@@ -676,6 +871,7 @@ void crash_render(OSThread *t) {
     s32 i;
     __OSThreadContext *c;
     u32 input;
+    u32 first = osGetCount();
 
     c = &t->context;
 
@@ -699,34 +895,36 @@ void crash_render(OSThread *t) {
         return;
     }
 
-    bcopy(gVideoDepthBuffer, gCrashFB, (gScreenWidth * gScreenHeight) * 2);
+    dcopy(gVideoDepthBuffer, gCrashFB, (gScreenWidth * gScreenHeight) * 2);
     
-    crash_line(CRASH_BORDER_X - 1, 11, gScreenWidth - CRASH_BORDER_X, 11, 255, 255, 255, 160);
-    crash_line(CRASH_BORDER_X - 1, gScreenHeight - 12, gScreenWidth - CRASH_BORDER_X, gScreenHeight - 12, 255, 255, 255, 160);
-    crash_line(CRASH_BORDER_X - 1, 12, CRASH_BORDER_X - 1, gScreenHeight - 13, 255, 255, 255, 160);
-    crash_line(gScreenWidth - CRASH_BORDER_X, 12, gScreenWidth - CRASH_BORDER_X, gScreenHeight - 13, 255, 255, 255, 160);
-    crash_rectangle(CRASH_BORDER_X, 12, gScreenWidth - (CRASH_BORDER_X * 2), 33, 127, 0, 0, 160);
-    
-    crash_line(CRASH_BORDER_X, 45, gScreenWidth - CRASH_BORDER_X - 1, 45, 255, 255, 255, 160);
-    
-    crash_rectangle(CRASH_BORDER_X, 46, gScreenWidth - (CRASH_BORDER_X * 2), gScreenHeight - 70, 0, 0, 0, 160);
-    crash_rectangle(CRASH_BORDER_X, gScreenHeight - 24, gScreenWidth - (CRASH_BORDER_X * 2) - 128, 12, 0, 0, 0, 160);
-    crash_rectangle(gScreenWidth - (CRASH_BORDER_X * 2) - 107, gScreenHeight - 23, 127, 11, 0, 0, 255, 160);
-    crash_line(gScreenWidth - (CRASH_BORDER_X * 2) - 108, gScreenHeight - 24, gScreenWidth - (CRASH_BORDER_X * 2) - 108, gScreenHeight - 13, 255, 255, 255, 160);
-    crash_line(gScreenWidth - (CRASH_BORDER_X * 2) - 107, gScreenHeight - 24, gScreenWidth - (CRASH_BORDER_X * 2) - 1, gScreenHeight - 24, 255, 255, 255, 160);
+    if (gCrashPage != CRASH_PAGE_EMPTY) {
+        crash_line(CRASH_BORDER_X - 1, 11, gScreenWidth - CRASH_BORDER_X, 11, 255, 255, 255, 160);
+        crash_line(CRASH_BORDER_X - 1, gScreenHeight - 12, gScreenWidth - CRASH_BORDER_X, gScreenHeight - 12, 255, 255, 255, 160);
+        crash_line(CRASH_BORDER_X - 1, 12, CRASH_BORDER_X - 1, gScreenHeight - 13, 255, 255, 255, 160);
+        crash_line(gScreenWidth - CRASH_BORDER_X, 12, gScreenWidth - CRASH_BORDER_X, gScreenHeight - 13, 255, 255, 255, 160);
+        crash_rectangle(CRASH_BORDER_X, 12, gScreenWidth - (CRASH_BORDER_X * 2), 33, 127, 0, 0, 160);
+        
+        crash_line(CRASH_BORDER_X, 45, gScreenWidth - CRASH_BORDER_X - 1, 45, 255, 255, 255, 160);
+        
+        crash_rectangle(CRASH_BORDER_X, 46, gScreenWidth - (CRASH_BORDER_X * 2), gScreenHeight - 70, 0, 0, 0, 160);
+        crash_rectangle(CRASH_BORDER_X, gScreenHeight - 24, gScreenWidth - (CRASH_BORDER_X * 2) - 128, 12, 0, 0, 0, 160);
+        crash_rectangle(gScreenWidth - (CRASH_BORDER_X * 2) - 107, gScreenHeight - 23, 127, 11, 255, 255, 255, 160);
+        crash_line(gScreenWidth - (CRASH_BORDER_X * 2) - 108, gScreenHeight - 24, gScreenWidth - (CRASH_BORDER_X * 2) - 108, gScreenHeight - 13, 255, 255, 255, 160);
+        crash_line(gScreenWidth - (CRASH_BORDER_X * 2) - 107, gScreenHeight - 24, gScreenWidth - (CRASH_BORDER_X) - 1, gScreenHeight - 24, 255, 255, 255, 160);
 
-    crash_text(gScreenWidth - (CRASH_BORDER_X) - 120, gScreenHeight - 21, GPACK_RGBA5551(255, 255, 255, 1), "Page %d of %d", gCrashPage, 8);
+        crash_text(gScreenWidth - (CRASH_BORDER_X) - 120, gScreenHeight - 21, GPACK_RGBA5551(0, 0, 0, 1), "Page %d of %d", gCrashPage + 1, CRASH_PAGE_COUNT);
 
-    // iykyk
-    crash_rectangle(9, 4, 8, 6, 255, 0, 0, 255);
-    crash_rectangle(10, 5, 6, 4, 255, 255, 255, 255);
+        // iykyk
+        crash_rectangle(9, 4, 8, 6, 255, 0, 0, 255);
+        crash_rectangle(10, 5, 6, 4, 255, 255, 255, 255);
 
-    crash_text(CRASH_BORDER_X + 16, 16, GPACK_RGBA5551(255, 255, 0, 1), "Thread:%s(%d)", sThreadNames[crash_thread_name(t->id)], t->id);
-    crash_text(CRASH_BORDER_X + 16 + 144, 16, GPACK_RGBA5551(255, 255, 0, 1), "PC:0#%8X", (u32) c->pc);
-    crash_text(CRASH_BORDER_X + 16 + 288, 16, GPACK_RGBA5551(255, 255, 0, 1), "RA:0#%8X", (u32) c->ra);
-    crash_text(CRASH_BORDER_X + 16, 25, GPACK_RGBA5551(255, 255, 0, 1), "Cause:%s", gCauseDesc[gCrashCause]);
-    if (gCrashFuncName) {
-        crash_text(CRASH_BORDER_X + 16, 34, GPACK_RGBA5551(255, 255, 0, 1), "Func Name:%s", gCrashFuncName);
+        crash_text(CRASH_BORDER_X + 16, 16, GPACK_RGBA5551(255, 255, 0, 1), "Thread:%s(%d)", sThreadNames[crash_thread_name(t->id)], t->id);
+        crash_text(CRASH_BORDER_X + 16 + 144, 16, GPACK_RGBA5551(255, 255, 0, 1), "PC:0#%8X", (u32) c->pc);
+        crash_text(CRASH_BORDER_X + 16 + 288, 16, GPACK_RGBA5551(255, 255, 0, 1), "RA:0#%8X", (u32) c->ra);
+        crash_text(CRASH_BORDER_X + 16, 25, GPACK_RGBA5551(255, 255, 0, 1), "Cause:%s", gCauseDesc[gCrashCause]);
+        if (gCrashFuncName) {
+            crash_text(CRASH_BORDER_X + 16, 34, GPACK_RGBA5551(255, 255, 0, 1), "Func Name:%s", gCrashFuncName);
+        }
     }
 
     switch (gCrashPage) {
@@ -739,7 +937,15 @@ void crash_render(OSThread *t) {
         case CRASH_PAGE_STACKS:
             gCrashFBUpdate = crash_page_stacks(t);
             break;
+        case CRASH_PAGE_ASSERTS:
+            gCrashFBUpdate = crash_page_assert();
+            break;
+        case CRASH_PAGE_MEMORY:
+            gCrashFBUpdate = crash_page_memory();
     }
+
+
+    crash_text(CRASH_BORDER_X + 16, gScreenHeight - 20, GPACK_RGBA5551(255, 255, 255, 1), "%2.3fms", (f64) ((f32) OS_CYCLES_TO_USEC(osGetCount() - first) / 1000.0f));
 
     osWritebackDCacheAll();
     osViBlack(FALSE);
@@ -806,7 +1012,7 @@ void crash_default_page(OSThread *t) {
                     gCrashCause = 18;
                     break;
                 case 69:
-                    __osFaultedThread = &gThread30;
+                    __osFaultedThread = &gThreadUsb;
                     gThreadStackSize = STACK_USB;
                     gCrashCause = 18;
                     break;
@@ -835,7 +1041,10 @@ void crash_thread(UNUSED void *var) {
 
     osRecvMesg(&gCrashQueue, &msg, OS_MESG_BLOCK);
     osSetThreadPri(NULL, OS_PRIORITY_APPMAX);
-    crash_screen_sleep(500);
+    osStopThread(&gMainSched.thread);
+    while (__osDpDeviceBusy() == 1) {}
+    while (__osSpDeviceBusy() == 1) {}
+    //crash_screen_sleep(500);
     gCrashFBUpdate = TRUE;
     oldW = gScreenWidth;
     oldH = gScreenHeight;
@@ -851,7 +1060,6 @@ void crash_thread(UNUSED void *var) {
     if (gVideoFramebuffers[2] == NULL) {
         gVideoFramebuffers[2] = (u16 *) 0x80280000;
     }
-    bcopy(gVideoDepthBuffer, gVideoFramebuffers[1], (gScreenHeight * gScreenWidth) * 2);
     gCrashFB = gVideoFramebuffers[1];
 
     crash_default_page(crash_error_thread());

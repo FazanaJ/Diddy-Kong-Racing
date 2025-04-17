@@ -40,7 +40,7 @@ void mempool_init_main(void) {
         ramEnd = RAM_END;
     }
     mempool_init(&gMainMemoryPool, ramEnd - (s32) (&gMainMemoryPool), MAIN_POOL_SLOT_COUNT);
-    debug_ram(K0_TO_PHYS((u32) &gMainMemoryPool), COLOUR_TAG_WHITE);
+    debug_ram(K0_TO_PHYS((u32) &gMainMemoryPool), PP_RAM_CODE);
     mempool_free_timer(2);
     gFreeQueueCount = 0;
 }

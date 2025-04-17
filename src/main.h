@@ -195,7 +195,9 @@ typedef enum DebugRam {
     "GreyXLU", \
     "Orange", \
     "Black", \
-    "L. Orange"
+    "L. Orange", \
+            \
+    "Code"
 
 #define NUM_PERF_ITERATIONS 60
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS

@@ -372,7 +372,8 @@ void main_game_loop(void) {
         if (osTvType == OS_TV_TYPE_PAL) {
             framebufferSize = (s32) ((SCREEN_WIDTH * SCREEN_HEIGHT * 2) * 1.1f);
         }
-        dmacopy_doubleword(gVideoLastFramebuffer, gVideoCurrFramebuffer, (s32) gVideoCurrFramebuffer + framebufferSize);
+        dcopy(gVideoLastFramebuffer, gVideoCurrFramebuffer, framebufferSize);
+        osWritebackDCacheAll();
     }
     debug_thread(THREAD3_END, 0);
     calculate_and_update_fps();

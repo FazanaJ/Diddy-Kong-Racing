@@ -1116,7 +1116,7 @@ void func_80074AA8(GhostHeader *ghostHeader, s16 characterID, s16 time, s16 node
     ghostHeader->unk3 = 0;
     ghostHeader->time = time;
     ghostHeader->nodeCount = nodeCount;
-    bcopy(dest, (u8 *) ghostHeader + 8, nodeCount * sizeof(GhostNode));
+    wcopy(dest, (u8 *) ghostHeader + 8, nodeCount * sizeof(GhostNode));
     ghostHeader->checksum = calculate_ghost_header_checksum(ghostHeader);
 }
 
@@ -1188,7 +1188,7 @@ s32 func_80074B34(s32 controllerIndex, s16 levelId, s16 vehicleId, u16 *ghostCha
                         *ghostCharacterId = cPakFile->data[-1].unk2_b;
                         *ghostTime = cPakFile->data[0].unk0_hw;
                         *ghostNodeCount = cPakFile->data[0].unk2;
-                        bcopy(cPakFile->data + 1, ghostData, *ghostNodeCount * sizeof(GhostNode));
+                        wcopy(cPakFile->data + 1, ghostData, *ghostNodeCount * sizeof(GhostNode));
                         pakStatus = CONTROLLER_PAK_GOOD;
                     } else {
                         stubbed_printf("warning: corrupt ghost\n");

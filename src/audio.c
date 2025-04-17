@@ -35,7 +35,7 @@ u8 gBlockVoiceLimitChange = FALSE;
 /************ .bss ************/
 
 // The audio heap is located at the start of the BSS section.
-u8 gAudioHeapStack[AUDIO_HEAP_SIZE];
+u8 *gAudioHeapStack;
 
 ALHeap gALHeap;
 ALSeqFile *gSequenceTable;
@@ -86,7 +86,11 @@ void audio_init(OSSched *sc) {
     audioMgrConfig audConfig;
 
     seqLength = 0;
-    alHeapInit(&gALHeap, gAudioHeapStack, sizeof(gAudioHeapStack));
+    gAudioHeapStack = (u8 *) mempool_alloc(AUDIO_HEAP_SIZE, COLOUR_TAG_CYAN);
+    if ((s32) gAudioHeapStack & 0xF) {
+        gAudioHeapStack = align16(gAudioHeapStack);
+    }
+    alHeapInit(&gALHeap, gAudioHeapStack, AUDIO_HEAP_SIZE);
 
     addrPtr = (s32 *) load_asset_section_from_rom(ASSET_AUDIO_TABLE);
     gSoundBank = (ALBankFile *) mempool_alloc_safe(addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1], COLOUR_TAG_CYAN);
