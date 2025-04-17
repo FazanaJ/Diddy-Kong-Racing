@@ -84,6 +84,17 @@ enum ObjectStackTraceID {
     OBJECT_DRAW
 };
 
+enum CrashPages {
+    CRASH_PAGE_GPREGS,
+    CRASH_PAGE_FPREGS,
+    CRASH_PAGE_EXTRA,
+    CRASH_PAGE_STACKS,
+    CRASH_PAGE_ASSERTS,
+    CRASH_PAGE_EMPTY,
+
+    CRASH_PAGE_COUNT,
+};
+
 void enable_interupts_on_main(void);
 void stop_all_threads_except_main(void);
 void update_object_stack_trace(s32 index, s32 value);

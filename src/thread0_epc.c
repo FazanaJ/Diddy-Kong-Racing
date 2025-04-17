@@ -26,7 +26,7 @@ void update_object_stack_trace(s32 index, s32 value) {
 #include "stdarg.h"
 #include "audiomgr.h"
 
-u64 gCrashThreadStack[0x200];
+u64 gCrashThreadStack[STACKSIZE(STACK_CRASH)];
 OSThread gCrashThread;
 OSMesgQueue gCrashQueue;
 OSMesg gCrashQueueBuf[2];
@@ -35,6 +35,11 @@ char *gCrashFuncName;
 char gCrashAssert[127];
 u8 gCrashAssetTripped;
 u8 gCrashPage;
+u8 gCrashCause;
+u8 gCrashFBFlip;
+u8 gCrashFBUpdate;
+u16 gThreadStackSize;
+
 
 u16 gScreenWidth = 320;
 u16 gScreenHeight = 240;
@@ -375,20 +380,22 @@ void crash_line(s32 x0, s32 y0, s32 x1, s32 y1, s32 r, s32 g, s32 b, s32 a) {
 
 char *sThreadNames[] = {
     "Unknown",
+    "Idle",
+    "Crash",
     "Main",
     "Audio",
     "Sched",
     "BGLoad",
-    "USB"
+    "USB",
 };
 
 s32 crash_thread_name(s32 threadID) {
-    s32 id = threadID - 2;
-    if (id == 28) {
-        id = 4;
-    } else if (id == 67) {
-        id = 5;
-    } else if (id >= 2) {
+    s32 id = threadID;
+    if (id == 30) {
+        id = 6;
+    } else if (id == 69) {
+        id = 7;
+    } else if (id > 5) {
         id = 0;
     }
 
@@ -431,6 +438,8 @@ u32 crash_stack_pos(s32 threadID) {
     switch(threadID) {
         case 1:
             return (u32) &gThread1Stack[STACKSIZE(STACK_IDLE) - 1];
+        case 2:
+            return (u32) &gCrashThreadStack[STACKSIZE(STACK_CRASH) - 1];
         case 3:
             return (u32) &gThread3Stack[STACKSIZE(STACK_GAME) - 1];
         case 4:
@@ -438,7 +447,11 @@ u32 crash_stack_pos(s32 threadID) {
         case 5:
             return (u32) &gSchedStack[STACKSIZE(STACK_SCHED) - 1];
         case 30:
-            return (u32) &gThread30Stack[STACKSIZE(STACK_BGLOAD) - 1];
+            if (gThread30Stack) {
+                return (u32) gThread30Stack[STACKSIZE(STACK_BGLOAD) - 1];
+            } else {
+                return 0;
+            }
         case 69:
             return (u32) &gThreadUsbStack[STACKSIZE(STACK_USB) - 1];
         default:
@@ -475,19 +488,218 @@ extern OSThread gThread3;
 extern OSSched gMainSched;
 extern OSThread gThread30;
 
-void crash_render(OSThread *t) {
-    s32 i;
+void crash_reg_common(OSThread *t, s32 x) {
+    __OSThreadContext *c;
+
+    c = &t->context;
+    crash_text(x, 54, GPACK_RGBA5551(255, 255, 255, 1), "GP:0#%08X", (u32) c->gp);
+    crash_text(x + 144, 54, GPACK_RGBA5551(255, 255, 255, 1), "SP:0#%08X", (u32) c->sp);
+    crash_text(x + 288, 54, GPACK_RGBA5551(255, 255, 255, 1), "Stack Pos:0#%X", (u32) (crash_stack_pos(t->id) - c->sp));
+    crash_text(x, 63, GPACK_RGBA5551(255, 255, 255, 1), "VA:0#%08X", (u32) c->badvaddr);
+    crash_text(x + 144, 63, GPACK_RGBA5551(255, 255, 255, 1), "SR:0#%08X", (u32) c->sr);
+}
+
+s32 crash_page_gpregs(OSThread *t) {
+    __OSThreadContext *c;
+    s32 initialX;
     s32 x;
     s32 y;
     s32 midPoint;
     s32 midCount;
-    s32 initialX;
+    s32 i;
     u64 *reg;
-    f64 *regF;
-    s32 cause;
-    s32 threadID;
-    s32 stackSize;
+
+    c = &t->context;
+    x = CRASH_BORDER_X + 12;
+    midPoint = 1;
+    while (1) {
+        if (x + 288 < gScreenWidth - CRASH_BORDER_X) {
+            x += 144;
+            midPoint++;
+        } else {
+            break;
+        }
+    }
+    initialX = (gScreenWidth / 2) - ((144 * midPoint) / 2);
+
+    crash_reg_common(t, initialX);
+
+    return 0;
+
+    x = initialX;
+    y = 72;
+    midCount = 0;
+    reg = (u64 *) c;
+    for (i = 0; i < 26; i++) {
+        u32 val = reg[i];
+        if (val >= 0x80000000 && val < 0x80800000) {
+            crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "%s:0#%08X (addr?)", sGPRegisterNames[i], (u32) val);
+        } else if (val > 0x10000000 && val < 0xFFFFFFFF - 0x10000000) {
+            crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "%s:0#%08X", sGPRegisterNames[i], (u32) val);
+        } else {
+            crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "%s:0#%08X (%d)", sGPRegisterNames[i], (u32) val, (s32) val);
+        }
+        midCount++;
+        if (midCount >= 3) {
+            midCount = 0;
+            y += 9;
+            x = initialX;
+        } else {
+            x += 144;
+        }
+    }
+
+    return FALSE;
+}
+
+s32 crash_page_fpregs(OSThread *t) {
     __OSThreadContext *c;
+    s32 initialX;
+    s32 x;
+    s32 y;
+    s32 midPoint;
+    s32 midCount;
+    s32 i;
+    f64 *reg;
+
+    c = &t->context;
+    x = CRASH_BORDER_X + 12;
+    midPoint = 1;
+    while (1) {
+        if (x + 288 < gScreenWidth - CRASH_BORDER_X) {
+            x += 144;
+            midPoint++;
+        } else {
+            break;
+        }
+    }
+    initialX = (gScreenWidth / 2) - ((144 * midPoint) / 2);
+
+    crash_reg_common(t, initialX);
+
+    x = initialX;
+    y = 72;
+    midCount = 0;
+    if (gCrashCause == 15) {
+        crash_text(initialX, y + 4, GPACK_RGBA5551(255, 255, 255, 1), "Cause:%s", gFpcsrDesc[c->fpcsr & 0x1F]);
+    }
+    y += 16;
+    reg = (f64 *) &c->fp0;
+    for (i = 0; i < 32; i += 1) {
+        crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "FPR%02d:%2.4f", i, (f64) reg[i]);
+        midCount++;
+        if (midCount >= 3) {
+            midCount = 0;
+            y += 9;
+            x = initialX;
+        } else {
+            x += 144;
+        }
+    }
+
+    return FALSE;
+}
+
+u8 gStackThreadIDs[] = {
+    1, 2, 3, 4, 5, 30, 69
+};
+
+u32 crash_stack_size(s32 threadID) {
+    switch(threadID) {
+        case 1:
+            return STACK_IDLE;
+        case 2:
+            return STACK_CRASH;
+        case 3:
+            return STACK_GAME;
+        case 4:
+            return STACK_AUD;
+        case 5:
+            return STACK_SCHED;
+        case 30:
+            return STACK_BGLOAD;
+        case 69:
+            return STACK_USB;
+        default:
+            return 0;
+    }
+}
+
+OSThread *crash_thread_id(s32 threadID) {
+    switch(threadID) {
+        case 1:
+            return &gThread1;
+        case 2:
+            return &gCrashThread;
+        case 3:
+            return &gThread3;
+        case 4:
+            return audioGetThread();
+        case 5:
+            return &gMainSched.thread;
+        case 30:
+            return &gThread30;
+        case 69:
+            return &gThread30;
+        default:
+            return 0;
+    }
+}
+
+s32 crash_page_stacks(OSThread *t) {
+    s32 i;
+    u32 colour;
+    s32 y;
+    OSThread *stackT;
+    s32 stackMin;
+    s32 stackMax;
+
+    y = 54;
+    for (i = 0; i < 7; i++) {
+        stackT = crash_thread_id(gStackThreadIDs[i]);
+        stackMin = (u32) (crash_stack_pos(gStackThreadIDs[i]) - stackT->context.sp);
+        stackMax = (u32) crash_stack_size(gStackThreadIDs[i]);
+        if (stackMin >= stackMax) {
+            colour = GPACK_RGBA5551(255, 64, 64, 1);
+        } else {
+            colour = GPACK_RGBA5551(255, 255, 255, 1);
+        }
+        crash_text(CRASH_BORDER_X + 8, y, colour, "Thread:%s(%d)", sThreadNames[crash_thread_name(gStackThreadIDs[i])], gStackThreadIDs[i]);
+        crash_text(CRASH_BORDER_X + 128, y, colour, "Stack Pos:0#%04X - Size:0#%04X", stackMin, stackMax);
+        y += 9;
+    }
+
+    return FALSE;
+}
+
+void crash_render(OSThread *t) {
+    s32 i;
+    __OSThreadContext *c;
+    u32 input;
+
+    c = &t->context;
+
+    input = input_pressed(0);
+
+    if (input & R_TRIG) {
+        gCrashFBUpdate = TRUE;
+        gCrashPage++;
+        if (gCrashPage == CRASH_PAGE_COUNT) {
+            gCrashPage = 0;
+        }
+    } else if (input & L_TRIG) {
+        gCrashPage--;
+        if (gCrashPage >= CRASH_PAGE_COUNT) {
+            gCrashPage = CRASH_PAGE_COUNT - 1;
+        }
+        gCrashFBUpdate = TRUE;
+    }
+
+    if (gCrashFBUpdate == FALSE) {
+        return;
+    }
+
+    bcopy(gVideoDepthBuffer, gCrashFB, (gScreenWidth * gScreenHeight) * 2);
     
     crash_line(CRASH_BORDER_X - 1, 11, gScreenWidth - CRASH_BORDER_X, 11, 255, 255, 255, 160);
     crash_line(CRASH_BORDER_X - 1, gScreenHeight - 12, gScreenWidth - CRASH_BORDER_X, gScreenHeight - 12, 255, 255, 255, 160);
@@ -509,121 +721,32 @@ void crash_render(OSThread *t) {
     crash_rectangle(9, 4, 8, 6, 255, 0, 0, 255);
     crash_rectangle(10, 5, 6, 4, 255, 255, 255, 255);
 
-    if (gCrashAssetTripped == FALSE) {
-        cause = -1;
-        switch(crash_check_stack()) {
-            case 1:
-                t = &gThread1;
-                stackSize = STACK_IDLE;
-                cause = 18;
-                break;
-            case 3:
-                t = &gThread3;
-                stackSize = STACK_GAME;
-                cause = 18;
-                break;
-            case 4:
-                t = audioGetThread();
-                stackSize = STACK_AUD;
-                cause = 18;
-                break;
-            case 5:
-                t = &gMainSched.thread;
-                stackSize = STACK_SCHED;
-                cause = 18;
-                break;
-            case 30:
-                t = &gThread30;
-                stackSize = STACK_BGLOAD;
-                cause = 18;
-                break;
-        }
-    } else {
-        cause = 19;
-    }
-    c = &t->context;
-    if (cause == -1) {
-        cause = (c->cause >> 2) & 0x1F;
-    }
     crash_text(CRASH_BORDER_X + 16, 16, GPACK_RGBA5551(255, 255, 0, 1), "Thread:%s(%d)", sThreadNames[crash_thread_name(t->id)], t->id);
     crash_text(CRASH_BORDER_X + 16 + 144, 16, GPACK_RGBA5551(255, 255, 0, 1), "PC:0#%8X", (u32) c->pc);
     crash_text(CRASH_BORDER_X + 16 + 288, 16, GPACK_RGBA5551(255, 255, 0, 1), "RA:0#%8X", (u32) c->ra);
-    crash_text(CRASH_BORDER_X + 16, 25, GPACK_RGBA5551(255, 255, 0, 1), "Cause:%s", gCauseDesc[cause]);
+    crash_text(CRASH_BORDER_X + 16, 25, GPACK_RGBA5551(255, 255, 0, 1), "Cause:%s", gCauseDesc[gCrashCause]);
     if (gCrashFuncName) {
         crash_text(CRASH_BORDER_X + 16, 34, GPACK_RGBA5551(255, 255, 0, 1), "Func Name:%s", gCrashFuncName);
     }
 
-    if (cause == 19) {
-        crash_text(CRASH_BORDER_X + 8, 54, GPACK_RGBA5551(255, 255, 255, 1), gCrashAssert);
-    } else if (cause == 18) {        
-        if (t) {
-            crash_text(CRASH_BORDER_X + 8, 54, GPACK_RGBA5551(255, 255, 255, 1), "Thread %d stack write out of bounds\nIncrease stack size in stacks.h", threadID);
-            crash_text(CRASH_BORDER_X + 8, 80, GPACK_RGBA5551(255, 255, 255, 1), "Stack Pos: 0#%X", (u32) (crash_stack_pos(threadID) - t->context.sp));
-            crash_text(CRASH_BORDER_X + 8, 89, GPACK_RGBA5551(255, 255, 255, 1), "Stack Size:0#%X", stackSize);
-        }
-    } else {
-        x = CRASH_BORDER_X + 12;
-        midPoint = 1;
-        while (1) {
-            if (x + 288 < gScreenWidth - CRASH_BORDER_X) {
-                x += 144;
-                midPoint++;
-            } else {
-                break;
-            }
-        }
-        initialX = (gScreenWidth / 2) - ((144 * midPoint) / 2);
-    
-        crash_text(initialX, 54, GPACK_RGBA5551(255, 255, 255, 1), "GP:0#%08X", (u32) c->gp);
-        crash_text(initialX + 144, 54, GPACK_RGBA5551(255, 255, 255, 1), "SP:0#%08X", (u32) c->sp);
-        crash_text(initialX + 288, 54, GPACK_RGBA5551(255, 255, 255, 1), "Stack Pos:0#%X", (u32) (crash_stack_pos(t->id) - c->sp));
-        crash_text(initialX, 63, GPACK_RGBA5551(255, 255, 255, 1), "VA:0#%08X", (u32) c->badvaddr);
-        crash_text(initialX + 144, 63, GPACK_RGBA5551(255, 255, 255, 1), "SR:0#%08X", (u32) c->sr);
-        x = initialX;
-        y = 72;
-        midCount = 0;
-        if (cause == 15) {
-            crash_text(initialX, y + 4, GPACK_RGBA5551(255, 255, 255, 1), "Cause:%s", gFpcsrDesc[c->fpcsr & 0x1F]);
-            y += 16;
-            regF = (f64 *) &c->fp0;
-            for (i = 0; i < 32; i += 1) {
-                crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "FPR%02d:%2.4f", i, (f64) regF[i]);
-                midCount++;
-                if (midCount >= 3) {
-                    midCount = 0;
-                    y += 9;
-                    x = initialX;
-                } else {
-                    x += 144;
-                }
-            }
-
-        } else {
-            reg = (u64 *) c;
-            for (i = 0; i < 26; i++) {
-                u32 val = reg[i];
-                if (val >= 0x80000000 && val < 0x80800000) {
-                    crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "%s:0#%08X (addr?)", sGPRegisterNames[i], (u32) val);
-                } else if (val > 0x10000000 && val < 0xFFFFFFFF - 0x10000000) {
-                    crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "%s:0#%08X", sGPRegisterNames[i], (u32) val);
-                } else {
-                    crash_text(x, y, GPACK_RGBA5551(255, 255, 255, 1), "%s:0#%08X (%d)", sGPRegisterNames[i], (u32) val, (s32) reg[i]);
-                }
-                midCount++;
-                if (midCount >= 3) {
-                    midCount = 0;
-                    y += 9;
-                    x = initialX;
-                } else {
-                    x += 144;
-                }
-            }
-        }
+    switch (gCrashPage) {
+        case CRASH_PAGE_GPREGS:
+            gCrashFBUpdate = crash_page_gpregs(t);
+            break;
+        case CRASH_PAGE_FPREGS:
+            gCrashFBUpdate = crash_page_fpregs(t);
+            break;
+        case CRASH_PAGE_STACKS:
+            gCrashFBUpdate = crash_page_stacks(t);
+            break;
     }
+
     osWritebackDCacheAll();
     osViBlack(FALSE);
     osViSwapBuffer(gCrashFB);
     vi_change(gScreenWidth, gScreenHeight);
+    gCrashFB = gVideoFramebuffers[(gCrashFBFlip ^= 1) + 1];
+    gCrashFBUpdate = FALSE;
 }
 
 void crash_screen_sleep(s32 ms) {
@@ -647,6 +770,59 @@ OSThread *crash_error_thread(void) {
     return NULL;
 }
 
+void crash_default_page(OSThread *t) {
+    s32 threadID;
+    __OSThreadContext *c;
+
+    if (gCrashAssetTripped) {
+        gCrashPage = CRASH_PAGE_ASSERTS;
+    } else {
+        threadID = crash_check_stack();
+        if (threadID) {
+            switch(threadID) {
+                case 1:
+                    __osFaultedThread = &gThread1;
+                    gThreadStackSize = STACK_IDLE;
+                    gCrashCause = 18;
+                    break;
+                case 3:
+                    __osFaultedThread = &gThread3;
+                    gThreadStackSize = STACK_GAME;
+                    gCrashCause = 18;
+                    break;
+                case 4:
+                    __osFaultedThread = audioGetThread();
+                    gThreadStackSize = STACK_AUD;
+                    gCrashCause = 18;
+                    break;
+                case 5:
+                    __osFaultedThread = &gMainSched.thread;
+                    gThreadStackSize = STACK_SCHED;
+                    gCrashCause = 18;
+                    break;
+                case 30:
+                    __osFaultedThread = &gThread30;
+                    gThreadStackSize = STACK_BGLOAD;
+                    gCrashCause = 18;
+                    break;
+                case 69:
+                    __osFaultedThread = &gThread30;
+                    gThreadStackSize = STACK_USB;
+                    gCrashCause = 18;
+                    break;
+            }
+            gCrashPage = CRASH_PAGE_STACKS;
+        } else {
+            c = &t->context;
+            gCrashCause = (c->cause >> 2) & 0x1F;
+
+            if (gCrashCause == 15) {
+                gCrashPage = CRASH_PAGE_FPREGS;
+            }
+        }
+    }
+}
+
 void crash_thread(UNUSED void *var) {
     OSMesg msg;
     s32 oldW;
@@ -659,30 +835,29 @@ void crash_thread(UNUSED void *var) {
 
     osRecvMesg(&gCrashQueue, &msg, OS_MESG_BLOCK);
     osSetThreadPri(NULL, OS_PRIORITY_APPMAX);
-    if (gVideoDepthBuffer == NULL) {
-        gCrashFB = (u16 *) 0x803000000;
-    } else {
-        gCrashFB = gVideoDepthBuffer;
-    }
     crash_screen_sleep(500);
+    gCrashFBUpdate = TRUE;
     oldW = gScreenWidth;
     oldH = gScreenHeight;
     gScreenWidth = 512;
     gScreenHeight = 240;
     if (gVideoCurrFramebuffer == NULL) {
-        gVideoCurrFramebuffer = (u16 *) 0x802000000;
+        gVideoCurrFramebuffer = (u16 *) 0x80200000;
     }
-    framebuffer_scale(gVideoCurrFramebuffer, gCrashFB, oldW, oldH, gScreenWidth, gScreenHeight);
+    framebuffer_scale(gVideoCurrFramebuffer, gVideoDepthBuffer, oldW, oldH, gScreenWidth, gScreenHeight);
+    if (gVideoFramebuffers[1] == NULL) {
+        gVideoFramebuffers[1] = (u16 *) 0x80200000;
+    }
+    if (gVideoFramebuffers[2] == NULL) {
+        gVideoFramebuffers[2] = (u16 *) 0x80280000;
+    }
+    bcopy(gVideoDepthBuffer, gVideoFramebuffers[1], (gScreenHeight * gScreenWidth) * 2);
+    gCrashFB = gVideoFramebuffers[1];
 
-    crash_render(crash_error_thread());
+    crash_default_page(crash_error_thread());
     while (1) { 
-        msg = 0;
-        osRecvMesg(&gCrashQueue, &msg, OS_MESG_NOBLOCK);
-        if ((s32) msg == 64) {
-            vi_change(oldW, oldH);
-            osViSwapBuffer(gCrashFB);
-            break;
-        }
+        input_update(0, LOGIC_30FPS);
+        crash_render(crash_error_thread());
     }
 
     while (1) {}
@@ -690,6 +865,6 @@ void crash_thread(UNUSED void *var) {
 
 void crash_init(void) {
     osCreateMesgQueue(&gCrashQueue, gCrashQueueBuf, ARRAY_COUNT(gCrashQueueBuf));
-    osCreateThread(&gCrashThread, 1, &crash_thread, 0, &gCrashThreadStack[0x200], 30);
+    osCreateThread(&gCrashThread, 2, &crash_thread, 0, &gCrashThreadStack[STACKSIZE(STACK_CRASH)], 30);
     osStartThread(&gCrashThread);
 }
