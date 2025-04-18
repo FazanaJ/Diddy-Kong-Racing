@@ -15,6 +15,8 @@
 #include "main.h"
 #include "usb/usb.h"
 
+#define MAP_PARSE
+
 /**
  * Mark the object type given, so if the game crashes while processing it, the debug screen will tell you which object
  * ID is to blame. Split into three sections, for spawning an object, updating an object and for rendering an object.
@@ -38,8 +40,10 @@ OSMesgQueue gCrashQueue;
 OSMesgQueue gCrashQueue2;
 OSMesg gCrashQueueBuf[2];
 OSMesg gCrashQueueBuf2[2];
+MapSymbol *gMapSymbols;
 u16 *gCrashFB;
-char *gCrashFuncName;
+char gCrashFuncName[32];
+u8 gCrashFuncFound;
 char gCrashAssert[127];
 s32 gCrashInput;
 u8 gCrashAssetTripped;
@@ -933,6 +937,8 @@ extern u8 *main_RODATA_START[];
 extern u8 *main_RODATA_END[];
 extern u8 *main_BSS_START[];
 extern u8 *main_BSS_END[];
+extern u8 *map_ROM_START[];
+extern u8 *map_ROM_END[];
 
 extern u8 *main_TEXT_SIZE[];
 extern u8 *main_DATA_SIZE[];
@@ -1244,6 +1250,59 @@ void crash_screen_sleep(s32 ms) {
 
 u8 viSetOnce = 0;
 
+#ifdef MAP_PARSE
+
+/* Relies on the linker being different which is a little annoying until custom linker support is added
+    map_ROM_START = __romPos;
+    map_VRAM = ADDR(.map);
+    .map assets_VRAM_END : AT(map_ROM_START) SUBALIGN(16)
+    {
+        FILL(0x00000000);
+        map_DATA_START = .;
+        build/assets/map.bin.o(.data);
+        map_DATA_END = .;
+        map_DATA_SIZE = ABSOLUTE(map_DATA_END - map_DATA_START);
+    }
+    __romPos += SIZEOF(.map);
+    map_ROM_END = __romPos;
+    map_VRAM_END = .;
+
+    goes beneath the assets section at the bottom of .ld that looks very similar.*/
+s32 func_name_find(u32 addr) {
+    u32 searchAddr = (u32) map_ROM_START;
+    s32 symbolFlip;
+    u32 symbolAddr;
+    u32 symbolAddrPrev;
+    MapSymbol symbol[2];
+    bzero(&symbol, sizeof(MapSymbol) * 2);
+
+    addr = (addr & 0x1FFFFFFF) | 0xA0000000;
+    symbolFlip = 0;
+    dmacopy(searchAddr, (u32) &symbol[1], sizeof(MapSymbol));
+    searchAddr += sizeof(MapSymbol);
+    symbolAddr = (symbol[1].address & 0x1FFFFFFF) | 0xA0000000;
+
+    while (1) {
+        symbolAddrPrev = symbolAddr;
+        dmacopy(searchAddr, (u32) &symbol[symbolFlip], sizeof(MapSymbol));
+        symbolAddr = (symbol[symbolFlip].address & 0x1FFFFFFF) | 0xA0000000;
+        if (addr >= symbolAddrPrev && addr < symbolAddr) {
+            bcopy(symbol[symbolFlip ^ 1].name, gCrashFuncName, 32);
+            return TRUE;
+        }
+        symbolFlip ^= 1;
+        searchAddr += sizeof(MapSymbol);
+        if (searchAddr > (u32) map_ROM_END) {
+            return FALSE;
+        }
+    }
+}
+#else
+s32 func_name_find(u32 addr) {
+    return FALSE;
+}
+#endif
+
 void crash_render(OSThread *t) {
     s32 i;
     __OSThreadContext *c;
@@ -1402,8 +1461,8 @@ void crash_render(OSThread *t) {
         crash_text(CRASH_BORDER_X + 16 + 144, 16, GPACK_RGBA5551(255, 255, 0, 1), "PC:0#%8X", (u32) c->pc);
         crash_text(CRASH_BORDER_X + 16 + 288, 16, GPACK_RGBA5551(255, 255, 0, 1), "RA:0#%8X", (u32) c->ra);
         crash_text(CRASH_BORDER_X + 16, 25, GPACK_RGBA5551(255, 255, 0, 1), "Cause:%s", gCauseDesc[gCrashCause]);
-        if (gCrashFuncName) {
-            crash_text(CRASH_BORDER_X + 16, 34, GPACK_RGBA5551(255, 255, 0, 1), "Func Name:%s", gCrashFuncName);
+        if (gCrashFuncFound) {
+            crash_text(CRASH_BORDER_X + 16, 34, GPACK_RGBA5551(255, 255, 0, 1), "Func Name: %s", gCrashFuncName);
         }
     }
 
@@ -1526,6 +1585,9 @@ void crash2_render(void) {
     crash_text(40, 50, 0xFFFF, "PC:0#%08X", (u32) c->pc);
     crash_text(40, 60, 0xFFFF, "RA:0#%08X", (u32) c->ra);
     crash_text(40, 70, 0xFFFF, "Stack:0#%X of 0#%X", stackMin, stackMax);
+    if (gCrashFuncFound) {
+        crash_text(40, 80, 0xFFFF, "Func Name: %s", gCrashFuncName);
+    }
     osWritebackDCacheAll();
     osViSwapBuffer(gCrashFB);
     osViBlack(FALSE);
@@ -1550,6 +1612,7 @@ void crash_thread2(UNUSED void *var) {
     gScreenWidth = 320;
     gScreenHeight = 240;
     gCrashFB = (u16 *) gVideoCurrFramebuffer;
+    gCrashFuncFound = func_name_find((u32) gCrashThread.context.pc);
     crash2_render();
 
     while (1) {}
@@ -1564,7 +1627,6 @@ void crash_thread(UNUSED void *var) {
     osSetEventMesg(OS_EVENT_FAULT, &gCrashQueue, (OSMesg) 8);
 
     gCrashAssetTripped = FALSE;
-
     osRecvMesg(&gCrashQueue, &msg, OS_MESG_BLOCK);
     osSetThreadPri(NULL, OS_PRIORITY_APPMAX);
     osStopThread(&gMainSched.thread);
@@ -1592,6 +1654,7 @@ void crash_thread(UNUSED void *var) {
     gCrashFB = gVideoFramebuffers[1];
 
     crash_default_page(crash_error_thread());
+    gCrashFuncFound = func_name_find((u32) crash_error_thread()->context.pc);
     while (1) { 
         input_update(0, LOGIC_30FPS);
         crash_render(crash_error_thread());

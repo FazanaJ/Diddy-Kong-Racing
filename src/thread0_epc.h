@@ -68,6 +68,11 @@ typedef struct unk800D2470 {
 /* 0x118 */ s32 unk118;
 } unk800D2470;
 
+typedef struct {
+    u32 address;
+    char name[32];
+} MapSymbol;
+
 enum EPCScreenPage {
     EPC_PAGE_REGISTER,
     EPC_PAGE_STACK_TOP,
