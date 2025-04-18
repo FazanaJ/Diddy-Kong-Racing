@@ -203,6 +203,7 @@ typedef enum DebugRam {
     PP_RAM_UNKNOWN,
     PP_RAM_OBJLISTS,
     PP_RAM_OBJHEADERS,
+    PP_RAM_OBJGFX,
 
     PP_RAM_TOTAL,
 } DebugRam;
@@ -261,7 +262,8 @@ typedef enum DebugRam {
     "Transitions", \
     "Unknown\t", \
     "Obj Lists", \
-    "Obj Headers"
+    "Obj Headers", \
+    "Obj Gfx\t"
 
 #define NUM_PERF_ITERATIONS 60
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS

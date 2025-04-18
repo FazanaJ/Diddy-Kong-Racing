@@ -210,7 +210,7 @@ Object_68 *model_init_type(ObjectModel *model, s32 flags) {
 
     if ((model->numberOfAnimations != 0) && (flags & OBJECT_SPAWN_ANIMATION)) {
         temp = ((model->numberOfVertices * 2) * sizeof(Vertex)) + 36;
-        result = (Object_68 *) mempool_alloc((model->unk4A * 6) + temp, PP_RAM_OBJMDL);
+        result = (Object_68 *) mempool_alloc((model->unk4A * 6) + temp, PP_RAM_OBJGFX);
         if (result == NULL) {
             return NULL;
         }
@@ -220,7 +220,7 @@ Object_68 *model_init_type(ObjectModel *model, s32 flags) {
         result->modelType = MODELTYPE_ANIMATED;
     } else if ((model->unk40 != NULL) && (flags & OBJECT_SPAWN_UNK01)) {
         temp = (model->numberOfVertices * sizeof(Vertex)) + 36;
-        result = (Object_68 *) mempool_alloc(temp, PP_RAM_OBJMDL);
+        result = (Object_68 *) mempool_alloc(temp, PP_RAM_OBJGFX);
         if (result == NULL) {
             return NULL;
         }
@@ -230,7 +230,7 @@ Object_68 *model_init_type(ObjectModel *model, s32 flags) {
         result->vertices[2] = NULL;
         result->modelType = MODELTYPE_SHADE;
     } else {
-        result = (Object_68 *) mempool_alloc(36, PP_RAM_OBJMDL);
+        result = (Object_68 *) mempool_alloc(36, PP_RAM_OBJGFX);
         if (result == NULL) {
             return NULL;
         }

@@ -952,6 +952,7 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
     Object *obj;
     ObjectModel *objModel;
     Object_68 *objGfx;
+    ObjectModel_44 *objAnim;
 
     switch (tag) {
         case PP_RAM_FRAMEBUFFERS:
@@ -1009,6 +1010,16 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
             if (texID != -200) {
                 crash_text(x + 40, y, col, "Obj Mdl:%d", texID);
                 return;
+            }
+            objAnim = (ObjectModel_44 *) slot->data;
+            for (i = 0; i < D_80126358; i++) {
+                objModel = (ObjectModel *) gModelCache[(i << 1) + 1];
+                if (objModel->animations  == objAnim) {
+                    texID = gModelCache[i << 1];
+                }
+            }
+            if (texID == -200) {
+                crash_text(x + 40, y, col, "Obj Mdl:%d", texID);
             }
             // I give up :(
             crash_text(x + 40, y, col, "Unknown");
