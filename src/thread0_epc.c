@@ -31,9 +31,13 @@ void update_object_stack_trace(s32 index, s32 value) {
 #include "audiomgr.h"
 
 u64 gCrashThreadStack[STACKSIZE(STACK_CRASH)];
+u64 gCrashThreadStack2[STACKSIZE(STACK_CRASH)];
 OSThread gCrashThread;
+OSThread gCrashThread2;
 OSMesgQueue gCrashQueue;
+OSMesgQueue gCrashQueue2;
 OSMesg gCrashQueueBuf[2];
+OSMesg gCrashQueueBuf2[2];
 u16 *gCrashFB;
 char *gCrashFuncName;
 char gCrashAssert[127];
@@ -947,7 +951,6 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
     s32 tag = slot->colourTag;
     TextureHeader *texHeader;
     Sprite *sprite;
-    Sprite *compareSprite;
     ObjectHeader *objHeader;
     Object *obj;
     ObjectModel *objModel;
@@ -991,8 +994,7 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
             // Okay, lets try for a sprite?
             sprite = (Sprite *) slot->data;
             for (i = 0; i < D_80126358; i++) {
-                compareSprite = (Sprite *) gSpriteCache[(i << 1) + 1];
-                if (compareSprite->frames == sprite->frames) {
+                if ((Sprite *) gSpriteCache[(i << 1) + 1] == sprite) {
                     texID = gSpriteCache[i << 1];
                 }
             }
@@ -1014,12 +1016,13 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
             objAnim = (ObjectModel_44 *) slot->data;
             for (i = 0; i < D_80126358; i++) {
                 objModel = (ObjectModel *) gModelCache[(i << 1) + 1];
-                if (objModel->animations  == objAnim) {
+                if (objModel && objAnim && objModel->animations == objAnim) {
                     texID = gModelCache[i << 1];
                 }
             }
-            if (texID == -200) {
+            if (texID != -200) {
                 crash_text(x + 40, y, col, "Obj Mdl:%d", texID);
+                return;
             }
             // I give up :(
             crash_text(x + 40, y, col, "Unknown");
@@ -1404,7 +1407,6 @@ void crash_render(OSThread *t) {
         }
     }
 
-
     switch (gCrashPage) {
         case CRASH_PAGE_GPREGS:
             crash_page_gpregs(t);
@@ -1506,6 +1508,53 @@ void crash_default_page(OSThread *t) {
     }
 }
 
+void crash2_render(void) {
+    u32 stackMin;
+    u32 stackMax;
+    __OSThreadContext *c;
+    OSThread *t = &gCrashThread;
+
+    c = &t->context;
+
+    stackMin = (u32) (crash_stack_pos(t->id) - c->sp);
+    if (stackMin > 0xFFFF) {
+        stackMin = 0xFFFF;
+    }
+    stackMax = (u32) crash_stack_size(t->id);
+    crash_rectangle(0, 0, gScreenWidth, gScreenHeight, 0, 0, 255, 255);
+    crash_text(40, 32, 0xFFFF, "Well done, you crashed the crash screen");
+    crash_text(40, 50, 0xFFFF, "PC:0#%08X", (u32) c->pc);
+    crash_text(40, 60, 0xFFFF, "RA:0#%08X", (u32) c->ra);
+    crash_text(40, 70, 0xFFFF, "Stack:0#%X of 0#%X", stackMin, stackMax);
+    osWritebackDCacheAll();
+    osViSwapBuffer(gCrashFB);
+    osViBlack(FALSE);
+    vi_change(gScreenWidth, gScreenHeight);
+}
+
+void crash_thread2(UNUSED void *var) {
+    OSMesg msg;
+    s32 oldW;
+    s32 oldH;
+
+    osSetEventMesg(OS_EVENT_CPU_BREAK, &gCrashQueue2, (OSMesg) 2);
+    osSetEventMesg(OS_EVENT_FAULT, &gCrashQueue2, (OSMesg) 8);
+
+    osRecvMesg(&gCrashQueue2, &msg, OS_MESG_BLOCK);
+    osSetThreadPri(NULL, OS_PRIORITY_APPMAX);
+    osStopThread(&gMainSched.thread);
+    osStopThread(&gCrashThread);
+    while (__osDpDeviceBusy() == 1) {}
+    while (__osSpDeviceBusy() == 1) {}
+    crash_screen_sleep(50);
+    gScreenWidth = 320;
+    gScreenHeight = 240;
+    gCrashFB = (u16 *) gVideoCurrFramebuffer;
+    crash2_render();
+
+    while (1) {}
+}
+
 void crash_thread(UNUSED void *var) {
     OSMesg msg;
     s32 oldW;
@@ -1519,6 +1568,9 @@ void crash_thread(UNUSED void *var) {
     osRecvMesg(&gCrashQueue, &msg, OS_MESG_BLOCK);
     osSetThreadPri(NULL, OS_PRIORITY_APPMAX);
     osStopThread(&gMainSched.thread);
+    osCreateMesgQueue(&gCrashQueue2, gCrashQueueBuf2, ARRAY_COUNT(gCrashQueueBuf2));
+    osCreateThread(&gCrashThread2, 9, &crash_thread2, 0, &gCrashThreadStack2[STACKSIZE(STACK_CRASH2)], 30);
+    osStartThread(&gCrashThread2);
     while (__osDpDeviceBusy() == 1) {}
     while (__osSpDeviceBusy() == 1) {}
     crash_screen_sleep(50);
@@ -1544,8 +1596,6 @@ void crash_thread(UNUSED void *var) {
         input_update(0, LOGIC_30FPS);
         crash_render(crash_error_thread());
     }
-
-    while (1) {}
 }
 
 void crash_init(void) {
@@ -1553,5 +1603,7 @@ void crash_init(void) {
     osCreateThread(&gCrashThread, 2, &crash_thread, 0, &gCrashThreadStack[STACKSIZE(STACK_CRASH)], 30);
     debug_ram(-STACK_CRASH, PP_RAM_CODE);
     debug_ram(STACK_CRASH, PP_RAM_STACK);
+    debug_ram(-STACK_CRASH2, PP_RAM_CODE);
+    debug_ram(STACK_CRASH2, PP_RAM_STACK);
     osStartThread(&gCrashThread);
 }
