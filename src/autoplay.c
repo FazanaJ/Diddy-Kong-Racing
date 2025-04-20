@@ -124,7 +124,7 @@ Object *autoplay_find_balloon(s32 balloonID) {
     if (gObjectCount > 0) {
         do {
             tempObj = gObjPtrList[i];
-            if (!(tempObj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && tempObj->behaviorId == BHV_GOLDEN_BALLOON) {
+            if (!(tempObj->segment.trans.flags & OBJ_FLAGS_PARTICLE) && tempObj->behaviorId == BHV_GOLDEN_BALLOON) {
                 Object_NPC *balloon = (Object_NPC *) tempObj->unk64;
                 if (tempObj->segment.level_entry->goldenBalloon.balloonID == balloonID) {
                     return tempObj;
@@ -150,7 +150,7 @@ Object *autoplay_find_balloon2(f32 x, f32 z) {
     if (gObjectCount > 0) {
         do {
             tempObj = gObjPtrList[i];
-            if (!(tempObj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && tempObj->behaviorId == BHV_GOLDEN_BALLOON) {
+            if (!(tempObj->segment.trans.flags & OBJ_FLAGS_PARTICLE) && tempObj->behaviorId == BHV_GOLDEN_BALLOON) {
                 diffX = tempObj->segment.trans.x_position - x;
                 diffZ = tempObj->segment.trans.z_position - z;
                 distance = sqrtf((diffX * diffX) + (diffZ * diffZ));
