@@ -947,7 +947,7 @@ extern u8 *main_BSS_SIZE[];
 extern s32 *gTextureCache;
 extern s32 gNumberOfLoadedTextures;
 extern s32 *gSpriteCache;
-extern s32 D_80126358;
+extern s32 gSpriteCacheCount;
 extern s32 *gModelCache;
 extern s32 gModelCacheCount;
 
@@ -999,7 +999,7 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
             }
             // Okay, lets try for a sprite?
             sprite = (Sprite *) slot->data;
-            for (i = 0; i < D_80126358; i++) {
+            for (i = 0; i < gSpriteCacheCount; i++) {
                 if ((Sprite *) gSpriteCache[(i << 1) + 1] == sprite) {
                     texID = gSpriteCache[i << 1];
                 }
@@ -1010,7 +1010,7 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
             }
             // Try object models
             objModel = (ObjectModel *) slot->data;
-            for (i = 0; i < D_80126358; i++) {
+            for (i = 0; i < gModelCacheCount; i++) {
                 if ((ObjectModel *) gModelCache[(i << 1) + 1] == objModel) {
                     texID = gModelCache[i << 1];
                 }
@@ -1020,7 +1020,7 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
                 return;
             }
             objAnim = (ObjectModel_44 *) slot->data;
-            for (i = 0; i < D_80126358; i++) {
+            for (i = 0; i < gModelCacheCount; i++) {
                 objModel = (ObjectModel *) gModelCache[(i << 1) + 1];
                 if (objModel && objAnim && objModel->animations == objAnim) {
                     texID = gModelCache[i << 1];

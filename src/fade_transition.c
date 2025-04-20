@@ -431,7 +431,7 @@ void transition_render_fullscreen(Gfx **dList, UNUSED MatrixS **mtx, UNUSED Vert
     gDPSetPrimColor((*dList)++, 0, 0, gCurFadeRed, gCurFadeGreen, gCurFadeBlue, gCurFadeAlpha);
     gDPSetCombineMode((*dList)++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
     gDPFillRectangle((*dList)++, 0, 0, screenSize & 0x3FF, (screenSize >> 16) & 0x3FF);
-    reset_render_settings(dList);
+    rendermode_reset(dList);
 }
 
 /**
@@ -554,11 +554,11 @@ void transition_update_shape(s32 updateRate) {
  * Renders a transition effect on screen that will close in from both sides horizonally.
  */
 void transition_render_barndoor_hor(Gfx **dList, UNUSED MatrixS **mtx, UNUSED Vertex **vtx) {
-    reset_render_settings(dList);
+    rendermode_reset(dList);
     gSPDisplayList((*dList)++, dTransitionShapeSettings);
     gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(sTransitionVtx[sTransitionTaskNum]), 12, 0);
     gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(sTransitionTris[sTransitionTaskNum]), 8, TRIN_DISABLE_TEXTURE);
-    reset_render_settings(dList);
+    rendermode_reset(dList);
 }
 
 /**
@@ -566,11 +566,11 @@ void transition_render_barndoor_hor(Gfx **dList, UNUSED MatrixS **mtx, UNUSED Ve
  * Codewise, exactly the same as above, but uses a different vertex layout to make the difference.
  */
 void transition_render_barndoor_vert(Gfx **dList, UNUSED MatrixS **mtx, UNUSED Vertex **vtx) {
-    reset_render_settings(dList);
+    rendermode_reset(dList);
     gSPDisplayList((*dList)++, dTransitionShapeSettings);
     gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(sTransitionVtx[sTransitionTaskNum]), 12, 0);
     gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(sTransitionTris[sTransitionTaskNum]), 8, TRIN_DISABLE_TEXTURE);
-    reset_render_settings(dList);
+    rendermode_reset(dList);
 }
 
 void transition_init_circle(FadeTransition *transition) {
@@ -739,7 +739,7 @@ void transition_render_circle(Gfx **dList, UNUSED MatrixS **mtx, UNUSED Vertex *
     Gfx *gfx;
     s32 i;
 
-    reset_render_settings(dList);
+    rendermode_reset(dList);
     gfx = *dList;
 
     vertsToRender = (Vertex *) sTransitionVtx[sTransitionTaskNum];
@@ -754,7 +754,7 @@ void transition_render_circle(Gfx **dList, UNUSED MatrixS **mtx, UNUSED Vertex *
     }
 
     *dList = gfx;
-    reset_render_settings(dList);
+    rendermode_reset(dList);
 }
 
 /**
@@ -765,7 +765,7 @@ void transition_render_waves(Gfx **dList, UNUSED MatrixS **mtx, UNUSED Vertex **
     s32 i;
     Vertex *v;
     Triangle *t;
-    reset_render_settings(dList);
+    rendermode_reset(dList);
     gfx = *dList;
     v = (Vertex *) sTransitionVtx[sTransitionTaskNum];
     t = (Triangle *) sTransitionTris[sTransitionTaskNum];
@@ -792,18 +792,18 @@ void transition_render_waves(Gfx **dList, UNUSED MatrixS **mtx, UNUSED Vertex **
         }
     }
     *dList = gfx;
-    reset_render_settings(dList);
+    rendermode_reset(dList);
 }
 
 /**
  * Renders a transition effect on screen that will close in from the opposite corners of the screen.
  */
 void transition_render_barndoor_diag(Gfx **dList, UNUSED MatrixS **mtx, UNUSED Vertex **vtx) {
-    reset_render_settings(dList);
+    rendermode_reset(dList);
     gSPDisplayList((*dList)++, dTransitionShapeSettings);
     gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(sTransitionVtx[sTransitionTaskNum]), 10, 0);
     gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(sTransitionTris[sTransitionTaskNum]), 6, TRIN_DISABLE_TEXTURE);
-    reset_render_settings(dList);
+    rendermode_reset(dList);
 }
 
 /**
@@ -862,5 +862,5 @@ void transition_render_blank(Gfx **dList, UNUSED MatrixS **mtx, UNUSED Vertex **
     gDPSetPrimColor((*dList)++, 0, 0, (gLastFadeRed >> 16), (gLastFadeGreen >> 16), (gLastFadeBlue >> 16), 255);
     gDPSetCombineMode((*dList)++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
     gDPFillRectangle((*dList)++, 0, 0, GET_VIDEO_WIDTH(screenSize), GET_VIDEO_HEIGHT(screenSize) & 0x3FF);
-    reset_render_settings(dList);
+    rendermode_reset(dList);
 }
