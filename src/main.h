@@ -102,7 +102,6 @@ void thread1_main(void *);
 void thread3_verify_stack(void);
 void get_platform(void);
 
-#ifdef DEBUG
 
 typedef enum DebugPages {
     PAGE_MINIMAL,
@@ -207,6 +206,8 @@ typedef enum DebugRam {
 
     PP_RAM_TOTAL,
 } DebugRam;
+
+#ifdef DEBUG
 
 #define MEMSTRINGS \
     "Red\t", \

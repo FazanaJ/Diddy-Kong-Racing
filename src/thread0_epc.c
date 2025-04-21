@@ -161,6 +161,22 @@ const u32 gCrashScreenFont[7 * 10] = {
     0x00000000,
 };
 
+u32 gCrashFont[] = {
+    0x746318c5, 0xc4610842, 0x39d10991, 0x0fba2170,
+    0x0062e32a, 0x52f885f8, 0x78218b9d, 0x187a3177,
+    0xe2111084, 0x7462e8c5, 0xce8c5e18, 0xb88a8c7f,
+    0x18fa31f4, 0x63e74610, 0x845dc946, 0x31973f08,
+    0x7a10ffe1, 0x0f421074, 0x6178c5d1, 0x8c7f18c5,
+    0xc4210847, 0x04210c62, 0xe8ca98a4, 0xa3084210,
+    0x87e3bad6, 0x318c639a, 0xce317463, 0x18c5de8c,
+    0x7d0841d1, 0x8c6b26fa, 0x31f52517, 0x460e0c5d,
+    0xf2108421, 0x2318c631, 0x746318a9, 0x448c635a,
+    0xd5518a88, 0xa8c6318a, 0x88427c22, 0x2221f000,
+    0x80200022, 0x21082088, 0x20842220, 0x00000001,
+    0xc0001d10, 0x88802108, 0x42100401, 0x09f21011,
+    0x11111110, 0x45445440, 0x11108884, 0x40000000
+};
+
 char *gCauseDesc[] = {
     "Interrupt",
     "TLB modification",
@@ -199,6 +215,7 @@ char *write_to_buf(char *buffer, const char *data, size_t size) {
 typedef char *outfun(char*,const char*,size_t);
 s32 _Printf(outfun prout, char *dst, const char *fmt, va_list args);
 
+#ifdef DEBUG
 void crash_assert(s32 cond, const char *str, ...) {
     char *ptr;
     va_list args;
@@ -217,6 +234,7 @@ void crash_assert(s32 cond, const char *str, ...) {
     gCrashAssetTripped = TRUE;
     *(volatile int *) 0 = 0;
 }
+#endif
 
 void crash_nomemory(s32 size, s32 colourTag) {
     if (colourTag != COLOUR_TAG_NONE) {
@@ -497,12 +515,14 @@ u32 crash_stack_pos(s32 threadID) {
             } else {
                 return 0;
             }
+#ifdef DEBUG
         case 69:
             if (gThreadUsbStack) {
                 return (u32) &gThreadUsbStack[STACKSIZE(STACK_USB) - 1];
             } else {
                 return 0;
             }
+#endif
         default:
             return 0;
     }
@@ -525,9 +545,11 @@ s32 crash_check_stack(void) {
     if (gThread30Stack && (gThread30Stack[STACKSIZE(STACK_BGLOAD) - 1] != gThread30Stack[0])) {
         return 30;
     }
+#ifdef DEBUG
     if (gThreadUsbStack && (gThreadUsbStack[STACKSIZE(STACK_USB) - 1] != gThreadUsbStack[0])) {
         return 69;
     }
+#endif
 
     return 0;
 }
@@ -683,8 +705,10 @@ OSThread *crash_thread_id(s32 threadID) {
             return &gMainSched.thread;
         case 30:
             return &gThread30;
+#ifdef DEBUG
         case 69:
             return &gThreadUsb;
+#endif
         default:
             return 0;
     }
@@ -725,6 +749,7 @@ void crash_page_stacks(OSThread *t) {
     }
 }
 
+#ifdef DEBUG
 void crash_page_assert(void) {
     if (gCrashAssetTripped) {
         crash_text(CRASH_BORDER_X + 16, 54, GPACK_RGBA5551(255, 255, 255, 1), gCrashAssert);
@@ -1241,6 +1266,7 @@ void crash_page_memory(void) {
 
     crash_memory_chart(32, gScreenHeight - 40, gScreenWidth - 64, 12);
 }
+#endif
 
 void crash_screen_sleep(s32 ms) {
     u32 cycles = ms * 1000 * osClockRate / 1000000;
@@ -1345,6 +1371,7 @@ void crash_render(OSThread *t) {
             break;
         case CRASH_PAGE_STACKS:
             break;
+#ifdef DEBUG
         case CRASH_PAGE_ASSERTS:
             break;
         case CRASH_PAGE_MEMORY:
@@ -1428,6 +1455,7 @@ void crash_render(OSThread *t) {
                 }
             } 
             break;
+#endif
     }
 
     if (gCrashFBUpdate == FALSE) {
@@ -1476,12 +1504,14 @@ void crash_render(OSThread *t) {
         case CRASH_PAGE_STACKS:
             crash_page_stacks(t);
             break;
+#ifdef DEBUG
         case CRASH_PAGE_ASSERTS:
             crash_page_assert();
             break;
         case CRASH_PAGE_MEMORY:
             crash_page_memory();
             break;
+#endif
     }
 
     crash_text(CRASH_BORDER_X + 16, gScreenHeight - 20, GPACK_RGBA5551(255, 255, 255, 1), "%2.3fms", (f64) ((f32) OS_CYCLES_TO_USEC(osGetCount() - first) / 1000.0f));
@@ -1516,11 +1546,13 @@ void crash_default_page(OSThread *t) {
     s32 threadID;
     __OSThreadContext *c;
 
+#ifdef DEBUG
     if (gCrashAssetTripped) {
         gCrashPage = CRASH_PAGE_ASSERTS;
     } else if (gCrashCause == 20) {
         gCrashPage = CRASH_PAGE_MEMORY;
     } else {
+#endif
         threadID = crash_check_stack();
         if (threadID) {
             switch(threadID) {
@@ -1549,11 +1581,13 @@ void crash_default_page(OSThread *t) {
                     gThreadStackSize = STACK_BGLOAD;
                     gCrashCause = 18;
                     break;
+#ifdef DEBUG
                 case 69:
                     __osFaultedThread = &gThreadUsb;
                     gThreadStackSize = STACK_USB;
                     gCrashCause = 18;
                     break;
+#endif
             }
             gCrashPage = CRASH_PAGE_STACKS;
         } else {
@@ -1564,7 +1598,9 @@ void crash_default_page(OSThread *t) {
                 gCrashPage = CRASH_PAGE_FPREGS;
             }
         }
+#ifdef DEBUG
     }
+#endif
 }
 
 void crash2_render(void) {
