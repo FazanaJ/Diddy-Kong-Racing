@@ -312,6 +312,7 @@ void mainproc(void) {
     bzero(&gMainMemoryPool, RAM_END - (s32) (&gMainMemoryPool));
 #endif
     memsize_init();
+    mempool_init_main();
     debug_init();
     osCreateThread(&gThread1, 1, &thread1_main, 0, &gThread1Stack[STACKSIZE(STACK_IDLE)], OS_PRIORITY_IDLE);
     gThread1Stack[STACKSIZE(STACK_IDLE) - 1] = 0;
@@ -329,7 +330,6 @@ void crash_init(void);
  * stopping this thread, as it's no longer needed.
  */
 void thread1_main(UNUSED void *unused) {
-    mempool_init_main();
     crash_init();
     config_init();
     osCreateThread(&gThread3, 3, &thread3_main, 0, &gThread3Stack[STACKSIZE(STACK_GAME)], 10);
@@ -352,12 +352,16 @@ void thread3_verify_stack(void) {
 
 #ifdef DEBUG
 
-ALIGNED8 DebugData gDebug;
+DebugData *gDebug;
 
 void debug_init(void) {
-    bzero(&gDebug, sizeof(DebugData));
-    gDebug.enabled = FALSE;
-    gDebug.iter = 0;
+    gDebug = (DebugData *) mempool_alloc(sizeof(DebugData), PP_RAM_YELLOW);
+    bzero(gDebug, sizeof(DebugData));
+    gDebug->enabled = FALSE;
+    gDebug->iter = 0;
+    debug_ram(K0_TO_PHYS((u32) &gMainMemoryPool) - (MAIN_POOL_SLOT_COUNT * sizeof(MemoryPoolSlot)), PP_RAM_CODE);
+    debug_ram(MAIN_POOL_SLOT_COUNT * sizeof(MemoryPoolSlot), PP_RAM_SLOTS);
+    debug_ram(sizeof(DebugData), PP_RAM_YELLOW);
 }
 
 typedef char *outfun(char *dst, const char *src, size_t count);
@@ -417,7 +421,8 @@ void debug_timer_update(DebugData *d, s32 field, u32 time) {
 }
 
 void debug_rdp(void) {
-    DebugData *d = &gDebug;
+    DebugData *d = gDebug;
+
     debug_timer_update(d, PP_RDP_CLK, RDP_TO_USEC(IO_READ(DPC_CLOCK_REG)));
     debug_timer_update(d, PP_RDP_BUF, RDP_TO_USEC(IO_READ(DPC_BUFBUSY_REG)));
     debug_timer_update(d, PP_RDP_BUS, RDP_TO_USEC(IO_READ(DPC_PIPEBUSY_REG)));
@@ -427,7 +432,7 @@ void debug_rdp(void) {
 }
 
 void debug_rsp(s32 context) {
-    DebugData *d = &gDebug;
+    DebugData *d = gDebug;
     u32 time = osGetCount();
 
     switch (context) {
@@ -490,10 +495,13 @@ s32 debug_tag_index(s32 colourTag) {
 }
 
 void debug_ram(s32 size, s32 tag) {
-    if (tag != PP_RAM_SUBPOOLS) {
-        gDebug.ramTotal += size;
+    if (gDebug == NULL) {
+        return;
     }
-    gDebug.ramSegments[debug_tag_index(tag)] += size;
+    if (tag != PP_RAM_SUBPOOLS) {
+        gDebug->ramTotal += size;
+    }
+    gDebug->ramSegments[debug_tag_index(tag)] += size;
 }
 
 const char *sMinimalText[] = {
@@ -539,7 +547,7 @@ void debug_page_minimal(DebugData *d, Gfx **dList, s32 updateRate) {
         } else {
             ramCount = 0x400000;
         }
-        ram = ((u32) ramCount - gDebug.ramTotal) / 1024.0f;
+        ram = ((u32) ramCount - gDebug->ramTotal) / 1024.0f;
         if (ram < 0.0f) {
             ram = 0.0f;
         }
@@ -554,7 +562,7 @@ void debug_page_minimal(DebugData *d, Gfx **dList, s32 updateRate) {
 }
 
 void debug_render(Gfx **dList, s32 updateRate) {
-    DebugData *d = &gDebug;
+    DebugData *d = gDebug;
 
     if (d->enabled == FALSE) {
         return;
@@ -568,7 +576,7 @@ void debug_render(Gfx **dList, s32 updateRate) {
 }
 
 void debug_thread(s32 field, s32 offset) {
-    DebugData *d = &gDebug;
+    DebugData *d = gDebug;
     s32 count = field >> 1;
     d->threadTimers[field][d->threadIter[count]] = osGetCount() - offset;
     if (field % 2) {
@@ -610,7 +618,7 @@ void debug_newframe(s32 updateRate) {
     s32 i;
     s32 j;
     s32 it;
-    DebugData *d = &gDebug;
+    DebugData *d = gDebug;
 
     //for (j = 0; j < ABS(d->iter - d->prevIter); j++) {
         //it = d->prevIter + j;
@@ -682,7 +690,7 @@ void debug_update(s32 updateRate) {
     s32 i;
     s32 j;
     u32 highTime;
-    DebugData *d = &gDebug;
+    DebugData *d = gDebug;
     s32 inputPressed;
     s32 inputHeld;
     s32 count;

@@ -304,7 +304,7 @@ typedef struct DebugData {
     u32 ramTotal;
 } DebugData;
 
-extern DebugData gDebug;
+extern DebugData *gDebug;
 
 void debug_init();
 void debug_log(s32 logLevel, char *str, ...);

@@ -864,7 +864,7 @@ f32 memsize_float(s32 size, s32 *tag) {
 u8 gCrashMemPrintOrder[PP_RAM_TOTAL];
 
 void crash_memory_chart(s32 x, s32 y, s32 width, s32 height) {
-    DebugData *d = &gDebug;
+    DebugData *d = gDebug;
     u32 ramSize;
     s32 i;
     s32 totalHeight = 0;
@@ -1164,7 +1164,7 @@ void crash_mem_details(void) {
 
 void crash_page_memory(void) {
     s32 i;
-    DebugData *d = &gDebug;
+    DebugData *d = gDebug;
     f32 size;
     s32 y;
     s32 x;
@@ -1380,7 +1380,7 @@ void crash_render(OSThread *t) {
                 debug_ram_dump();
             }
             for (i = 0; i < PP_RAM_TOTAL; i++) {
-                if (gDebug.ramSegments[i] != 0) {
+                if (gDebug->ramSegments[i] != 0) {
                     numValids++;
                 }
             }
