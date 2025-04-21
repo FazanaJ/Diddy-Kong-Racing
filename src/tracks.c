@@ -279,14 +279,14 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
 
 void aa_manage(s32 mode) {
     s32 aaMode;
-    if (mode == AA_OFF || gConfig.antiAliasing == AA_OFF) {
-        gAntiAliasing = AA_OFF;
-        return;
-    }
     if (gScenePlayerViewports == ONE_PLAYER) {
         aaMode = gConfig.antiAliasing;
     } else {
         aaMode = gConfig.multiAA;
+    }
+    if (mode == AA_OFF || aaMode == AA_OFF) {
+        gAntiAliasing = AA_OFF;
+        return;
     }
     if (aaMode == AA_FANCY) {
         gAntiAliasing = AA_FANCY;
