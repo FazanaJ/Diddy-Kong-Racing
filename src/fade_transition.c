@@ -313,11 +313,7 @@ s32 transition_update(s32 updateRate) {
  */
 void transition_render(Gfx **dList, MatrixS **mtx, Vertex **vtx) {
     if (sTransitionStatus != TRANSITION_NONE) {
-        if (osTvType == OS_TV_TYPE_PAL) {
-            set_ortho_matrix_height(1.4f);
-        } else {
-            set_ortho_matrix_height(1.2f);
-        }
+        set_ortho_matrix_height(1.2f);
         set_ortho_matrix_view(dList, mtx);
         set_ortho_matrix_height(1.0f);
         switch (gCurFadeTransition) {

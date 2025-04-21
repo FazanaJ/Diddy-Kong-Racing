@@ -200,9 +200,6 @@ void obj_loop_fireball_octoweapon(Object *obj, s32 updateRate) {
 
     someObj = obj->properties.fireball.obj;
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     if (obj->behaviorId == BHV_FIREBALL_OCTOWEAPON_2 && obj->properties.fireball.timer < 0) {
         obj->segment.trans.x_position = 0.0f;
         obj->segment.trans.y_position = 0.0f;
@@ -436,9 +433,6 @@ void obj_loop_laserbolt(Object *obj, s32 updateRate) {
 
     delete = FALSE;
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     dir.x = obj->segment.trans.x_position + (obj->segment.x_velocity * updateRateF);
     dir.y = obj->segment.trans.y_position + (obj->segment.y_velocity * updateRateF);
     dir.z = obj->segment.trans.z_position + (obj->segment.z_velocity * updateRateF);
@@ -723,9 +717,6 @@ void obj_loop_collectegg(Object *obj, s32 updateRate) {
 
     egg = (Object_CollectEgg *) obj->unk64;
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     switch (egg->status) {
         case EGG_SPAWNED:
             try_to_collect_egg(obj, egg);
@@ -1214,9 +1205,6 @@ void obj_loop_stopwatchman(Object *obj, s32 updateRate) {
 
     tempPosY = obj->segment.trans.y_position;
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     tt = (Object_NPC *) obj->unk64;
     if (obj->segment.animFrame == 0) {
         if (tt->animFrameF > 1.0) {
@@ -2217,9 +2205,6 @@ void obj_init_smoke(UNUSED Object *obj, UNUSED LevelObjectEntry_Smoke *entry) {
 
 void obj_loop_smoke(Object *obj, s32 updateRate) {
     f32 updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     obj->segment.trans.x_position += obj->segment.x_velocity * updateRateF;
     obj->segment.animFrame += updateRate * 16;
     obj->segment.trans.y_position += obj->segment.y_velocity * updateRateF;
@@ -2248,9 +2233,6 @@ void obj_loop_wardensmoke(Object *obj, s32 updateRate) {
     f32 updateRateF;
 
     updateRateF = (f32) updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     obj->segment.animFrame += updateRate * 4;
     obj->segment.trans.y_position += updateRateF * 0.25;
     if (obj->segment.animFrame > 255) {
@@ -2559,9 +2541,6 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
 
     updateRateF2 = updateRate;
     updateRateF = updateRateF2;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     taj = (Object_NPC *) obj->unk64;
     levelHeader = get_current_level_header();
     obj->particleEmittersEnabled = OBJ_EMIT_NONE;
@@ -3396,9 +3375,6 @@ void obj_loop_goldenballoon(Object *obj, s32 updateRate) {
     s32 isPirated;
 
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     isPirated = FALSE;
 #ifdef ANTI_TAMPER
     // AntiPiracy check. Seems to set a flag that prevents collecting balloons.
@@ -3538,9 +3514,6 @@ void obj_loop_door(Object *doorObj, s32 updateRate) {
 
     doorEntry = &doorObj->segment.level_entry->door;
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     settings = get_settings();
 #ifndef OPEN_ALL_DOORS
     playSound = settings->courseFlagsPtr[settings->courseId];
@@ -3993,10 +3966,6 @@ void obj_loop_bridge_whaleramp(Object *obj, s32 updateRate) {
     entry = (LevelObjectEntry_Bridge_WhaleRamp *) obj->segment.level_entry;
     updateRateF = updateRate;
 
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
-
     if (entry->unkB != 3) {
         if (obj->properties.common.unk0 != 0) {
             bobAmount = 2.0 * (f32) entry->bobAmount;
@@ -4247,9 +4216,6 @@ void obj_loop_flycoin(Object *obj, s32 updateRate) {
     Object_Racer *racerObj;
 
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     obj->segment.y_velocity -= 0.5 * updateRateF;
     move_object(obj, obj->segment.x_velocity * updateRateF, obj->segment.y_velocity * updateRateF,
                 obj->segment.z_velocity * updateRateF);
@@ -4347,9 +4313,6 @@ void obj_loop_banana(Object *obj, s32 updateRate) {
     SoundMask *prevSoundMask;
 
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     banana = (Object_Banana *) obj->unk64;
     obj->segment.animFrame += updateRate * 8;
     properties = (ObjPropertyBanana *) &obj->properties.banana;
@@ -4874,9 +4837,6 @@ void weapon_projectile(Object *obj, s32 updateRate) {
     guMtxXFMF(mtxf, 0.0f, 0.0f, weapon->forwardVel, &obj->segment.x_velocity, &obj->segment.y_velocity,
               &obj->segment.z_velocity);
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     offset.x = obj->segment.trans.x_position + (obj->segment.x_velocity * updateRateF);
     offset.y = obj->segment.trans.y_position + (obj->segment.y_velocity * updateRateF);
     offset.z = obj->segment.trans.z_position + (obj->segment.z_velocity * updateRateF);
@@ -5178,9 +5138,6 @@ void weapon_trap(Object *weaponObj, s32 updateRate) {
     weaponOwner = &weapon->owner->unk64->racer;
     updateRateF = updateRate;
     weaponProperties = &weaponObj->properties.weapon;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     if (weaponProperties->status == WEAPON_DROPPED) {
         intendedPos.x = weaponObj->segment.trans.x_position + (weaponObj->segment.x_velocity * updateRateF);
         intendedPos.y = weaponObj->segment.trans.y_position + (weaponObj->segment.y_velocity * updateRateF);
@@ -6400,9 +6357,6 @@ void obj_loop_frog(Object *obj, s32 updateRate) {
     Object *racerObj;
 
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     frog = (Object_Frog *) obj->unk64;
 
     switch (frog->action) {
@@ -6622,13 +6576,8 @@ void obj_loop_levelname(Object *obj, s32 updateRate) {
             textWidth = (get_text_width(levelName, 0, 0) + 24) >> 1;
             x1 = SCREEN_WIDTH_HALF - textWidth;
             x2 = textWidth + SCREEN_WIDTH_HALF;
-            if (osTvType == OS_TV_TYPE_PAL) {
-                y1 = SCREEN_HEIGHT - 16;
-                y2 = SCREEN_HEIGHT - 16 + 24;
-            } else {
-                y1 = SCREEN_HEIGHT - 38;
-                y2 = SCREEN_HEIGHT - 38 + 20;
-            }
+            y1 = SCREEN_HEIGHT - 38;
+            y2 = SCREEN_HEIGHT - 38 + 20;
             dialogue_clear(4);
             set_current_dialogue_box_coords(4, x1, y1, x2, y2);
             set_current_dialogue_background_colour(4, 128, 64, 128, (properties->opacity * 160) >> 8);

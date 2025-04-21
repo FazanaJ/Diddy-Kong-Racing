@@ -439,9 +439,6 @@ void func_8000BADC(s32 updateRate) {
     }
     for (i = 0; i < gNumRacers; i++) {
         updateRateF = (f32) updateRate;
-        if (osTvType == OS_TV_TYPE_PAL) {
-            updateRateF *= 1.2f;
-        }
         racer = &(*gRacers)[i]->unk64->racer;
         asset20Part = &asset20[racer->racerIndex];
         if (racer->shieldTimer != 0) {
@@ -756,7 +753,7 @@ void try_free_object_header(s32 index) {
  * Official Name: objTvTimes
  */
 s32 normalise_time(s32 timer) {
-    if (osTvType != OS_TV_TYPE_PAL || timer < 0) {
+    if (timer < 0) {
         return timer;
     } else {
         return (timer * 5) / 6;
@@ -4407,11 +4404,7 @@ void race_transition_adventure(s32 updateRate) {
         set_anti_aliasing(TRUE);
         disable_racer_input();
         if (!(get_current_level_race_type() & RACETYPE_CHALLENGE_BATTLE)) {
-            if (osTvType == OS_TV_TYPE_PAL) {
-                cutsceneTimerLimit = 415;
-            } else {
-                cutsceneTimerLimit = 540;
-            }
+            cutsceneTimerLimit = 540;
             gBalloonCutsceneTimer += updateRate;
             if (gBalloonCutsceneTimer < cutsceneTimerLimit) {
                 minimap_fade(1);
@@ -4534,9 +4527,6 @@ void race_finish_time_trial(void) {
                 gTimeTrialCharacter = settings->racers[0].character;
                 timetrial_swap_player_ghost(get_current_map_id());
                 gHasGhostToSave = TRUE;
-            }
-            if (osTvType == OS_TV_TYPE_PAL) {
-                bestCourseTime = (bestCourseTime * 6) / 5;
             }
             if (bestCourseTime < gTTGhostTimeToBeat) {
                 if (gTimeTrialStaffGhost) {

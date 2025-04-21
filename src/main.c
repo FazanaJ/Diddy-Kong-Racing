@@ -306,7 +306,6 @@ void memsize_init(void) {
  */
 void mainproc(void) {
     osInitialize();
-    osTvType = OS_TV_NTSC;
     gPlatformSet = FALSE;
 #ifdef AVOID_UB
     bzero(&gMainMemoryPool, RAM_END - (s32) (&gMainMemoryPool));

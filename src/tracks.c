@@ -441,13 +441,8 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, Triangle **tris, s32
             lensflare_render(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList,
                              get_active_camera_segment());
             set_text_font(FONT_COLOURFUL);
-            if (osTvType == OS_TV_TYPE_PAL) {
-                posX = SCREEN_WIDTH_HALF + 6;
-                posY = SCREEN_HEIGHT_HALF_PAL + 6;
-            } else {
-                posX = SCREEN_WIDTH_HALF + 10;
-                posY = SCREEN_HEIGHT_HALF + 5;
-            }
+            posX = SCREEN_WIDTH_HALF + 10;
+            posY = SCREEN_HEIGHT_HALF + 5;
 #if REGION == REGION_JP
             draw_text(&gSceneCurrDisplayList, posX, posY, gJpnTTCam, ALIGN_TOP_LEFT);
 #else
@@ -1369,13 +1364,8 @@ void draw_gradient_background(void) {
     gSPVertexDKR(gSceneCurrDisplayList++, OS_PHYSICAL_TO_K0(verts), 4, 0);
     gSPPolygon(gSceneCurrDisplayList++, OS_PHYSICAL_TO_K0(tris), 2, 0);
     set_twenty = 20;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        y0 = -180;
-        y1 = 180;
-    } else {
-        y0 = -150;
-        y1 = 150;
-    }
+    y0 = -150;
+    y1 = 150;
     if (get_viewport_count() == TWO_PLAYERS) {
         y0 >>= 1;
         y1 >>= 1;

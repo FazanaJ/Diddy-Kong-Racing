@@ -182,13 +182,7 @@ void init_game(void) {
     gIsLoading = FALSE;
     gLevelDefaultVehicleID = VEHICLE_CAR;
 
-    if (osTvType == OS_TV_TYPE_PAL) {
-        viMode = OS_VI_PAL_LPN1;
-    } else if (osTvType == OS_TV_TYPE_NTSC) {
-        viMode = OS_VI_NTSC_LPN1;
-    } else if (osTvType == OS_TV_TYPE_MPAL) {
-        viMode = OS_VI_MPAL_LPN1;
-    }
+    viMode = OS_VI_NTSC_LPN1;
     gSchedStack = mempool_alloc_safe(STACK_SCHED, PP_RAM_STACK);
     osCreateScheduler(&gMainSched, gSchedStack + STACKSIZE(STACK_SCHED), /*priority*/ 13, viMode, 1);
     gSchedStack[0] = 0;
@@ -225,6 +219,7 @@ void init_game(void) {
     gGameCurrentEntrance = 0;
     gGameCurrentCutscene = 0;
     gSPTaskNum = 0;
+    osTvType = OS_TV_NTSC;
 
     gCurrDisplayList = gDisplayLists[gSPTaskNum];
     gDPFullSync(gCurrDisplayList++);
@@ -368,9 +363,6 @@ void main_game_loop(void) {
     }
     if (gDrawFrameTimer == 2) {
         framebufferSize = SCREEN_WIDTH * SCREEN_HEIGHT * 2;
-        if (osTvType == OS_TV_TYPE_PAL) {
-            framebufferSize = (s32) ((SCREEN_WIDTH * SCREEN_HEIGHT * 2) * 1.1f);
-        }
         dcopy(gVideoLastFramebuffer, gVideoCurrFramebuffer, framebufferSize);
         osWritebackDCacheAll();
     }

@@ -3089,9 +3089,6 @@ void menu_missing_controller(Gfx **dList, s32 updateRate) {
         set_text_colour(255, 255, 255, 0, 0xFF);
         set_text_background_colour(0, 0, 0, 0);
         posY = 208;
-        if (osTvType == OS_TV_TYPE_PAL) {
-            posY = 234;
-        }
         draw_text(dList, POS_CENTRED, posY, gMenuText[ASSET_MENU_TEXT_CONTROLLERNOTCONNECTED], ALIGN_MIDDLE_CENTER);
     }
 }
@@ -3104,13 +3101,8 @@ void menu_logos_screen_init(void) {
     gMenuDelay = 0;
     sBootScreenTimer = 16.0f;
     bgdraw_fillcolour(0, 0, 0);
-    if (osTvType == OS_TV_TYPE_PAL) {
-        viewport_menu_set(0, 0, 38, SCREEN_WIDTH, SCREEN_HEIGHT - 16);
-        set_viewport_properties(0, VIEWPORT_AUTO, VIEWPORT_AUTO, SCREEN_WIDTH, SCREEN_HEIGHT_PAL);
-    } else {
-        viewport_menu_set(0, 0, 40, SCREEN_WIDTH, SCREEN_HEIGHT - 44);
-        set_viewport_properties(0, VIEWPORT_AUTO, VIEWPORT_AUTO, SCREEN_WIDTH, SCREEN_HEIGHT);
-    }
+    viewport_menu_set(0, 0, 40, SCREEN_WIDTH, SCREEN_HEIGHT - 44);
+    set_viewport_properties(0, VIEWPORT_AUTO, VIEWPORT_AUTO, SCREEN_WIDTH, SCREEN_HEIGHT);
     copy_viewports_to_stack(); // Init viewports
     camEnableUserView(0, TRUE);
 }
@@ -3123,21 +3115,12 @@ s32 menu_logo_screen_loop(s32 updateRate) {
     s32 yOffset;
     s32 yOffsetShadow;
 
-    if (osTvType == OS_TV_TYPE_PAL) {
-        yOffset = 26;
-        if (sBootScreenTimer < 2.6f && gMenuDelay == 0) {
-            transition_begin(&gFadeLogoToTitleScreen);
-            gMenuDelay = 1;
-        }
-        sBootScreenTimer -= updateRate / 50.0f;
-    } else {
-        yOffset = 0;
-        if (sBootScreenTimer < 2.17f && gMenuDelay == 0) {
-            transition_begin(&gFadeLogoToTitleScreen);
-            gMenuDelay = 1;
-        }
-        sBootScreenTimer -= updateRate / 60.0f;
+    yOffset = 0;
+    if (sBootScreenTimer < 2.17f && gMenuDelay == 0) {
+        transition_begin(&gFadeLogoToTitleScreen);
+        gMenuDelay = 1;
     }
+    sBootScreenTimer -= updateRate / 60.0f;
     if (sBootScreenTimer <= 0.0f) {
         camDisableUserView(0, FALSE);
         set_viewport_properties(0, VIEWPORT_AUTO, VIEWPORT_AUTO, VIEWPORT_AUTO, VIEWPORT_AUTO);
@@ -3368,7 +3351,7 @@ void render_title_screen(UNUSED s32 updateRate, f32 updateRateF) {
         }
         if (!is_controller_missing()) {
             i = 0;
-            posY = (osTvType == OS_TV_TYPE_PAL) ? SCREEN_HEIGHT - 22 : SCREEN_HEIGHT - 48;
+            posY = SCREEN_HEIGHT - 48;
             set_text_font(ASSET_FONTS_FUNFONT);
             set_text_background_colour(0, 0, 0, 0);
             while (gTitleMenuStrings[i] != NULL) {
@@ -3414,11 +3397,7 @@ s32 menu_title_screen_loop(s32 updateRate) {
     sp18 = get_active_camera_segment();
     gOptionBlinkTimer = (gOptionBlinkTimer + updateRate) & 0x3F;
     menu_input();
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF = (f32) updateRate / 50.0f;
-    } else {
-        updateRateF = (f32) updateRate / 60.0f;
-    }
+    updateRateF = (f32) updateRate / 60.0f;
     if (gMenuDelay < 20) {
         render_title_screen(updateRate, updateRateF);
     }
@@ -3856,11 +3835,7 @@ void func_80084854(UNUSED s32 updateRate) {
     gAudioMenuStrings[0].text = gAudioOutputStrings[gAudioOutputType];
     set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
 
-    if (osTvType == OS_TV_TYPE_PAL) {
-        yOffset = 101;
-    } else {
-        yOffset = 113;
-    }
+    yOffset = 113;
     func_80080580(NULL, -72, 120 - yOffset, 144, 14, 6, 4, COLOUR_RGBA32(255, 192, 64, 255),
                   (TextureHeader *) gMenuAssets[TEXTURE_UNK_44]);
     func_80080580(NULL, -72, 80 - yOffset, 144, 14, 6, 4, COLOUR_RGBA32(255, 192, 64, 255),
@@ -4277,16 +4252,9 @@ void savemenu_render_element(SaveFileData *file, s32 x, s32 y) {
 #define SAVE_MENU_TEXT_OFFSET_2 0
 #endif
     func_80080580(&sMenuCurrDisplayList, x - 160, 120 - y, SAVE_MENU_TEXT_WIDTH, 64, 4, 4, colour, texture);
-    if (osTvType == OS_TV_TYPE_PAL) {
-        y += 12;
-    }
     if (file->saveFileType == SAVE_FILE_TYPE_CPAK_SAVE ||
         (file->saveFileType == SAVE_FILE_TYPE_CART_SAVE && gSavefileData[file->controllerIndex]->newGame == FALSE)) {
-        if (osTvType == OS_TV_TYPE_PAL) {
-            i = 134;
-        } else {
-            i = 120;
-        }
+        i = 120;
         sprite_anim_off(TRUE);
         offsetY = (i - y);
         gMenuImages[2].y = offsetY - 49;
@@ -4390,7 +4358,7 @@ void savemenu_render(UNUSED s32 updateRate) {
               ALIGN_MIDDLE_CENTER);
 
     if (drawLowerElements) {
-        temp = (osTvType == OS_TV_TYPE_PAL) ? SCREEN_HEIGHT_HALF_PAL : SCREEN_HEIGHT_HALF;
+        temp = SCREEN_HEIGHT_HALF;
         temp += ((s32) (gOptionBlinkTimer & 0x1F) >> 1);
 
         for (scroll = 0; scroll < 2; scroll += 1, temp += 16) {
@@ -5460,9 +5428,6 @@ s32 menu_boot_loop(s32 updateRate) {
     out = MENU_RESULT_CONTINUE;
 
     offsetY = SCREEN_HEIGHT_HALF;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        offsetY = SCREEN_HEIGHT_HALF_PAL;
-    }
 
     y = offsetY;
 
@@ -5553,11 +5518,7 @@ void bootscreen_init_cpak(void) {
     gOpacityDecayTimer = 0;
     menu_asset_load(63);
     menu_init_arrow_textures();
-    if (osTvType == OS_TV_TYPE_PAL) {
-        sControllerPakMenuNumberOfRows = 8;
-    } else {
-        sControllerPakMenuNumberOfRows = 7;
-    }
+    sControllerPakMenuNumberOfRows = 7;
 #if REGION == REGION_JP
     func_800C663C_C723C();
 #else
@@ -5695,11 +5656,7 @@ void pakmenu_render(UNUSED s32 updateRate) {
                       ALIGN_TOP_CENTER); // EXIT
         }
         if (gMenuStage != PAKMENU_CHOOSE && gCpakWriteTimer == 0) {
-            if (osTvType == OS_TV_TYPE_PAL) {
-                yPos = 134;
-            } else {
-                yPos = SCREEN_HEIGHT_HALF;
-            }
+            yPos = SCREEN_HEIGHT_HALF;
             dialogue_clear(6);
 #if REGION == REGION_JP
             set_dialogue_font(6, ASSET_FONTS_SMALLFONT);
@@ -6045,9 +6002,6 @@ void cheatmenu_render(UNUSED s32 updateRate) {
     i = 0;
     offsetY = 164;
     yPos = 16;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        yPos = 24;
-    }
 
     while (gMagicCodeMenuStrings[i] != NULL) {
         highlight2 = 0;
@@ -6084,11 +6038,7 @@ void cheatmenu_render(UNUSED s32 updateRate) {
                   ALIGN_MIDDLE_CENTER); //"All cheats have been deleted"
     }
     if (gMenuStage != CHEATMENU_CHOOSE) {
-        if (osTvType == OS_TV_TYPE_PAL) {
-            offsetY = SCREEN_HEIGHT_HALF + 14;
-        } else {
-            offsetY = SCREEN_HEIGHT_HALF;
-        }
+        offsetY = SCREEN_HEIGHT_HALF;
         dialogue_clear(6);
         set_dialogue_font(6, ASSET_FONTS_FUNFONT);
 #if REGION == REGION_JP
@@ -6425,11 +6375,7 @@ void menu_magic_codes_list_init(void) {
     menu_asset_load(63);
     menu_init_arrow_textures();
     transition_begin(&sMenuTransitionFadeOut);
-    if (osTvType == OS_TV_TYPE_PAL) {
-        gNumOnscreenMagicCodes = 11;
-    } else {
-        gNumOnscreenMagicCodes = 10;
-    }
+    gNumOnscreenMagicCodes = 10;
 }
 
 /**
@@ -6830,9 +6776,6 @@ void charselect_render_text(UNUSED s32 updateRate) {
                   ALIGN_MIDDLE_CENTER);
         if (gNumberOfReadyPlayers == gNumberOfActivePlayers && gNumberOfActivePlayers > 0) {
             yPos = 208;
-            if (osTvType == OS_TV_TYPE_PAL) {
-                yPos = 234;
-            }
 #if REGION == REGION_JP
             func_80082BC8_837C8(-1, SCREEN_WIDTH_HALF, yPos, 1, 3, "OK?", ALIGN_MIDDLE_CENTER,
                                 COLOUR_RGBA32(255, 255, 255, 255), 0);
@@ -7384,13 +7327,8 @@ void gameselect_render(UNUSED s32 updateRate) {
             gGameSelectElements[((i ^ 0) * 2) + 3].filterBlendFactor = filterBlendFactor;
         }
 
-        if (osTvType == OS_TV_TYPE_PAL) {
-            gPostraceTextOffset = 12;
-            gPostraceTimestampOffset = 0;
-        } else {
-            gPostraceTextOffset = 0;
-            gPostraceTimestampOffset = 0;
-        }
+        gPostraceTextOffset = 0;
+        gPostraceTimestampOffset = 0;
 
         draw_menu_elements(1, gGameSelectElements, 1.0f);
         func_80080BC8(&sMenuCurrDisplayList);
@@ -7587,11 +7525,7 @@ void fileselect_render(UNUSED s32 updateRate) {
     UNUSED s32 pad[3];
     char trimmedFilename[4];
 
-    if (osTvType == OS_TV_TYPE_PAL) {
-        yPos = 12;
-    } else {
-        yPos = 0;
-    }
+    yPos = 0;
 
     menu_camera_centre();
     set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
@@ -8086,9 +8020,6 @@ s32 menu_file_select_loop(s32 updateRate) {
                         gFileNew = TRUE;
                         gIndexOfCurInputCharacter = 0;
                         i = 0;
-                        if (osTvType == OS_TV_TYPE_PAL) {
-                            i = 12;
-                        }
                         filename_init(i + 187, gFileSelectButtons[gSaveFileIndex].x + gFileSelectElementPos[0],
                                       gFileSelectButtons[gSaveFileIndex].y + gFileSelectElementPos[1] + i, 0,
                                       &gIndexOfCurInputCharacter, gSavefileInfo[gSaveFileIndex].name, 3);
@@ -8711,9 +8642,6 @@ void trackmenu_render_2D(s32 x, s32 y, char *hubName, char *trackName, s32 rectO
     sp6C = 0;
     xTemp = x + 160;
     yTemp = gTrackSelectViewPortHalfY - y;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        sp6C = 12;
-    }
     set_text_font(ASSET_FONTS_BIGFONT);
     set_text_background_colour(0, 0, 0, 0);
     if (gMenuDelay > 0) {
@@ -8747,9 +8675,6 @@ void trackmenu_render_2D(s32 x, s32 y, char *hubName, char *trackName, s32 rectO
             (((gTrackSelectViewportY >> 2) + yTemp) > 0)) {
             sp58 = 1.25f;
             sp54 = 1.25f;
-            if (osTvType == OS_TV_TYPE_PAL) {
-                sp54 *= 1.1;
-            }
             temp = xTemp - 80;
             if (copyViewPort) {
                 copy_viewport_frame_size_to_coords(0, &x1, &y1, &x2, &y2);
@@ -8773,12 +8698,7 @@ void trackmenu_render_2D(s32 x, s32 y, char *hubName, char *trackName, s32 rectO
     }
     gMenuImages[imageId].x = x;
     gMenuImages[imageId].y = y;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        gTrackSelectWoodFrameHeightScale = 1.2f;
-        offsets = gTracksMenuArrowPositionsPAL;
-    } else {
-        offsets = gTracksMenuArrowPositionsNTSC;
-    }
+    offsets = gTracksMenuArrowPositionsNTSC;
     menu_element_render(imageId);
     gTrackSelectWoodFrameHeightScale = 1.0f;
     for (i = 0; i < 4; i++) {
@@ -9122,9 +9042,6 @@ void trackmenu_setup_render(UNUSED s32 updateRate) {
     filename.word = 0; // Set all 4 bytes as '\0'?
     sp74 = FALSE;
     settings = get_settings();
-    if (osTvType == OS_TV_TYPE_PAL) {
-        regionOffset = 12;
-    }
     if (gNumberOfActivePlayers == 2 && gTrackSelectCursorX < 4 && gMenuStage > TRACKMENU_CHOOSE) {
         sp74 = TRUE;
     }
@@ -9141,9 +9058,6 @@ void trackmenu_setup_render(UNUSED s32 updateRate) {
         }
         gMenuImages[sp84].x = 0.0f;
         gMenuImages[sp84].y = 0.0f;
-        if (osTvType == OS_TV_TYPE_PAL) {
-            gTrackSelectWoodFrameHeightScale = 1.2f;
-        }
         menu_element_render(sp84);
         gTrackSelectWoodFrameHeightScale = 1.0f;
     }
@@ -9866,9 +9780,6 @@ void adventuretrack_render(UNUSED s32 updateRate, s32 arg1, s32 arg2) {
     filename = NULL;
     settings = get_settings();
     yOffset = 0;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        yOffset = 12;
-    }
     mapID = ((Settings4C *) ((u8 *) settings->unk4C + gTrackIdForPreview))->mapID;
     gSPClearGeometryMode(sMenuCurrDisplayList++, G_CULL_FRONT);
     menu_camera_centre();
@@ -10231,11 +10142,7 @@ void pausemenu_render(UNUSED s32 updateRate) {
     }
 #endif
     temp = (gMenuOptionCap * 16) + 28;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        y = SCREEN_HEIGHT_HALF_PAL;
-    } else {
-        y = SCREEN_HEIGHT_HALF;
-    }
+    y = SCREEN_HEIGHT_HALF;
     clear_dialogue_box_open_flag(7);
     dialogue_clear(7);
     halfTemp = temp >> 1;
@@ -10730,9 +10637,6 @@ void func_80094D28(UNUSED s32 updateRate) {
             }
             var_s2 = ((var_s0 * sp50) + 1) >> 1;
             var_s0 = 192;
-            if (osTvType == OS_TV_TYPE_PAL) {
-                var_s0 = 218;
-            }
             set_current_dialogue_box_coords(7, 0, var_s0 - var_s2 - var_v0 - 4, SCREEN_WIDTH,
                                             var_s0 + var_s2 + var_v0 + 4);
             set_current_dialogue_background_colour(7, 64, 64, 255, 0);
@@ -10783,9 +10687,6 @@ void func_80094D28(UNUSED s32 updateRate) {
     if (get_game_mode() == GAMEMODE_INGAME && gNumberOfActivePlayers == 1) {
         if (gTrophyRaceWorldId == 0) {
             camEnableUserView(0, TRUE);
-            if (osTvType == OS_TV_TYPE_PAL) {
-                gTrackSelectWoodFrameHeightScale = 1.2f;
-            }
             if (gMenuStage > 0) {
                 menu_element_render(4);
             }
@@ -10859,13 +10760,8 @@ s32 menu_postrace(Gfx **dList, MatrixS **matrices, Vertex **vertices, s32 update
     sMenuCurrHudMat = *matrices;
     sMenuCurrHudVerts = *vertices;
     settings = get_settings();
-    if (osTvType == OS_TV_TYPE_PAL) {
-        textOffsetY = 26;
-        timeOffsetY = 12;
-    } else {
-        textOffsetY = 0;
-        timeOffsetY = 0;
-    }
+    textOffsetY = 0;
+    timeOffsetY = 0;
     numPlayers = gNumberOfActivePlayers;
     if (is_in_two_player_adventure()) {
         numPlayers = 2;
@@ -11254,9 +11150,6 @@ void results_render(UNUSED s32 updateRate, f32 opacity) {
 
     settings = get_settings();
     offsetY = 0;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        offsetY = 12;
-    }
     set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
     if (opacity < 0.0f) {
         opacity = 0.0f;
@@ -11987,11 +11880,7 @@ void trophyround_render(UNUSED s32 updateRate) {
     s8 *levelIds;
 
     levelIds = (s8 *) get_misc_asset(ASSET_MISC_TRACKS_MENU_IDS);
-    if (osTvType == OS_TV_TYPE_PAL) {
-        yPos = 18;
-    } else {
-        yPos = 0;
-    }
+    yPos = 0;
 
     worldName = get_level_name(get_hub_area_id(gTrophyRaceWorldId));
     levelName = get_level_name(levelIds[((gTrophyRaceWorldId - 1) * 6) + gTrophyRaceRound]);
@@ -12088,10 +11977,6 @@ void func_80098774(s32 isRankings) {
     racerIndex = (gRankingPlayerCount - 1);
     racerIndex <<= 1;
     yOffset = 240;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        racerIndex += 16;
-        yOffset = 264;
-    }
     iconPositions = gTrophyRankingsIconPositions;
     xPositions = gTrophyRankingsIconPositions[racerIndex++];
     yPositions = iconPositions[racerIndex];
@@ -12594,11 +12479,7 @@ void ghostmenu_render(UNUSED s32 updateRate) {
     char textBuffer[64];
 
     set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
-    if (osTvType == OS_TV_TYPE_PAL) {
-        heightAdjust = 12;
-    } else {
-        heightAdjust = 0;
-    }
+    heightAdjust = 0;
     scroll = gOpacityDecayTimer;
     set_text_font(FONT_LARGE);
     set_text_background_colour(0, 0, 0, 0);
@@ -12978,13 +12859,8 @@ void menu_credits_init(void) {
     D_80126BD8 = 0;
     D_80126BE0 = 0;
     bgdraw_fillcolour(0, 0, 0);
-    if (osTvType == OS_TV_TYPE_PAL) {
-        viewport_menu_set(0, 0, 38, SCREEN_WIDTH, 224);
-        set_viewport_properties(0, VIEWPORT_AUTO, VIEWPORT_AUTO, SCREEN_WIDTH, SCREEN_HEIGHT_PAL);
-    } else {
-        viewport_menu_set(0, 0, 40, SCREEN_WIDTH, 196);
-        set_viewport_properties(0, VIEWPORT_AUTO, VIEWPORT_AUTO, SCREEN_WIDTH, SCREEN_HEIGHT);
-    }
+    viewport_menu_set(0, 0, 40, SCREEN_WIDTH, 196);
+    set_viewport_properties(0, VIEWPORT_AUTO, VIEWPORT_AUTO, SCREEN_WIDTH, SCREEN_HEIGHT);
     copy_viewports_to_stack();
     camEnableUserView(0, TRUE);
     menu_assetgroup_load(gCreditsObjectIndices);
@@ -13099,11 +12975,7 @@ s32 menu_credits_loop(s32 updateRate) {
         enable_new_screen_transitions();
     }
 
-    if (osTvType == OS_TV_TYPE_PAL) {
-        credits_fade(0, 38, SCREEN_WIDTH, 186, gOpacityDecayTimer * 8);
-    } else {
-        credits_fade(0, 40, SCREEN_WIDTH, 156, gOpacityDecayTimer * 8);
-    }
+    credits_fade(0, 40, SCREEN_WIDTH, 156, gOpacityDecayTimer * 8);
 
     if (gOpacityDecayTimer > 0) {
         gMenuCurIndex += updateRate << 8;
@@ -13161,7 +13033,7 @@ s32 menu_credits_loop(s32 updateRate) {
                     }
 
                     // if tv type is pal we want to offset the position slightly
-                    textPos = osTvType == OS_TV_TYPE_PAL ? SCREEN_HEIGHT_HALF + 14 : SCREEN_HEIGHT_HALF;
+                    textPos = SCREEN_HEIGHT_HALF;
 
                     var_s5 = FONT_COLOURFUL;
                     textLineHeight = 20;
@@ -14585,11 +14457,7 @@ void dialogue_tt_gamestatus(void) {
     }
     settings = get_settings();
     sprite_anim_off(TRUE);
-    if (osTvType == OS_TV_TYPE_PAL) {
-        y = 10;
-    } else {
-        y = 20;
-    }
+    y = 20;
     numOfItem = 8;
     if (settings->cutsceneFlags & 4) {
         numOfItem = 9;

@@ -11,9 +11,8 @@ u16 *gVideoDepthBuffer = NULL;
 
 /************ .bss ************/
 
-s32 gVideoRefreshRate; // Official Name: viFramesPerSecond
+s32 gVideoRefreshRate = 60;
 f32 gVideoAspectRatio;
-f32 gVideoHeightRatio;
 OSViMode gTvViMode;
 s32 gVideoFbWidths[3];
 s32 gVideoFbHeights[3];
@@ -40,19 +39,6 @@ s32 gVideoSkipNextRate = FALSE;
  */
 void video_init(s32 videoModeIndex, OSSched *sc) {
     s32 i;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        gVideoRefreshRate = REFRESH_50HZ;
-        gVideoAspectRatio = ASPECT_RATIO_PAL;
-        gVideoHeightRatio = HEIGHT_RATIO_PAL;
-    } else if (osTvType == OS_TV_TYPE_MPAL) {
-        gVideoRefreshRate = REFRESH_60HZ;
-        gVideoAspectRatio = ASPECT_RATIO_MPAL;
-        gVideoHeightRatio = HEIGHT_RATIO_MPAL;
-    } else {
-        gVideoRefreshRate = REFRESH_60HZ;
-        gVideoAspectRatio = ASPECT_RATIO_NTSC;
-        gVideoHeightRatio = HEIGHT_RATIO_NTSC;
-    }
 
     video_delta_reset();
     fb_mode_set(videoModeIndex);

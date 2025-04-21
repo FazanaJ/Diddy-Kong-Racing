@@ -2443,10 +2443,6 @@ void update_player_racer(Object *obj, s32 updateRate) {
     if (tempRacer->unk1FE == 1) {
         tempRacer->unk1F1 = 0;
     }
-    // PAL moves 20% faster.
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     tempRacer->unk1F6 -= updateRate;
     if (tempRacer->unk1F6 < 0) {
         tempRacer->unk1F6 = 0;
@@ -6530,9 +6526,6 @@ void func_80059208(Object *obj, Object_Racer *racer, s32 updateRate) {
  * Used to visualise a standard time to the player for a stopwatch, or a record.
  */
 void get_timestamp_from_frames(s32 frameCount, s32 *minutes, s32 *seconds, s32 *hundredths) {
-    if (gVideoRefreshRate == REFRESH_50HZ) {
-        frameCount = (f32) frameCount * 1.2;
-    }
     // (REFRESH_60HZ * 60) is just frames per minute basically
     *minutes = frameCount / (REFRESH_60HZ * 60);
     *seconds = (frameCount - (*minutes * (REFRESH_60HZ * 60))) / REFRESH_60HZ;

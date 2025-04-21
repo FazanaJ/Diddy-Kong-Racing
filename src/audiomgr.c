@@ -124,7 +124,11 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
      * Calculate the frame sample parameters from the
      * video field rate and the output rate
      */
-    fsize = (f32) c->outputRate * 2 / (f32) gVideoRefreshRate;
+    if (osTvType == OS_TV_PAL) {
+        fsize = (f32) c->outputRate * 2 / (f32) 50.0f;
+    } else {
+        fsize = (f32) c->outputRate * 2 / (f32) 60.0f;
+    }
     frameSize = (s32) fsize;
     if (frameSize < fsize) {
         frameSize++;
