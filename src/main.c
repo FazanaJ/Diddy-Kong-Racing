@@ -355,13 +355,13 @@ void thread3_verify_stack(void) {
 DebugData *gDebug;
 
 void debug_init(void) {
-    gDebug = (DebugData *) mempool_alloc(sizeof(DebugData), PP_RAM_YELLOW);
+    gDebug = (DebugData *) mempool_alloc(sizeof(DebugData), PP_RAM_DEBUG);
     bzero(gDebug, sizeof(DebugData));
     gDebug->enabled = FALSE;
     gDebug->iter = 0;
     debug_ram(K0_TO_PHYS((u32) &gMainMemoryPool) - (MAIN_POOL_SLOT_COUNT * sizeof(MemoryPoolSlot)), PP_RAM_CODE);
     debug_ram(MAIN_POOL_SLOT_COUNT * sizeof(MemoryPoolSlot), PP_RAM_SLOTS);
-    debug_ram(sizeof(DebugData), PP_RAM_YELLOW);
+    debug_ram(sizeof(DebugData), PP_RAM_DEBUG);
 }
 
 typedef char *outfun(char *dst, const char *src, size_t count);

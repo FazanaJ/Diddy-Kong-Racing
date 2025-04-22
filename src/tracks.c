@@ -2375,7 +2375,6 @@ void func_8002C0C4(s32 modelId) {
     LevelModel *mdl;
 
     set_texture_colour_tag(PP_RAM_LEVELTEX);
-    //gTrackModelHeap = mempool_alloc_safe(LEVEL_MODEL_MAX_SIZE, COLOUR_TAG_YELLOW);
     gTrackModelHeap = (LevelModel *) mempool_alloc_largest(PP_RAM_LEVELMDL);
     gCurrentLevelModel = gTrackModelHeap;
     D_8011D370 = mempool_alloc_safe(0x7D0, PP_RAM_LEVELMDL);

@@ -1061,6 +1061,27 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
     }
 }
 
+const u32 sCrashCodeSizes[] = {
+    (u32) main_TEXT_SIZE,
+    (u32) main_DATA_SIZE,
+    (u32) main_RODATA_SIZE,
+    (u32) main_BSS_SIZE
+};
+
+const u32 sCrashCodeAddr[] = {
+    (u32) main_TEXT_START,
+    (u32) main_DATA_START,
+    (u32) main_RODATA_START,
+    (u32) main_BSS_START
+};
+
+const char *sCrashCodeStrings[] = {
+    "Text",
+    "Data",
+    "Rodata",
+    "Bss"
+};
+
 void crash_mem_details(void) {
     s32 x;
     s32 y;
@@ -1085,23 +1106,23 @@ void crash_mem_details(void) {
     scrollSize = 0;
     useScroll = FALSE;
     if (gCrashMemPrintOrder[gCrashSelection] == PP_RAM_CODE) {
-        numSlots += 4;
-        crash_text(x + 40, y, GPACK_RGBA5551(255, 255, 255, 1), "text", (f64) size, sMemLabels[tag]);
-        size = memsize_float((u32) main_TEXT_SIZE, &tag);
-        crash_text(x + 180, y, GPACK_RGBA5551(255, 255, 255, 1), "%2.3f%s", (f64) size, sMemLabels[tag]);
-        y += 9;
-        crash_text(x + 40, y, GPACK_RGBA5551(255, 255, 255, 1), "data", (f64) size, sMemLabels[tag]);
-        size = memsize_float((u32) main_DATA_SIZE, &tag);
-        crash_text(x + 180, y, GPACK_RGBA5551(255, 255, 255, 1), "%2.3f%s", (f64) size, sMemLabels[tag]);
-        y += 9;
-        crash_text(x + 40, y, GPACK_RGBA5551(255, 255, 255, 1), "rodata", (f64) size, sMemLabels[tag]);
-        size = memsize_float((u32) main_RODATA_SIZE, &tag);
-        crash_text(x + 180, y, GPACK_RGBA5551(255, 255, 255, 1), "%2.3f%s", (f64) size, sMemLabels[tag]);
-        y += 9;
-        crash_text(x + 40, y, GPACK_RGBA5551(255, 255, 255, 1), "bss", (f64) size, sMemLabels[tag]);
-        size = memsize_float((u32) main_BSS_SIZE, &tag);
-        crash_text(x + 180, y, GPACK_RGBA5551(255, 255, 255, 1), "%2.3f%s", (f64) size, sMemLabels[tag]);
-        y += 9;
+        for (i = 0; i < 4; i++) {
+            numSlots++;
+            scrollSize++;
+            
+            if (gCrashAltSelection + 1 == scrollSize && gCrashAltView == 1) {
+                crash_rectangle(x + 37, y - 1, 192, 9, 255, 255, 255, 144);
+                col = GPACK_RGBA5551(0, 0, 0, 1);
+                crash_text(x + 40, y, col, sCrashCodeStrings[i]);
+                crash_text(x + 166, y, col, "0#%X", sCrashCodeAddr[i]);
+            } else {
+                col = GPACK_RGBA5551(255, 255, 255, 1);
+                crash_text(x + 40, y, col, sCrashCodeStrings[i]);
+                size = memsize_float(sCrashCodeSizes[i], &tag);
+                crash_text(x + 172, y, col, "%2.3f%s", (f64) size, sMemLabels[tag]);
+            }
+            y += 9;
+        }
     } else {
         for (i = 0; i <= gNumberOfMemoryPools; i++) {
             slot = &gMemoryPools[i].slots[0];
