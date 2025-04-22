@@ -1178,7 +1178,7 @@ void crash_mem_details(void) {
         gAltScrollSize = numSlots;
         crash_rectangle(x + 232, 68, 8, gScreenHeight - 50 - 68, 127, 127, 127, 144);
         scrollLen =  (f32) (gScreenHeight - 50 - 68) / (f32) scrollSize;
-        crash_rectangle(x + 232, 68 + (scrollLen * gCrashAltScroll), 8, scrollLen * numSlots, 255, 255, 255, 255);
+        crash_rectangle(x + 232, 68 + (scrollLen * gCrashAltScroll), 8, (scrollLen * numSlots) + 1, 255, 255, 255, 255);
     }
     
     crash_text(x + 100, 66, GPACK_RGBA5551(255, 255, 255, 1), "Entries:%d", scrollSize);
@@ -1282,7 +1282,7 @@ void crash_page_memory(void) {
         gScrollSize = scrollNum;
         crash_rectangle(x + 216, 68, 8, gScreenHeight - 50 - 68, 127, 127, 127, 144);
         scrollLen =  (f32) (gScreenHeight - 50 - 68) / (f32) scrollSize;
-        crash_rectangle(x + 216, 68 + (scrollLen * gCrashScroll), 8, scrollLen * scrollNum, 255, 255, 255, 255);
+        crash_rectangle(x + 216, 68 + (scrollLen * gCrashScroll), 8, (scrollLen * scrollNum) + 1, 255, 255, 255, 255);
     }
 
     crash_mem_details();
@@ -1357,6 +1357,7 @@ void crash_render(OSThread *t) {
     __OSThreadContext *c;
     s32 prevOpt;
     s32 numValids;
+    s32 repeat;
     u32 first = osGetCount();
 
     c = &t->context;
@@ -1407,62 +1408,76 @@ void crash_render(OSThread *t) {
                     numValids++;
                 }
             }
-            if (gCrashInput & U_JPAD) {
-                if (gCrashAltView == 0) {
-                    prevOpt = gCrashSelection;
-                    if (gCrashSelection > 0) {
-                        gCrashSelection--;
-                        gCrashAltSelection = 0;
-                        gCrashAltScrollCursor = 0;
-                        gCrashAltScroll = 0;
-                        if (numValids > gScrollSize && gCrashSelection < gCrashScroll + 4 && gCrashScroll > 0) {
-                            gCrashScroll--;
-                        }
-                        gCrashScrollCursor = gCrashSelection;
-                    }
-                    if (prevOpt != gCrashSelection) {
-                        gCrashFBUpdate = TRUE;
-                    }
+            if (gCrashInput & U_JPAD || gCrashInput & U_CBUTTONS) {
+                if (gCrashInput & U_JPAD) {
+                    repeat = 1;
                 } else {
-                    prevOpt = gCrashAltSelection;
-                    if (gCrashAltSelection > 0) {
-                        gCrashAltSelection--;
-                        if (gAltNumValids > gAltScrollSize && gCrashAltSelection < gCrashAltScroll + 4 && gCrashAltScroll > 0) {
-                            gCrashAltScroll--;
+                    repeat = 8;
+                }
+                for (i = 0; i < repeat; i++) {
+                    if (gCrashAltView == 0) {
+                        prevOpt = gCrashSelection;
+                        if (gCrashSelection > 0) {
+                            gCrashSelection--;
+                            gCrashAltSelection = 0;
+                            gCrashAltScrollCursor = 0;
+                            gCrashAltScroll = 0;
+                            if (numValids > gScrollSize && gCrashSelection < gCrashScroll + 4 && gCrashScroll > 0) {
+                                gCrashScroll--;
+                            }
+                            gCrashScrollCursor = gCrashSelection;
                         }
-                        gCrashAltScrollCursor = gCrashAltSelection;
-                    }
-                    if (prevOpt != gCrashAltSelection) {
-                        gCrashFBUpdate = TRUE;
+                        if (prevOpt != gCrashSelection) {
+                            gCrashFBUpdate = TRUE;
+                        }
+                    } else {
+                        prevOpt = gCrashAltSelection;
+                        if (gCrashAltSelection > 0) {
+                            gCrashAltSelection--;
+                            if (gAltNumValids > gAltScrollSize && gCrashAltSelection < gCrashAltScroll + 4 && gCrashAltScroll > 0) {
+                                gCrashAltScroll--;
+                            }
+                            gCrashAltScrollCursor = gCrashAltSelection;
+                        }
+                        if (prevOpt != gCrashAltSelection) {
+                            gCrashFBUpdate = TRUE;
+                        }
                     }
                 }
-            } else if (gCrashInput & D_JPAD) {
-                if (gCrashAltView == 0) {
-                    prevOpt = gCrashSelection;
-                    if (gCrashSelection < numValids - 1) {
-                        gCrashSelection++;
-                        gCrashAltSelection = 0;
-                        gCrashAltScrollCursor = 0;
-                        gCrashAltScroll = 0;
-                        if (numValids > gScrollSize && gCrashSelection >= gCrashScroll + gScrollSize - 4 && gCrashScroll < gMaxScroll) {
-                            gCrashScroll++;
-                        }
-                        gCrashScrollCursor = gCrashSelection;
-                    }
-                    if (prevOpt != gCrashSelection) {
-                        gCrashFBUpdate = TRUE;
-                    }
+            } else if (gCrashInput & D_JPAD || gCrashInput & D_CBUTTONS) {
+                if (gCrashInput & D_JPAD) {
+                    repeat = 1;
                 } else {
-                    prevOpt = gCrashAltSelection;
-                    if (gCrashAltSelection < gAltNumValids - 1) {
-                        gCrashAltSelection++;
-                        if (gAltNumValids > gAltScrollSize && gCrashAltSelection >= gCrashAltScroll + gAltScrollSize - 4 && gCrashAltScroll < gMaxAltScroll) {
-                            gCrashAltScroll++;
+                    repeat = 8;
+                }
+                for (i = 0; i < repeat; i++) {
+                    if (gCrashAltView == 0) {
+                        prevOpt = gCrashSelection;
+                        if (gCrashSelection < numValids - 1) {
+                            gCrashSelection++;
+                            gCrashAltSelection = 0;
+                            gCrashAltScrollCursor = 0;
+                            gCrashAltScroll = 0;
+                            if (numValids > gScrollSize && gCrashSelection >= gCrashScroll + gScrollSize - 4 && gCrashScroll < gMaxScroll) {
+                                gCrashScroll++;
+                            }
+                            gCrashScrollCursor = gCrashSelection;
                         }
-                        gCrashAltScrollCursor = gCrashAltSelection;
-                    }
-                    if (prevOpt != gCrashAltSelection) {
-                        gCrashFBUpdate = TRUE;
+                        if (prevOpt != gCrashSelection) {
+                            gCrashFBUpdate = TRUE;
+                        }
+                    } else {
+                        prevOpt = gCrashAltSelection;
+                        if (gCrashAltSelection < gAltNumValids - 1) {
+                            gCrashAltSelection++;
+                            if (gAltNumValids > gAltScrollSize && gCrashAltSelection >= gCrashAltScroll + gAltScrollSize - 4 && gCrashAltScroll < gMaxAltScroll) {
+                                gCrashAltScroll++;
+                            }
+                            gCrashAltScrollCursor = gCrashAltSelection;
+                        }
+                        if (prevOpt != gCrashAltSelection) {
+                            gCrashFBUpdate = TRUE;
+                        }
                     }
                 }
             }

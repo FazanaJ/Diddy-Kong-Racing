@@ -196,7 +196,6 @@ typedef enum DebugRam {
     PP_RAM_CPAK,
     PP_RAM_WAVES,
     PP_RAM_GHOSTS,
-    PP_RAM_SKY,
     PP_RAM_MENU,
     PP_RAM_TRANSITIONS,
     PP_RAM_UNKNOWN,
@@ -259,7 +258,6 @@ typedef enum DebugRam {
     "Cpak\t", \
     "Waves\t", \
     "Ghost Data", \
-    "Sky\t", \
     "Menu\t", \
     "Transitions", \
     "Unknown\t", \

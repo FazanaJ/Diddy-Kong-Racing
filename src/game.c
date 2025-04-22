@@ -499,11 +499,9 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
         weather_clip_planes(-1, -512);
     }
     if (gCurrentLevelHeader->skyDome == -1) {
-        set_texture_colour_tag(PP_RAM_SKY);
         gCurrentLevelHeader->unkA4 = load_texture((s32) gCurrentLevelHeader->unkA4);
         gCurrentLevelHeader->unkA8 = 0;
         gCurrentLevelHeader->unkAA = 0;
-        set_texture_colour_tag(COLOUR_TAG_MAGENTA);
     }
     if ((s32) gCurrentLevelHeader->pulseLightData != -1) {
         gCurrentLevelHeader->pulseLightData =
