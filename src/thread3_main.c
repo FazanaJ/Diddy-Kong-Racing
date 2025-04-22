@@ -51,17 +51,14 @@
 /************ .data ************/
 
 s8 sAntiPiracyTriggered = FALSE;
-UNUSED s32 D_800DD378 = 1;
 s32 gSaveDataFlags = 0; // Official Name: load_save_flags
 s32 sControllerStatus = 0;
-UNUSED s32 D_800DD388 = 0;
 s8 gSkipGfxTask = FALSE;
 s8 gDrumstickSceneLoadTimer = 0;
 s16 gLevelLoadTimer = 0;
 s8 gPauseLockTimer = 0; // If this is above zero, the player cannot pause the game.
 s8 gFutureFunLandLevelTarget = FALSE;
 s8 gDmemInvalid = FALSE;
-UNUSED s32 D_800DD3A4[] = { 0, 0, 0 };
 s32 gNumF3dCmdsPerPlayer[MAXCONTROLLERS] = {3000 + GFX_ADD, 4000 + GFX_ADD, 5000 + GFX_ADD, 5000 + GFX_ADD};
 s32 gNumHudVertsPerPlayer[MAXCONTROLLERS] = {200, 300, 400, 500};
 s32 gNumHudMatPerPlayer[MAXCONTROLLERS] = {200, 300, 400, 500};
@@ -294,7 +291,7 @@ void main_game_loop(void) {
     static u8 balls = 0;
 
     if (input_pressed(0) & L_TRIG) {
-        *(volatile int *) 0 = 0;
+        //*(volatile int *) 0 = 0;
     }
 
     gCurrDisplayList = gDisplayLists[gSPTaskNum];

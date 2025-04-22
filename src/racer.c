@@ -122,7 +122,6 @@ f32 gCurrentCourseHeight;
 Vec3f gCurrentRacerWaterPos;
 s8 gRacerWaveType;
 ObjectCamera *gCameraObject;
-UNUSED s32 D_8011D50C;
 ObjectTransform gCurrentRacerTransform;
 u32 gCurrentRacerInput;
 u32 gCurrentButtonsPressed;

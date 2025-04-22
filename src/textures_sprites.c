@@ -452,20 +452,6 @@ void set_texture_colour_tag(s32 tagID) {
 }
 
 /**
- * Gets the texture cache index from the argument.
- * Returns NULL if the entry is invalid.
- */
-UNUSED s32 tex_cache_index(s32 texID) {
-    if (texID < 0 || texID >= gNumberOfLoadedTextures) {
-        return NULL;
-    }
-    if (gTextureCache[ASSETCACHE_PTR(texID)] == -1) {
-        return NULL;
-    }
-    return gTextureCache[ASSETCACHE_PTR(texID)];
-}
-
-/**
  * Resets all render settings to the default state.
  * The next draw call will be forced to apply all settings instead of skipping unecessary steps.
  * Official Name: texDPInit
@@ -799,33 +785,6 @@ s32 tex_asset_size(s32 id) {
     new_var2 = gTempTextureHeader;
     numOfTextures = new_var2->header.numOfTextures;
     return (((numOfTextures >> 8) & 0xFFFF) * 0x60) + size;
-}
-
-UNUSED u8 func_8007C660(s32 texID) {
-    Sprite *temp_s1;
-    s32 j;
-    s32 i;
-    s32 temp_v1;
-
-    if (texID & ASSET_MASK_TEX3D) {
-        return 0;
-    }
-    if (D_80126370 == 0) {
-        D_80126370 = (u8 *) mempool_alloc_safe(gTextureAssetID[TEX_TABLE_2D], COLOUR_TAG_MAGENTA);
-        for (i = 0; i < gTextureAssetID[TEX_TABLE_2D]; i++) {
-            D_80126370[i] = 0;
-        }
-        for (i = 0; i < gSpriteTableSize; i++) {
-            temp_s1 = gCurrentSprite;
-            load_asset_to_address(ASSET_SPRITES, (u32) temp_s1, gSpriteOffsetTable[i],
-                                  gSpriteOffsetTable[i + 1] - gSpriteOffsetTable[i]);
-            temp_v1 = temp_s1->unkC.val[temp_s1->numberOfFrames];
-            for (j = 0; j < temp_v1; j++) {
-                D_80126370[temp_s1->baseTextureId + j] = 1;
-            }
-        }
-    }
-    return D_80126370[texID];
 }
 
 s32 load_sprite_info(s32 spriteIndex, s32 *numOfInstancesOut, s32 *unkOut, s32 *numFramesOut, s32 *formatOut,

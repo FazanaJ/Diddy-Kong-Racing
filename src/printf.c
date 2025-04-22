@@ -171,7 +171,6 @@ s32 gDebugBoundsY2;
 s32 gDebugFontTexture;
 u16 gDebugScreenWidth;
 u16 gDebugScreenHeight;
-UNUSED s32 D_80127CD4;
 char gDebugPrintBufferStart[0x900];
 char *gDebugPrintBufferEnd;
 
