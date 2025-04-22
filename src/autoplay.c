@@ -967,20 +967,24 @@ void autoplay_multiplayer(s32 playerCount) {
                 }
 
             }
-            if (get_map_race_type(get_current_map_id()) == RACETYPE_CHALLENGE_BATTLE) {
+            if (get_map_race_type(get_current_map_id()) & RACETYPE_CHALLENGE_BATTLE) {
                 for (i = 0; i < 4; i++) {
                     obj = get_racer_object(i);
                     racer = (Object_Racer *) obj->unk64;
-                    if (racer->bananas > 1) {
+                    if (racer->bananas > 1 && get_current_map_id() != ASSET_LEVEL_SMOKEYCASTLE) {
                         racer->bananas = 1;
                     }
                     racer->lap_times[0] += sLogicUpdateRate;
-                }
-                if (racer->lap_times[0] > (60 * 60) * 2) {
-                    for (i = 0; i < 4; i++) {
-                        obj = get_racer_object(i);
-                        racer = (Object_Racer *) obj->unk64;
-                        racer->bananas = 0;
+                    if (racer->lap_times[0] > (60 * 60) * 2) {
+                        for (i = 0; i < 4; i++) {
+                            obj = get_racer_object(i);
+                            racer = (Object_Racer *) obj->unk64;
+                            if (get_current_map_id() != ASSET_LEVEL_SMOKEYCASTLE) {
+                                racer->bananas = 0;
+                            } else {
+                                racer->bananas = 10;
+                            }
+                        }
                     }
                 }
             }
