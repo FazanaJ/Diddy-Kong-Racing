@@ -32,8 +32,8 @@ void update_object_stack_trace(s32 index, s32 value) {
 #include "stdarg.h"
 #include "audiomgr.h"
 
-u64 gCrashThreadStack[STACKSIZE(STACK_CRASH)];
-u64 gCrashThreadStack2[STACKSIZE(STACK_CRASH)];
+u64 *gCrashThreadStack;
+u64 *gCrashThreadStack2;
 OSThread gCrashThread;
 OSThread gCrashThread2;
 OSMesgQueue gCrashQueue;
@@ -480,8 +480,7 @@ char *sGPRegisterNames[] = {
     "s5", "s6", "s7", "t8", "t9",
 };
 
-extern u64 gThread1Stack[STACKSIZE(STACK_IDLE)];
-extern u64 gThread3Stack[STACKSIZE(STACK_GAME)];
+extern u64 *gThread3Stack;
 extern u64 *audioStack;
 extern u64 *gSchedStack;
 extern u64 *gThread30Stack;
@@ -491,34 +490,40 @@ extern u64 *gThreadUsbStack;
 
 u32 crash_stack_pos(s32 threadID) {
     switch(threadID) {
-        case 1:
-            return (u32) &gThread1Stack[STACKSIZE(STACK_IDLE) - 1];
         case 2:
-            return (u32) &gCrashThreadStack[STACKSIZE(STACK_CRASH) - 1];
+            if (gCrashThreadStack) {
+                return (u32) (gCrashThreadStack + (STACKSIZE(STACK_CRASH) - 1));
+            } else {
+                return 0;
+            }
         case 3:
-            return (u32) &gThread3Stack[STACKSIZE(STACK_GAME) - 1];
+            if (gThread3Stack) {
+                return (u32) (gThread3Stack + (STACKSIZE(STACK_GAME) - 1));
+            } else {
+                return 0;
+            }
         case 4:
             if (audioStack) {
-                return (u32) &audioStack[STACKSIZE(STACK_AUD) - 1];
+                return (u32) (audioStack + (STACKSIZE(STACK_AUD) - 1));
             } else {
                 return 0;
             }
         case 5:
             if (gSchedStack) {
-                return (u32) &gSchedStack[STACKSIZE(STACK_SCHED) - 1];
+                return (u32) (gSchedStack + (STACKSIZE(STACK_SCHED) - 1));
             } else {
                 return 0;
             }
         case 30:
             if (gThread30Stack) {
-                return (u32) gThread30Stack[STACKSIZE(STACK_BGLOAD) - 1];
+                return (u32) (gThread30Stack + (STACKSIZE(STACK_BGLOAD) - 1));
             } else {
                 return 0;
             }
 #ifdef DEBUG
         case 69:
             if (gThreadUsbStack) {
-                return (u32) &gThreadUsbStack[STACKSIZE(STACK_USB) - 1];
+                return (u32) (gThreadUsbStack + (STACKSIZE(STACK_USB) - 1));
             } else {
                 return 0;
             }
@@ -530,10 +535,7 @@ u32 crash_stack_pos(s32 threadID) {
 }
 
 s32 crash_check_stack(void) {
-    if ((gThread1Stack[STACKSIZE(STACK_IDLE) - 1] != gThread1Stack[0])) {
-        return 1;
-    }
-    if ((gThread3Stack[STACKSIZE(STACK_GAME) - 1] != gThread3Stack[0])) {
+    if (gThread3Stack && gThread3Stack[STACKSIZE(STACK_GAME) - 1] != gThread3Stack[0]) {
         return 3;
     }
     if (audioStack && (audioStack[STACKSIZE(STACK_AUD) - 1] != audioStack[0])) {
@@ -667,13 +669,13 @@ void crash_page_fpregs(OSThread *t) {
 }
 
 u8 gStackThreadIDs[] = {
-    1, 2, 3, 4, 5, 30, 69
+    2, 3, 4, 5, 30, 69
 };
 
 u32 crash_stack_size(s32 threadID) {
     switch(threadID) {
         case 1:
-            return STACK_IDLE;
+            return STACK_GAME;
         case 2:
             return STACK_CRASH;
         case 3:
@@ -723,7 +725,7 @@ void crash_page_stacks(OSThread *t) {
     s32 stackMax;
 
     y = 54;
-    for (i = 0; i < 7; i++) {
+    for (i = 0; i < (s32) sizeof(gStackThreadIDs); i++) {
         stackT = crash_thread_id(gStackThreadIDs[i]);
         if (stackT->context.sp < 0x80000000) {
             stackMin = 0;
@@ -1579,7 +1581,7 @@ void crash_default_page(OSThread *t) {
             switch(threadID) {
                 case 1:
                     __osFaultedThread = &gThread1;
-                    gThreadStackSize = STACK_IDLE;
+                    gThreadStackSize = STACK_GAME;
                     gCrashCause = 18;
                     break;
                 case 3:
@@ -1688,11 +1690,13 @@ void crash_thread(UNUSED void *var) {
     osSetThreadPri(NULL, OS_PRIORITY_APPMAX);
     osStopThread(&gMainSched.thread);
     osCreateMesgQueue(&gCrashQueue2, gCrashQueueBuf2, ARRAY_COUNT(gCrashQueueBuf2));
-    osCreateThread(&gCrashThread2, 9, &crash_thread2, 0, &gCrashThreadStack2[STACKSIZE(STACK_CRASH2)], 30);
+    gCrashThreadStack2 = (u64 *) mempool_alloc(STACK_CRASH2, PP_RAM_STACK);
+    osCreateThread(&gCrashThread2, 9, &crash_thread2, 0, gCrashThreadStack2 + (STACKSIZE(STACK_CRASH2)), 30);
     osStartThread(&gCrashThread2);
     while (__osDpDeviceBusy() == 1) {}
     while (__osSpDeviceBusy() == 1) {}
-    crash_screen_sleep(50);
+    while (__osDpDeviceBusy() == 1) {}
+    while (__osSpDeviceBusy() == 1) {}
     input_init();
     gCrashFBUpdate = TRUE;
     oldW = gScreenWidth;
@@ -1715,15 +1719,13 @@ void crash_thread(UNUSED void *var) {
     while (1) { 
         input_update(0, LOGIC_30FPS);
         crash_render(crash_error_thread());
+        crash_screen_sleep(10);
     }
 }
 
 void crash_init(void) {
     osCreateMesgQueue(&gCrashQueue, gCrashQueueBuf, ARRAY_COUNT(gCrashQueueBuf));
-    osCreateThread(&gCrashThread, 2, &crash_thread, 0, &gCrashThreadStack[STACKSIZE(STACK_CRASH)], 30);
-    debug_ram(-STACK_CRASH, PP_RAM_CODE);
-    debug_ram(STACK_CRASH, PP_RAM_STACK);
-    debug_ram(-STACK_CRASH2, PP_RAM_CODE);
-    debug_ram(STACK_CRASH2, PP_RAM_STACK);
+    gCrashThreadStack = (u64 *) mempool_alloc(STACK_CRASH, PP_RAM_STACK);
+    osCreateThread(&gCrashThread, 2, &crash_thread, 0, gCrashThreadStack + STACKSIZE(STACK_CRASH), 30);
     osStartThread(&gCrashThread);
 }

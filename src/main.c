@@ -11,8 +11,7 @@
 
 /************ .bss ************/
 
-u64 gThread1Stack[STACKSIZE(STACK_IDLE)];
-u64 gThread3Stack[STACKSIZE(STACK_GAME)];
+u64 *gThread3Stack;
 OSThread gThread1; // OSThread for thread 1
 OSThread gThread3; // OSThread for thread 3
 u16 gPlatform;
@@ -314,11 +313,10 @@ void mainproc(void) {
     memsize_init();
     mempool_init_main();
     debug_init();
-    osCreateThread(&gThread1, 1, &thread1_main, 0, &gThread1Stack[STACKSIZE(STACK_IDLE)], OS_PRIORITY_IDLE);
-    gThread1Stack[STACKSIZE(STACK_IDLE) - 1] = 0;
-    gThread1Stack[0] = 0;
-    debug_ram(-STACK_IDLE, PP_RAM_CODE);
-    debug_ram(STACK_IDLE, PP_RAM_STACK);
+    gThread3Stack = (u64 *) mempool_alloc(STACK_GAME, PP_RAM_STACK);
+    osCreateThread(&gThread1, 1, &thread1_main, 0, gThread3Stack + STACKSIZE(STACK_GAME), OS_PRIORITY_IDLE);
+    gThread3Stack[STACKSIZE(STACK_GAME) - 1] = 0;
+    gThread3Stack[0] = 0;
     osStartThread(&gThread1);
 }
 
@@ -332,13 +330,10 @@ void crash_init(void);
 void thread1_main(UNUSED void *unused) {
     crash_init();
     config_init();
-    osCreateThread(&gThread3, 3, &thread3_main, 0, &gThread3Stack[STACKSIZE(STACK_GAME)], 10);
+    osCreateThread(&gThread3, 3, &thread3_main, 0, gThread3Stack + STACKSIZE(STACK_GAME), 10);
     gThread3Stack[STACKSIZE(STACK_GAME) - 1] = 0;
     gThread3Stack[0] = 0;
-    debug_ram(-STACK_GAME, PP_RAM_CODE);
-    debug_ram(STACK_GAME, PP_RAM_STACK);
     osStartThread(&gThread3);
-    osSetThreadPri(NULL, OS_PRIORITY_IDLE);
     while (1) {}
 }
 
