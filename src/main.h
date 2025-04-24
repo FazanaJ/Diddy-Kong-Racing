@@ -105,6 +105,14 @@ void get_platform(void);
 
 typedef enum DebugPages {
     PAGE_MINIMAL,
+    PAGE_OVERVIEW,
+    PAGE_GENERAL,
+    PAGE_BREAKDOWN,
+    PAGE_MEMORY,
+    PAGE_AUDIO,
+    PAGE_LOG,
+    PAGE_VISCVG,
+    PAGE_MISC,
 } DebugPages;
 
 typedef enum DebugProfiles {
@@ -281,6 +289,8 @@ typedef struct DebugData {
     u8 pageSelected;
     u8 pageScroll;
     u8 pageViewMode;
+    u8 pageMenuOpen;
+    u8 pauseGame;
     u8 logLine;
     u8 logLevel;
     u8 iter;
@@ -303,6 +313,13 @@ typedef struct DebugData {
     u32 ramSegments[PP_RAM_TOTAL];
     u32 ramTotal;
 } DebugData;
+
+typedef struct DebugPage {
+    char name[16];
+    u8 index;
+    void (*updateFunc)(struct DebugData *d);
+    void (*renderFunc)(struct DebugData *d, Gfx **dList, s32 updateRate);
+} DebugPage;
 
 extern DebugData *gDebug;
 

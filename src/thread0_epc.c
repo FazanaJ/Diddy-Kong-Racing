@@ -15,7 +15,7 @@
 #include "main.h"
 #include "usb/usb.h"
 
-//#define MAP_PARSE
+#define MAP_PARSE
 
 /**
  * Mark the object type given, so if the game crashes while processing it, the debug screen will tell you which object

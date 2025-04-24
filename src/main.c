@@ -505,7 +505,7 @@ const char *sMinimalText[] = {
     "RDP"
 };
 
-void debug_page_minimal(DebugData *d, Gfx **dList, s32 updateRate) {
+void debug_render_minimal(DebugData *d, Gfx **dList, s32 updateRate) {
     char textBytes[32];
     s32 i;
     s32 y;
@@ -556,6 +556,14 @@ void debug_page_minimal(DebugData *d, Gfx **dList, s32 updateRate) {
     }
 }
 
+/*void debug_page_minimal(DebugData *d) {
+    
+}
+
+DebugPage gDebugPages[] = {
+    "Minimal", PAGE_MINIMAL, debug_page_minimal, debug_render_minimal,
+};*/
+
 void debug_render(Gfx **dList, s32 updateRate) {
     DebugData *d = gDebug;
 
@@ -565,7 +573,7 @@ void debug_render(Gfx **dList, s32 updateRate) {
 
     switch (d->pageCurrent) {
         case PAGE_MINIMAL:
-            debug_page_minimal(d, dList, updateRate);
+            debug_render_minimal(d, dList, updateRate);
             break;
     }
 }
@@ -681,6 +689,19 @@ void debug_ram_dump(void) {
     }
 }
 
+void debug_pause(DebugData *d) {
+    switch (d->pageCurrent) {
+        case PAGE_MINIMAL:
+        case PAGE_BREAKDOWN:
+        case PAGE_GENERAL:
+        case PAGE_VISCVG:
+        case PAGE_AUDIO:
+        case PAGE_MISC:
+            d->pauseGame = FALSE;
+            break;
+    }
+}
+
 void debug_update(s32 updateRate) {
     s32 i;
     s32 j;
@@ -698,8 +719,24 @@ void debug_update(s32 updateRate) {
         inputHeld |= input_held(i);
     }
 
-    if (inputPressed & L_TRIG) {
+    if (inputHeld & U_JPAD && inputPressed & L_TRIG) {
         d->enabled ^= 1;
+    }
+
+    if (d->pageMenuOpen == FALSE) {
+        switch (d->pageCurrent) {
+            case PAGE_MINIMAL:
+                if (inputPressed & R_JPAD || inputPressed & L_JPAD) {
+                    d->pageViewMode ^= 1;
+                }
+                break;
+        }
+    } else {
+        if (d->pageCurrent != d->pagePrev) {
+            d->pagePrev = d->pageCurrent;
+            d->pageViewMode = 0;
+            debug_pause(d);
+        }
     }
 
     if (inputPressed & R_JPAD) {
