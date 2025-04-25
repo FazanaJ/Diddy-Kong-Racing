@@ -336,7 +336,6 @@ void mempool_free_queue_clear(void) {
 /**
  * Searches the memory pools for a slot matching the given address.
  * If a slot is found, free it.
- * Official name: heapFree
  */
 void mempool_free_addr(u8 *address) {
     s32 slotIndex;
