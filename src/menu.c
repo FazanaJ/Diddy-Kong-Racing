@@ -4088,9 +4088,9 @@ void menu_save_options_init(void) {
 #if REGION == REGION_JP
     func_800C663C_C723C();
 #endif
-#if VERSION >= VERSION_79
+//#if VERSION >= VERSION_79
     rumble_enable(FALSE);
-#endif
+//#endif
 }
 
 /**
@@ -4772,9 +4772,9 @@ SIDeviceStatus savemenu_write(void) {
                 case SAVE_FILE_TYPE_CART_TIMES:
                     ret = read_time_data_from_controller_pak(
                         gSaveMenuFilesSource[gSaveMenuOptionSource].controllerIndex, fileExt, settings);
-#if VERSION >= VERSION_79
+//#if VERSION >= VERSION_79
                     mark_to_write_flap_and_course_times();
-#endif
+//#endif
                     break;
                 case SAVE_FILE_TYPE_CPAK_EMPTY:
                     ret = read_time_data_from_controller_pak(
@@ -5211,9 +5211,9 @@ void savemenu_free(void) {
 #if REGION == REGION_JP
     func_800C67F4_C73F4();
 #endif
-#if VERSION >= VERSION_79
+//#if VERSION >= VERSION_79
     rumble_enable(TRUE);
-#endif
+//#endif
 }
 
 SIDeviceStatus func_80087F14(s32 *controllerIndex, s32 xAxisDirection) {
@@ -5524,9 +5524,9 @@ void bootscreen_init_cpak(void) {
 #else
     load_font(ASSET_FONTS_BIGFONT);
 #endif
-#if VERSION >= VERSION_79
+//#if VERSION >= VERSION_79
     rumble_enable(FALSE);
-#endif
+//#endif
 }
 
 #if REGION == REGION_JP
@@ -5888,9 +5888,9 @@ void pakmenu_free(void) {
 #else
     unload_font(ASSET_FONTS_BIGFONT);
 #endif
-#if VERSION >= VERSION_79
+//#if VERSION >= VERSION_79
     rumble_enable(TRUE);
-#endif
+//#endif
 }
 
 /**

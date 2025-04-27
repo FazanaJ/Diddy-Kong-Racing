@@ -15,6 +15,9 @@
 #include "save_layout.h"
 #include "main.h"
 
+#undef VERSION
+#define VERSION VERSION_80
+
 /************ .data ************/
 
 s8 *gPakFileList = 0;
