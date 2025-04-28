@@ -272,7 +272,7 @@ typedef enum DebugRam {
     "Obj Lists", \
     "Obj Headers", \
     "Obj Gfx\t", \
-    "Debug"
+    "Debug\t"
 
 #define NUM_PERF_ITERATIONS 60
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS

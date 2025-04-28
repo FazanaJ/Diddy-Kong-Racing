@@ -35,7 +35,7 @@ void update_object_stack_trace(s32 index, s32 value) {
 u64 *gCrashThreadStack;
 u64 *gCrashThreadStack2;
 OSThread gCrashThread;
-OSThread gCrashThread2;
+OSThread *gCrashThread2;
 OSMesgQueue gCrashQueue;
 OSMesgQueue gCrashQueue2;
 OSMesg gCrashQueueBuf[2];
@@ -559,7 +559,7 @@ s32 crash_check_stack(void) {
 extern OSThread gThread1;
 extern OSThread gThread3;
 extern OSSched gMainSched;
-extern OSThread gThread30;
+extern OSThread *gThread30;
 extern OSThread gThreadUsb;
 
 void crash_reg_common(OSThread *t, s32 x) {
@@ -706,13 +706,17 @@ OSThread *crash_thread_id(s32 threadID) {
         case 5:
             return &gMainSched.thread;
         case 30:
-            return &gThread30;
+            if (gThread30) {
+                return gThread30;
+            } else {
+                return NULL;
+            }
 #ifdef DEBUG
         case 69:
             return &gThreadUsb;
 #endif
         default:
-            return 0;
+            return NULL;
     }
 }
 
@@ -727,12 +731,16 @@ void crash_page_stacks(OSThread *t) {
     y = 54;
     for (i = 0; i < (s32) sizeof(gStackThreadIDs); i++) {
         stackT = crash_thread_id(gStackThreadIDs[i]);
-        if (stackT->context.sp < 0x80000000) {
+        if (stackT == NULL) {
             stackMin = 0;
         } else {
-            stackMin = (u32) (crash_stack_pos(gStackThreadIDs[i]) - stackT->context.sp);
-            if (stackMin > 0xFFFF) {
-                stackMin = 0xFFFF;
+            if (stackT->context.sp < 0x80000000) {
+                stackMin = 0;
+            } else {
+                stackMin = (u32) (crash_stack_pos(gStackThreadIDs[i]) - stackT->context.sp);
+                if (stackMin > 0xFFFF) {
+                    stackMin = 0xFFFF;
+                }
             }
         }
         stackMax = (u32) crash_stack_size(gStackThreadIDs[i]);
@@ -1615,7 +1623,7 @@ void crash_default_page(OSThread *t) {
                     gCrashCause = 18;
                     break;
                 case 30:
-                    __osFaultedThread = &gThread30;
+                    __osFaultedThread = gThread30;
                     gThreadStackSize = STACK_BGLOAD;
                     gCrashCause = 18;
                     break;
@@ -1706,8 +1714,15 @@ void crash_thread(UNUSED void *var) {
     osStopThread(&gMainSched.thread);
     osCreateMesgQueue(&gCrashQueue2, gCrashQueueBuf2, ARRAY_COUNT(gCrashQueueBuf2));
     gCrashThreadStack2 = (u64 *) mempool_alloc(STACK_CRASH2, PP_RAM_STACK);
-    osCreateThread(&gCrashThread2, 9, &crash_thread2, 0, gCrashThreadStack2 + (STACKSIZE(STACK_CRASH2)), 30);
-    osStartThread(&gCrashThread2);
+    if (gCrashThreadStack2 == NULL) {
+        gCrashThreadStack2 = (u64 *) 0x803C0000;
+    }
+    gCrashThread2 = (OSThread *) mempool_alloc(STACK_CRASH2, PP_RAM_DEBUG);
+    if (gCrashThread2 == NULL) {
+        gCrashThread2 = (OSThread *) 0x803C1000;
+    }
+    osCreateThread(gCrashThread2, 9, &crash_thread2, 0, gCrashThreadStack2 + (STACKSIZE(STACK_CRASH2)), 30);
+    osStartThread(gCrashThread2);
     while (__osDpDeviceBusy() == 1) {}
     while (__osSpDeviceBusy() == 1) {}
     while (__osDpDeviceBusy() == 1) {}
