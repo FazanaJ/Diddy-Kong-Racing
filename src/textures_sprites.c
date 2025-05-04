@@ -463,8 +463,8 @@ void rendermode_reset(Gfx **dList) {
     gForceFlags = TRUE;
     gBlockedRenderFlags = RENDER_NONE;
     gUsePrimColour = FALSE;
-    gDPPipeSync((*dList)++);
     gSPSetGeometryMode((*dList)++, G_SHADING_SMOOTH | G_SHADE | G_ZBUFFER);
+    gDPPipeSync((*dList)++);
 }
 
 /**
