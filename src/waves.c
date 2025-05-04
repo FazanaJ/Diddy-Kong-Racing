@@ -942,7 +942,7 @@ void func_800BA8E4(Gfx **dList, MatrixS **mtx, s32 arg2) {
             func_800BA4B8(tex1, 1);
             func_800BA4B8(tex2, 0);
             gDPSetCombineMode(gWaveDL++, DKR_CC_UNK14, DKR_CC_UNK15);
-            if ((tex1->format & 0xF) == TEX_FORMAT_RGBA32 && get_viewport_count() <= 0) {
+            if (TEX_FORMAT(tex1->format) == TEX_FORMAT_RGBA32 && (get_viewport_count() <= 0 || gConfig.multiWaves)) {
                 gDPSetOtherMode(gWaveDL++, DKR_OMH_2CYC_BILERP, DKR_OML_COMMON | G_RM_AA_ZB_XLU_INTER2);
             } else {
                 gDPSetOtherMode(gWaveDL++, DKR_OMH_2CYC_BILERP, DKR_OML_COMMON | G_RM_AA_ZB_OPA_SURF2);

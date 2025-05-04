@@ -471,8 +471,7 @@ void hud_render_player(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Object *
                     gRaceStartShowHudStep += 1;
                 }
                 gDPPipeSync(gHudDL++);
-                rsp_init(&gHudDL);
-                rdp_init(&gHudDL);
+                //rdp_init(&gHudDL);
                 tex_enable_modes(RENDER_ALL);
                 tex_disable_modes(RENDER_Z_COMPARE);
                 sprite_opaque(FALSE);
@@ -1068,8 +1067,8 @@ void hud_lives_render(Object_Racer *racer, UNUSED s32 updateRate) {
         D_80126CD5 = TRUE;
         hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT]);
         D_80126CD5 = FALSE;
-        rdp_init(&gHudDL);
         rendermode_reset(&gHudDL);
+        //rdp_init(&gHudDL);
     }
     if (racer->bananas < 10) {
         gCurrentHud->entry[HUD_BATTLE_BANANA_COUNT_1].spriteOffset = racer->bananas;
