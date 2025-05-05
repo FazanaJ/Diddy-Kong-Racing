@@ -6,6 +6,37 @@
 
 // This file is an extension of PR/gbi.h
 
+// Just for the sake of easy finding, custom gbi stuff is here too.
+#define	RM_AA_ZB_EDGE_DECAL(clk) \
+	AA_EN | Z_CMP | Z_UPD | IM_RD | CVG_DST_CLAMP | ALPHA_CVG_SEL |	\
+	CVG_X_ALPHA | ZMODE_DEC | TEX_EDGE | ZMODE_OPA | \
+	GBL_c##clk(G_BL_CLR_IN, G_BL_A_IN, G_BL_CLR_MEM, G_BL_A_MEM)
+
+#define	RM_RA_ZB_EDGE_DECAL(clk) \
+	AA_EN | Z_CMP | Z_UPD | CVG_DST_CLAMP | ALPHA_CVG_SEL |	\
+	CVG_X_ALPHA | ZMODE_DEC | TEX_EDGE | ZMODE_OPA | \
+	GBL_c##clk(G_BL_CLR_IN, G_BL_A_IN, G_BL_CLR_MEM, G_BL_A_MEM)
+
+#define	RM_RA_ZB_TEX_EDGE(clk) \
+	AA_EN | Z_CMP | Z_UPD | CVG_DST_CLAMP | \
+	CVG_X_ALPHA | ALPHA_CVG_SEL | ZMODE_OPA | TEX_EDGE | \
+	GBL_c##clk(G_BL_CLR_IN, G_BL_A_IN, G_BL_CLR_MEM, G_BL_A_MEM)
+
+#define	RM_RA_TEX_EDGE(clk) \
+	AA_EN | CVG_DST_CLAMP | \
+	CVG_X_ALPHA | ALPHA_CVG_SEL | ZMODE_OPA | TEX_EDGE | \
+	GBL_c##clk(G_BL_CLR_IN, G_BL_A_IN, G_BL_CLR_MEM, G_BL_A_MEM)
+
+#define G_RM_AA_ZB_EDGE_DECAL   RM_AA_ZB_EDGE_DECAL(1)
+#define G_RM_AA_ZB_EDGE_DECAL2  RM_AA_ZB_EDGE_DECAL(2)
+#define G_RM_RA_ZB_EDGE_DECAL   RM_RA_ZB_EDGE_DECAL(1)
+#define G_RM_RA_ZB_EDGE_DECAL2  RM_RA_ZB_EDGE_DECAL(2)
+
+#define	G_RM_RA_ZB_TEX_EDGE	    RM_RA_ZB_TEX_EDGE(1)
+#define	G_RM_RA_ZB_TEX_EDGE2	RM_RA_ZB_TEX_EDGE(2)
+#define	G_RM_RA_TEX_EDGE	    RM_RA_TEX_EDGE(1)
+#define	G_RM_RA_TEX_EDGE2	    RM_RA_TEX_EDGE(2)
+
 // Color combiner values. These need better names!
 #define DKR_CC_UNK0 0, 0, 0, COMBINED, COMBINED, 0, PRIMITIVE, 0
 #define DKR_CC_UNK1 ENVIRONMENT, COMBINED, ENV_ALPHA, COMBINED, COMBINED, 0, PRIMITIVE, 0
@@ -21,6 +52,9 @@
 #define DKR_CC_UNK11 ENVIRONMENT, TEXEL0, ENV_ALPHA, TEXEL0, TEXEL0, 0, PRIMITIVE, 0
 #define	DKR_CC_UNK12 0, 0, 0, ENVIRONMENT, 0, 0, 0, TEXEL0
 #define DKR_CC_UNK13 ENVIRONMENT, TEXEL0, ENV_ALPHA, TEXEL0, TEXEL1, 0, PRIMITIVE, 0
+#define DKR_CC_UNK14 TEXEL1, TEXEL0, SHADE, TEXEL0, 1, TEXEL0, PRIMITIVE, TEXEL0
+#define DKR_CC_UNK15 ENVIRONMENT, COMBINED, ENV_ALPHA, COMBINED, COMBINED, 0, SHADE, 0
+#define DKR_CC_UNK16 ENVIRONMENT, TEXEL0, ENV_ALPHA, TEXEL0, 0, 0, 0, PRIMITIVE
 
 #define	DKR_CC_ENVIRONMENT   0, 0, 0, ENVIRONMENT, 0, 0, 0, ENVIRONMENT
 #define DKR_CC_DECALFADEPRIM 0, 0, 0, TEXEL0, TEXEL0, 0, PRIMITIVE, 0
@@ -90,7 +124,7 @@
 	gMoveWd(pkt, G_MW_BILLBOARD, 0, 0)
 
 #define gSPVertexDKR(pkt, v, n, v0) \
-    gDma1p(pkt, G_VTX, v, (((n) * 8 + (n)) << 1) + 8,((n)-1)<<3|(((u32)(v) & 6))|(v0))
+    gDma1p(pkt, G_VTX, v, (((n) * 8 + (n)) << 1) + 8, ((n)-1)<<3|(((u32)(v) & 6))|(v0))
 
 #define TRIN_DISABLE_TEXTURE 0
 #define TRIN_ENABLE_TEXTURE 1
@@ -127,7 +161,7 @@
 }
 
 #if defined(F3DDKR_GBI)
- // ?????? - Needed to modify this to work with matching build_tex_display_list
+ // ?????? - Needed to modify this to work with matching material_init
 #undef TXL2WORDS_4b
 #define TXL2WORDS_4b(txls) ((txls)/16)
 #endif

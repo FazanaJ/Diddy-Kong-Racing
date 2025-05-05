@@ -1,3 +1,4 @@
+#define NUKE 1
 #include "objects.h"
 #include "memory.h"
 
@@ -28,6 +29,7 @@
 #include "audio_vehicle.h"
 #include "vehicle_misc.h"
 #include "PRinternal/viint.h"
+#include "main.h"
 
 #define MAX_CHECKPOINTS 60
 #define OBJECT_POOL_SIZE 0x15800
@@ -267,7 +269,7 @@ s32 D_8011AED4;
 s16 gTajChallengeType;
 Object *(*gCameraObjList)[CAMCONTROL_COUNT]; // Camera objects with a maximum of 20
 s32 gCameraObjCount;                         // The number of camera objects in the above list
-Object *(*gRacers)[10];
+Object *(*gRacers)[10];                      // Official Name: playerlist
 // Similar to gRacers, but sorts the pointer by the players' current position in the race.
 Object **gRacersByPosition;
 // Similar to gRacers, but sorts the pointer by controller ports 1-4, then CPUs.
@@ -322,7 +324,7 @@ void func_8000B020(s32 numberOfVertices, s32 numberOfTriangles) {
     LevelObjectEntry_unk8000B020 objEntry;
     s32 i;
 
-    D_800DC754[0] = (s32) mempool_alloc_safe(((numberOfTriangles * 16) + (numberOfVertices * 10)) * 2, COLOUR_TAG_BLUE);
+    D_800DC754[0] = (s32) mempool_alloc_safe(((numberOfTriangles * 16) + (numberOfVertices * 10)) * 2, PP_RAM_OBJMDL);
     D_800DC754[1] = D_800DC754[0] + (numberOfTriangles * 16);
     D_800DC74C[0] = D_800DC754[1] + (numberOfTriangles * 16);
     D_800DC74C[1] = D_800DC74C[0] + (numberOfVertices * 10);
@@ -393,12 +395,12 @@ void func_8000B290(void) {
     for (i = 0; i < 10; i++) {
         sprite = asset20[i].unk78;
         if (sprite != NULL) {
-            free_sprite(sprite);
+            sprite_free(sprite);
             asset20[i].unk78 = NULL;
         }
         texture = asset20[i].unk7C;
         if (texture != NULL) {
-            free_texture(texture);
+            tex_free(texture);
             asset20[i].unk7C = NULL;
         }
     }
@@ -438,9 +440,6 @@ void func_8000BADC(s32 updateRate) {
     }
     for (i = 0; i < gNumRacers; i++) {
         updateRateF = (f32) updateRate;
-        if (osTvType == OS_TV_TYPE_PAL) {
-            updateRateF *= 1.2f;
-        }
         racer = &(*gRacers)[i]->unk64->racer;
         asset20Part = &asset20[racer->racerIndex];
         if (racer->shieldTimer != 0) {
@@ -538,31 +537,31 @@ void allocate_object_pools(void) {
 
     set_world_shading(0.67f, 0.33f, 0, -0x2000, 0);
     gObjectMemoryPool = (Object *) mempool_new_sub(OBJECT_POOL_SIZE, OBJECT_SLOT_COUNT);
-    gParticlePtrList = mempool_alloc_safe(sizeof(uintptr_t) * 200, COLOUR_TAG_BLUE);
-    D_8011AE6C = mempool_alloc_safe(sizeof(uintptr_t) * 20, COLOUR_TAG_BLUE);
-    D_8011AE74 = mempool_alloc_safe(sizeof(uintptr_t) * 128, COLOUR_TAG_BLUE);
-    gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, COLOUR_TAG_BLUE);
-    gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * CAMCONTROL_COUNT, COLOUR_TAG_BLUE);
-    gRacers = mempool_alloc_safe(sizeof(uintptr_t) * 10, COLOUR_TAG_BLUE);
-    gRacersByPort = mempool_alloc_safe(sizeof(uintptr_t) * 10, COLOUR_TAG_BLUE);
-    gRacersByPosition = mempool_alloc_safe(sizeof(uintptr_t) * 10, COLOUR_TAG_BLUE);
-    gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, COLOUR_TAG_BLUE);
-    D_8011ADCC = mempool_alloc_safe(8, COLOUR_TAG_BLUE);
-    D_8011AFF4 = mempool_alloc_safe(sizeof(unk800179D0) * 16, COLOUR_TAG_BLUE);
+    gParticlePtrList = mempool_alloc_safe(sizeof(uintptr_t) * 200, PP_RAM_OBJLISTS);
+    D_8011AE6C = mempool_alloc_safe(sizeof(uintptr_t) * 20, PP_RAM_OBJLISTS);
+    D_8011AE74 = mempool_alloc_safe(sizeof(uintptr_t) * 128, PP_RAM_OBJLISTS);
+    gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, PP_RAM_OBJLISTS);
+    gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * CAMCONTROL_COUNT, PP_RAM_OBJLISTS);
+    gRacers = mempool_alloc_safe(sizeof(uintptr_t) * 10, PP_RAM_OBJLISTS);
+    gRacersByPort = mempool_alloc_safe(sizeof(uintptr_t) * 10, PP_RAM_OBJLISTS);
+    gRacersByPosition = mempool_alloc_safe(sizeof(uintptr_t) * 10, PP_RAM_OBJLISTS);
+    gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, PP_RAM_OBJLISTS);
+    D_8011ADCC = mempool_alloc_safe(8, PP_RAM_OBJLISTS);
+    D_8011AFF4 = mempool_alloc_safe(sizeof(unk800179D0) * 16, PP_RAM_OBJLISTS);
     gAssetsLvlObjTranslationTable = (s16 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE);
     gAssetsLvlObjTranslationTableLength = (get_size_of_asset_section(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE) >> 1) - 1;
     while (gAssetsLvlObjTranslationTable[gAssetsLvlObjTranslationTableLength] == 0) {
         gAssetsLvlObjTranslationTableLength--;
     }
-    gSpawnObjectHeap = mempool_alloc_safe(sizeof(uintptr_t) * 512, COLOUR_TAG_BLUE);
+    gSpawnObjectHeap = mempool_alloc_safe(sizeof(uintptr_t) * 512, PP_RAM_OBJLISTS);
     gAssetsObjectHeadersTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_HEADERS_TABLE);
     gAssetsObjectHeadersTableLength = 0;
     while (-1 != gAssetsObjectHeadersTable[gAssetsObjectHeadersTableLength]) {
         gAssetsObjectHeadersTableLength++;
     }
     gAssetsObjectHeadersTableLength--;
-    gLoadedObjectHeaders = mempool_alloc_safe(gAssetsObjectHeadersTableLength * 4, COLOUR_TAG_WHITE);
-    gObjectHeaderReferences = mempool_alloc_safe(gAssetsObjectHeadersTableLength, COLOUR_TAG_WHITE);
+    gLoadedObjectHeaders = mempool_alloc_safe(gAssetsObjectHeadersTableLength * 4, PP_RAM_ASSETTABLE);
+    gObjectHeaderReferences = mempool_alloc_safe(gAssetsObjectHeadersTableLength, PP_RAM_ASSETTABLE);
 
     for (i = 0; i < gAssetsObjectHeadersTableLength; i++) {
         (*gObjectHeaderReferences)[i] = 0;
@@ -579,7 +578,7 @@ void allocate_object_pools(void) {
         &gAssetsMiscSection[gAssetsMiscTable[ASSET_MISC_MAGIC_CODES]],
         (gAssetsMiscTable[ASSET_MISC_TITLE_SCREEN_DEMO_IDS] - gAssetsMiscTable[ASSET_MISC_MAGIC_CODES]) *
             sizeof(s32 *));
-    gObjPtrList = mempool_alloc_safe(sizeof(uintptr_t) * OBJECT_SLOT_COUNT, COLOUR_TAG_BLUE);
+    gObjPtrList = mempool_alloc_safe(sizeof(uintptr_t) * OBJECT_SLOT_COUNT, PP_RAM_OBJLISTS);
     gFirstTimeFinish = 0;
     gTimeTrialEnabled = 0;
     gIsTimeTrial = FALSE;
@@ -718,7 +717,7 @@ ObjectHeader *load_object_header(s32 index) {
     }
     assetOffset = gAssetsObjectHeadersTable[index];
     size = gAssetsObjectHeadersTable[index + 1] - assetOffset;
-    address = mempool_alloc_pool((MemoryPoolSlot *) gObjectMemoryPool, size);
+    address = mempool_alloc_pool_tag((MemoryPoolSlot *) gObjectMemoryPool, size, PP_RAM_OBJHEADERS);
     if (address != NULL) {
         load_asset_to_address(ASSET_OBJECTS, (u32) address, assetOffset, size);
         address->unk24 = (ObjectHeader24 *) ((uintptr_t) address + (uintptr_t) address->unk24);
@@ -755,11 +754,7 @@ void try_free_object_header(s32 index) {
  * Official Name: objTvTimes
  */
 s32 normalise_time(s32 timer) {
-    if (osTvType != OS_TV_TYPE_PAL || timer < 0) {
-        return timer;
-    } else {
-        return (timer * 5) / 6;
-    }
+    return timer;
 }
 
 void func_8000C8F8(s32 arg0, s32 arg1) {
@@ -790,7 +785,7 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
     }
 
     D_8011AD3E = 0;
-    mem = mempool_alloc_safe(0x3000, COLOUR_TAG_BLUE);
+    mem = mempool_alloc_safe(0x3000, PP_RAM_OBJLISTS);
     D_8011AEB0[arg1] = mem;
     D_8011AE98[arg1] = (u8 *) (D_8011AEB0[arg1] + 4);
     D_8011AEA0[arg1] = 0;
@@ -942,7 +937,7 @@ void func_8000CC7C(Vehicle vehicle, u32 arg1, s32 arg2) {
     }
     for (i2 = 0; i2 < gObjectCount; i2++) {
         curObj = gObjPtrList[i2];
-        if (!(curObj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED)) {
+        if (!(curObj->segment.trans.flags & OBJ_FLAGS_PARTICLE)) {
             if (curObj->behaviorId == BHV_SETUP_POINT) {
                 if (arg1 == (u32) curObj->properties.setupPoint.entranceID) {
                     if (curObj->properties.setupPoint.racerIndex < 8) {
@@ -1537,9 +1532,9 @@ Object **objGetObjList(s32 *arg0, s32 *cnt) {
     return gObjPtrList;
 }
 
-void func_8000E9D0(Object *obj) {
-    obj->segment.trans.flags |= OBJ_FLAGS_DEACTIVATED;
-    func_800245B4(obj->segment.object.unk2C | (OBJ_FLAGS_DEACTIVATED | OBJ_FLAGS_INVISIBLE));
+void add_particle_to_entity_list(Object *obj) {
+    obj->segment.trans.flags |= OBJ_FLAGS_PARTICLE;
+    func_800245B4(obj->segment.object.unk2C | (OBJ_FLAGS_PARTICLE | OBJ_FLAGS_INVISIBLE));
     gObjPtrList[gObjectCount++] = obj;
     if (1) {} // Fakematch
     gParticleCount++;
@@ -1733,7 +1728,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 arg1) {
         address = (u32 *) ((uintptr_t) address + sizeOfobj);
         if (sizeOfobj == 0) {
             if (D_8011AE50 != NULL) {
-                free_texture((TextureHeader *) D_8011AE50);
+                tex_free((TextureHeader *) D_8011AE50);
             }
             objFreeAssets(curObj, assetCount, objType);
             try_free_object_header(var_a0);
@@ -1761,10 +1756,10 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 arg1) {
     newObj = mempool_alloc_pool((MemoryPoolSlot *) gObjectMemoryPool, sizeOfobj);
     if (newObj == NULL) {
         if (D_8011AE50 != NULL) {
-            free_texture((TextureHeader *) D_8011AE50);
+            tex_free((TextureHeader *) D_8011AE50);
         }
         if (D_8011AE54 != NULL) {
-            free_texture((TextureHeader *) D_8011AE54);
+            tex_free((TextureHeader *) D_8011AE54);
         }
         objFreeAssets(curObj, assetCount, objType);
         try_free_object_header(var_a0);
@@ -1831,10 +1826,10 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 arg1) {
     }
     if (newObj->segment.header->unk56 > 0 && newObj->segment.header->unk56 < 10 && func_8000F99C(newObj)) {
         if (D_8011AE50 != NULL) {
-            free_texture(D_8011AE50);
+            tex_free(D_8011AE50);
         }
         if (D_8011AE54 != NULL) {
-            free_texture(D_8011AE54);
+            tex_free(D_8011AE54);
         }
         objFreeAssets(newObj, assetCount, objType);
         try_free_object_header(var_a0);
@@ -1870,13 +1865,13 @@ void objFreeAssets(Object *obj, s32 count, s32 objType) {
     } else if (objType == OBJECT_MODEL_TYPE_MISC) {
         for (i = 0; i < count; i++) {
             if (obj->unk68[i] != NULL) {
-                free_texture((TextureHeader *) (s32) obj->unk68[i]);
+                tex_free((TextureHeader *) (s32) obj->unk68[i]);
             }
         }
     } else { // Sprite
         for (i = 0; i < count; i++) {
             if (obj->unk68[i] != NULL) {
-                free_sprite((Sprite *) (s32) obj->unk68[i]);
+                sprite_free((Sprite *) (s32) obj->unk68[i]);
             }
         }
     }
@@ -1972,12 +1967,12 @@ s32 obj_init_emitter(Object *obj, ParticleEmitter *emitter) {
     particleDataEntry = obj->segment.header->objectParticles;
     for (i = 0; i < obj->segment.header->particleCount; i++) {
         if ((particleDataEntry[i].upper & 0xFFFF0000) == 0xFFFF0000) {
-            partInitTrigger((Particle *) &obj->particleEmitter[i].unk0, (particleDataEntry[i].upper >> 8) & 0xFF,
-                            particleDataEntry[i].upper & 0xFF);
+            emitter_init(&obj->particleEmitter[i], (particleDataEntry[i].upper >> 8) & 0xFF,
+                         particleDataEntry[i].upper & 0xFF);
         } else {
-            func_800AF29C((Particle *) &obj->particleEmitter[i].unk0, (particleDataEntry[i].upper >> 0x18) & 0xFF,
-                          (particleDataEntry[i].upper >> 0x10) & 0xFF, particleDataEntry[i].upper & 0xFFFF,
-                          (particleDataEntry[i].lower >> 0x10) & 0xFFFF, particleDataEntry[i].lower & 0xFFFF);
+            emitter_init_with_pos(&obj->particleEmitter[i], (particleDataEntry[i].upper >> 0x18) & 0xFF,
+                                  (particleDataEntry[i].upper >> 0x10) & 0xFF, particleDataEntry[i].upper & 0xFFFF,
+                                  (particleDataEntry[i].lower >> 0x10) & 0xFFFF, particleDataEntry[i].lower & 0xFFFF);
         }
     }
     return ((obj->segment.header->particleCount * sizeof(ParticleEmitter)) + 3) & ~3;
@@ -1993,10 +1988,12 @@ s32 init_object_shadow(Object *obj, ShadowData *shadow) {
     obj->shadow = shadow;
     shadow->texture = NULL;
     objHeader = ((ObjectSegment *) obj)->header;
+    set_texture_colour_tag(PP_RAM_SHADOWS);
     if (objHeader->shadowGroup) {
         shadow->texture = load_texture((s32) ((ObjectHeader *) objHeader)->unk34);
         objHeader = ((ObjectSegment *) obj)->header;
     }
+    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
     shadow->scale = objHeader->shadowScale;
     shadow->meshStart = -1;
     D_8011AE50 = shadow->texture;
@@ -2016,9 +2013,11 @@ s32 init_object_water_effect(Object *obj, WaterEffect *waterEffect) {
     waterEffect->textureFrame = 0;
     waterEffect->animationSpeed = obj->segment.header->unk0 >> 8;
     waterEffect->texture = NULL;
+    set_texture_colour_tag(PP_RAM_SHADOWS);
     if (obj->segment.header->waterEffectGroup) {
         waterEffect->texture = load_texture(obj->segment.header->unk38);
     }
+    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
     waterEffect->meshStart = -1;
     D_8011AE54 = waterEffect->texture;
     if (obj->segment.header->waterEffectGroup && waterEffect->texture == NULL) {
@@ -2063,7 +2062,7 @@ Object *func_8000FD54(s32 objectHeaderIndex) {
         return NULL;
     }
     objSize = (objHeader->numberOfModelIds * 4) + 0x80;
-    object = (Object *) mempool_alloc(objSize, COLOUR_TAG_BLUE);
+    object = (Object *) mempool_alloc(objSize, PP_RAM_OBJECTS);
     if (object == NULL) {
         try_free_object_header(objectHeaderIndex);
         return NULL;
@@ -2118,7 +2117,7 @@ Object *func_8000FD54(s32 objectHeaderIndex) {
  * Official Name: objFreeObject
  */
 void free_object(Object *object) {
-    func_800245B4(object->objectID | OBJ_FLAGS_DEACTIVATED);
+    func_800245B4(object->objectID | OBJ_FLAGS_PARTICLE);
     gParticlePtrList[gFreeListCount] = object;
     gFreeListCount++;
 }
@@ -2159,17 +2158,13 @@ void gParticlePtrList_flush(void) {
 
 #pragma GLOBAL_ASM("asm/nonmatchings/objects/func_800101AC.s")
 
-#ifdef NON_MATCHING
-// Minor regalloc diffs
-// obj_update
-void func_80010994(s32 updateRate) {
+void obj_update(s32 updateRate) {
     s32 i;
-    s32 tempVal;
+    s32 j;
     Object_Racer *racer;
-    Object *obj;
-    s32 sp54;
     Object_68 *obj68;
-    UNUSED Object_64 *obj64;
+    s32 sp54;
+    Object *obj;
 
     func_800245B4(-1);
     gEventStartTimer = gEventCountdown;
@@ -2185,14 +2180,12 @@ void func_80010994(s32 updateRate) {
     D_8011AD3D = 0;
     D_8011AD21 = 1 - D_8011AD21;
     D_8011AD22[D_8011AD21] = 0;
-    for (i = 0; i < gNumRacers; i++) {
-        obj = (*gRacers)[i];
-        racer = &obj->unk64->racer;
-        racer->prev_x_position = (f32) (*gRacers)[i]->segment.trans.x_position;
-        racer->prev_y_position = (f32) (*gRacers)[i]->segment.trans.y_position;
-        racer->prev_z_position = (f32) (*gRacers)[i]->segment.trans.z_position;
+    for (j = 0; j < gNumRacers; j++) {
+        racer = &(*gRacers)[j]->unk64->racer;
+        racer->prev_x_position = (f32) (*gRacers)[j]->segment.trans.x_position;
+        racer->prev_y_position = (f32) (*gRacers)[j]->segment.trans.y_position;
+        racer->prev_z_position = (f32) (*gRacers)[j]->segment.trans.z_position;
     }
-    i = 1; // FAKEMATCH
     obj_tick_anims();
     process_object_interactions();
     func_8001E89C();
@@ -2203,10 +2196,10 @@ void func_80010994(s32 updateRate) {
     for (i = 0; i < D_8011AE70; i++) {
         func_8001709C(D_8011AE6C[i]);
     }
-    tempVal = gObjectCount;
-    for (i = gObjectListStart; i < tempVal; i++) {
+    j = gObjectCount;
+    for (i = gObjectListStart; i < j; i++) {
         obj = gObjPtrList[i];
-        if (!(obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED)) {
+        if (!(obj->segment.trans.flags & OBJ_FLAGS_PARTICLE)) {
             if ((obj->behaviorId != BHV_LIGHT_RGBA) && (obj->behaviorId != BHV_WEAPON) &&
                 (obj->behaviorId != BHV_FOG_CHANGER)) {
                 if (obj->interactObj != NULL) {
@@ -2219,12 +2212,7 @@ void func_80010994(s32 updateRate) {
                 if (obj->segment.header->modelType == OBJECT_MODEL_TYPE_3D_MODEL) {
                     for (sp54 = 0; sp54 < obj->segment.header->numberOfModelIds; sp54++) {
                         obj68 = obj->unk68[sp54];
-
-                        // FAKEMATCH
-                        if (!gObjPtrList) {}
-
                         if (obj68 != NULL) {
-                            if (1) {} // FAKEMATCH
                             obj68->objModel->unk52 = updateRate;
                         }
                     }
@@ -2248,66 +2236,68 @@ void func_80010994(s32 updateRate) {
         }
     }
     func_8000BADC(updateRate);
-    for (i = gObjectListStart; i < tempVal; i++) {
+    for (i = gObjectListStart; i < j; i++) {
         obj = gObjPtrList[i];
-        if ((!(obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && (obj->behaviorId == BHV_WEAPON)) ||
+        if ((!(obj->segment.trans.flags & OBJ_FLAGS_PARTICLE) && (obj->behaviorId == BHV_WEAPON)) ||
             (obj->behaviorId == BHV_FOG_CHANGER)) {
             run_object_loop_func(obj, updateRate);
         }
     }
     if (gParticleCount > 0) {
-        for (i = gObjectListStart; i < tempVal; i++) {
+        for (i = gObjectListStart; i < j; i++) {
             obj = gObjPtrList[i];
-            if (obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) {
+            if (obj->segment.trans.flags & OBJ_FLAGS_PARTICLE) {
                 // Why is this object being treated as a Particle?
-                handle_particle_movement((Particle *) obj, updateRate);
+                particle_update((Particle *) obj, updateRate);
             }
         }
     }
-    do { // FAKEMATCH
+
 #ifdef USE_DYNLIGHTS
-        lightUpdateLights(updateRate);
-        if (get_light_count() > 0) {
-            for (i = gObjectListStart; i < gObjectCount; i++) {
-                obj = gObjPtrList[i];
-                if (!(obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && (obj->shading != NULL)) {
-                    func_80032C7C(obj);
-                }
+    lightUpdateLights(updateRate);
+    if (get_light_count() > 0) {
+        for (i = gObjectListStart; i < gObjectCount; i++) {
+            obj = gObjPtrList[i];
+            if (!(obj->segment.trans.flags & OBJ_FLAGS_PARTICLE) && (obj->shading != NULL)) {
+                func_80032C7C(obj);
             }
         }
+    }
 #endif
-        func_8001E6EC(0);
-        if (gTajRaceInit != 0) {
-            mode_init_taj_race();
+    func_8001E6EC(0);
+    if (gTajRaceInit != 0) {
+        mode_init_taj_race();
+    }
+    if (gPathUpdateOff == FALSE) {
+        gParticlePtrList_flush();
+        func_80017E98();
+        spectate_update();
+        func_8001E93C();
+    }
+    if (gNumRacers != 0) {
+        if (gRaceEndTimer == 0) {
+            func_80019808(updateRate);
+        } else {
+            race_transition_adventure(updateRate);
         }
-        if (gPathUpdateOff == FALSE) {
-            gParticlePtrList_flush();
-            func_80017E98();
-            spectate_update();
-            func_8001E93C();
-        }
-        if (gNumRacers != 0) {
-            if (gRaceEndTimer == 0) {
-                func_80019808(updateRate);
-            } else {
-                race_transition_adventure(updateRate);
-            }
-        }
-        func_80008438(gRacersByPort, gNumRacers, updateRate);
-        gPathUpdateOff = TRUE;
-        gObjectUpdateRateF = (f32) updateRate;
-        D_8011AD24[0] = 0;
-        D_8011AD53 = 0;
-        transform_player_vehicle();
-        dialogue_try_close();
-        func_800179D0();
-    } while (0); // FAKEMATCH
+    }
+    func_80008438(gRacersByPort, gNumRacers, updateRate);
+    gPathUpdateOff = TRUE;
+    gObjectUpdateRateF = (f32) updateRate;
+    D_8011AD24[0] = 0;
+    D_8011AD53 = 0;
+    transform_player_vehicle();
+    dialogue_try_close();
+    func_800179D0();
+
+    // @fake
+    do {
+    } while (0);
     if (D_8011AF00 == 1) {
         if ((gEventCountdown == 0x50) && (gCutsceneID == 0)) {
             sp54 = 0;
-            for (i = 0; i < MAXCONTROLLERS; i++) {
-                tempVal = input_pressed(i);
-                sp54 |= tempVal;
+            for (j = 0; j < MAXCONTROLLERS; j++) {
+                sp54 |= input_pressed(j);
             }
 
             if (sp54 & A_BUTTON) {
@@ -2320,9 +2310,6 @@ void func_80010994(s32 updateRate) {
         D_8011AF00 = 1;
     }
 }
-#else
-#pragma GLOBAL_ASM("asm/nonmatchings/objects/func_80010994.s")
-#endif
 
 #ifdef NON_EQUIVALENT
 void func_80011134(Object *arg0, s32 arg1) {
@@ -2355,41 +2342,40 @@ void func_80011134(Object *arg0, s32 arg1) {
 #pragma GLOBAL_ASM("asm/nonmatchings/objects/func_80011134.s")
 #endif
 
-#ifdef NON_EQUIVALENT
-// Probably NON_MATCHING, but not sure.
 // This is a function for doors
 void func_80011264(ObjectModel *model, Object *obj) {
+    Object_64 *obj64;
     s32 current;
     s32 remaining;
     s32 i;
-    Object_Door *door;
     TriangleBatchInfo *batch;
 
-    if (model->unk50 > 0) {
-        batch = &model->batches[0];
-        door = &obj->unk64->door;
-        current = ((door->balloonCount / 10) - 1) << 2;
-        if (model->textures[batch->textureIndex].texture) {} // fakematch
-        if (1) {                                             // fakematch
-            remaining = ((door->balloonCount % 10) << 2);
-        }
-        for (i = 0; i < model->numberOfBatches; i++, batch++) {
-            if (batch->flags & 0x10000) {
-                if (batch->textureIndex != 0xFF) { // 0xFF = No Texture
-                    if (model->textures[batch->textureIndex].texture->numOfTextures > 0x900) {
-                        batch->unk7 = remaining;
-                    } else if (current >= 0) {
-                        batch->unk7 = current;
-                    }
-                    if (door) {} // fakematch
+    if (model->unk50 <= 0) {
+        return;
+    }
+
+    obj64 = obj->unk64;
+    remaining = obj64->door.balloonCount;
+    current = ((remaining / 10) - 1) << 2;
+    remaining = (remaining % 10) << 2;
+    i = 0;
+    batch = model->batches;
+
+    while (i < model->numberOfBatches) {
+        if (batch[i].flags & 0x10000) {
+            if (batch[i].textureIndex != TEX_INDEX_NO_TEXTURE) {
+                // Fakematch
+                if (model->textures[batch[i].textureIndex].texture) {}
+                if ((model->textures[batch[i].textureIndex].texture->numOfTextures) > 0x900) {
+                    batch[i].unk7 = remaining;
+                } else if (current >= 0) {
+                    batch[i].unk7 = current;
                 }
             }
         }
+        i++;
     }
 }
-#else
-#pragma GLOBAL_ASM("asm/nonmatchings/objects/func_80011264.s")
-#endif
 
 /**
  * Signal to the game that checkpoints should be updated.
@@ -2576,7 +2562,7 @@ void render_misc_model(Object *obj, Vertex *verts, u32 numVertices, Triangle *tr
     if (tex != NULL) {
         hasTexture = TRUE;
     }
-    load_and_set_texture(&gObjectCurrDisplayList, (TextureHeader *) tex, flags, texOffset);
+    material_set(&gObjectCurrDisplayList, (TextureHeader *) tex, flags, texOffset);
     gSPVertexDKR(gObjectCurrDisplayList++, OS_K0_TO_PHYSICAL(verts), numVertices, 0);
     gSPPolygon(gObjectCurrDisplayList++, OS_K0_TO_PHYSICAL(triangles), numTriangles, hasTexture);
     apply_matrix_from_stack(&gObjectCurrDisplayList);
@@ -2837,7 +2823,7 @@ void render_3d_model(Object *obj) {
         if (obj->segment.header->unk71) {
             gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, obj->shading->unk18, obj->shading->unk19,
                             obj->shading->unk1A, alpha);
-            enable_primitive_colour();
+            tex_primcolour_on();
         } else if (hasOpacity) {
             gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, intensity, intensity, intensity, alpha);
         } else {
@@ -2854,7 +2840,7 @@ void render_3d_model(Object *obj) {
             } else {
                 gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, 255, 255, 255, 255);
             }
-            disable_primitive_colour();
+            tex_primcolour_off();
         }
         if (obj->unk60 != NULL) {
             obj60_unk0 = obj->unk60->unk0;
@@ -2940,11 +2926,11 @@ void render_3d_model(Object *obj) {
             if (obj->segment.header->unk71) {
                 gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, obj->shading->unk18, obj->shading->unk19,
                                 obj->shading->unk1A, alpha);
-                enable_primitive_colour();
+                tex_primcolour_on();
             }
             render_mesh(objModel, obj, meshBatch, RENDER_SEMI_TRANSPARENT, spB0);
             if (obj->segment.header->unk71) {
-                disable_primitive_colour();
+                tex_primcolour_off();
             }
         }
         if (hasOpacity || obj->segment.header->unk71) {
@@ -3077,7 +3063,7 @@ void func_80012F94(Object *obj) {
 
     ret1 = 1.0f;
     ret2 = 1.0f;
-    if (!(obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED)) {
+    if (!(obj->segment.trans.flags & OBJ_FLAGS_PARTICLE)) {
         if (obj->segment.header->behaviorId == BHV_RACER) {
             objRacer = (Object_Racer *) obj->unk64;
             objRacer->unk201 = 30;
@@ -3212,8 +3198,9 @@ void func_80012F94(Object *obj) {
  */
 void render_object_parts(Object *obj) {
     func_80012F94(obj);
-    if (obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) {
-        render_particle((Particle *) obj, &gObjectCurrDisplayList, &gObjectCurrMatrix, &gObjectCurrVertexList, 0x8000);
+    if (obj->segment.trans.flags & OBJ_FLAGS_PARTICLE) {
+        render_particle((Particle *) obj, &gObjectCurrDisplayList, &gObjectCurrMatrix, &gObjectCurrVertexList,
+                        PARTICLE_UNK_FLAG_8000);
     } else {
         if (obj->segment.header->modelType == OBJECT_MODEL_TYPE_3D_MODEL) {
             render_3d_model(obj);
@@ -3230,7 +3217,7 @@ void render_object_parts(Object *obj) {
  * After rendering, sets the object position back to normal.
  */
 void unset_temp_model_transforms(Object *obj) {
-    if (!(obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && obj->segment.header->behaviorId == BHV_RACER) {
+    if (!(obj->segment.trans.flags & OBJ_FLAGS_PARTICLE) && obj->segment.header->behaviorId == BHV_RACER) {
         obj->segment.trans.x_position -= obj->unk64->racer.carBobX;
         obj->segment.trans.y_position -= obj->unk64->racer.carBobY;
         obj->segment.trans.z_position -= obj->unk64->racer.carBobZ;
@@ -3259,7 +3246,7 @@ void render_bubble_trap(ObjectTransform *trans, Object_68 *gfxData, Object *obj,
     z = cameraSegment->trans.z_position - obj->segment.trans.z_position;
     dist = sqrtf((x * x) + (y * y) + (z * z));
     if (dist > 0.0) {
-        dist = obj->segment.unk1A / dist;
+        dist = obj->segment.numActiveEmitters / dist;
         x *= dist;
         y *= dist;
         z *= dist;
@@ -3390,15 +3377,15 @@ void render_racer_magnet(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *o
             mdl = gfxData->objModel;
             gMagnetEffectObject->curVertData = (Vertex *) gfxData->vertices[gfxData->animationTaskNum];
             opacity = ((D_8011B078[var_t0].g * 8) & 0x7F) + 0x80;
-            func_8007F594(&gObjectCurrDisplayList, 2, COLOUR_RGBA32(255, 255, 255, opacity),
-                          gMagnetColours[racer->magnetModelID]);
+            gfx_init_basic_xlu(&gObjectCurrDisplayList, DRAW_BASIC_2CYCLE, COLOUR_RGBA32(255, 255, 255, opacity),
+                               gMagnetColours[racer->magnetModelID]);
             apply_object_shear_matrix(&gObjectCurrDisplayList, &gObjectCurrMatrix, gMagnetEffectObject, obj, shear);
             gObjectTexAnim = TRUE;
             render_mesh(mdl, gMagnetEffectObject, 0, RENDER_SEMI_TRANSPARENT, 0);
             gObjectTexAnim = FALSE;
             gDkrInsertMatrix(gObjectCurrDisplayList++, 0, G_MTX_DKR_INDEX_0);
             gDPSetPrimColor(gObjectCurrDisplayList++, 0, 0, 255, 255, 255, 255);
-            reset_render_settings(&gObjectCurrDisplayList);
+            rendermode_reset(&gObjectCurrDisplayList);
             *dList = gObjectCurrDisplayList;
             *mtx = gObjectCurrMatrix;
             *vtxList = gObjectCurrVertexList;
@@ -3421,7 +3408,7 @@ void obj_tick_anims(void) {
 
     for (; i < gObjectCount; i++) {
         currObj = gObjPtrList[i];
-        if (!(currObj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) &&
+        if (!(currObj->segment.trans.flags & OBJ_FLAGS_PARTICLE) &&
             currObj->segment.header->modelType == OBJECT_MODEL_TYPE_3D_MODEL) {
             for (j = 0; j < currObj->segment.header->numberOfModelIds; j++) {
                 curr_68 = currObj->unk68[j];
@@ -3487,7 +3474,7 @@ s32 render_mesh(ObjectModel *objModel, Object *obj, s32 startIndex, s32 flags, s
                     texToSetFlags |= RENDER_SEMI_TRANSPARENT;
                 }
                 if (gObjectTexAnim == FALSE) {
-                    load_and_set_texture(&dList, texToSet, texToSetFlags, texOffset);
+                    material_set(&dList, texToSet, texToSetFlags, texOffset);
                 } else {
                     texToSet = set_animated_texture_header(texToSet, texOffset);
                     gDkrDmaDisplayList(gObjectCurrDisplayList++, OS_K0_TO_PHYSICAL(texToSet->cmd),
@@ -3540,11 +3527,11 @@ s32 get_first_active_object(s32 *retObjCount) {
     while (i <= j) {
         breakLoop = 0;
         while (i <= maxIndex && breakLoop == 0) {
-            if (!(gObjPtrList[i]->segment.trans.flags & OBJ_FLAGS_DEACTIVATED)) {
+            if (!(gObjPtrList[i]->segment.trans.flags & OBJ_FLAGS_PARTICLE)) {
                 if (gObjPtrList[i]->segment.header->flags & 1) {
                     i++;
                 } else {
-                    // Break the loop if neither OBJ_FLAGS_DEACTIVATED nor bit 1 in header->flags is set
+                    // Break the loop if neither OBJ_FLAGS_PARTICLE nor bit 1 in header->flags is set
                     breakLoop = -1;
                 }
             } else {
@@ -3554,8 +3541,8 @@ s32 get_first_active_object(s32 *retObjCount) {
 
         breakLoop = 0;
         while (j >= minIndex && breakLoop == 0) {
-            if (gObjPtrList[j]->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) {
-                // Break the loop if OBJ_FLAGS_DEACTIVATED is set
+            if (gObjPtrList[j]->segment.trans.flags & OBJ_FLAGS_PARTICLE) {
+                // Break the loop if OBJ_FLAGS_PARTICLE is set
                 breakLoop = -1;
             } else if (!(gObjPtrList[j]->segment.header->flags & 1)) {
                 j--;
@@ -3591,11 +3578,11 @@ s32 func_80014B50(s32 arg0, s32 arg1, f32 arg2, u32 arg3) {
         case 0:
             while (arg1 >= arg0) {
                 while ((var_a1 >= arg0) && ((gObjPtrList[arg0]->segment.trans.x_position -
-                                             gObjPtrList[arg0]->segment.particle.unk34) < arg2)) {
+                                             gObjPtrList[arg0]->segment.camera.unk34) < arg2)) {
                     arg0++;
                 }
                 while ((arg1 >= var_a0) && (arg2 <= (gObjPtrList[arg1]->segment.trans.x_position -
-                                                     gObjPtrList[arg1]->segment.particle.unk34))) {
+                                                     gObjPtrList[arg1]->segment.camera.unk34))) {
                     arg1--;
                 }
                 if (arg0 < arg1) {
@@ -3610,11 +3597,11 @@ s32 func_80014B50(s32 arg0, s32 arg1, f32 arg2, u32 arg3) {
         case 1:
             while (arg1 >= arg0) {
                 while ((var_a1 >= arg0) && ((gObjPtrList[arg0]->segment.trans.y_position -
-                                             gObjPtrList[arg0]->segment.particle.unk34) < arg2)) {
+                                             gObjPtrList[arg0]->segment.camera.unk34) < arg2)) {
                     arg0++;
                 }
                 while ((arg1 >= var_a0) && (arg2 <= (gObjPtrList[arg1]->segment.trans.y_position -
-                                                     gObjPtrList[arg1]->segment.particle.unk34))) {
+                                                     gObjPtrList[arg1]->segment.camera.unk34))) {
                     arg1--;
                 }
                 if (arg0 < arg1) {
@@ -3629,11 +3616,11 @@ s32 func_80014B50(s32 arg0, s32 arg1, f32 arg2, u32 arg3) {
         case 2:
             while (arg1 >= arg0) {
                 while ((var_a1 >= arg0) && ((gObjPtrList[arg0]->segment.trans.z_position -
-                                             gObjPtrList[arg0]->segment.particle.unk34) < arg2)) {
+                                             gObjPtrList[arg0]->segment.camera.unk34) < arg2)) {
                     arg0++;
                 }
                 while ((arg1 >= var_a0) && (arg2 <= (gObjPtrList[arg1]->segment.trans.z_position -
-                                                     gObjPtrList[arg1]->segment.particle.unk34))) {
+                                                     gObjPtrList[arg1]->segment.camera.unk34))) {
                     arg1--;
                 }
                 if (arg0 < arg1) {
@@ -3648,11 +3635,11 @@ s32 func_80014B50(s32 arg0, s32 arg1, f32 arg2, u32 arg3) {
         case 8:
             while (arg1 >= arg0) {
                 while ((var_a1 >= arg0) && ((gObjPtrList[arg0]->segment.trans.x_position +
-                                             gObjPtrList[arg0]->segment.particle.unk34) < arg2)) {
+                                             gObjPtrList[arg0]->segment.camera.unk34) < arg2)) {
                     arg0++;
                 }
                 while ((arg1 >= var_a0) && (arg2 <= (gObjPtrList[arg1]->segment.trans.x_position +
-                                                     gObjPtrList[arg1]->segment.particle.unk34))) {
+                                                     gObjPtrList[arg1]->segment.camera.unk34))) {
                     arg1--;
                 }
                 if (arg0 < arg1) {
@@ -3667,11 +3654,11 @@ s32 func_80014B50(s32 arg0, s32 arg1, f32 arg2, u32 arg3) {
         case 9:
             while (arg1 >= arg0) {
                 while ((var_a1 >= arg0) && ((gObjPtrList[arg0]->segment.trans.y_position +
-                                             gObjPtrList[arg0]->segment.particle.unk34) < arg2)) {
+                                             gObjPtrList[arg0]->segment.camera.unk34) < arg2)) {
                     arg0++;
                 }
                 while ((arg1 >= var_a0) && (arg2 <= (gObjPtrList[arg1]->segment.trans.y_position +
-                                                     gObjPtrList[arg1]->segment.particle.unk34))) {
+                                                     gObjPtrList[arg1]->segment.camera.unk34))) {
                     arg1--;
                 }
                 if (arg0 < arg1) {
@@ -3686,11 +3673,11 @@ s32 func_80014B50(s32 arg0, s32 arg1, f32 arg2, u32 arg3) {
         case 10:
             while (arg1 >= arg0) {
                 while ((var_a1 >= arg0) && ((gObjPtrList[arg0]->segment.trans.z_position +
-                                             gObjPtrList[arg0]->segment.particle.unk34) < arg2)) {
+                                             gObjPtrList[arg0]->segment.camera.unk34) < arg2)) {
                     arg0++;
                 }
                 while ((arg1 >= var_a0) && (arg2 <= (gObjPtrList[arg1]->segment.trans.z_position +
-                                                     gObjPtrList[arg1]->segment.particle.unk34))) {
+                                                     gObjPtrList[arg1]->segment.camera.unk34))) {
                     arg1--;
                 }
                 if (arg0 < arg1) {
@@ -3721,7 +3708,7 @@ void sort_objects_by_dist(s32 startIndex, s32 lastIndex) {
     for (i = startIndex; i <= lastIndex; i++) {
         obj = gObjPtrList[i];
         if (obj != NULL) {
-            if (obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) {
+            if (obj->segment.trans.flags & OBJ_FLAGS_PARTICLE) {
                 // get_distance_to_camera calculates the distance to the camera from a XYZ location.
                 obj->segment.object.distanceToCamera = -get_distance_to_camera(
                     obj->segment.trans.x_position, obj->segment.trans.y_position, obj->segment.trans.z_position);
@@ -3774,7 +3761,7 @@ void process_object_interactions(void) {
     objsWithInteractives = 0;
     for (i = gObjectListStart; i < gObjectCount; i++) {
         obj = gObjPtrList[i];
-        if (!(obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED)) {
+        if (!(obj->segment.trans.flags & OBJ_FLAGS_PARTICLE)) {
             objInteract = obj->interactObj;
             if (objInteract != NULL) {
                 objList[objsWithInteractives] = obj;
@@ -3876,7 +3863,7 @@ void func_80016500(Object *obj, Object_Racer *racer) {
         }
         if (racer->unk1F6 == 0) {
             sound_play(SOUND_CRASH_CHARACTER, &racer->unk220);
-            sound_volume_set_relative(SOUND_CRASH_CHARACTER, (s32 *) racer->unk220, angle);
+            sound_volume_set_relative(SOUND_CRASH_CHARACTER, racer->unk220, angle);
         }
         if (racer->unk1F6 == 0 && angle >= 56) {
             if (!racer->raceFinished) {
@@ -4010,7 +3997,7 @@ Object *obj_butterfly_node(f32 x, f32 y, f32 z, f32 maxDistCheck, s32 dontCheckY
 
     for (i = 0; i < gObjectCount; i++) {
         curObj = gObjPtrList[i];
-        if (!(curObj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && curObj->behaviorId == BHV_ANIMATED_OBJECT_3) {
+        if (!(curObj->segment.trans.flags & OBJ_FLAGS_PARTICLE) && curObj->behaviorId == BHV_ANIMATED_OBJECT_3) {
             diffX = curObj->segment.trans.x_position - x;
             diffZ = curObj->segment.trans.z_position - z;
             if (!dontCheckYAxis) {
@@ -4195,8 +4182,7 @@ Object *find_taj_object(void) {
     Object *current_obj;
     for (i = gObjectListStart; i < gObjectCount; i++) {
         current_obj = gObjPtrList[i];
-        if (!(current_obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) &&
-            (current_obj->behaviorId == BHV_PARK_WARDEN)) {
+        if (!(current_obj->segment.trans.flags & OBJ_FLAGS_PARTICLE) && (current_obj->behaviorId == BHV_PARK_WARDEN)) {
             return current_obj;
         }
     }
@@ -4332,7 +4318,7 @@ void race_transition_adventure(s32 updateRate) {
                 sp30 = i;
             }
             if (racer->magnetSoundMask != NULL) {
-                sound_stop(racer->magnetSoundMask);
+                sndp_stop(racer->magnetSoundMask);
             }
             if (racer->shieldSoundMask != NULL) {
                 func_800096F8(racer->shieldSoundMask);
@@ -4344,7 +4330,7 @@ void race_transition_adventure(s32 updateRate) {
         racer_sound_free((*gRacers)[0]);
         hud_audio_init();
         reset_rocket_sound_timer();
-        sound_stop_all();
+        sndp_stop_all_looped();
         if (is_in_two_player_adventure()) {
             set_scene_viewport_num(0);
             set_active_viewports_and_max(0);
@@ -4402,11 +4388,7 @@ void race_transition_adventure(s32 updateRate) {
         set_anti_aliasing(TRUE);
         disable_racer_input();
         if (!(get_current_level_race_type() & RACETYPE_CHALLENGE_BATTLE)) {
-            if (osTvType == OS_TV_TYPE_PAL) {
-                cutsceneTimerLimit = 415;
-            } else {
-                cutsceneTimerLimit = 540;
-            }
+            cutsceneTimerLimit = 540;
             gBalloonCutsceneTimer += updateRate;
             if (gBalloonCutsceneTimer < cutsceneTimerLimit) {
                 minimap_fade(1);
@@ -4529,9 +4511,6 @@ void race_finish_time_trial(void) {
                 gTimeTrialCharacter = settings->racers[0].character;
                 timetrial_swap_player_ghost(get_current_map_id());
                 gHasGhostToSave = TRUE;
-            }
-            if (osTvType == OS_TV_TYPE_PAL) {
-                bestCourseTime = (bestCourseTime * 6) / 5;
             }
             if (bestCourseTime < gTTGhostTimeToBeat) {
                 if (gTimeTrialStaffGhost) {
@@ -4828,6 +4807,7 @@ s32 get_checkpoint_count(void) {
 
 /**
  * Returns the group of racer objects.
+ * Official Name: objGetPlayerlist
  */
 Object **get_racer_objects(s32 *numRacers) {
     *numRacers = gNumRacers;
@@ -4888,7 +4868,7 @@ void spectate_update(void) {
     gCameraObjCount = 0;
     for (i = 0; i < gObjectCount; i++) {
         objPtr = gObjPtrList[i];
-        if (!(objPtr->segment.trans.flags & OBJ_FLAGS_DEACTIVATED)) {
+        if (!(objPtr->segment.trans.flags & OBJ_FLAGS_PARTICLE)) {
             if (objPtr->behaviorId == BHV_CAMERA_CONTROL) {
                 if (gCameraObjCount < CAMCONTROL_COUNT) {
                     (*gCameraObjList)[gCameraObjCount] = objPtr;
@@ -5010,7 +4990,7 @@ void ainode_update(void) {
     // Store each existing node ID in the temporary vars.
     for (i = 0; i < gObjectCount; i++) {
         obj = gObjPtrList[i];
-        if (!(obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && obj->behaviorId == BHV_AINODE) {
+        if (!(obj->segment.trans.flags & OBJ_FLAGS_PARTICLE) && obj->behaviorId == BHV_AINODE) {
             aiNodeEntry = &obj->segment.level_entry->aiNode;
             index2 = aiNodeEntry->nodeID;
             if (!(index2 & AINODE_COUNT)) {
@@ -5206,7 +5186,6 @@ s32 ainode_find_next(s32 nodeId, s32 arg1, s32 direction) {
     }
 }
 
-#ifdef NON_MATCHING
 s16 func_8001CD28(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     s16 result;
     s32 sp370;
@@ -5290,8 +5269,8 @@ s16 func_8001CD28(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
                         spD4[sp36C] = spD4[sp36C - 1];
                         spD4[sp36C - 1] = temp;
                         temp = sp54[sp36C];
-                        sp54[sp36C] = sp54[sp36C - 1];
-                        sp54[sp36C - 1] = temp;
+                        sp54[sp36C] = sp54[sp36C - 1] & 0xFF & 0xFF & 0xFF;
+                        sp54[sp36C - 1] = temp & 0xFF;
                         sp36C--;
                     }
                 }
@@ -5307,7 +5286,7 @@ s16 func_8001CD28(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
             aiNode = &aiNodeObj->unk64->ai_node;
             someBool = 0;
             if (arg1 & 0x100) {
-                if ((arg1 & AINODE_COUNT) == spD4[var_t1]) {
+                if ((arg1 & 0x7F) == spD4[var_t1]) {
                     result = var_s3;
                 }
             } else if (arg1 == aiNodeEntry->unk8) {
@@ -5330,9 +5309,6 @@ s16 func_8001CD28(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     }
     return result;
 }
-#else
-#pragma GLOBAL_ASM("asm/nonmatchings/objects/func_8001CD28.s")
-#endif
 
 /**
  * Signal that AI nodes exist, so the game knows to initialise them.
@@ -5495,7 +5471,7 @@ void obj_bridge_pos(s32 timing, f32 *x, f32 *y, f32 *z) {
     for (i = 0; i < gObjectCount; i++) {
         current_obj = gObjPtrList[i];
 
-        if (current_obj != NULL && !(current_obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) &&
+        if (current_obj != NULL && !(current_obj->segment.trans.flags & OBJ_FLAGS_PARTICLE) &&
             current_obj->behaviorId == BHV_RAMP_SWITCH && current_obj->properties.common.unk0 == timing) {
             *x = current_obj->segment.trans.x_position;
             *y = current_obj->segment.trans.y_position;
@@ -5542,7 +5518,7 @@ void func_8001E4C4(void) {
     }
     for (i = 0; i < gObjectCount; i++) {
         obj = gObjPtrList[i];
-        if (obj != NULL && !(obj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && obj->behaviorId == BHV_ANIMATION) {
+        if (obj != NULL && !(obj->segment.trans.flags & OBJ_FLAGS_PARTICLE) && obj->behaviorId == BHV_ANIMATION) {
             entryAnimation = &obj->segment.level_entry->animation;
             if (entryAnimation->channel != gCutsceneID && entryAnimation->channel != 20) {
                 obj->segment.trans.flags |= OBJ_FLAGS_UNK_2000;
@@ -5725,7 +5701,7 @@ void obj_init_animcamera(Object *arg0, Object *animObj) {
     anim->unk3C = animEntry->fadeAlpha;
     anim->unk42 = 0xFF;
     if (anim->unk18 != NULL) {
-        sound_stop(anim->unk18);
+        sndp_stop(anim->unk18);
     }
     anim->unk18 = NULL;
     anim->unk43 = animEntry->unk30;
@@ -6070,7 +6046,7 @@ void mode_init_taj_race(void) {
         D_8011ADC0 = 1;
         levelHeader->laps = 3;
         levelHeader->race_type = RACETYPE_DEFAULT;
-        func_8009F034();
+        hud_init_element();
         // clang-format off
         for (i = 0; i < ARRAY_COUNT(racer->lap_times); i++) { racer->lap_times[i] = 0; } // Must be a single line.
         // clang-format on
@@ -6106,7 +6082,7 @@ void mode_init_taj_race(void) {
         racerObj->interactObj->pushForce = 2;
 
         for (j = gObjectListStart; j < gObjectCount; j++) {
-            if (!(gObjPtrList[j]->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) &&
+            if (!(gObjPtrList[j]->segment.trans.flags & OBJ_FLAGS_PARTICLE) &&
                 gObjPtrList[j]->behaviorId == BHV_PARK_WARDEN) {
                 racer->unk154 = gObjPtrList[j];
             }
@@ -6176,7 +6152,7 @@ void mode_end_taj_race(s32 reason) {
     gRacersByPosition[0] = (*gRacers)[0];
     gNumRacers = 1;
     for (i = gObjectListStart; i < gObjectCount; i++) {
-        if (!(gObjPtrList[i]->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) &&
+        if (!(gObjPtrList[i]->segment.trans.flags & OBJ_FLAGS_PARTICLE) &&
             gObjPtrList[i]->behaviorId == BHV_PARK_WARDEN) {
             obj = gObjPtrList[i];
         }
@@ -6233,7 +6209,7 @@ CheckpointNode *func_800230D0(Object *obj, Object_Racer *racer) {
         lastCheckpointNode = NULL;
         for (i = 0; i < gObjectCount; i++) {
             ptrList = gObjPtrList[i];
-            if (!(ptrList->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && (ptrList->behaviorId == BHV_SETUP_POINT)) {
+            if (!(ptrList->segment.trans.flags & OBJ_FLAGS_PARTICLE) && (ptrList->behaviorId == BHV_SETUP_POINT)) {
                 if (ptrList->properties.setupPoint.racerIndex == 0) {
                     obj->segment.trans.x_position = ptrList->segment.trans.x_position;
                     obj->segment.trans.y_position = ptrList->segment.trans.y_position;
@@ -6325,7 +6301,7 @@ Object *find_furthest_telepoint(f32 x, f32 z) {
     if (gObjectCount > 0) {
         do {
             tempObj = gObjPtrList[i];
-            if (!(tempObj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && tempObj->behaviorId == BHV_TAJ_TELEPOINT) {
+            if (!(tempObj->segment.trans.flags & OBJ_FLAGS_PARTICLE) && tempObj->behaviorId == BHV_TAJ_TELEPOINT) {
                 diffX = tempObj->segment.trans.x_position - x;
                 diffZ = tempObj->segment.trans.z_position - z;
                 tempObj = gObjPtrList[i]; // fakematch

@@ -9,6 +9,7 @@
 #include "racer.h"
 #include "save_data.h"
 #include "objects.h"
+#include "main.h"
 
 #undef VERSION
 #define VERSION VERSION_80
@@ -44,8 +45,8 @@ void allocate_object_model_pools(void) {
     s32 i;
     s32 checksum;
 
-    gModelCache = mempool_alloc_safe(MODEL_LOADED_MAX * ((sizeof(uintptr_t)) * 2), COLOUR_TAG_GREEN);
-    D_8011D628 = mempool_alloc_safe(100 * sizeof(uintptr_t), COLOUR_TAG_GREEN);
+    gModelCache = mempool_alloc_safe(MODEL_LOADED_MAX * ((sizeof(uintptr_t)) * 2), PP_RAM_ASSET_CACHE);
+    D_8011D628 = mempool_alloc_safe(100 * sizeof(uintptr_t), PP_RAM_ASSET_CACHE);
     gModelCacheCount = 0;
     D_8011D634 = 0;
     gObjectModelTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_MODELS_TABLE);
@@ -56,7 +57,7 @@ void allocate_object_model_pools(void) {
     gNumModelIDs--;
     gAnimationTable = (s16 *) load_asset_section_from_rom(ASSET_ANIMATION_IDS);
     gObjectAnimationTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_ANIMATIONS_TABLE);
-    D_8011D644 = (s32) mempool_alloc_safe(0xC00, COLOUR_TAG_GREEN);
+    D_8011D644 = (s32) mempool_alloc_safe(0xC00, PP_RAM_ASSET_CACHE);
     D_8011D640 = 0;
 
 #ifdef ANTI_TAMPER
@@ -97,8 +98,8 @@ Object_68 *object_model_init(s32 modelID, s32 flags) {
 
     // Check if the model already exists in the cache.
     for (i = 0; i < gModelCacheCount; i++) {
-        if (modelID == gModelCache[MODELCACHE_ID(i)]) {
-            objMdl = (ObjectModel *) gModelCache[MODELCACHE_DATA(i)];
+        if (modelID == gModelCache[ASSETCACHE_ID(i)]) {
+            objMdl = (ObjectModel *) gModelCache[ASSETCACHE_PTR(i)];
             ret = model_init_type(objMdl, flags);
             if (ret != NULL) {
                 objMdl->references++;
@@ -128,7 +129,7 @@ Object_68 *object_model_init(s32 modelID, s32 flags) {
     temp_s0 = gObjectModelTable[modelID];
     sp48 = gObjectModelTable[modelID + 1] - temp_s0;
     modelSize = get_asset_uncompressed_size(ASSET_OBJECT_MODELS, temp_s0) + sizeof(ObjectModel);
-    objMdl = (ObjectModel *) mempool_alloc(modelSize, COLOUR_TAG_RED);
+    objMdl = (ObjectModel *) mempool_alloc(modelSize, PP_RAM_OBJMDL);
     if (objMdl == NULL) {
 #if VERSION >= VERSION_79
         if (var_a2) {
@@ -159,12 +160,14 @@ Object_68 *object_model_init(s32 modelID, s32 flags) {
     objMdl->numberOfAnimations = 0;
     objMdl->animations = NULL;
     sp3F = 0;
+    set_texture_colour_tag(PP_RAM_OBJTEX);
     for (i = 0; i < objMdl->numberOfTextures; i++) {
         objMdl->textures[i].texture = load_texture(((s32) objMdl->textures[i].texture) | 0x8000);
         if (objMdl->textures[i].texture == NULL) {
             sp3F = 1;
         }
     }
+    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
     if (!sp3F) {
         for (i = 0; i < objMdl->numberOfBatches; i++) {
             if ((objMdl->batches[i].textureIndex != 0xFF) &&
@@ -175,8 +178,8 @@ Object_68 *object_model_init(s32 modelID, s32 flags) {
         if ((func_80060EA8(objMdl) == 0) && (func_80061A00(objMdl, modelID) == 0)) {
             ret = model_init_type(objMdl, flags);
             if (ret != NULL) {
-                gModelCache[MODELCACHE_ID(cacheIndex)] = modelID;
-                gModelCache[MODELCACHE_DATA(cacheIndex)] = (s32) objMdl;
+                gModelCache[ASSETCACHE_ID(cacheIndex)] = modelID;
+                gModelCache[ASSETCACHE_PTR(cacheIndex)] = (s32) objMdl;
                 if (gModelCacheCount < MODEL_LOADED_MAX) {
                     ret->animUpdateTimer = 0;
                     return ret;
@@ -207,7 +210,7 @@ Object_68 *model_init_type(ObjectModel *model, s32 flags) {
 
     if ((model->numberOfAnimations != 0) && (flags & OBJECT_SPAWN_ANIMATION)) {
         temp = ((model->numberOfVertices * 2) * sizeof(Vertex)) + 36;
-        result = (Object_68 *) mempool_alloc((model->unk4A * 6) + temp, COLOUR_TAG_BLUE);
+        result = (Object_68 *) mempool_alloc((model->unk4A * 6) + temp, PP_RAM_OBJGFX);
         if (result == NULL) {
             return NULL;
         }
@@ -217,7 +220,7 @@ Object_68 *model_init_type(ObjectModel *model, s32 flags) {
         result->modelType = MODELTYPE_ANIMATED;
     } else if ((model->unk40 != NULL) && (flags & OBJECT_SPAWN_UNK01)) {
         temp = (model->numberOfVertices * sizeof(Vertex)) + 36;
-        result = (Object_68 *) mempool_alloc(temp, COLOUR_TAG_BLUE);
+        result = (Object_68 *) mempool_alloc(temp, PP_RAM_OBJGFX);
         if (result == NULL) {
             return NULL;
         }
@@ -227,7 +230,7 @@ Object_68 *model_init_type(ObjectModel *model, s32 flags) {
         result->vertices[2] = NULL;
         result->modelType = MODELTYPE_SHADE;
     } else {
-        result = (Object_68 *) mempool_alloc(36, COLOUR_TAG_BLUE);
+        result = (Object_68 *) mempool_alloc(36, PP_RAM_OBJGFX);
         if (result == NULL) {
             return NULL;
         }
@@ -302,7 +305,7 @@ void free_3d_model(ObjectModel **modelPtr) {
 
     modelIndex = -1;
     for (i = 0; i < gModelCacheCount; i++) {
-        if (model == (ObjectModel *) gModelCache[MODELCACHE_DATA(i)]) {
+        if (model == (ObjectModel *) gModelCache[ASSETCACHE_PTR(i)]) {
             modelIndex = i;
         }
     }
@@ -311,8 +314,8 @@ void free_3d_model(ObjectModel **modelPtr) {
         free_model_data(model);
         D_8011D628[D_8011D634] = modelIndex;
         D_8011D634++;
-        gModelCache[MODELCACHE_ID(modelIndex)] = -1;
-        gModelCache[MODELCACHE_DATA(modelIndex)] = -1;
+        gModelCache[ASSETCACHE_ID(modelIndex)] = -1;
+        gModelCache[ASSETCACHE_PTR(modelIndex)] = -1;
         mempool_free(modelPtr);
     }
 }
@@ -329,7 +332,7 @@ void free_model_data(ObjectModel *mdl) {
         do {
             TextureHeader *header = mdl->textures[textureIndex].texture;
             if (header != NULL) {
-                free_texture(header);
+                tex_free(header);
                 numTextures = mdl->numberOfTextures;
             }
             texturesFreed++;
@@ -444,7 +447,7 @@ s32 func_80061A00(ObjectModel *model, s32 animTableIndex) {
         }
     }
     model->numberOfAnimations = end - start;
-    allocAnimData = (ObjectModel_44 *) mempool_alloc(model->numberOfAnimations * 8, COLOUR_TAG_RED);
+    allocAnimData = (ObjectModel_44 *) mempool_alloc(model->numberOfAnimations * 8, PP_RAM_ANIMATIONS);
     model->animations = allocAnimData;
     if (allocAnimData == NULL) {
         return 1;
@@ -456,7 +459,7 @@ s32 func_80061A00(ObjectModel *model, s32 animTableIndex) {
         animAddress = gObjectAnimationTable[start + 1] - assetOffset;
         assetSize = animAddress;
         size = get_asset_uncompressed_size(ASSET_OBJECT_ANIMATIONS, assetOffset) + 0x80;
-        model->animations[i].animData = (u8 *) mempool_alloc(size, COLOUR_TAG_RED);
+        model->animations[i].animData = (u8 *) mempool_alloc(size, PP_RAM_ANIMATIONS);
         if (model->animations[i].animData == NULL) {
             for (j = 0; j < i2; j++) {
                 mempool_free(model->animations[j].animData);

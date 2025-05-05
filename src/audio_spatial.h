@@ -16,31 +16,17 @@ typedef struct floatXYZVals {
     f32 z2;
 } floatXYZVals;
 
-/* Size: 0x0C / 12 bytes - Possibly just a Vec3f? */
-typedef struct unk8011A6D8_04 {
-  /* 0x00 */ f32 unk0;
-  /* 0x04 */ f32 unk4;
-  /* 0x08 */ f32 unk8;
-} unk8011A6D8_04;
-
 /* Size: 0x180 / 384 bytes */
 typedef struct unk80119C58 {
-    union {
-        /* 0x00 */ f32 unk0_01;
-        /* 0x00 */ u8 unk0_02;
-        /* 0x00 */ s32 unk0_03;
-    } unk0;
-    union {
-        /* 0x004 */ f32 unk4_floats[30 * 3]; // Should be a Vec3f, but that just doesn't match
-        /* 0x004 */ Vec3f unk4_vec[30];
-    } unk4;
+    /* 0x000 */ u8 unk0_02;
+    /* 0x004 */ f32 unk4_floats[30 * 3]; // Should be a Vec3f, but that just doesn't match
     /* 0x16C */ s32 soundID;
     /* 0x170 */ s32 unk170;
     /* 0x174 */ u8 unk174;
     /* 0x175 */ u8 unk175;
     /* 0x176 */ u8 unk176;
     /* 0x177 */ u8 unk177;
-    /* 0x178 */ ALSoundState *soundPtr;
+    /* 0x178 */ SoundHandle soundPtr;
     /* 0x17C */ s8 unk17C;
     /* 0x17D */ u8 unk17D;
     /* 0x17E */ u8 unk17E;
@@ -48,27 +34,12 @@ typedef struct unk80119C58 {
 
 /* Size: 0xC0 / 192 bytes - Thought it was a LevelHeader, but that didn't match other usages */
 typedef struct unk8011A6D8 {
-  union {
-    /* 0x00 */ f32 unk0_01;
-    /* 0x00 */ u8 unk0_02;
-  } unk0;
-  union {
-    f32 unk4_floats[15 * 3];
-    Vec3f unk4_vec[15];
-  } unk4;
+  /* 0x00 */ u8 unk0_02;
+  /* 0x04 */ f32 unk4_floats[15 * 3];
   /* 0xB8 */ s8 unkB8;
   /* 0xB9 */ u8 padB9[0x03];
   /* 0xBC */ f32 unkBC;
 } unk8011A6D8;
-
-typedef struct unk800A414_arg3 {
-    f32 unk0;
-    f32 unk4;
-    f32 unk8;
-    f32 unkC;
-    f32 unk10;
-    f32 unk14;
-} unk800A414_arg3;
 
 void audioline_on(void);
 void func_800096F8(SoundMask *);
@@ -91,7 +62,7 @@ void audioline_reverb_create(f32, f32, f32, u8, u8, u8);
 void audioline_reverb(s32 *soundState, f32 x, f32 y, f32 z);
 
 s32 audioline_distance(f32 inX, f32 inY, f32 inZ, f32 coords[6], f32 *outX, f32 *outY, f32 *outZ);
-void func_80008174(void); // Non Matching
+void audioline_reset(void);
 void func_80008438(Object **arg0, s32 numRacers, s32 updateRate); // Non Matching
 void func_80006FC8(Object **objs, s32 numRacers, ObjectSegment *segment, u8 arg3, s32 updateRate); // Non Matching
 u8 func_80009D6C(unk8011A6D8 *, f32, f32, f32);

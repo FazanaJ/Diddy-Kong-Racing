@@ -88,7 +88,7 @@ void init_level_globals(void) {
     s32 checksumCount;
     u8 *header;
     s32 j;
-    header = mempool_alloc_safe(sizeof(LevelHeader), COLOUR_TAG_YELLOW);
+    header = mempool_alloc_safe(sizeof(LevelHeader), PP_RAM_ASSETTABLE);
     gTempAssetTable = (s32 *) load_asset_section_from_rom(ASSET_LEVEL_HEADERS_TABLE);
     i = 0;
     while (i < 16) {
@@ -99,7 +99,7 @@ void init_level_globals(void) {
         gNumberOfLevelHeaders++;
     }
     gNumberOfLevelHeaders--;
-    gGlobalLevelTable = mempool_alloc_safe(gNumberOfLevelHeaders * sizeof(LevelGlobalData), COLOUR_TAG_YELLOW);
+    gGlobalLevelTable = mempool_alloc_safe(gNumberOfLevelHeaders * sizeof(LevelGlobalData), PP_RAM_ASSETTABLE);
     gCurrentLevelHeader = (LevelHeader *) header;
     gNumberOfWorlds = -1;
     for (i = 0; i < gNumberOfLevelHeaders; i++) {
@@ -118,7 +118,7 @@ void init_level_globals(void) {
         gGlobalLevelTable[i].unk4 = gCurrentLevelHeader->unkB0;
     }
     gNumberOfWorlds++;
-    D_80121178 = mempool_alloc_safe(gNumberOfWorlds, COLOUR_TAG_YELLOW);
+    D_80121178 = mempool_alloc_safe(gNumberOfWorlds, PP_RAM_ASSETTABLE);
     for (i = 0; i < gNumberOfWorlds; i++) {
         D_80121178[i] = -1;
     }
@@ -133,8 +133,8 @@ void init_level_globals(void) {
     for (i = 0; gTempAssetTable[i] != (-1); i++) {}
     i--;
     size = gTempAssetTable[i] - gTempAssetTable[0];
-    gLevelNames = mempool_alloc_safe(i * sizeof(s32), COLOUR_TAG_YELLOW);
-    gTempLevelNames = mempool_alloc_safe(size, COLOUR_TAG_YELLOW);
+    gLevelNames = mempool_alloc_safe(i * sizeof(s32), PP_RAM_ASSETTABLE);
+    gTempLevelNames = mempool_alloc_safe(size, PP_RAM_ASSETTABLE);
     load_asset_to_address(ASSET_LEVEL_NAMES, (u32) gTempLevelNames, 0, size);
     for (size = 0; size < i; size++) {
         gLevelNames[size] = (char *) &gTempLevelNames[gTempAssetTable[size]];
@@ -287,11 +287,11 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
     }
 
     if (numberOfPlayers == ONE_PLAYER) {
-        set_sound_channel_count(8);
+        sndp_set_active_sound_limit(8);
     } else if (numberOfPlayers == TWO_PLAYERS) {
-        set_sound_channel_count(12);
+        sndp_set_active_sound_limit(12);
     } else {
-        set_sound_channel_count(16);
+        sndp_set_active_sound_limit(16);
     }
     settings = get_settings();
     gTempAssetTable = (s32 *) load_asset_section_from_rom(ASSET_LEVEL_HEADERS_TABLE);
@@ -305,7 +305,7 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
 
     offset = gTempAssetTable[levelId];
     size = gTempAssetTable[levelId + 1] - offset;
-    gCurrentLevelHeader = (LevelHeader *) mempool_alloc_safe(size, COLOUR_TAG_YELLOW);
+    gCurrentLevelHeader = (LevelHeader *) mempool_alloc_safe(size, PP_RAM_ASSETTABLE);
     load_asset_to_address(ASSET_LEVEL_HEADERS, (u32) gCurrentLevelHeader, offset, size);
     D_800DD330 = 0;
     prevLevelID = levelId;
@@ -372,7 +372,7 @@ void load_level(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
         mempool_free(gCurrentLevelHeader);
         offset = gTempAssetTable[levelId];
         size = gTempAssetTable[levelId + 1] - offset;
-        gCurrentLevelHeader = mempool_alloc_safe(size, COLOUR_TAG_YELLOW);
+        gCurrentLevelHeader = mempool_alloc_safe(size, PP_RAM_ASSETTABLE);
         load_asset_to_address(ASSET_LEVEL_HEADERS, (u32) gCurrentLevelHeader, offset, size);
     }
     mempool_free(gTempAssetTable);
@@ -544,6 +544,7 @@ u8 get_current_level_race_type(void) {
 
 /**
  * Return the header data of the current level.
+ * Official Name: levelGetLevel
  */
 LevelHeader *get_current_level_header(void) {
     return gCurrentLevelHeader;
@@ -594,7 +595,7 @@ void clear_audio_and_track(void) {
     free_ai_behaviour_table();
     bgdraw_primcolour(0, 0, 0);
     mempool_free(gCurrentLevelHeader);
-    sound_stop_all();
+    sndp_stop_all_looped();
     music_stop();
     music_jingle_stop();
     music_channel_reset_all();
@@ -602,14 +603,14 @@ void clear_audio_and_track(void) {
     free_lights();
 #endif
     free_track();
-    func_80008174();
+    audioline_reset();
     sound_volume_change(VOLUME_NORMAL);
     if (gCurrentLevelHeader->weatherEnable > 0) {
         weather_free();
     }
     //! @bug this will never be true because skyDome is signed.
     if (gCurrentLevelHeader->skyDome == -1) {
-        free_texture(gCurrentLevelHeader->unkA4);
+        tex_free(gCurrentLevelHeader->unkA4);
     }
 }
 
@@ -662,7 +663,7 @@ void set_ai_level(s8 *aiLevelTable) {
     }
     temp2 = gTempAssetTable[aiLevel];
     temp = gTempAssetTable[aiLevel + 1] - temp2;
-    gAIBehaviourTable = mempool_alloc_safe(temp, COLOUR_TAG_YELLOW);
+    gAIBehaviourTable = mempool_alloc_safe(temp, PP_RAM_ASSETTABLE);
     load_asset_to_address(ASSET_AI_BEHAVIOUR, (u32) gAIBehaviourTable, temp2, temp);
     mempool_free(gTempAssetTable);
 }

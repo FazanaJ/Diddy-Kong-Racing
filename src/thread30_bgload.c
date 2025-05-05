@@ -3,6 +3,7 @@
 #include <ultra64.h>
 #include "game.h"
 #include "stacks.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -15,7 +16,7 @@ s32 gThread30LoadDelay = 0;
 
 /************ .bss ************/
 
-OSThread gThread30;
+OSThread *gThread30;
 OSMesgQueue gThread30MesgQueue;
 OSMesg gThread30Message[2];
 u64 *gThread30Stack;
@@ -34,9 +35,10 @@ void bgload_init(void) {
  * Official Name: amStop
  */
 void bgload_kill(void) {
-    osStopThread(&gThread30);
-    osDestroyThread(&gThread30);
+    osStopThread(gThread30);
+    osDestroyThread(gThread30);
     mempool_free(gThread30Stack);
+    mempool_free(gThread30);
     gThread30Stack = NULL;
 }
 
@@ -76,12 +78,12 @@ s32 bgload_start(s32 levelId, s32 cutsceneId) {
         gThread30LevelIdToLoad = levelId;
         gThread30CutsceneIdToLoad = cutsceneId;
         gThread30NeedToLoadLevel = TRUE;
-        gThread30Stack = mempool_alloc_safe(STACK_BGLOAD + 0x10, COLOUR_TAG_WHITE);
-        if ((u32) gThread30Stack & 0xF) {
-            gThread30Stack = (u64 *) align16((u8 *) gThread30Stack);
-        }
-        osCreateThread(&gThread30, 30, &thread30_bgload, NULL, gThread30Stack + STACKSIZE(STACK_BGLOAD), 8);
-        osStartThread(&gThread30);
+        gThread30Stack = mempool_alloc_safe(STACK_BGLOAD, PP_RAM_STACK);
+        gThread30 = mempool_alloc_safe(sizeof(OSThread), PP_RAM_STACK);
+        osCreateThread(gThread30, 30, &thread30_bgload, NULL, gThread30Stack + STACKSIZE(STACK_BGLOAD), 8);
+        gThread30Stack[STACKSIZE(STACK_BGLOAD) - 1] = 0;
+        gThread30Stack[0] = 0;
+        osStartThread(gThread30);
         return TRUE;
     }
     return FALSE;

@@ -52,8 +52,7 @@ typedef struct epcInfo {
 /* 0x11C */ s32 epc;
 /* 0x120 */ s32 cause;
 /* 0x124 */ s32 badvaddr;
-/* 0x128 */ s32 unk128;
-/* 0x12C */ s32 unk12C;
+/* 0x128 */ u32 unk128[2];
 /* 0x130 */ f32 objectStackTrace[3];
 /* 0x13C */ u8 pad13C[0x74];
 } epcInfo;
@@ -67,6 +66,11 @@ typedef struct unk800D2470 {
 /*  0x10 */ u8 pad10[0x108];
 /* 0x118 */ s32 unk118;
 } unk800D2470;
+
+typedef struct {
+    u32 address;
+    char name[32];
+} MapSymbol;
 
 enum EPCScreenPage {
     EPC_PAGE_REGISTER,
@@ -84,6 +88,21 @@ enum ObjectStackTraceID {
     OBJECT_DRAW
 };
 
+enum CrashPages {
+    CRASH_PAGE_GPREGS,
+    CRASH_PAGE_FPREGS,
+    CRASH_PAGE_EXTRA,
+    CRASH_PAGE_STACKS,
+    CRASH_PAGE_LOG,
+#ifdef DEBUG
+    CRASH_PAGE_MEMORY,
+    CRASH_PAGE_ASSERTS,
+#endif
+    CRASH_PAGE_EMPTY,
+
+    CRASH_PAGE_COUNT,
+};
+
 void enable_interupts_on_main(void);
 void stop_all_threads_except_main(void);
 void update_object_stack_trace(s32 index, s32 value);
@@ -94,5 +113,6 @@ void write_epc_data_to_cpak(void);
 void dump_memory_to_cpak(s32 epc, s32 size, u32 colourTag);
 void thread0_Main(UNUSED void *unused);
 void render_epc_lock_up_display(void);
+void crash_nomemory(s32 size, s32 colourTag);
 
 #endif

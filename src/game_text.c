@@ -6,6 +6,7 @@
 #include "game.h"
 #include "joypad.h"
 #include "PRinternal/viint.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -53,7 +54,7 @@ s32 D_8012A7D4;
  * Set the default values of dialogue and allocate memory for the active text entry.
  */
 void init_dialogue_text(void) {
-    gCurrentMessageText[0] = (char *) mempool_alloc_safe(0x780, COLOUR_TAG_GREEN);
+    gCurrentMessageText[0] = (char *) mempool_alloc_safe(0x780, PP_RAM_TEXT);
     gCurrentMessageText[1] = gCurrentMessageText[0] + 0x3C0;
     D_8012A7D4 = 0;
     gShowSubtitles = FALSE;
@@ -67,13 +68,8 @@ void init_dialogue_text(void) {
     gDialogueXPos1 = 32;
     gDialogueXPos2 = 288;
 #endif
-    if (osTvType == OS_TV_TYPE_PAL) {
-        gDialogueYPos1 = 224;
-        gDialogueYPos2 = 248;
-    } else {
-        gDialogueYPos1 = SCREEN_HEIGHT - 38;
-        gDialogueYPos2 = SCREEN_HEIGHT - 18;
-    }
+    gDialogueYPos1 = SCREEN_HEIGHT - 38;
+    gDialogueYPos2 = SCREEN_HEIGHT - 18;
     clear_dialogue_box_open_flag(6);
 }
 
@@ -234,7 +230,7 @@ void process_subtitles(s32 updateRate) {
  * Assign the entries to a pointer table, then calculate the number of entries.
  */
 void load_game_text_table(void) {
-    gGameTextTable[0] = (GameTextTableStruct *) mempool_alloc_safe(0x800, COLOUR_TAG_GREEN);
+    gGameTextTable[0] = (GameTextTableStruct *) mempool_alloc_safe(0x800, PP_RAM_ASSETTABLE);
     gGameTextTableEntries[0] = (char *) &gGameTextTable[0]->entries[32];
     gGameTextTableEntries[1] = &gGameTextTableEntries[0][960];
     D_8012A7A4 = 0;
@@ -278,11 +274,7 @@ void reset_delayed_text(void) {
  * Set the delayed text ID and delay (in seconds)
  */
 void set_delayed_text(s32 textID, f32 delay) {
-    if (osTvType == OS_TV_TYPE_PAL) {
-        gTextboxDelay = delay * 50.0;
-    } else {
-        gTextboxDelay = delay * 60.0;
-    }
+    gTextboxDelay = delay * 60.0;
     gDelayedTextID = textID;
 }
 
@@ -488,15 +480,8 @@ s32 func_800C38B4(s32 arg0, TextBox *textbox) {
             case 1:
                 textbox->left = var_s0[1] & 0xFF;
                 textbox->top = D_8012A7A0[arg0 + 2] & 0xFF;
-                if (osTvType == OS_TV_TYPE_PAL) {
-                    temp = textbox->top;
-                    textbox->top = (textbox->top * 264) / 240;
-                    temp = textbox->top - temp;
-                } else {
-                    temp = 0;
-                }
                 textbox->right = (D_8012A7A0[arg0 + 3] & 0xFF) + 65;
-                textbox->bottom = (D_8012A7A0[arg0 + 4] & 0xFF) + temp;
+                textbox->bottom = (D_8012A7A0[arg0 + 4] & 0xFF);
                 arg0 += 5;
                 set_current_dialogue_box_coords(1, textbox->left, textbox->top, textbox->right, textbox->bottom);
                 var_s0 = &D_8012A7A0[arg0];

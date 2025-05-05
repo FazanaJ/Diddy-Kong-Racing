@@ -5,12 +5,12 @@
 #include "macros.h"
 #include "asset_enums.h"
 #include "asset_loading.h"
-#include "audio_internal.h"
 #include "audiomgr.h"
 #include "audiosfx.h"
 #include "audio_spatial.h"
 #include "sched.h"
 #include "libultra/src/audio/seqchannel.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -35,7 +35,7 @@ u8 gBlockVoiceLimitChange = FALSE;
 /************ .bss ************/
 
 // The audio heap is located at the start of the BSS section.
-u8 gAudioHeapStack[AUDIO_HEAP_SIZE];
+u8 *gAudioHeapStack;
 
 ALHeap gALHeap;
 ALSeqFile *gSequenceTable;
@@ -66,9 +66,9 @@ ALCSeq gJingleSequence;
 u8 gSkipResetChannels; // Stored and used by a single function, but redundant.
 u8 gAudioVolumeSetting;
 u32 gDynamicMusicChannelMask;
-SoundMask *gGlobalSoundMask;
-SoundMask *gSpatialSoundMask;
-SoundMask *gRacerSoundMask;
+SoundHandle gGlobalSoundMask;
+SoundHandle gSpatialSoundMask;
+SoundHandle gRacerSoundMask;
 
 /******************************/
 
@@ -86,35 +86,39 @@ void audio_init(OSSched *sc) {
     audioMgrConfig audConfig;
 
     seqLength = 0;
-    alHeapInit(&gALHeap, gAudioHeapStack, sizeof(gAudioHeapStack));
+    gAudioHeapStack = (u8 *) mempool_alloc(AUDIO_HEAP_SIZE, PP_RAM_AUDIOHEAP);
+    if ((s32) gAudioHeapStack & 0xF) {
+        gAudioHeapStack = align16(gAudioHeapStack);
+    }
+    alHeapInit(&gALHeap, gAudioHeapStack, AUDIO_HEAP_SIZE);
 
     addrPtr = (s32 *) load_asset_section_from_rom(ASSET_AUDIO_TABLE);
-    gSoundBank = (ALBankFile *) mempool_alloc_safe(addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1], COLOUR_TAG_CYAN);
+    gSoundBank = (ALBankFile *) mempool_alloc_safe(addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1], PP_RAM_SOUNDBANK);
     load_asset_to_address(ASSET_AUDIO, (u32) gSoundBank, addrPtr[ASSET_AUDIO_1],
                           addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1]);
     alBnkfNew(gSoundBank, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_2]));
 
     gSoundTableSize = addrPtr[ASSET_AUDIO_7] - addrPtr[ASSET_AUDIO_6];
-    gSoundTable = (SoundData *) mempool_alloc_safe(gSoundTableSize, COLOUR_TAG_CYAN);
+    gSoundTable = (SoundData *) mempool_alloc_safe(gSoundTableSize, PP_RAM_AUD_TABLE);
     load_asset_to_address(ASSET_AUDIO, (u32) gSoundTable, addrPtr[ASSET_AUDIO_6], gSoundTableSize);
     gSoundCount = gSoundTableSize / sizeof(SoundData);
 
     gSeqSoundTableSize = addrPtr[ASSET_AUDIO_6] - addrPtr[ASSET_AUDIO_5];
-    gSeqSoundTable = (MusicData *) mempool_alloc_safe(gSeqSoundTableSize, COLOUR_TAG_CYAN);
+    gSeqSoundTable = (MusicData *) mempool_alloc_safe(gSeqSoundTableSize, PP_RAM_AUD_TABLE);
     load_asset_to_address(ASSET_AUDIO, (u32) gSeqSoundTable, addrPtr[ASSET_AUDIO_5], gSeqSoundTableSize);
     gSeqSoundCount = gSeqSoundTableSize / sizeof(MusicData);
 
-    gSequenceBank = (ALBankFile *) mempool_alloc_safe(addrPtr[ASSET_AUDIO_0], COLOUR_TAG_CYAN);
+    gSequenceBank = (ALBankFile *) mempool_alloc_safe(addrPtr[ASSET_AUDIO_0], PP_RAM_SOUNDBANK);
     load_asset_to_address(ASSET_AUDIO, (u32) gSequenceBank, 0, addrPtr[ASSET_AUDIO_0]);
     alBnkfNew(gSequenceBank, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_0]));
     gSequenceTable = (ALSeqFile *) alHeapAlloc(&gALHeap, 1, 4);
     load_asset_to_address(ASSET_AUDIO, (u32) gSequenceTable, addrPtr[ASSET_AUDIO_4], 4);
 
     seqfSize = (gSequenceTable->seqCount) * 8 + 4;
-    gSequenceTable = mempool_alloc_safe(seqfSize, COLOUR_TAG_CYAN);
+    gSequenceTable = mempool_alloc_safe(seqfSize, PP_RAM_AUD_TABLE);
     load_asset_to_address(ASSET_AUDIO, (u32) gSequenceTable, addrPtr[ASSET_AUDIO_4], seqfSize);
     alSeqFileNew(gSequenceTable, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_4]));
-    gSeqLengthTable = (u32 *) mempool_alloc_safe((gSequenceTable->seqCount) * 4, COLOUR_TAG_CYAN);
+    gSeqLengthTable = (u32 *) mempool_alloc_safe((gSequenceTable->seqCount) * 4, PP_RAM_AUD_TABLE);
 
     for (i = 0; i < gSequenceTable->seqCount; i++) {
         pad = (u32) (gSequenceTable + 8 + i * 8); // Fakematch
@@ -139,18 +143,18 @@ void audio_init(OSSched *sc) {
     gMusicPlayer = sound_seqplayer_init(24, 120);
     set_voice_limit(gMusicPlayer, 18);
     gJinglePlayer = sound_seqplayer_init(16, 50);
-    gMusicSequenceData = mempool_alloc_safe(seqLength, COLOUR_TAG_CYAN);
-    gJingleSequenceData = mempool_alloc_safe(seqLength, COLOUR_TAG_CYAN);
-    audConfig.unk04 = 150;
-    audConfig.unk00 = 32;
+    gMusicSequenceData = mempool_alloc_safe(seqLength, PP_RAM_SEQUENCES);
+    gJingleSequenceData = mempool_alloc_safe(seqLength, PP_RAM_SEQUENCES);
+    audConfig.maxEvents = 150;
+    audConfig.maxSounds = 32;
     audConfig.maxChannels = AUDIO_CHANNELS;
-    audConfig.unk10 = 1;
-    audConfig.hp = &gALHeap;
-    alSndPNew(&audConfig);
+    audConfig.numGroups = 1;
+    audConfig.heap = &gALHeap;
+    sndp_init_player(&audConfig);
     audioStartThread();
     sound_volume_change(VOLUME_NORMAL);
     mempool_free(addrPtr);
-    set_sound_channel_count(10);
+    sndp_set_active_sound_limit(10);
     gBlockMusicChange = FALSE;
     gMusicPlaying = FALSE;
     gJinglePlaying = FALSE;
@@ -172,10 +176,10 @@ void sound_volume_reset(u8 skipReset) {
         if (gSkipResetChannels == FALSE) {
             gGlobalMusicVolume = 256;
             music_volume_set(gMusicBaseVolume);
-            set_sound_channel_volume(0, gGlobalMusicVolume * 128 - 1);
-            set_sound_channel_volume(1, gGlobalMusicVolume * 128 - 1);
-            set_sound_channel_volume(2, gGlobalMusicVolume * 128 - 1);
-            set_sound_channel_volume(4, gGlobalMusicVolume * 128 - 1);
+            sndp_set_group_volume(0, gGlobalMusicVolume * 128 - 1);
+            sndp_set_group_volume(1, gGlobalMusicVolume * 128 - 1);
+            sndp_set_group_volume(2, gGlobalMusicVolume * 128 - 1);
+            sndp_set_group_volume(4, gGlobalMusicVolume * 128 - 1);
         }
     }
 }
@@ -186,32 +190,32 @@ void sound_volume_reset(u8 skipReset) {
 void sound_volume_change(s32 behaviour) {
     switch (behaviour) {
         case VOLUME_LOWER: // Mute most sound effects and half the volume of music.
-            set_sound_channel_volume(0, 0);
-            set_sound_channel_volume(1, 32767);
-            set_sound_channel_volume(2, 0);
-            set_sound_channel_volume(4, 0);
+            sndp_set_group_volume(0, 0);
+            sndp_set_group_volume(1, 32767);
+            sndp_set_group_volume(2, 0);
+            sndp_set_group_volume(4, 0);
             alCSPSetVol(gMusicPlayer, (s16) (gMusicBaseVolume * gMusicSliderVolume >> 2));
             alCSPSetVol(gJinglePlayer, 0);
             break;
         case VOLUME_LOWER_AMBIENT: // Mute the ambient channel, making course elements stop making noise.
-            set_sound_channel_volume(0, 0);
-            set_sound_channel_volume(1, 32767);
-            set_sound_channel_volume(2, 32767);
-            set_sound_channel_volume(4, 32767);
+            sndp_set_group_volume(0, 0);
+            sndp_set_group_volume(1, 32767);
+            sndp_set_group_volume(2, 32767);
+            sndp_set_group_volume(4, 32767);
             break;
         case VOLUME_UNK03:
-            set_sound_channel_volume(0, 0);
-            set_sound_channel_volume(1, 32767);
-            set_sound_channel_volume(2, 0);
-            set_sound_channel_volume(4, 0);
+            sndp_set_group_volume(0, 0);
+            sndp_set_group_volume(1, 32767);
+            sndp_set_group_volume(2, 0);
+            sndp_set_group_volume(4, 0);
             break;
         default: // Restore sound back to normal.
-            set_sound_channel_volume(0, 32767);
-            set_sound_channel_volume(1, 32767);
-            set_sound_channel_volume(2, 32767);
-            set_sound_channel_volume(4, 32767);
+            sndp_set_group_volume(0, 32767);
+            sndp_set_group_volume(1, 32767);
+            sndp_set_group_volume(2, 32767);
+            sndp_set_group_volume(4, 32767);
             alCSPSetVol(gMusicPlayer, (s16) (gMusicBaseVolume * gMusicSliderVolume));
-            alCSPSetVol(gJinglePlayer, (s16) (get_sfx_volume_slider() * sfxRelativeVolume));
+            alCSPSetVol(gJinglePlayer, (s16) (sndp_get_global_volume() * sfxRelativeVolume));
             break;
     }
     gAudioVolumeSetting = behaviour;
@@ -332,13 +336,13 @@ void sound_update_queue(u8 updateRate) {
             gDelayedSounds[i].timer -= updateRate;
             if (gDelayedSounds[i].timer <= 0) {
                 j = i;
-                sound_play(gDelayedSounds[i].soundId, (s32 *) gDelayedSounds[i].soundMask);
+                sound_play(gDelayedSounds[i].soundId, gDelayedSounds[i].handlePtr);
 
                 gDelayedSoundsCount -= 1;
                 while (j < gDelayedSoundsCount) {
                     gDelayedSounds[i].soundId = gDelayedSounds[i + 1].soundId;
                     gDelayedSounds[i].timer = gDelayedSounds[i + 1].timer;
-                    gDelayedSounds[i].soundMask = gDelayedSounds[i + 1].soundMask;
+                    gDelayedSounds[i].handlePtr = gDelayedSounds[i + 1].handlePtr;
                     j++;
                 }
                 j++;
@@ -359,10 +363,10 @@ void sound_update_queue(u8 updateRate) {
  * Add a sound to a queue to play after a set time has passed.
  * Delay time is in seconds. (1.0f = 1 second)
  */
-void sound_play_delayed(u16 soundId, SoundMask *soundMask, f32 delayTime) {
+void sound_play_delayed(u16 soundId, SoundHandle *handlePtr, f32 delayTime) {
     if (gDelayedSoundsCount < 8) {
         gDelayedSounds[gDelayedSoundsCount].soundId = soundId;
-        gDelayedSounds[gDelayedSoundsCount].soundMask = soundMask;
+        gDelayedSounds[gDelayedSoundsCount].handlePtr = handlePtr;
         gDelayedSounds[gDelayedSoundsCount].timer = delayTime * 60.0f;
         gDelayedSoundsCount++;
     }
@@ -648,7 +652,7 @@ s32 music_volume_config(void) {
  */
 void music_jingle_volume_set(u8 arg0) {
     sfxRelativeVolume = arg0;
-    alCSPSetVol(gJinglePlayer, (s16) (get_sfx_volume_slider() * sfxRelativeVolume));
+    alCSPSetVol(gJinglePlayer, (s16) (sndp_get_global_volume() * sfxRelativeVolume));
 }
 
 /**
@@ -696,37 +700,37 @@ u16 sound_distance(u16 soundId) {
  * Add the requested sound to the queue and update the mask to show that this sound is playing at that source.
  * If no soundmask is provided, then instead use the global mask.
  */
-void sound_play(u16 soundID, s32 *soundMask) {
+void sound_play(u16 soundID, SoundHandle *handlePtr) {
     f32 pitch;
     s32 soundBite;
 
     if (soundID > gSoundCount) {
-        if (soundMask != NULL) {
-            *soundMask = NULL;
+        if (handlePtr != NULL) {
+            *handlePtr = NULL;
         }
         stubbed_printf("amSndPlay: Illegal sound effects table index\n");
         return;
     }
     soundBite = gSoundTable[soundID].soundBite;
     if (soundBite == NULL) {
-        if (soundMask != NULL) {
-            *soundMask = NULL;
+        if (handlePtr != NULL) {
+            *handlePtr = NULL;
         }
         return;
     }
     pitch = gSoundTable[soundID].pitch / 100.0f;
-    if (soundMask != NULL) {
-        func_80004668(gSoundBank->bankArray[0], soundBite, gSoundTable[soundID].unk8, (SoundMask *) soundMask);
-        if (*soundMask != NULL) {
-            sound_event_update(*soundMask, AL_SNDP_VOL_EVT, gSoundTable[soundID].volume * 256);
-            sound_event_update(*soundMask, AL_SNDP_PITCH_EVT, *((u32 *) &pitch));
+    if (handlePtr != NULL) {
+        sndp_play_with_priority(gSoundBank->bankArray[0], soundBite, gSoundTable[soundID].unk8, handlePtr);
+        if (*handlePtr != NULL) {
+            sndp_set_param(*handlePtr, AL_SNDP_VOL_EVT, gSoundTable[soundID].volume * 256);
+            sndp_set_param(*handlePtr, AL_SNDP_PITCH_EVT, *((u32 *) &pitch));
         }
     } else {
-        soundMask = (s32 *) &gGlobalSoundMask;
-        func_80004668(gSoundBank->bankArray[0], soundBite, gSoundTable[soundID].unk8, (SoundMask *) &gGlobalSoundMask);
-        if (*soundMask != NULL) {
-            sound_event_update(*soundMask, AL_SNDP_VOL_EVT, gSoundTable[soundID].volume * 256);
-            sound_event_update(*soundMask, AL_SNDP_PITCH_EVT, *((u32 *) &pitch));
+        handlePtr = &gGlobalSoundMask;
+        sndp_play_with_priority(gSoundBank->bankArray[0], soundBite, gSoundTable[soundID].unk8, &gGlobalSoundMask);
+        if (*handlePtr != NULL) {
+            sndp_set_param(*handlePtr, AL_SNDP_VOL_EVT, gSoundTable[soundID].volume * 256);
+            sndp_set_param(*handlePtr, AL_SNDP_PITCH_EVT, *((u32 *) &pitch));
         }
     }
 }
@@ -736,7 +740,7 @@ void sound_play(u16 soundID, s32 *soundMask) {
  * This then makes the audio pan around in 3D space.
  * If it is not given a mask, then it will use the global mask.
  */
-void sound_play_spatial(u16 soundID, f32 x, f32 y, f32 z, s32 **soundMask) {
+void sound_play_spatial(u16 soundID, f32 x, f32 y, f32 z, SoundHandle *soundMask) {
     if (soundMask == NULL) {
         soundMask = (s32 **) &gSpatialSoundMask;
     }
@@ -757,19 +761,19 @@ void func_80001F14(u16 soundID, s32 *soundMask) {
         return;
     }
     if (soundMask) {
-        func_80004638(gSoundBank->bankArray[0], (s16) soundID, (SoundMask *) soundMask);
+        sndp_play(gSoundBank->bankArray[0], (s16) soundID, soundMask);
     } else {
-        func_80004638(gSoundBank->bankArray[0], (s16) soundID, (SoundMask *) &gRacerSoundMask);
+        sndp_play(gSoundBank->bankArray[0], (s16) soundID, &gRacerSoundMask);
     }
 }
 
 /**
  * Set the volume of the sound relative to the baseline volume of the sound ID.
  */
-void sound_volume_set_relative(u16 soundID, void *soundState, u8 volume) {
+void sound_volume_set_relative(u16 soundID, SoundHandle soundHandle, u8 volume) {
     s32 newVolume = ((s32) (gSoundTable[soundID].volume * (volume / 127.0f))) * 256;
-    if (soundState) {
-        sound_event_update((s32) soundState, AL_SNDP_VOL_EVT, newVolume);
+    if (soundHandle) {
+        sndp_set_param(soundHandle, AL_SNDP_VOL_EVT, newVolume);
     }
 }
 

@@ -11,8 +11,7 @@
 
 /************ .bss ************/
 
-u64 gThread1Stack[STACKSIZE(STACK_IDLE)];
-u64 gThread3Stack[STACKSIZE(STACK_GAME)];
+u64 *gThread3Stack;
 OSThread gThread1; // OSThread for thread 1
 OSThread gThread3; // OSThread for thread 3
 u16 gPlatform;
@@ -266,11 +265,12 @@ u32 osGetMemSize(void) {
 }
 
 void config_init(void) {
-    gConfig.antiAliasing = AA_OFF;
+    gConfig.antiAliasing = AA_FAST;
     gConfig.terrainQuality = 0;
     gConfig.dedither = FALSE;
     gConfig.frameCap = 1;
     gConfig.multiAA = AA_OFF;
+    osTvType = OS_TV_NTSC;
 }
 
 /**
@@ -306,14 +306,17 @@ void memsize_init(void) {
  */
 void mainproc(void) {
     osInitialize();
-    osTvType = OS_TV_NTSC;
     gPlatformSet = FALSE;
 #ifdef AVOID_UB
     bzero(&gMainMemoryPool, RAM_END - (s32) (&gMainMemoryPool));
 #endif
     memsize_init();
+    mempool_init_main();
     debug_init();
-    osCreateThread(&gThread1, 1, &thread1_main, 0, &gThread1Stack[STACKSIZE(STACK_IDLE)], OS_PRIORITY_IDLE);
+    gThread3Stack = (u64 *) mempool_alloc(STACK_GAME, PP_RAM_STACK);
+    osCreateThread(&gThread1, 1, &thread1_main, 0, gThread3Stack + STACKSIZE(STACK_GAME), OS_PRIORITY_IDLE);
+    gThread3Stack[STACKSIZE(STACK_GAME) - 1] = 0;
+    gThread3Stack[0] = 0;
     osStartThread(&gThread1);
 }
 
@@ -327,11 +330,10 @@ void crash_init(void);
 void thread1_main(UNUSED void *unused) {
     crash_init();
     config_init();
-    osCreateThread(&gThread3, 3, &thread3_main, 0, &gThread3Stack[STACKSIZE(STACK_GAME)], 10);
+    osCreateThread(&gThread3, 3, &thread3_main, 0, gThread3Stack + STACKSIZE(STACK_GAME), 10);
     gThread3Stack[STACKSIZE(STACK_GAME) - 1] = 0;
     gThread3Stack[0] = 0;
     osStartThread(&gThread3);
-    osSetThreadPri(NULL, OS_PRIORITY_IDLE);
     while (1) {}
 }
 
@@ -341,21 +343,20 @@ void thread1_main(UNUSED void *unused) {
  * Official Name: bootCheckStack
  */
 void thread3_verify_stack(void) {
-    gThread3Stack[STACKSIZE(STACK_GAME) - 1]++;
-    gThread3Stack[0]++;
-    if ((gThread3Stack[STACKSIZE(STACK_GAME) - 1] != gThread3Stack[0])) {
-        rmonPrintf("WARNING: Stack overflow/underflow!!!\n");
-    }
 }
 
 #ifdef DEBUG
 
-ALIGNED8 DebugData gDebug;
+DebugData *gDebug;
 
 void debug_init(void) {
-    bzero(&gDebug, sizeof(DebugData));
-    gDebug.enabled = FALSE;
-    gDebug.iter = 0;
+    gDebug = (DebugData *) mempool_alloc(sizeof(DebugData), PP_RAM_DEBUG);
+    bzero(gDebug, sizeof(DebugData));
+    gDebug->enabled = FALSE;
+    gDebug->iter = 0;
+    debug_ram(K0_TO_PHYS((u32) &gMainMemoryPool) - (MAIN_POOL_SLOT_COUNT * sizeof(MemoryPoolSlot)), PP_RAM_CODE);
+    debug_ram(MAIN_POOL_SLOT_COUNT * sizeof(MemoryPoolSlot), PP_RAM_SLOTS);
+    debug_ram(sizeof(DebugData), PP_RAM_DEBUG);
 }
 
 typedef char *outfun(char *dst, const char *src, size_t count);
@@ -415,7 +416,8 @@ void debug_timer_update(DebugData *d, s32 field, u32 time) {
 }
 
 void debug_rdp(void) {
-    DebugData *d = &gDebug;
+    DebugData *d = gDebug;
+
     debug_timer_update(d, PP_RDP_CLK, RDP_TO_USEC(IO_READ(DPC_CLOCK_REG)));
     debug_timer_update(d, PP_RDP_BUF, RDP_TO_USEC(IO_READ(DPC_BUFBUSY_REG)));
     debug_timer_update(d, PP_RDP_BUS, RDP_TO_USEC(IO_READ(DPC_PIPEBUSY_REG)));
@@ -425,7 +427,7 @@ void debug_rdp(void) {
 }
 
 void debug_rsp(s32 context) {
-    DebugData *d = &gDebug;
+    DebugData *d = gDebug;
     u32 time = osGetCount();
 
     switch (context) {
@@ -454,49 +456,47 @@ s32 debug_tag_index(s32 colourTag) {
     switch (colourTag) {
         case COLOUR_TAG_RED:
             return PP_RAM_RED;
-            break;
         case COLOUR_TAG_GREEN:
             return PP_RAM_GREEN;
-            break;
         case COLOUR_TAG_BLUE:
             return PP_RAM_BLUE;
-            break;
         case COLOUR_TAG_YELLOW:
             return PP_RAM_YELLOW;
-            break;
         case COLOUR_TAG_MAGENTA:
             return PP_RAM_MAGENTA;
-            break;
         case COLOUR_TAG_CYAN:
             return PP_RAM_CYAN;
-            break;
         case COLOUR_TAG_WHITE:
             return PP_RAM_WHITE;
-            break;
         case COLOUR_TAG_GREY:
             return PP_RAM_GREY;
-            break;
         case COLOUR_TAG_SEMITRANS_GREY:
             return PP_RAM_GREY_XLU;
-            break;
         case COLOUR_TAG_ORANGE:
             return PP_RAM_ORANGE;
-            break;
         case COLOUR_TAG_BLACK:
             return PP_RAM_BLACK;
-            break;
         case COLOUR_TAG_LIGHT_ORANGE:
             return PP_RAM_LIGHT_ORANGE;
-            break;
+        case COLOUR_TAG_LIME:
+            return PP_RAM_LIME;
         default:
-            return colourTag % PP_RAM_TOTAL;
+            if (colourTag >= PP_RAM_TOTAL) {
+                return PP_RAM_UNKNOWN;
+            } else {
+                return colourTag % PP_RAM_TOTAL;
+            }
     }
-    return PP_RAM_WHITE;
 }
 
 void debug_ram(s32 size, s32 tag) {
-    gDebug.ramTotal += size;
-    gDebug.ramSegments[debug_tag_index(tag)] += size;
+    if (gDebug == NULL) {
+        return;
+    }
+    if (tag != PP_RAM_SUBPOOLS) {
+        gDebug->ramTotal += size;
+    }
+    gDebug->ramSegments[debug_tag_index(tag)] += size;
 }
 
 const char *sMinimalText[] = {
@@ -505,7 +505,7 @@ const char *sMinimalText[] = {
     "RDP"
 };
 
-void debug_page_minimal(DebugData *d, Gfx **dList, s32 updateRate) {
+void debug_render_minimal(DebugData *d, Gfx **dList, s32 updateRate) {
     char textBytes[32];
     s32 i;
     s32 y;
@@ -542,7 +542,7 @@ void debug_page_minimal(DebugData *d, Gfx **dList, s32 updateRate) {
         } else {
             ramCount = 0x400000;
         }
-        ram = ((u32) ramCount - gDebug.ramTotal) / 1024.0f;
+        ram = ((u32) ramCount - gDebug->ramTotal) / 1024.0f;
         if (ram < 0.0f) {
             ram = 0.0f;
         }
@@ -556,8 +556,16 @@ void debug_page_minimal(DebugData *d, Gfx **dList, s32 updateRate) {
     }
 }
 
+/*void debug_page_minimal(DebugData *d) {
+    
+}
+
+DebugPage gDebugPages[] = {
+    "Minimal", PAGE_MINIMAL, debug_page_minimal, debug_render_minimal,
+};*/
+
 void debug_render(Gfx **dList, s32 updateRate) {
-    DebugData *d = &gDebug;
+    DebugData *d = gDebug;
 
     if (d->enabled == FALSE) {
         return;
@@ -565,13 +573,13 @@ void debug_render(Gfx **dList, s32 updateRate) {
 
     switch (d->pageCurrent) {
         case PAGE_MINIMAL:
-            debug_page_minimal(d, dList, updateRate);
+            debug_render_minimal(d, dList, updateRate);
             break;
     }
 }
 
 void debug_thread(s32 field, s32 offset) {
-    DebugData *d = &gDebug;
+    DebugData *d = gDebug;
     s32 count = field >> 1;
     d->threadTimers[field][d->threadIter[count]] = osGetCount() - offset;
     if (field % 2) {
@@ -613,7 +621,7 @@ void debug_newframe(s32 updateRate) {
     s32 i;
     s32 j;
     s32 it;
-    DebugData *d = &gDebug;
+    DebugData *d = gDebug;
 
     //for (j = 0; j < ABS(d->iter - d->prevIter); j++) {
         //it = d->prevIter + j;
@@ -664,7 +672,7 @@ void debug_ram_dump(void) {
             colourTag = debug_tag_index(slot->colourTag);
 
             if (flags == SLOT_FREE) {
-                debug_printf("Pool: %d Idx: %d   \t Free Slot\t\t\t\t Size: 0x%X\t (%2.3fKiB) \t %2.2f%%\t Addr: %X\n", i, slot->index, slot->size, (double) slot->size / 1024.0, 
+                debug_printf("Pool: %d Idx: %d   \t Free Slot\t\t\t\t\t Size: 0x%X\t (%2.3fKiB) \t %2.2f%%\t Addr: %X\n", i, slot->index, slot->size, (double) slot->size / 1024.0, 
                 (double) ((f32) slot->size / (f32) ramTotal) * 100.0, slot->data);
             } else {
                 debug_printf("Pool: %d Idx: %d   \t %s\t Tag: %s \t\t Size: 0x%X\t (%2.3fKiB) \t %2.2f%% \t Addr: %X\n", i, slot->index, sMemDumpStrings[flags], 
@@ -681,11 +689,24 @@ void debug_ram_dump(void) {
     }
 }
 
+void debug_pause(DebugData *d) {
+    switch (d->pageCurrent) {
+        case PAGE_MINIMAL:
+        case PAGE_BREAKDOWN:
+        case PAGE_GENERAL:
+        case PAGE_VISCVG:
+        case PAGE_AUDIO:
+        case PAGE_MISC:
+            d->pauseGame = FALSE;
+            break;
+    }
+}
+
 void debug_update(s32 updateRate) {
     s32 i;
     s32 j;
     u32 highTime;
-    DebugData *d = &gDebug;
+    DebugData *d = gDebug;
     s32 inputPressed;
     s32 inputHeld;
     s32 count;
@@ -698,12 +719,28 @@ void debug_update(s32 updateRate) {
         inputHeld |= input_held(i);
     }
 
-    if (inputPressed & L_TRIG) {
+    if (inputHeld & U_JPAD && inputPressed & L_TRIG) {
         d->enabled ^= 1;
     }
 
+    if (d->pageMenuOpen == FALSE) {
+        switch (d->pageCurrent) {
+            case PAGE_MINIMAL:
+                if (inputPressed & R_JPAD || inputPressed & L_JPAD) {
+                    d->pageViewMode ^= 1;
+                }
+                break;
+        }
+    } else {
+        if (d->pageCurrent != d->pagePrev) {
+            d->pagePrev = d->pageCurrent;
+            d->pageViewMode = 0;
+            debug_pause(d);
+        }
+    }
+
     if (inputPressed & R_JPAD) {
-        debug_ram_dump();
+        //debug_ram_dump();
     }
 
     d->cpuTotal = 0;

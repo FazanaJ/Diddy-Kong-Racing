@@ -1,6 +1,5 @@
 #include "audiomgr.h"
 #include "memory.h"
-#include "audio_internal.h"
 #include "video.h"
 #include "math_util.h"
 #include "asset_loading.h"
@@ -65,7 +64,7 @@ OSSched *gAudioSched;
 ALHeap *gAudioHeap; // Set but not used
 
 AMAudioMgr __am;
-u64 audioStack[STACKSIZE(STACK_AUD)];
+u64 *audioStack;
 
 AMDMAState dmaState;
 AMDMABuffer dmaBuffs[NUM_DMA_BUFFERS];
@@ -124,7 +123,11 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
      * Calculate the frame sample parameters from the
      * video field rate and the output rate
      */
-    fsize = (f32) c->outputRate * 2 / (f32) gVideoRefreshRate;
+    if (osTvType == OS_TV_PAL) {
+        fsize = (f32) c->outputRate * 2 / (f32) 50.0f;
+    } else {
+        fsize = (f32) c->outputRate * 2 / (f32) 60.0f;
+    }
     frameSize = (s32) fsize;
     if (frameSize < fsize) {
         frameSize++;
@@ -138,7 +141,7 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
     if (c->fxType[0] == AL_FX_CUSTOM) {
         assetAudioTable = load_asset_section_from_rom(ASSET_AUDIO_TABLE);
         assetSize = assetAudioTable[ASSET_AUDIO_9] - assetAudioTable[ASSET_AUDIO_8];
-        asset8 = mempool_alloc_safe(assetSize, COLOUR_TAG_CYAN);
+        asset8 = mempool_alloc_safe(assetSize, PP_RAM_AUD_TABLE);
         load_asset_to_address(ASSET_AUDIO, (u32) asset8, assetAudioTable[ASSET_AUDIO_8], assetSize);
         c->params = asset8;
         c[1].maxVVoices = 0;
@@ -178,7 +181,7 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
         __am.ACMDList[i] = (Acmd *) alHeapAlloc(c->heap, 1, 0xA000); // sizeof(Acmd) * DMA_BUFFER_LENGTH * 5?
     }
 
-    asset = (uintptr_t *) mempool_alloc((maxFrameSize * 12), COLOUR_TAG_CYAN);
+    asset = (uintptr_t *) mempool_alloc((maxFrameSize * 12), PP_RAM_AUDIOHEAP);
 
     /**** initialize the done messages ****/
     for (i = 0; i < NUM_ACMD_LISTS + 1; i++) {
@@ -190,7 +193,10 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
     osCreateMesgQueue(&__am.audioReplyMsgQ, __am.audioReplyMsgBuf, MAX_MESGS);
     osCreateMesgQueue(&__am.audioFrameMsgQ, __am.audioFrameMsgBuf, MAX_MESGS);
     osCreateMesgQueue(&audDMAMessageQ, audDMAMessageBuf, NUM_DMA_MESSAGES);
+    audioStack = mempool_alloc_safe(STACK_AUD, PP_RAM_STACK);
     osCreateThread(&__am.thread, 4, __amMain, 0, (void *) (audioStack + STACKSIZE(STACK_AUD)), pri);
+    audioStack[STACKSIZE(STACK_AUD) - 1] = 0;
+    audioStack[0] = 0;
 }
 
 /**

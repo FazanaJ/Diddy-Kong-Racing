@@ -8,7 +8,7 @@
 #include "libc/math.h"
 #include "camera.h"
 #include "lights.h"
-
+#include "particles.h"
 
 #define NEW_OBJECT_ENTRY(entryVar, entryId, entrySize, xPos, yPos, zPos) { \
     entryVar.x = (xPos);                                                   \
@@ -361,7 +361,7 @@ Object *get_object(s32 index);
 Object **objGetObjList(s32 *arg0, s32 *cnt);
 s32 obj_count(void);
 s32 particle_count(void);
-void func_8000E9D0(Object *obj);
+void add_particle_to_entity_list(Object *obj);
 void free_object(Object *);
 s32 obj_table_ids(void);
 s32 obj_id_valid(s32 arg0);
@@ -539,9 +539,14 @@ void func_80014090(Object*, s32, ObjectHeader*);
 void func_80008438(Object**, s32, s32);
 void func_8001E89C(void);
 CheckpointNode *func_800230D0(Object*, Object_Racer*);
-void func_80010994(s32 updateRate);
+void obj_update(s32 updateRate);
 void func_800159C8(Object *, Object *);
 void func_80011264(ObjectModel *, Object *);
 s16 func_8001CD28(s32 arg0, s32 arg1, s32 arg2, s32 arg3); // NON MATCHING
+
+
+#if !defined(__sgi) && !defined(NUKE)
+#define normalise_time(x) (x)
+#endif
 
 #endif

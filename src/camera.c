@@ -143,16 +143,6 @@ void func_80066060(s32 cameraID, s32 zoomLevel) {
     }
 }
 
-/**
- * Set gAdjustViewportHeight to PAL mode if necessary, if setting is 1.
- * Otherwise, set it to 0, regardless of TV type.
- */
-void set_viewport_tv_type(s8 setting) {
-    if (osTvType == OS_TV_TYPE_PAL) {
-        gAdjustViewportHeight = setting;
-    }
-}
-
 void func_800660C0(void) {
     D_80120D18 = 1;
 }
@@ -184,6 +174,7 @@ s32 get_viewport_count(void) {
 /**
  * Return the index of the active view.
  * 0-3 is players 1-4, and 4-7 is the same, but with 4 added on for cutscenes.
+ * Official Name: camGetMode
  */
 s32 get_current_viewport(void) {
     return gActiveCameraID;
@@ -1033,8 +1024,8 @@ s32 render_sprite_billboard(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Obj
     if (flags & RENDER_SEMI_TRANSPARENT) {
         flags |= RENDER_ANTI_ALIASING;
     }
-    func_8007BF34(dList, arg4->unk6 | (flags & (RENDER_FOG_ACTIVE | RENDER_SEMI_TRANSPARENT | RENDER_Z_COMPARE |
-                                                RENDER_ANTI_ALIASING)));
+    material_load_simple(dList, arg4->drawFlags | (flags & (RENDER_FOG_ACTIVE | RENDER_SEMI_TRANSPARENT |
+                                                            RENDER_Z_COMPARE | RENDER_ANTI_ALIASING)));
     if (!(flags & RENDER_Z_UPDATE)) {
         gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
     }
@@ -1101,7 +1092,7 @@ void render_ortho_triangle_image(Gfx **dList, MatrixS **mtx, Vertex **vtx, Objec
         if (gSpriteAnimOff == FALSE) {
             index = (((u8) index) * sprite->baseTextureId) >> 8;
         }
-        func_8007BF34(dList, sprite->unk6 | flags);
+        material_load_simple(dList, sprite->drawFlags | flags);
         if (index >= sprite->baseTextureId) {
             index = sprite->baseTextureId - 1;
         }
@@ -1223,7 +1214,7 @@ void apply_object_shear_matrix(Gfx **dList, MatrixS **mtx, Object *arg2, Object 
 /**
  * Official Name: camPushModelMtx
  */
-void camera_push_model_mtx(Gfx **dList, MatrixS **mtx, ObjectTransform *trans, f32 scale, f32 scaleY) {
+s32 camera_push_model_mtx(Gfx **dList, MatrixS **mtx, ObjectTransform *trans, f32 scale, f32 scaleY) {
     f32 tempX;
     f32 tempY;
     f32 tempZ;

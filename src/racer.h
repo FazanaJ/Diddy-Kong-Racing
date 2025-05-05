@@ -240,6 +240,8 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object* obj, Object_Racer* r
 void func_80053750(Object *objRacer, Object_Racer *racer, f32 updateRateF);
 void func_80054FD0(Object *racerObj, Object_Racer *racer, s32 updateRate);
 void func_8004F7F4(s32 updateRate, f32 updateRateF, Object* racerObj, Object_Racer* racer);  /* extern */
+void ghost_free(void);
+void ghost_alloc(void);
 
 //Non Matching
 s32 set_ghost_position_and_rotation(Object *obj);

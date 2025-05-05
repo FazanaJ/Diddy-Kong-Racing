@@ -1,6 +1,7 @@
 #include "stdlib.h"
 #include "string.h"
 #include "xstdio.h"
+#include "PR/os_libc.h"
 
 // TODO: these come from headers
 #ident "$Revision: 1.23 $"

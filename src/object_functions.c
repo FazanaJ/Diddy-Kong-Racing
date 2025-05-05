@@ -94,8 +94,8 @@ VertexPosition D_800DCB28[6] = {
 /************ .bss ************/
 
 f32 gNPCPosY;
-s32 gTajSoundMask;
-s32 gTTSoundMask;
+SoundHandle gTajSoundMask;
+SoundHandle gTTSoundMask;
 s32 gRocketSoundTimer;
 s8 gTajDialogueChoice;
 s16 gTajSoundID; // Taj Voice clips
@@ -160,7 +160,7 @@ void obj_loop_scenery(Object *obj, s32 updateRate) {
                     } else {
                         particleFlagShift = get_random_number_from_range(0, obj->segment.header->particleCount - 1);
                     }
-                    obj->particleEmitFlags = OBJ_EMIT_PARTICLE_1 << particleFlagShift;
+                    obj->particleEmittersEnabled = OBJ_EMIT_1 << particleFlagShift;
                     obj_spawn_particle(obj, LOGIC_30FPS);
                 }
             }
@@ -200,9 +200,6 @@ void obj_loop_fireball_octoweapon(Object *obj, s32 updateRate) {
 
     someObj = obj->properties.fireball.obj;
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     if (obj->behaviorId == BHV_FIREBALL_OCTOWEAPON_2 && obj->properties.fireball.timer < 0) {
         obj->segment.trans.x_position = 0.0f;
         obj->segment.trans.y_position = 0.0f;
@@ -275,7 +272,7 @@ void obj_loop_fireball_octoweapon(Object *obj, s32 updateRate) {
         }
     }
     if (obj->behaviorId == BHV_FIREBALL_OCTOWEAPON) {
-        obj->particleEmitFlags = OBJ_EMIT_PARTICLE_1;
+        obj->particleEmittersEnabled = OBJ_EMIT_1;
         obj_spawn_particle(obj, updateRate);
         obj->properties.fireball.timer -= updateRate;
         if (obj->properties.fireball.timer < 0) {
@@ -305,7 +302,7 @@ void obj_loop_fireball_octoweapon(Object *obj, s32 updateRate) {
         if (obj->properties.fireball.timer == 0) {
             soundMask = weapon->soundMask;
             if (soundMask != NULL) {
-                sound_stop(soundMask);
+                sndp_stop(soundMask);
             }
             play_sound_at_position(SOUND_POP, obj->segment.trans.x_position, obj->segment.trans.y_position,
                                    obj->segment.trans.z_position, 4, NULL);
@@ -436,9 +433,6 @@ void obj_loop_laserbolt(Object *obj, s32 updateRate) {
 
     delete = FALSE;
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     dir.x = obj->segment.trans.x_position + (obj->segment.x_velocity * updateRateF);
     dir.y = obj->segment.trans.y_position + (obj->segment.y_velocity * updateRateF);
     dir.z = obj->segment.trans.z_position + (obj->segment.z_velocity * updateRateF);
@@ -723,9 +717,6 @@ void obj_loop_collectegg(Object *obj, s32 updateRate) {
 
     egg = (Object_CollectEgg *) obj->unk64;
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     switch (egg->status) {
         case EGG_SPAWNED:
             try_to_collect_egg(obj, egg);
@@ -1214,9 +1205,6 @@ void obj_loop_stopwatchman(Object *obj, s32 updateRate) {
 
     tempPosY = obj->segment.trans.y_position;
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     tt = (Object_NPC *) obj->unk64;
     if (obj->segment.animFrame == 0) {
         if (tt->animFrameF > 1.0) {
@@ -1393,7 +1381,7 @@ void obj_loop_stopwatchman(Object *obj, s32 updateRate) {
         index--;
         while (index >= 0) {
             if ((water[index]->type != WATER_CALM) && (water[index]->type != WATER_WAVY) &&
-                (water[index]->rotY > 0.0)) {
+                (water[index]->rot.y > 0.0)) {
                 obj->segment.trans.y_position = water[index]->waveHeight;
             }
             index--;
@@ -1420,7 +1408,7 @@ void obj_loop_stopwatchman(Object *obj, s32 updateRate) {
  */
 void play_tt_voice_clip(u16 soundID, s32 interrupt) {
     if (gTTSoundMask && interrupt & 1) {
-        sound_stop(gTTSoundMask); // This is likely wrong and will need to be fixed
+        sndp_stop(gTTSoundMask);
         gTTSoundMask = NULL;
     }
     if (gTTSoundMask == NULL) {
@@ -1905,7 +1893,7 @@ void obj_loop_wizpigship(Object *wizShipObj, s32 updateRate) {
             wizShipObj->properties.fireball.timer = 0;
         }
         if ((wizShipObj->unk60 != NULL) && (wizShipObj->properties.fireball.timer == 0)) {
-            if (wizShipObj->particleEmitFlags & OBJ_EMIT_PARTICLE_1) {
+            if (wizShipObj->particleEmittersEnabled & OBJ_EMIT_1) {
                 wizShipObj->properties.fireball.timer = 20;
                 object_transform_to_matrix(shipMtx, &wizShipObj->segment.trans);
                 trans.x_position = 0.0f;
@@ -2046,7 +2034,7 @@ void obj_loop_char_select(Object *charSelectObj, s32 updateRate) {
     var_s0 = 0;
     func_8001F460(charSelectObj, updateRate, NULL);
     charSelect = &charSelectObj->unk64->characterSelect;
-    charSelectObj->particleEmitFlags = OBJ_EMIT_OFF;
+    charSelectObj->particleEmittersEnabled = OBJ_EMIT_NONE;
     if (charSelect != NULL) {
         gfxData = charSelectObj->unk68[charSelectObj->segment.object.modelIndex];
         if (gfxData != NULL) {
@@ -2092,7 +2080,7 @@ void obj_loop_char_select(Object *charSelectObj, s32 updateRate) {
                     status = charselect_status();
                     for (i2 = 0; i2 < sp4F; i2++) {
                         if (status[sp50[i2]] == 1) {
-                            charSelectObj->particleEmitFlags = OBJ_EMIT_PARTICLE_1;
+                            charSelectObj->particleEmittersEnabled = OBJ_EMIT_1;
                             obj_spawn_particle(charSelectObj, LOGIC_30FPS);
                         }
                     }
@@ -2217,9 +2205,6 @@ void obj_init_smoke(UNUSED Object *obj, UNUSED LevelObjectEntry_Smoke *entry) {
 
 void obj_loop_smoke(Object *obj, s32 updateRate) {
     f32 updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     obj->segment.trans.x_position += obj->segment.x_velocity * updateRateF;
     obj->segment.animFrame += updateRate * 16;
     obj->segment.trans.y_position += obj->segment.y_velocity * updateRateF;
@@ -2248,9 +2233,6 @@ void obj_loop_wardensmoke(Object *obj, s32 updateRate) {
     f32 updateRateF;
 
     updateRateF = (f32) updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     obj->segment.animFrame += updateRate * 4;
     obj->segment.trans.y_position += updateRateF * 0.25;
     if (obj->segment.animFrame > 255) {
@@ -2270,7 +2252,7 @@ void obj_init_bombexplosion(Object *obj, LevelObjectEntry_BombExplosion *entry) 
     if (entry->unk8) {
         obj->properties.bombExplosion.unk4 |= (entry2->unk8 << 8) & 0xFF00;
     }
-    obj->particleEmitFlags = OBJ_EMIT_PARTICLE_1;
+    obj->particleEmittersEnabled = OBJ_EMIT_1;
 }
 
 void obj_loop_bombexplosion(Object *obj, s32 updateRate) {
@@ -2293,10 +2275,10 @@ void obj_loop_bombexplosion(Object *obj, s32 updateRate) {
         free_object(obj);
     }
 
-    if (obj->particleEmitFlags) {
+    if (obj->particleEmittersEnabled) {
         if (get_number_of_active_players() < THREE_PLAYERS) {
             obj_spawn_particle(obj, LOGIC_30FPS);
-            obj->particleEmitFlags = OBJ_EMIT_OFF;
+            obj->particleEmittersEnabled = OBJ_EMIT_NONE;
         }
     }
 }
@@ -2559,12 +2541,9 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
 
     updateRateF2 = updateRate;
     updateRateF = updateRateF2;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     taj = (Object_NPC *) obj->unk64;
     levelHeader = get_current_level_header();
-    obj->particleEmitFlags = OBJ_EMIT_OFF;
+    obj->particleEmittersEnabled = OBJ_EMIT_NONE;
     if (obj->segment.animFrame == 0 && taj->animFrameF > 1.0) {
         taj->animFrameF = 0.0f;
     }
@@ -2803,10 +2782,10 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
             racer_set_dialogue_camera();
             taj->animFrameF += updateRateF * 2.0;
             if (taj->animFrameF > 25.0) {
-                obj->particleEmitFlags = OBJ_EMIT_PARTICLE_1 | OBJ_EMIT_PARTICLE_2 | OBJ_EMIT_PARTICLE_4;
+                obj->particleEmittersEnabled = OBJ_EMIT_1 | OBJ_EMIT_2 | OBJ_EMIT_4;
             }
             if (taj->animFrameF > 50.0) {
-                obj->particleEmitFlags = OBJ_EMIT_OFF;
+                obj->particleEmittersEnabled = OBJ_EMIT_NONE;
             }
             if (taj->animFrameF > 60.0) {
                 taj->animFrameF = 60.0f;
@@ -3110,7 +3089,7 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
         var_a2--;
         while (var_a2 >= 0) {
             if ((water[var_a2]->type != WATER_CALM) && (water[var_a2]->type != WATER_WAVY) &&
-                (water[var_a2]->rotY > 0.0)) {
+                (water[var_a2]->rot.y > 0.0)) {
                 obj->segment.trans.y_position = water[var_a2]->waveHeight;
             }
             var_a2--;
@@ -3136,7 +3115,7 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
  */
 void play_taj_voice_clip(u16 soundID, s32 interrupt) {
     if (gTajSoundMask && interrupt & 1) {
-        sound_stop(gTajSoundMask);
+        sndp_stop(gTajSoundMask);
         gTajSoundMask = NULL;
     }
     if (!gTajSoundMask) {
@@ -3396,9 +3375,6 @@ void obj_loop_goldenballoon(Object *obj, s32 updateRate) {
     s32 isPirated;
 
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     isPirated = FALSE;
 #ifdef ANTI_TAMPER
     // AntiPiracy check. Seems to set a flag that prevents collecting balloons.
@@ -3412,7 +3388,7 @@ void obj_loop_goldenballoon(Object *obj, s32 updateRate) {
     flag = 0x10000 << levelEntry->goldenBalloon.balloonID;
     if (settings->courseFlagsPtr[settings->courseId] & flag) {
         if (obj->properties.npc.timer > 0) {
-            obj->particleEmitFlags = OBJ_EMIT_PARTICLE_2;
+            obj->particleEmittersEnabled = OBJ_EMIT_2;
             obj_spawn_particle(obj, updateRate);
             obj->properties.npc.timer -= updateRate;
         } else {
@@ -3444,7 +3420,7 @@ void obj_loop_goldenballoon(Object *obj, s32 updateRate) {
                         sound_play_spatial(SOUND_COLLECT_BALLOON, obj->segment.trans.x_position,
                                            obj->segment.trans.y_position, obj->segment.trans.z_position, NULL);
                         obj->properties.npc.timer = 16;
-                        obj->particleEmitFlags = OBJ_EMIT_PARTICLE_2;
+                        obj->particleEmittersEnabled = OBJ_EMIT_2;
                         obj->segment.trans.flags |= OBJ_FLAGS_INVISIBLE;
                         obj_spawn_particle(obj, updateRate);
                     }
@@ -3538,9 +3514,6 @@ void obj_loop_door(Object *doorObj, s32 updateRate) {
 
     doorEntry = &doorObj->segment.level_entry->door;
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     settings = get_settings();
 #ifndef OPEN_ALL_DOORS
     playSound = settings->courseFlagsPtr[settings->courseId];
@@ -3993,10 +3966,6 @@ void obj_loop_bridge_whaleramp(Object *obj, s32 updateRate) {
     entry = (LevelObjectEntry_Bridge_WhaleRamp *) obj->segment.level_entry;
     updateRateF = updateRate;
 
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
-
     if (entry->unkB != 3) {
         if (obj->properties.common.unk0 != 0) {
             bobAmount = 2.0 * (f32) entry->bobAmount;
@@ -4247,9 +4216,6 @@ void obj_loop_flycoin(Object *obj, s32 updateRate) {
     Object_Racer *racerObj;
 
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     obj->segment.y_velocity -= 0.5 * updateRateF;
     move_object(obj, obj->segment.x_velocity * updateRateF, obj->segment.y_velocity * updateRateF,
                 obj->segment.z_velocity * updateRateF);
@@ -4347,16 +4313,13 @@ void obj_loop_banana(Object *obj, s32 updateRate) {
     SoundMask *prevSoundMask;
 
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     banana = (Object_Banana *) obj->unk64;
     obj->segment.animFrame += updateRate * 8;
     properties = (ObjPropertyBanana *) &obj->properties.banana;
     if (properties->status == BANANA_COLLECTED) {
         obj->segment.trans.flags |= OBJ_FLAGS_INVISIBLE;
         properties->destroyTimer -= updateRate;
-        obj->particleEmitFlags = OBJ_EMIT_PARTICLE_1;
+        obj->particleEmittersEnabled = OBJ_EMIT_1;
         obj_spawn_particle(obj, updateRate);
         if (properties->destroyTimer <= 0) {
             free_object(obj);
@@ -4455,7 +4418,7 @@ void obj_loop_banana(Object *obj, s32 updateRate) {
                         free_object(obj);
                     } else {
                         properties->status = BANANA_COLLECTED;
-                        obj->particleEmitFlags = OBJ_EMIT_PARTICLE_1;
+                        obj->particleEmittersEnabled = OBJ_EMIT_1;
                         obj_spawn_particle(obj, updateRate);
                     }
                 }
@@ -4549,7 +4512,7 @@ void obj_loop_silvercoin(Object *obj, s32 updateRate) {
     }
     if (obj->properties.npc.timer > 0) {
         obj->properties.npc.timer -= updateRate;
-        obj->particleEmitFlags = OBJ_EMIT_PARTICLE_1;
+        obj->particleEmittersEnabled = OBJ_EMIT_1;
         obj_spawn_particle(obj, updateRate);
     }
 }
@@ -4691,7 +4654,7 @@ void obj_loop_weaponballoon(Object *weaponBalloonObj, s32 updateRate) {
         weaponBalloonObj->segment.trans.flags &= ~OBJ_FLAGS_INVISIBLE;
     }
     if (weaponBalloonObj->properties.weaponBalloon.particleTimer > 0) {
-        weaponBalloonObj->particleEmitFlags = OBJ_EMIT_PARTICLE_1;
+        weaponBalloonObj->particleEmittersEnabled = OBJ_EMIT_1;
         obj_spawn_particle(weaponBalloonObj, updateRate);
         weaponBalloonObj->properties.weaponBalloon.particleTimer -= updateRate;
     }
@@ -4771,7 +4734,7 @@ void obj_loop_weaponballoon(Object *weaponBalloonObj, s32 updateRate) {
                             gReverbOverride = 30;
                         }
                     }
-                    weaponBalloonObj->particleEmitFlags = OBJ_EMIT_PARTICLE_1;
+                    weaponBalloonObj->particleEmittersEnabled = OBJ_EMIT_1;
                     obj_spawn_particle(weaponBalloonObj, updateRate);
                     weaponBalloon->respawnTime = 90;
                 }
@@ -4874,9 +4837,6 @@ void weapon_projectile(Object *obj, s32 updateRate) {
     guMtxXFMF(mtxf, 0.0f, 0.0f, weapon->forwardVel, &obj->segment.x_velocity, &obj->segment.y_velocity,
               &obj->segment.z_velocity);
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     offset.x = obj->segment.trans.x_position + (obj->segment.x_velocity * updateRateF);
     offset.y = obj->segment.trans.y_position + (obj->segment.y_velocity * updateRateF);
     offset.z = obj->segment.trans.z_position + (obj->segment.z_velocity * updateRateF);
@@ -5086,7 +5046,7 @@ void homing_rocket_prevent_overshoot(Object *obj, s32 updateRate, Object_Weapon 
     }
     play_rocket_trailing_sound(obj, rocket, SOUND_HOMING_ROCKET);
     if (get_number_of_active_players() < 3) {
-        obj->particleEmitFlags |= OBJ_EMIT_PARTICLE_1;
+        obj->particleEmittersEnabled |= OBJ_EMIT_1;
         obj_spawn_particle(obj, updateRate);
     }
 }
@@ -5178,9 +5138,6 @@ void weapon_trap(Object *weaponObj, s32 updateRate) {
     weaponOwner = &weapon->owner->unk64->racer;
     updateRateF = updateRate;
     weaponProperties = &weaponObj->properties.weapon;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     if (weaponProperties->status == WEAPON_DROPPED) {
         intendedPos.x = weaponObj->segment.trans.x_position + (weaponObj->segment.x_velocity * updateRateF);
         intendedPos.y = weaponObj->segment.trans.y_position + (weaponObj->segment.y_velocity * updateRateF);
@@ -5269,7 +5226,7 @@ void weapon_trap(Object *weaponObj, s32 updateRate) {
             }
         }
         if (weaponProperties->status == WEAPON_DESTROY) {
-            weaponObj->particleEmitFlags = OBJ_EMIT_PARTICLE_1;
+            weaponObj->particleEmittersEnabled = OBJ_EMIT_1;
             obj_spawn_particle(weaponObj, updateRate);
             weaponObj->segment.trans.flags |= OBJ_FLAGS_INVISIBLE;
             weaponProperties->scale -= updateRate;
@@ -6285,7 +6242,7 @@ void obj_init_midichset(Object *obj, LevelObjectEntry_Midichset *entry) {
 
 /* Official name: bubblerInit */
 void obj_init_bubbler(Object *obj, LevelObjectEntry_Bubbler *entry) {
-    func_800AF134((Particle *) obj->particleEmitter, entry->particleBehaviourID, entry->particlePropertyID, 0, 0, 0);
+    emitter_change_settings(obj->particleEmitter, entry->particleBehaviourID, entry->particlePropertyID, 0, 0, 0);
     obj->properties.common.unk0 = entry->particleDensity;
 }
 
@@ -6296,9 +6253,9 @@ void obj_init_bubbler(Object *obj, LevelObjectEntry_Bubbler *entry) {
  */
 void obj_loop_bubbler(Object *obj, s32 updateRate) {
     if (obj->properties.common.unk0 >= get_random_number_from_range(0, 1024)) {
-        obj->particleEmitFlags = OBJ_EMIT_PARTICLE_1;
+        obj->particleEmittersEnabled = OBJ_EMIT_1;
     } else {
-        obj->particleEmitFlags = OBJ_EMIT_OFF;
+        obj->particleEmittersEnabled = OBJ_EMIT_NONE;
     }
     if (get_number_of_active_players() < 2) {
         obj_spawn_particle(obj, updateRate);
@@ -6335,9 +6292,9 @@ void obj_loop_rangetrigger(Object *obj, s32 updateRate) {
 
     entry = &obj->segment.level_entry->rangeTrigger;
     if (obj_dist_racer(obj->segment.trans.x_position, 0, obj->segment.trans.z_position, entry->radius, 1, objs) > 0) {
-        obj->particleEmitFlags = entry->particleFlags;
+        obj->particleEmittersEnabled = entry->particleFlags;
     } else {
-        obj->particleEmitFlags = OBJ_EMIT_OFF;
+        obj->particleEmittersEnabled = OBJ_EMIT_NONE;
     }
     obj_spawn_particle(obj, updateRate);
 }
@@ -6400,9 +6357,6 @@ void obj_loop_frog(Object *obj, s32 updateRate) {
     Object *racerObj;
 
     updateRateF = updateRate;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     frog = (Object_Frog *) obj->unk64;
 
     switch (frog->action) {
@@ -6622,13 +6576,8 @@ void obj_loop_levelname(Object *obj, s32 updateRate) {
             textWidth = (get_text_width(levelName, 0, 0) + 24) >> 1;
             x1 = SCREEN_WIDTH_HALF - textWidth;
             x2 = textWidth + SCREEN_WIDTH_HALF;
-            if (osTvType == OS_TV_TYPE_PAL) {
-                y1 = SCREEN_HEIGHT - 16;
-                y2 = SCREEN_HEIGHT - 16 + 24;
-            } else {
-                y1 = SCREEN_HEIGHT - 38;
-                y2 = SCREEN_HEIGHT - 38 + 20;
-            }
+            y1 = SCREEN_HEIGHT - 38;
+            y2 = SCREEN_HEIGHT - 38 + 20;
             dialogue_clear(4);
             set_current_dialogue_box_coords(4, x1, y1, x2, y2);
             set_current_dialogue_background_colour(4, 128, 64, 128, (properties->opacity * 160) >> 8);

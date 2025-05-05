@@ -256,6 +256,12 @@ $(BUILD_DIR)/$(LIBULTRA_DIR)/src/audio/env.c.o: MIPSISET := -mips1
 $(BUILD_DIR)/$(LIBULTRA_DIR)/%.c.o: CC_WARNINGS := -w
 $(BUILD_DIR)/$(LIBULTRA_DIR)/%.c.o: CC_CHECK := :
 
+ifeq ($(COMPILER),ido)
+# Allow dollar sign to be used in var names for this file alone
+# It allows us to return the current stack pointer
+$(BUILD_DIR)/$(SRC_DIR)/get_stack_pointer.c.o: OPT_FLAGS += -dollar
+endif
+
 ### Targets
 
 ifeq ($(COMPILER),gcc)
@@ -503,6 +509,24 @@ $(TARGET).bin: $(TARGET).elf | $(ALL_ASSETS_BUILT)
 $(TARGET).z64: $(TARGET).bin | $(ALL_ASSETS_BUILT)
 	$(call print,CopyRom:,$<,$@)
 	$(V)$(PYTHON) $(TOOLS_DIR)/python/CopyRom.py $< $@
+
+$(BUILD_DIR)/map_symbols.bin: $(BUILD_DIR)/$(BASENAME).map
+	$(call print,Generating Map Symbols:,$<,$@)
+	$(V)$(PYTHON) $(TOOLS_DIR)/python/map_gen.py $< $@
+
+$(BUILD_DIR)/map_symbols.bin.o: $(BUILD_DIR)/map_symbols.bin
+	$(call print,Linking Map Symbols:,$<,$@)
+	$(V)$(LD) -r -b binary -o $@ $<
+
+O_FILES += $(BUILD_DIR)/map_symbols.bin.o
+
+$(BUILD_DIR)/map_symbols.bin: $(BUILD_DIR)/$(BASENAME).map
+	$(call print,Generating Map Symbols:,$<,$@)
+	$(V)$(PYTHON) $(TOOLS_DIR)/python/map_gen.py $< $@
+
+$(BUILD_DIR)/map_symbols.bin.o: $(BUILD_DIR)/map_symbols.bin
+	$(call print,Linking Map Symbols:,$<,$@)
+	$(V)$(LD) -r -b binary -o $@ $<
 
 ### Settings
 .PHONY: all clean cleanextract default assets

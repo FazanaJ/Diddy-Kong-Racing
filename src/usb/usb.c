@@ -685,7 +685,7 @@ void usb_read(void* buffer, int nbytes)
         }
         
         // Copy from the USB buffer to the supplied buffer
-        bcopy(usb_buffer+copystart, (void*)(((u32)buffer)+read), block);
+        wcopy(usb_buffer+copystart, (void*)(((u32)buffer)+read), block);
         
         // Increment/decrement all our counters
         read += block;
@@ -1007,7 +1007,7 @@ static void usb_64drive_write(int datatype, const void* data, int size)
         u32 block = MIN(left, BUFFER_SIZE);
 
         // Copy data to PI DMA aligned buffer
-        bcopy(data, usb_buffer, block);
+        wcopy(data, usb_buffer, block);
         
         // Pad the buffer with zeroes if it wasn't 4 byte aligned
         while (block%4)
@@ -1195,7 +1195,7 @@ static void usb_everdrive_write(int datatype, const void* data, int size)
             block = BUFFER_SIZE-offset;
             
         // Copy the data to the next available spots in the global buffer
-        bcopy((void*)((char*)data+read), usb_buffer+offset, block);
+        wcopy((void*)((char*)data+read), usb_buffer+offset, block);
         
         // Restart the loop to write the CMP signal if we've finished
         if (!wrotecmp && read+block >= size)

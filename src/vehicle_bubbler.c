@@ -100,7 +100,7 @@ void update_bubbler(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *
         obj->segment.object.animationID = ANIM_BUBBLER_DAMAGE;
         obj->segment.y_velocity += 7.5;
         play_random_boss_sound(BOSS_SOUND_NEGATIVE);
-        sound_play(SOUND_EXPLOSION, 0);
+        sound_play(SOUND_EXPLOSION, NULL);
         set_camera_shake(12.0f);
         racer->velocity *= 0.3;
         racer->animationSpeed = 0.0f;
@@ -139,7 +139,7 @@ void update_bubbler(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *
             spawn_boss_hazard(obj, racer, 0.0f, objectID, SOUND_VOICE_BUBBLER_HOHO2);
         }
     }
-    obj->particleEmitFlags = OBJ_EMIT_OFF;
+    obj->particleEmittersEnabled = OBJ_EMIT_NONE;
     obj_spawn_particle(obj, updateRate);
     fade_when_near_camera(obj, racer, 40);
     switch (obj->segment.object.animationID) {

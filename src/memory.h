@@ -51,6 +51,10 @@ typedef enum MempoolFlags {
 #define COLOUR_TAG_BLACK 0x000000FF
 // Weather
 #define COLOUR_TAG_LIGHT_ORANGE 0xFFAA55FF
+// Particle Sprites
+#define COLOUR_TAG_LIME 0x00FF0163
+
+#define COLOUR_TAG_NONE 999
     
 /* Size: 0x10 bytes */
 typedef struct MemoryPoolSlot {
@@ -120,5 +124,6 @@ void mempool_free_addr(u8 *address);
 MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag, s32 findLargest);
 void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag);
 MemoryPoolSlot *mempool_alloc_largest(u32 colourTag);
+void *mempool_alloc_pool_tag(MemoryPoolSlot *slots, s32 size, s32 colourTag);
 
 #endif

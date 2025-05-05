@@ -102,10 +102,17 @@ void thread1_main(void *);
 void thread3_verify_stack(void);
 void get_platform(void);
 
-#ifdef DEBUG
 
 typedef enum DebugPages {
     PAGE_MINIMAL,
+    PAGE_OVERVIEW,
+    PAGE_GENERAL,
+    PAGE_BREAKDOWN,
+    PAGE_MEMORY,
+    PAGE_AUDIO,
+    PAGE_LOG,
+    PAGE_VISCVG,
+    PAGE_MISC,
 } DebugPages;
 
 typedef enum DebugProfiles {
@@ -161,10 +168,10 @@ typedef enum DebugRam {
     PP_RAM_ORANGE,
     PP_RAM_BLACK,
     PP_RAM_LIGHT_ORANGE,
+    PP_RAM_LIME,
 
     PP_RAM_CODE,
     PP_RAM_FRAMEBUFFERS,
-    PP_RAM_ZBUFFER,
     PP_RAM_TASKBUFFER,
     PP_RAM_ANIMATIONS,
     PP_RAM_WEATHER,
@@ -179,23 +186,93 @@ typedef enum DebugRam {
     PP_RAM_CMDBUF,
     PP_RAM_SAVES,
     PP_RAM_TEMP,
+    PP_RAM_SHADOWS,
+    PP_RAM_SUBPOOLS,
+    PP_RAM_AUDIOHEAP,
+    PP_RAM_ASSETTABLE,
+    PP_RAM_STACK,
+    PP_RAM_AUD_EMITTERS,
+    PP_RAM_AUD_TABLE,
+    PP_RAM_SEQUENCES,
+    PP_RAM_SOUNDBANK,
+    PP_RAM_HUD,
+    PP_RAM_FONTS,
+    PP_RAM_TEXT,
+    PP_RAM_LIGHTS,
+    PP_RAM_ASSET_CACHE,
+    PP_RAM_OBJECTS,
+    PP_RAM_CPAK,
+    PP_RAM_WAVES,
+    PP_RAM_GHOSTS,
+    PP_RAM_MENU,
+    PP_RAM_TRANSITIONS,
+    PP_RAM_UNKNOWN,
+    PP_RAM_OBJLISTS,
+    PP_RAM_OBJHEADERS,
+    PP_RAM_OBJGFX,
+    PP_RAM_DEBUG,
 
     PP_RAM_TOTAL,
 } DebugRam;
 
+#ifdef DEBUG
+
 #define MEMSTRINGS \
-    "Red", \
-    "Green", \
-    "Blue", \
-    "Yellow", \
-    "Magenta", \
-    "Cyan", \
-    "White", \
-    "Grey", \
-    "GreyXLU", \
-    "Orange", \
-    "Black", \
-    "L. Orange"
+    "Red\t", \
+    "Green\t", \
+    "Blue\t", \
+    "Yellow\t", \
+    "Magenta\t", \
+    "Cyan\t", \
+    "White\t", \
+    "Grey\t", \
+    "GreyXLU\t", \
+    "Orange\t", \
+    "Black\t", \
+    "L. Orange", \
+    "Lime\t", \
+            \
+    "Code\t", \
+    "Framebuffers", \
+    "Task Buffer", \
+    "Animations", \
+    "Weather\t", \
+    "Lvl Textures", \
+    "Lvl Models", \
+    "Obj Textures", \
+    "Obj Models", \
+    "Misc Textures", \
+    "Misc Models", \
+    "Sprites\t", \
+    "Slots\t", \
+    "Gfx Buffer", \
+    "Saves\t", \
+    "Temp\t", \
+    "Shadows\t", \
+    "Subpools\t", \
+    "Audio Heap", \
+    "Asset Tables", \
+    "Stack\t", \
+    "SFX Emitters", \
+    "Aud Table", \
+    "Sequences", \
+    "Sound Banks", \
+    "HUD\t", \
+    "Fonts\t", \
+    "Text\t", \
+    "Lights\t", \
+    "Asset Cache", \
+    "Objects\t", \
+    "Cpak\t", \
+    "Waves\t", \
+    "Ghost Data", \
+    "Menu\t", \
+    "Transitions", \
+    "Unknown\t", \
+    "Obj Lists", \
+    "Obj Headers", \
+    "Obj Gfx\t", \
+    "Debug\t"
 
 #define NUM_PERF_ITERATIONS 60
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS
@@ -212,6 +289,8 @@ typedef struct DebugData {
     u8 pageSelected;
     u8 pageScroll;
     u8 pageViewMode;
+    u8 pageMenuOpen;
+    u8 pauseGame;
     u8 logLine;
     u8 logLevel;
     u8 iter;
@@ -235,7 +314,14 @@ typedef struct DebugData {
     u32 ramTotal;
 } DebugData;
 
-extern DebugData gDebug;
+typedef struct DebugPage {
+    char name[16];
+    u8 index;
+    void (*updateFunc)(struct DebugData *d);
+    void (*renderFunc)(struct DebugData *d, Gfx **dList, s32 updateRate);
+} DebugPage;
+
+extern DebugData *gDebug;
 
 void debug_init();
 void debug_log(s32 logLevel, char *str, ...);
@@ -249,6 +335,7 @@ void debug_ram(s32 size, s32 tag);
 s32 debug_tag_index(s32 colourTag);
 void debug_printf(const char* message, ...);
 void crash_assert(s32 cond, const char *str, ...);
+void debug_ram_dump(void);
 #else
 #define debug_init()
 #define debug_render(dList, updateRate)

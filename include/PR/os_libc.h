@@ -82,10 +82,14 @@ extern "C" {
 
 #ifndef MODERN_CC
 extern void     bcopy(const void *, void *, int);
+extern void     wcopy(const void *, void *, int);
+extern void     dcopy(const void *, void *, int);
 extern int      bcmp(const void *, const void *, int);
 extern void     bzero(void *, int);
 #else
 extern void     bcopy(const void *, void *, size_t);
+extern void     wcopy(const void *, void *, size_t);
+extern void     dcopy(const void *, void *, size_t);
 extern int      bcmp(const void *, const void *, size_t);
 extern void     bzero(void *, size_t);
 #endif

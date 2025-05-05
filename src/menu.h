@@ -474,6 +474,9 @@ extern s32 gCurrentMenuId;
 
 s32 get_random_number_from_range(s32, s32); // No file to pull from yet.
 
+void savedata_free(void);
+void savedata_alloc(void);
+
 void menu_button_free(void);
 void menu_geometry_end(void);
 void reset_title_logo_scale(void);

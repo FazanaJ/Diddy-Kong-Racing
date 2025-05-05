@@ -3,6 +3,7 @@
 #include "common.h"
 #include "macros.h"
 #include "ultra64.h"
+#include "main.h"
 
 /************ .bss ************/
 
@@ -46,7 +47,7 @@ void init_PI_mesg_queue(void) {
 #endif
 
     assetTableSize = __ASSETS_LUT_END - __ASSETS_LUT_START;
-    gAssetsLookupTable = (u32 *) mempool_alloc_safe(assetTableSize, COLOUR_TAG_GREY);
+    gAssetsLookupTable = (u32 *) mempool_alloc_safe(assetTableSize, PP_RAM_ASSETTABLE);
     dmacopy_internal((u32) __ASSETS_LUT_START, (u32) gAssetsLookupTable, (s32) assetTableSize);
 }
 

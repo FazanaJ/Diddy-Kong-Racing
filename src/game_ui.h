@@ -5,10 +5,13 @@
 #include "structs.h"
 #include <ultra64.h>
 
-#define HUD_ELEMENT_MODEL       0x0000
-#define HUD_ELEMENT_OBJECT      0x4000
-#define HUD_ELEMENT_SPRITE      0x8000
-#define HUD_ELEMENT_TEXTURE     0xC000
+#define ASSET_MASK_MODEL       0x0000
+#define ASSET_MASK_OBJECT      0x4000
+#define ASSET_MASK_SPRITE      0x8000
+#define ASSET_MASK_TEXTURE     0xC000
+
+#define ASSET_MASK_TEX2D       0x0000
+#define ASSET_MASK_TEX3D       0x8000
 
 #define HUD_EGG_TOTAL 3
 
@@ -147,7 +150,6 @@ enum HudTypes {
     HUD_STOPWATCH,
     HUD_WRONGWAY_1,
     HUD_WRONGWAY_2,
-    HUD_PRO_AM_LOGO,
     HUD_SPEEDOMETRE_ARROW,
     HUD_SPEEDOMETRE_0,
     HUD_SPEEDOMETRE_30,
@@ -333,13 +335,12 @@ typedef struct HudElement_RaceTimeLabel {
 } HudElement_RaceTimeLabel;
 
 typedef struct HudElement {
-    Vec3s rotation;
-    s16 spriteID;
-    f32 scale;
-    Vec3f pos;
-    s16 spriteOffset;
-    union {
-        u8 filler[4];   // Ensures this union is 6 bytes, since Rare never actually use more than four.
+    /* 0x00 */ Vec3s rotation;
+    /* 0x06 */ s16 spriteID;
+    /* 0x08 */ f32 scale;
+    /* 0x0C */ Vec3f pos;
+    /* 0x14 */ s16 spriteOffset;
+    /* 0x16 */ union {
         HudElement_ChallengeEggs challengeEggs;
         HudElement_RaceStartGo raceStartGo;
         HudElement_BananaCountIconSpin bananaCountIconSpin;
@@ -367,7 +368,7 @@ typedef struct HudAudio {
     u16 soundID;
     u8 volume;
     s8 volumeRamp;
-    SoundMask *soundMask;
+    SoundHandle soundMask;
     s32 unk8;
     s8 playerIndex;
     s8 unkD;
@@ -378,6 +379,11 @@ typedef struct HudAudio {
 typedef struct HudElements {
     void *entry[HUD_ELEMENT_COUNT];
 } HudElements;
+
+typedef struct HudDrawTexture {
+    DrawTexture drawTexture;
+    s32 unk8; // Field is always set to 0 and never read/written outside of hud_element_render
+} HudDrawTexture;
 
 extern u8 gGfxTaskYieldData[OS_YIELD_DATA_SIZE];
 
@@ -427,12 +433,10 @@ void hud_treasure(Object_Racer *racer);
 void minimap_marker_pos(f32 x, f32 z, f32 angleSin, f32 angleCos, f32 modelAspectRatio);
 void hud_timer_render(s32 x, s32 y, s32 minutes, s32 seconds, s32 hundredths, s32 smallFont);
 void hud_draw_model(ObjectModel *objModel);
-
-// Non Matching
 void hud_element_render(Gfx **dList, MatrixS **mtx, Vertex **vtxList, HudElement *arg3);
 void hud_main_time_trial(s32, Object*, s32);
 void hud_race_finish_multiplayer(Object_Racer *racer, s32 updateRate);
 void func_800A1E48(Object*, s32 updateRate);
-void func_8009F034(void);
+void hud_init_element(void);
 
 #endif

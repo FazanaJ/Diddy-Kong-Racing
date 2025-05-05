@@ -124,7 +124,7 @@ Object *autoplay_find_balloon(s32 balloonID) {
     if (gObjectCount > 0) {
         do {
             tempObj = gObjPtrList[i];
-            if (!(tempObj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && tempObj->behaviorId == BHV_GOLDEN_BALLOON) {
+            if (!(tempObj->segment.trans.flags & OBJ_FLAGS_PARTICLE) && tempObj->behaviorId == BHV_GOLDEN_BALLOON) {
                 Object_NPC *balloon = (Object_NPC *) tempObj->unk64;
                 if (tempObj->segment.level_entry->goldenBalloon.balloonID == balloonID) {
                     return tempObj;
@@ -150,7 +150,7 @@ Object *autoplay_find_balloon2(f32 x, f32 z) {
     if (gObjectCount > 0) {
         do {
             tempObj = gObjPtrList[i];
-            if (!(tempObj->segment.trans.flags & OBJ_FLAGS_DEACTIVATED) && tempObj->behaviorId == BHV_GOLDEN_BALLOON) {
+            if (!(tempObj->segment.trans.flags & OBJ_FLAGS_PARTICLE) && tempObj->behaviorId == BHV_GOLDEN_BALLOON) {
                 diffX = tempObj->segment.trans.x_position - x;
                 diffZ = tempObj->segment.trans.z_position - z;
                 distance = sqrtf((diffX * diffX) + (diffZ * diffZ));
@@ -785,6 +785,9 @@ void autoplay_single_player(void) {
                                 gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
                             }
                         }
+                        if (map == ASSET_LEVEL_WIZPIG2 && racer->raceFinished && racer->finishPosition == 1) {
+                            gAutoplayTest = AUTOPLAY_OFF;
+                        }
                     }
                 }
 
@@ -964,20 +967,24 @@ void autoplay_multiplayer(s32 playerCount) {
                 }
 
             }
-            if (get_map_race_type(get_current_map_id()) == RACETYPE_CHALLENGE_BATTLE) {
+            if (get_map_race_type(get_current_map_id()) & RACETYPE_CHALLENGE_BATTLE) {
                 for (i = 0; i < 4; i++) {
                     obj = get_racer_object(i);
                     racer = (Object_Racer *) obj->unk64;
-                    if (racer->bananas > 1) {
+                    if (racer->bananas > 1 && get_current_map_id() != ASSET_LEVEL_SMOKEYCASTLE) {
                         racer->bananas = 1;
                     }
                     racer->lap_times[0] += sLogicUpdateRate;
-                }
-                if (racer->lap_times[0] > (60 * 60) * 2) {
-                    for (i = 0; i < 4; i++) {
-                        obj = get_racer_object(i);
-                        racer = (Object_Racer *) obj->unk64;
-                        racer->bananas = 0;
+                    if (racer->lap_times[0] > (60 * 60) * 2) {
+                        for (i = 0; i < 4; i++) {
+                            obj = get_racer_object(i);
+                            racer = (Object_Racer *) obj->unk64;
+                            if (get_current_map_id() != ASSET_LEVEL_SMOKEYCASTLE) {
+                                racer->bananas = 0;
+                            } else {
+                                racer->bananas = 10;
+                            }
+                        }
                     }
                 }
             }

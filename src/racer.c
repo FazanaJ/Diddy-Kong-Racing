@@ -27,6 +27,7 @@
 #include "particles.h"
 #include "PRinternal/viint.h"
 #include "common.h"
+#include "main.h"
 
 #define MAX_NUMBER_OF_GHOST_NODES 360
 
@@ -121,7 +122,6 @@ f32 gCurrentCourseHeight;
 Vec3f gCurrentRacerWaterPos;
 s8 gRacerWaveType;
 ObjectCamera *gCameraObject;
-UNUSED s32 D_8011D50C;
 ObjectTransform gCurrentRacerTransform;
 u32 gCurrentRacerInput;
 u32 gCurrentButtonsPressed;
@@ -935,7 +935,7 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
     }
     playerObjectHasMoved = FALSE;
     if (racer->playerIndex >= PLAYER_ONE && gNumViewports < 2) {
-        obj->particleEmitFlags |= OBJ_EMIT_UNK_100;
+        obj->particleEmittersEnabled |= OBJ_EMIT_9;
     }
     D_8011D550 = 0;
     gCurrentCarSteerVel = 0;
@@ -1201,12 +1201,12 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
         if (racer->trickType != 0) {
             if (racer->groundedWheels) {
                 if (gRaceStartTimer != 100 && racer->playerIndex != PLAYER_COMPUTER && racer->trickType >= 6) {
-                    sound_play(SOUND_BOUNCE, (s32 *) &racer->unk21C);
+                    sound_play(SOUND_BOUNCE, &racer->unk21C);
                     sound_volume_set_relative(SOUND_BOUNCE, racer->unk21C, (racer->trickType * 2) + 50);
                 }
             } else if (racer->approachTarget == NULL) {
                 racer_play_sound(obj, SOUND_UNK_AF);
-                obj->particleEmitFlags |= OBJ_EMIT_UNK_10 | OBJ_EMIT_UNK_20;
+                obj->particleEmittersEnabled |= OBJ_EMIT_5 | OBJ_EMIT_6;
             }
             var_f2 = racer->trickType;
             var_f2 -= 5.0f;
@@ -1485,9 +1485,9 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
     if (gNumViewports < 2 && obj->segment.header->particleCount >= 9) {
         if ((gCurrentRacerInput & (A_BUTTON | R_TRIG)) == (A_BUTTON | R_TRIG) &&
             (gCurrentStickX < -30 || gCurrentStickX > 30)) {
-            func_800B4668(obj, 8, updateRate << 10, 0x80);
+            increase_emitter_opacity(obj, 8, updateRate << 10, 0x80);
         } else {
-            func_800B46BC(obj, 8, updateRate << 9, 0x20);
+            decrease_emitter_opacity(obj, 8, updateRate << 9, 0x20);
         }
     }
     if (gCurrentPlayerIndex >= PLAYER_ONE && racer->buoyancy > 0.0) {
@@ -1497,13 +1497,13 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
                      (obj->segment.z_velocity * obj->segment.z_velocity);
             if (var_f2 > 16.0f) {
                 if (var_f2 < 80.0f) {
-                    obj->particleEmitFlags |= OBJ_EMIT_PARTICLE_3 | OBJ_EMIT_PARTICLE_4;
+                    obj->particleEmittersEnabled |= OBJ_EMIT_3 | OBJ_EMIT_4;
                 }
                 if (var_f2 > 28.0f) {
-                    obj->particleEmitFlags |= OBJ_EMIT_PARTICLE_1 | OBJ_EMIT_PARTICLE_2;
+                    obj->particleEmittersEnabled |= OBJ_EMIT_1 | OBJ_EMIT_2;
                 }
                 if (gNumViewports == 1 && var_f2 > 10.25f) {
-                    obj->particleEmitFlags |= OBJ_EMIT_UNK_40;
+                    obj->particleEmittersEnabled |= OBJ_EMIT_7;
                 }
             }
         } else {
@@ -1513,7 +1513,7 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
                 var_f2 = racer->velocity;
             }
             if (var_f2 > 4.0f) {
-                obj->particleEmitFlags |= OBJ_EMIT_PARTICLE_3 | OBJ_EMIT_PARTICLE_4;
+                obj->particleEmittersEnabled |= OBJ_EMIT_3 | OBJ_EMIT_4;
             }
         }
     }
@@ -1523,19 +1523,19 @@ void func_80046524(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
         iTemp = ((racer->boostType & EMPOWER_BOOST) >> 2) + 10;
         if (iTemp > 10) {
             if (asset20->unk70 > 0 || asset20->unk74 > 0.0) {
-                obj->particleEmitFlags |= 1 << iTemp;
+                obj->particleEmittersEnabled |= 1 << iTemp;
             }
         } else if (asset20->unk70 == 2 && asset20->unk74 < 0.5) {
-            obj->particleEmitFlags |= 1 << iTemp;
+            obj->particleEmittersEnabled |= 1 << iTemp;
         } else if (asset20->unk70 < 2 && asset20->unk74 > 0.0f) {
-            obj->particleEmitFlags |= 1 << iTemp;
+            obj->particleEmittersEnabled |= 1 << iTemp;
         }
     }
     if (racer->unk201 == 0) {
-        obj->particleEmitFlags = OBJ_EMIT_OFF;
+        obj->particleEmittersEnabled = OBJ_EMIT_NONE;
     } else {
         obj->segment.y_velocity += updateRate * gCurrentRacerWeightStat;
-        func_800AF714(obj, updateRate);
+        update_vehicle_particles(obj, updateRate);
         obj->segment.y_velocity -= updateRate * gCurrentRacerWeightStat;
     }
     gCurrentRacerTransform.rotation.y_rotation = -obj->segment.trans.rotation.y_rotation;
@@ -2442,15 +2442,11 @@ void update_player_racer(Object *obj, s32 updateRate) {
     if (tempRacer->unk1FE == 1) {
         tempRacer->unk1F1 = 0;
     }
-    // PAL moves 20% faster.
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
     tempRacer->unk1F6 -= updateRate;
     if (tempRacer->unk1F6 < 0) {
         tempRacer->unk1F6 = 0;
     }
-    obj->particleEmitFlags = OBJ_EMIT_OFF;
+    obj->particleEmittersEnabled = OBJ_EMIT_NONE;
     if (tempRacer->unk201 > 0) {
         tempRacer->unk201 -= updateRate;
     } else {
@@ -2701,7 +2697,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
         }
         if (tempRacer->magnetTimer == 0) {
             if (tempRacer->magnetSoundMask) {
-                sound_stop(tempRacer->magnetSoundMask);
+                sndp_stop(tempRacer->magnetSoundMask);
                 tempRacer->magnetSoundMask = NULL;
             }
         }
@@ -2994,7 +2990,7 @@ void func_8004F7F4(s32 updateRate, f32 updateRateF, Object *racerObj, Object_Rac
             var_v1 = 0;
         }
         if (racer->unk1FE == 0) {
-            racerObj->particleEmitFlags |= PARTICLE_VEL_Z;
+            racerObj->particleEmittersEnabled |= PARTICLE_RANDOM_VELOCITY_Z;
         }
         apply_vehicle_rotation_offset(racer, updateRate, 0, 0, var_v1);
         func_80053750(racerObj, racer, updateRateF);
@@ -3056,7 +3052,7 @@ void func_8004F7F4(s32 updateRate, f32 updateRateF, Object *racerObj, Object_Rac
             update_car_velocity_offground(racerObj, racer, updateRate, updateRateF);
         }
         if (racer->unk1C != 0) {
-            sound_stop((u8 *) racer->unk1C);
+            sndp_stop((s32) racer->unk1C); // type cast required to match
             racer->unk1C = 0;
         }
         if (racer->buoyancy != 0.0f && racer->vehicleIDPrev != VEHICLE_BUBBLER) {
@@ -3113,7 +3109,7 @@ void func_8004F7F4(s32 updateRate, f32 updateRateF, Object *racerObj, Object_Rac
         if (D_8011D550) {
             if (gCurrentPlayerIndex != PLAYER_COMPUTER && D_8011D550 != SOUND_STOMP5) {
                 sound_play_spatial(D_8011D550, racerObj->segment.trans.x_position, racerObj->segment.trans.y_position,
-                                   racerObj->segment.trans.z_position, (s32 **) &racer->unk21C);
+                                   racerObj->segment.trans.z_position, &racer->unk21C);
                 sound_volume_set_relative(D_8011D550, racer->unk21C, D_8011D552);
             }
             racer->stretch_height_cap = (1.0 - ((f32) (D_8011D552 - 40) * 0.004));
@@ -3212,29 +3208,30 @@ void func_8004F7F4(s32 updateRate, f32 updateRateF, Object *racerObj, Object_Rac
             var_v1 = ((racer->boostType & EMPOWER_BOOST) >> 2) + 0x10;
             if (var_v1 > 0x10) {
                 if (asset20->unk70 > 0 || asset20->unk74 > 0.0) {
-                    racerObj->particleEmitFlags |= 1 << var_v1;
+                    racerObj->particleEmittersEnabled |= 1 << var_v1;
                 }
             } else {
                 if (asset20->unk70 == 2 && asset20->unk74 < 0.5) {
-                    racerObj->particleEmitFlags |= 1 << var_v1;
+                    racerObj->particleEmittersEnabled |= 1 << var_v1;
                 } else if (asset20->unk70 < 2 && asset20->unk74 > 0.0f) {
-                    racerObj->particleEmitFlags |= 1 << var_v1;
+                    racerObj->particleEmittersEnabled |= 1 << var_v1;
                 }
             }
         }
         if (gCurrentPlayerIndex != PLAYER_COMPUTER && gNumViewports < 2) {
             if (racer->buoyancy > 14.0f) {
                 if (get_random_number_from_range(0, 1) != 0) {
-                    racerObj->particleEmitFlags |= PARTICLE_COLOURVEL_RED | PARTICLE_COLOURVEL_GREEN;
+                    racerObj->particleEmittersEnabled |= PARTICLE_RANDOM_COLOUR_RED | PARTICLE_RANDOM_COLOUR_GREEN;
                 }
             } else if (racer->buoyancy < 6.0f) {
                 if (racer->velocity > -3.0 && racer->velocity < 0.5 && get_random_number_from_range(0, 1) != 0) {
-                    racerObj->particleEmitFlags |= PARTICLE_UNK00040000 | PARTICLE_FORWARDVEL;
+                    racerObj->particleEmittersEnabled |=
+                        PARTICLE_RANDOM_SCALE_VELOCITY | PARTICLE_RANDOM_MOVEMENT_PARAM;
                 }
             }
         }
         if (racer->vehicleID < VEHICLE_BOSSES) {
-            func_800AF714(racerObj, updateRate);
+            update_vehicle_particles(racerObj, updateRate);
         }
         second_racer_camera_update(racerObj, racer, 0, updateRateF);
         if (gNumViewports == 1 && racer->velocity > -3.0 && get_settings()->courseId != ASSET_LEVEL_WIZPIG1) {
@@ -3407,11 +3404,11 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
         if (gCurrentPlayerIndex >= PLAYER_ONE) {
             if (gNumViewports < FOUR_PLAYERS) {
                 if (racer->drift_direction > 0) {
-                    obj->particleEmitFlags |= 0x1000 | 0x400;
+                    obj->particleEmittersEnabled |= 0x1000 | 0x400;
                 } else if (racer->drift_direction < 0) {
-                    obj->particleEmitFlags |= 0x2000 | 0x800;
+                    obj->particleEmittersEnabled |= 0x2000 | 0x800;
                 } else {
-                    obj->particleEmitFlags |= 0x2000 | 0x1000;
+                    obj->particleEmittersEnabled |= 0x2000 | 0x1000;
                 }
             } else {
                 sp58 = 1;
@@ -3438,7 +3435,7 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
         gCurrentStickY = -70;
         sp60 = TRUE;
         if (gNumViewports < FOUR_PLAYERS) {
-            obj->particleEmitFlags |= 0x2000 | 0x1000 | 0x800 | 0x400;
+            obj->particleEmittersEnabled |= 0x2000 | 0x1000 | 0x800 | 0x400;
         } else {
             sp58 = TRUE;
         }
@@ -3464,9 +3461,9 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
     if (racer->drift_direction != 0 && gCurrentPlayerIndex >= PLAYER_ONE) {
         if (gNumViewports < FOUR_PLAYERS) {
             if (racer->drift_direction > 0) {
-                obj->particleEmitFlags |= 0x1000 | 0x400;
+                obj->particleEmittersEnabled |= 0x1000 | 0x400;
             } else {
-                obj->particleEmitFlags |= 0x2000 | 0x800;
+                obj->particleEmittersEnabled |= 0x2000 | 0x800;
             }
         } else {
             sp58 = TRUE;
@@ -3509,32 +3506,32 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
             rumble_set(racer->playerIndex, RUMBLE_TYPE_0);
         }
         if (racer->y_rotation_vel < 0) {
-            obj->particleEmitFlags |= 0x1000 | 0x400;
+            obj->particleEmittersEnabled |= 0x1000 | 0x400;
         } else {
-            obj->particleEmitFlags |= 0x2000 | 0x800;
+            obj->particleEmittersEnabled |= 0x2000 | 0x800;
         }
         if (racer->drift_direction != 0 || racer->drifting != 0 || racer->unk1FB != 0) {
             if (racer->unk10 == 0) {
                 sound_play_spatial(SOUND_CAR_SLIDE, obj->segment.trans.x_position, obj->segment.trans.y_position,
-                                   obj->segment.trans.z_position, (s32 **) &racer->unk10);
+                                   obj->segment.trans.z_position, &racer->unk10);
             } else {
-                audioline_reverb((void *) racer->unk10, obj->segment.trans.x_position, obj->segment.trans.y_position,
+                audioline_reverb((s32) racer->unk10, obj->segment.trans.x_position, obj->segment.trans.y_position,
                                  obj->segment.trans.z_position);
             }
             if (racer->unk14) {
-                sound_stop((void *) racer->unk14);
+                sndp_stop((s32) racer->unk14); // type cast required to match
             }
         } else {
             if (racer->unk10) {
-                sound_stop((void *) racer->unk10);
+                sndp_stop((s32) racer->unk10); // type cast required to match
             }
         }
     } else {
         if (racer->unk10) {
-            sound_stop((void *) racer->unk10);
+            sndp_stop((s32) racer->unk10); // type cast required to match
         }
         if (racer->unk14) {
-            sound_stop((void *) racer->unk14);
+            sndp_stop((s32) racer->unk14); // type cast required to match
         }
     }
     // Velocity of steering input
@@ -3692,28 +3689,28 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
     if (get_viewport_count() < THREE_PLAYERS) {
         if ((sp60 != 0 && racer->velocity < -2.0) || sp58 != 0 || racer->unk1FB != 0) {
             if (racer->wheel_surfaces[2] < SURFACE_NONE) {
-                obj->particleEmitFlags |= gSurfaceFlagTable[racer->wheel_surfaces[2]];
+                obj->particleEmittersEnabled |= gSurfaceFlagTable[racer->wheel_surfaces[2]];
             }
             if (racer->wheel_surfaces[3] < SURFACE_NONE) {
-                obj->particleEmitFlags |= gSurfaceFlagTable[racer->wheel_surfaces[3]] * 2;
+                obj->particleEmittersEnabled |= gSurfaceFlagTable[racer->wheel_surfaces[3]] * 2;
             }
         }
         if (racer->velocity < -2.0) {
             if (racer->wheel_surfaces[2] < SURFACE_NONE) {
-                obj->particleEmitFlags |= gSurfaceFlagTable4P[racer->wheel_surfaces[2]];
+                obj->particleEmittersEnabled |= gSurfaceFlagTable4P[racer->wheel_surfaces[2]];
             }
             if (racer->wheel_surfaces[3] < SURFACE_NONE) {
-                obj->particleEmitFlags |= gSurfaceFlagTable4P[racer->wheel_surfaces[3]] * 2;
+                obj->particleEmittersEnabled |= gSurfaceFlagTable4P[racer->wheel_surfaces[3]] * 2;
             }
         }
     }
     // Play a sound on grass and sand when landing on it
     surfaceType = gSurfaceSoundTable[surfaceType];
-    if (racer->unk18 == NULL && surfaceType != SOUND_NONE && racer->velocity < -2.0) {
+    if (racer->unk18 == 0 && surfaceType != SOUND_NONE && racer->velocity < -2.0) {
         sound_play(surfaceType, &racer->unk18);
     }
-    if (racer->unk18 != NULL && (surfaceType == SOUND_NONE || racer->velocity > -2.0)) {
-        sound_stop((void *) racer->unk18);
+    if (racer->unk18 != 0 && (surfaceType == SOUND_NONE || racer->velocity > -2.0)) {
+        sndp_stop((s32) racer->unk18); // type cast required to match
     }
     // Apply a bobbing effect when on grass and sand.
     if (racer->velocity < -2.0 && sp68 >= 4) {
@@ -3947,9 +3944,9 @@ void func_8005250C(Object *obj, Object_Racer *racer, s32 updateRate) {
     if (racer->unk1F3 & 8) {
         if (gNumViewports < 3) {
             if (gCurrentPlayerIndex >= PLAYER_ONE) {
-                obj->particleEmitFlags |= 0x100000;
+                obj->particleEmittersEnabled |= 0x100000;
             } else {
-                obj->particleEmitFlags |= 0x80000;
+                obj->particleEmittersEnabled |= 0x80000;
             }
         }
         racer->unk1F2 = 4;
@@ -4109,13 +4106,13 @@ void racer_spinout_car(Object *obj, Object_Racer *racer, s32 updateRate, f32 upd
     angleVel = racer->y_rotation_vel;
     if (gCurrentPlayerIndex > PLAYER_COMPUTER) {
         if (gNumViewports < VIEWPORTS_COUNT_4_PLAYERS) {
-            obj->particleEmitFlags |= 0x4FC00;
+            obj->particleEmittersEnabled |= 0x4FC00;
         } else {
             if (racer->wheel_surfaces[2] < SURFACE_NONE) {
-                obj->particleEmitFlags |= 1 << (racer->wheel_surfaces[2] * 2);
+                obj->particleEmittersEnabled |= 1 << (racer->wheel_surfaces[2] * 2);
             }
             if (racer->wheel_surfaces[3] < SURFACE_NONE) {
-                obj->particleEmitFlags |= 2 << (racer->wheel_surfaces[3] * 2);
+                obj->particleEmittersEnabled |= 2 << (racer->wheel_surfaces[3] * 2);
             }
         }
     }
@@ -4169,13 +4166,13 @@ void update_car_velocity_offground(Object *obj, Object_Racer *racer, s32 updateR
         racer->x_rotation_vel += (angle >> 3); //!@Delta
     }
     if (racer->unk18) {
-        sound_stop((void *) racer->unk18);
+        sndp_stop((s32) racer->unk18); // type cast required to match
     }
     if (racer->unk10) {
-        sound_stop((void *) racer->unk10);
+        sndp_stop((s32) racer->unk10); // type cast required to match
     }
     if (racer->unk14) {
-        sound_stop((void *) racer->unk14);
+        sndp_stop((s32) racer->unk14); // type cast required to match
     }
     if (racer->unk1FE == 1 || racer->unk1FE == 3) {
         racer->unk1E8 = racer->steerAngle;
@@ -4243,7 +4240,7 @@ void update_car_velocity_offground(Object *obj, Object_Racer *racer, s32 updateR
         canSteer = TRUE;
     }
     if (canSteer) {
-        obj->particleEmitFlags = OBJ_EMIT_OFF;
+        obj->particleEmittersEnabled = OBJ_EMIT_NONE;
         racer->drift_direction = 0;
         racer->unk10C -= (racer->unk10C * updateRate) >> 4;
         gCurrentCarSteerVel = 0;
@@ -4277,7 +4274,7 @@ void update_car_velocity_offground(Object *obj, Object_Racer *racer, s32 updateR
         }
         racer->trickType = steerAngle;
     }
-    obj->particleEmitFlags = OBJ_EMIT_OFF;
+    obj->particleEmittersEnabled = OBJ_EMIT_NONE;
 }
 
 /**
@@ -4444,7 +4441,7 @@ void func_80053750(Object *objRacer, Object_Racer *racer, f32 updateRateF) {
                     }
                 }
             }
-            objRacer->particleEmitFlags |= OBJ_EMIT_UNK_400 | OBJ_EMIT_UNK_800;
+            objRacer->particleEmittersEnabled |= OBJ_EMIT_11 | OBJ_EMIT_12;
         }
         temp_f0 = someObj->segment.trans.y_position; // Fake
         for (i = 0; i < 4; i++) {
@@ -4662,9 +4659,9 @@ void update_onscreen_AI_racer(Object *obj, Object_Racer *racer, s32 updateRate, 
         func_80054FD0(obj, racer, updateRate);
     }
     if (!racer->unk201) {
-        obj->particleEmitFlags = OBJ_EMIT_OFF;
+        obj->particleEmittersEnabled = OBJ_EMIT_NONE;
     } else if (racer->vehicleID < VEHICLE_BOSSES) {
-        func_800AF714(obj, updateRate);
+        update_vehicle_particles(obj, updateRate);
     }
     func_80053750(obj, racer, updateRateF);
     tempVel = 1.0f / updateRateF;
@@ -4792,10 +4789,10 @@ void update_car_velocity_ground(Object *obj, Object_Racer *racer, s32 updateRate
     }
     if (get_viewport_count() < 2 && sp38 && racer->velocity < -2.0) {
         if (racer->wheel_surfaces[2] < SURFACE_NONE) {
-            obj->particleEmitFlags |= 1 << (racer->wheel_surfaces[2] * 2);
+            obj->particleEmittersEnabled |= 1 << (racer->wheel_surfaces[2] * 2);
         }
         if (racer->wheel_surfaces[3] < SURFACE_NONE) {
-            obj->particleEmitFlags |= 2 << (racer->wheel_surfaces[3] * 2);
+            obj->particleEmittersEnabled |= 2 << (racer->wheel_surfaces[3] * 2);
         }
     }
     vel = racer->velocity;
@@ -5474,10 +5471,10 @@ void handle_racer_items(Object *obj, Object_Racer *racer, UNUSED s32 updateRate)
                                                    NULL);
                         } else {
                             if (racer->weaponSoundMask) {
-                                sound_stop(racer->weaponSoundMask);
+                                sndp_stop(racer->weaponSoundMask);
                             }
                             sound_play_spatial(soundID, obj->segment.trans.x_position, obj->segment.trans.y_position,
-                                               obj->segment.trans.z_position, (s32 **) &racer->weaponSoundMask);
+                                               obj->segment.trans.z_position, &racer->weaponSoundMask);
                         }
                     }
                 }
@@ -5611,7 +5608,7 @@ void racer_activate_magnet(Object *obj, Object_Racer *racer, s32 updateRate) {
             racer->boostType |= EMPOWER_BOOST;
         }
         if (racer->magnetSoundMask == NULL && racer->raceFinished == FALSE) {
-            sound_play(SOUND_MAGNET_HUM, (void *) &racer->magnetSoundMask);
+            sound_play(SOUND_MAGNET_HUM, &racer->magnetSoundMask);
         }
     } else {
         racer->magnetTimer = 0;
@@ -6437,11 +6434,11 @@ void func_80059208(Object *obj, Object_Racer *racer, s32 updateRate) {
             if (temp_v0_4->altRouteID == -1) {
                 racer->unk1C8 = 0;
             }
-            counter = racer->checkpoint - 1;
-            if (counter < 0) {
-                counter += temp_v0;
+            angle = racer->checkpoint - 1;
+            if (angle < 0) {
+                angle += temp_v0;
             }
-            temp_v0_4 = get_checkpoint_node(counter);
+            temp_v0_4 = get_checkpoint_node(angle);
             if (temp_v0_4->altRouteID == -1) {
                 racer->unk1C8 = 0;
             }
@@ -6528,13 +6525,23 @@ void func_80059208(Object *obj, Object_Racer *racer, s32 updateRate) {
  * Used to visualise a standard time to the player for a stopwatch, or a record.
  */
 void get_timestamp_from_frames(s32 frameCount, s32 *minutes, s32 *seconds, s32 *hundredths) {
-    if (gVideoRefreshRate == REFRESH_50HZ) {
-        frameCount = (f32) frameCount * 1.2;
-    }
     // (REFRESH_60HZ * 60) is just frames per minute basically
     *minutes = frameCount / (REFRESH_60HZ * 60);
     *seconds = (frameCount - (*minutes * (REFRESH_60HZ * 60))) / REFRESH_60HZ;
     *hundredths = (((frameCount - (*minutes * (REFRESH_60HZ * 60))) - (*seconds * REFRESH_60HZ)) * 100) / REFRESH_60HZ;
+}
+
+void ghost_alloc(void) {
+    if (is_time_trial_enabled()) {
+        gGhostData[0] = mempool_alloc_safe( (sizeof(GhostNode) * 2) * MAX_NUMBER_OF_GHOST_NODES, PP_RAM_GHOSTS);
+        gGhostData[1] = ((GhostNode *) gGhostData[0] + MAX_NUMBER_OF_GHOST_NODES);
+    }
+}
+
+void ghost_free(void) {
+    if (gGhostData[0]) {
+        mempool_free(gGhostData[0]);
+    }
 }
 
 /**
@@ -6543,8 +6550,8 @@ void get_timestamp_from_frames(s32 frameCount, s32 *minutes, s32 *seconds, s32 *
  */
 void allocate_ghost_data(void) {
     // Allocate two sets of ghost data. One for the current playing ghost, and one for the new ghost being written.
-    gGhostData[0] = mempool_alloc_safe((sizeof(GhostNode) * 2) * MAX_NUMBER_OF_GHOST_NODES, COLOUR_TAG_RED);
-    gGhostData[1] = ((GhostNode *) gGhostData[0] + MAX_NUMBER_OF_GHOST_NODES);
+    gGhostData[0] = NULL;
+    gGhostData[1] = NULL;
     gGhostData[GHOST_STAFF] = NULL; // T.T. Ghost
     gGhostNodeCount[0] = 0;
     gGhostNodeCount[1] = 0;
@@ -6610,17 +6617,17 @@ s32 timetrial_load_player_ghost(s32 controllerID, s32 mapId, s16 arg2, s16 *char
  * Returns 0 if successful, or 1 if an error occured.
  */
 s32 load_tt_ghost(s32 ghostOffset, s32 size, s16 *outTime) {
-    GhostHeader *ghost = mempool_alloc_safe(size, COLOUR_TAG_RED);
+    GhostHeader *ghost = mempool_alloc_safe(size, PP_RAM_GHOSTS);
     if (ghost != NULL) {
         load_asset_to_address(ASSET_TTGHOSTS, (u32) ghost, ghostOffset, size);
         if (gGhostData[GHOST_STAFF] != NULL) {
             mempool_free(gGhostData[GHOST_STAFF]);
         }
-        gGhostData[GHOST_STAFF] = mempool_alloc_safe(size - sizeof(GhostHeader), COLOUR_TAG_WHITE);
+        gGhostData[GHOST_STAFF] = mempool_alloc_safe(size - sizeof(GhostHeader), PP_RAM_GHOSTS);
         if (gGhostData[GHOST_STAFF] != NULL) {
             *outTime = ghost->time;
             gGhostNodeCount[GHOST_STAFF] = ghost->nodeCount;
-            bcopy((u8 *) ghost + 8, gGhostData[GHOST_STAFF], size - sizeof(GhostHeader));
+            wcopy((u8 *) ghost + 8, gGhostData[GHOST_STAFF], size - sizeof(GhostHeader));
             mempool_free(ghost);
             return 0;
         }
@@ -6797,7 +6804,7 @@ s32 set_ghost_position_and_rotation(Object *obj) {
     }
     obj->segment.trans.rotation.z_rotation = rot + (s32) (rotDiff * catmullX);
 
-    obj->particleEmitFlags = OBJ_EMIT_OFF;
+    obj->particleEmittersEnabled = OBJ_EMIT_NONE;
     obj->segment.object.segmentID = get_level_segment_index_from_position(
         obj->segment.trans.x_position, obj->segment.trans.y_position, obj->segment.trans.z_position);
     if (ghostNodeCount == (commonUnk0s32 + 3)) {
@@ -7139,7 +7146,7 @@ void update_AI_racer(Object *obj, Object_Racer *racer, s32 updateRate, f32 updat
     }
     if (racer->magnetTimer == 0) {
         if (racer->magnetSoundMask != NULL) {
-            sound_stop(racer->magnetSoundMask);
+            sndp_stop(racer->magnetSoundMask);
             racer->magnetSoundMask = NULL;
         }
     }
@@ -7489,8 +7496,8 @@ void func_8005B818(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
     racer->unkFC.x = obj->segment.trans.x_position;
     racer->unkFC.y = obj->segment.trans.y_position;
     racer->unkFC.z = obj->segment.trans.z_position;
-    obj->particleEmitFlags = OBJ_EMIT_OFF;
-    func_800AF714(obj, updateRate);
+    obj->particleEmittersEnabled = OBJ_EMIT_NONE;
+    update_vehicle_particles(obj, updateRate);
 }
 
 #ifdef ANTI_TAMPER

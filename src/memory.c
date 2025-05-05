@@ -40,7 +40,6 @@ void mempool_init_main(void) {
         ramEnd = RAM_END;
     }
     mempool_init(&gMainMemoryPool, ramEnd - (s32) (&gMainMemoryPool), MAIN_POOL_SLOT_COUNT);
-    debug_ram(K0_TO_PHYS((u32) &gMainMemoryPool), COLOUR_TAG_WHITE);
     mempool_free_timer(2);
     gFreeQueueCount = 0;
 }
@@ -56,9 +55,10 @@ MemoryPoolSlot *mempool_new_sub(s32 poolDataSize, s32 numSlots) {
     u32 intFlags = interrupts_disable();
     MemoryPoolSlot *newPool;
 
-    size = poolDataSize + (numSlots * sizeof(MemoryPoolSlot));
-    slots = (MemoryPoolSlot *) mempool_alloc_safe(size, COLOUR_TAG_WHITE);
-    newPool = mempool_init(slots, size, numSlots);
+    slots = (MemoryPoolSlot *) mempool_alloc_safe(numSlots * sizeof(MemoryPoolSlot), PP_RAM_SLOTS);
+    // Good thing we're not using Rust :)
+    slots[numSlots].data = (u8 *) mempool_alloc_safe(poolDataSize, PP_RAM_SUBPOOLS);
+    newPool = mempool_init(slots, poolDataSize + (numSlots * sizeof(MemoryPoolSlot)), numSlots);
     interrupts_enable(intFlags);
     return newPool;
 }
@@ -73,7 +73,6 @@ MemoryPoolSlot *mempool_init(MemoryPoolSlot *slots, s32 poolSize, s32 numSlots) 
     s32 i;
     s32 firstSlotSize;
 
-    debug_ram(numSlots * sizeof(MemoryPoolSlot), COLOUR_TAG_WHITE);
     poolCount = ++gNumberOfMemoryPools;
     firstSlotSize = poolSize - (numSlots * sizeof(MemoryPoolSlot));
     gMemoryPools[poolCount].maxNumSlots = numSlots;
@@ -141,14 +140,13 @@ MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag
     s32 nextIndex;
     s32 currIndex;
 
+    crash_assert(size == 0, "Alloc size 0");
     intFlags = interrupts_disable();
-    if (size == 0) {
-        stubbed_printf("*** mmAlloc: size = 0 ***\n");
-    }
     pool = &gMemoryPools[poolIndex];
     if ((pool->curNumSlots + 1) == (*pool).maxNumSlots) {
         interrupts_enable(intFlags);
-        stubbed_printf("*** mm Error *** ---> No more slots available.\n");
+        gMemoryPools[poolIndex].curNumSlots++;
+        crash_nomemory(0, COLOUR_TAG_NONE);
         return NULL;
     }
     currIndex = MEMSLOT_NONE;
@@ -185,7 +183,6 @@ MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag
         if (size & ALIGNCHECK) {
             size = _ALIGN8(size);
         }
-        crash_assert(slotSize == 0, "Couldn't find memory???");
     }
     if (currIndex != MEMSLOT_NONE) {
         mempool_slot_assign(poolIndex, (s32) currIndex, size, 1, 0, colourTag);
@@ -194,7 +191,7 @@ MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag
         return (MemoryPoolSlot *) (slots + currIndex)->data;
     }
     interrupts_enable(intFlags);
-    stubbed_printf("\n*** mm Error *** ---> No suitble block found for allocation.\n");
+    crash_nomemory(size, colourTag);
     return NULL;
 }
 
@@ -206,7 +203,21 @@ void *mempool_alloc_pool(MemoryPoolSlot *slots, s32 size) {
     s32 i;
     for (i = gNumberOfMemoryPools; i != 0; i--) {
         if (slots == gMemoryPools[i].slots) {
-            return mempool_slot_find(i, size, 0, 0);
+            return mempool_slot_find(i, size, PP_RAM_OBJECTS, 0);
+        }
+    }
+    return (void *) NULL;
+}
+
+/**
+ * Allocate memory from a specific pool.
+ * Official name: mmAllocR
+ */
+void *mempool_alloc_pool_tag(MemoryPoolSlot *slots, s32 size, s32 colourTag) {
+    s32 i;
+    for (i = gNumberOfMemoryPools; i != 0; i--) {
+        if (slots == gMemoryPools[i].slots) {
+            return mempool_slot_find(i, size, colourTag, 0);
         }
     }
     return (void *) NULL;
@@ -325,7 +336,6 @@ void mempool_free_queue_clear(void) {
 /**
  * Searches the memory pools for a slot matching the given address.
  * If a slot is found, free it.
- * Official name: heapFree
  */
 void mempool_free_addr(u8 *address) {
     s32 slotIndex;

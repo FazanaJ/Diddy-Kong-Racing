@@ -58,8 +58,8 @@ s32 osPfsFileState(OSPfs* pfs, s32 file_no, OSPfsState* state) {
     state->file_size = pages * (PFS_ONE_PAGE * BLOCKSIZE);
     state->company_code = dir.company_code;
     state->game_code = dir.game_code;
-    bcopy(&dir.game_name, state->game_name, PFS_FILE_NAME_LEN);
-    bcopy(&dir.ext_name, state->ext_name, PFS_FILE_EXT_LEN);
+    wcopy(&dir.game_name, state->game_name, PFS_FILE_NAME_LEN);
+    wcopy(&dir.ext_name, state->ext_name, PFS_FILE_EXT_LEN);
 
     ret = __osPfsGetStatus(pfs->queue, pfs->channel);
     return ret;

@@ -13,6 +13,10 @@
 #include "PRinternal/viint.h"
 #include "PR/os_motor.h"
 #include "save_layout.h"
+#include "main.h"
+
+#undef VERSION
+#define VERSION VERSION_80
 
 /************ .data ************/
 
@@ -683,7 +687,7 @@ s32 read_game_data_from_controller_pak(s32 controllerIndex, char *fileExt, Setti
             ret = CONTROLLER_PAK_BAD_DATA;
         }
         if (ret == CONTROLLER_PAK_GOOD) {
-            alloc = mempool_alloc_safe(fileSize, COLOUR_TAG_BLACK);
+            alloc = mempool_alloc_safe(fileSize, PP_RAM_CPAK);
             ret = read_data_from_controller_pak(controllerIndex, fileNumber, (u8 *) alloc, fileSize);
 
             if (ret == CONTROLLER_PAK_GOOD) {
@@ -716,7 +720,7 @@ s32 write_game_data_to_controller_pak(s32 controllerIndex, Settings *arg1) {
     s32 fileSize;
 
     fileSize = get_game_data_file_size(); // 256 bytes
-    gameData = mempool_alloc_safe(fileSize, COLOUR_TAG_WHITE);
+    gameData = mempool_alloc_safe(fileSize, PP_RAM_CPAK);
     *((s32 *) gameData) = GAMD;
     func_800732E8(arg1, gameData + 4);
     ret = get_file_extension(controllerIndex, 3, (char *) &fileExt);
@@ -751,7 +755,7 @@ s32 read_time_data_from_controller_pak(s32 controllerIndex, char *fileExt, Setti
         }
 
         if (status == CONTROLLER_PAK_GOOD) {
-            cpakData = mempool_alloc_safe(fileSize, COLOUR_TAG_BLACK);
+            cpakData = mempool_alloc_safe(fileSize, PP_RAM_CPAK);
 
             status = read_data_from_controller_pak(controllerIndex, fileNumber, (u8 *) cpakData, fileSize);
             if (status == CONTROLLER_PAK_GOOD) {
@@ -783,7 +787,7 @@ s32 write_time_data_to_controller_pak(s32 controllerIndex, Settings *arg1) {
     char *fileExt;
 
     fileSize = get_time_data_file_size(); // 512 bytes
-    timeData = mempool_alloc_safe(fileSize, COLOUR_TAG_WHITE);
+    timeData = mempool_alloc_safe(fileSize, PP_RAM_CPAK);
     *((s32 *) timeData) = TIMD;
     func_800738A4(arg1, timeData + 4);
     ret = get_file_extension(controllerIndex, 4, (char *) &fileExt);
@@ -825,7 +829,7 @@ s32 read_save_file(s32 saveFileNum, Settings *settings) {
             break;
     }
     blocks = 5;
-    saveData = mempool_alloc_safe(blocks * sizeof(u64), COLOUR_TAG_WHITE);
+    saveData = mempool_alloc_safe(blocks * sizeof(u64), PP_RAM_SAVES);
     for (block = 0, address = startingAddress; block < blocks; block++, address++) {
         osEepromRead(si_mesg(), address, (u8 *) &saveData[block]);
     }
@@ -877,7 +881,7 @@ void erase_save_file(s32 saveFileNum, Settings *settings) {
                 break;
         }
         blockSize = 5;
-        alloc = mempool_alloc_safe(blockSize * sizeof(u64), COLOUR_TAG_WHITE);
+        alloc = mempool_alloc_safe(blockSize * sizeof(u64), PP_RAM_SAVES);
         saveData = (u8 *) alloc;
 
         // clang-format off
@@ -931,7 +935,7 @@ s32 write_save_data(s32 saveFileNum, Settings *settings) {
     }
 
     blocks = 5;
-    alloc = mempool_alloc_safe(blocks * sizeof(u64), COLOUR_TAG_WHITE);
+    alloc = mempool_alloc_safe(blocks * sizeof(u64), PP_RAM_SAVES);
     func_800732E8(settings, (u8 *) alloc);
 
     if (!is_reset_pressed()) {
@@ -961,7 +965,7 @@ s32 read_eeprom_data(Settings *settings, u8 flags) {
         return -1;
     }
 
-    alloc = mempool_alloc_safe(COURSE_TIMES_START + sizeof(CourseRecords), COLOUR_TAG_WHITE);
+    alloc = mempool_alloc_safe(COURSE_TIMES_START + sizeof(CourseRecords), PP_RAM_SAVES);
 
     if (flags & SAVE_DATA_FLAG_READ_FLAP_TIMES) {
         s32 blocks = BLOCK_SIZE(sizeof(CourseRecords));
@@ -1001,7 +1005,7 @@ s32 write_eeprom_data(Settings *settings, u8 flags) {
         return -1;
     }
 
-    alloc = mempool_alloc_safe(COURSE_TIMES_START + sizeof(CourseRecords), COLOUR_TAG_WHITE);
+    alloc = mempool_alloc_safe(COURSE_TIMES_START + sizeof(CourseRecords), PP_RAM_SAVES);
 
     func_800738A4(settings, (u8 *) alloc);
 
@@ -1116,7 +1120,7 @@ void func_80074AA8(GhostHeader *ghostHeader, s16 characterID, s16 time, s16 node
     ghostHeader->unk3 = 0;
     ghostHeader->time = time;
     ghostHeader->nodeCount = nodeCount;
-    bcopy(dest, (u8 *) ghostHeader + 8, nodeCount * sizeof(GhostNode));
+    wcopy(dest, (u8 *) ghostHeader + 8, nodeCount * sizeof(GhostNode));
     ghostHeader->checksum = calculate_ghost_header_checksum(ghostHeader);
 }
 
@@ -1150,7 +1154,7 @@ s32 func_80074B34(s32 controllerIndex, s16 levelId, s16 vehicleId, u16 *ghostCha
     }
     pakStatus = get_file_number(controllerIndex, "DKRACING-GHOSTS", "", &fileNumber);
     if (pakStatus == CONTROLLER_PAK_GOOD) {
-        cPakFile = mempool_alloc_safe(GHSS_SIZE, COLOUR_TAG_BLACK);
+        cPakFile = mempool_alloc_safe(GHSS_SIZE, PP_RAM_CPAK);
         if (!(pfs[controllerIndex].status & 1)) {
             osPfsInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex);
         }
@@ -1180,7 +1184,7 @@ s32 func_80074B34(s32 controllerIndex, s16 levelId, s16 vehicleId, u16 *ghostCha
         mempool_free(cPakFile);
         if (ghostSize != 0) {
             if (ghostCharacterId != NULL) {
-                cPakFile = mempool_alloc_safe(allocateSpace + GHSS_SIZE, COLOUR_TAG_BLACK);
+                cPakFile = mempool_alloc_safe(allocateSpace + GHSS_SIZE, PP_RAM_CPAK);
                 if (osPfsReadWriteFile(&pfs[controllerIndex], fileNumber, PFS_READ, ghostSize, allocateSpace,
                                        AS_BYTES(cPakFile)) == 0) {
                     // Hmm... The ghost data struct might not be quite right here...
@@ -1188,7 +1192,7 @@ s32 func_80074B34(s32 controllerIndex, s16 levelId, s16 vehicleId, u16 *ghostCha
                         *ghostCharacterId = cPakFile->data[-1].unk2_b;
                         *ghostTime = cPakFile->data[0].unk0_hw;
                         *ghostNodeCount = cPakFile->data[0].unk2;
-                        bcopy(cPakFile->data + 1, ghostData, *ghostNodeCount * sizeof(GhostNode));
+                        wcopy(cPakFile->data + 1, ghostData, *ghostNodeCount * sizeof(GhostNode));
                         pakStatus = CONTROLLER_PAK_GOOD;
                     } else {
                         stubbed_printf("warning: corrupt ghost\n");
@@ -1258,7 +1262,7 @@ SIDeviceStatus func_80074EB8(s32 controllerIndex, s16 levelId, s16 vehicleId, s1
     sp30 += GHSS_SIZE;
     sp24 = sp30 * 6;
     if (1) {} // fake
-    ghost = mempool_alloc_safe(sp24 + (GHSS_SIZE * 2), COLOUR_TAG_BLACK);
+    ghost = mempool_alloc_safe(sp24 + (GHSS_SIZE * 2), PP_RAM_CPAK);
     ghost->signature = GHSS;
     ghostBody = &ghost->data[0];
     ghostBody[0].unk0 = levelId;
@@ -1319,7 +1323,7 @@ SIDeviceStatus func_80075000(s32 controllerIndex, s16 levelId, s16 vehicleId, s1
             start_reading_controller_data(controllerIndex);
             return pakStatus;
         } else {
-            fileData = mempool_alloc_safe(fileSize + GHSS_SIZE, COLOUR_TAG_BLACK);
+            fileData = mempool_alloc_safe(fileSize + GHSS_SIZE, PP_RAM_CPAK);
             pakStatus = read_data_from_controller_pak(controllerIndex, fileNumber, AS_BYTES(fileData), fileSize);
             start_reading_controller_data(controllerIndex);
             if (pakStatus != CONTROLLER_PAK_GOOD) {
@@ -1356,7 +1360,7 @@ SIDeviceStatus func_80075000(s32 controllerIndex, s16 levelId, s16 vehicleId, s1
                         pakStatus = CONTROLLER_PAK_NO_ROOM_FOR_GHOSTS;
                     } else {
                         sp58 = ghostSize - (ghostFileData[ghostIndex + 1].unk2 - ghostFileData[ghostIndex].unk2);
-                        fileDataToWrite = mempool_alloc_safe(fileSize + GHSS_SIZE, COLOUR_TAG_BLACK);
+                        fileDataToWrite = mempool_alloc_safe(fileSize + GHSS_SIZE, PP_RAM_CPAK);
                         fileDataToWrite->signature = GHSS;
                         sp70 = &fileDataToWrite->data[0];
                         fileDataToWrite->data[6].unk0 = 0xFF;
@@ -1413,14 +1417,14 @@ s32 func_800753D8(s32 controllerIndex, s32 worldId) {
             start_reading_controller_data(controllerIndex);
             return pakStatus;
         }
-        data = mempool_alloc_safe(fileSize + GHSS_SIZE, COLOUR_TAG_BLACK);
+        data = mempool_alloc_safe(fileSize + GHSS_SIZE, PP_RAM_CPAK);
         pakStatus = read_data_from_controller_pak(controllerIndex, fileNumber, (u8 *) data, fileSize);
         start_reading_controller_data(controllerIndex);
         if (pakStatus == CONTROLLER_PAK_GOOD) {
             if (data->signature == GHSS) {
                 tempData = data->data;
                 sizeDiff = tempData[worldId].unk2 - tempData[worldId + 1].unk2;
-                data2 = mempool_alloc_safe(fileSize + GHSS_SIZE, COLOUR_TAG_BLACK);
+                data2 = mempool_alloc_safe(fileSize + GHSS_SIZE, PP_RAM_CPAK);
                 bcopy(data, data2, tempData[worldId].unk2); // Copy data into data2
 
                 if (worldId != WORLD_FUTURE_FUN_LAND) {
@@ -1474,7 +1478,7 @@ SIDeviceStatus func_800756D4(s32 controllerIndex, u8 *levelIDs, u8 *vehicleIDs, 
     if (ret == CONTROLLER_PAK_GOOD) {
         ret = get_file_size(controllerIndex, fileNumber, &fileSize);
         if (ret == CONTROLLER_PAK_GOOD) {
-            fileData = mempool_alloc_safe(fileSize + GHSS_SIZE, COLOUR_TAG_BLACK);
+            fileData = mempool_alloc_safe(fileSize + GHSS_SIZE, PP_RAM_CPAK);
             ret = read_data_from_controller_pak(controllerIndex, fileNumber, (u8 *) fileData, fileSize);
             if (ret == CONTROLLER_PAK_GOOD) {
                 for (i = 0, var_s1 = (GhostHeaderAlt *) (&fileData[4]); i < 6; i++) {
@@ -1690,13 +1694,7 @@ s32 get_controller_pak_file_list(s32 controllerIndex, s32 maxNumOfFilesToGet, ch
         return (controllerIndex << 30) | CONTROLLER_PAK_BAD_DATA;
     }
 
-    if (get_language() == LANGUAGE_JAPANESE) {
-        gameCode = JPN_GAME_CODE;
-    } else if (osTvType == OS_TV_TYPE_PAL) {
-        gameCode = PAL_GAME_CODE;
-    } else {
-        gameCode = NTSC_GAME_CODE;
-    }
+    gameCode = NTSC_GAME_CODE;
 
     if (maxNumOfFilesToGet < maxNumOfFilesOnCpak) {
         maxNumOfFilesOnCpak = maxNumOfFilesToGet;
@@ -1713,7 +1711,7 @@ s32 get_controller_pak_file_list(s32 controllerIndex, s32 maxNumOfFilesToGet, ch
     files_used = maxNumOfFilesOnCpak * SAVE_FILE_BYTES;
 #endif
 
-    gPakFileList = mempool_alloc_safe(files_used, COLOUR_TAG_BLACK);
+    gPakFileList = mempool_alloc_safe(files_used, PP_RAM_CPAK);
     bzero(gPakFileList, files_used);
     list = gPakFileList;
 
@@ -1869,7 +1867,7 @@ s32 copy_controller_pak_data(s32 controllerIndex, s32 fileNumber, s32 secondCont
         return (controllerIndex << 30) | CONTROLLER_PAK_BAD_DATA;
     }
 
-    alloc = mempool_alloc_safe(state.file_size, COLOUR_TAG_BLACK);
+    alloc = mempool_alloc_safe(state.file_size, PP_RAM_CPAK);
 
     status = read_data_from_controller_pak(controllerIndex, fileNumber, alloc, state.file_size);
     start_reading_controller_data(controllerIndex);
@@ -1907,13 +1905,7 @@ SIDeviceStatus get_file_number(s32 controllerIndex, char *fileName, char *fileEx
     string_to_font_codes(fileName, fileNameAsFontCodes, PFS_FILE_NAME_LEN);
     string_to_font_codes(fileExt, fileExtAsFontCodes, PFS_FILE_EXT_LEN);
 
-    if (get_language() == LANGUAGE_JAPANESE) {
-        gameCode = JPN_GAME_CODE;
-    } else if (osTvType == OS_TV_TYPE_PAL) {
-        gameCode = PAL_GAME_CODE;
-    } else {
-        gameCode = NTSC_GAME_CODE;
-    }
+    gameCode = NTSC_GAME_CODE;
 
     ret = osPfsFindFile(&pfs[controllerIndex], COMPANY_CODE, gameCode, (u8 *) fileNameAsFontCodes,
                         (u8 *) fileExtAsFontCodes, fileNumber);
@@ -1987,13 +1979,7 @@ SIDeviceStatus write_controller_pak_file(s32 controllerIndex, s32 fileNumber, ch
     string_to_font_codes(fileName, (char *) fileNameAsFontCodes, PFS_FILE_NAME_LEN);
     string_to_font_codes(fileExt, (char *) fileExtAsFontCodes, PFS_FILE_EXT_LEN);
 
-    if (get_language() == LANGUAGE_JAPANESE) {
-        game_code = JPN_GAME_CODE;
-    } else if (osTvType == OS_TV_TYPE_PAL) {
-        game_code = PAL_GAME_CODE;
-    } else {
-        game_code = NTSC_GAME_CODE;
-    }
+    game_code = NTSC_GAME_CODE;
 
     ret = get_file_number(controllerIndex, fileName, fileExt, &file_number);
     if (ret == CONTROLLER_PAK_GOOD) {
@@ -2143,7 +2129,7 @@ SaveFileType get_file_type(s32 controllerIndex, s32 fileNum) {
     s32 ret;
 
     ret = SAVE_FILE_TYPE_CPAK_OTHER;
-    data = mempool_alloc_safe(0x100, COLOUR_TAG_BLACK);
+    data = mempool_alloc_safe(0x100, PP_RAM_CPAK);
     if (read_data_from_controller_pak(controllerIndex, fileNum, (u8 *) data, 0x100) == CONTROLLER_PAK_GOOD) {
         switch (*data) {
             case GAMD:

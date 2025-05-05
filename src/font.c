@@ -3,6 +3,7 @@
 #include "textures_sprites.h"
 #include "camera.h"
 #include "common.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -147,7 +148,7 @@ void load_fonts(void) {
     }
 
     gDialogueBoxBackground = (DialogueBoxBackground *) mempool_alloc_safe(
-        DIALOGUEBOXBACKGROUND_TOTAL_SIZE + DialogueTextElement_TOTAL_SIZE, COLOUR_TAG_YELLOW);
+        DIALOGUEBOXBACKGROUND_TOTAL_SIZE + DialogueTextElement_TOTAL_SIZE, PP_RAM_FONTS);
     gDialogueText = (DialogueTextElement *) &gDialogueBoxBackground[DIALOGUEBOXBACKGROUND_COUNT];
 
     for (i = 0; i < DIALOGUEBOXBACKGROUND_COUNT; i++) {
@@ -214,6 +215,7 @@ void set_kerning(s32 setting) {
  * This is required before any text using this font can be displayed in a scene.
  */
 void load_font(s32 fontID) {
+    set_texture_colour_tag(PP_RAM_FONTS);
     if (fontID < gNumberOfFonts) {
         FontData *fontData = &gFonts[fontID];
         fontData->loadedFonts[0]++;
@@ -225,6 +227,7 @@ void load_font(s32 fontID) {
             }
         }
     }
+    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
 }
 
 /**
@@ -239,7 +242,7 @@ void unload_font(s32 fontID) {
             if (fontData->loadedFonts[0] == 0) {
                 s32 i = 0;
                 while (i < 32 && fontData->textureID[i] != -1) {
-                    free_texture(fontData->texturePointers[i]);
+                    tex_free(fontData->texturePointers[i]);
                     fontData->texturePointers[i] = NULL;
                     i++;
                 }
@@ -447,7 +450,7 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
         if (box != gDialogueBoxBackground) {
             viewport_scissor(dList);
         }
-        reset_render_settings(dList);
+        rendermode_reset(dList);
         gDPPipeSync((*dList)++);
     }
 }
@@ -641,7 +644,7 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
     if (box != gDialogueBoxBackground) {
         viewport_scissor(dList);
     }
-    reset_render_settings(dList);
+    rendermode_reset(dList);
     gDPPipeSync((*dList)++);
 }
 #endif

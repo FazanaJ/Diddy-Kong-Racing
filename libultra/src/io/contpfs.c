@@ -210,7 +210,7 @@ s32 __osGetId(OSPfs* pfs) {
     }
 
 #if BUILD_VERSION >= VERSION_J
-    bcopy(id, pfs->id, BLOCKSIZE);
+    wcopy(id, pfs->id, BLOCKSIZE);
 #else
     for (k = 0; k < ARRLEN(pfs->id); k++) {
         pfs->id[k] = ((u8 *)id)[k];
@@ -282,7 +282,7 @@ s32 __osPfsRWInode(OSPfs* pfs, __OSInode* inode, u8 flag, u8 bank) {
 
 #if BUILD_VERSION >= VERSION_J
     if (flag == PFS_READ && bank == __osPfsInodeCacheBank && (pfs->channel == __osPfsInodeCacheChannel)) {
-        bcopy(&__osPfsInodeCache, inode, sizeof(__OSInode));
+        wcopy(&__osPfsInodeCache, inode, sizeof(__OSInode));
         return 0;
     }
 #endif
@@ -347,7 +347,7 @@ s32 __osPfsRWInode(OSPfs* pfs, __OSInode* inode, u8 flag, u8 bank) {
 
 #if BUILD_VERSION >= VERSION_J
     __osPfsInodeCacheBank = bank;
-    bcopy(inode, &__osPfsInodeCache, sizeof(__OSInode));
+    wcopy(inode, &__osPfsInodeCache, sizeof(__OSInode));
     __osPfsInodeCacheChannel = pfs->channel;
 #endif
 
