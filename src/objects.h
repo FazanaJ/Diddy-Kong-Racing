@@ -10,7 +10,6 @@
 #include "lights.h"
 #include "particles.h"
 
-
 #define NEW_OBJECT_ENTRY(entryVar, entryId, entrySize, xPos, yPos, zPos) { \
     entryVar.x = (xPos);                                                   \
     entryVar.y = (yPos);                                                   \
@@ -544,5 +543,10 @@ void obj_update(s32 updateRate);
 void func_800159C8(Object *, Object *);
 void func_80011264(ObjectModel *, Object *);
 s16 func_8001CD28(s32 arg0, s32 arg1, s32 arg2, s32 arg3); // NON MATCHING
+
+
+#if !defined(__sgi) && !defined(NUKE)
+#define normalise_time(x) (x)
+#endif
 
 #endif

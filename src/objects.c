@@ -1,3 +1,4 @@
+#define NUKE 1
 #include "objects.h"
 #include "memory.h"
 
