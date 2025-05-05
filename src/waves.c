@@ -922,6 +922,7 @@ void func_800BA8E4(Gfx **dList, MatrixS **mtx, s32 arg2) {
     s32 i;
     TextureHeader *tex1;
     TextureHeader *tex2;
+    u32 mode;
 
     if ((arg2 != 1) || (D_8012A078 != 2)) {
         arg2 = 0;
@@ -943,9 +944,9 @@ void func_800BA8E4(Gfx **dList, MatrixS **mtx, s32 arg2) {
             func_800BA4B8(tex2, 0);
             gDPSetCombineMode(gWaveDL++, DKR_CC_UNK14, DKR_CC_UNK15);
             if (TEX_FORMAT(tex1->format) == TEX_FORMAT_RGBA32 && (get_viewport_count() <= 0 || gConfig.multiWaves)) {
-                gDPSetOtherMode(gWaveDL++, DKR_OMH_2CYC_BILERP, DKR_OML_COMMON | G_RM_AA_ZB_XLU_INTER2);
+                mode = DKR_OML_COMMON | G_RM_AA_ZB_XLU_INTER2;
             } else {
-                gDPSetOtherMode(gWaveDL++, DKR_OMH_2CYC_BILERP, DKR_OML_COMMON | G_RM_AA_ZB_OPA_SURF2);
+                mode = DKR_OML_COMMON | G_RM_AA_ZB_OPA_SURF2;
             }
             gDPSetPrimColor(gWaveDL++, 0, 0, 255, 255, 255, 0);
             if (D_800E3180 != NULL) {
@@ -958,7 +959,7 @@ void func_800BA8E4(Gfx **dList, MatrixS **mtx, s32 arg2) {
             tex1 = set_animated_texture_header(gWaveTexture, gWaveBatch->unk7 << 14);
             gDkrDmaDisplayList(gWaveDL++, OS_K0_TO_PHYSICAL(tex1->cmd), tex1->numberOfCommands);
             gDPSetCombineMode(gWaveDL++, DKR_CC_UNK16, DKR_CC_UNK8);
-            gDPSetOtherMode(gWaveDL++, DKR_OMH_2CYC_BILERP, DKR_OML_COMMON | G_RM_FOG_SHADE_A | G_RM_AA_ZB_OPA_SURF2);
+            mode = DKR_OML_COMMON | G_RM_FOG_SHADE_A | G_RM_AA_ZB_OPA_SURF2;
             gDPSetPrimColor(gWaveDL++, 0, 0, 255, 255, 255, 255);
             if (D_800E3180 != NULL) {
                 gDPSetEnvColor(gWaveDL++, D_800E3180->red, D_800E3180->green, D_800E3180->blue, D_800E3180->alpha);
@@ -966,6 +967,7 @@ void func_800BA8E4(Gfx **dList, MatrixS **mtx, s32 arg2) {
                 gDPSetEnvColor(gWaveDL++, 255, 255, 255, 0);
             }
         }
+        gDPSetOtherMode(gWaveDL++, DKR_OMH_2CYC_BILERP, mode);
         if (D_80129FC8.unk28) {
             spE4.scale = 0.5f;
         } else {

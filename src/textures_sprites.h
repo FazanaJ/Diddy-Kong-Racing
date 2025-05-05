@@ -175,6 +175,7 @@ void material_set(Gfx **dList, TextureHeader *texhead, s32 flags, s32 texOffset)
 void sprite_free(Sprite *sprite);
 void tex_free(TextureHeader *tex);
 void material_load_simple(Gfx **dList, s32 flags);
+s32 get_tile_bytes(s32 type, s32 siz);
 
 // There might be a file boundary here.
 void tex_animate_texture(TextureHeader *texture, u32 *triangleBatchInfoFlags, s32 *arg2, s32 updateRate);

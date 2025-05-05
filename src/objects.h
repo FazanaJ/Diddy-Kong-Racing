@@ -545,7 +545,7 @@ void func_80011264(ObjectModel *, Object *);
 s16 func_8001CD28(s32 arg0, s32 arg1, s32 arg2, s32 arg3); // NON MATCHING
 
 
-#if !defined(__sgi) && !defined(NUKE)
+#if !defined(NUKE)
 #define normalise_time(x) (x)
 #endif
 
