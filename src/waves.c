@@ -1342,7 +1342,7 @@ void func_800BBF78(LevelModel *model) {
     if (D_800E30D4 != NULL) {
         mempool_free(D_800E30D4);
     }
-    D_800E30D4 = mempool_alloc_safe(D_8012A0D8 * D_8012A0DC * 4, COLOUR_TAG_CYAN);
+    D_800E30D4 = mempool_alloc_safe(D_8012A0D8 * D_8012A0DC * 4, PP_RAM_WAVES);
 
     if (D_800E30D8 != NULL) {
         mempool_free(D_800E30D8);
@@ -1351,7 +1351,7 @@ void func_800BBF78(LevelModel *model) {
     // clang-format off
     D_800E30D8 = mempool_alloc_safe(
         (model->numberOfSegments * sizeof(LevelModel_Alternate)) + (D_800E318C * 8) + 0x880,
-        COLOUR_TAG_CYAN
+        PP_RAM_WAVES
     );
     // clang-format on
 
@@ -1542,10 +1542,10 @@ void func_800BCC70(LevelModel *arg0) {
     if (D_800E3178 != NULL) {
         mempool_free(D_800E3178);
     }
-    D_800E3178 = mempool_alloc_safe(arg0->numberOfSegments * D_800E317C, COLOUR_TAG_CYAN);
-    spA0 = mempool_alloc_safe(arg0->numberOfSegments * 4, COLOUR_TAG_CYAN);
-    spA4 = mempool_alloc_safe((D_8012A0D8 * D_8012A0DC) * 8, COLOUR_TAG_CYAN);
-    spA8 = mempool_alloc_safe((var_s4 * 4) + 4, COLOUR_TAG_CYAN);
+    D_800E3178 = mempool_alloc_safe(arg0->numberOfSegments * D_800E317C, PP_RAM_WAVES);
+    spA0 = mempool_alloc_safe(arg0->numberOfSegments * 4, PP_RAM_WAVES);
+    spA4 = mempool_alloc_safe((D_8012A0D8 * D_8012A0DC) * 8, PP_RAM_WAVES);
+    spA8 = mempool_alloc_safe((var_s4 * 4) + 4, PP_RAM_WAVES);
 
     // temp assignment required for match
     pad_sp188 = -1;
@@ -2093,7 +2093,7 @@ Object_64 *func_800BE654(s32 arg0, f32 arg1, f32 arg2) {
     var_t0 = 0x80;
     object = NULL;
     if ((D_800E3040 != NULL) && (arg0 >= 0) && (arg0 < gNumberOfLevelSegments)) {
-        object = mempool_alloc_safe((D_80129FC8.unk20 >> 1) + 0xE, COLOUR_TAG_CYAN);
+        object = mempool_alloc_safe((D_80129FC8.unk20 >> 1) + 0xE, PP_RAM_WAVES);
         object->effect_box.unk0 = D_800E30D8[arg0].unk6;
         object->effect_box.unk2 = 0;
         object->effect_box.unk3 = 1;
