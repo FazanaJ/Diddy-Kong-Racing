@@ -121,7 +121,7 @@ void sound_reverb_set(u8 setting);
 void alSeqFileNew(ALSeqFile *file, u8 *base);
 void func_80063A90(ALCSPlayer *seqp, u8 channel);
 void sound_volume_set_relative(u16 soundID, SoundHandle soundState, u8 volume);
-void music_sequence_init(ALCSPlayer *seqp, void *sequence, u8 *seqID, ALCSeq *seq);
+void music_sequence_init(ALCSPlayer *seqp, s32 sequence, u8 *seqID, ALCSeq *seq);
 void sound_play(u16 soundID, SoundHandle* handlePtr);
 f32 music_animation_fraction(void);
 
