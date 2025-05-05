@@ -753,11 +753,7 @@ void try_free_object_header(s32 index) {
  * Official Name: objTvTimes
  */
 s32 normalise_time(s32 timer) {
-    if (timer < 0) {
-        return timer;
-    } else {
-        return (timer * 5) / 6;
-    }
+    return timer;
 }
 
 void func_8000C8F8(s32 arg0, s32 arg1) {

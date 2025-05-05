@@ -24,67 +24,74 @@
 
 /************ .data ************/
 
-// Base positions of all onscreen hud elements
-HudElement gHudElementBase[HUD_ELEMENT_COUNT] = {
-    { 0, 0, 0, HUD_ASSET_0, 1.0f, 53.0f, 16.0f, 0.0f, 0, 0, 127, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_3, 1.0f, 54.0f, 18.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_WEAPONS, 0.4f, -120.0f, -68.0f, 0, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_6, 1.0f, 104.0f, 16.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_NUMBERS, 1.0f, 93.0f, 31.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_4, 1.0f, 104.0f, 32.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_NUMBERS, 1.0f, 114.0f, 31.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_BANANA_ANIM, 0.5f, -3.0f, 73.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_NUMBERS, 1.0f, 182.0f, 22.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_NUMBERS, 1.0f, 192.0f, 22.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_13, 1.0f, 239.0f, 16.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_NUMBERS, 1.0f, 206.0f, 31.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_GO_BIG, 1.0f, 0.0f, 30.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_GET_READY, 1.0f, 0.0f, 30.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_FINISH, 1.0f, -200.0f, 30.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_MAP_DOT, 1.0f, 0.0f, 0.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_CHEQUER_FLAG, 1.0f, -50.0f, 87.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_RETICLE, 2.0f, -50.0f, 87.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_18, 1.0f, 167.0f, 22.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_GOLD_BALLOON, 1.0f, -127.0f, 88.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_18, 1.0f, 52.0f, 27.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_NUMBERS, 1.0f, 67.0f, 27.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_NUMBERS, 1.0f, 77.0f, 27.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_NUMBERS, 1.0f, 221.0f, 48.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_6, 1.0f, 188.0f, 48.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_NUMBERS_SMALL, 1.0f, 206.0f, 48.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_20, 0.4f, -105.0f, -98.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_BANANA_STATIC, 0.5f, -3.0f, 73.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_23, 1.0f, -8.0f, 97.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_LAP_FINAL, 1.0f, 0.0f, 30.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_LAP_LAP, 1.0f, 0.0f, 30.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_LAP_2, 1.0f, 0.0f, 30.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_2, 1.0f, 25.0f, 48.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_INDICATOR_TURN_90, 1.0f, -120.0f, 30.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_34, 0.4f, -105.0f, -98.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_WRONG, 1.0f, 0.0f, 30.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_WAY, 1.0f, 0.0f, 30.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_PRO_AM, 1.0f, 80.0f, -60.0f, 0.0f, 0, 0, 0, 0, 0 }, // Unused
-    { 0, 0, 0x6490, HUD_SPRITE_SPEEDOMETRE_ARROW, 0.5f, 122.0f, -71.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_47, 0.75f, 247.0f, 212.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_48, 1.0f, 234.0f, 196.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_49, 1.0f, 232.0f, 177.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_50, 1.0f, 240.0f, 159.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_51, 1.0f, 256.0f, 146.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_52, 1.0f, 275.0f, 143.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_53, 1.0f, 246.0f, 156.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_54, 0.7272f, 27.0f, 142.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_0, 1.0f, -200.0f, 70.0f, 0.0f, 0, 0, 129, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_3, 1.0f, -175.0f, 72.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_WEAPON_NUMBER, 1.0f, -99.0f, -89.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_PORTRAIT, 0.76f, 43.0f, 20.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_66, 1.0f, 40.0f, 54.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_BANANA_ANIM, 0.375f, -117.0f, 46.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_28, 1.0f, 51.0f, 56.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_NUMBERS_SMALL, 1.0f, 60.0f, 57.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_ASSET_NUMBERS_SMALL, 1.0f, 69.0f, 57.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_PLACE_1, 1.0f, -160.0f, 5.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_PORTRAIT, 1.0f, 260.0f, 16.0f, 0.0f, 0, 0, 0, 0, 0 },
-    { 0, 0, 0, HUD_SPRITE_PLACE_ST, 1.0f, 160.0f, 5.0f, 0.0f, 0, 0, 0, 0, 0 },
+#define HUDSCALE(x) (x * 0x4000)
+
+typedef struct HudElementStarts {
+    Vec2s pos;
+    u16 scale;
+    s16 hudAsset;
+    s16 param;
+} HudElementStarts;
+
+HudElementStarts gHudElementBase[HUD_ELEMENT_COUNT] = {
+    {{53, 16}, HUDSCALE(1.0f), HUD_ASSET_0, 127},
+    {{54, 18}, HUDSCALE(1.0f), HUD_ASSET_3, 0},
+    {{-120, -68}, HUDSCALE(0.4f), HUD_SPRITE_WEAPONS, 0},
+    {{104, 16}, HUDSCALE(1.0f), HUD_ASSET_6, 0},
+    {{93, 31}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS, 0},
+    {{104, 32}, HUDSCALE(1.0f), HUD_ASSET_4, 0},
+    {{114, 31}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS, 0},
+    {{-3, 73}, HUDSCALE(0.5f), HUD_SPRITE_BANANA_ANIM, 0},
+    {{182, 22}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS, 0},
+    {{192, 22}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS, 0},
+    {{239, 16}, HUDSCALE(1.0f), HUD_ASSET_13, 0},
+    {{206, 31}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS, 0},
+    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_GO_BIG, 0},
+    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_GET_READY, 0},
+    {{-200, 30}, HUDSCALE(1.0f), HUD_SPRITE_FINISH, 0},
+    {{0, 0}, HUDSCALE(1.0f), HUD_SPRITE_MAP_DOT, 0},
+    {{-50, 87}, HUDSCALE(1.0f), HUD_SPRITE_CHEQUER_FLAG, 0},
+    {{-50, 87}, HUDSCALE(2.0f), HUD_SPRITE_RETICLE, 0},
+    {{167, 22}, HUDSCALE(1.0f), HUD_ASSET_18, 0},
+    {{-127, 88}, HUDSCALE(1.0f), HUD_SPRITE_GOLD_BALLOON, 0},
+    {{52, 27}, HUDSCALE(1.0f), HUD_ASSET_18, 0},
+    {{67, 27}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS, 0},
+    {{77, 27}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS, 0},
+    {{221, 48}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS, 0},
+    {{188, 48}, HUDSCALE(1.0f), HUD_ASSET_6, 0},
+    {{206, 48}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS_SMALL, 0},
+    {{-105, -98}, HUDSCALE(0.4f), HUD_ASSET_20, 0},
+    {{-3, 73}, HUDSCALE(0.5f), HUD_SPRITE_BANANA_STATIC, 0},
+    {{-8, 97}, HUDSCALE(1.0f), HUD_ASSET_23, 0},
+    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_LAP_FINAL, 0},
+    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_LAP_LAP, 0},
+    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_LAP_2, 0},
+    {{25, 48}, HUDSCALE(1.0f), HUD_ASSET_2, 0},
+    {{-120, 30}, HUDSCALE(1.0f), HUD_SPRITE_INDICATOR_TURN_90, 0},
+    {{-105, -98}, HUDSCALE(0.4f), HUD_ASSET_34, 0},
+    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_WRONG, 0},
+    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_WAY, 0},
+    {{122, -71}, HUDSCALE(0.5f), HUD_SPRITE_SPEEDOMETRE_ARROW, 0},
+    {{247, 212}, HUDSCALE(0.75f), HUD_ASSET_47, 0},
+    {{234, 196}, HUDSCALE(1.0f), HUD_ASSET_48, 0},
+    {{232, 177}, HUDSCALE(1.0f), HUD_ASSET_49, 0},
+    {{240, 159}, HUDSCALE(1.0f), HUD_ASSET_50, 0},
+    {{256, 146}, HUDSCALE(1.0f), HUD_ASSET_51, 0},
+    {{275, 143}, HUDSCALE(1.0f), HUD_ASSET_52, 0},
+    {{246, 156}, HUDSCALE(1.0f), HUD_ASSET_53, 0},
+    {{27, 142}, HUDSCALE(0.7272f), HUD_ASSET_54, 0},
+    {{-200, 70}, HUDSCALE(1.0f), HUD_ASSET_0, 129},
+    {{-175, 72}, HUDSCALE(1.0f), HUD_ASSET_3, 0},
+    {{-99, -89}, HUDSCALE(1.0f), HUD_SPRITE_WEAPON_NUMBER, 0},
+    {{43, 20}, HUDSCALE(0.76f), HUD_SPRITE_PORTRAIT, 0},
+    {{40, 54}, HUDSCALE(1.0f), HUD_ASSET_66, 0},
+    {{-117, 46}, HUDSCALE(0.375f), HUD_SPRITE_BANANA_ANIM, 0},
+    {{51, 56}, HUDSCALE(1.0f), HUD_ASSET_28, 0},
+    {{60, 57}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS_SMALL, 0},
+    {{69, 57}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS_SMALL, 0},
+    {{-160, 5}, HUDSCALE(1.0f), HUD_SPRITE_PLACE_1, 0},
+    {{260, 16}, HUDSCALE(1.0f), HUD_SPRITE_PORTRAIT, 0},
+    {{160, 5}, HUDSCALE(1.0f), HUD_SPRITE_PLACE_ST, 0},
 };
 
 s16 D_800E25C4[96] = {
@@ -168,9 +175,6 @@ char D_800E4300_E4F00[] = { 0x80, 0x90, 0x80, 0x4A, 0x80, 0x57 };
 // ふりょう  - Defective
 char D_800E4308_E4F08[] = { 0x80, 0xD5, 0x80, 0xE1, 0x80, 0xB7, 0x80, 0xBC, 0x00, 0x00 };
 #endif
-
-// Unused?
-s32 D_800E283C[] = { 0x06FFFFFF, 0x000FFFFF, 0x06000000, 0x0014FFFF };
 
 /*******************************/
 
@@ -358,7 +362,7 @@ void hud_init_element(void) {
     gWrongWayNagPrefix = 0;
     gHudSlide = 0;
     gMinimapOpacity = 0;
-    gMinimapOpacityTarget = osTvType == OS_TV_TYPE_PAL ? 0x3C : 0x32;
+    gMinimapOpacityTarget = 50;
     gMinimapFade = 0;
     gShowHUD = 0;
     D_80126CD5 = 0;
@@ -368,28 +372,24 @@ void hud_init_element(void) {
     D_8012718A = func_8000E158();
     gStopwatchErrorX = 0x37;
     gStopwatchErrorY = 0xB3;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        gStopwatchErrorY += 0x1E;
-        gStopwatchErrorX -= 4;
-    }
     gHudTimeTrialGhost = timetrial_ghost_staff() == NULL ? 0 : 1;
     activePlayers = gNumActivePlayers != 3 ? gNumActivePlayers : 4;
     for (j = 0; j < activePlayers; j++) {
         gCurrentHud = gPlayerHud[j];
         for (k = 0; k < ARRAY_COUNT(gHudElementBase); k++) {
-            gCurrentHud->entry[k].pos.f[0] = gHudElementBase[k].pos.f[0];
-            gCurrentHud->entry[k].pos.f[1] = gHudElementBase[k].pos.f[1];
-            gCurrentHud->entry[k].pos.f[2] = gHudElementBase[k].pos.f[2];
-            gCurrentHud->entry[k].scale = gHudElementBase[k].scale;
-            gCurrentHud->entry[k].rotation.s[2] = gHudElementBase[k].rotation.s[2];
-            gCurrentHud->entry[k].rotation.s[1] = gHudElementBase[k].rotation.s[1];
-            gCurrentHud->entry[k].rotation.s[0] = gHudElementBase[k].rotation.s[0];
-            gCurrentHud->entry[k].spriteID = gHudElementBase[k].spriteID;
-            gCurrentHud->entry[k].spriteOffset = gHudElementBase[k].spriteOffset;
-            gCurrentHud->entry[k].timer.minutes = gHudElementBase[k].timer.minutes;
-            gCurrentHud->entry[k].timer.seconds = gHudElementBase[k].timer.seconds;
-            gCurrentHud->entry[k].timer.hundredths = gHudElementBase[k].timer.hundredths;
-            gCurrentHud->entry[k].timer.unk1D = gHudElementBase[k].timer.unk1D;
+            gCurrentHud->entry[k].pos.f[0] = gHudElementBase[k].pos.x;
+            gCurrentHud->entry[k].pos.f[1] = gHudElementBase[k].pos.y;
+            gCurrentHud->entry[k].pos.f[2] = 0.0f;
+            gCurrentHud->entry[k].scale = ((f32) gHudElementBase[k].scale) / (f32) 0x4000;
+            gCurrentHud->entry[k].rotation.s[2] = 0;
+            gCurrentHud->entry[k].rotation.s[1] = 0;
+            gCurrentHud->entry[k].rotation.s[0] = 0;
+            gCurrentHud->entry[k].spriteID = gHudElementBase[k].hudAsset;
+            gCurrentHud->entry[k].spriteOffset = 0;
+            gCurrentHud->entry[k].timer.minutes = 0;
+            gCurrentHud->entry[k].timer.seconds = gHudElementBase[k].param;
+            gCurrentHud->entry[k].timer.hundredths = 0;
+            gCurrentHud->entry[k].timer.unk1D = 0;
         }
         gCurrentHud->entry[HUD_SILVER_COIN_TALLY].silverCoinTally.offsetY = 5;
         if (gHUDNumPlayers == 1) {
@@ -520,9 +520,6 @@ void hud_init_element(void) {
                 gCurrentHud->entry[HUD_LAP_COUNT_FLAG].pos.f[0] += 28.0f;
                 break;
             case 0x41:
-                if (osTvType == OS_TV_TYPE_PAL) {
-                    gCurrentHud->entry[HUD_TREASURE_METRE].pos.f[1] -= 4.0f;
-                }
                 if (gNumActivePlayers >= 3) {
                     var_v0 = (j == 0) || (j == 2) ? 0xF : -0xA;
                 } else {
@@ -542,20 +539,6 @@ void hud_init_element(void) {
             gCurrentHud->entry[HUD_LAP_COUNT_SEPERATOR].pos.f[0] += 28.0f;
             gCurrentHud->entry[HUD_LAP_COUNT_TOTAL].pos.f[0] += 28.0f;
             gCurrentHud->entry[HUD_LAP_COUNT_FLAG].pos.f[0] += 28.0f;
-        }
-        if (osTvType == OS_TV_TYPE_PAL) {
-            for (k = 0; (k < HUD_ELEMENT_COUNT) ^ 0; k++) {
-                i = k;
-                gCurrentHud->entry[k].pos.f[1] *= 1.2;
-                gCurrentHud->entry[k].pos.f[0] -= 4.0f;
-                if ((gAssetHudElementIds[gCurrentHud->entry[k].spriteID] & ASSET_MASK_TEXTURE) == ASSET_MASK_TEXTURE) {
-                    gCurrentHud->entry[i].pos.f[1] -= 10.0f;
-                }
-            }
-
-            for (k = HUD_SPEEDOMETRE_0; k < HUD_SILVER_COIN_TALLY; k++) {
-                gCurrentHud->entry[k].pos.f[1] += 10.0f;
-            }
         }
         gCurrentHud->entry[HUD_BALLOON_COUNT_ICON].scale = 1.0f;
         gCurrentHud->entry[HUD_BALLOON_COUNT_X].spriteID = 0x12;
@@ -1257,11 +1240,7 @@ void func_800A1E48(Object *racerObj, s32 updateRate) {
             if (gNumActivePlayers == 1) {
                 offsetX += 68;
             } else if (gNumActivePlayers == 2) {
-                if (osTvType == OS_TV_TYPE_PAL) {
-                    offsetY += 66.0;
-                } else {
-                    offsetY += 55;
-                }
+                offsetY += 55;
             }
         }
 
@@ -1482,10 +1461,6 @@ void hud_main_time_trial(s32 arg0, Object *playerRacerObj, s32 updateRate) {
 
     for (i = 0; curRacer->lap >= i && i < 5; i++) {
         stopwatchTimer += curRacer->lap_times[i];
-    }
-
-    if (osTvType == OS_TV_TYPE_PAL) {
-        stopwatchTimer = (f32) stopwatchTimer * 1.2;
     }
 
     if (normalise_time(36000) < stopwatchTimer) {
@@ -1911,7 +1886,6 @@ void hud_bananas(Object_Racer *racer, s32 updateRate) {
         }
         if (prevSprite == 0) {
             sprite_opaque(TRUE);
-            set_viewport_tv_type(OS_TV_TYPE_NTSC);
             hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_BANANA_COUNT_ICON_STATIC]);
             sprite_opaque(FALSE);
             gCurrentHud->entry[HUD_BANANA_COUNT_ICON_SPIN].spriteOffset = prevSprite;
@@ -1926,14 +1900,12 @@ void hud_bananas(Object_Racer *racer, s32 updateRate) {
                         gCurrentHud->entry[HUD_BANANA_COUNT_SPARKLE].spriteOffset++;
                     }
                 }
-                set_viewport_tv_type(OS_TV_TYPE_NTSC);
                 hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_BANANA_COUNT_SPARKLE]);
             }
         } else {
             gCurrentHud->entry[HUD_BANANA_COUNT_ICON_SPIN].spriteOffset = prevSprite + 128;
             sprite_anim_off(FALSE);
             sprite_opaque(TRUE);
-            set_viewport_tv_type(OS_TV_TYPE_NTSC);
             hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_BANANA_COUNT_ICON_SPIN]);
             sprite_opaque(FALSE);
             sprite_anim_off(TRUE);
@@ -2858,7 +2830,6 @@ void hud_balloons(UNUSED Object_Racer *racer) {
         gCurrentHud->entry[HUD_BALLOON_COUNT_NUMBER_1].spriteOffset = balloonCount % 10;
     }
     hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_BALLOON_COUNT_NUMBER_1]);
-    set_viewport_tv_type(OS_TV_TYPE_NTSC);
     hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_BALLOON_COUNT_ICON]);
     sprite_opaque(FALSE);
     hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_BALLOON_COUNT_X]);
@@ -2894,7 +2865,6 @@ void hud_weapon(Object *obj, s32 updateRate) {
 
     racer = (Object_Racer *) obj->unk64;
     if (racer->raceFinished == FALSE) {
-        set_viewport_tv_type(OS_TV_TYPE_NTSC);
         temp_a0 = (racer->balloon_type * 3) + (racer->balloon_level);
         if (gCurrentHud->entry[HUD_WEAPON_DISPLAY].weaponDisplay.prevLevel != racer->balloon_level) {
             if (racer->balloon_level == 0) {
@@ -3688,9 +3658,6 @@ void hud_element_render(Gfx **arg0, MatrixS **arg1, Vertex **arg2, HudElement *a
     spriteID = arg3->spriteID;
     if ((gAssetHudElementIds[spriteID] & ASSET_MASK_TEXTURE) == ASSET_MASK_TEXTURE) {
         if ((spriteID >= 0x2F) && (spriteID < 0x36)) {
-            if (osTvType == OS_TV_TYPE_PAL) {
-                arg3->pos.f[1] -= 8.0f;
-            }
 
             if (gMinimapXlu & 2) {
                 var_v1 = (255.0f - ((gMinimapOpacity * 255.0f) / gMinimapOpacityTarget));
@@ -3705,36 +3672,7 @@ void hud_element_render(Gfx **arg0, MatrixS **arg1, Vertex **arg2, HudElement *a
             sp88.drawTexture.xOffset = arg3->pos.f[0];
             sp88.drawTexture.yOffset = arg3->pos.f[1];
             sp88.unk8 = 0;
-            if (osTvType == OS_TV_TYPE_PAL) {
-                if (arg3->spriteID == 0x35) {
-                    if (var_v1 == 0xFF) {
-                        var_v0 = -2;
-                    } else {
-                        var_v0 = var_v1 | ~0xFF;
-                    }
-                    sp88.drawTexture.xOffset = 0;
-                    sp88.drawTexture.yOffset = 0;
-                    texrect_draw_scaled(&gHudDL, &sp88.drawTexture, arg3->pos.f[0], arg3->pos.f[1], 1.0f, 1.1f, var_v0,
-                                        1);
-                } else {
-                    texrect_draw(&gHudDL, &sp88.drawTexture, 0, 0, 0xFF, 0xFF, 0xFF, var_v1);
-                }
-            } else {
-                texrect_draw(&gHudDL, &sp88.drawTexture, 0, 0, 0xFF, 0xFF, 0xFF, var_v1);
-            }
-            if (osTvType == OS_TV_TYPE_PAL) {
-                arg3->pos.f[1] += 8.0f;
-            }
-        } else if ((D_80126CD5 != 0) && (osTvType == OS_TV_TYPE_PAL)) {
-            textureHeader = gAssetHudElements->entry[spriteID];
-            textureHeader =
-                (TextureHeader *) (((u8 *) textureHeader) + arg3->spriteOffset * textureHeader->textureSize);
-            sp70.drawTexture.texture = textureHeader;
-            sp70.drawTexture.xOffset = 0;
-            sp70.drawTexture.yOffset = 0;
-            sp70.unk8 = 0;
-            texrect_draw_scaled(&gHudDL, &sp70.drawTexture, arg3->pos.f[0], arg3->pos.f[1], arg3->scale,
-                                arg3->scale * 1.1, gHudColour, 1);
+            texrect_draw(&gHudDL, &sp88.drawTexture, 0, 0, 0xFF, 0xFF, 0xFF, var_v1);
         } else if (arg3->scale == 1.0) {
             textureHeader2 = gAssetHudElements->entry[spriteID];
             textureHeader2 =

@@ -150,7 +150,6 @@ enum HudTypes {
     HUD_STOPWATCH,
     HUD_WRONGWAY_1,
     HUD_WRONGWAY_2,
-    HUD_PRO_AM_LOGO,
     HUD_SPEEDOMETRE_ARROW,
     HUD_SPEEDOMETRE_0,
     HUD_SPEEDOMETRE_30,
@@ -342,7 +341,6 @@ typedef struct HudElement {
     /* 0x0C */ Vec3f pos;
     /* 0x14 */ s16 spriteOffset;
     /* 0x16 */ union {
-        u8 filler[4];   // Ensures this union is 6 bytes, since Rare never actually use more than four.
         HudElement_ChallengeEggs challengeEggs;
         HudElement_RaceStartGo raceStartGo;
         HudElement_BananaCountIconSpin bananaCountIconSpin;

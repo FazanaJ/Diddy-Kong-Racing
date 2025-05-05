@@ -1694,13 +1694,7 @@ s32 get_controller_pak_file_list(s32 controllerIndex, s32 maxNumOfFilesToGet, ch
         return (controllerIndex << 30) | CONTROLLER_PAK_BAD_DATA;
     }
 
-    if (get_language() == LANGUAGE_JAPANESE) {
-        gameCode = JPN_GAME_CODE;
-    } else if (osTvType == OS_TV_TYPE_PAL) {
-        gameCode = PAL_GAME_CODE;
-    } else {
-        gameCode = NTSC_GAME_CODE;
-    }
+    gameCode = NTSC_GAME_CODE;
 
     if (maxNumOfFilesToGet < maxNumOfFilesOnCpak) {
         maxNumOfFilesOnCpak = maxNumOfFilesToGet;
@@ -1911,13 +1905,7 @@ SIDeviceStatus get_file_number(s32 controllerIndex, char *fileName, char *fileEx
     string_to_font_codes(fileName, fileNameAsFontCodes, PFS_FILE_NAME_LEN);
     string_to_font_codes(fileExt, fileExtAsFontCodes, PFS_FILE_EXT_LEN);
 
-    if (get_language() == LANGUAGE_JAPANESE) {
-        gameCode = JPN_GAME_CODE;
-    } else if (osTvType == OS_TV_TYPE_PAL) {
-        gameCode = PAL_GAME_CODE;
-    } else {
-        gameCode = NTSC_GAME_CODE;
-    }
+    gameCode = NTSC_GAME_CODE;
 
     ret = osPfsFindFile(&pfs[controllerIndex], COMPANY_CODE, gameCode, (u8 *) fileNameAsFontCodes,
                         (u8 *) fileExtAsFontCodes, fileNumber);
@@ -1991,13 +1979,7 @@ SIDeviceStatus write_controller_pak_file(s32 controllerIndex, s32 fileNumber, ch
     string_to_font_codes(fileName, (char *) fileNameAsFontCodes, PFS_FILE_NAME_LEN);
     string_to_font_codes(fileExt, (char *) fileExtAsFontCodes, PFS_FILE_EXT_LEN);
 
-    if (get_language() == LANGUAGE_JAPANESE) {
-        game_code = JPN_GAME_CODE;
-    } else if (osTvType == OS_TV_TYPE_PAL) {
-        game_code = PAL_GAME_CODE;
-    } else {
-        game_code = NTSC_GAME_CODE;
-    }
+    game_code = NTSC_GAME_CODE;
 
     ret = get_file_number(controllerIndex, fileName, fileExt, &file_number);
     if (ret == CONTROLLER_PAK_GOOD) {

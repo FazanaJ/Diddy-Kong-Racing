@@ -274,11 +274,7 @@ void reset_delayed_text(void) {
  * Set the delayed text ID and delay (in seconds)
  */
 void set_delayed_text(s32 textID, f32 delay) {
-    if (osTvType == OS_TV_TYPE_PAL) {
-        gTextboxDelay = delay * 50.0;
-    } else {
-        gTextboxDelay = delay * 60.0;
-    }
+    gTextboxDelay = delay * 60.0;
     gDelayedTextID = textID;
 }
 
@@ -484,15 +480,8 @@ s32 func_800C38B4(s32 arg0, TextBox *textbox) {
             case 1:
                 textbox->left = var_s0[1] & 0xFF;
                 textbox->top = D_8012A7A0[arg0 + 2] & 0xFF;
-                if (osTvType == OS_TV_TYPE_PAL) {
-                    temp = textbox->top;
-                    textbox->top = (textbox->top * 264) / 240;
-                    temp = textbox->top - temp;
-                } else {
-                    temp = 0;
-                }
                 textbox->right = (D_8012A7A0[arg0 + 3] & 0xFF) + 65;
-                textbox->bottom = (D_8012A7A0[arg0 + 4] & 0xFF) + temp;
+                textbox->bottom = (D_8012A7A0[arg0 + 4] & 0xFF);
                 arg0 += 5;
                 set_current_dialogue_box_coords(1, textbox->left, textbox->top, textbox->right, textbox->bottom);
                 var_s0 = &D_8012A7A0[arg0];

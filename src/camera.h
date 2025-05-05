@@ -78,7 +78,6 @@ typedef struct unk80068514_arg4 {
 } unk80068514_arg4;
 
 void func_80066060(s32 cameraID, s32 zoomLevel);
-void set_viewport_tv_type(s8 setting);
 void func_800660C0(void);
 void func_800660D0(void);
 UNUSED f32 get_current_camera_fov(void);

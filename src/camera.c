@@ -143,16 +143,6 @@ void func_80066060(s32 cameraID, s32 zoomLevel) {
     }
 }
 
-/**
- * Set gAdjustViewportHeight to PAL mode if necessary, if setting is 1.
- * Otherwise, set it to 0, regardless of TV type.
- */
-void set_viewport_tv_type(s8 setting) {
-    if (osTvType == OS_TV_TYPE_PAL) {
-        gAdjustViewportHeight = setting;
-    }
-}
-
 void func_800660C0(void) {
     D_80120D18 = 1;
 }
