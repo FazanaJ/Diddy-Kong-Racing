@@ -30,69 +30,68 @@ typedef struct HudElementStarts {
     Vec2s pos;
     u16 scale;
     s16 hudAsset;
-    s16 param;
 } HudElementStarts;
 
 HudElementStarts gHudElementBase[HUD_ELEMENT_COUNT] = {
-    {{53, 16}, HUDSCALE(1.0f), HUD_ASSET_0, 127},
-    {{54, 18}, HUDSCALE(1.0f), HUD_ASSET_3, 0},
-    {{-120, -68}, HUDSCALE(0.4f), HUD_SPRITE_WEAPONS, 0},
-    {{104, 16}, HUDSCALE(1.0f), HUD_ASSET_6, 0},
-    {{93, 31}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS, 0},
-    {{104, 32}, HUDSCALE(1.0f), HUD_ASSET_4, 0},
-    {{114, 31}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS, 0},
-    {{-3, 73}, HUDSCALE(0.5f), HUD_SPRITE_BANANA_ANIM, 0},
-    {{182, 22}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS, 0},
-    {{192, 22}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS, 0},
-    {{239, 16}, HUDSCALE(1.0f), HUD_ASSET_13, 0},
-    {{206, 31}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS, 0},
-    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_GO_BIG, 0},
-    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_GET_READY, 0},
-    {{-200, 30}, HUDSCALE(1.0f), HUD_SPRITE_FINISH, 0},
-    {{0, 0}, HUDSCALE(1.0f), HUD_SPRITE_MAP_DOT, 0},
-    {{-50, 87}, HUDSCALE(1.0f), HUD_SPRITE_CHEQUER_FLAG, 0},
-    {{-50, 87}, HUDSCALE(2.0f), HUD_SPRITE_RETICLE, 0},
-    {{167, 22}, HUDSCALE(1.0f), HUD_ASSET_18, 0},
-    {{-127, 88}, HUDSCALE(1.0f), HUD_SPRITE_GOLD_BALLOON, 0},
-    {{52, 27}, HUDSCALE(1.0f), HUD_ASSET_18, 0},
-    {{67, 27}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS, 0},
-    {{77, 27}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS, 0},
-    {{221, 48}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS, 0},
-    {{188, 48}, HUDSCALE(1.0f), HUD_ASSET_6, 0},
-    {{206, 48}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS_SMALL, 0},
-    {{-105, -98}, HUDSCALE(0.4f), HUD_ASSET_20, 0},
-    {{-3, 73}, HUDSCALE(0.5f), HUD_SPRITE_BANANA_STATIC, 0},
-    {{-8, 97}, HUDSCALE(1.0f), HUD_ASSET_23, 0},
-    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_LAP_FINAL, 0},
-    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_LAP_LAP, 0},
-    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_LAP_2, 0},
-    {{25, 48}, HUDSCALE(1.0f), HUD_ASSET_2, 0},
-    {{-120, 30}, HUDSCALE(1.0f), HUD_SPRITE_INDICATOR_TURN_90, 0},
-    {{-105, -98}, HUDSCALE(0.4f), HUD_ASSET_34, 0},
-    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_WRONG, 0},
-    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_WAY, 0},
-    {{80, -60}, HUDSCALE(1.0f), HUD_SPRITE_PRO_AM, 0},
-    {{122, -71}, HUDSCALE(0.5f), HUD_SPRITE_SPEEDOMETRE_ARROW, 0},
-    {{247, 212}, HUDSCALE(0.75f), HUD_ASSET_47, 0},
-    {{234, 196}, HUDSCALE(1.0f), HUD_ASSET_48, 0},
-    {{232, 177}, HUDSCALE(1.0f), HUD_ASSET_49, 0},
-    {{240, 159}, HUDSCALE(1.0f), HUD_ASSET_50, 0},
-    {{256, 146}, HUDSCALE(1.0f), HUD_ASSET_51, 0},
-    {{275, 143}, HUDSCALE(1.0f), HUD_ASSET_52, 0},
-    {{246, 156}, HUDSCALE(1.0f), HUD_ASSET_53, 0},
-    {{27, 142}, HUDSCALE(0.7272f), HUD_ASSET_54, 0},
-    {{-200, 70}, HUDSCALE(1.0f), HUD_ASSET_0, 129},
-    {{-175, 72}, HUDSCALE(1.0f), HUD_ASSET_3, 0},
-    {{-99, -89}, HUDSCALE(1.0f), HUD_SPRITE_WEAPON_NUMBER, 0},
-    {{43, 20}, HUDSCALE(0.76f), HUD_SPRITE_PORTRAIT, 0},
-    {{40, 54}, HUDSCALE(1.0f), HUD_ASSET_66, 0},
-    {{-117, 46}, HUDSCALE(0.375f), HUD_SPRITE_BANANA_ANIM, 0},
-    {{51, 56}, HUDSCALE(1.0f), HUD_ASSET_28, 0},
-    {{60, 57}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS_SMALL, 0},
-    {{69, 57}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS_SMALL, 0},
-    {{-160, 5}, HUDSCALE(1.0f), HUD_SPRITE_PLACE_1, 0},
-    {{260, 16}, HUDSCALE(1.0f), HUD_SPRITE_PORTRAIT, 0},
-    {{160, 5}, HUDSCALE(1.0f), HUD_SPRITE_PLACE_ST, 0},
+    {{53, 16}, HUDSCALE(1.0f), HUD_ASSET_0},
+    {{54, 18}, HUDSCALE(1.0f), HUD_ASSET_3},
+    {{-120, -68}, HUDSCALE(0.4f), HUD_SPRITE_WEAPONS},
+    {{104, 16}, HUDSCALE(1.0f), HUD_ASSET_6},
+    {{93, 31}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS},
+    {{104, 32}, HUDSCALE(1.0f), HUD_ASSET_4},
+    {{114, 31}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS},
+    {{-3, 73}, HUDSCALE(0.5f), HUD_SPRITE_BANANA_ANIM},
+    {{182, 22}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS},
+    {{192, 22}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS},
+    {{239, 16}, HUDSCALE(1.0f), HUD_ASSET_13},
+    {{206, 31}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS},
+    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_GO_BIG},
+    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_GET_READY},
+    {{-200, 30}, HUDSCALE(1.0f), HUD_SPRITE_FINISH},
+    {{0}, HUDSCALE(1.0f), HUD_SPRITE_MAP_DOT},
+    {{-50, 87}, HUDSCALE(1.0f), HUD_SPRITE_CHEQUER_FLAG},
+    {{-50, 87}, HUDSCALE(2.0f), HUD_SPRITE_RETICLE},
+    {{167, 22}, HUDSCALE(1.0f), HUD_ASSET_18},
+    {{-127, 88}, HUDSCALE(1.0f), HUD_SPRITE_GOLD_BALLOON},
+    {{52, 27}, HUDSCALE(1.0f), HUD_ASSET_18},
+    {{67, 27}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS},
+    {{77, 27}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS},
+    {{221, 48}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS},
+    {{188, 48}, HUDSCALE(1.0f), HUD_ASSET_6},
+    {{206, 48}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS_SMALL},
+    {{-105, -98}, HUDSCALE(0.4f), HUD_ASSET_20},
+    {{-3, 73}, HUDSCALE(0.5f), HUD_SPRITE_BANANA_STATIC},
+    {{-8, 97}, HUDSCALE(1.0f), HUD_ASSET_23},
+    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_LAP_FINAL},
+    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_LAP_LAP},
+    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_LAP_2},
+    {{25, 48}, HUDSCALE(1.0f), HUD_ASSET_2},
+    {{-120, 30}, HUDSCALE(1.0f), HUD_SPRITE_INDICATOR_TURN_90},
+    {{-105, -98}, HUDSCALE(0.4f), HUD_ASSET_34},
+    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_WRONG},
+    {{0, 30}, HUDSCALE(1.0f), HUD_SPRITE_WAY},
+    {{80, -60}, HUDSCALE(1.0f), HUD_SPRITE_PRO_AM},
+    {{122, -71}, HUDSCALE(0.5f), HUD_SPRITE_SPEEDOMETRE_ARROW},
+    {{247, 212}, HUDSCALE(0.75f), HUD_ASSET_47},
+    {{234, 196}, HUDSCALE(1.0f), HUD_ASSET_48},
+    {{232, 177}, HUDSCALE(1.0f), HUD_ASSET_49},
+    {{240, 159}, HUDSCALE(1.0f), HUD_ASSET_50},
+    {{256, 146}, HUDSCALE(1.0f), HUD_ASSET_51},
+    {{275, 143}, HUDSCALE(1.0f), HUD_ASSET_52},
+    {{246, 156}, HUDSCALE(1.0f), HUD_ASSET_53},
+    {{27, 142}, HUDSCALE(0.7272f), HUD_ASSET_54},
+    {{-200, 70}, HUDSCALE(1.0f), HUD_ASSET_0},
+    {{-175, 72}, HUDSCALE(1.0f), HUD_ASSET_3},
+    {{-99, -89}, HUDSCALE(1.0f), HUD_SPRITE_WEAPON_NUMBER},
+    {{43, 20}, HUDSCALE(0.76f), HUD_SPRITE_PORTRAIT},
+    {{40, 54}, HUDSCALE(1.0f), HUD_ASSET_66},
+    {{-117, 46}, HUDSCALE(0.375f), HUD_SPRITE_BANANA_ANIM},
+    {{51, 56}, HUDSCALE(1.0f), HUD_ASSET_28},
+    {{60, 57}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS_SMALL},
+    {{69, 57}, HUDSCALE(1.0f), HUD_ASSET_NUMBERS_SMALL},
+    {{-160, 5}, HUDSCALE(1.0f), HUD_SPRITE_PLACE_1},
+    {{260, 16}, HUDSCALE(1.0f), HUD_SPRITE_PORTRAIT},
+    {{160, 5}, HUDSCALE(1.0f), HUD_SPRITE_PLACE_ST},
 };
 
 s16 D_800E25C4[96] = {
@@ -249,7 +248,7 @@ u8 gHudTimeTrialGhost;
 s32 gHudVoiceTimer;
 s32 gHudVoicePlayerID;
 u16 gHudVoiceID;
-DrawTexture gHudSprites[128];
+DrawTexture *gHudSprites;
 s32 D_80127180;
 Settings *gHudSettings;
 u8 gHudSilverCoinRace;
@@ -300,6 +299,7 @@ void hud_init(UNUSED s32 viewportCount) {
     } else {
         playerCount = 4; // Create four viewports if there are three players.
     }
+    gHudSprites = mempool_alloc_safe(128 * sizeof(DrawTexture), PP_RAM_HUD);
     gPlayerHud[PLAYER_ONE] = mempool_alloc_safe(playerCount * sizeof(HudData), PP_RAM_HUD);
     gPlayerHud[PLAYER_TWO] = (HudData *) ((u8 *) gPlayerHud[PLAYER_ONE] + sizeof(HudData));
     gPlayerHud[PLAYER_THREE] = (HudData *) ((u8 *) gPlayerHud[PLAYER_TWO] + sizeof(HudData));
@@ -388,7 +388,13 @@ void hud_init_element(void) {
             gCurrentHud->entry[k].spriteID = gHudElementBase[k].hudAsset;
             gCurrentHud->entry[k].spriteOffset = 0;
             gCurrentHud->entry[k].timer.minutes = 0;
-            gCurrentHud->entry[k].timer.seconds = gHudElementBase[k].param;
+            if (k == HUD_RACE_POSITION) {
+                gCurrentHud->entry[k].timer.seconds = 127;
+            } else if (k == HUD_CHALLENGE_FINISH_POS_1) {
+                gCurrentHud->entry[k].timer.seconds = 129;
+            } else {
+                gCurrentHud->entry[k].timer.seconds = 0;
+            }
             gCurrentHud->entry[k].timer.hundredths = 0;
             gCurrentHud->entry[k].timer.unk1D = 0;
         }
@@ -573,6 +579,7 @@ void hud_free(void) {
             gAssetHudElements->entry[i] = NULL;
         }
     }
+    mempool_free(gHudSprites);
     mempool_free(*gPlayerHud);
     mempool_free(gAssetHudElementIds);
     gAssetHudElementIdsCount = 0;

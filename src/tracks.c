@@ -106,8 +106,8 @@ unk8011B330 D_8011B330[120]; // Struct sizeof(0x20) / sizeof(32)
 s32 D_8011C230;
 s32 D_8011C234;
 unk8011C238 D_8011C238[32]; // Struct sizeof(0xC) / sizeof(12)
-unk8011C3B8 D_8011C3B8[64];
-unk8011C8B8 D_8011C8B8[128];
+unk8011C3B8 *D_8011C3B8;
+unk8011C8B8 *D_8011C8B8;
 s32 D_8011D0B8;
 unk8011C8B8 *D_8011D0BC;
 TextureHeader *gNewShadowTexture;
@@ -222,6 +222,8 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     }
 
     if (gWaveBlockCount) {
+        D_8011C3B8 = (unk8011C3B8 *) mempool_alloc_safe(sizeof(unk8011C3B8) * 64, PP_RAM_WAVES);
+        D_8011C8B8 = (unk8011C8B8 *) mempool_alloc_safe(sizeof(unk8011C8B8) * 128, PP_RAM_WAVES);
         func_800B82B4(gCurrentLevelModel, gCurrentLevelHeader2, i);
     }
 
@@ -2720,6 +2722,8 @@ void free_track(void) {
 
     func_8000B290();
     if (gWaveBlockCount != 0) {
+        mempool_free(D_8011C3B8);
+        mempool_free(D_8011C8B8);
         free_waves();
     }
     for (i = 0; i < gCurrentLevelModel->numberOfTextures; i++) {

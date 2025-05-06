@@ -91,7 +91,7 @@ s32 D_8012A0D8; // used in mempool_alloc_safe size calculation
 s32 D_8012A0DC; // used in mempool_alloc_safe size calculation
 s32 gNumberOfLevelSegments;
 s32 D_8012A0E8[64];
-s16 D_8012A1E8[512]; // used to index D_800E30D8 and as arg0 for func_800B92F4 and func_800B97A8
+s16 *D_8012A1E8; // used to index D_800E30D8 and as arg0 for func_800B92F4 and func_800B97A8
 unk8012A5E8 D_8012A5E8[2];
 unk8012A5E8 D_8012A600[24];
 f32 gWavePowerBase;
@@ -126,6 +126,7 @@ void free_waves(void) {
     FREE_MEM(D_800E30D4);
     FREE_MEM(D_800E30D8);
     FREE_MEM(D_800E3178);
+    FREE_MEM(D_8012A1E8);
     D_800E3190 = NULL;
     D_800E3194 = NULL;
     D_800E3184 = NULL;
@@ -138,6 +139,7 @@ void wave_init(void) {
     s32 i;
 
     free_waves();
+    D_8012A1E8 = (s16 *) mempool_alloc_safe(512 * sizeof(s16), PP_RAM_WAVES);
     D_800E3040 = (f32 *) mempool_alloc_safe(D_80129FC8.unk20 * sizeof(f32 *), PP_RAM_WAVES);
     D_800E3044 = (Vec2s *) mempool_alloc_safe((D_80129FC8.unk4 * sizeof(Vec2s *)) * D_80129FC8.unk4, PP_RAM_WAVES);
     D_800E3048 = (TexCoords *) mempool_alloc_safe(((D_80129FC8.unk0 + 1) * sizeof(TexCoords *)) * (D_80129FC8.unk0 + 1),
