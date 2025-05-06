@@ -950,9 +950,9 @@ void func_800BA8E4(Gfx **dList, MatrixS **mtx, s32 viewportID) {
             wave_load_material(tex2, 0);
             gDPSetCombineMode(gWaveDL++, DKR_CC_UNK14, DKR_CC_UNK15);
             if (TEX_FORMAT(tex1->format) == TEX_FORMAT_RGBA32 && (get_viewport_count() <= VIEWPORTS_COUNT_1_PLAYER || gConfig.multiWaves)) {
-                mode = DKR_OML_COMMON | G_RM_AA_ZB_XLU_INTER2;
+                mode = DKR_OML_COMMON | G_RM_ZB_CLD_SURF2;
             } else {
-                mode = DKR_OML_COMMON | G_RM_AA_ZB_OPA_SURF2;
+                mode = DKR_OML_COMMON | G_RM_ZB_OPA_SURF2;
             }
             gDPSetPrimColor(gWaveDL++, 0, 0, 255, 255, 255, 0);
             if (D_800E3180 != NULL) {
@@ -965,7 +965,7 @@ void func_800BA8E4(Gfx **dList, MatrixS **mtx, s32 viewportID) {
             tex1 = set_animated_texture_header(gWaveTexture, gWaveBatch->unk7 << 14);
             gDkrDmaDisplayList(gWaveDL++, OS_K0_TO_PHYSICAL(tex1->cmd), tex1->numberOfCommands);
             gDPSetCombineMode(gWaveDL++, DKR_CC_UNK16, DKR_CC_UNK8);
-            mode = DKR_OML_COMMON | G_RM_FOG_SHADE_A | G_RM_AA_ZB_OPA_SURF2;
+            mode = DKR_OML_COMMON | G_RM_FOG_SHADE_A | G_RM_ZB_OPA_SURF2;
             gDPSetPrimColor(gWaveDL++, 0, 0, 255, 255, 255, 255);
             if (D_800E3180 != NULL) {
                 gDPSetEnvColor(gWaveDL++, D_800E3180->red, D_800E3180->green, D_800E3180->blue, D_800E3180->alpha);
