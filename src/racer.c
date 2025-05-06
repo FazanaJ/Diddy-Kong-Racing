@@ -128,7 +128,6 @@ u32 gCurrentButtonsPressed;
 u32 gCurrentButtonsReleased;
 s32 gCurrentStickX;
 s32 gCurrentStickY;
-s32 unused_8011D53C; // Set to 0 and only 0. Checked for being 1, but never true.
 s32 gRaceStartTimer;
 f32 D_8011D544; // Starts are 300, then counts down when the race starts. Usage currently unknown.
 f32 D_8011D548;
@@ -1781,11 +1780,7 @@ void update_camera_hovercraft(f32 updateRate, Object *obj, Object_Racer *racer) 
     if (yVel > 0.0f) {
         yVel *= 0.5;
     } else {
-        if (unused_8011D53C == 1) {
-            yVel *= 0.5; // Unreachable. unused_8011D53C is never not 0.
-        } else {
-            yVel *= 0.25;
-        }
+        yVel *= 0.25;
         if (racer->boostTimer != 0) {
             yVel *= 2.0;
         }
@@ -2271,7 +2266,6 @@ void obj_init_racer(Object *obj, LevelObjectEntry_Racer *racer) {
     ActivePlayers player;
     s32 i;
 
-    unused_8011D53C = 0;
     tempRacer = (struct Object_Racer *) obj->unk64;
     obj->segment.trans.rotation.y_rotation = racer->angleY;
     obj->segment.trans.rotation.x_rotation = racer->angleX;

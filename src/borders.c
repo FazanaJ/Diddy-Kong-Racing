@@ -15,43 +15,39 @@
  * 3 player will completely fill in where player 4 would normally be.
  */
 void divider_draw(Gfx **dList) {
-    u32 width, height;
+    u32 widthAndHeight, width, height;
+    u32 y, x, xOffset, yOffset;
     LevelHeader *levelHeader;
-    s32 x1;
-    s32 y1;
-    s32 x2;
-    s32 y2;
-    s32 heightHalf;
-    s32 widthHalf;
 
-    width = fb_size();
-    height = GET_VIDEO_HEIGHT(width);
-    width = GET_VIDEO_WIDTH(width);
-    heightHalf = height / 2;
-    widthHalf = width / 2;
-    width--;
-    height--;
+    widthAndHeight = fb_size();
+    width = GET_VIDEO_WIDTH(widthAndHeight);
+    height = GET_VIDEO_HEIGHT(widthAndHeight);
+    xOffset = width / 256;
+    width += 0; // Fake match?
+    yOffset = height / 128;
     gDPSetCycleType((*dList)++, G_CYC_FILL);
     gDPSetFillColor((*dList)++, GPACK_RGBA5551(0, 0, 0, 1) << 16 | GPACK_RGBA5551(0, 0, 0, 1)); // Black fill color
     switch (get_viewport_count()) {
+        case VIEWPORTS_COUNT_2_PLAYERS:
+            // Draws a solid horizontal black line in the middle of the screen.
+            y = (height >> 1) - yOffset;
+            gDPFillRectangle((*dList)++, height * 0, y, width, y + yOffset);
+            break;
         case VIEWPORTS_COUNT_3_PLAYERS:
             levelHeader = get_current_level_header();
             // Draw black square in the bottom-right corner.
-            if (hud_setting() || levelHeader->race_type & RACETYPE_CHALLENGE) {
-                gDPFillRectangle((*dList)++, widthHalf + 1, heightHalf + 1, width, height);
+            if (hud_setting() || (levelHeader->race_type & RACETYPE_CHALLENGE)) {
+                gDPFillRectangle((*dList)++, width >> 1, height >> 1, width, height);
             }
             // There is no break statement here. This is intentional.
         case VIEWPORTS_COUNT_4_PLAYERS:
-            gDPFillRectangle((*dList)++, widthHalf - 1, 0, widthHalf, height);
-            // Fallthrough
-        case VIEWPORTS_COUNT_2_PLAYERS:
-            x1 = 0;
-            y1 = heightHalf - 1;
-            x2 = width;
-            y2 = heightHalf + 1;
+            x = (width >> 1) - xOffset;
+            // Draws 2 black lines in the middle of the screen. One vertical, another horizontal.
+            gDPFillRectangle((*dList)++, height * 0, (height >> 1) - yOffset, width,
+                             ((height >> 1) - yOffset) + yOffset);
+            gDPFillRectangle((*dList)++, x, 0, x + xOffset, height);
             break;
     }
-    gDPFillRectangle((*dList)++, x1, y1, x2, y2 - 1);
 }
 
 /**
@@ -59,6 +55,7 @@ void divider_draw(Gfx **dList) {
  * The effect here is that it will strip coverage for anything beneath, eliminating pixel bleed.
  */
 void divider_clear_coverage(Gfx **dList) {
+    u32 screenSize;
     u32 screenWidth;
     u32 screenHeight;
     u32 height;
@@ -66,9 +63,9 @@ void divider_clear_coverage(Gfx **dList) {
     u32 tempX;
     u32 tempY;
 
-    width = fb_size();
-    height = GET_VIDEO_HEIGHT(width);
-    width = GET_VIDEO_WIDTH(width);
+    screenSize = fb_size();
+    screenHeight = GET_VIDEO_HEIGHT(screenSize);
+    screenWidth = GET_VIDEO_WIDTH(screenSize);
     height = (screenHeight / 128) << 1 << 1;
     width = (screenWidth / 256) << 1 << 1;
     gDPSetCycleType((*dList)++, G_CYC_1CYCLE);
@@ -76,14 +73,17 @@ void divider_clear_coverage(Gfx **dList) {
     gDPSetRenderMode((*dList)++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
     gDPSetPrimColor((*dList)++, 0, 0, 0, 0, 0, 0);
     switch (get_viewport_count()) {
+        case VIEWPORTS_COUNT_2_PLAYERS:
+            tempY = (screenHeight / 2) - (height / 2);
+            gDPFillRectangle((*dList)++, 0, tempY, screenWidth, tempY + height);
+            break;
         case VIEWPORTS_COUNT_3_PLAYERS:
         case VIEWPORTS_COUNT_4_PLAYERS:
-            tempX = (screenWidth / 2) - 2;
-            gDPFillRectangle((*dList)++, tempX, 0, tempX + width, screenHeight);
-            // Fallthrough
-        case VIEWPORTS_COUNT_2_PLAYERS:
-            tempY = (screenHeight / 2) - 2;
+            tempY = (screenHeight / 2) - (height / 2);
+            tempX = (screenWidth / 2) - (width / 2);
             gDPFillRectangle((*dList)++, 0, tempY, screenWidth, tempY + height);
+            tempX += 0; // Fakematch
+            gDPFillRectangle((*dList)++, tempX, 0, tempX + width, screenHeight);
             break;
     }
 }
