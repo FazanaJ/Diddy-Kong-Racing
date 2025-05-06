@@ -3304,9 +3304,6 @@ void menu_title_screen_init(void) {
     music_voicelimit_set(27);
     func_800660C0();
     set_text_font(ASSET_FONTS_FUNFONT);
-#if REGION != REGION_JP
-    load_font(ASSET_FONTS_BIGFONT);
-#endif
     sound_volume_reset(FALSE);
     set_time_trial_enabled(FALSE);
     gTitleDemoIndex = 0;
@@ -3544,9 +3541,6 @@ void titlescreen_free(void) {
     menu_assetgroup_free(sGameTitleTileTextures);
     music_voicelimit_set(16);
     func_800660D0();
-#if REGION != REGION_JP
-    unload_font(ASSET_FONTS_BIGFONT);
-#endif
     sound_volume_reset(TRUE);
 }
 
@@ -3558,9 +3552,6 @@ void menu_options_init(void) {
     gOptionBlinkTimer = 0;
     gMenuDelay = 0;
     transition_begin(&sMenuTransitionFadeOut);
-#if REGION != REGION_JP
-    load_font(ASSET_FONTS_BIGFONT);
-#endif
     set_text_font(ASSET_FONTS_BIGFONT);
     music_voicelimit_set(24);
     music_play(SEQUENCE_MAIN_MENU);
@@ -3764,9 +3755,6 @@ s32 menu_options_loop(s32 updateRate) {
  * Unloads all assets associated with the options menu.
  */
 void optionscreen_free(void) {
-#if REGION != REGION_JP
-    unload_font(ASSET_FONTS_BIGFONT);
-#endif
 }
 
 /**
@@ -3797,9 +3785,6 @@ void menu_audio_options_init(void) {
         gAudioMenuStrings[3].y = 192;
         gMenuStage = 4;
     }
-#if REGION != REGION_JP
-    load_font(ASSET_FONTS_BIGFONT);
-#endif
 }
 
 // Probably soundoption_render
@@ -4042,9 +4027,6 @@ void soundoptions_free(void) {
         music_change_off();
     }
     menu_assetgroup_free(gOptionMenuTextures);
-#if REGION != REGION_JP
-    unload_font(ASSET_FONTS_BIGFONT);
-#endif
 }
 
 /**
@@ -4073,9 +4055,6 @@ void menu_save_options_init(void) {
     menu_assetgroup_load(gSaveMenuObjectIndices);
     menu_imagegroup_load(gSaveMenuImageIndices);
     func_8007FFEC(10);
-#if REGION != REGION_JP
-    load_font(ASSET_FONTS_BIGFONT);
-#endif
     gDrawTexN64Icon[0].texture = gMenuAssets[TEXTURE_ICON_SAVE_N64];
     gDrawTexTTIcon[0].texture = gMenuAssets[TEXTURE_ICON_SAVE_TT];
     gDrawTexGhostIcon[0].texture = gMenuAssets[TEXTURE_ICON_SAVE_GHOSTS];
@@ -5200,9 +5179,6 @@ s32 menu_save_options_loop(s32 updateRate) {
  * Free the assets associated with the save options menu.
  */
 void savemenu_free(void) {
-#if REGION != REGION_JP
-    unload_font(ASSET_FONTS_BIGFONT);
-#endif
     menu_button_free();
     menu_assetgroup_free(gSaveMenuObjectIndices);
     dialogue_clear(7);
@@ -5521,8 +5497,6 @@ void bootscreen_init_cpak(void) {
     sControllerPakMenuNumberOfRows = 7;
 #if REGION == REGION_JP
     func_800C663C_C723C();
-#else
-    load_font(ASSET_FONTS_BIGFONT);
 #endif
 //#if VERSION >= VERSION_79
     rumble_enable(FALSE);
@@ -5885,8 +5859,6 @@ void pakmenu_free(void) {
     mempool_free(gBootPakData[0]);
 #if REGION == REGION_JP
     func_800C67F4_C73F4();
-#else
-    unload_font(ASSET_FONTS_BIGFONT);
 #endif
 //#if VERSION >= VERSION_79
     rumble_enable(TRUE);
@@ -5918,8 +5890,6 @@ void menu_magic_codes_init(void) {
     dialogue_clear(7);
 #if REGION == REGION_JP
     func_800C663C_C723C();
-#else
-    load_font(ASSET_FONTS_BIGFONT);
 #endif
 }
 
@@ -6353,8 +6323,6 @@ s32 menu_magic_codes_loop(s32 updateRate) {
 void cheatmenu_free(void) {
 #if REGION == REGION_JP
     func_800C67F4_C73F4();
-#else
-    unload_font(ASSET_FONTS_BIGFONT);
 #endif
 }
 
@@ -6369,8 +6337,6 @@ void menu_magic_codes_list_init(void) {
     gOptionsMenuItemIndex = 0;
 #if REGION == REGION_JP
     func_800C663C_C723C();
-#else
-    load_font(ASSET_FONTS_BIGFONT);
 #endif
     menu_asset_load(63);
     menu_init_arrow_textures();
@@ -6590,8 +6556,6 @@ void cheatlist_free(void) {
     menu_asset_free(TEXTURE_ICON_ARROW_DOWN);
 #if REGION == REGION_JP
     func_800C67F4_C73F4();
-#else
-    unload_font(ASSET_FONTS_BIGFONT);
 #endif
 }
 
@@ -6753,9 +6717,6 @@ void menu_character_select_init(void) {
     menu_assetgroup_load(gCharSelectObjectIndices);
     menu_imagegroup_load(gCharSelectImageIndices);
     transition_begin(&sMenuTransitionFadeOut);
-#if REGION != REGION_JP
-    load_font(ASSET_FONTS_BIGFONT);
-#endif
 }
 
 /**
@@ -7145,9 +7106,6 @@ void charselect_move(s32 playerID, s8 *direction, s32 bounds, u16 menuPickSoundI
 void charselect_free(void) {
     menu_assetgroup_free(gCharSelectObjectIndices);
     mempool_free_timer(0);
-#if REGION != REGION_JP
-    unload_font(ASSET_FONTS_BIGFONT);
-#endif
     mempool_free_timer(2);
     gEnteredCharSelectFrom = 0;
 }
@@ -7208,9 +7166,6 @@ void charselect_music_channels(s32 updateRate) {
 void menu_caution_init(void) {
     gIgnorePlayerInputTime = 60;
     gMenuDelay = 0;
-#if REGION != REGION_JP
-    load_font(ASSET_FONTS_BIGFONT);
-#endif
     transition_begin(&sMenuTransitionFadeOut);
     gPlayerHasSeenCautionMenu = TRUE;
 #if REGION == REGION_JP
@@ -7249,8 +7204,6 @@ s32 menu_caution_loop(s32 updateRate) {
 void caution_free(void) {
 #if REGION == REGION_JP
     func_800C67F4_C73F4();
-#else
-    unload_font(ASSET_FONTS_BIGFONT);
 #endif
 }
 
@@ -7271,9 +7224,6 @@ void menu_game_select_init(void) {
     gOpacityDecayTimer = 1;
     menu_asset_load(67);
     func_8007FFEC(3);
-#if REGION != REGION_JP
-    load_font(ASSET_FONTS_BIGFONT);
-#endif
     music_play(SEQUENCE_CHOOSE_YOUR_RACER);
 
     for (i = 0; i < NUM_CHARACTERS; i++) {
@@ -7435,9 +7385,6 @@ s32 menu_game_select_loop(s32 updateRate) {
  * Free the assets associated with the game select menu.
  */
 void gameselect_free(void) {
-#if REGION != REGION_JP
-    unload_font(ASSET_FONTS_BIGFONT);
-#endif
     menu_button_free();
     menu_asset_free(TEXTURE_SURFACE_BUTTON_WOOD);
 #if REGION == REGION_JP
@@ -7468,9 +7415,6 @@ void menu_file_select_init(void) {
     gFileErase = FALSE;
     gFileNew = FALSE;
     transition_begin(&sMenuTransitionFadeOut);
-#if REGION != REGION_JP
-    load_font(ASSET_FONTS_BIGFONT);
-#endif
     music_play(SEQUENCE_CHOOSE_YOUR_RACER);
     for (i = 0; i < NUM_CHARACTERS; i++) {
         if (i != gMenuSelectedCharacter.channelIndex) {
@@ -8083,8 +8027,6 @@ void fileselect_free(void) {
     menu_button_free();
 #if REGION == REGION_JP
     func_800C67F4_C73F4();
-#else
-    unload_font(ASSET_FONTS_BIGFONT);
 #endif
 }
 
@@ -8165,9 +8107,6 @@ void menu_track_select_init(void) {
     Settings *settings;
     s8 *trackIds;
 
-#if REGION != REGION_JP
-    load_font(ASSET_FONTS_BIGFONT);
-#endif
     settings = get_settings();
     get_number_of_levels_and_worlds(&levelCount, &worldCount);
     trackIds = (s8 *) get_misc_asset(ASSET_MISC_TRACKS_MENU_IDS);
@@ -8497,9 +8436,6 @@ void menu_track_select_unload(void) {
             menu_asset_free(gTracksMenuBgTextureIndices[i + 1]);
         }
     }
-#if REGION != REGION_JP
-    unload_font(ASSET_FONTS_BIGFONT);
-#endif
     menu_button_free();
     music_change_on();
     music_voicelimit_change_on();
@@ -9749,8 +9685,6 @@ void menu_adventure_track_init(void) {
         gTrackNameVoiceDelay = 30;
 #if REGION == REGION_JP
         func_800C663C_C723C();
-#else
-        load_font(ASSET_FONTS_BIGFONT);
 #endif
         load_level_for_menu(mapId, -1, 1);
     }
@@ -10050,8 +9984,6 @@ void adventuretrack_free(void) {
     menu_assetgroup_free((s16 *) &gAdvTrackInitObjectIndices);
 #if REGION == REGION_JP
     func_800C67F4_C73F4();
-#else
-    unload_font(ASSET_FONTS_BIGFONT);
 #endif
     music_change_on();
 }
@@ -11116,9 +11048,6 @@ void menu_results_init(void) {
     menu_assetgroup_load(gRaceResultsObjectIndices);
     menu_imagegroup_load(gRaceResultsImageIndices);
     menu_racer_portraits();
-#if REGION != REGION_JP
-    load_font(ASSET_FONTS_BIGFONT);
-#endif
     transition_begin(&sMenuTransitionFadeOut);
     music_voicelimit_set(24);
     music_play(SEQUENCE_MAIN_MENU);
@@ -11437,9 +11366,6 @@ s32 menu_results_loop(s32 updateRate) {
  */
 void results_free(void) {
     menu_assetgroup_free(gRaceResultsObjectIndices);
-#if REGION != REGION_JP
-    unload_font(ASSET_FONTS_BIGFONT);
-#endif
 }
 
 /**
@@ -11559,9 +11485,6 @@ void filename_init(s32 titleY, s32 x, s32 y, s32 font, s32 *targetX, char *fileN
     gNameSelectionDone = FALSE;
     gNameEntryStickX = 0;
     gNameEntryStickHeld = 0;
-#if REGION != REGION_JP
-    load_font(ASSET_FONTS_BIGFONT);
-#endif
 }
 
 /**
@@ -11803,9 +11726,6 @@ s32 filename_enter(s32 updateRate) {
  * Explicitly says to unload the ASSET_FONTS_BIGFONT type.
  */
 void menu_unload_bigfont(void) {
-#if REGION != REGION_JP
-    unload_font(ASSET_FONTS_BIGFONT);
-#endif
 }
 
 /**
@@ -11861,8 +11781,6 @@ void menu_trophy_race_round_init(void) {
     gTrackNameVoiceDelay = 10;
 #if REGION == REGION_JP
     func_800C663C_C723C();
-#else
-    load_font(ASSET_FONTS_BIGFONT);
 #endif
     music_voicelimit_set(24);
     music_play(SEQUENCE_MAIN_MENU);
@@ -11953,8 +11871,6 @@ s32 menu_trophy_race_round_loop(s32 updateRate) {
 void trophyround_free(void) {
 #if REGION == REGION_JP
     func_800C67F4_C73F4();
-#else
-    unload_font(ASSET_FONTS_BIGFONT);
 #endif
 }
 
@@ -12120,9 +12036,6 @@ void menu_trophy_race_rankings_init(void) {
             gRankingsPlayers[i] = FALSE;
         }
     }
-#if REGION != REGION_JP
-    load_font(ASSET_FONTS_BIGFONT);
-#endif
     music_voicelimit_set(24);
     music_play(SEQUENCE_MAIN_MENU);
     music_fade(256);
@@ -12321,9 +12234,6 @@ s32 menu_trophy_race_rankings_loop(s32 updateRate) {
  */
 void rankings_free(void) {
     menu_assetgroup_free(gTrophyRankingsObjectIndices);
-#if REGION != REGION_JP
-    unload_font(ASSET_FONTS_BIGFONT);
-#endif
 }
 
 /**
@@ -12426,9 +12336,6 @@ void menu_ghost_data_init(void) {
     }
     menu_assetgroup_load(gGhostDataObjectIndices);
     menu_imagegroup_load(gGhostDataImageIndices);
-#if REGION != REGION_JP
-    load_font(ASSET_FONTS_BIGFONT);
-#endif
 
     for (i = 0; i < 5; i++) {
         gDrawTexDinoDomainGhostBg[i].texture = gMenuAssets[TEXTURE_BACKGROUND_DINO_DOMAIN_TOP];
@@ -12736,9 +12643,6 @@ s32 menu_ghost_data_loop(s32 updateRate) {
  */
 void ghostmenu_free(void) {
     menu_assetgroup_free(gGhostDataObjectIndices);
-#if REGION != REGION_JP
-    unload_font(ASSET_FONTS_BIGFONT);
-#endif
 }
 
 /**
@@ -12868,8 +12772,6 @@ void menu_credits_init(void) {
     menu_racer_portraits();
 #if REGION == REGION_JP
     func_800C663C_C723C();
-#else
-    load_font(ASSET_FONTS_BIGFONT);
 #endif
     music_voicelimit_set(24);
     gCreditsControlData[130] = CREDITS_END; // DONT show developer times
@@ -13254,8 +13156,6 @@ void credits_free(void) {
     menu_assetgroup_free(gCreditsObjectIndices);
 #if REGION == REGION_JP
     func_800C67F4_C73F4();
-#else
-    unload_font(ASSET_FONTS_BIGFONT);
 #endif
     set_gIntDisFlag(FALSE);
 }

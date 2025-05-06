@@ -194,9 +194,6 @@ void load_fonts(void) {
     }
 #if REGION == REGION_JP
     func_800C6464_C7064();
-#else
-    load_font(ASSET_FONTS_FUNFONT);
-    load_font(ASSET_FONTS_SMALLFONT);
 #endif
     gCompactKerning = FALSE;
 }
@@ -300,6 +297,37 @@ void draw_text(Gfx **displayList, s32 xpos, s32 ypos, char *text, AlignmentFlags
 }
 
 /**
+ * Gets font data from an ID, and loads it if it does not exist.
+*/
+FontData *font_get(s32 fontID) {
+    if (fontID < gNumberOfFonts) {
+        FontData *fontData = &gFonts[fontID];
+        if (fontData->loadedFonts[0] == 0) {
+            load_font(fontID);
+        }
+        fontData->staleTimer = 10;
+        return &gFonts[fontID];
+    }
+    return NULL;
+}
+
+/**
+ * Ticks down all font data and unloads any that tick to 0.
+*/
+void font_cycle(s32 updateRate) {
+    s32 i;
+    for (i = 0; i < gNumberOfFonts; i++) {
+        FontData *fontData = &gFonts[i];
+        if (fontData->loadedFonts[0] > 0) {
+            fontData->staleTimer -= updateRate;
+            if (fontData->staleTimer <= 0) {
+                unload_font(i);
+            }
+        }
+    }
+}
+
+/**
  * Loops through a string, then draws each character onscreen.
  * Will also draw a fillrect if text backgrounds are enabled.
  */
@@ -336,7 +364,7 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
         textureLry = 0;
         xpos = box->xpos;
         ypos = box->ypos;
-        fontData = &gFonts[box->font];
+        fontData = font_get(box->font);
         gSPDisplayList((*dList)++, dDialogueBoxBegin);
         if (box != gDialogueBoxBackground) {
             scisOffset = (((box->y2 - box->y1) + 1) / (f32) 2) * scisScale;
@@ -668,7 +696,7 @@ s32 get_text_width(char *text, s32 x, s32 font) {
     if (font < 0) {
         font = gDialogueBoxBackground[0].font;
     }
-    fontData = &gFonts[font];
+    fontData = font_get(font);
     for (index = 0; text[index] != '\0'; index++) {
         thisDiffX = diffX;
         ch = text[index];
@@ -850,7 +878,7 @@ void *render_dialogue_text(s32 dialogueBoxID, s32 posX, s32 posY, char *text, s3
             posY = bg->height >> 1;
         }
         if (bg->font != FONT_UNK_FF) {
-            fontData = &gFonts[bg->font];
+            fontData = font_get(bg->font);
             if (flags & (HORZ_ALIGN_CENTER | HORZ_ALIGN_RIGHT)) {
                 parse_string_with_number(text, buffer, number);
                 width = get_text_width(buffer, posX, bg->font);

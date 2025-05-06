@@ -348,7 +348,7 @@ void hud_init(UNUSED s32 viewportCount) {
     } else {
         playerCount = 4; // Create four viewports if there are three players.
     }
-    gHudSprites = mempool_alloc_safe(128 * sizeof(DrawTexture), PP_RAM_HUD);
+    gHudSprites = mempool_alloc_safe((32 * playerCount) * sizeof(DrawTexture), PP_RAM_HUD);
     gPlayerHud[PLAYER_ONE] = mempool_alloc_safe(playerCount * sizeof(HudData), PP_RAM_HUD);
     gPlayerHud[PLAYER_TWO] = (HudData *) ((u8 *) gPlayerHud[PLAYER_ONE] + sizeof(HudData));
     gPlayerHud[PLAYER_THREE] = (HudData *) ((u8 *) gPlayerHud[PLAYER_TWO] + sizeof(HudData));
