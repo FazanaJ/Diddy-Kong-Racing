@@ -146,7 +146,7 @@ u16 gGhostChecksumIDsPak[6];
 u8 gGhostLevelIDsMenu[6];
 u8 gGhostCharacterIDsMenu[6];
 UNUSED s32 D_801282D2_EEA82;
-SoundMask *gMenuSoundMasks[MAXCONTROLLERS]; // Soundmask values
+AudioPoint *gMenuSoundMasks[MAXCONTROLLERS]; // Soundmask values
 u8 gGhostVehicleIDsMenu[6];
 UNUSED s8 sUnused_80126828; // Set to 0 in menu_init, and never used again.
 u16 gGhostChecksumIDsMenu[6];
@@ -168,9 +168,9 @@ s16 gMenuStickY[5];
 s16 D_8012683A;
 s32 gCinematicSkipA;
 s32 gPostraceScaleOut;
-SoundMask *gTrackTTSoundMask;
+AudioPoint *gTrackTTSoundMask;
 s32 gCinematicSkipB;
-SoundMask *D_80126848;
+AudioPoint *D_80126848;
 s32 gCinematicMusicChangeOff;
 s32 gTitleDemoIndex;
 s32 gTitleRevealTimer;
@@ -203,7 +203,7 @@ f32 gTrackSelectTargetY;
 char *gTrackMenuHubName;
 s32 gSelectedTrackX;
 s32 gSelectedTrackY;
-SoundMask *gSoundOptionMask;
+AudioPoint *gSoundOptionMask;
 s32 gSaveMenuOptionCountLower;
 SaveFileData *gSaveMenuFilesDest;
 s32 gSaveMenuOptionCountUpper;
@@ -13292,7 +13292,7 @@ void menu_camera_centre(void) {
     cam->trans.z_position = -32.0f;
 
     update_envmap_position(0, 0, -1);
-    func_80066CDC(&sMenuCurrDisplayList, &sMenuCurrHudMat);
+    viewport_main(&sMenuCurrDisplayList, &sMenuCurrHudMat);
 
     cam->trans.rotation.y_rotation = angleY;
     cam->trans.rotation.x_rotation = angleX;

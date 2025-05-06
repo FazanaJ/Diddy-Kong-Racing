@@ -22,6 +22,8 @@ s8 gAntiPiracyViewport = FALSE;
     0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, SCREEN_WIDTH_HALF, SCREEN_HEIGHT_HALF, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, \
         SCREEN_WIDTH - 1, SCREEN_HEIGHT - 1, 0
 
+#define SCISSOR_INTERLACE G_SC_NON_INTERLACE
+
 ScreenViewport gScreenViewports[4] = {
     { DEFAULT_VIEWPORT },
     { DEFAULT_VIEWPORT },
@@ -211,7 +213,7 @@ void camera_init_tracks_menu(Gfx **dList, MatrixS **mtxS) {
     cam->trans.y_position = 0.0f;
     cam->trans.z_position = 0.0f;
     update_envmap_position(0.0f, 0.0f, -1.0f);
-    func_80066CDC(dList, mtxS);
+    viewport_main(dList, mtxS);
     cam->camera.unk38 = sp24;
     cam->trans.rotation.y_rotation = angleY;
     cam->trans.rotation.x_rotation = angleX;
@@ -543,8 +545,7 @@ void copy_viewport_frame_size_to_coords(s32 viewPortIndex, s32 *x1, s32 *y1, s32
     *y2 = gScreenViewports[viewPortIndex].y2;
 }
 
-// viewport_main
-void func_80066CDC(Gfx **dlist, MatrixS **mats) {
+void viewport_main(Gfx **dlist, MatrixS **mats) {
     s32 videoHeight;
     s32 videoWidth;
     s32 savedCameraID;

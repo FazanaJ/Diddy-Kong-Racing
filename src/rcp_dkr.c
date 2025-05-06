@@ -13,9 +13,9 @@
 
 s16 gGfxTaskMesgNums[16] = { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-u8 sBGPrimColourrR = 0;
-u8 sBGPrimColourrG = 0;
-u8 sBGPrimColourrB = 0;
+u8 sBGPrimColourR = 0;
+u8 sBGPrimColourG = 0;
+u8 sBGPrimColourB = 0;
 s32 sBackgroundFillColour = GPACK_RGBA5551(0, 0, 0, 1) | (GPACK_RGBA5551(0, 0, 0, 1) << 16);
 
 u32 gTexBGShiftX = 64;
@@ -271,9 +271,9 @@ s32 bgdraw_init(void) {
  * Official name: rcpSetScreenColour
  */
 void bgdraw_primcolour(u8 red, u8 green, u8 blue) {
-    sBGPrimColourrR = red;
-    sBGPrimColourrG = green;
-    sBGPrimColourrB = blue;
+    sBGPrimColourR = red;
+    sBGPrimColourG = green;
+    sBGPrimColourB = blue;
 }
 
 /**
@@ -357,8 +357,8 @@ void bgdraw_render(Gfx **dList, MatrixS **mtx, s32 drawBG) {
             y2 = h;
             otherBG:
             gDPSetFillColor((*dList)++,
-                            (GPACK_RGBA5551(sBGPrimColourrR, sBGPrimColourrG, sBGPrimColourrB, 1) << 16) |
-                                GPACK_RGBA5551(sBGPrimColourrR, sBGPrimColourrG, sBGPrimColourrB, 1));
+                            (GPACK_RGBA5551(sBGPrimColourR, sBGPrimColourG, sBGPrimColourB, 1) << 16) |
+                                GPACK_RGBA5551(sBGPrimColourR, sBGPrimColourG, sBGPrimColourB, 1));
             gDPFillRectangle((*dList)++, x1, y1, x2, y2);
         }
     }

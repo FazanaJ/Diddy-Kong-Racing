@@ -603,7 +603,7 @@ void clear_audio_and_track(void) {
     free_lights();
 #endif
     free_track();
-    audioline_reset();
+    audspat_reset();
     sound_volume_change(VOLUME_NORMAL);
     if (gCurrentLevelHeader->weatherEnable > 0) {
         weather_free();

@@ -52,7 +52,7 @@ s32 D_800DC714 = 0; // Currently unknown, might be a different type.
 Object *gGhostObjStaff = NULL;
 s8 D_800DC71C = 0;
 s32 gObjectTexAnim = FALSE;
-s16 gTimeTrialTime = 0x2A30;
+s16 gTimeTrialTime = 10800;
 s16 gTimeTrialVehicle = -1;
 s16 gTimeTrialCharacter = 0;
 u8 gHasGhostToSave = FALSE;
@@ -61,7 +61,7 @@ u8 gBeatStaffGhost = FALSE;
 s8 D_800DC73C = 0;
 s8 D_800DC740 = 0;
 s8 gSwapLeadPlayer = FALSE;
-s8 D_800DC748 = 0;
+s8 D_800DC748 = FALSE;
 s32 D_800DC74C[2] = { 0, 0 }; // Have a feeling these are both the same array.
 s32 D_800DC754[2] = { 0, 0 };
 Object *gShieldEffectObject = NULL;
@@ -679,7 +679,7 @@ void clear_object_pointers(void) {
 void free_all_objects(void) {
     s32 i, len;
     timetrial_free_staff_ghost();
-    D_800DC748 = 0;
+    D_800DC748 = FALSE;
     if (D_800DC71C) {
         rumble_init(TRUE);
     }
@@ -2226,7 +2226,7 @@ void obj_update(s32 updateRate) {
     for (i = 0; i < gNumRacers; i++) {
         update_player_racer((*gRacers)[i], updateRate);
     }
-    if (get_current_level_race_type() == 0) {
+    if (get_current_level_race_type() == RACETYPE_DEFAULT) {
         for (i = 0; i < gNumRacers; i++) {
             racer = &gRacersByPosition[i]->unk64->racer;
             if (racer->playerIndex != -1) {
@@ -2281,7 +2281,7 @@ void obj_update(s32 updateRate) {
             race_transition_adventure(updateRate);
         }
     }
-    func_80008438(gRacersByPort, gNumRacers, updateRate);
+    audspat_update_all(gRacersByPort, gNumRacers, updateRate);
     gPathUpdateOff = TRUE;
     gObjectUpdateRateF = (f32) updateRate;
     D_8011AD24[0] = 0;
@@ -2435,8 +2435,8 @@ s32 play_footstep_sounds(Object *obj, s32 arg1, s32 frame, s32 oddSoundId, s32 e
                 } else {
                     soundId = evenSoundId; // Always set to SOUND_STOMP3
                 }
-                play_sound_at_position(soundId, obj->segment.trans.x_position, obj->segment.trans.y_position,
-                                       obj->segment.trans.z_position, 4, NULL);
+                audspat_play_sound_at_position(soundId, obj->segment.trans.x_position, obj->segment.trans.y_position,
+                                               obj->segment.trans.z_position, 4, NULL);
                 ret = i + 1;
                 i = asset0; // Come on, just use break!
             }
@@ -4321,7 +4321,7 @@ void race_transition_adventure(s32 updateRate) {
                 sndp_stop(racer->magnetSoundMask);
             }
             if (racer->shieldSoundMask != NULL) {
-                func_800096F8(racer->shieldSoundMask);
+                audspat_point_stop(racer->shieldSoundMask);
             }
         }
         prevPort0Racer = (*gRacers)[0];
@@ -6183,7 +6183,7 @@ void mode_end_taj_race(s32 reason) {
         music_change_on();
         music_stop();
         set_next_taj_challenge_menu(0);
-        audioline_on();
+        audspat_jingle_on();
         if (reason == CHALLENGE_END_OOB) {
             set_current_text(ASSET_GAME_TEXT_0);
         }
