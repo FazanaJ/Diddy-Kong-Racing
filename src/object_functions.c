@@ -5660,7 +5660,7 @@ void obj_init_weather(Object *obj, LevelObjectEntry_Weather *entry) {
  * Can be used to stop, start or change the intensity of the current weather.
  */
 void obj_loop_weather(Object *obj, UNUSED s32 updateRate) {
-    s32 currViewport;
+    s32 playerCount;
     s32 numberOfObjects;
     Object_Racer *curObj64;
     Object **objects;
@@ -5671,27 +5671,37 @@ void obj_loop_weather(Object *obj, UNUSED s32 updateRate) {
     s32 cur;
     s32 last;
     f32 dist;
+    s32 i;
+    s32 j;
 
-    currViewport = get_current_viewport();
+    playerCount = (get_viewport_count() % 4) + 1;
     objects = get_racer_objects(&numberOfObjects);
-    cur = -1;
+    dist = obj->properties.distance.radius;
+    entry = (LevelObjectEntry_Weather *) obj->segment.level_entry;
     if (numberOfObjects != 0) {
-        last = numberOfObjects - 1;
-        do {
-            curObj = objects[cur + 1];
-            curObj64 = (Object_Racer *) curObj->unk64;
-        } while (++cur < last && currViewport != curObj64->playerIndex);
-
-        diffX = obj->segment.trans.x_position - curObj->segment.trans.x_position;
-        diffZ = obj->segment.trans.z_position - curObj->segment.trans.z_position;
-        dist = obj->properties.distance.radius;
-        entry = (LevelObjectEntry_Weather *) obj->segment.level_entry;
-        if ((diffX * diffX) + (diffZ * diffZ) <= dist) {
-            if (((!obj->segment.level_entry) && (!obj->segment.level_entry)) && (!obj->segment.level_entry)) {
-            } // Fakematch
-            weather_set(entry->unkA * 256, entry->unkC * 256, entry->unkE * 256, entry->unk10 * 257, entry->unk11 * 257,
-                        entry->unk12);
+        for (i = 0; i < playerCount; i++) {
+            cur = -1;
+            for (j = 0; j < gNumRacers; j++) {
+                curObj = get_racer_object(j);
+                if (curObj) {
+                    curObj64 = (Object_Racer *) curObj->unk64;
+                    if (curObj64->playerIndex == i) {
+                        cur = j;
+                        break;
+                    }
+                }
+            }
+            if (cur == -1) {
+                continue;
+            }
+            diffX = obj->segment.trans.x_position - curObj->segment.trans.x_position;
+            diffZ = obj->segment.trans.z_position - curObj->segment.trans.z_position;
+            if ((diffX * diffX) + (diffZ * diffZ) <= dist) {
+                weather_set(entry->unkA * 256, entry->unkC * 256, entry->unkE * 256, entry->unk10 * 257, entry->unk11 * 257,
+                            entry->unk12, i);
+            }
         }
+
     }
 }
 

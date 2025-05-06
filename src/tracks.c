@@ -397,7 +397,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, Triangle **tris, s32
         aa_manage(AA_OFF);
         weather_clip_planes(-1, -512);
         // Show weather effects in single player.
-        if (gCurrentLevelHeader2->weatherEnable > 0 && numViewports < 2) {
+        if (gCurrentLevelHeader2->weatherEnable > 0 && (numViewports < 2 || gConfig.multiWeather)) {
             weather_update(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, &gSceneCurrTriList,
                            tempUpdateRate);
         }

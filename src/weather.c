@@ -27,14 +27,13 @@ SnowGfxData gWeatherPresets[3] = {
 #endif
 };
 
-SnowPosData *gSnowPhysics = NULL;
+SnowPosData *gSnowPhysics[4] = {NULL};
 SnowGfxData gSnowGfx = { NULL, 0, { NULL }, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 Vertex *gSnowVerts = NULL;
 s32 gSnowVertCount = 0;
 Triangle *gSnowTriangles = NULL;
-s16 *gSnowTriIndices = NULL;
-Vertex *gSnowVertexData[2] = { NULL, NULL };
+Vertex *gSnowVertexData[4][2] = { NULL };
 s32 *gWeatherAssetTable = NULL;   // List of Ids
 s32 gWeatherAssetTableLength = 0; // Set, but never read.
 
@@ -128,10 +127,10 @@ FadeTransition gThunderTransition = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_I
 
 /************ .bss ************/
 
-s32 gSnowDensity;
+s32 gSnowDensity[4];
 s32 gSnowParticleCount;
-WeatherData gWeather;
-SnowLimits gSnowPlane; // Uses negative values, so all distances will be checked in reverse.
+WeatherData gWeather[4];
+SnowLimits gSnowPlane[4]; // Uses negative values, so all distances will be checked in reverse.
 s32 gSnowVertOffset;
 s32 gSnowTriCount;
 s32 gSnowVertexFlip;
@@ -155,10 +154,10 @@ Object *gLensFlareSwitches[WEATHER_OVERRIDE_COUNT];
  * Official Name: initWeather
  */
 void weather_init(void) {
+    s32 i;
+
     gSnowGfx.pos = NULL;
     gSnowGfx.size = 0;
-    gSnowPhysics = NULL;
-    gSnowDensity = 0;
     gSnowVertOffset = 6;
 #if VERSION == VERSION_77
     gSnowVertOffset *= 3;
@@ -167,11 +166,15 @@ void weather_init(void) {
     gSnowVertOffset <<= 2;
     gSnowTriCount = gSnowVertOffset >> 1;
 #endif
-    gSnowVertexData[0] = 0;
-    gSnowVertexData[1] = 0;
+    for (i = 0; i < 4; i++) {
+        gSnowDensity[i] = 0;
+        gSnowPhysics[i] = NULL;
+        gSnowVertexData[i][0] = NULL;
+        gSnowVertexData[i][1] = NULL;
+        gSnowPlane[i].near = -1;
+        gSnowPlane[i].far = -512;
+    }
     gSnowTriangles = 0;
-    gSnowPlane.near = -1;
-    gSnowPlane.far = -512;
     gLensFlare = NULL;
     gLensFlareOff = TRUE;
     gLensFlareOverrideObjs = 0;
@@ -190,12 +193,15 @@ void weather_init(void) {
  * Official Name: setWeatherLimits
  */
 void weather_clip_planes(s16 near, s16 far) {
-    if (gSnowPlane.far < gSnowPlane.near) {
-        gSnowPlane.near = near;
-        gSnowPlane.far = far;
-    } else {
-        gSnowPlane.near = far;
-        gSnowPlane.far = near;
+    s32 i;
+    for (i = 0; i < 4; i++) {
+        if (gSnowPlane[i].far < gSnowPlane[i].near) {
+            gSnowPlane[i].near = near;
+            gSnowPlane[i].far = far;
+        } else {
+            gSnowPlane[i].near = far;
+            gSnowPlane[i].far = near;
+        }
     }
 }
 
@@ -220,14 +226,16 @@ void weather_clip_planes(s16 near, s16 far) {
 void weather_free(void) {
     TextureHeader *tempTex;
     s32 *tempMem;
+    s32 i;
 
     FREE_MEM(gSnowTriangles);
-    FREE_MEM(gSnowVertexData[0]);
-    FREE_MEM(gSnowVertexData[1]);
-    FREE_MEM(gSnowPhysics);
+    for (i = 0; i < 4; i++) {
+        FREE_MEM(gSnowVertexData[i][0]);
+        FREE_MEM(gSnowVertexData[i][1]);
+        FREE_MEM(gSnowPhysics[i]);
+    }
     FREE_MEM(gSnowGfx.pos);
     FREE_TEX(gSnowGfx.texture);
-    FREE_MEM(gSnowTriIndices);
 
     gLensFlareOverrideObjs = 0;
     gLensFlare = NULL;
@@ -249,25 +257,30 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
     s32 allocSize;
     s32 i;
     s32 j;
+    s32 k;
     Vec3i *pos;
+    s32 playerCount;
 
+    playerCount = (get_viewport_count() % 4) + 1;
     weather_free();
-    gWeather.velX = velX;
-    gWeather.velXStep = 0;
-    gWeather.velXTarget = velX;
-    gWeather.velY = velY;
-    gWeather.velYStep = 0;
-    gWeather.velYTarget = velY;
-    gWeather.velZStep = 0;
-    gWeather.intensityStep = 0;
-    gWeather.opacityStep = 0;
-    gWeather.shiftTime = 0;
-    gWeather.velZ = velZ;
-    gWeather.velZTarget = velZ;
-    gWeather.intensity = intensity;
-    gWeather.intensityTarget = intensity;
-    gWeather.opacity = opacity;
-    gWeather.opacityTarget = opacity;
+    for (i = 0; i < playerCount; i++) {
+        gWeather[i].velX = velX;
+        gWeather[i].velXStep = 0;
+        gWeather[i].velXTarget = velX;
+        gWeather[i].velY = velY;
+        gWeather[i].velYStep = 0;
+        gWeather[i].velYTarget = velY;
+        gWeather[i].velZStep = 0;
+        gWeather[i].intensityStep = 0;
+        gWeather[i].opacityStep = 0;
+        gWeather[i].shiftTime = 0;
+        gWeather[i].velZ = velZ;
+        gWeather[i].velZTarget = velZ;
+        gWeather[i].intensity = intensity;
+        gWeather[i].intensityTarget = intensity;
+        gWeather[i].opacity = opacity;
+        gWeather[i].opacityTarget = opacity;
+    }
     if (weatherType > WEATHER_RAIN) {
         weatherType = WEATHER_RAIN;
     }
@@ -292,14 +305,15 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
         snow_init();
     }
     numOfElements = density;
-    gSnowDensity = numOfElements;
-    gSnowTriIndices = (s16 *) mempool_alloc_safe(numOfElements * (sizeof(s16)), PP_RAM_WEATHER);
-    gSnowPhysics = (SnowPosData *) mempool_alloc_safe(numOfElements * (sizeof(SnowPosData)), PP_RAM_WEATHER);
-    for (i = 0; i < gSnowDensity; i++) {
-        gSnowPhysics[i].x_position = get_random_number_from_range(0, gSnowGfx.radiusX);
-        gSnowPhysics[i].y_position = get_random_number_from_range(0, gSnowGfx.radiusY);
-        gSnowPhysics[i].z_position = get_random_number_from_range(0, gSnowGfx.radiusZ);
-        gSnowPhysics[i].index = get_random_number_from_range(0, gSnowGfx.size - 1);
+    for (j = 0; j < playerCount; j++) {
+        gSnowDensity[j] = numOfElements;
+        gSnowPhysics[j] = (SnowPosData *) mempool_alloc_safe(numOfElements * (sizeof(SnowPosData)), PP_RAM_WEATHER);
+        for (i = 0; i < gSnowDensity[j]; i++) {
+            gSnowPhysics[j][i].x_position = get_random_number_from_range(0, gSnowGfx.radiusX);
+            gSnowPhysics[j][i].y_position = get_random_number_from_range(0, gSnowGfx.radiusY);
+            gSnowPhysics[j][i].z_position = get_random_number_from_range(0, gSnowGfx.radiusZ);
+            gSnowPhysics[j][i].index = get_random_number_from_range(0, gSnowGfx.size - 1);
+        }
     }
 
 #if VERSION == VERSION_77
@@ -309,15 +323,17 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
 #endif
     allocSize = sizeof(Vertex);
     allocSize *= numOfElements;
-    gSnowVertexData[0] = mempool_alloc_safe(allocSize, PP_RAM_WEATHER);
-    gSnowVertexData[1] = mempool_alloc_safe(allocSize, PP_RAM_WEATHER);
-    for (j = 0; j < 2; j++) {
-        gSnowVerts = gSnowVertexData[j];
-        for (i = 0; i < numOfElements; i++) {
-            gSnowVerts[i].r = 255;
-            gSnowVerts[i].g = 255;
-            gSnowVerts[i].b = 255;
-            gSnowVerts[i].a = 255;
+    for (i = 0; i < playerCount; i++) {
+        gSnowVertexData[i][0] = mempool_alloc_safe(allocSize, PP_RAM_WEATHER);
+        gSnowVertexData[i][1] = mempool_alloc_safe(allocSize, PP_RAM_WEATHER);
+        for (j = 0; j < 2; j++) {
+            gSnowVerts = gSnowVertexData[i][j];
+            for (k = 0; k < numOfElements; k++) {
+                gSnowVerts[k].r = 255;
+                gSnowVerts[k].g = 255;
+                gSnowVerts[k].b = 255;
+                gSnowVerts[k].a = 255;
+            }
         }
     }
 
@@ -394,25 +410,25 @@ void snow_init(void) {
  * Will start a timer that means it will gradually shift from the current to the new.
  * Official name: changeWeather
  */
-void weather_set(s32 velX, s32 velY, s32 velZ, s32 intensity, s32 opacity, s32 time) {
-    if (time > 0 && (velX != gWeather.velXTarget || velY != gWeather.velYTarget || velZ != gWeather.velZTarget ||
-                     intensity != gWeather.intensity || opacity != gWeather.opacity)) {
-        gWeather.velXTarget = velX;
-        gWeather.velYTarget = velY;
-        gWeather.velZTarget = velZ;
-        gWeather.velXStep = (velX - gWeather.velX) / time;
-        gWeather.velYStep = (velY - gWeather.velY) / time;
-        gWeather.velZStep = (velZ - gWeather.velZ) / time;
+void weather_set(s32 velX, s32 velY, s32 velZ, s32 intensity, s32 opacity, s32 time, s32 racerID) {
+    if (time > 0 && (velX != gWeather[racerID].velXTarget || velY != gWeather[racerID].velYTarget || velZ != gWeather[racerID].velZTarget ||
+                     intensity != gWeather[racerID].intensity || opacity != gWeather[racerID].opacity)) {
+        gWeather[racerID].velXTarget = velX;
+        gWeather[racerID].velYTarget = velY;
+        gWeather[racerID].velZTarget = velZ;
+        gWeather[racerID].velXStep = (velX - gWeather[racerID].velX) / time;
+        gWeather[racerID].velYStep = (velY - gWeather[racerID].velY) / time;
+        gWeather[racerID].velZStep = (velZ - gWeather[racerID].velZ) / time;
         if (gWeatherType == WEATHER_SNOW) {
-            gWeather.intensityStep = (intensity - gWeather.intensity) / time;
-            gWeather.opacityStep = (opacity - gWeather.opacity) / time;
-            gWeather.intensityTarget = intensity;
-            gWeather.opacityTarget = opacity;
-            gWeather.shiftTime = time;
+            gWeather[racerID].intensityStep = (intensity - gWeather[racerID].intensity) / time;
+            gWeather[racerID].opacityStep = (opacity - gWeather[racerID].opacity) / time;
+            gWeather[racerID].intensityTarget = intensity;
+            gWeather[racerID].opacityTarget = opacity;
+            gWeather[racerID].shiftTime = time;
         } else {
-            gWeather.intensity = intensity;
-            gWeather.opacity = opacity;
-            gWeather.shiftTime = 0;
+            gWeather[racerID].intensity = intensity;
+            gWeather[racerID].opacity = opacity;
+            gWeather[racerID].shiftTime = 0;
             rain_set(intensity + 1, opacity + 1, time / 60.0f);
         }
     }
@@ -424,7 +440,8 @@ void weather_set(s32 velX, s32 velY, s32 velZ, s32 intensity, s32 opacity, s32 t
  */
 void weather_update(Gfx **currDisplayList, MatrixS **currHudMat, Vertex **currHudVerts, Triangle **currHudTris,
                     s32 updateRate) {
-    UNUSED s32 unused;
+    s32 viewport = get_current_viewport() % 4;
+
     gCurrWeatherDisplayList = *currDisplayList;
     gCurrWeatherMatrix = *currHudMat;
     gCurrWeatherVertexList = *currHudVerts;
@@ -432,35 +449,39 @@ void weather_update(Gfx **currDisplayList, MatrixS **currHudMat, Vertex **currHu
     gWeatherCamera = get_active_camera_segment();
     gWeatherCameraMatrix = get_camera_matrix();
     if (gWeatherType != WEATHER_SNOW) {
-        rain_update(updateRate);
+        if (viewport == 0) {
+            rain_update(updateRate);
+        }
     } else {
-        if (gWeather.shiftTime > 0) {
-            if (updateRate < gWeather.shiftTime) {
-                gWeather.intensity += gWeather.intensityStep * updateRate;
-                gWeather.velX += gWeather.velXStep * updateRate;
-                gWeather.velY += gWeather.velYStep * updateRate;
-                gWeather.velZ += gWeather.velZStep * updateRate;
-                gWeather.opacity += gWeather.opacityStep * updateRate;
-                gWeather.shiftTime -= updateRate;
+        if (viewport == 0) {
+            gSnowVertexFlip = 1 - gSnowVertexFlip;
+        }
+        if (gWeather[viewport].shiftTime > 0) {
+            if (updateRate < gWeather[viewport].shiftTime) {
+                gWeather[viewport].intensity += gWeather[viewport].intensityStep * updateRate;
+                gWeather[viewport].velX += gWeather[viewport].velXStep * updateRate;
+                gWeather[viewport].velY += gWeather[viewport].velYStep * updateRate;
+                gWeather[viewport].velZ += gWeather[viewport].velZStep * updateRate;
+                gWeather[viewport].opacity += gWeather[viewport].opacityStep * updateRate;
+                gWeather[viewport].shiftTime -= updateRate;
             } else {
-                gWeather.intensity = gWeather.intensityTarget;
-                gWeather.velX = gWeather.velXTarget;
-                gWeather.velY = gWeather.velYTarget;
-                gWeather.velZ = gWeather.velZTarget;
-                gWeather.opacity = gWeather.opacityTarget;
-                gWeather.shiftTime = 0;
+                gWeather[viewport].intensity = gWeather[viewport].intensityTarget;
+                gWeather[viewport].velX = gWeather[viewport].velXTarget;
+                gWeather[viewport].velY = gWeather[viewport].velYTarget;
+                gWeather[viewport].velZ = gWeather[viewport].velZTarget;
+                gWeather[viewport].opacity = gWeather[viewport].opacityTarget;
+                gWeather[viewport].shiftTime = 0;
             }
         }
-        gSnowParticleCount = (gSnowDensity * gWeather.intensity) >> (unused = 16);
-        gSnowPlane.current =
-            (gSnowPlane.near + ((gSnowPlane.far - gSnowPlane.near) * gWeather.opacity)) >> (unused = 16);
+        gSnowParticleCount = (gSnowDensity[viewport] * gWeather[viewport].intensity) >> 16;
+        gSnowPlane[viewport].current =
+            (gSnowPlane[viewport].near + ((gSnowPlane[viewport].far - gSnowPlane[viewport].near) * gWeather[viewport].opacity)) >> 16;
 
-        snow_update(updateRate);
-        if (gSnowParticleCount > 0 && gSnowPlane.current < gSnowPlane.near) {
-            gSnowVerts = gSnowVertexData[gSnowVertexFlip];
-            snow_vertices();
-            snow_render();
-            gSnowVertexFlip = 1 - gSnowVertexFlip;
+        snow_update(updateRate, viewport);
+        if (gSnowParticleCount > 0 && gSnowPlane[viewport].current < gSnowPlane[viewport].near) {
+            gSnowVerts = gSnowVertexData[viewport][gSnowVertexFlip];
+            snow_vertices(viewport);
+            snow_render(viewport);
         }
     }
     *currDisplayList = gCurrWeatherDisplayList;
@@ -473,21 +494,21 @@ void weather_update(Gfx **currDisplayList, MatrixS **currHudMat, Vertex **currHu
  * Update the positions of all the snow particles.
  * Make any far particles wrap around the boundaries.
  */
-void snow_update(s32 updateRate) {
+void snow_update(s32 updateRate, s32 index) {
     Vec3i *snowPos;
     s32 i;
 
-    for (i = 0; i < gSnowDensity; i++) {
-        snowPos = &gSnowGfx.pos[gSnowPhysics[i].index];
-        gSnowPhysics[i].x_position =
-            ((((snowPos->x + (gWeather.velX * 2)) * updateRate) >> 1) + gSnowPhysics[i].x_position) & gSnowGfx.radiusX;
-        gSnowPhysics[i].y_position =
-            ((((snowPos->y + (gWeather.velY * 2)) * updateRate) >> 1) + gSnowPhysics[i].y_position) & gSnowGfx.radiusY;
-        gSnowPhysics[i].z_position =
-            ((((snowPos->z + (gWeather.velZ * 2)) * updateRate) >> 1) + gSnowPhysics[i].z_position) & gSnowGfx.radiusZ;
-        gSnowPhysics[i].index++;
-        if (gSnowPhysics[i].index >= gSnowGfx.size) {
-            gSnowPhysics[i].index -= gSnowGfx.size;
+    for (i = 0; i < gSnowDensity[index]; i++) {
+        snowPos = &gSnowGfx.pos[gSnowPhysics[index][i].index];
+        gSnowPhysics[index][i].x_position =
+            ((((snowPos->x + (gWeather[index].velX * 2)) * updateRate) >> 1) + gSnowPhysics[index][i].x_position) & gSnowGfx.radiusX;
+            gSnowPhysics[index][i].y_position =
+            ((((snowPos->y + (gWeather[index].velY * 2)) * updateRate) >> 1) + gSnowPhysics[index][i].y_position) & gSnowGfx.radiusY;
+            gSnowPhysics[index][i].z_position =
+            ((((snowPos->z + (gWeather[index].velZ * 2)) * updateRate) >> 1) + gSnowPhysics[index][i].z_position) & gSnowGfx.radiusZ;
+            gSnowPhysics[index][i].index++;
+        if (gSnowPhysics[index][i].index >= gSnowGfx.size) {
+            gSnowPhysics[index][i].index -= gSnowGfx.size;
         }
     }
 }
@@ -496,7 +517,7 @@ void snow_update(s32 updateRate) {
  * Update the position of each vertex for snow.
  * This starts from the camera position then
  */
-void snow_vertices(void) {
+void snow_vertices(s32 index) {
     s16 pos[3];
     f32 posF[3];
     s32 i;
@@ -511,12 +532,12 @@ void snow_vertices(void) {
     gSnowVertCount = 0;
     verts = gSnowVerts;
     for (i = 0; i < gSnowParticleCount; i++) {
-        posF[0] = (((gSnowPhysics[i].x_position - camX) & gSnowGfx.radiusX) + gSnowGfx.offsetX) * (1.0f / 65536.0f);
-        posF[1] = (((gSnowPhysics[i].y_position - camy) & gSnowGfx.radiusY) + gSnowGfx.offsetY) * (1.0f / 65536.0f);
-        posF[2] = (((gSnowPhysics[i].z_position - camz) & gSnowGfx.radiusZ) + gSnowGfx.offsetZ) * (1.0f / 65536.0f);
+        posF[0] = (((gSnowPhysics[index][i].x_position - camX) & gSnowGfx.radiusX) + gSnowGfx.offsetX) * (1.0f / 65536.0f);
+        posF[1] = (((gSnowPhysics[index][i].y_position - camy) & gSnowGfx.radiusY) + gSnowGfx.offsetY) * (1.0f / 65536.0f);
+        posF[2] = (((gSnowPhysics[index][i].z_position - camz) & gSnowGfx.radiusZ) + gSnowGfx.offsetZ) * (1.0f / 65536.0f);
         f32_matrix_dot(gWeatherCameraMatrix, (Matrix *) &posF, (Matrix *) &posF);
         pos[2] = posF[2];
-        if (pos[2] < gSnowPlane.near && gSnowPlane.current < pos[2]) {
+        if (pos[2] < gSnowPlane[index].near && gSnowPlane[index].current < pos[2]) {
             pos[0] = posF[0];
             pos[1] = posF[1];
             verts[0].x = pos[0] - gSnowGfx.vertOffsetW;
@@ -525,24 +546,19 @@ void snow_vertices(void) {
             verts[1].x = pos[0] + gSnowGfx.vertOffsetW;
             verts[1].y = pos[1] + gSnowGfx.vertOffsetH;
             verts[1].z = pos[2];
-#if VERSION == VERSION_77
-            verts[2].x = pos[0];
-#else
-            verts[2].x = pos[0] + gSnowGfx.vertOffsetW;
-#endif
             verts[2].y = pos[1] - gSnowGfx.vertOffsetH;
             verts[2].z = pos[2];
 #if VERSION == VERSION_77
+            verts[2].x = pos[0];
             verts += 3;
             gSnowVertCount += 3;
-            gSnowTriIndices[gSnowVertCount / 3] = i;
 #else
+            verts[2].x = pos[0] + gSnowGfx.vertOffsetW;
             verts[3].x = pos[0] - gSnowGfx.vertOffsetW;
             verts[3].y = pos[1] - gSnowGfx.vertOffsetH;
             verts[3].z = pos[2];
             verts += 4;
             gSnowVertCount += 4;
-            gSnowTriIndices[gSnowVertCount >> 2] = i;
 #endif
         }
     }
@@ -551,7 +567,7 @@ void snow_vertices(void) {
 /**
  * Load and execute the draw commands for the falling snowflakes, seen with snowy weather enabled.
  */
-void snow_render(void) {
+void snow_render(s32 index) {
     s32 i;
     u32 mtx;
     u32 vtx;
@@ -577,13 +593,6 @@ void snow_render(void) {
                 gSPPolygon(gCurrWeatherDisplayList++, OS_PHYSICAL_TO_K0(gSnowTriangles), gSnowTriCount, 1);
                 i += gSnowVertOffset;
             }
-            vtx = (u32) &gSnowVerts[i];
-            gSPVertexDKR(gCurrWeatherDisplayList++, OS_PHYSICAL_TO_K0(vtx), (gSnowVertCount - i), 0);
-#if VERSION == VERSION_77
-            gSPPolygon(gCurrWeatherDisplayList++, OS_PHYSICAL_TO_K0(gSnowTriangles), ((s32) (gSnowVertCount - i) / 3), 1);
-#else
-            gSPPolygon(gCurrWeatherDisplayList++, OS_PHYSICAL_TO_K0(gSnowTriangles), ((s32) (gSnowVertCount - i) >> 1), 1);
-#endif
         }
     }
 }
