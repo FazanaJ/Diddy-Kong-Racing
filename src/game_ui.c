@@ -161,10 +161,6 @@ HudPresets4P gHudPresets4P[] = {
     { -1, -1, -1, -1 },
 };
 
-// Rare likely just used an s16 array for the above data, but we can make it match with a nicer looking struct.
-// Small side effect is this padding is required to maintain matching.
-UNUSED s32 gPresetPadding = 0;
-
 HudAudio gHudAudioData[2] = {
     { SOUND_CROWD, 0, 0, NULL, 0, 0, 0, 0, 0 },
     { SOUND_UNK_FF, 0, 0, NULL, 0, 0, 0, 0, 0 },
@@ -3760,15 +3756,6 @@ void hud_element_render(Gfx **dList, MatrixS **mtx, Vertex **vtxList, HudElement
             sp88.drawTexture.yOffset = hud->pos.y;
             sp88.unk8 = 0;
             texrect_draw(&gHudDL, &sp88.drawTexture, 0, 0, 0xFF, 0xFF, 0xFF, alpha);
-        } else if (gHudPALScale && osTvType == OS_TV_TYPE_PAL) {
-            textureHeader = gAssetHudElements->entry[spriteID];
-            textureHeader = (TextureHeader *) (((u8 *) textureHeader) + hud->spriteOffset * textureHeader->textureSize);
-            sp70.drawTexture.texture = textureHeader;
-            sp70.drawTexture.xOffset = 0;
-            sp70.drawTexture.yOffset = 0;
-            sp70.unk8 = 0;
-            texrect_draw_scaled(&gHudDL, &sp70.drawTexture, hud->pos.x, hud->pos.y, hud->scale, hud->scale * 1.1,
-                                gHudColour, TEXRECT_POINT);
         } else if (hud->scale == 1.0) {
             textureHeader2 = gAssetHudElements->entry[spriteID];
             textureHeader2 =

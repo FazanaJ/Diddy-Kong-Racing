@@ -69,7 +69,6 @@ s32 gNumberOfLevelHeaders;
 s32 gNumberOfWorlds;
 s8 *D_80121178;
 LevelGlobalData *gGlobalLevelTable;
-s32 gRaceTypeCountTable[16];
 AIBehaviourTable *gAIBehaviourTable;
 s16 gLevelPropertyStack[5 * 4]; // Stores level info for cutscenes. 5 sets of four properties.
 
@@ -91,9 +90,6 @@ void init_level_globals(void) {
     header = mempool_alloc_safe(sizeof(LevelHeader), PP_RAM_ASSETTABLE);
     gTempAssetTable = (s32 *) load_asset_section_from_rom(ASSET_LEVEL_HEADERS_TABLE);
     i = 0;
-    while (i < 16) {
-        gRaceTypeCountTable[i++] = 0;
-    }
     gNumberOfLevelHeaders = 0;
     while (gTempAssetTable[gNumberOfLevelHeaders] != -1) {
         gNumberOfLevelHeaders++;
@@ -106,9 +102,6 @@ void init_level_globals(void) {
         load_asset_to_address(ASSET_LEVEL_HEADERS, (u32) gCurrentLevelHeader, gTempAssetTable[i], sizeof(LevelHeader));
         if (gNumberOfWorlds < gCurrentLevelHeader->world) {
             gNumberOfWorlds = gCurrentLevelHeader->world;
-        }
-        if ((gCurrentLevelHeader->race_type >= 0) && (gCurrentLevelHeader->race_type < 16)) {
-            gRaceTypeCountTable[gCurrentLevelHeader->race_type]++;
         }
         gGlobalLevelTable[i].world = gCurrentLevelHeader->world;
         gGlobalLevelTable[i].raceType = gCurrentLevelHeader->race_type;

@@ -59,10 +59,10 @@ s16 gLevelLoadTimer = 0;
 s8 gPauseLockTimer = 0; // If this is above zero, the player cannot pause the game.
 s8 gFutureFunLandLevelTarget = FALSE;
 s8 gDmemInvalid = FALSE;
-s32 gNumF3dCmdsPerPlayer[MAXCONTROLLERS] = {3000 + GFX_ADD, 4000 + GFX_ADD, 5000 + GFX_ADD, 5000 + GFX_ADD};
-s32 gNumHudVertsPerPlayer[MAXCONTROLLERS] = {200, 300, 400, 500};
-s32 gNumHudMatPerPlayer[MAXCONTROLLERS] = {200, 300, 400, 500};
-s32 gNumHudTrisPerPlayer[MAXCONTROLLERS] = {20, 30, 40, 50};
+s16 gNumF3dCmdsPerPlayer[MAXCONTROLLERS] = {3000 + GFX_ADD, 4000 + GFX_ADD, 5000 + GFX_ADD, 5000 + GFX_ADD};
+s16 gNumHudVertsPerPlayer[MAXCONTROLLERS] = {200, 300, 400, 500};
+s16 gNumHudMatPerPlayer[MAXCONTROLLERS] = {200, 300, 400, 500};
+s8 gNumHudTrisPerPlayer[MAXCONTROLLERS] = {20, 30, 40, 50};
 s8 gDrawFrameTimer = 0;
 FadeTransition D_800DD3F4 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_BLACK, 20, 0);
 s32 sLogicUpdateRate = LOGIC_5FPS;
@@ -95,23 +95,19 @@ s32 gRenderMenu; // I don't think this is ever not 1
 s32 gPlayableMapId;
 s32 D_801234F8;
 s32 D_801234FC;
-s32 gGameNumPlayers;
+s8 gGameNumPlayers;
 s32 gGameCurrentEntrance;
 s32 gGameCurrentCutscene;
-s32 gPrevPlayerCount;
+s8 gPrevPlayerCount;
 Settings *gSettingsPtr;
 s8 gIsLoading;
 s8 gIsPaused;
 s8 gPostRaceViewPort;
 Vehicle gLevelDefaultVehicleID;
 Vehicle gMenuVehicleID; // Looks to be the current level's vehicle ID.
-s32 sBootDelayTimer;
+s8 sBootDelayTimer;
 s8 gLevelLoadType;
 s8 gNextMap;
-s32 gCurrNumF3dCmdsPerPlayer;
-s32 gCurrNumHudMatPerPlayer;
-s32 gCurrNumHudTrisPerPlayer;
-s32 gCurrNumHudVertsPerPlayer;
 OSScClient *gNMISched[3];
 OSMesg gGameMesgBuf[3];
 OSMesgQueue gGameMesgQueue;
@@ -1387,10 +1383,6 @@ void alloc_displaylist_heap(s32 numberOfPlayers) {
         gMatrixHeap[1] = (MatrixS *) ((u8 *) gDisplayLists[1] + ((gNumF3dCmdsPerPlayer[num] * sizeof(Gwords))));
         gTriangleHeap[1] = (Triangle *) ((u8 *) gMatrixHeap[1] + ((gNumHudMatPerPlayer[num] * sizeof(Matrix))));
         gVertexHeap[1] = (Vertex *) ((u8 *) gTriangleHeap[1] + ((gNumHudTrisPerPlayer[num] * sizeof(Triangle))));
-        gCurrNumF3dCmdsPerPlayer = gNumF3dCmdsPerPlayer[num];
-        gCurrNumHudMatPerPlayer = gNumHudMatPerPlayer[num];
-        gCurrNumHudTrisPerPlayer = gNumHudTrisPerPlayer[num];
-        gCurrNumHudVertsPerPlayer = gNumHudVertsPerPlayer[num];
         mempool_free_timer(2);
     }
 
@@ -1433,11 +1425,6 @@ void default_alloc_displaylist_heap(void) {
     gMatrixHeap[1] = (MatrixS *) ((u8 *) gDisplayLists[1] + (gNumF3dCmdsPerPlayer[numberOfPlayers] * sizeof(Gwords)));
     gVertexHeap[1] = (Vertex *) ((u8 *) gMatrixHeap[1] + (gNumHudMatPerPlayer[numberOfPlayers] * sizeof(Matrix)));
     gTriangleHeap[1] = (Triangle *) ((u8 *) gVertexHeap[1] + (gNumHudVertsPerPlayer[numberOfPlayers] * sizeof(Vertex)));
-
-    gCurrNumF3dCmdsPerPlayer = gNumF3dCmdsPerPlayer[numberOfPlayers];
-    gCurrNumHudMatPerPlayer = gNumHudMatPerPlayer[numberOfPlayers];
-    gCurrNumHudTrisPerPlayer = gNumHudTrisPerPlayer[numberOfPlayers];
-    gCurrNumHudVertsPerPlayer = gNumHudVertsPerPlayer[numberOfPlayers];
 }
 
 /**
