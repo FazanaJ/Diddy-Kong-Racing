@@ -303,11 +303,11 @@ s32 D_8011B000;
 s32 D_8011B004;
 s32 D_8011B008; // indexes D_800DC74C and D_800DC754
 u8 D_8011B010[16];
-Object *D_8011B020[NUMBER_OF_CHARACTERS];
+Object *D_8011B020[10];
 u8 D_8011B048[16];
 u8 D_8011B058[16];
 u8 D_8011B068[16];
-ColourRGBA D_8011B078[NUMBER_OF_CHARACTERS]; // Note: D_8011B078 might not be a ColourRGBA.
+ColourRGBA D_8011B078[10]; // Note: D_8011B078 might not be a ColourRGBA.
 
 extern s16 gGhostMapID;
 
@@ -319,62 +319,78 @@ typedef struct LevelObjectEntry_unk8000B020 {
     s8 unk9;
 } LevelObjectEntry_unk8000B020;
 
-void func_8000B020(s32 numberOfVertices, s32 numberOfTriangles) {
-    Asset20 *miscAsset20;
+void obj_magnet_spawn(void) {
     LevelObjectEntry_unk8000B020 objEntry;
-    s32 i;
 
-    D_800DC754[0] = (Triangle *) mempool_alloc_safe(
-        ((numberOfTriangles * sizeof(Triangle)) + (numberOfVertices * sizeof(Vertex))) * 2, PP_RAM_OBJMDL);
-    D_800DC754[1] = (Triangle *) ((u32) D_800DC754[0] + numberOfTriangles * sizeof(Triangle));
-    D_800DC74C[0] = (Vertex *) ((u32) D_800DC754[1] + numberOfTriangles * sizeof(Triangle));
-    D_800DC74C[1] = (Vertex *) ((u32) D_800DC74C[0] + numberOfVertices * sizeof(Vertex));
-    D_8011AFF8 = numberOfVertices;
-    D_8011AFFC = 0;
-    D_8011B000 = numberOfTriangles;
-    D_8011B004 = 0;
-    D_8011B008 = 0;
-    miscAsset20 = (Asset20 *) get_misc_asset(ASSET_MISC_20);
-    for (i = 0; i < ARRAY_COUNT(D_8011B020); i++) {
-        objEntry.common.objectID = ASSET_OBJECT_ID_BOOST;
-        objEntry.common.size = 10;
-        objEntry.common.x = 0;
-        objEntry.common.y = 0;
-        objEntry.common.z = 0;
-        objEntry.unk8 = i;
-        D_8011B020[i] = spawn_object(&objEntry.common, 1);
-        if (D_8011B020[i] != NULL) {
-            D_8011B020[i]->properties.common.unk0 = 0;
-            D_8011B020[i]->properties.common.unk4 = 0;
-            miscAsset20[i].unk70 = 0;
-            miscAsset20[i].unk74 = 0.0f;
-            miscAsset20[i].unk78 = (Sprite *) func_8007C12C(miscAsset20[i].unk6C, 0);
-            miscAsset20[i].unk7C = load_texture(miscAsset20[i].unk6E);
-            miscAsset20[i].unk72 = get_random_number_from_range(0, 255);
-            miscAsset20[i].unk73 = 0;
-            D_8011B010[i] = get_random_number_from_range(0, 255);
-        }
-        D_8011B068[i] = 1;
+    if (gMagnetEffectObject != NULL) {
+        return;
     }
-    D_800DC760 = 9;
-    objEntry.common.objectID = ASSET_OBJECT_ID_SHIELD;
-    objEntry.common.size = 10;
-    objEntry.common.x = 0;
-    objEntry.common.y = 0;
-    objEntry.common.z = 0;
-    gShieldEffectObject = spawn_object((LevelObjectEntryCommon *) &objEntry, 0);
-    for (i = 0; i < ARRAY_COUNT(D_8011B078); i++) {
-        D_8011B078[i].r = 0;
-        D_8011B078[i].g = get_random_number_from_range(0, 255);
-        D_8011B078[i].b = get_random_number_from_range(0, 255);
-        D_8011B078[i].a = 0;
-    }
+
     objEntry.common.objectID = ASSET_OBJECT_ID_AINODE;
-    objEntry.common.size = 138;
+    objEntry.common.size = 0x8A;
     objEntry.common.x = 0;
     objEntry.common.y = 0;
     objEntry.common.z = 0;
     gMagnetEffectObject = spawn_object((LevelObjectEntryCommon *) &objEntry, 0);
+}
+
+void obj_shield_spawn(void) {
+    LevelObjectEntry_unk8000B020 objEntry;
+    s32 i;
+
+    if (gShieldEffectObject != NULL) {
+        return;
+    }
+
+    objEntry.common.objectID = ASSET_OBJECT_ID_SHIELD;
+    objEntry.common.size = 0xA;
+    objEntry.common.x = 0;
+    objEntry.common.y = 0;
+    objEntry.common.z = 0;
+    gShieldEffectObject = spawn_object((LevelObjectEntryCommon *) &objEntry, 0);
+}
+
+void func_8000B020(s32 numberOfVertices, s32 numberOfTriangles) {
+    LevelObjectEntry_unk8000B020 objEntry;
+    Asset20 *miscAsset20;
+    s32 i;
+
+    if (gNumRacers > 0) {
+        D_800DC754[0] = (Triangle *) mempool_alloc_safe(((numberOfTriangles * sizeof(Triangle)) + (numberOfVertices * sizeof(Vertex))) * 2, PP_RAM_OBJMDL);
+        D_800DC754[1] = (Triangle *) ((u32) D_800DC754[0] + numberOfTriangles * sizeof(Triangle));
+        D_800DC74C[0] = (Vertex *) ((u32) D_800DC754[1] + numberOfTriangles * sizeof(Triangle));
+        D_800DC74C[1] = (Vertex *) ((u32) D_800DC74C[0] + numberOfVertices * sizeof(Vertex));
+        D_8011AFFC = 0;
+        D_8011B004 = 0;
+        D_8011B008 = 0;
+        miscAsset20 = (Asset20 *) get_misc_asset(ASSET_MISC_20);
+        for (i = 0; i < gNumRacers; i++) {
+            objEntry.common.objectID = ASSET_OBJECT_ID_BOOST;
+            objEntry.common.size = 10;
+            objEntry.common.x = 0;
+            objEntry.common.y = 0;
+            objEntry.common.z = 0;
+            objEntry.unk8 = i;
+            D_8011B020[i] = spawn_object(&objEntry.common, 1);
+            if (D_8011B020[i] != NULL) {
+                D_8011B020[i]->properties.common.unk0 = 0;
+                D_8011B020[i]->properties.common.unk4 = 0;
+                miscAsset20[i].unk70 = 0;
+                miscAsset20[i].unk74 = 0.0f;
+                miscAsset20[i].unk78 = (Sprite *) func_8007C12C(miscAsset20[i].unk6C, 0);
+                miscAsset20[i].unk7C = load_texture(miscAsset20[i].unk6E);
+                miscAsset20[i].unk72 = get_random_number_from_range(0, 255);
+                miscAsset20[i].unk73 = 0;
+                D_8011B010[i] = get_random_number_from_range(0, 255);
+            }
+            D_8011B068[i] = 1;
+            D_8011B078[i].r = 0;
+            D_8011B078[i].g = get_random_number_from_range(0, 255);
+            D_8011B078[i].b = get_random_number_from_range(0, 255);
+            D_8011B078[i].a = 0;
+        }
+        D_800DC760 = 9;
+    }
 }
 
 void func_8000B290(void) {
@@ -405,13 +421,13 @@ void func_8000B290(void) {
     }
     if (gShieldEffectObject != NULL) {
         free_object(gShieldEffectObject);
+        gShieldEffectObject = NULL;
     }
-    gShieldEffectObject = NULL;
 
     if (gMagnetEffectObject != NULL) {
         free_object(gMagnetEffectObject);
+        gMagnetEffectObject = NULL;
     }
-    gMagnetEffectObject = NULL;
     gParticlePtrList_flush();
 }
 
@@ -534,7 +550,6 @@ Object *func_8000BF44(s32 arg0) {
 void allocate_object_pools(void) {
     s32 i;
 
-    set_world_shading(0.67f, 0.33f, 0, -0x2000, 0);
     gObjectMemoryPool = (Object *) mempool_new_sub(OBJECT_POOL_SIZE, OBJECT_SLOT_COUNT);
     gParticlePtrList = mempool_alloc_safe(sizeof(uintptr_t) * 200, PP_RAM_OBJLISTS);
     D_8011AE6C = mempool_alloc_safe(sizeof(uintptr_t) * 20, PP_RAM_OBJLISTS);
@@ -2222,9 +2237,6 @@ void obj_update(s32 updateRate) {
             }
         }
     }
-    for (i = 0; i < gNumRacers; i++) {
-        update_player_racer((*gRacers)[i], updateRate);
-    }
     if (get_current_level_race_type() == RACETYPE_DEFAULT) {
         for (i = 0; i < gNumRacers; i++) {
             racer = &gRacersByPosition[i]->unk64->racer;
@@ -3335,7 +3347,11 @@ void render_racer_shield(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *o
     f32 shear;
 
     racer = &obj->unk64->racer;
-    if (racer->shieldTimer > 0 && gShieldEffectObject != NULL) {
+    if (racer->shieldTimer > 0) {
+        obj_shield_spawn();
+        if (gShieldEffectObject == NULL) {
+            return;
+        }
         gObjectCurrDisplayList = *dList;
         gObjectCurrMatrix = *mtx;
         gObjectCurrVertexList = *vtxList;
@@ -3409,6 +3425,7 @@ void render_racer_magnet(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *o
     racer = &obj->unk64->racer;
     var_t0 = racer->racerIndex;
     if (D_8011B078[var_t0].a != 0) {
+        obj_magnet_spawn();
         if (gMagnetEffectObject != NULL) {
             gObjectCurrDisplayList = *dList;
             gObjectCurrMatrix = *mtx;
@@ -3625,133 +3642,6 @@ s32 get_first_active_object(s32 *retObjCount) {
 
     gFirstActiveObjectId = i;
     return i;
-}
-
-// Only used in the unused function func_800149C0
-s32 func_80014B50(s32 arg0, s32 arg1, f32 arg2, u32 arg3) {
-    Object *swapTemp;
-    s32 var_a0;
-    s32 var_a1;
-
-    var_a0 = arg0;
-    var_a1 = arg1;
-    switch (arg3) {
-        case 0:
-            while (arg1 >= arg0) {
-                while ((var_a1 >= arg0) && ((gObjPtrList[arg0]->segment.trans.x_position -
-                                             gObjPtrList[arg0]->segment.camera.unk34) < arg2)) {
-                    arg0++;
-                }
-                while ((arg1 >= var_a0) && (arg2 <= (gObjPtrList[arg1]->segment.trans.x_position -
-                                                     gObjPtrList[arg1]->segment.camera.unk34))) {
-                    arg1--;
-                }
-                if (arg0 < arg1) {
-                    swapTemp = gObjPtrList[arg0];
-                    gObjPtrList[arg0] = gObjPtrList[arg1];
-                    gObjPtrList[arg1] = swapTemp;
-                    arg0++;
-                    arg1--;
-                }
-            }
-            break;
-        case 1:
-            while (arg1 >= arg0) {
-                while ((var_a1 >= arg0) && ((gObjPtrList[arg0]->segment.trans.y_position -
-                                             gObjPtrList[arg0]->segment.camera.unk34) < arg2)) {
-                    arg0++;
-                }
-                while ((arg1 >= var_a0) && (arg2 <= (gObjPtrList[arg1]->segment.trans.y_position -
-                                                     gObjPtrList[arg1]->segment.camera.unk34))) {
-                    arg1--;
-                }
-                if (arg0 < arg1) {
-                    swapTemp = gObjPtrList[arg0];
-                    gObjPtrList[arg0] = gObjPtrList[arg1];
-                    gObjPtrList[arg1] = swapTemp;
-                    arg0++;
-                    arg1--;
-                }
-            }
-            break;
-        case 2:
-            while (arg1 >= arg0) {
-                while ((var_a1 >= arg0) && ((gObjPtrList[arg0]->segment.trans.z_position -
-                                             gObjPtrList[arg0]->segment.camera.unk34) < arg2)) {
-                    arg0++;
-                }
-                while ((arg1 >= var_a0) && (arg2 <= (gObjPtrList[arg1]->segment.trans.z_position -
-                                                     gObjPtrList[arg1]->segment.camera.unk34))) {
-                    arg1--;
-                }
-                if (arg0 < arg1) {
-                    swapTemp = gObjPtrList[arg0];
-                    gObjPtrList[arg0] = gObjPtrList[arg1];
-                    gObjPtrList[arg1] = swapTemp;
-                    arg0++;
-                    arg1--;
-                }
-            }
-            break;
-        case 8:
-            while (arg1 >= arg0) {
-                while ((var_a1 >= arg0) && ((gObjPtrList[arg0]->segment.trans.x_position +
-                                             gObjPtrList[arg0]->segment.camera.unk34) < arg2)) {
-                    arg0++;
-                }
-                while ((arg1 >= var_a0) && (arg2 <= (gObjPtrList[arg1]->segment.trans.x_position +
-                                                     gObjPtrList[arg1]->segment.camera.unk34))) {
-                    arg1--;
-                }
-                if (arg0 < arg1) {
-                    swapTemp = gObjPtrList[arg0];
-                    gObjPtrList[arg0] = gObjPtrList[arg1];
-                    gObjPtrList[arg1] = swapTemp;
-                    arg0++;
-                    arg1--;
-                }
-            }
-            break;
-        case 9:
-            while (arg1 >= arg0) {
-                while ((var_a1 >= arg0) && ((gObjPtrList[arg0]->segment.trans.y_position +
-                                             gObjPtrList[arg0]->segment.camera.unk34) < arg2)) {
-                    arg0++;
-                }
-                while ((arg1 >= var_a0) && (arg2 <= (gObjPtrList[arg1]->segment.trans.y_position +
-                                                     gObjPtrList[arg1]->segment.camera.unk34))) {
-                    arg1--;
-                }
-                if (arg0 < arg1) {
-                    swapTemp = gObjPtrList[arg0];
-                    gObjPtrList[arg0] = gObjPtrList[arg1];
-                    gObjPtrList[arg1] = swapTemp;
-                    arg0++;
-                    arg1--;
-                }
-            }
-            break;
-        case 10:
-            while (arg1 >= arg0) {
-                while ((var_a1 >= arg0) && ((gObjPtrList[arg0]->segment.trans.z_position +
-                                             gObjPtrList[arg0]->segment.camera.unk34) < arg2)) {
-                    arg0++;
-                }
-                while ((arg1 >= var_a0) && (arg2 <= (gObjPtrList[arg1]->segment.trans.z_position +
-                                                     gObjPtrList[arg1]->segment.camera.unk34))) {
-                    arg1--;
-                }
-                if (arg0 < arg1) {
-                    swapTemp = gObjPtrList[arg0];
-                    gObjPtrList[arg0] = gObjPtrList[arg1];
-                    gObjPtrList[arg1] = swapTemp;
-                    arg0++;
-                    arg1--;
-                }
-            }
-            break;
-    }
-    return arg0;
 }
 
 /**
@@ -5398,14 +5288,6 @@ Object *ainode_get(s32 nodeID) {
     return NULL;
 }
 
-/**
- * Applies shading properties to a global variable.
- * Presumably intended for level geometry, which supports shading, but never uses it.
- */
-void set_world_shading(f32 brightness, f32 ambient, s16 angleX, s16 angleY, s16 angleZ) {
-    set_shading_properties((ShadeProperties *) &gWorldShading, brightness, ambient, angleX, angleY, angleZ);
-}
-
 void set_shading_properties(ShadeProperties *arg0, f32 brightness, f32 ambient, s16 angleX, s16 angleY, s16 angleZ) {
     Vec3s angle;
     Vec3f velocityPos;
@@ -6956,6 +6838,9 @@ s32 obj_init_property_flags(s32 behaviorId) {
 void run_object_loop_func(Object *obj, s32 updateRate) {
     update_object_stack_trace(OBJECT_UPDATE, obj->objectID);
     switch (obj->behaviorId) {
+        case BHV_RACER:
+            update_player_racer(obj, updateRate);
+            break;
         case BHV_SCENERY:
             obj_loop_scenery(obj, updateRate);
             break;

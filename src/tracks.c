@@ -3119,7 +3119,7 @@ void shadow_render(Object *obj, ShadowData *shadow) {
             alpha = gCurrShadowVerts[gCurrShadowHeapData[i].vtxCount].a;
             flags = RENDER_FOG_ACTIVE | RENDER_Z_COMPARE;
             if (alpha == 0 || obj->segment.object.opacity == 0) {
-                i = shadow->meshEnd; // It'd be easier to just return...
+                return;
             } else if (alpha != 255 || obj->segment.object.opacity != 255) {
                 flags = RENDER_FOG_ACTIVE | RENDER_SEMI_TRANSPARENT | RENDER_Z_COMPARE;
                 alpha = (obj->segment.object.opacity * alpha) >> 8;
@@ -3251,8 +3251,7 @@ void shadow_update(s32 group, s32 waterGroup, s32 updateRate) {
             shadow->meshStart = -1;
             skipShading = FALSE;
             // Multiplayer
-            if (objHeader->shadowGroup == SHADOW_ACTORS && numViewports >= TWO_PLAYERS &&
-                numViewports <= FOUR_PLAYERS) {
+            if (objHeader->shadowGroup == SHADOW_ACTORS && numViewports >= TWO_PLAYERS) {
                 if (obj->behaviorId == BHV_RACER) {
                     playerIndex = obj->unk64->racer.playerIndex;
                     if (playerIndex != PLAYER_COMPUTER) {
@@ -3289,8 +3288,7 @@ void shadow_update(s32 group, s32 waterGroup, s32 updateRate) {
             }
 
             // Multiplayer
-            if (objHeader->shadowGroup == SHADOW_ACTORS && numViewports >= TWO_PLAYERS &&
-                numViewports <= FOUR_PLAYERS) {
+            if (objHeader->shadowGroup == SHADOW_ACTORS && numViewports) {
                 if (obj->behaviorId == BHV_RACER) {
                     playerIndex = obj->unk64->racer.playerIndex;
                     if (playerIndex != PLAYER_COMPUTER) {

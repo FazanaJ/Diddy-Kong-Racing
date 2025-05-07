@@ -350,6 +350,10 @@ typedef struct Asset20 {
 extern s32 osCicId; // Used for an Anti-Piracy check in render_3d_model
 extern s32 gNumRacers;
 
+void obj_magnet_spawn(void);
+void obj_boost_spawn(s32 charID);
+void obj_shield_spawn(void);
+
 Object *func_8000BF44(s32 arg0);
 void allocate_object_pools(void);
 void clear_object_pointers(void);
