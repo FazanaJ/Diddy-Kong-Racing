@@ -243,7 +243,6 @@ s8 gMinimapXlu;
  */
 s8 gRaceStartShowHudStep;
 
-s8 gHudPALScale;
 u8 *gAssetHudElementStaleCounter;
 HudData *gCurrentHud;
 HudData *gPlayerHud[MAXCONTROLLERS]; // One per active player
@@ -419,7 +418,6 @@ void hud_init_element(void) {
 #endif
     gMinimapFade = 0;
     gShowHUD = FALSE;
-    gHudPALScale = FALSE;
     gAdventurePlayerFinish = FALSE;
     D_80126D4C = -100;
     D_80126D50 = get_random_number_from_range(120, 360);
@@ -1189,7 +1187,6 @@ void hud_eggs_portrait(Object_Racer *racer, UNUSED s32 updateRate) {
 
     prevY = gCurrentHud->entry[HUD_EGG_CHALLENGE_ICON].pos.x;
     gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT].spriteID = racer->characterId + HUD_SPRITE_PORTRAIT;
-    gHudPALScale = TRUE;
     if (gNumActivePlayers < 3 || (gNumActivePlayers == 3 && racer->playerIndex == PLAYER_COMPUTER)) {
         hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT]);
     }
@@ -1213,7 +1210,6 @@ void hud_eggs_portrait(Object_Racer *racer, UNUSED s32 updateRate) {
         gCurrentHud->entry[HUD_EGG_CHALLENGE_ICON].pos.x += 12.0f;
     }
     gCurrentHud->entry[HUD_EGG_CHALLENGE_ICON].pos.x = prevY;
-    gHudPALScale = FALSE;
 }
 
 /**
@@ -1332,9 +1328,7 @@ void func_800A1E48(Object *racerObj, s32 updateRate) {
 void hud_lives_render(Object_Racer *racer, UNUSED s32 updateRate) {
     gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT].spriteID = racer->characterId + HUD_SPRITE_PORTRAIT;
     if (gNumActivePlayers < 3 || (gNumActivePlayers == 3 && racer->playerIndex == PLAYER_COMPUTER)) {
-        gHudPALScale = TRUE;
         hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT]);
-        gHudPALScale = FALSE;
         rendermode_reset(&gHudDL);
         //rdp_init(&gHudDL);
     }
@@ -1355,9 +1349,7 @@ void hud_lives_render(Object_Racer *racer, UNUSED s32 updateRate) {
     if (gNumActivePlayers != 2) {
         hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_BATTLE_BANANA_X]);
         sprite_opaque(TRUE);
-        gHudPALScale = TRUE;
         hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_BATTLE_BANANA_ICON]);
-        gHudPALScale = FALSE;
         sprite_opaque(FALSE);
     }
 }
@@ -2012,22 +2004,17 @@ void hud_treasure(Object_Racer *racer) {
     prevY = gCurrentHud->entry[HUD_TREASURE_METRE].pos.y;
     if (gNumActivePlayers < 3 || (gNumActivePlayers == 3 && racer->playerIndex == PLAYER_COMPUTER)) {
         gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT].spriteID = racer->characterId + HUD_SPRITE_PORTRAIT;
-        gHudPALScale = TRUE;
         hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT]);
-        gHudPALScale = FALSE;
     }
     for (i = 0; i < 10; i++) {
         if (i >= racer->lap) {
             gHudColour = COLOUR_RGBA32(128, 128, 128, 128);
         }
-        gHudPALScale = TRUE;
         hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_TREASURE_METRE]);
-        gHudPALScale = FALSE;
         gCurrentHud->entry[HUD_TREASURE_METRE].pos.y -= 3.0f;
     }
     gCurrentHud->entry[HUD_TREASURE_METRE].pos.y = prevY;
     gHudColour = COLOUR_RGBA32(255, 255, 255, 254);
-    gHudPALScale = FALSE;
 }
 
 /**
@@ -3377,9 +3364,7 @@ void hud_render_general(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 updateRate
                     gCurrentHud->entry[HUD_BANANA_COUNT_X].pos.y -= temp;
                     gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT].spriteID =
                         curRacerObj->characterId + HUD_SPRITE_PORTRAIT;
-                    gHudPALScale = TRUE;
                     hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT]);
-                    gHudPALScale = FALSE;
                     if (gCurrentHud->entry[HUD_BANANA_COUNT_ICON_SPIN].bananaCountIconSpin.visualCounter == 0 &&
                         curRacerObj->bananas == 10) {
                         gCurrentHud->entry[HUD_BANANA_COUNT_ICON_SPIN].bananaCountIconSpin.visualCounter =

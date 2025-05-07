@@ -58,13 +58,13 @@ typedef struct ConfigBits {
     unsigned screenBits : 1;
     unsigned terrainQuality : 1;
     // Multiplayer
-    unsigned multiMusic : 1;
-    unsigned multiObjects : 1;
-    unsigned multiWaves : 1;
-    unsigned multiParticles : 1;
-    unsigned multiWeather : 1;
-    unsigned multiModels : 1;
-    unsigned multiSky : 1;
+    unsigned multiMusic : 2;
+    unsigned multiObjects : 2;
+    unsigned multiWaves : 2;
+    unsigned multiParticles : 2;
+    unsigned multiWeather : 2;
+    unsigned multiModels : 2;
+    unsigned multiSky : 2;
     signed multiAA : 2;
 } ConfigBits;
 
