@@ -53,7 +53,7 @@ typedef struct FontCharData {
 
 /* Size: 0x400 bytes */
 typedef struct FontData {
-/* 0x000 */ s32 unk0; // Unused
+/* 0x000 */ s32 staleTimer; // Unused
 /* 0x004 */ char name[28];
 /* 0x020 */ u16 x;
 /* 0x022 */ u16 y;
@@ -186,6 +186,7 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
                         f32 scisScale);
 s32 get_text_width(char *text, s32 x, s32 font);
 void *render_dialogue_text(s32 dialogueBoxID, s32 posX, s32 posY, char *text, s32 number, s32 flags);
+void font_cycle(s32 updateRate);
 
 // Japanese Region exclusives
 void func_800C6464_C7064(void);

@@ -143,8 +143,8 @@ void audio_init(OSSched *sc) {
     gMusicPlayer = sound_seqplayer_init(24, 120);
     set_voice_limit(gMusicPlayer, 18);
     gJinglePlayer = sound_seqplayer_init(16, 50);
-    gMusicSequenceData = mempool_alloc_safe(seqLength, PP_RAM_SEQUENCES);
-    gJingleSequenceData = mempool_alloc_safe(seqLength, PP_RAM_SEQUENCES);
+    gMusicSequenceData = NULL;
+    gJingleSequenceData = NULL;
     audConfig.maxEvents = 150;
     audConfig.maxSounds = 32;
     audConfig.maxChannels = AUDIO_CHANNELS;
@@ -351,9 +351,9 @@ void sound_update_queue(u8 updateRate) {
             }
         }
     }
-
-    music_sequence_init(gMusicPlayer, gMusicSequenceData, &gMusicNextSeqID, &gMusicSequence);
-    music_sequence_init(gJinglePlayer, gJingleSequenceData, &gJingleNextSeqID, &gJingleSequence);
+ 
+    music_sequence_init(gMusicPlayer, 0, &gMusicNextSeqID, &gMusicSequence);
+    music_sequence_init(gJinglePlayer, 1, &gJingleNextSeqID, &gJingleSequence);
     if (sMusicTempo == -1 && gMusicPlayer->target) {
         sMusicTempo = 60000000 / alCSPGetTempo(gMusicPlayer);
     }
@@ -693,7 +693,7 @@ u16 sound_distance(u16 soundId) {
     if (soundId > gSoundCount) {
         return 0;
     }
-    return gSoundTable[soundId].distance;
+    return gSoundTable[soundId].range;
 }
 
 /**
@@ -720,14 +720,14 @@ void sound_play(u16 soundID, SoundHandle *handlePtr) {
     }
     pitch = gSoundTable[soundID].pitch / 100.0f;
     if (handlePtr != NULL) {
-        sndp_play_with_priority(gSoundBank->bankArray[0], soundBite, gSoundTable[soundID].unk8, handlePtr);
+        sndp_play_with_priority(gSoundBank->bankArray[0], soundBite, gSoundTable[soundID].priority, handlePtr);
         if (*handlePtr != NULL) {
             sndp_set_param(*handlePtr, AL_SNDP_VOL_EVT, gSoundTable[soundID].volume * 256);
             sndp_set_param(*handlePtr, AL_SNDP_PITCH_EVT, *((u32 *) &pitch));
         }
     } else {
         handlePtr = &gGlobalSoundMask;
-        sndp_play_with_priority(gSoundBank->bankArray[0], soundBite, gSoundTable[soundID].unk8, &gGlobalSoundMask);
+        sndp_play_with_priority(gSoundBank->bankArray[0], soundBite, gSoundTable[soundID].priority, &gGlobalSoundMask);
         if (*handlePtr != NULL) {
             sndp_set_param(*handlePtr, AL_SNDP_VOL_EVT, gSoundTable[soundID].volume * 256);
             sndp_set_param(*handlePtr, AL_SNDP_PITCH_EVT, *((u32 *) &pitch));
@@ -740,28 +740,28 @@ void sound_play(u16 soundID, SoundHandle *handlePtr) {
  * This then makes the audio pan around in 3D space.
  * If it is not given a mask, then it will use the global mask.
  */
-void sound_play_spatial(u16 soundID, f32 x, f32 y, f32 z, SoundHandle *soundMask) {
-    if (soundMask == NULL) {
-        soundMask = (s32 **) &gSpatialSoundMask;
+void sound_play_spatial(u16 soundID, f32 x, f32 y, f32 z, SoundHandle *handlePtr) {
+    if (handlePtr == NULL) {
+        handlePtr = &gSpatialSoundMask;
     }
 
-    sound_play(soundID, (s32 *) soundMask);
+    sound_play(soundID, handlePtr);
 
-    if (*soundMask != NULL) {
-        audioline_reverb(*soundMask, x, y, z);
+    if (*handlePtr != NULL) {
+        audspat_calculate_echo(*handlePtr, x, y, z);
     }
 }
 
-void func_80001F14(u16 soundID, s32 *soundMask) {
+void func_80001F14(u16 soundID, SoundHandle *handlePtr) {
     if (soundID <= 0 || sound_count() < soundID) {
         stubbed_printf("amSndPlayDirect: Somebody tried to play illegal sound %d\n", soundID);
-        if (soundMask) {
-            *soundMask = NULL;
+        if (handlePtr) {
+            *handlePtr = NULL;
         }
         return;
     }
-    if (soundMask) {
-        sndp_play(gSoundBank->bankArray[0], (s16) soundID, soundMask);
+    if (handlePtr) {
+        sndp_play(gSoundBank->bankArray[0], (s16) soundID, handlePtr);
     } else {
         sndp_play(gSoundBank->bankArray[0], (s16) soundID, &gRacerSoundMask);
     }
@@ -857,14 +857,28 @@ void music_sequence_start(u8 seqID, ALCSPlayer *seqPlayer) {
 /**
  * If the sequence player is currently inactive, start a new sequence with the current properties.
  */
-void music_sequence_init(ALCSPlayer *seqp, void *sequence, u8 *seqID, ALCSeq *seq) {
+void music_sequence_init(ALCSPlayer *seqp, s32 sequence, u8 *seqID, ALCSeq *seq) {
     s32 i;
+    void *s;
 
     if ((alCSPGetState(seqp) == AL_STOPPED) && (*seqID != 0)) {
-        load_asset_to_address(ASSET_AUDIO, (u32) sequence,
+        if (sequence == 0) {
+            if (gMusicSequenceData != NULL) {
+                mempool_free(gMusicSequenceData);
+            }
+            gMusicSequenceData = mempool_alloc_safe(gSeqLengthTable[*seqID], PP_RAM_SEQUENCES);
+            s = gMusicSequenceData;
+        } else {
+            if (gJingleSequenceData != NULL) {
+                mempool_free(gJingleSequenceData);
+            }
+            gJingleSequenceData = mempool_alloc_safe(gSeqLengthTable[*seqID], PP_RAM_SEQUENCES);
+            s = gJingleSequenceData;
+        }
+        load_asset_to_address(ASSET_AUDIO, (u32) s,
                               gSequenceTable->seqArray[*seqID].offset - get_rom_offset_of_asset(ASSET_AUDIO, 0),
                               (s32) gSeqLengthTable[*seqID]);
-                              alCSeqNew(seq, sequence);
+                              alCSeqNew(seq, s);
         alCSPSetSeq(seqp, seq);
         alCSPPlay(seqp);
         if (seqp == gMusicPlayer) {
@@ -905,10 +919,14 @@ void music_sequence_stop(ALCSPlayer *seqPlayer) {
         gMusicPlaying = FALSE;
         gCurrentSequenceID = SEQUENCE_NONE;
         gMusicNextSeqID = SEQUENCE_NONE;
+        mempool_free(gMusicSequenceData);
+        gMusicSequenceData = NULL;
     } else if (gJinglePlayer == seqPlayer && gJinglePlaying) {
         alCSPStop(seqPlayer);
         gJinglePlaying = FALSE;
         gJingleNextSeqID = SEQUENCE_NONE;
+        mempool_free(gJingleSequenceData);
+        gJingleSequenceData = NULL;
     }
 }
 

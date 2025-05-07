@@ -15,6 +15,19 @@
 
 #define HUD_EGG_TOTAL 3
 
+typedef struct HudPresets2P {
+    s16 assetID;
+    s16 x;
+    s16 y;
+} HudPresets2P;
+
+typedef struct HudPresets4P {
+    s16 assetID;
+    s16 xLeft;
+    s16 y;
+    s16 xRight;
+} HudPresets4P;
+
 typedef enum RaceFinishStages {
     HUD_RACEFINISH_MUTE,
     HUD_RACEFINISH_TEXT_IN,
@@ -53,8 +66,6 @@ typedef enum WrongWayDirection {
     WRONGWAY_OUT = -1,
     WRONGWAY_IN = 1
 } WrongWayDirection;
-
-
 
 enum CourseIndicatorArrows {
     INDICATOR_NONE,
@@ -150,6 +161,7 @@ enum HudTypes {
     HUD_STOPWATCH,
     HUD_WRONGWAY_1,
     HUD_WRONGWAY_2,
+    HUD_PRO_AM_LOGO,
     HUD_SPEEDOMETRE_ARROW,
     HUD_SPEEDOMETRE_0,
     HUD_SPEEDOMETRE_30,
@@ -433,7 +445,7 @@ void hud_treasure(Object_Racer *racer);
 void minimap_marker_pos(f32 x, f32 z, f32 angleSin, f32 angleCos, f32 modelAspectRatio);
 void hud_timer_render(s32 x, s32 y, s32 minutes, s32 seconds, s32 hundredths, s32 smallFont);
 void hud_draw_model(ObjectModel *objModel);
-void hud_element_render(Gfx **dList, MatrixS **mtx, Vertex **vtxList, HudElement *arg3);
+void hud_element_render(Gfx **dList, MatrixS **mtx, Vertex **vtxList, HudElement *hud);
 void hud_main_time_trial(s32, Object*, s32);
 void hud_race_finish_multiplayer(Object_Racer *racer, s32 updateRate);
 void func_800A1E48(Object*, s32 updateRate);

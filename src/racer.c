@@ -128,7 +128,6 @@ u32 gCurrentButtonsPressed;
 u32 gCurrentButtonsReleased;
 s32 gCurrentStickX;
 s32 gCurrentStickY;
-s32 unused_8011D53C; // Set to 0 and only 0. Checked for being 1, but never true.
 s32 gRaceStartTimer;
 f32 D_8011D544; // Starts are 300, then counts down when the race starts. Usage currently unknown.
 f32 D_8011D548;
@@ -1781,11 +1780,7 @@ void update_camera_hovercraft(f32 updateRate, Object *obj, Object_Racer *racer) 
     if (yVel > 0.0f) {
         yVel *= 0.5;
     } else {
-        if (unused_8011D53C == 1) {
-            yVel *= 0.5; // Unreachable. unused_8011D53C is never not 0.
-        } else {
-            yVel *= 0.25;
-        }
+        yVel *= 0.25;
         if (racer->boostTimer != 0) {
             yVel *= 2.0;
         }
@@ -2271,7 +2266,6 @@ void obj_init_racer(Object *obj, LevelObjectEntry_Racer *racer) {
     ActivePlayers player;
     s32 i;
 
-    unused_8011D53C = 0;
     tempRacer = (struct Object_Racer *) obj->unk64;
     obj->segment.trans.rotation.y_rotation = racer->angleY;
     obj->segment.trans.rotation.x_rotation = racer->angleX;
@@ -2850,14 +2844,15 @@ void update_player_racer(Object *obj, s32 updateRate) {
         if (tempRacer->shieldTimer > 0) {
             if (tempRacer->shieldTimer > 60) {
                 if (tempRacer->shieldSoundMask) {
-                    update_spatial_audio_position(tempRacer->shieldSoundMask, obj->segment.trans.x_position,
-                                                  obj->segment.trans.y_position, obj->segment.trans.z_position);
+                    audspat_point_set_position(tempRacer->shieldSoundMask, obj->segment.trans.x_position,
+                                               obj->segment.trans.y_position, obj->segment.trans.z_position);
                 } else if (tempRacer->vehicleSound) {
-                    play_sound_at_position(SOUND_SHIELD, obj->segment.trans.x_position, obj->segment.trans.y_position,
-                                           obj->segment.trans.z_position, 1, &tempRacer->shieldSoundMask);
+                    audspat_play_sound_at_position(SOUND_SHIELD, obj->segment.trans.x_position,
+                                                   obj->segment.trans.y_position, obj->segment.trans.z_position, 1,
+                                                   &tempRacer->shieldSoundMask);
                 }
             } else if (tempRacer->shieldSoundMask) {
-                func_800096F8(tempRacer->shieldSoundMask);
+                audspat_point_stop(tempRacer->shieldSoundMask);
                 tempRacer->shieldSoundMask = NULL;
             }
             tempRacer->shieldTimer -= updateRate;
@@ -2866,15 +2861,15 @@ void update_player_racer(Object *obj, s32 updateRate) {
             }
         }
         if (tempRacer->bananaSoundMask) {
-            update_spatial_audio_position(tempRacer->bananaSoundMask, obj->segment.trans.x_position,
-                                          obj->segment.trans.y_position, obj->segment.trans.z_position);
+            audspat_point_set_position(tempRacer->bananaSoundMask, obj->segment.trans.x_position,
+                                       obj->segment.trans.y_position, obj->segment.trans.z_position);
         }
         if (is_in_time_trial() && tempRacer->playerIndex == PLAYER_ONE && gRaceStartTimer == 0) {
             timetrial_ghost_write(obj, updateRate);
         }
         if (tempRacer->soundMask) {
-            update_spatial_audio_position(tempRacer->soundMask, obj->segment.trans.x_position,
-                                          obj->segment.trans.y_position, obj->segment.trans.z_position);
+            audspat_point_set_position(tempRacer->soundMask, obj->segment.trans.x_position,
+                                       obj->segment.trans.y_position, obj->segment.trans.z_position);
         }
         gRacerInputBlocked = 0;
         if (tempRacer->unk150 && gRaceStartTimer == 0) {
@@ -2903,8 +2898,9 @@ void update_player_racer(Object *obj, s32 updateRate) {
             } else {
                 tempRacer->delaySoundTimer = 0;
                 if (tempRacer->playerIndex == PLAYER_COMPUTER) {
-                    play_sound_at_position(tempRacer->delaySoundID, obj->segment.trans.x_position,
-                                           obj->segment.trans.y_position, obj->segment.trans.z_position, 4, NULL);
+                    audspat_play_sound_at_position(tempRacer->delaySoundID, obj->segment.trans.x_position,
+                                                   obj->segment.trans.y_position, obj->segment.trans.z_position, 4,
+                                                   NULL);
                 } else {
                     sound_play_spatial(tempRacer->delaySoundID, obj->segment.trans.x_position,
                                        obj->segment.trans.y_position, obj->segment.trans.z_position, NULL);
@@ -3515,8 +3511,8 @@ void func_80050A28(Object *obj, Object_Racer *racer, s32 updateRate, f32 updateR
                 sound_play_spatial(SOUND_CAR_SLIDE, obj->segment.trans.x_position, obj->segment.trans.y_position,
                                    obj->segment.trans.z_position, &racer->unk10);
             } else {
-                audioline_reverb((s32) racer->unk10, obj->segment.trans.x_position, obj->segment.trans.y_position,
-                                 obj->segment.trans.z_position);
+                audspat_calculate_echo((s32) racer->unk10, obj->segment.trans.x_position, obj->segment.trans.y_position,
+                                       obj->segment.trans.z_position);
             }
             if (racer->unk14) {
                 sndp_stop((s32) racer->unk14); // type cast required to match
@@ -5466,9 +5462,9 @@ void handle_racer_items(Object *obj, Object_Racer *racer, UNUSED s32 updateRate)
                     }
                     if (soundID != SOUND_NONE) {
                         if (racer->playerIndex == PLAYER_COMPUTER) {
-                            play_sound_at_position(soundID, obj->segment.trans.x_position,
-                                                   obj->segment.trans.y_position, obj->segment.trans.z_position, 4,
-                                                   NULL);
+                            audspat_play_sound_at_position(soundID, obj->segment.trans.x_position,
+                                                           obj->segment.trans.y_position, obj->segment.trans.z_position,
+                                                           4, NULL);
                         } else {
                             if (racer->weaponSoundMask) {
                                 sndp_stop(racer->weaponSoundMask);
@@ -5667,7 +5663,7 @@ void play_random_character_voice(Object *obj, s32 soundID, s32 range, s32 flags)
     if (tempRacer->exitObj == 0 && (!(flags & 0x80) || gCurrentPlayerIndex != PLAYER_COMPUTER)) {
         if (flags == 2) {
             if (tempRacer->soundMask != NULL && soundID != tempRacer->unk2A) {
-                func_800096F8(tempRacer->soundMask);
+                audspat_point_stop(tempRacer->soundMask);
                 tempRacer->soundMask = 0;
             }
         }
@@ -5680,8 +5676,8 @@ void play_random_character_voice(Object *obj, s32 soundID, s32 range, s32 flags)
                     soundIndex = (get_random_number_from_range(0, range - 1) * 12) + soundID;
                 }
             }
-            play_sound_at_position(soundIndex, obj->segment.trans.x_position, obj->segment.trans.y_position,
-                                   obj->segment.trans.z_position, 4, &tempRacer->soundMask);
+            audspat_play_sound_at_position(soundIndex, obj->segment.trans.x_position, obj->segment.trans.y_position,
+                                           obj->segment.trans.z_position, 4, &tempRacer->soundMask);
             tempRacer->lastSoundID = soundIndex;
         }
     }
@@ -7186,15 +7182,16 @@ void update_AI_racer(Object *obj, Object_Racer *racer, s32 updateRate, f32 updat
     if (racer->shieldTimer > 0) {
         if (racer->shieldTimer > 60) {
             if (racer->shieldSoundMask) {
-                update_spatial_audio_position(racer->shieldSoundMask, obj->segment.trans.x_position,
-                                              obj->segment.trans.y_position, obj->segment.trans.z_position);
+                audspat_point_set_position(racer->shieldSoundMask, obj->segment.trans.x_position,
+                                           obj->segment.trans.y_position, obj->segment.trans.z_position);
             } else if (racer->vehicleSound) {
-                play_sound_at_position(SOUND_SHIELD, obj->segment.trans.x_position, obj->segment.trans.y_position,
-                                       obj->segment.trans.z_position, 1, &racer->shieldSoundMask);
+                audspat_play_sound_at_position(SOUND_SHIELD, obj->segment.trans.x_position,
+                                               obj->segment.trans.y_position, obj->segment.trans.z_position, 1,
+                                               &racer->shieldSoundMask);
             }
         } else {
             if (racer->shieldSoundMask) {
-                func_800096F8(racer->shieldSoundMask);
+                audspat_point_stop(racer->shieldSoundMask);
                 racer->shieldSoundMask = NULL;
             }
         }
@@ -7204,8 +7201,8 @@ void update_AI_racer(Object *obj, Object_Racer *racer, s32 updateRate, f32 updat
         }
     }
     if (racer->soundMask != NULL) {
-        update_spatial_audio_position(racer->soundMask, obj->segment.trans.x_position, obj->segment.trans.y_position,
-                                      obj->segment.trans.z_position);
+        audspat_point_set_position(racer->soundMask, obj->segment.trans.x_position, obj->segment.trans.y_position,
+                                   obj->segment.trans.z_position);
     }
     gRacerInputBlocked = FALSE;
     if ((racer->unk150 != NULL) && (gRaceStartTimer == 0)) {

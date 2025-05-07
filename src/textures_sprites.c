@@ -1157,7 +1157,7 @@ void material_init(TextureHeader *tex, Gfx *_dList) {
     gDPSetTile(dList++, fmt, firstSiz, 0, 0, G_TX_LOADTILE, 0, cmt, maskt, G_TX_NOLOD, cms, masks, G_TX_NOLOD);
     gDPLoadSync(dList++);
     gDPLoadBlock(dList++, G_TX_LOADTILE, 0, 0, ((width * height + get_tile_bytes(1, size)) >> get_tile_bytes(2, size)) - 1, dxt);
-    gDPLoadSync(dList++);
+    //gDPTileSync(dList++);
     gDPSetTile(dList++, fmt, size, (shiftWidth + 7) >> 3, 0, G_TX_RENDERTILE, pal, cmt, maskt, 0, cms, masks, 0);
     gDPSetTileSize(dList++, G_TX_RENDERTILE, 0, 0, (width - 1) << G_TEXTURE_IMAGE_FRAC, (height -1) << G_TEXTURE_IMAGE_FRAC);
     if (texFormat == TEX_FORMAT_CI4 || texFormat == TEX_FORMAT_CI8) {

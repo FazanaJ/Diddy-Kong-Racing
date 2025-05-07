@@ -106,8 +106,8 @@ unk8011B330 D_8011B330[120]; // Struct sizeof(0x20) / sizeof(32)
 s32 D_8011C230;
 s32 D_8011C234;
 unk8011C238 D_8011C238[32]; // Struct sizeof(0xC) / sizeof(12)
-unk8011C3B8 D_8011C3B8[64];
-unk8011C8B8 D_8011C8B8[128];
+unk8011C3B8 *D_8011C3B8;
+unk8011C8B8 *D_8011C8B8;
 s32 D_8011D0B8;
 unk8011C8B8 *D_8011D0BC;
 TextureHeader *gNewShadowTexture;
@@ -222,6 +222,8 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     }
 
     if (gWaveBlockCount) {
+        D_8011C3B8 = (unk8011C3B8 *) mempool_alloc_safe(sizeof(unk8011C3B8) * 64, PP_RAM_WAVES);
+        D_8011C8B8 = (unk8011C8B8 *) mempool_alloc_safe(sizeof(unk8011C8B8) * 128, PP_RAM_WAVES);
         func_800B82B4(gCurrentLevelModel, gCurrentLevelHeader2, i);
     }
 
@@ -376,7 +378,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, Triangle **tris, s32
         apply_fog(gSceneCurrentPlayerID);
         gDPPipeSync(gSceneCurrDisplayList++);
         set_active_camera(gSceneCurrentPlayerID);
-        func_80066CDC(&gSceneCurrDisplayList, &gSceneCurrMatrix);
+        viewport_main(&gSceneCurrDisplayList, &gSceneCurrMatrix);
         func_8002A31C();
         // Show detailed skydome in single player.
         if (numViewports < 2) {
@@ -397,7 +399,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, Triangle **tris, s32
         aa_manage(AA_OFF);
         weather_clip_planes(-1, -512);
         // Show weather effects in single player.
-        if (gCurrentLevelHeader2->weatherEnable > 0 && numViewports < 2) {
+        if (gCurrentLevelHeader2->weatherEnable > 0 && (numViewports < 2 || gConfig.multiWeather)) {
             weather_update(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, &gSceneCurrTriList,
                            tempUpdateRate);
         }
@@ -420,7 +422,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, Triangle **tris, s32
             set_active_camera(PLAYER_FOUR);
             disable_cutscene_camera();
             func_800278E8(updateRate);
-            func_80066CDC(&gSceneCurrDisplayList, &gSceneCurrMatrix);
+            viewport_main(&gSceneCurrDisplayList, &gSceneCurrMatrix);
             func_8002A31C();
             func_8006807C(&gSceneCurrDisplayList, &gSceneCurrMatrix);
             draw_gradient_background();
@@ -1357,7 +1359,7 @@ void set_skydome_visbility(s32 renderSky) {
 }
 
 // init_skydome
-// https://decomp.me/scratch/jmbc1
+// https://decomp.me/scratch/80umh
 #pragma GLOBAL_ASM("asm/nonmatchings/tracks/func_80028050.s")
 
 /**
@@ -2720,6 +2722,8 @@ void free_track(void) {
 
     func_8000B290();
     if (gWaveBlockCount != 0) {
+        mempool_free(D_8011C3B8);
+        mempool_free(D_8011C8B8);
         free_waves();
     }
     for (i = 0; i < gCurrentLevelModel->numberOfTextures; i++) {

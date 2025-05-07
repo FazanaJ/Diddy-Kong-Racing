@@ -49,7 +49,6 @@ void free_lights(void) {
 /**
  * Official Name: setupLights
  */
-
 void setup_lights(s32 count) {
     s32 i;
     u8 *buffer;
@@ -57,11 +56,11 @@ void setup_lights(s32 count) {
 
     free_lights();
     gMaxLights = count;
-    buffer = (ObjectLight **) mempool_alloc_safe(
+    buffer = (u8 *) mempool_alloc_safe(
         gMaxLights * (sizeof(s32 *) + sizeof(ObjectLight) + sizeof(unk800DC960) + sizeof(Vec3f)), PP_RAM_LIGHTS);
 
     temp = gMaxLights;
-    gActiveLights = buffer;
+    gActiveLights = (ObjectLight **) buffer;
     buffer += temp * sizeof(ObjectLight *);
     D_800DC954 = (ObjectLight *) buffer;
     D_800DC960 = (unk800DC960 *) ((u32) D_800DC954 + temp * sizeof(ObjectLight));
@@ -229,9 +228,9 @@ UNUSED void enable_object_light(ObjectLight *light) {
 UNUSED void toggle_object_light(ObjectLight *light) {
     if (light->enabled == TRUE) {
         light->enabled = FALSE;
-        return;
+    } else {
+        light->enabled = TRUE;
     }
-    light->enabled = TRUE;
 }
 
 UNUSED void func_80032248(ObjectLight *light, s32 arg1, s32 arg2, s32 arg3, s32 arg4, s32 arg5, s32 arg6) {
