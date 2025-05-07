@@ -355,7 +355,7 @@ void func_8000B020(s32 numberOfVertices, s32 numberOfTriangles) {
     Asset20 *miscAsset20;
     s32 i;
 
-    if (gNumRacers > 0) {
+    //if (gNumRacers > 0) {
         D_800DC754[0] = (Triangle *) mempool_alloc_safe(((numberOfTriangles * sizeof(Triangle)) + (numberOfVertices * sizeof(Vertex))) * 2, PP_RAM_OBJMDL);
         D_800DC754[1] = (Triangle *) ((u32) D_800DC754[0] + numberOfTriangles * sizeof(Triangle));
         D_800DC74C[0] = (Vertex *) ((u32) D_800DC754[1] + numberOfTriangles * sizeof(Triangle));
@@ -364,7 +364,7 @@ void func_8000B020(s32 numberOfVertices, s32 numberOfTriangles) {
         D_8011B004 = 0;
         D_8011B008 = 0;
         miscAsset20 = (Asset20 *) get_misc_asset(ASSET_MISC_20);
-        for (i = 0; i < gNumRacers; i++) {
+        for (i = 0; i < 10 /*gNumRacers*/; i++) {
             objEntry.common.objectID = ASSET_OBJECT_ID_BOOST;
             objEntry.common.size = 10;
             objEntry.common.x = 0;
@@ -390,7 +390,7 @@ void func_8000B020(s32 numberOfVertices, s32 numberOfTriangles) {
             D_8011B078[i].a = 0;
         }
         D_800DC760 = 9;
-    }
+    //}
 }
 
 void func_8000B290(void) {
