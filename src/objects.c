@@ -319,6 +319,37 @@ typedef struct LevelObjectEntry_unk8000B020 {
     s8 unk9;
 } LevelObjectEntry_unk8000B020;
 
+void obj_shield_spawn(void) {
+    LevelObjectEntry_unk8000B020 objEntry;
+    s32 i;
+
+    if (gShieldEffectObject != NULL) {
+        return;
+    }
+
+    objEntry.common.objectID = ASSET_OBJECT_ID_SHIELD;
+    objEntry.common.size = sizeof(LevelObjectEntryCommon);
+    objEntry.common.x = 0;
+    objEntry.common.y = 0;
+    objEntry.common.z = 0;
+    gShieldEffectObject = spawn_object((LevelObjectEntryCommon *) &objEntry, 0);
+}
+
+void obj_magnet_spawn(void) {
+    LevelObjectEntry_unk8000B020 objEntry;
+
+    if (gMagnetEffectObject != NULL) {
+        return;
+    }
+    
+    objEntry.common.objectID = ASSET_OBJECT_ID_AINODE;
+    objEntry.common.size = sizeof(LevelObjectEntryCommon) + 0x80;
+    objEntry.common.x = 0;
+    objEntry.common.y = 0;
+    objEntry.common.z = 0;
+    gMagnetEffectObject = spawn_object((LevelObjectEntryCommon *) &objEntry, 0);
+}
+
 /**
  * Spawns control objects for racer boost visuals, as well as shield and magnet visuals.
  * Boost geometry is made in real time, and allocated here.
@@ -327,61 +358,44 @@ typedef struct LevelObjectEntry_unk8000B020 {
 void racerfx_alloc(s32 numberOfVertices, s32 numberOfTriangles) {
     Asset20 *miscAsset20;
     LevelObjectEntry_unk8000B020 objEntry;
+    s32 i;
 
-    gBoostTris[0] = (Triangle *) mempool_alloc_safe(
-        ((numberOfTriangles * sizeof(Triangle)) + (numberOfVertices * sizeof(Vertex))) * 2, COLOUR_TAG_BLUE);
-    gBoostTris[1] = (Triangle *) ((u32) gBoostTris[0] + numberOfTriangles * sizeof(Triangle));
-    gBoostVerts[0] = (Vertex *) ((u32) gBoostTris[1] + numberOfTriangles * sizeof(Triangle));
-    gBoostVerts[1] = (Vertex *) ((u32) gBoostVerts[0] + numberOfVertices * sizeof(Vertex));
-    gBoostVertCount = numberOfVertices;
-    D_8011AFFC = 0;
-    gBoostTriCount = numberOfTriangles;
-    D_8011B004 = 0;
-    gBoostVertFlip = 0;
-    miscAsset20 = (Asset20 *) get_misc_asset(ASSET_MISC_20);
-    // Makes 10 boost objects, but only 8 racers can actually exist at once.
-    for (i = 0; i < NUMBER_OF_CHARACTERS; i++) {
-        objEntry.common.objectID = ASSET_OBJECT_ID_BOOST;
-        objEntry.common.size = sizeof(LevelObjectEntry_unk8000B020);
-        objEntry.common.x = 0;
-        objEntry.common.y = 0;
-        objEntry.common.z = 0;
-        objEntry.unk8 = i;
-        gBoostEffectObjects[i] = spawn_object(&objEntry.common, OBJECT_SPAWN_UNK01);
-        if (gBoostEffectObjects[i] != NULL) {
-            gBoostEffectObjects[i]->properties.common.unk0 = 0;
-            gBoostEffectObjects[i]->properties.common.unk4 = 0;
-            miscAsset20[i].unk70 = 0;
-            miscAsset20[i].unk74 = 0.0f;
-            miscAsset20[i].unk78 = (Sprite *) func_8007C12C(miscAsset20[i].unk6C, 0);
-            miscAsset20[i].unk7C = load_texture(miscAsset20[i].unk6E);
-            miscAsset20[i].unk72 = get_random_number_from_range(0, 255);
-            miscAsset20[i].unk73 = 0;
-            // This is for shields, not boosts.
-            gShieldSineTime[i] = get_random_number_from_range(0, 255);
+    if (gNumRacers > 0) {
+        gBoostTris[0] = (Triangle *) mempool_alloc_safe(
+            ((numberOfTriangles * sizeof(Triangle)) + (numberOfVertices * sizeof(Vertex))) * 2, COLOUR_TAG_BLUE);
+        gBoostTris[1] = (Triangle *) ((u32) gBoostTris[0] + numberOfTriangles * sizeof(Triangle));
+        gBoostVerts[0] = (Vertex *) ((u32) gBoostTris[1] + numberOfTriangles * sizeof(Triangle));
+        gBoostVerts[1] = (Vertex *) ((u32) gBoostVerts[0] + numberOfVertices * sizeof(Vertex));
+        gBoostVertCount = numberOfVertices;
+        D_8011AFFC = 0;
+        gBoostTriCount = numberOfTriangles;
+        D_8011B004 = 0;
+        gBoostVertFlip = 0;
+        miscAsset20 = (Asset20 *) get_misc_asset(ASSET_MISC_20);
+        // Makes 10 boost objects, but only 8 racers can actually exist at once.
+        for (i = 0; i < gNumRacers; i++) {
+            objEntry.common.objectID = ASSET_OBJECT_ID_BOOST;
+            objEntry.common.size = sizeof(LevelObjectEntry_unk8000B020);
+            objEntry.common.x = 0;
+            objEntry.common.y = 0;
+            objEntry.common.z = 0;
+            objEntry.unk8 = i;
+            gBoostEffectObjects[i] = spawn_object(&objEntry.common, OBJECT_SPAWN_UNK01);
+            if (gBoostEffectObjects[i] != NULL) {
+                gBoostEffectObjects[i]->properties.common.unk0 = 0;
+                gBoostEffectObjects[i]->properties.common.unk4 = 0;
+                miscAsset20[i].unk70 = 0;
+                miscAsset20[i].unk74 = 0.0f;
+                miscAsset20[i].unk78 = (Sprite *) func_8007C12C(miscAsset20[i].unk6C, 0);
+                miscAsset20[i].unk7C = load_texture(miscAsset20[i].unk6E);
+                miscAsset20[i].unk72 = get_random_number_from_range(0, 255);
+                miscAsset20[i].unk73 = 0;
+                // This is for shields, not boosts.
+                gShieldSineTime[i] = get_random_number_from_range(0, 255);
+            }
+            D_8011B068[i] = TRUE;
         }
-        D_8011B068[i] = TRUE;
     }
-    gBoostObjOverrideID = 9;
-    objEntry.common.objectID = ASSET_OBJECT_ID_SHIELD;
-    objEntry.common.size = sizeof(LevelObjectEntry_unk8000B020);
-    objEntry.common.x = 0;
-    objEntry.common.y = 0;
-    objEntry.common.z = 0;
-    gShieldEffectObject = spawn_object((LevelObjectEntryCommon *) &objEntry, OBJECT_SPAWN_NONE);
-    for (i = 0; i < NUMBER_OF_CHARACTERS; i++) {
-        gRacerFXData[i].unk0 = 0;
-        gRacerFXData[i].unk1 = get_random_number_from_range(0, 255);
-        gRacerFXData[i].unk2 = get_random_number_from_range(0, 255);
-        gRacerFXData[i].unk3 = 0;
-    }
-
-    objEntry.common.objectID = ASSET_OBJECT_ID_AINODE;
-    objEntry.common.size = sizeof(LevelObjectEntry_unk8000B020) + 0x80; // Not sure where this 0x80 comes from.
-    objEntry.common.x = 0;
-    objEntry.common.y = 0;
-    objEntry.common.z = 0;
-    gMagnetEffectObject = spawn_object((LevelObjectEntryCommon *) &objEntry, OBJECT_SPAWN_NONE);
 }
 
 /**
@@ -439,6 +453,10 @@ void racerfx_update(s32 updateRate) {
     Asset20 *asset20;
     f32 updateRateF;
     Object_Racer *racer;
+
+    if (gNumRacers == 0) {
+        return;
+    }
 
     gBoostVertFlip = 1 - gBoostVertFlip;
     D_8011AFFC = 0;

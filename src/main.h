@@ -211,6 +211,7 @@ typedef enum DebugRam {
     PP_RAM_OBJHEADERS,
     PP_RAM_OBJGFX,
     PP_RAM_DEBUG,
+    PP_RAM_AUDIOLINE,
 
     PP_RAM_TOTAL,
 } DebugRam;
@@ -272,7 +273,8 @@ typedef enum DebugRam {
     "Obj Lists", \
     "Obj Headers", \
     "Obj Gfx\t", \
-    "Debug\t"
+    "Debug\t", \
+    "Aud Lines"
 
 #define NUM_PERF_ITERATIONS 60
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS
