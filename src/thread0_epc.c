@@ -985,6 +985,8 @@ extern s32 *gSpriteCache;
 extern s32 gSpriteCacheCount;
 extern s32 *gModelCache;
 extern s32 gModelCacheCount;
+extern void *gMusicSequenceData;
+extern void *gJingleSequenceData;
 
 void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
     s32 i;
@@ -1014,6 +1016,31 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
         case PP_RAM_OBJECTS:
             obj = (Object *) slot->data;
             crash_text(x + 40, y, col, "%s", obj->segment.header->internalName);
+            break;
+        case PP_RAM_SEQUENCES:
+            if ((s32) slot->data == (s32) gMusicSequenceData) {
+                crash_text(x + 40, y, col, "Music");
+            } else if ((s32) slot->data == (s32) gJingleSequenceData) {
+                crash_text(x + 40, y, col, "Jingle");
+            } else {
+                crash_text(x + 40, y, col, "Unknown");
+            }
+            break;
+        case PP_RAM_ANIMATIONS:
+            texID = -200;
+            objAnim = (ObjectModel_44 *) slot->data;
+            for (i = 0; i < gModelCacheCount; i++) {
+                objModel = (ObjectModel *) gModelCache[(i << 1) + 1];
+                if (objModel && objAnim && objModel->animations == objAnim) {
+                    texID = gModelCache[i << 1];
+                }
+            }
+            if (texID != -200) {
+                crash_text(x + 40, y, col, "Obj Mdl:%d", texID);
+                return;
+            } else {
+                crash_text(x + 40, y, col, "Unknown");
+            }
             break;
         default:
             texHeader = (TextureHeader *) slot->data;
@@ -1047,17 +1074,6 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
             objModel = (ObjectModel *) slot->data;
             for (i = 0; i < gModelCacheCount; i++) {
                 if ((ObjectModel *) gModelCache[(i << 1) + 1] == objModel) {
-                    texID = gModelCache[i << 1];
-                }
-            }
-            if (texID != -200) {
-                crash_text(x + 40, y, col, "Obj Mdl:%d", texID);
-                return;
-            }
-            objAnim = (ObjectModel_44 *) slot->data;
-            for (i = 0; i < gModelCacheCount; i++) {
-                objModel = (ObjectModel *) gModelCache[(i << 1) + 1];
-                if (objModel && objAnim && objModel->animations == objAnim) {
                     texID = gModelCache[i << 1];
                 }
             }

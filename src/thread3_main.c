@@ -48,6 +48,8 @@
 #include "usb/usb.h"
 #include "autoplay.h"
 
+u32 loadTime;
+
 /************ .data ************/
 
 s8 sAntiPiracyTriggered = FALSE;
@@ -238,6 +240,9 @@ void main_game_loop(void) {
     const f32 divisor = 1.0f;
     debug_thread(THREAD3_START, 0);
 
+    set_render_printf_background_colour(0, 0, 0, 255);
+    //render_printf("Load Time: %2.3f\n", (f32) loadTime / 1000000.0f);
+
     if (gVideoSkipNextRate) {
         sLogicUpdateRate = LOGIC_60FPS;
         sLogicUpdateRateF = 1.0f;
@@ -413,6 +418,7 @@ void load_next_ingame_level(s32 numPlayers, s32 trackID, Vehicle vehicle) {
  * Used when ingame.
  */
 void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicleId) {
+    u32 first = osGetCount();
     alloc_displaylist_heap(numberOfPlayers);
     mempool_free_timer(0);
     camera_init();
@@ -425,6 +431,7 @@ void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     mempool_free_timer(2);
     rumble_init(TRUE);
     gShowBG = bgdraw_init();
+    loadTime = OS_CYCLES_TO_USEC(osGetCount() - first);
 }
 
 /**
@@ -897,6 +904,7 @@ Vehicle get_level_default_vehicle(void) {
  * Used for menus.
  */
 void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicleId, s32 cutsceneId) {
+    u32 first = osGetCount();
     mempool_free_timer(0);
     camera_init();
     //load_game_text_table();
@@ -907,6 +915,7 @@ void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     osSetTime(0);
     mempool_free_timer(2);
     gShowBG = bgdraw_init();
+    loadTime = OS_CYCLES_TO_USEC(osGetCount() - first);
 }
 
 /**
