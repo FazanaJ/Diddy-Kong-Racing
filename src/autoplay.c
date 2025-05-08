@@ -800,7 +800,7 @@ void autoplay_charselect_multi(s32 playerCount) {
     s32 i;
     
     sAutoplayTrackStage = 0;
-    sAutoplayActiveTrack = 24;
+    sAutoplayActiveTrack = 0;
     if (sControllerFlip) {
         for (i = 0; i < playerCount; i++) {
             if (sCharSelectInputs < 1) {
