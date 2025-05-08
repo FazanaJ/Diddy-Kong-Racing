@@ -10,6 +10,7 @@
 #include "tracks.h"
 #include "math_util.h"
 #include "main.h"
+#include "printf.h"
 
 #define MAX_AUDIO_POINTS 40
 #define MAX_AUDIO_LINES 7
@@ -29,8 +30,8 @@ AudioPoint **gAudioPoints;
 AudioPoint *gAudioPointsPool; // 0x24 struct size - 0x5A0 total size - should be 40 elements
 u8 gLastFreePointIndex;
 AudioPoint **gFreeAudioPoints;
-AudioLine gAudioLines[MAX_AUDIO_LINES];
-ReverbLine gReverbLines[MAX_REVERB_LINES]; // Reverb stuff
+AudioLine *gAudioLines;
+ReverbLine *gReverbLines; // Reverb stuff
 u8 gJinglesOff;
 s32 D_8011AC1C;
 
@@ -47,9 +48,6 @@ void audspat_init(void) {
     gFreeAudioPoints = mempool_alloc_safe(sizeof(uintptr_t) * MAX_AUDIO_POINTS, PP_RAM_AUD_EMITTERS);
     gAudioPoints = mempool_alloc_safe(sizeof(uintptr_t) * MAX_AUDIO_POINTS, PP_RAM_AUD_EMITTERS);
     gNumAudioPoints = 0;
-    for (i = 0; i < ARRAY_COUNT(gAudioLines); i++) {
-        gAudioLines[i].soundHandle = NULL;
-    }
     for (i = 0; i < MAX_AUDIO_POINTS; i++) {
         gAudioPointsPool[i].soundHandle = NULL;
     }
@@ -103,37 +101,45 @@ void audspat_reset(void) {
     }
     gNumAudioPoints = 0;
 
-    for (i = 0; i < MAX_AUDIO_LINES; i++) {
-        gAudioLines[i].soundBite = 0;
-        if (gAudioLines[i].soundHandle != 0) {
-            if (gAudioLines[i].type == AUDIO_LINE_TYPE_SOUND) {
-                sndp_stop(gAudioLines[i].soundHandle);
-            } else if (gAudioLines[i].type == AUDIO_LINE_TYPE_JINGLE) {
-                music_jingle_stop();
+    if (gAudioLines) {
+        for (i = 0; i < MAX_AUDIO_LINES; i++) {
+            gAudioLines[i].soundBite = 0;
+            if (gAudioLines[i].soundHandle != 0) {
+                if (gAudioLines[i].type == AUDIO_LINE_TYPE_SOUND) {
+                    sndp_stop(gAudioLines[i].soundHandle);
+                } else if (gAudioLines[i].type == AUDIO_LINE_TYPE_JINGLE) {
+                    music_jingle_stop();
+                }
+                gAudioLines[i].soundHandle = NULL;
             }
-            gAudioLines[i].soundHandle = NULL;
+            gAudioLines[i].numSegments = -1;
+    
+            coords = gAudioLines[i].coords;
+            for (j = 0; j < 30; j++) {
+                *coords++ = -100000.0f;
+                *coords++ = -100000.0f;
+                *coords++ = -100000.0f;
+            }
         }
-        gAudioLines[i].numSegments = -1;
-
-        coords = gAudioLines[i].coords;
-        for (j = 0; j < 30; j++) {
-            *coords++ = -100000.0f;
-            *coords++ = -100000.0f;
-            *coords++ = -100000.0f;
-        }
+        mempool_free(gAudioLines);
+        gAudioLines = NULL;
     }
 
-    for (i = 0; i < MAX_REVERB_LINES; i++) {
-        gReverbLines[i].numSegments = -1;
-        gReverbLines[i].reverbAmount = 0;
-        gReverbLines[i].totalLength = 0.0f;
+    if (gReverbLines) {
+        for (i = 0; i < MAX_REVERB_LINES; i++) {
+            gReverbLines[i].numSegments = -1;
+            gReverbLines[i].reverbAmount = 0;
+            gReverbLines[i].totalLength = 0.0f;
 
-        coords = gReverbLines[i].coords;
-        for (j = 0; j < 15; j++) {
-            *coords++ = -100000.0f;
-            *coords++ = -100000.0f;
-            *coords++ = -100000.0f;
+            coords = gReverbLines[i].coords;
+            for (j = 0; j < 15; j++) {
+                *coords++ = -100000.0f;
+                *coords++ = -100000.0f;
+                *coords++ = -100000.0f;
+            }
         }
+        mempool_free(gReverbLines);
+        gReverbLines = NULL;
     }
 
     gJinglesOff = FALSE;
@@ -181,6 +187,13 @@ void audspat_update_all(Object **objList, s32 numObjects, s32 updateRate) {
     viewportCount = get_viewport_count();
     numCameras = set_active_viewports_and_max(viewportCount);
     cameras = get_cutscene_camera_segment();
+
+    if (gReverbOverride > 0) {
+        gReverbOverride -= updateRate;
+        if (gReverbOverride < 0) {
+            gReverbOverride = 0;
+        }
+    }
 
     // Update audio points
     for (i = 0; i < gNumAudioPoints; i++) {
@@ -295,6 +308,7 @@ void audspat_update_all(Object **objList, s32 numObjects, s32 updateRate) {
     }
 
     // Update audio lines
+    if (gAudioLines) {
     for (i = 0; i < MAX_AUDIO_LINES; i++) {
         AudioLine *line = &gAudioLines[i];
 
@@ -382,6 +396,7 @@ void audspat_update_all(Object **objList, s32 numObjects, s32 updateRate) {
                 jingleSound = line->soundBite;
             }
         }
+    }
     }
 
     // Update jingle parameters
@@ -586,6 +601,10 @@ void audspat_line_add_vertex(u8 type, u16 soundBite, f32 x, f32 y, f32 z, u8 arg
     f32 *coords;
 
     if (lineID < MAX_AUDIO_LINES && vertexIndex < 30) {
+        if (gAudioLines == NULL) {
+            gAudioLines = mempool_alloc_safe(sizeof(AudioLine) * MAX_AUDIO_LINES, PP_RAM_AUDIOLINE);
+            bzero(gAudioLines, sizeof(AudioLine) * MAX_AUDIO_LINES);
+        }
         line = &gAudioLines[lineID];
         coords = &line->coords[vertexIndex * 3];
         coords[0] = x;
@@ -614,7 +633,11 @@ void audspat_line_add_vertex(u8 type, u16 soundBite, f32 x, f32 y, f32 z, u8 arg
  */
 void audspat_reverb_add_vertex(f32 x, f32 y, f32 z, u8 reverbAmount, u8 lineID, u8 vertexIndex) {
     ReverbLine *line;
-    if (lineID < ARRAY_COUNT(gReverbLines) && vertexIndex < 15) {
+    if (lineID < MAX_REVERB_LINES && vertexIndex < 15) {
+        if (gReverbLines == NULL) {
+            gReverbLines = mempool_alloc_safe(sizeof(ReverbLine) * MAX_AUDIO_LINES, PP_RAM_AUDIOLINE);
+            bzero(gReverbLines, sizeof(ReverbLine) * MAX_AUDIO_LINES);
+        }
         line = &gReverbLines[lineID];
         line->coords[3 * vertexIndex + 0] = x;
         line->coords[3 * vertexIndex + 1] = y;
@@ -637,6 +660,10 @@ s32 audspat_line_validate(u8 lineID) {
     AudioLine *line;
     f32 *coords;
 
+    if (gAudioLines == NULL) {
+        return FALSE;
+    }
+
     ret = TRUE;
     line = &gAudioLines[lineID];
     coords = line->coords;
@@ -647,7 +674,7 @@ s32 audspat_line_validate(u8 lineID) {
 
     for (i = 0; i < line->numSegments; i++) {
         //@bug should be *(coords + 0), *(coords + 1), *(coords + 2)
-        if (*coords + 0 == -100000.0 || *coords + 1 == -100000.0 || *coords + 2 == -100000.0) {
+        if (*(coords + 0) == -100000.0 || *(coords + 1) == -100000.0 || *(coords + 2) == -100000.0) {
             ret = FALSE;
         }
         coords += 3;
@@ -664,6 +691,10 @@ s32 audspat_reverb_validate(u8 reverbLineID) {
     s32 i;
     ReverbLine *line;
     f32 *coords;
+
+    if (gReverbLines == NULL) {
+        return FALSE;
+    }
 
     ret = TRUE;
     line = &gReverbLines[reverbLineID];
@@ -706,6 +737,10 @@ void audspat_calculate_echo(SoundHandle soundHandle, f32 x, f32 y, f32 z) {
     f32 *coords;
     f32 yVals[10];
 
+    if (gReverbLines == NULL) {
+        return;
+    }
+
     levelSegmentIndex = get_level_segment_index_from_position(x, y, z);
     maxReverbAmt = 0;
     minDist = 400;
@@ -715,15 +750,15 @@ void audspat_calculate_echo(SoundHandle soundHandle, f32 x, f32 y, f32 z) {
         reverbLine = &gReverbLines[i];
         if (reverbLine->reverbAmount != 0 && audspat_reverb_validate(i)) {
             coords = reverbLine->coords;
+            // Check if the point is below the ceiling (indicating it is inside a tunnel).
+            // This check should ideally be performed only once per call.
+            numOfYVals = func_8002BAB0(levelSegmentIndex, x, z, yVals);
             for (j = 0; j < reverbLine->numSegments; j++) {
                 distToSegment = audspat_distance_to_segment(x, y, z, coords, &outX, &outY, &outZ);
                 // There seems to be a logic mistake here: the maximum reverb effect may not necessarily come from the
                 // nearest segment. The closest segment could be near the beginning of the curve and not contribute much
                 // to the echo. It would be better to iterate through all segments, but this approach would be slower.
                 if (distToSegment < minDist) {
-                    // Check if the point is below the ceiling (indicating it is inside a tunnel).
-                    // This check should ideally be performed only once per call.
-                    numOfYVals = func_8002BAB0(levelSegmentIndex, x, z, yVals);
                     for (k = 0; k < numOfYVals; k++) {
                         if (y < yVals[k]) {
                             minDist = distToSegment;
@@ -826,38 +861,6 @@ u8 audspat_reverb_get_strength_at_point(ReverbLine *line, f32 x, f32 y, f32 z) {
 }
 
 /**
- * Makes audio and reverb lines visible, useful for debugging.
- */
-void audspat_debug_render_lines(Gfx **dList, Vertex **verts, Triangle **tris) {
-    s32 i, j;
-    f32 *coords;
-    AudioLine *audioLine;
-    ReverbLine *reverbLine;
-
-    for (i = 0; i < ARRAY_COUNT(gAudioLines); i++) {
-        audioLine = &gAudioLines[i];
-        coords = audioLine->coords;
-        if (gAudioLines[i].soundBite != 0) {
-            for (j = 0; j < audioLine->numSegments; j++) {
-                audspat_debug_render_line(dList, verts, tris, coords, 255, 255, 0);
-                coords += 3;
-            }
-        }
-    }
-
-    for (i = 0; i < ARRAY_COUNT(gReverbLines); i++) {
-        reverbLine = &gReverbLines[i];
-        coords = reverbLine->coords;
-        if (gReverbLines[i].reverbAmount != 0) {
-            for (j = 0; j < reverbLine->numSegments; j++) {
-                audspat_debug_render_line(dList, verts, tris, coords, 255, 0, 255);
-                coords += 3;
-            }
-        }
-    }
-}
-
-/**
  * Stops the sound associated with the given audio point.
  * If the sound is currently playing, it stops it and removes the audio point from the list.
  */
@@ -880,87 +883,3 @@ void audspat_point_stop_by_index(s32 index) {
     }
 }
 
-/**
- * Generates and renders a coloured line visible from anywhere.
- * Allows use of a colour, that interpolates from bright to dark from the beginning to the end of the line.
- */
-void audspat_debug_render_line(Gfx **dList, Vertex **verts, Triangle **tris, f32 coords[6], u8 red, u8 green, u8 blue) {
-    Gfx *temp_dlist;
-    Vertex *temp_verts;
-    Triangle *temp_tris;
-    s16 x1;
-    s16 y1;
-    s16 z1;
-    s16 x2;
-    s16 y2;
-    s16 z2;
-
-    x1 = coords[0];
-    y1 = coords[1];
-    z1 = coords[2];
-    x2 = coords[3];
-    y2 = coords[4];
-    z2 = coords[5];
-    temp_dlist = *dList;
-
-    temp_verts = *verts;
-    temp_tris = *tris;
-    material_set_no_tex_offset(&temp_dlist, NULL, RENDER_NONE);
-    gSPVertexDKR(temp_dlist++, OS_PHYSICAL_TO_K0(temp_verts), 4, 0);
-    gSPPolygon(temp_dlist++, OS_PHYSICAL_TO_K0(temp_tris), 2, 0);
-    temp_verts[0].x = x1;
-    temp_verts[0].y = (y1 + 5);
-    temp_verts[0].z = z1;
-    temp_verts[0].r = red;
-    temp_verts[0].g = green;
-    temp_verts[0].b = blue;
-    temp_verts[0].a = 255;
-    temp_verts[1].x = x1;
-    temp_verts[1].y = (y1 - 5);
-    temp_verts[1].z = z1;
-    temp_verts[1].r = red;
-    temp_verts[1].g = green;
-    temp_verts[1].b = blue;
-    temp_verts[1].a = 255;
-    temp_verts[2].x = x2;
-    temp_verts[2].y = (y2 + 5);
-    temp_verts[2].z = z2;
-    temp_verts[2].r = 255;
-    temp_verts[2].g = 255;
-    temp_verts[2].b = 255;
-    temp_verts[2].a = 255;
-    temp_verts[3].x = x2;
-    temp_verts[3].y = (y2 - 5);
-    temp_verts[3].z = z2;
-    temp_verts[3].r = 255;
-    temp_verts[3].g = 255;
-    temp_verts[3].b = 255;
-    temp_verts[3].a = 255;
-    temp_verts += 4;
-
-    temp_tris[0].flags = BACKFACE_DRAW;
-    temp_tris[0].vi0 = 2;
-    temp_tris[0].vi1 = 1;
-    temp_tris[0].vi2 = 0;
-    temp_tris[0].uv0.u = 1024 - 32;
-    temp_tris[0].uv0.v = 1024 - 32;
-    temp_tris[0].uv1.u = 1024 - 32;
-    temp_tris[0].uv1.v = 0;
-    temp_tris[0].uv2.u = 1;
-    temp_tris[0].uv2.v = 0;
-    temp_tris[1].flags = BACKFACE_DRAW;
-    temp_tris[1].vi0 = 3;
-    temp_tris[1].vi1 = 2;
-    temp_tris[1].vi2 = 1;
-    temp_tris[1].uv0.u = 1;
-    temp_tris[1].uv0.v = 1024 - 32;
-    temp_tris[1].uv1.u = 1024 - 32;
-    temp_tris[1].uv1.v = 1024 - 32;
-    temp_tris[1].uv2.u = 1;
-    temp_tris[1].uv2.v = 0;
-    temp_tris += 2;
-
-    *dList = temp_dlist;
-    *verts = temp_verts;
-    *tris = temp_tris;
-}

@@ -171,7 +171,7 @@ FadeTransition gRaceEndTransition = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_O
 
 /*******************************/
 
-UNUSED const char sDuplicateCheckpointString[] = "Error: Multiple checkpoint no: %d !!\n";
+UNUSED const char sDuplicateCheckpointString[] = "";
 /************ .bss ************/
 
 s16 D_8011AC20[128];

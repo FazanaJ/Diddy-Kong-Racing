@@ -888,7 +888,8 @@ void music_sequence_init(ALCSPlayer *seqp, s32 sequence, u8 *seqID, ALCSeq *seq)
             } else {
                 sMusicTempo = -1;
             }
-            sound_reverb_set(gSeqSoundTable[*seqID].reverb);
+            sound_reverb_set(FALSE);
+            //sound_reverb_set(gSeqSoundTable[*seqID].reverb);
             gCurrentSequenceID = *seqID;
             if (gDynamicMusicChannelMask != MUSIC_CHAN_MASK_NONE) {
                 for (i = 0; i < AUDIO_CHANNELS; i++) {
