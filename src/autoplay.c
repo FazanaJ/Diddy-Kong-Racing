@@ -36,7 +36,7 @@ u8 sBootTime = 0;
 u8 sFileSelectInputs = 0;
 u8 sPrevMapID;
 u8 sPauseStage;
-u8 override = 1;
+u8 override = 0;
 u8 sAutoplayTrackStage;
 u8 sAutoplayActiveTrack;
 
