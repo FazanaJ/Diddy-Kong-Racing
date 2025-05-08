@@ -36,7 +36,7 @@ u8 sBootTime = 0;
 u8 sFileSelectInputs = 0;
 u8 sPrevMapID;
 u8 sPauseStage;
-u8 override = 0;
+u8 override = 1;
 u8 sAutoplayTrackStage;
 u8 sAutoplayActiveTrack;
 
@@ -479,7 +479,7 @@ void autoplay_single_player(void) {
                                 }
                                 break;
                             case 4:
-                                if (autoplay_drive(5997.0f, 75.0f, -461.0f, 300.0f)) {
+                                if (autoplay_drive(3290.0f, 100.0f, -1835.0f, 300.0f)) {
                                     sCheckpointID++;
                                     if (override != 3) {
                                         override += 2;
@@ -488,7 +488,12 @@ void autoplay_single_player(void) {
                                 }
                                 break;
                             case 5:
-                                if (autoplay_drive(5066.0f, -200.0f, -1093.0f, 1.0f)) {
+                                if (autoplay_drive(4723.0f, 100.0f, -300.0f, 300.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 6:
+                                if (autoplay_drive(5066.0f, -200.0f, -1188.0f, 1.0f)) {
                                     sCheckpointID++;
                                 }
                                 break;

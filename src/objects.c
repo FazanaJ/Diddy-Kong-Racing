@@ -373,6 +373,10 @@ void racerfx_alloc(s32 numberOfVertices, s32 numberOfTriangles) {
         gBoostVertFlip = 0;
         miscAsset20 = (Asset20 *) get_misc_asset(ASSET_MISC_20);
         // Makes 10 boost objects, but only 8 racers can actually exist at once.
+        for (i = 0; i < 10; i++) {
+            // This is for shields, not boosts.
+            gShieldSineTime[i] = get_random_number_from_range(0, 255);
+        }
         for (i = 0; i < 10; i++) { // temp until I figure out why SDV crashes without 10
             objEntry.common.objectID = ASSET_OBJECT_ID_BOOST;
             objEntry.common.size = sizeof(LevelObjectEntry_unk8000B020);
@@ -390,8 +394,6 @@ void racerfx_alloc(s32 numberOfVertices, s32 numberOfTriangles) {
                 miscAsset20[i].unk7C = load_texture(miscAsset20[i].unk6E);
                 miscAsset20[i].unk72 = get_random_number_from_range(0, 255);
                 miscAsset20[i].unk73 = 0;
-                // This is for shields, not boosts.
-                gShieldSineTime[i] = get_random_number_from_range(0, 255);
             }
             D_8011B068[i] = TRUE;
         }
