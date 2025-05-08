@@ -234,13 +234,11 @@ void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag) {
     MemoryPoolSlot *slots;
     u32 intFlags;
 
+    crash_assert(size == 0, "Alloc size 0");
     intFlags = interrupts_disable();
-    if (size == 0) {
-        stubbed_printf("*** mmAllocAtAddr: size = 0 ***\n");
-    }
     if ((gMemoryPools[POOL_MAIN].curNumSlots + 1) == gMemoryPools[POOL_MAIN].maxNumSlots) {
         interrupts_enable(intFlags);
-        stubbed_printf("\n*** mm Error *** ---> No more slots available.\n");
+        crash_nomemory(0, COLOUR_TAG_NONE);
     } else {
         if (size & ALIGNCHECK) {
             size = _ALIGN8(size);
@@ -270,8 +268,7 @@ void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag) {
         }
         interrupts_enable(intFlags);
     }
-    *(volatile int *) 0 = 0;
-    stubbed_printf("\n*** mm Error *** ---> Can't allocate memory at desired address.\n");
+    crash_nomemory(size, colorTag);
     return NULL;
 }
 

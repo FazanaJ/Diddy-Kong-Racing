@@ -9,7 +9,7 @@
 
 #define MAX_UPDATES             32
 #define MAX_EVENTS              32
-#define AUDIO_HEAP_SIZE         0x29D88
+#define AUDIO_HEAP_SIZE         0x80000 // The max amount it can be, the game reallocs to the smallest size when finished.
 
 #define MAX_VOICES              22
 #define EXTRA_SAMPLES           96
