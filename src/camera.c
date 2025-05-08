@@ -9,6 +9,7 @@
 #include "weather.h"
 #include "PRinternal/piint.h"
 #include "PRinternal/viint.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -936,9 +937,7 @@ s32 render_sprite_billboard(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Obj
     s32 result;
     s32 textureFrame;
 
-    if (obj == NULL) {
-        stubbed_printf("\nCam do 2D sprite called with NULL pointer!");
-    }
+    crash_assert(obj == NULL, "Null object passed");
 
     result = TRUE;
     if (flags & RENDER_VEHICLE_PART) {

@@ -1246,7 +1246,7 @@ void crash_page_memory(void) {
     stopCounting = FALSE;
     y = 68 - (gCrashScroll * 9);
     for (i = 0; i < PP_RAM_TOTAL; i++) {
-        if (d->ramSegments[gCrashMemPrintOrder[i]]) {
+        //if (d->ramSegments[gCrashMemPrintOrder[i]]) {
             scrollSize++;
             if (y < 68) {
                 y += 9;
@@ -1282,7 +1282,7 @@ void crash_page_memory(void) {
             crash_text(x + 90, y, col, "%2.3f%s", (f64) size, sMemLabels[tag]);
             crash_text(x + 156, y, col, "(%2.3f%%)", (f64) (((f32) d->ramSegments[gCrashMemPrintOrder[i]] / (f32) ramSize) * 100.0f));
             y += 9;
-        }
+        //}
     }
     
     if (useScroll) {
@@ -1412,9 +1412,9 @@ void crash_render(OSThread *t) {
                 debug_ram_dump();
             }
             for (i = 0; i < PP_RAM_TOTAL; i++) {
-                if (gDebug->ramSegments[i] != 0) {
+                //if (gDebug->ramSegments[i] != 0) {
                     numValids++;
-                }
+                //}
             }
             if (gCrashInput & U_JPAD || gCrashInput & U_CBUTTONS) {
                 if (gCrashInput & U_JPAD) {

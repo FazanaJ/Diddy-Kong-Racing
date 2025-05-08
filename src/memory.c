@@ -19,7 +19,8 @@
 
 MemoryPool gMemoryPools[POOL_COUNT]; // Only two are used.
 s32 gNumberOfMemoryPools;
-FreeQueueSlot gFreeQueue[FREE_QUEUE_SIZE];
+void *gFreeQueueAddr[FREE_QUEUE_SIZE];
+u8 gFreeQueueTicks[FREE_QUEUE_SIZE];
 s32 gFreeQueueCount;
 s32 gFreeQueueTimer; // Official Name: mmDelay
 
@@ -283,7 +284,7 @@ void mempool_free_timer(s32 state) {
     gFreeQueueTimer = state;
     if (state == 0) { // flush free queue if state is 0.
         while (gFreeQueueCount > 0) {
-            mempool_free_addr(gFreeQueue[--gFreeQueueCount].dataAddress);
+            mempool_free_addr(gFreeQueueAddr[--gFreeQueueCount]);
         }
     }
     interrupts_enable(intFlags);
@@ -315,14 +316,14 @@ void mempool_free_queue_clear(void) {
     intFlags = interrupts_disable();
 
     for (i = 0; i < gFreeQueueCount;) {
-        gFreeQueue[i].freeTimer--;
-        if (gFreeQueue[i].freeTimer == 0) {
-            mempool_free_addr(gFreeQueue[i].dataAddress);
-            gFreeQueue[i].dataAddress = gFreeQueue[gFreeQueueCount - 1].dataAddress;
-            gFreeQueue[i].freeTimer = gFreeQueue[gFreeQueueCount - 1].freeTimer;
+        gFreeQueueTicks[i]--;
+        if (gFreeQueueTicks[i] == 0) {
+            mempool_free_addr(gFreeQueueAddr[i]);
+            gFreeQueueAddr[i] = gFreeQueueAddr[gFreeQueueCount - 1];
+            gFreeQueueTicks[i] = gFreeQueueTicks[gFreeQueueCount - 1];
             gFreeQueueCount--;
         } else {
-            stubbed_printf("\n*** mm Error *** ---> Can't free ram at this location: %x\n", gFreeQueue[i].dataAddress);
+            stubbed_printf("\n*** mm Error *** ---> Can't free ram at this location: %x\n", gFreeQueueAddr[i]);
             i++;
         }
     }
@@ -362,11 +363,11 @@ void mempool_free_addr(u8 *address) {
  * Adds the current memory address to the back of the queue, so it can be freed.
  */
 void mempool_free_queue(void *dataAddress) {
-    gFreeQueue[gFreeQueueCount].dataAddress = dataAddress;
-    gFreeQueue[gFreeQueueCount].freeTimer = gFreeQueueTimer;
+    gFreeQueueAddr[gFreeQueueCount] = dataAddress;
+    gFreeQueueTicks[gFreeQueueCount] = gFreeQueueTimer;
     gFreeQueueCount++;
 
-    if (gFreeQueueCount >= ARRAY_COUNT(gFreeQueue)) {
+    if (gFreeQueueCount >= FREE_QUEUE_SIZE) {
         stubbed_printf("\n*** mm Error *** ---> stbf stack too deep!\n");
     }
 }

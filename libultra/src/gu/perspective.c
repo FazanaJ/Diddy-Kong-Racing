@@ -13,6 +13,7 @@
 
 #include "guint.h"
 #include <ultratypes.h>
+#include "src/math_util.h"
 
 void guPerspectiveF(float mf[4][4], u16 *perspNorm, float fovy, float aspect, float near, float far, float scale)
 {
@@ -21,8 +22,8 @@ void guPerspectiveF(float mf[4][4], u16 *perspNorm, float fovy, float aspect, fl
 
 	guMtxIdentF(mf);
 
-	fovy *= 3.1415926 / 180.0;
-	cot = cosf (fovy/2) / sinf (fovy/2);
+    fovy *= 91;
+    cot = coss_f(fovy)/sins_f(fovy);
 
 	mf[0][0] = cot / aspect;
 	mf[1][1] = cot;

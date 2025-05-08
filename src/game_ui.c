@@ -313,6 +313,10 @@ void hud_init(UNUSED s32 viewportCount) {
     s32 i;
     s32 playerCount;
 
+    if (get_game_mode() == GAMEMODE_MENU) {
+        return;
+    }
+
     gHUDNumPlayers = get_viewport_count();
     gNumActivePlayers = set_active_viewports_and_max(gHUDNumPlayers);
     gHudSettings = get_settings();

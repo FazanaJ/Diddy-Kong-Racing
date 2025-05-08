@@ -9,8 +9,6 @@
 typedef enum MemoryPools {
     POOL_MAIN,
     POOL_OBJECT,
-    POOL_UNUSED_2,
-    POOL_UNUSED_3,
 
     POOL_COUNT
 } MemoryPools;
