@@ -987,6 +987,9 @@ extern s32 *gModelCache;
 extern s32 gModelCacheCount;
 extern void *gMusicSequenceData;
 extern void *gJingleSequenceData;
+extern u64 *gGfxSPTaskOutputBuffer;
+extern Gfx *gDisplayLists[2];
+extern u8 *gAudioHeapStack;
 
 void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
     s32 i;
@@ -1001,14 +1004,6 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
     ObjectModel_44 *objAnim;
 
     switch (tag) {
-        case PP_RAM_FRAMEBUFFERS:
-            if ((u32)slot->data <= 0x80300000) {
-                crash_text(x + 40, y, col, "Colour Buffer");
-
-            } else {
-                crash_text(x + 40, y, col, "Depth Buffer");
-            }
-            break;
         case PP_RAM_OBJHEADERS:
             objHeader = (ObjectHeader *) slot->data;
             crash_text(x + 40, y, col, "%s", objHeader->internalName);
@@ -1016,15 +1011,6 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
         case PP_RAM_OBJECTS:
             obj = (Object *) slot->data;
             crash_text(x + 40, y, col, "%s", obj->segment.header->internalName);
-            break;
-        case PP_RAM_SEQUENCES:
-            if ((s32) slot->data == (s32) gMusicSequenceData) {
-                crash_text(x + 40, y, col, "Music");
-            } else if ((s32) slot->data == (s32) gJingleSequenceData) {
-                crash_text(x + 40, y, col, "Jingle");
-            } else {
-                crash_text(x + 40, y, col, "Unknown");
-            }
             break;
         case PP_RAM_ANIMATIONS:
             texID = -200;
@@ -1043,6 +1029,32 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
             }
             break;
         default:
+            if ((s32) slot->data == (s32) gVideoFramebuffers[0] || 
+                (s32) slot->data == (s32) gVideoFramebuffers[1] ||
+                (s32) slot->data == (s32) gVideoFramebuffers[2]) {
+                crash_text(x + 40, y, col, "Colour Buffer");
+                return;
+            } else if ((s32) slot->data == (s32) gVideoDepthBuffer) {
+                crash_text(x + 40, y, col, "Depth Buffer");
+                return;
+            } else if ((s32) slot->data == (s32) gMusicSequenceData) {
+                crash_text(x + 40, y, col, "Music");
+                return;
+            } else if ((s32) slot->data == (s32) gJingleSequenceData) {
+                crash_text(x + 40, y, col, "Jingle");
+                return;
+            } else if ((s32) slot->data == (s32) gGfxSPTaskOutputBuffer) {
+                crash_text(x + 40, y, col, "FIFO Task Buf");
+                return;
+            } else if ((s32) slot->data == (s32) gDisplayLists[0] || 
+                       (s32) slot->data == (s32) gDisplayLists[1]) {
+                crash_text(x + 40, y, col, "Displaylists");
+                return;
+            } else if ((s32) slot->data == (s32) gAudioHeapStack) {
+                crash_text(x + 40, y, col, "alHeap Stack");
+                return;
+            }
+
             texHeader = (TextureHeader *) slot->data;
             texID = -200;
             // First see if it's a texture

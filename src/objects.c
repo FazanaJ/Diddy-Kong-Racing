@@ -2104,10 +2104,7 @@ Object *func_8000FD54(s32 objectHeaderIndex) {
         return NULL;
     }
 
-    // clang-format off
-    objectAsRawBytes = (u8 *) object;
-    for (i = 0; i < objSize; i++) { objectAsRawBytes[i] = 0; } // Must be one line! (Why not use bzero?)
-    // clang-format on
+    bzero(object, objSize);
 
     object->segment.trans.flags = OBJ_FLAGS_UNK_0002;
     object->segment.header = objHeader;
