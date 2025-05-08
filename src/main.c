@@ -556,13 +556,54 @@ void debug_render_minimal(DebugData *d, Gfx **dList, s32 updateRate) {
     }
 }
 
-/*void debug_page_minimal(DebugData *d) {
+
+void debug_render_memory(DebugData *d, Gfx **dList, s32 updateRate) {
+}
+
+void debug_page_minimal(DebugData *d) {
+    
+}
+
+
+void debug_page_memory(DebugData *d) {
     
 }
 
 DebugPage gDebugPages[] = {
     "Minimal", PAGE_MINIMAL, debug_page_minimal, debug_render_minimal,
-};*/
+    "Memory", PAGE_MEMORY, debug_page_memory, debug_render_memory,
+};
+
+void debug_render_page_menu(Gfx **dList, s32 updateRate) {
+    DebugData *d = gDebug;
+    s32 i;
+    s32 y;
+    char text[32];
+    char *textPtr;
+
+    if (d->pageMenuOpen == FALSE) {
+        return;
+    }
+
+    debug_fillrect(dList, 10, 68, 112, 68 + 64, 0x0000007F);
+    set_text_font(ASSET_FONTS_SMALLFONT);
+    set_text_colour(255, 255, 255, 255, 255);
+    set_text_background_colour(0, 0, 0, 0);
+    set_kerning(FALSE);
+
+    y = 72;
+    
+    for (i = 0; i < ARRAY_COUNT(gDebugPages); i++) {
+        if (i == d->pageCurrent) {
+            textPtr = " <";
+        } else {
+            textPtr = " ";
+        }
+        sprintf(text, "%s%s", gDebugPages[i].name, textPtr);
+        draw_text(dList, 14, y, text, ALIGN_TOP_LEFT);
+        y += 10;
+    }
+}
 
 void debug_render(Gfx **dList, s32 updateRate) {
     DebugData *d = gDebug;
@@ -571,10 +612,10 @@ void debug_render(Gfx **dList, s32 updateRate) {
         return;
     }
 
-    switch (d->pageCurrent) {
-        case PAGE_MINIMAL:
-            debug_render_minimal(d, dList, updateRate);
-            break;
+    gDebugPages[d->pageCurrent].renderFunc(d, dList, updateRate);
+
+    if (d->pageMenuOpen) {
+        debug_render_page_menu(dList, updateRate);
     }
 }
 
@@ -721,8 +762,9 @@ void debug_update(s32 updateRate) {
 
     if (inputHeld & U_JPAD && inputPressed & L_TRIG) {
         d->enabled ^= 1;
+    } else if (inputPressed & L_TRIG) {
+        d->pageMenuOpen ^= 1;
     }
-
     if (d->pageMenuOpen == FALSE) {
         switch (d->pageCurrent) {
             case PAGE_MINIMAL:
