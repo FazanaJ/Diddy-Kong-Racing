@@ -66,5 +66,6 @@ s32 func_800C38B4(s32 arg0, TextBox *textbox);
 void render_subtitles(void);
 void set_current_text(s32 textID);
 s32 dialogue_challenge_loop(void);
+void textbox_cycle(s32 updateRate);
 
 #endif

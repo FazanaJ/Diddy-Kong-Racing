@@ -353,6 +353,7 @@ void main_game_loop(void) {
     debug_thread(THREAD3_START, 0);
     gSkipGfxTask = FALSE;
     font_cycle(sLogicUpdateRate);
+    textbox_cycle(sLogicUpdateRate);
     mempool_free_queue_clear();
     if (!gIsPaused) {
         disable_cutscene_camera();
@@ -415,7 +416,7 @@ void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     alloc_displaylist_heap(numberOfPlayers);
     mempool_free_timer(0);
     camera_init();
-    load_game_text_table();
+    //load_game_text_table();
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, gGameCurrentCutscene);
     hud_init(get_viewport_count());
     init_particle_buffers(8, 16, 150, 100, 50, 0);
@@ -443,7 +444,6 @@ void unload_level_game(void) {
     transition_begin(&D_800DD3F4);
     reset_particles();
     hud_free();
-    free_game_text_table();
     gCurrDisplayList = gDisplayLists[gSPTaskNum];
     gDPFullSync(gCurrDisplayList++);
     gSPEndDisplayList(gCurrDisplayList++);
@@ -899,7 +899,7 @@ Vehicle get_level_default_vehicle(void) {
 void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicleId, s32 cutsceneId) {
     mempool_free_timer(0);
     camera_init();
-    load_game_text_table();
+    //load_game_text_table();
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, cutsceneId);
     hud_init(get_viewport_count());
     init_particle_buffers(4, 4, 110, 48, 32, 0);
@@ -921,7 +921,6 @@ void unload_level_menu(void) {
         transition_begin(&D_800DD3F4);
         reset_particles();
         hud_free();
-        free_game_text_table();
         mempool_free_timer(2);
     }
     gIsLoading = FALSE;
