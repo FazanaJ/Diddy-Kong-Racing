@@ -2,7 +2,6 @@
 #include "memory.h"
 
 #include "types.h"
-#include "macros.h"
 #include "asset_enums.h"
 #include "asset_loading.h"
 #include "audiomgr.h"
@@ -73,7 +72,7 @@ SoundHandle gRacerSoundMask;
 /******************************/
 
 /**
- * Allocate memory for all of the audio systems, including sequence data, sound data and heaps.
+ * Allocate memory for all the audio systems, including sequence data, sound data and heaps.
  * Afterwards, set up the audio thread and start it.
  */
 void audio_init(OSSched *sc) {

@@ -1,7 +1,6 @@
 #include "main.h"
 #include "thread0_epc.h"
 #include "game.h"
-#include "libultra/src/libc/rmonPrintf.h"
 #include "stacks.h"
 #include "printf.h"
 #include "joypad.h"
@@ -309,7 +308,7 @@ void mainproc(void) {
     osInitialize();
     gPlatformSet = FALSE;
 #ifdef AVOID_UB
-    bzero(&gMainMemoryPool, RAM_END - (s32) (&gMainMemoryPool));
+    bzero(&gMainMemoryPool, RAM_END - (s32) (&main_BSS_START));
 #endif
     memsize_init();
     mempool_init_main();
@@ -336,14 +335,6 @@ void thread1_main(UNUSED void *unused) {
     gThread3Stack[0] = 0;
     osStartThread(&gThread3);
     while (1) {}
-}
-
-/**
- * Increments the start and endpoint of the stack.
- * They should have an equal value, so if they don't, that triggers a printout saying a stack wraparound has occured.
- * Official Name: bootCheckStack
- */
-void thread3_verify_stack(void) {
 }
 
 #ifdef DEBUG

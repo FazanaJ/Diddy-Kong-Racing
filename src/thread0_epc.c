@@ -17,6 +17,8 @@
 
 //#define MAP_PARSE
 
+u16 gObjectStackTrace[3];
+
 /**
  * Mark the object type given, so if the game crashes while processing it, the debug screen will tell you which object
  * ID is to blame. Split into three sections, for spawning an object, updating an object and for rendering an object.

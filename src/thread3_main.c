@@ -62,9 +62,9 @@ s8 gPauseLockTimer = 0; // If this is above zero, the player cannot pause the ga
 s8 gFutureFunLandLevelTarget = FALSE;
 s8 gDmemInvalid = FALSE;
 s16 gNumF3dCmdsPerPlayer[MAXCONTROLLERS] = {3000 + GFX_ADD, 4000 + GFX_ADD, 5000 + GFX_ADD, 5000 + GFX_ADD};
-s16 gNumHudVertsPerPlayer[MAXCONTROLLERS] = {200, 300, 400, 500};
-s16 gNumHudMatPerPlayer[MAXCONTROLLERS] = {200, 300, 400, 500};
-s8 gNumHudTrisPerPlayer[MAXCONTROLLERS] = {20, 30, 40, 50};
+s16 gNumHudVertsPerPlayer[MAXCONTROLLERS] = {125, 150, 200, 200};
+s16 gNumHudMatPerPlayer[MAXCONTROLLERS] = {200, 300, 400, 400};
+s8 gNumHudTrisPerPlayer[MAXCONTROLLERS] = {12, 12, 12, 12};
 s8 gDrawFrameTimer = 0;
 FadeTransition D_800DD3F4 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_BLACK, 20, 0);
 s32 sLogicUpdateRate = LOGIC_5FPS;
@@ -341,6 +341,11 @@ void main_game_loop(void) {
 
     debug_thread(THREAD3_END, 0);
     debug_render(&gCurrDisplayList, sLogicUpdateRate);
+    //set_render_printf_background_colour(0, 0, 0, 255);
+    //render_printf("Gfx: %d/%d\n", ((u32) gCurrDisplayList - (u32) gDisplayLists[gSPTaskNum]) / sizeof(Gwords), gNumF3dCmdsPerPlayer[get_active_player_count() - 1]);
+    //render_printf("Mtx: %d/%d\n", ((u32) gGameCurrMatrix - (u32) gMatrixHeap[gSPTaskNum]) / sizeof(MatrixS), gNumHudMatPerPlayer[get_active_player_count() - 1]);
+    //render_printf("Vtx: %d/%d\n", ((u32) gGameCurrVertexList - (u32) gVertexHeap[gSPTaskNum]) / sizeof(Vertex), gNumHudVertsPerPlayer[get_active_player_count() - 1]);
+    //render_printf("Tri: %d/%d\n", ((u32) gGameCurrTriList - (u32) gTriangleHeap[gSPTaskNum]) / sizeof(Triangle), gNumHudTrisPerPlayer[get_active_player_count() - 1]);
 
     gDPFullSync(gCurrDisplayList++);
     gSPEndDisplayList(gCurrDisplayList++);

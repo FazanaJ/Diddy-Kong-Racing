@@ -1795,7 +1795,7 @@ void hud_speedometre(Object *obj, UNUSED s32 updateRate) {
                                 (obj->segment.z_velocity * obj->segment.z_velocity));
                 }
                 vel *= 4.0f;
-                //!@Bug: Planes and hovercraft use drift_direction for something else, applying this unintentionally.
+                //!@bug: Planes and hovercraft use drift_direction for something else, applying this unintentionally.
                 if (racer->drift_direction != 0 && racer->vehicleID == VEHICLE_CAR) {
                     vel += 7.0f;
                 }

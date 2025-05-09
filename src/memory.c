@@ -1,7 +1,6 @@
 #include "memory.h"
 #include "printf.h"
 #include "thread0_epc.h"
-#include "joypad.h"
 #include "math_util.h"
 #include "main.h"
 
@@ -144,7 +143,7 @@ MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag
     crash_assert(size == 0, "Alloc size 0");
     intFlags = interrupts_disable();
     pool = &gMemoryPools[poolIndex];
-    if ((pool->curNumSlots + 1) == (*pool).maxNumSlots) {
+    if (pool->maxNumSlots == pool->curNumSlots + 1) {
         interrupts_enable(intFlags);
         gMemoryPools[poolIndex].curNumSlots++;
         crash_nomemory(0, COLOUR_TAG_NONE);
