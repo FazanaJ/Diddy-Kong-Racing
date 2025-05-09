@@ -124,6 +124,17 @@ MemoryPoolSlot *mempool_alloc_largest(u32 colourTag) {
     return mempool_slot_find(POOL_MAIN, 0x10, colourTag, 1);
 }
 
+/**
+ * Resize the memory block while preserving the contents.
+ * Can only go lower, not higher.
+*/
+void mempool_realloc(void *addr, s32 size, s32 colourTag) {
+    mempool_free_timer(0);
+    mempool_free(addr);
+    addr = mempool_alloc_fixed(size, (u8 *) addr, colourTag, FALSE);
+    mempool_free_timer(2);
+}
+
 u32 biggestSize = 0;
 
 /**
@@ -228,7 +239,7 @@ void *mempool_alloc_pool_tag(MemoryPoolSlot *slots, s32 size, s32 colourTag) {
  * Rearranges the memory slots to place one at that address if possible.
  * Official Name: mmAllocAtAddr
  */
-void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag) {
+void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag, s32 markFixed) {
     s32 i;
     MemoryPoolSlot *curSlot;
     MemoryPoolSlot *slots;
@@ -253,14 +264,22 @@ void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag) {
                         mempool_slot_assign(POOL_MAIN, i, size, 1, 0, colorTag);
                         interrupts_enable(intFlags);
                         debug_ram(size, colorTag);
-                        curSlot->flags = 2;
+                        if (markFixed) {
+                            curSlot->flags = SLOT_FIXED;
+                        } else {
+                            curSlot->flags = SLOT_USED;
+                        }
                         return curSlot->data;
                     } else {
                         i = mempool_slot_assign(POOL_MAIN, i, (u32) address - (u32) curSlot->data, 0, 1, colorTag);
                         mempool_slot_assign(POOL_MAIN, i, size, 1, 0, colorTag);
                         interrupts_enable(intFlags);
                         debug_ram(size, colorTag);
-                        (slots + i)->flags = 2;
+                        if (markFixed) {
+                            (slots + i)->flags = SLOT_FIXED;
+                        } else {
+                            (slots + i)->flags = SLOT_USED;
+                        }
                         return (slots + i)->data;
                     }
                 }

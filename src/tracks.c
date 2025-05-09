@@ -2835,10 +2835,7 @@ void func_8002C0C4(s32 modelId) {
         j = (s32) align16(((u8 *) (gCurrentLevelModel->segments[k].unk32 * 2)) + j);
     }
     temp_s4 = j - (s32) gCurrentLevelModel;
-    mempool_free_timer(0);
-    mempool_free(gTrackModelHeap);
-    mempool_alloc_fixed(temp_s4, (u8 *) gTrackModelHeap, PP_RAM_LEVELMDL);
-    mempool_free_timer(2);
+    mempool_realloc(gTrackModelHeap, temp_s4, PP_RAM_LEVELMDL);
     minimap_init(gCurrentLevelModel);
 
     for (i = 0; i < gCurrentLevelModel->numberOfSegments; i++) {

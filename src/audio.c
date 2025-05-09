@@ -155,10 +155,7 @@ void audio_init(OSSched *sc) {
     heapSize = gALHeap.cur - gALHeap.base;
     heapAddr = gAudioHeapStack;
     gALHeap.len = heapSize;
-    mempool_free_timer(0);
-    mempool_free(gAudioHeapStack);
-    gAudioHeapStack = mempool_alloc_fixed(heapSize, heapAddr, PP_RAM_AUDIOHEAP);
-    mempool_free_timer(2);
+    mempool_realloc(gAudioHeapStack, heapSize, PP_RAM_AUDIOHEAP);
 }
 
 /**
