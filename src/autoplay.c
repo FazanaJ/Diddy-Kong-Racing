@@ -1,10 +1,12 @@
-#ifdef DEBUG
-
+#include "math_util.h"
+#include "macros.h"
 #include "autoplay.h"
 #include "objects.h"
 #include "thread3_main.h"
 #include "printf.h"
 #include "thread30_bgload.h"
+
+#ifdef DEBUG
 
 extern s32 gCurrentMenuId;
 extern s8 gDoneTalkingToNPC[];

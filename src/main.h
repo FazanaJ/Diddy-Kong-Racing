@@ -328,6 +328,7 @@ typedef struct DebugPage {
 extern DebugData *gDebug;
 extern char *sPuppyprintMemColours[];
 extern u8 *main_BSS_START[];
+extern f32 gFPS;
 
 void debug_init();
 void debug_log(s32 logLevel, char *str, ...);

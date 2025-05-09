@@ -260,5 +260,3 @@ s8 input_clamp_stick_mag(s8 stickMag) {
 void drm_disable_input(void) {
     gButtonMask = 0;
 }
-
-#include "autoplay.c"
