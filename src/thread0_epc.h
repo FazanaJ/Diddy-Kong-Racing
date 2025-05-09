@@ -4,6 +4,7 @@
 #include "types.h"
 #include <ultra64.h>
 #include "macros.h"
+#include "main.h"
 
 /* Size: 0x1B0 bytes */
 typedef struct epcInfo {
@@ -103,6 +104,8 @@ enum CrashPages {
     CRASH_PAGE_COUNT,
 };
 
+extern u8 gCrashMemPrintOrder[PP_RAM_TOTAL];
+
 void enable_interupts_on_main(void);
 void stop_all_threads_except_main(void);
 void update_object_stack_trace(s32 index, s32 value);
@@ -114,5 +117,7 @@ void dump_memory_to_cpak(s32 epc, s32 size, u32 colourTag);
 void thread0_Main(UNUSED void *unused);
 void render_epc_lock_up_display(void);
 void crash_nomemory(s32 size, s32 colourTag);
+f32 memsize_float(s32 size, s32 *tag);
+void crash_reorder_ram(DebugData *d);
 
 #endif

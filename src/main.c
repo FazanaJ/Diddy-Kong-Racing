@@ -8,6 +8,7 @@
 #include "PR/os_internal_reg.h"
 #include "PRinternal/piint.h"
 #include "usb/usb.h"
+#include "thread0_epc.h"
 
 /************ .bss ************/
 
@@ -556,8 +557,53 @@ void debug_render_minimal(DebugData *d, Gfx **dList, s32 updateRate) {
     }
 }
 
+extern const char *sMemLabels[];
 
 void debug_render_memory(DebugData *d, Gfx **dList, s32 updateRate) {
+    char textBytes[32];
+    u32 totalMem;
+    s32 memTag;
+    s32 y;
+    s32 i;
+
+    if (gUseExpansionMemory) {
+        totalMem = 0x800000;
+    } else {
+        totalMem = 0x400000;
+    }
+
+    crash_reorder_ram(d);
+
+    debug_fillrect(dList, SCREEN_WIDTH - 136, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0x0000009F);
+    set_text_font(ASSET_FONTS_SMALLFONT);
+    set_text_colour(255, 255, 255, 255, 255);
+    set_text_background_colour(0, 0, 0, 0);
+    set_kerning(FALSE);
+
+    sprintf(textBytes, "Total: %2.3f%s", memsize_float(totalMem, &memTag), sMemLabels[memTag]);
+    draw_text(dList, SCREEN_WIDTH - 68, 6, textBytes, ALIGN_TOP_CENTER);
+    sprintf(textBytes, "Used: %2.3f%s", memsize_float(gDebug->ramTotal, &memTag), sMemLabels[memTag]);
+    draw_text(dList, SCREEN_WIDTH - 68, 16, textBytes, ALIGN_TOP_CENTER);
+    sprintf(textBytes, "Free: %2.3f%s", memsize_float(totalMem - gDebug->ramTotal, &memTag), sMemLabels[memTag]);
+    draw_text(dList, SCREEN_WIDTH - 68, 26, textBytes, ALIGN_TOP_CENTER);
+    sprintf(textBytes, "Slots: %d/%d", gMemoryPools[POOL_MAIN].curNumSlots, gMemoryPools[POOL_MAIN].maxNumSlots);
+    draw_text(dList, SCREEN_WIDTH - 68, 36, textBytes, ALIGN_TOP_CENTER);
+
+    y = 50 - d->pageScroll;
+    gDPSetScissor((*dList)++, G_SC_NON_INTERLACE, SCREEN_WIDTH - 136, 50, SCREEN_WIDTH, SCREEN_HEIGHT);
+    for (i = 0; i < PP_RAM_TOTAL; i++) {
+        if (y > SCREEN_HEIGHT) {
+            break;
+        }
+        if (y > 50 - 10) {
+            sprintf(textBytes, "%s", sPuppyprintMemColours[gCrashMemPrintOrder[i]]);
+            draw_text(dList, SCREEN_WIDTH - 136 + 4, y, textBytes, ALIGN_TOP_LEFT);
+            sprintf(textBytes, "%2.3f%s", memsize_float(gDebug->ramSegments[gCrashMemPrintOrder[i]], &memTag), sMemLabels[memTag]);
+            draw_text(dList, SCREEN_WIDTH - 56, y, textBytes, ALIGN_TOP_LEFT);
+        }
+        y += 10;
+    }
+    gDPSetScissor((*dList)++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
 void debug_page_minimal(DebugData *d) {
@@ -566,12 +612,11 @@ void debug_page_minimal(DebugData *d) {
 
 
 void debug_page_memory(DebugData *d) {
-    
 }
 
 DebugPage gDebugPages[] = {
-    "Minimal", PAGE_MINIMAL, debug_page_minimal, debug_render_minimal,
-    "Memory", PAGE_MEMORY, debug_page_memory, debug_render_memory,
+    {"Minimal", PAGE_MINIMAL, debug_page_minimal, debug_render_minimal},
+    {"Memory", PAGE_MEMORY, debug_page_memory, debug_render_memory},
 };
 
 void debug_render_page_menu(Gfx **dList, s32 updateRate) {
@@ -594,7 +639,7 @@ void debug_render_page_menu(Gfx **dList, s32 updateRate) {
     y = 72;
     
     for (i = 0; i < ARRAY_COUNT(gDebugPages); i++) {
-        if (i == d->pageCurrent) {
+        if (i == d->pageSelected) {
             textPtr = " <";
         } else {
             textPtr = " ";
@@ -764,6 +809,7 @@ void debug_update(s32 updateRate) {
         d->enabled ^= 1;
     } else if (inputPressed & L_TRIG) {
         d->pageMenuOpen ^= 1;
+        d->pageCurrent = d->pageSelected;
     }
     if (d->pageMenuOpen == FALSE) {
         switch (d->pageCurrent) {
@@ -772,11 +818,36 @@ void debug_update(s32 updateRate) {
                     d->pageViewMode ^= 1;
                 }
                 break;
+            case PAGE_MEMORY:
+                if (inputHeld & U_JPAD) {
+                    d->pageScroll -= 2 * updateRate;
+                    if (d->pageScroll < 0) {
+                        d->pageScroll = 0;
+                    }
+                } else if (inputHeld & D_JPAD) {
+                    d->pageScroll += 2 * updateRate;
+                }
+                if (d->pageScroll > (PP_RAM_TOTAL * 10) - (SCREEN_HEIGHT - 50) + 4) {
+                    d->pageScroll = (PP_RAM_TOTAL * 10) - (SCREEN_HEIGHT - 50) + 4;
+                }
+                break;
         }
     } else {
+        if (inputPressed & U_JPAD) {
+            d->pageSelected--;
+            if (d->pageSelected == 255) {
+                d->pageSelected = ARRAY_COUNT(gDebugPages) - 1;
+            }
+        } else if (inputPressed & D_JPAD) {
+            d->pageSelected++;
+            if (d->pageSelected >= ARRAY_COUNT(gDebugPages)) {
+                d->pageSelected = 0;
+            }
+        }
         if (d->pageCurrent != d->pagePrev) {
             d->pagePrev = d->pageCurrent;
             d->pageViewMode = 0;
+            d->pageScroll = 0;
             debug_pause(d);
         }
     }

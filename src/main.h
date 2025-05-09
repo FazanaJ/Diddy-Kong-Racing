@@ -105,10 +105,10 @@ void get_platform(void);
 
 typedef enum DebugPages {
     PAGE_MINIMAL,
+    PAGE_MEMORY,
     PAGE_OVERVIEW,
     PAGE_GENERAL,
     PAGE_BREAKDOWN,
-    PAGE_MEMORY,
     PAGE_AUDIO,
     PAGE_LOG,
     PAGE_VISCVG,
@@ -291,7 +291,6 @@ typedef struct DebugData {
     u8 pageCurrent;
     u8 pagePrev;
     u8 pageSelected;
-    u8 pageScroll;
     u8 pageViewMode;
     u8 pageMenuOpen;
     u8 pauseGame;
@@ -304,6 +303,7 @@ typedef struct DebugData {
     u8 threadIter[THREAD_CONTEXT_COUNT];
     u8 threadReset[THREAD_CONTEXT_COUNT];
 
+    s16 pageScroll;
     u16 logLen;
     u16 logStart;
     char logText[NUM_LOG_CHARACTERS];
@@ -326,6 +326,7 @@ typedef struct DebugPage {
 } DebugPage;
 
 extern DebugData *gDebug;
+extern char *sPuppyprintMemColours[];
 
 void debug_init();
 void debug_log(s32 logLevel, char *str, ...);
