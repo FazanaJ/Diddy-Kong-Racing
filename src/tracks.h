@@ -234,6 +234,7 @@ void func_80026C14(s16 arg0, s16 arg1, s32 arg2);
 void func_80026E54(s16 arg0, s8 *arg1, f32 arg2, f32 arg3);
 void func_80026070(LevelModelSegmentBoundingBox *arg0, f32 arg1, f32 arg2, f32 arg3);
 void func_80026430(LevelModelSegment *segment, f32 arg1, f32 arg2, f32 arg3);
+void aa_manage(s32 mode);
 
 void free_track(void);
 void func_8002581C(u8 *segmentIds, s32 numberOfSegments, s32 viewportIndex);

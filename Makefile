@@ -511,24 +511,6 @@ $(TARGET).z64: $(TARGET).bin | $(ALL_ASSETS_BUILT)
 	$(call print,CopyRom:,$<,$@)
 	$(V)$(PYTHON) $(TOOLS_DIR)/python/CopyRom.py $< $@
 
-$(BUILD_DIR)/map_symbols.bin: $(BUILD_DIR)/$(BASENAME).map
-	$(call print,Generating Map Symbols:,$<,$@)
-	$(V)$(PYTHON) $(TOOLS_DIR)/python/map_gen.py $< $@
-
-$(BUILD_DIR)/map_symbols.bin.o: $(BUILD_DIR)/map_symbols.bin
-	$(call print,Linking Map Symbols:,$<,$@)
-	$(V)$(LD) -r -b binary -o $@ $<
-
-O_FILES += $(BUILD_DIR)/map_symbols.bin.o
-
-$(BUILD_DIR)/map_symbols.bin: $(BUILD_DIR)/$(BASENAME).map
-	$(call print,Generating Map Symbols:,$<,$@)
-	$(V)$(PYTHON) $(TOOLS_DIR)/python/map_gen.py $< $@
-
-$(BUILD_DIR)/map_symbols.bin.o: $(BUILD_DIR)/map_symbols.bin
-	$(call print,Linking Map Symbols:,$<,$@)
-	$(V)$(LD) -r -b binary -o $@ $<
-
 ### Settings
 .PHONY: all clean cleanextract default assets
 SHELL = /bin/bash -e -o pipefail

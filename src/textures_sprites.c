@@ -249,7 +249,6 @@ TextureHeader *gCurrentTextureHeader;
 s16 gUsingTexture;
 s16 gForceFlags;
 s16 gUsePrimColour;
-u8 gUseAntiAliasing;
 
 /******************************/
 
