@@ -460,7 +460,7 @@ void racerfx_update(s32 updateRate) {
         return;
     }
 
-    gBoostVertFlip = 1 - gBoostVertFlip;
+    gBoostVertFlip ^= 1;
     D_8011AFFC = 0;
     D_8011B004 = 0;
     asset20 = (Asset20 *) get_misc_asset(ASSET_MISC_20);

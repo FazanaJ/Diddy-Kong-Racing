@@ -521,7 +521,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, Triangle **tris, s32
     viewport_reset(&gSceneCurrDisplayList);
     gDPPipeSync(gSceneCurrDisplayList++);
     gDkrDisableBillboard(gSceneCurrDisplayList++);
-    gShadowHeapFlip = 1 - gShadowHeapFlip;
+    gShadowHeapFlip ^= 1;
     *dList = gSceneCurrDisplayList;
     *mtx = gSceneCurrMatrix;
     *vtx = gSceneCurrVertexList;

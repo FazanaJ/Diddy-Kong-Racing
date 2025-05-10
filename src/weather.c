@@ -454,7 +454,7 @@ void weather_update(Gfx **currDisplayList, MatrixS **currHudMat, Vertex **currHu
         }
     } else {
         if (viewport == 0) {
-            gSnowVertexFlip = 1 - gSnowVertexFlip;
+            gSnowVertexFlip ^= 1;
         }
         if (gWeather[viewport].shiftTime > 0) {
             if (updateRate < gWeather[viewport].shiftTime) {
