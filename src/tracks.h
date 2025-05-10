@@ -27,7 +27,7 @@ typedef struct SortBuffer {
 } SortBuffer;
 
 extern s16 gSortBufCount;
-extern SortBuffer gSortBuffer[200];
+extern SortBuffer *gSortBuffer;
 void sortbuffer_find(SortBuffer *b);
 
 #define LOCAL_OFFSET_TO_RAM_ADDRESS(type, ptr) \
