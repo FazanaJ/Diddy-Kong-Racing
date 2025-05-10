@@ -22,7 +22,7 @@ OSMesgQueue gDmaMesgQueueV2;
 #else
 #define dmacopy_internal dmacopy
 #endif
-u32 *gAssetsLookupTable;
+u32 gAssetTableCount;
 
 /*******************************/
 
@@ -37,6 +37,8 @@ extern u8 __ASSETS_LUT_START[], __ASSETS_LUT_END[];
  */
 void init_PI_mesg_queue(void) {
     u32 assetTableSize;
+    u32 *table;
+
     osCreateMesgQueue(&gPIMesgQueue, gPIMesgBuf, ARRAY_COUNT(gPIMesgBuf));
     osCreateMesgQueue(&gDmaMesgQueue, &gDmaMesg, 1);
     osCreatePiManager((OSPri) 150, &gPIMesgQueue, gPIMesgBuf, ARRAY_COUNT(gPIMesgBuf));
@@ -47,8 +49,17 @@ void init_PI_mesg_queue(void) {
 #endif
 
     assetTableSize = __ASSETS_LUT_END - __ASSETS_LUT_START;
-    gAssetsLookupTable = (u32 *) mempool_alloc_safe(assetTableSize, PP_RAM_ASSETTABLE);
-    dmacopy_internal((u32) __ASSETS_LUT_START, (u32) gAssetsLookupTable, (s32) assetTableSize);
+    table = (u32 *) mempool_alloc_safe(assetTableSize, PP_RAM_ASSETTABLE);
+    dmacopy_internal((u32) __ASSETS_LUT_START, (u32) table, (s32) assetTableSize);
+    gAssetTableCount = table[0];
+    mempool_free(table);
+}
+
+void assettable_seek(s32 assetID, u32 *table0, s32 *table1) {
+    s32 table[2];
+    dmacopy_internal((u32) __ASSETS_LUT_START + (assetID * sizeof(s32)), (u32) &table, (s32) 2 * sizeof(s32));
+    *table0 = table[0];
+    *table1 = table[1] - table[0];
 }
 
 /**
@@ -66,13 +77,11 @@ u32 *load_asset_section_from_rom(u32 assetIndex) {
     osRecvMesg(&gDmaMesgQueueV2, &msg, OS_MESG_BLOCK);
 #endif
 
-    if (gAssetsLookupTable[0] < assetIndex) {
+    if (gAssetTableCount < assetIndex) {
         return 0;
     }
     assetIndex++;
-    index = assetIndex + gAssetsLookupTable;
-    start = *index;
-    size = *(index + 1) - start;
+    assettable_seek(assetIndex, &start, &size);
     out = (u32 *) mempool_alloc_safe(size, COLOUR_TAG_GREY);
     if (out == 0) {
         return 0;
@@ -94,20 +103,21 @@ u32 *load_asset_section_from_rom(u32 assetIndex) {
  */
 s32 load_asset_to_address(u32 assetIndex, u32 address, s32 assetOffset, s32 size) {
     u32 *index;
-    s32 start;
+    u32 start;
+    s32 pad;
 
 #if VERSION >= VERSION_79
     OSMesg msg = NULL;
     osRecvMesg(&gDmaMesgQueueV2, &msg, OS_MESG_BLOCK);
 #endif
 
-    if (size == 0 || gAssetsLookupTable[0] < assetIndex) {
+    if (size == 0 || gAssetTableCount < assetIndex) {
         return 0;
     }
 
     assetIndex++;
-    index = assetIndex + gAssetsLookupTable;
-    start = *index + assetOffset;
+    assettable_seek(assetIndex, &start, &pad);
+    start += assetOffset;
 
     dmacopy_internal((u32) (start + __ASSETS_LUT_END), address, size);
 
@@ -125,19 +135,20 @@ s32 load_asset_to_address(u32 assetIndex, u32 address, s32 assetOffset, s32 size
 u8 *get_rom_offset_of_asset(u32 assetIndex, u32 assetOffset) {
     u32 *index;
     u32 start;
+    s32 pad;
 
 #if VERSION >= VERSION_79
     OSMesg msg = NULL;
     osRecvMesg(&gDmaMesgQueueV2, &msg, OS_MESG_BLOCK);
 #endif
 
-    if (gAssetsLookupTable[0] < assetIndex) {
+    if (gAssetTableCount < assetIndex) {
         return NULL;
     }
 
     assetIndex++;
-    index = assetIndex + gAssetsLookupTable;
-    start = *index + assetOffset;
+    assettable_seek(assetIndex, &start, &pad);
+    start += assetOffset;
 
 #if VERSION >= VERSION_79
     osSendMesg(&gDmaMesgQueueV2, (OSMesg) 1, OS_MESG_NOBLOCK);
@@ -152,24 +163,26 @@ u8 *get_rom_offset_of_asset(u32 assetIndex, u32 assetOffset) {
  */
 s32 get_size_of_asset_section(u32 assetIndex) {
     u32 *index;
+    u32 pad;
+    s32 size;
 
 #if VERSION >= VERSION_79
     OSMesg msg = NULL;
     osRecvMesg(&gDmaMesgQueueV2, &msg, OS_MESG_BLOCK);
 #endif
 
-    if (gAssetsLookupTable[0] < assetIndex) {
+    if (gAssetTableCount < assetIndex) {
         return 0;
     }
 
     assetIndex++;
-    index = assetIndex + gAssetsLookupTable;
+    assettable_seek(assetIndex, &pad, &size);
 
 #if VERSION >= VERSION_79
     osSendMesg(&gDmaMesgQueueV2, (OSMesg) 1, OS_MESG_NOBLOCK);
 #endif
 
-    return *(index + 1) - *index;
+    return size;
 }
 
 #define MAX_TRANSFER_SIZE 0x5000

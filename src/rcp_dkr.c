@@ -26,36 +26,30 @@ BackgroundFunction gBGDrawFunc = { NULL };
 s32 gGfxBufCounter = 0;
 s32 gGfxTaskIsRunning = FALSE;
 
-Gfx dRaceFinishBackgroundSettings[] = {
-    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
+
+Gfx dScaledRectangleBaseModes[] = {
     gsDPPipeSync(),
+    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
     gsDPSetTextureLOD(G_TL_TILE),
     gsDPSetTextureLUT(G_TT_NONE),
     gsDPSetAlphaCompare(G_AC_NONE),
+    gsSPEndDisplayList(),
+};
+
+Gfx dRaceFinishBackgroundSettings[] = {
+    gsSPDisplayList(dScaledRectangleBaseModes),
     gsDPSetCombineMode(G_CC_DECALRGBA, G_CC_DECALRGBA),
     gsDPSetOtherMode(DKR_OMH_1CYC_POINT_NOPERSP, DKR_OML_COMMON | G_RM_OPA_SURF | G_RM_OPA_SURF2),
     gsSPEndDisplayList(),
 };
 
 Gfx dTextureRectangleModes[] = {
-    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
-    gsDPPipeSync(),
-    gsDPSetTextureLOD(G_TL_TILE),
-    gsDPSetTextureLUT(G_TT_NONE),
-    gsDPSetAlphaCompare(G_AC_NONE),
+    gsSPDisplayList(dScaledRectangleBaseModes),
     gsDPSetCombineMode(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM),
     gsDPSetOtherMode(DKR_OMH_1CYC_POINT_NOPERSP, DKR_OML_COMMON | G_RM_XLU_SURF | G_RM_XLU_SURF2),
     gsSPEndDisplayList(),
 };
 
-Gfx dScaledRectangleBaseModes[] = {
-    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
-    gsDPPipeSync(),
-    gsDPSetTextureLOD(G_TL_TILE),
-    gsDPSetTextureLUT(G_TT_NONE),
-    gsDPSetAlphaCompare(G_AC_NONE),
-    gsSPEndDisplayList(),
-};
 
 Gfx dTextureRectangleScaledOpa[][2] = {
     // Bilinear Filtered texture
