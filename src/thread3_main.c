@@ -1383,11 +1383,14 @@ void alloc_displaylist_heap(s32 numberOfPlayers) {
     if (numberOfPlayers != gPrevPlayerCount) {
         gPrevPlayerCount = numberOfPlayers;
         num = numberOfPlayers;
+        mempool_free_timer(0);
+        mempool_free(gDisplayLists[0]);
+        mempool_free(gDisplayLists[1]);
         totalSize = ((gNumF3dCmdsPerPlayer[num] * sizeof(Gwords))) + ((gNumHudMatPerPlayer[num] * sizeof(Matrix))) +
                     ((gNumHudVertsPerPlayer[num] * sizeof(Vertex))) + ((gNumHudTrisPerPlayer[num] * sizeof(Triangle)));
-        mempool_realloc(gDisplayLists[0], totalSize, PP_RAM_CMDBUF);
-        mempool_realloc(gDisplayLists[1], totalSize, PP_RAM_CMDBUF);
-        /*if ((gDisplayLists[0] == NULL) || gDisplayLists[1] == NULL) {
+        gDisplayLists[0] = (Gfx *) mempool_alloc_fixed(totalSize, (u8 *) gDisplayLists[0], PP_RAM_CMDBUF, FALSE);
+        gDisplayLists[1] = (Gfx *) mempool_alloc_fixed(totalSize, (u8 *) gDisplayLists[1], PP_RAM_CMDBUF, FALSE);
+        if ((gDisplayLists[0] == NULL) || gDisplayLists[1] == NULL) {
             if (gDisplayLists[0] != NULL) {
                 mempool_free(gDisplayLists[0]);
                 gDisplayLists[0] = NULL;
@@ -1397,13 +1400,14 @@ void alloc_displaylist_heap(s32 numberOfPlayers) {
                 gDisplayLists[1] = NULL;
             }
             default_alloc_displaylist_heap();
-        }*/
+        }
         gMatrixHeap[0] = (MatrixS *) ((u8 *) gDisplayLists[0] + ((gNumF3dCmdsPerPlayer[num] * sizeof(Gwords))));
         gTriangleHeap[0] = (Triangle *) ((u8 *) gMatrixHeap[0] + ((gNumHudMatPerPlayer[num] * sizeof(Matrix))));
         gVertexHeap[0] = (Vertex *) ((u8 *) gTriangleHeap[0] + ((gNumHudTrisPerPlayer[num] * sizeof(Triangle))));
         gMatrixHeap[1] = (MatrixS *) ((u8 *) gDisplayLists[1] + ((gNumF3dCmdsPerPlayer[num] * sizeof(Gwords))));
         gTriangleHeap[1] = (Triangle *) ((u8 *) gMatrixHeap[1] + ((gNumHudMatPerPlayer[num] * sizeof(Matrix))));
         gVertexHeap[1] = (Vertex *) ((u8 *) gTriangleHeap[1] + ((gNumHudTrisPerPlayer[num] * sizeof(Triangle))));
+        mempool_free_timer(2);
     }
 
     gDPFullSync(gCurrDisplayList++);
