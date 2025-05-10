@@ -229,6 +229,9 @@ s32 sTotalTime = 0;
 
 void calculate_and_update_fps(void);
 
+extern u8 gSortMats;
+extern s32 matLoads;
+
 /**
  * The main gameplay loop.
  * Contains all game logic, audio and graphics processing.
@@ -241,6 +244,8 @@ void main_game_loop(void) {
     debug_thread(THREAD3_START, 0);
 
     set_render_printf_background_colour(0, 0, 0, 255);
+    //render_printf("\n\n\n\n\nMatloads: %d\n", matLoads);
+    matLoads = 0;
     //render_printf("Load Time: %2.3f\n", (f32) loadTime / 1000000.0f);
 
     if (gVideoSkipNextRate) {
@@ -295,6 +300,10 @@ void main_game_loop(void) {
 
     if (input_pressed(0) & L_TRIG) {
         //*(volatile int *) 0 = 0;
+    }
+
+    if (input_pressed(0) & U_JPAD) {
+        //gSortMats ^= 1;
     }
 
     gCurrDisplayList = gDisplayLists[gSPTaskNum];

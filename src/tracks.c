@@ -168,7 +168,71 @@ s16 D_8011D4B8;
 s16 D_8011D4BA;
 s16 D_8011D4BC;
 
+u8 gSortMats;
+s16 gSortBufCount;
+SortBuffer gSortBuffer[200];
+
+
 /******************************/
+
+void sortbuffer_find(SortBuffer *b) {
+    s32 i;
+    SortBuffer *slot;
+    s32 nextIdx;
+
+    // This is the first entry, we don't need to sort anything.
+    if (gSortBufCount == 1) {
+        b->nextIndex = -1;
+        return;
+    }
+
+    for (i = 0; i != -1; i = slot->nextIndex) {
+        slot = &gSortBuffer[i];
+
+        if ((s32) slot->material == (s32) b->material) {
+            nextIdx = slot->nextIndex;
+            slot->nextIndex = b->index;
+            b->nextIndex = nextIdx;
+            return;
+        }
+    }
+
+    slot->nextIndex = b->index;
+    b->nextIndex = -1;
+}
+
+void sortbuffer_pop(Gfx **dList) {
+    s32 i;
+    SortBuffer *slot;
+    s32 nextIdx;
+    u32 prevPrim = 0;
+
+    // Just return if there's nothing.
+    if (gSortBufCount == 0) {
+        return;
+    }
+
+    for (i = 0; i != -1; i = slot->nextIndex) {
+        slot = &gSortBuffer[i];
+        if (slot->primColour != prevPrim) {
+            gDPSetPrimColorRGBA((*dList)++, slot->primColour);
+            prevPrim = slot->primColour;
+        }
+        if (slot->material) {
+            material_set(dList, slot->material, slot->flags, slot->texOffset);
+        }
+        if (slot->material) {
+            
+        }
+        gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(slot->vtx), slot->vtxCount, 0);
+        gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(slot->tri), slot->triCount, slot->material != NULL);
+    }
+
+    gSortBuffer[0].nextIndex = -1;
+    gSortBuffer[0].index = 0;
+
+    gSortBufCount = 0;
+}
 
 /**
  * Sets the number of expected viewports in the scene.
@@ -1755,6 +1819,7 @@ void render_level_geometry_and_objects(void) {
             objectsVisible[segmentIds[i] + 1] = TRUE;
         }
     }
+    sortbuffer_pop(&gSceneCurrDisplayList);
     aa_manage(TRACKAA_OBJECT);
 
     if (gCurrentLevelModel->numberOfSegments < 2) {
@@ -1821,6 +1886,7 @@ void render_level_geometry_and_objects(void) {
             render_level_segment(segmentIds[i], TRUE); // Render transparent segments
         }
     }
+    sortbuffer_pop(&gSceneCurrDisplayList);
     aa_manage(AA_OFF);
 
     if (gWaveBlockCount != 0) {
@@ -1869,9 +1935,12 @@ void render_level_geometry_and_objects(void) {
         }
     }
 
+    sortbuffer_pop(&gSceneCurrDisplayList);
+
     if (D_800DC924 != NULL && func_80027568()) {
         func_8002581C(segmentIds, numberOfSegments, get_current_viewport());
     }
+    
 }
 
 /**
@@ -1968,13 +2037,30 @@ void render_level_segment(s32 segmentId, s32 nonOpaque) {
             gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(triangles), numberTriangles, TRIN_ENABLE_TEXTURE);
             gDPSetPrimColor(gSceneCurrDisplayList++, 0, 0, 255, 255, 255, 255);
         } else {
-            material_set(&gSceneCurrDisplayList, texture, batchFlags, texOffset);
-            batchFlags = TRUE;
-            if (texture == NULL) {
-                batchFlags = FALSE;
+            if (gSortMats) {
+                    SortBuffer *buf = &gSortBuffer[gSortBufCount];
+                    buf->flags = batchFlags;
+                    buf->tri = triangles;
+                    buf->vtx = vertices;
+                    buf->triCount = numberTriangles;
+                    buf->vtxCount = numberVertices;
+                    buf->material = texture;
+                    buf->texOffset = texOffset;
+                    buf->mtx = NULL;
+                    buf->primColour = COLOUR_RGBA32(255, 255, 255, 255);
+                    buf->index = gSortBufCount;
+                    gSortBufCount++;
+                    buf->matType = 0;
+                    sortbuffer_find(buf);
+            } else {
+                material_set(&gSceneCurrDisplayList, texture, batchFlags, texOffset);
+                batchFlags = TRUE;
+                if (texture == NULL) {
+                    batchFlags = FALSE;
+                }
+                gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vertices), numberVertices, 0);
+                gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(triangles), numberTriangles, batchFlags);
             }
-            gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vertices), numberVertices, 0);
-            gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(triangles), numberTriangles, batchFlags);
         }
     }
 }
@@ -3299,7 +3385,6 @@ void shadow_render(Object *obj, ShadowData *shadow) {
                 gDPSetPrimColor(gSceneCurrDisplayList++, 0, 0, 255, 255, 255, alpha);
             }
             while (i < shadow->meshEnd) {
-                material_set_no_tex_offset(&gSceneCurrDisplayList, gCurrShadowHeapData[i].texture, flags);
                 // I hope we can clean this part up.
                 triCount = gCurrShadowHeapData[i].triCount; // Fakematch
                 vtxCount = gCurrShadowHeapData[i].vtxCount;
@@ -3307,8 +3392,26 @@ void shadow_render(Object *obj, ShadowData *shadow) {
                 numVerts = gCurrShadowHeapData[i + 1].vtxCount - vtxCount;
                 tri = &gCurrShadowTris[triCount];
                 vtx = &gCurrShadowVerts[vtxCount];
-                gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
-                gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
+                if (gSortMats) {
+                    SortBuffer *buf = &gSortBuffer[gSortBufCount];
+                    buf->flags = flags;
+                    buf->tri = tri;
+                    buf->vtx = vtx;
+                    buf->triCount = numTris;
+                    buf->vtxCount = numVerts;
+                    buf->material = gCurrShadowHeapData[i].texture;
+                    buf->texOffset = 0;
+                    buf->mtx = NULL;
+                    buf->primColour = COLOUR_RGBA32(255, 255, 255, alpha);
+                    buf->index = gSortBufCount;
+                    buf->matType = 0;
+                    gSortBufCount++;
+                    sortbuffer_find(buf);
+                } else {
+                    material_set_no_tex_offset(&gSceneCurrDisplayList, gCurrShadowHeapData[i].texture, flags);
+                    gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
+                    gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
+                }
                 i++;
             }
 
@@ -3351,13 +3454,30 @@ void watereffect_render(Object *obj, WaterEffect *effect) {
             gCurrShadowTris = gShadowHeapTris[gWaterEffectIndex];
             gCurrShadowVerts = gShadowHeapVerts[gWaterEffectIndex];
             while (i < effect->meshEnd) {
-                material_set_no_tex_offset(&gSceneCurrDisplayList, gCurrShadowHeapData[i].texture, flags);
                 numTris = gCurrShadowHeapData[i + 1].triCount - gCurrShadowHeapData[i].triCount;
                 numVerts = gCurrShadowHeapData[i + 1].vtxCount - gCurrShadowHeapData[i].vtxCount;
                 tri = &gCurrShadowTris[gCurrShadowHeapData[i].triCount];
                 vtx = &gCurrShadowVerts[gCurrShadowHeapData[i].vtxCount];
-                gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
-                gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
+                if (gSortMats) {
+                    SortBuffer *buf = &gSortBuffer[gSortBufCount];
+                    buf->flags = flags;
+                    buf->tri = tri;
+                    buf->vtx = vtx;
+                    buf->triCount = numTris;
+                    buf->vtxCount = numVerts;
+                    buf->material = gCurrShadowHeapData[i].texture;
+                    buf->texOffset = 0;
+                    buf->mtx = NULL;
+                    buf->primColour = COLOUR_RGBA32(255, 255, 255, 255);
+                    buf->index = gSortBufCount;
+                    buf->matType = 0;
+                    gSortBufCount++;
+                    sortbuffer_find(buf);
+                } else {
+                    material_set_no_tex_offset(&gSceneCurrDisplayList, gCurrShadowHeapData[i].texture, flags);
+                    gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
+                    gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
+                }
                 i++;
             }
         }

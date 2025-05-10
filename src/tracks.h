@@ -7,6 +7,29 @@
 #include "racer.h"
 #include "fade_transition.h"
 
+
+typedef struct SortBuffer {
+    Triangle *tri;
+    Vertex *vtx;
+    TextureHeader *material;
+    MatrixS *mtx;
+    u32 flags;
+    s32 texOffset;
+    s16 triCount;
+    s16 vtxCount;
+    u32 primColour;
+    u32 envColour;
+
+    s16 index;
+    s16 nextIndex;
+
+    u8 matType;
+} SortBuffer;
+
+extern s16 gSortBufCount;
+extern SortBuffer gSortBuffer[200];
+void sortbuffer_find(SortBuffer *b);
+
 #define LOCAL_OFFSET_TO_RAM_ADDRESS(type, ptr) \
     ptr = (type)((s32)((u8*)ptr) + (s32)((u8*)mdl))
 

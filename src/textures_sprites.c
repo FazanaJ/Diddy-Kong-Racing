@@ -505,6 +505,8 @@ void material_set_no_tex_offset(Gfx **dList, TextureHeader *texhead, u32 flags) 
     material_set(dList, texhead, flags, 0);
 }
 
+s32 matLoads;
+
 /**
  * Load a texture from memory into texture memory.
  * Also set render mode, combine mode and othermodes based on flags.
@@ -532,6 +534,7 @@ void material_set(Gfx **dList, TextureHeader *texhead, s32 flags, s32 texOffset)
         flags |= texhead->flags;
         if (texhead != gCurrentTextureHeader) {
             gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(texhead->cmd), texhead->numberOfCommands);
+            matLoads++;
             loadTex = TRUE;
             gCurrentTextureHeader = texhead;
             doPipeSync = FALSE;
