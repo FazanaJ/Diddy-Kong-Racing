@@ -301,6 +301,9 @@ void bgdraw_render(Gfx **dList, MatrixS **mtx, s32 drawBG) {
     h = GET_VIDEO_HEIGHT(widthAndHeight) - 1;
     wP = w + 1;
 
+    DEBUG_VAR(gDebug->misc.drawBG, drawBG);
+    DEBUG_VAR(gDebug->misc.invertBG, gInvertBG);
+
     gDPPipeSync((*dList)++);
     //!@bug: the scissor does not need the off by one here, despite being intended for fill mode.
     gDPSetScissor((*dList)++, 0, 0, 0, wP, h + 1);
@@ -529,6 +532,7 @@ void texrect_draw(Gfx **dList, DrawTexture *element, s32 xPos, s32 yPos, u8 red,
                 uly = 0;
             }
             gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(tex->cmd), tex->numberOfCommands);
+            DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
             gSPTextureRectangle((*dList)++, ulx, uly, lrx, lry, G_TX_RENDERTILE, s, t, 1024, 1024);
         }
     }
@@ -629,6 +633,7 @@ void texrect_draw_scaled(Gfx **dList, DrawTexture *element, f32 xPos, f32 yPos, 
                 }
 
                 gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(tex->cmd), tex->numberOfCommands);
+                DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
                 gSPTextureRectangle((*dList)++, ulx, uly, lrx, lry, G_TX_RENDERTILE, s, t, dsdx, dtdy);
             }
         }

@@ -427,6 +427,7 @@ s32 debug_text_character(Gfx **dList, s32 asciiVal) {
         // Character is a symbol or number and not a letter
         if (gDebugFontTexture != 0) {
             if (gDebugTextOn) {
+                DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
                 gDPLoadTextureBlock((*dList)++, OS_PHYSICAL_TO_K0(gTexture[0] + 1), G_IM_FMT_IA, G_IM_SIZ_8b, 192, 11,
                                     0, 2, 2, 0, 0, 0, 0);
             }
@@ -437,6 +438,7 @@ s32 debug_text_character(Gfx **dList, s32 asciiVal) {
         // Character is a upper case letter
         if (gDebugFontTexture != 1) {
             if (gDebugTextOn) {
+                DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
                 gDPLoadTextureBlock((*dList)++, OS_PHYSICAL_TO_K0(gTexture[1] + 1), G_IM_FMT_IA, G_IM_SIZ_8b, 248, 11,
                                     0, 2, 2, 0, 0, 0, 0);
             }
@@ -447,6 +449,7 @@ s32 debug_text_character(Gfx **dList, s32 asciiVal) {
         // Character is a lower case letter
         if (gDebugFontTexture != 2) {
             if (gDebugTextOn) {
+                DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
                 gDPLoadTextureBlock((*dList)++, OS_PHYSICAL_TO_K0(gTexture[2] + 1), G_IM_FMT_IA, G_IM_SIZ_8b, 192, 11,
                                     0, 2, 2, 0, 0, 0, 0);
             }

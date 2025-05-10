@@ -106,13 +106,13 @@ void get_platform(void);
 typedef enum DebugPages {
     PAGE_MINIMAL,
     PAGE_MEMORY,
+    PAGE_MISC,
     PAGE_OVERVIEW,
     PAGE_GENERAL,
     PAGE_BREAKDOWN,
     PAGE_AUDIO,
     PAGE_LOG,
     PAGE_VISCVG,
-    PAGE_MISC,
 } DebugPages;
 
 typedef enum DebugProfiles {
@@ -286,6 +286,13 @@ typedef enum DebugRam {
 
 typedef u32 DebugTimer[NUM_PERF_ITERATIONS + 2];
 
+typedef struct DebugMiscVars {
+    unsigned drawBG : 1;
+    unsigned invertBG : 1;
+
+    u16 texLoads;
+} DebugMiscVars;
+
 typedef struct DebugData {
     u8 enabled;
     u8 pageCurrent;
@@ -316,6 +323,8 @@ typedef struct DebugData {
     DebugTimer timers[PP_TOTAL];
     u32 ramSegments[PP_RAM_TOTAL];
     u32 ramTotal;
+
+    DebugMiscVars misc;
 } DebugData;
 
 typedef struct DebugPage {
@@ -343,6 +352,8 @@ s32 debug_tag_index(s32 colourTag);
 void debug_printf(const char* message, ...);
 void crash_assert(s32 cond, const char *str, ...);
 void debug_ram_dump(void);
+
+#define DEBUG_VAR(x, value) (x = value)
 #else
 #define debug_init()
 #define debug_render(dList, updateRate)
@@ -361,6 +372,7 @@ void debug_ram_dump(void);
 #define debug_log(logLevel, str, ...)
 #define debug_printf(str, ...)
 #define crash_assert(cond, str, ...);
+#define DEBUG_VAR(x, value)
 #endif
 #endif
 

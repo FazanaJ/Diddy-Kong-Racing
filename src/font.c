@@ -436,6 +436,7 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
                     if (lastTextureIndex != textureIndex) {
                         lastTextureIndex = textureIndex;
                         texture = fontData->texturePointers[textureIndex];
+                        DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
                         gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(texture->cmd), texture->numberOfCommands);
                     }
                     textureWidth = fontData->letter[curChar].width;

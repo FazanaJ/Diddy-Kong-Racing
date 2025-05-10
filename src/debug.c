@@ -6,6 +6,9 @@
 #include "font.h"
 #include "PR/os_internal_reg.h"
 #include "PRinternal/piint.h"
+#include "game.h"
+#include "objects.h"
+#include "tracks.h"
 
 #ifdef DEBUG
 
@@ -267,10 +270,68 @@ void debug_render_memory(DebugData *d, Gfx **dList, s32 updateRate) {
     gDPSetScissor((*dList)++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
+void debug_render_misc(DebugData *d, Gfx **dList, s32 updateRate) {
+    char textBytes[32];
+    Object *obj;
+    Object_Racer *racer;
+    s32 showRacer;
+
+    if (get_game_mode() == GAMEMODE_INGAME) {
+        showRacer = TRUE;
+        obj = get_racer_object(PLAYER_ONE);
+        if (obj == NULL) {
+            showRacer = FALSE;
+        } else {
+            racer = (Object_Racer *) obj->unk64;
+        }
+    } else {
+        showRacer = FALSE;
+    }
+
+    if (showRacer == FALSE || d->pageViewMode) {
+        debug_fillrect(dList, SCREEN_WIDTH - 96, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0x0000009F);
+    }
+
+    if (showRacer) {
+        debug_fillrect(dList, 8, 8, 192, 8 + 20 + 4, 0x0000007F);
+    }
+
+    set_text_font(ASSET_FONTS_SMALLFONT);
+    set_text_colour(255, 255, 255, 255, 255);
+    set_text_background_colour(0, 0, 0, 0);
+    set_kerning(FALSE);
+
+    if (showRacer == FALSE || d->pageViewMode) {
+        sprintf(textBytes, "Draw BG: %d", d->misc.drawBG);
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 4, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "Inverse BG: %d", d->misc.invertBG);
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 14, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "AA mode: %d", gAntiAliasing + 1);
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 24, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "Tex Loads: %d", d->misc.texLoads);
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 34, textBytes, ALIGN_TOP_LEFT);
+    }
+
+    if (showRacer) {
+        sprintf(textBytes, "X: %2.2f", obj->segment.trans.x_position);
+        draw_text(dList, 10, 10, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "Y: %2.2f", obj->segment.trans.y_position);
+        draw_text(dList, 10 + 60, 10, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "Z: %2.2f", obj->segment.trans.z_position);
+        draw_text(dList, 10 + 120, 10, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "Y: 0x%04X", (u16) obj->segment.trans.rotation.s[0]);
+        draw_text(dList, 10, 20, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "P: 0x%04X", (u16) obj->segment.trans.rotation.s[1]);
+        draw_text(dList, 10 + 60, 20, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "R: 0x%04X", (u16) obj->segment.trans.rotation.s[2]);
+        draw_text(dList, 10 + 120, 20, textBytes, ALIGN_TOP_LEFT);
+    }
+
+}
+
 void debug_page_minimal(DebugData *d) {
     
 }
-
 
 void debug_page_memory(DebugData *d) {
 }
@@ -278,6 +339,7 @@ void debug_page_memory(DebugData *d) {
 DebugPage gDebugPages[] = {
     {"Minimal", PAGE_MINIMAL, debug_page_minimal, debug_render_minimal},
     {"Memory", PAGE_MEMORY, debug_page_memory, debug_render_memory},
+    {"Misc", PAGE_MISC, debug_page_memory, debug_render_misc},
 };
 
 void debug_render_page_menu(Gfx **dList, s32 updateRate) {
@@ -381,6 +443,7 @@ void debug_newframe(s32 updateRate) {
             d->timers[i][it] = 0;
         }
     //}
+    bzero(&d->misc, sizeof(d->misc));
 }
 
 char *sMemDumpStrings[] = {
@@ -475,6 +538,7 @@ void debug_update(s32 updateRate) {
     if (d->pageMenuOpen == FALSE) {
         switch (d->pageCurrent) {
             case PAGE_MINIMAL:
+            case PAGE_MISC:
                 if (inputPressed & R_JPAD || inputPressed & L_JPAD) {
                     d->pageViewMode ^= 1;
                 }

@@ -1028,6 +1028,7 @@ s32 render_sprite_billboard(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Obj
         gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
     }
     gSPDisplayList((*dList)++, arg4->unk8[textureFrame + 1]);
+    DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
     gModelMatrixStackPos--;
     if (gModelMatrixStackPos == 0) {
         textureFrame = 0;
@@ -1083,6 +1084,7 @@ void render_ortho_triangle_image(Gfx **dList, MatrixS **mtx, Vertex **vtx, Objec
         if (gSpriteAnimOff == FALSE) {
             index = (((u8) index) * sprite->baseTextureId) >> 8;
         }
+        DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
         material_load_simple(dList, sprite->drawFlags | flags);
         if (index >= sprite->baseTextureId) {
             index = sprite->baseTextureId - 1;
