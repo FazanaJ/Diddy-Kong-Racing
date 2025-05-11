@@ -14,6 +14,10 @@
 #include "math_util.h"
 #include "main.h"
 #include "usb/usb.h"
+#include "video.h"
+#include "string.h"
+#include "stdarg.h"
+#include "audiomgr.h"
 
 //#define MAP_PARSE
 
@@ -29,10 +33,6 @@ void update_object_stack_trace(s32 index, s32 value) {
     }
 }
 
-#include "video.h"
-#include "string.h"
-#include "stdarg.h"
-#include "audiomgr.h"
 
 u64 *gCrashThreadStack;
 u64 *gCrashThreadStack2;
@@ -462,7 +462,7 @@ s32 crash_thread_name(s32 threadID) {
 /**
  * High chance the framebuffer size doesn't match the crash screens, so copy it with scaling applied.
 */
-void framebuffer_scale(u16 *srcFB, u16 *dstFB, s32 srcW, s32 srcH, s32 dstW, s32 dstH) {
+void framebuffer_scale_16b(u16 *srcFB, u16 *dstFB, s32 srcW, s32 srcH, s32 dstW, s32 dstH) {
     s32 y;
     s32 x;
     for (y = 0; y < dstH; y++) {
@@ -471,6 +471,26 @@ void framebuffer_scale(u16 *srcFB, u16 *dstFB, s32 srcW, s32 srcH, s32 dstW, s32
             s32 srcY = y * srcH / dstH;
             u16 pixel = srcFB[srcY * srcW + srcX];
             dstFB[y * dstW + x] = pixel;
+        }
+    }
+}
+
+void framebuffer_scale_32b(u32 *srcFB, u16 *dstFB, s32 srcW, s32 srcH, s32 dstW, s32 dstH) {
+    s32 y;
+    s32 x;
+    for (y = 0; y < dstH; y++) {
+        for (x = 0; x < dstW; x++) {
+            s32 srcX = x * srcW / dstW;
+            s32 srcY = y * srcH / dstH;
+            u32 pixel32 = srcFB[srcY * srcW + srcX];
+
+            s32 r = (pixel32 >> 24) & 0xFF;
+            s32 g = (pixel32 >> 16) & 0xFF;
+            s32 b = (pixel32 >> 8) & 0xFF;
+
+            u16 pixel16 = GPACK_RGBA5551(r, g, b, 1);
+
+            dstFB[y * dstW + x] = pixel16;
         }
     }
 }
@@ -1764,8 +1784,13 @@ void crash_thread(UNUSED void *var) {
     gScreenWidth = 512;
     gScreenHeight = 240;
     if (gVideoCurrFramebuffer != NULL) {
-        framebuffer_scale(gVideoCurrFramebuffer, gVideoDepthBuffer, oldW, oldH, gScreenWidth, gScreenHeight);
+        if (gBitDepth == G_IM_SIZ_16b) {
+            framebuffer_scale_16b(gVideoCurrFramebuffer, gVideoDepthBuffer, oldW, oldH, gScreenWidth, gScreenHeight);
+        } else {
+            framebuffer_scale_32b((u32 *) gVideoCurrFramebuffer, gVideoDepthBuffer, oldW, oldH, gScreenWidth, gScreenHeight);
+        }
     }
+    gConfig.screenBits = SCREENBITS_16b;
     if (gVideoFramebuffers[1] == NULL) {
         gVideoFramebuffers[1] = (u16 *) 0x80300000;
     }

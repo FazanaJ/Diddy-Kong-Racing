@@ -29,6 +29,7 @@ u8 gVideoDeltaCounter;
 u8 gVideoDeltaTime;
 OSScClient gVideoSched;
 s32 gVideoSkipNextRate = FALSE;
+u8 gBitDepth = G_IM_SIZ_16b;
 
 /******************************/
 
@@ -45,6 +46,12 @@ void video_init(s32 videoModeIndex, OSSched *sc) {
     for (i = 0; i < 3; i++) {
         gVideoFramebuffers[i] = NULL;
         fb_alloc(i);
+    }
+    if (gUseExpansionMemory == FALSE && gExpansionPak) {
+        gVideoFramebuffers[0] = (u16 *) 0x80400000;
+        gVideoFramebuffers[1] = (u16 *) 0x80500000;
+        gVideoFramebuffers[2] = (u16 *) 0x80600000;
+        gVideoDepthBuffer = (u16 *) 0x80700000;
     }
     gVideoCurrFbIndex = 1;
     fb_swap();
@@ -86,11 +93,11 @@ void vi_change(int width, int height) {
     }
 
     if (gConfig.screenBits == SCREENBITS_16b) {
-        //gBitDepth = G_IM_SIZ_16b;
+        gBitDepth = G_IM_SIZ_16b;
         mode->comRegs.ctrl = VI_CTRL_TYPE_16 | VI_CTRL_GAMMA_DITHER_ON | VI_CTRL_GAMMA_ON | VI_CTRL_ANTIALIAS_MODE_1 | 0x3000;
         mul = 2;
     } else {
-        //gBitDepth = G_IM_SIZ_32b;
+        gBitDepth = G_IM_SIZ_32b;
         mode->comRegs.ctrl = VI_CTRL_TYPE_32 | VI_CTRL_GAMMA_DITHER_ON | VI_CTRL_GAMMA_ON | VI_CTRL_ANTIALIAS_MODE_3 | 0x3000;
         mul = 4;
     }
@@ -160,16 +167,32 @@ void vi_dither(void) {
 void fb_alloc(s32 index) {
     s32 width = SCREEN_WIDTH;
     s32 height = SCREEN_HEIGHT;
-    s32 bitSize = 2;
+    s32 bitSize;
     u16 *fbAddr;
     s32 fbSize;
     u8 *addr;
 #if EXPANSION_PAK_SUPPORT
     if (gExpansionPak) {
-        //width = SCREEN_WIDTH_WIDE;
-        //height = SCREEN_HEIGHT_HIGH;
-        //bitSize = 4;
+        width = 480;
+        height = 360;
+        bitSize = 4;
+    } else {
+        if (width > 320) {
+            width = 320;
+        }
+        if (height > 240) {
+            height = 240;
+        }
+        bitSize = 2;
     }
+#else
+    if (width > 320) {
+        width = 320;
+    }
+    if (height > 240) {
+        height = 240;
+    }
+    bitSize = 2;
 #endif
 
     fbSize = (width * height) * bitSize;

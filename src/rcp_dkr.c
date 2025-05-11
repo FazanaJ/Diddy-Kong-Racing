@@ -308,11 +308,11 @@ void bgdraw_render(Gfx **dList, MatrixS **mtx, s32 drawBG) {
     //!@bug: the scissor does not need the off by one here, despite being intended for fill mode.
     gDPSetScissor((*dList)++, 0, 0, 0, wP, h + 1);
     gDPSetCycleType((*dList)++, G_CYC_FILL);
-    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, wP, SEGMENT_ZBUFFER << 24);
+    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, gBitDepth, wP, SEGMENT_ZBUFFER << 24);
     gDPSetFillColor((*dList)++, GPACK_RGBA5551(255, 255, 240, 0) << 16 | GPACK_RGBA5551(255, 255, 240, 0));
     gDPFillRectangle((*dList)++, 0, 0, w, h);
     gDPPipeSync((*dList)++);
-    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, wP, SEGMENT_FRAMEBUFFER << 24);
+    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, gBitDepth, wP, SEGMENT_FRAMEBUFFER << 24);
     if (check_viewport_background_flag(PLAYER_ONE)) {
         if (gTexBGTex1) {
             bgdraw_texture(dList);
@@ -369,7 +369,7 @@ void bgdraw_render(Gfx **dList, MatrixS **mtx, s32 drawBG) {
  */
 void rdp_init(Gfx **dList) {
     s32 width = GET_VIDEO_WIDTH(fb_size());
-    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, width, SEGMENT_FRAMEBUFFER << 24);
+    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, gBitDepth, width, SEGMENT_FRAMEBUFFER << 24);
     gDPSetDepthImage((*dList)++, SEGMENT_ZBUFFER << 24);
     //gSPDisplayList((*dList)++, dRdpInit);
 }

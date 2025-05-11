@@ -270,6 +270,7 @@ void config_init(void) {
     gConfig.dedither = FALSE;
     gConfig.frameCap = 1;
     gConfig.multiAA = AA_OFF;
+    gConfig.screenBits = SCREENBITS_16b;
     osTvType = OS_TV_NTSC;
 }
 

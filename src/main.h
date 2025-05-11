@@ -47,7 +47,7 @@ typedef struct ConfigBits {
     unsigned magic : 8;     // Checksum-ish
     // General
     unsigned sameStats : 1;
-    unsigned screenRegion : 3;
+    unsigned screenRegion : 2;
     // Graphics
     unsigned antiAliasing : 2;
     signed screenPosX : 5;
@@ -57,7 +57,7 @@ typedef struct ConfigBits {
     unsigned frameCap : 2;
     unsigned screenBits : 1;
     unsigned terrainQuality : 1;
-    // Multiplayer
+    // Multiplayer - every option needs to be 2 bits, because the option will be 0-3, representing how many players before it's disabled
     unsigned multiMusic : 2;
     unsigned multiObjects : 2;
     unsigned multiWaves : 2;
@@ -65,7 +65,7 @@ typedef struct ConfigBits {
     unsigned multiWeather : 2;
     unsigned multiModels : 2;
     unsigned multiSky : 2;
-    signed multiAA : 2;
+    unsigned multiAA : 2;
 } ConfigBits;
 
 typedef struct UserConfig {
