@@ -318,6 +318,7 @@ typedef struct DebugData {
     u32 cpuTotal;
     u32 rspTotal;
     u32 rdpTotal;
+    u32 fpsGraph[NUM_PERF_ITERATIONS];
     u32 rspTimers[RSP_CONTEXT_COUNT][4];
     u32 threadTimers[THREAD_CONTEXT_COUNT][NUM_THREAD_ITERATIONS];
     DebugTimer timers[PP_TOTAL];

@@ -45,7 +45,7 @@ void calculate_and_update_fps(void) {
     if (curFrameTimeIndex >= FRAMETIME_COUNT) {
         curFrameTimeIndex = 0;
     }
-
+    DEBUG_VAR(gDebug->fpsGraph[gDebug->iter], MIN(OS_CYCLES_TO_USEC((u32)(((f32)((newTime - oldTime) / 10)) / 2.9f)), 66666));
     gFPS = (FRAMETIME_COUNT * 1000000.0f) / (OS_CYCLES_TO_USEC(newTime - oldTime) * divisor);
 }
 

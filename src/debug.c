@@ -167,8 +167,102 @@ void debug_ram(s32 size, s32 tag) {
 const char *sMinimalText[] = {
     "CPU",
     "RSP",
-    "RDP"
+    "RDP",
+    "Frametime"
 };
+
+typedef struct ProfilerGraphEntry {
+    u32 *ptr;
+    u32 colour;
+} ProfilerGraphEntry;
+
+typedef struct ProfilerGraph {
+    char *name;
+    u8 indexCount;
+    u8 countType;
+    ProfilerGraphEntry entry[4];
+} ProfilerGraph;
+
+void debug_graph(DebugData *d, Gfx **dList, s32 x, u32 *timer0, u32 *timer1, u32 *timer2, u32 *timer3, s32 divType, u32 colour0, u32 colour1, u32 colour2, u32 colour3, s32 nameIdx) {
+    s32 i;
+    f32 divisor = 1.0f;
+    const s32 num = MIN(NUM_PERF_ITERATIONS, 60);
+    u32 *idx[4] = {timer0, timer1, timer2, timer3};
+    u32 colours[4] = {colour0, colour1, colour2, colour3};
+    s32 iterCount;
+
+    iterCount = 0;
+    for (i = 0; i < 4; i++) {
+        if (idx[i] != NULL) {
+            iterCount++;
+        }
+    }
+
+    set_text_font(ASSET_FONTS_SMALLFONT);
+    set_text_colour(255, 255, 255, 255, 255);
+    set_text_background_colour(0, 0, 0, 0);
+    set_kerning(FALSE);
+    gDPSetRenderMode((*dList)++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
+    s32 origin = x + (((num * 1)) / 2);
+    s32 origin2 = x;
+    u32 *ref;
+    gDPSetCombineMode((*dList)++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
+    // bg
+    gDPSetPrimColor((*dList)++, 0, 0, 0, 0, 0, 127);
+    gDPFillRectangle((*dList)++, x - 1, SCREEN_HEIGHT - 16 - 54, x + (num * 1) + 1, SCREEN_HEIGHT - 15);
+    gDPPipeSync((*dList)++);
+    gDPSetRenderMode((*dList)++, G_RM_OPA_SURF, G_RM_OPA_SURF2);
+    u32 prevColour = 0;
+    for (int i = 0; i < num; i++) {
+        s32 iter = d->iter + i;
+        u32 count;
+        s32 yT = 0;
+        s32 y = 0;
+        u32 colour;
+        if (iter >= num) {
+            iter -= num;
+        }
+
+        for (int k = 0; k < iterCount; k++) {
+            count = *(idx[k] + iter);
+            yT += (count / 1536) * divisor;
+            if (d->pageViewMode == 2) {
+                gDPSetPrimColorRGBA((*dList)++, colours[k]);
+                gDPFillRectangle((*dList)++, x, SCREEN_HEIGHT - 16 - (yT), x + 1, SCREEN_HEIGHT - 16 - y);
+                y = yT;
+            }
+        }
+        if (d->pageViewMode == 1) {
+            if (yT >= 34) {
+                colour = 0xFF4040FF;
+            } else if (yT >= 23) {
+                colour = 0xFFFF40FF;
+            } else if (yT >= 12) {
+                colour = 0x40FF40FF;
+            } else {
+                colour = 0x40FFFFFF;
+            }
+            if (colour != prevColour) {
+                gDPSetPrimColorRGBA((*dList)++, colour);
+                prevColour = colour;
+            }
+            gDPFillRectangle((*dList)++, x, SCREEN_HEIGHT - 16 - (yT), x + 1, SCREEN_HEIGHT - 16);
+        }
+        x += 1;
+    }
+    gDPSetRenderMode((*dList)++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
+    // 60 line
+    gDPSetPrimColor((*dList)++, 0, 0, 64, 255, 255, 160);
+    gDPFillRectangle((*dList)++, origin2, SCREEN_HEIGHT - 16 - 11, origin2 + (num * 1), SCREEN_HEIGHT - 16 - 10);
+    // 30 line
+    gDPSetPrimColor((*dList)++, 0, 0, 64, 255, 64, 160);
+    gDPFillRectangle((*dList)++, origin2, SCREEN_HEIGHT - 16 - 22, origin2 + (num * 1), SCREEN_HEIGHT - 16 - 21);
+    // bruh line
+    gDPSetPrimColor((*dList)++, 0, 0, 192, 192, 192, 112);
+    gDPFillRectangle((*dList)++, origin2, SCREEN_HEIGHT - 16 - 44, origin2 + (num * 1), SCREEN_HEIGHT - 16 - 43);
+    gDPPipeSync((*dList)++);
+    draw_text(dList, origin, SCREEN_HEIGHT - 69, (char *) sMinimalText[nameIdx], ALIGN_TOP_CENTER);
+}
 
 void debug_render_minimal(DebugData *d, Gfx **dList, s32 updateRate) {
     char textBytes[32];
@@ -211,13 +305,18 @@ void debug_render_minimal(DebugData *d, Gfx **dList, s32 updateRate) {
         if (ram < 0.0f) {
             ram = 0.0f;
         }
-        if (ram > 1000.0f) {
+        if (ram > 1024.0f) {
             ram /= 1024.0f;
             lol = 1;
         }
         sprintf(textBytes, "RAM: %2.3f%s", (f32) ram, ramStr[lol]);
         draw_text(dList, 10, y, textBytes, ALIGN_TOP_LEFT);
         
+    } else {
+        debug_graph(d, dList, 16, d->fpsGraph, NULL, NULL, NULL, 0, 0xFF4040FF, 0, 0, 0, 3);
+        debug_graph(d, dList, 16 + 76, d->timers[PP_THREAD5], d->timers[PP_THREAD3], d->timers[PP_THREAD4], NULL, 0, 0x40FFFFFF, 0xFF4040FF, 0xFFFF40FF, 0, 0);
+        //debug_graph(d, dList, 16 + 76 + 76, d->timers[PP_RSP_GFX], d->timers[PP_RSP_AUD], NULL, NULL, 0, 0xFF4040FF, 0xFFFF40FF, 0, 0, 1);
+        debug_graph(d, dList, 16 + 76 + 76 + 76, d->timers[PP_RDP_CLK], d->timers[PP_RDP_TMM], NULL, NULL, 0, 0xFF4040FF, 0x40FFFFFF, 0, 0, 2);
     }
 }
 
@@ -538,6 +637,18 @@ void debug_update(s32 updateRate) {
     if (d->pageMenuOpen == FALSE) {
         switch (d->pageCurrent) {
             case PAGE_MINIMAL:
+                if (inputPressed & R_JPAD) {
+                    d->pageViewMode++;
+                    if (d->pageViewMode == 3) {
+                        d->pageViewMode = 0;
+                    }
+                } else if (inputPressed & L_JPAD) {
+                    d->pageViewMode--;
+                    if (d->pageViewMode == 255) {
+                        d->pageViewMode = 2;
+                    }
+                }
+                break;
             case PAGE_MISC:
                 if (inputPressed & R_JPAD || inputPressed & L_JPAD) {
                     d->pageViewMode ^= 1;
