@@ -220,16 +220,16 @@ void dmacopy_internal(u32 romOffset, u32 ramAddress, s32 numBytes) {
     }
 }
 
-void assettable_seek_s32(s32 modelID, s32 *table0, s32 *table1, s32 assetIndex) {
+void assettable_seek_s32(s32 modelID, s32 *offset, s32 *size, s32 assetIndex) {
     s32 table[2];
     load_asset_to_address(assetIndex, (u32) &table, modelID * sizeof(s32), 2 * (sizeof(s32)));
-    *table0 = table[0];
-    *table1 = table[1] - table[0];
+    *offset = table[0];
+    *size = table[1] - table[0];
 }
 
-void assettable_seek_s16(s32 modelID, s32 *table0, s32 *table1, s32 assetIndex) {
+void assettable_seek_s16(s32 modelID, s32 *offset, s32 *size, s32 assetIndex) {
     s16 table[4];
     load_asset_to_address(assetIndex, (u32) &table, modelID * (sizeof(s16)), 2 * (sizeof(s16)));
-    *table0 = table[0];
-    *table1 = table[1];
+    *offset = table[0];
+    *size = table[1];
 }
