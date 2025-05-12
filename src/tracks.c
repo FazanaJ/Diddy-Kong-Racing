@@ -170,7 +170,7 @@ s16 D_8011D4BC;
 
 u8 gSortMats;
 s16 gSortBufCount;
-SortBuffer gSortBuffer[200];
+SortBuffer *gSortBuffer;
 
 
 /******************************/
@@ -258,6 +258,14 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     D_8011B104 = 0;
     D_8011B108 = 0;
     D_8011B10C = 0;
+
+    if (gSortBuffer) {
+        mempool_free(gSortBuffer);
+    }
+
+    if (gSortMats) {
+        gSortBuffer = mempool_alloc(sizeof(SortBuffer) * 200, PP_RAM_STACK);
+    }
 
     if (gCurrentLevelHeader2->race_type == RACETYPE_CUTSCENE_1 ||
         gCurrentLevelHeader2->race_type == RACETYPE_CUTSCENE_2) {

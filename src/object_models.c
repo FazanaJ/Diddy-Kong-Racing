@@ -68,19 +68,6 @@ void allocate_object_model_pools(void) {
 #endif
 }
 
-void model_assettable_get_s32(s32 modelID, s32 *table0, s32 *table1, s32 assetIndex) {
-    s32 table[2];
-    load_asset_to_address(assetIndex, (u32) &table, modelID * sizeof(s32), 2 * (sizeof(s32)));
-    *table0 = table[0];
-    *table1 = table[1] - table[0];
-}
-
-void model_assettable_get_s16(s32 modelID, s32 *table0, s32 *table1, s32 assetIndex) {
-    s16 table[4];
-    load_asset_to_address(assetIndex, (u32) &table, modelID * (sizeof(s16)), 2 * (sizeof(s16)));
-    *table0 = table[0];
-    *table1 = table[1];
-}
 
 /**
  * Load the associated model ID and assign it to the objects gfx data.
@@ -136,7 +123,7 @@ Object_68 *object_model_init(s32 modelID, s32 flags) {
         gModelCacheCount++;
     }
 
-    model_assettable_get_s32(modelID, &temp_s0, &sp48, ASSET_OBJECT_MODELS_TABLE);
+    assettable_seek_s32(modelID, &temp_s0, &sp48, ASSET_OBJECT_MODELS_TABLE);
     modelSize = get_asset_uncompressed_size(ASSET_OBJECT_MODELS, temp_s0) + sizeof(ObjectModel);
     objMdl = (ObjectModel *) mempool_alloc(modelSize, PP_RAM_OBJMDL);
     if (objMdl == NULL) {
@@ -444,7 +431,7 @@ s32 func_80061A00(ObjectModel *model, s32 animTableIndex) {
     u32 animAddress;
     s32 *temp;
 
-    model_assettable_get_s16(animTableIndex, &start, &end, ASSET_ANIMATION_IDS);
+    assettable_seek_s16(animTableIndex, &start, &end, ASSET_ANIMATION_IDS);
     if (start == end) {
         model->numberOfAnimations = 0;
         return 0;
@@ -463,7 +450,7 @@ s32 func_80061A00(ObjectModel *model, s32 animTableIndex) {
     i = 0;
     i2 = 0;
     do {
-        model_assettable_get_s32(start, &assetOffset, (s32 *) &animAddress, ASSET_OBJECT_ANIMATIONS_TABLE);
+        assettable_seek_s32(start, &assetOffset, (s32 *) &animAddress, ASSET_OBJECT_ANIMATIONS_TABLE);
         assetSize = animAddress;
         size = get_asset_uncompressed_size(ASSET_OBJECT_ANIMATIONS, assetOffset) + 0x80;
         model->animations[i].animData = (u8 *) mempool_alloc(size, PP_RAM_ANIMATIONS);

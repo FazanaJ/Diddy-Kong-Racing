@@ -12,5 +12,7 @@ u8 *get_rom_offset_of_asset(u32 assetIndex, u32 assetOffset);
 s32 get_size_of_asset_section(u32 assetIndex);
 void dmacopy(u32 romOffset, u32 ramAddress, s32 numBytes);
 void dmacopy_v1(u32 romOffset, u32 ramAddress, s32 numBytes);
+void assettable_seek_s32(s32 modelID, s32 *table0, s32 *table1, s32 assetIndex);
+void assettable_seek_s16(s32 modelID, s32 *table0, s32 *table1, s32 assetIndex);
 
 #endif
