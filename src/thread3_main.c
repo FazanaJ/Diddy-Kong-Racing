@@ -126,9 +126,6 @@ u8 gShowBG;
 void thread3_main(UNUSED void *unused) {
     OSMesg mesg;
     init_game();
-    gSaveDataFlags = input_update(gSaveDataFlags, 0);
-    sBootDelayTimer = 0;
-    gGameMode = GAMEMODE_INTRO;
     while (1) {
         while (gNumGfxTasksAtScheduler < 2) {
             main_game_loop();
@@ -214,6 +211,9 @@ void init_game(void) {
     gGameCurrentEntrance = 0;
     gGameCurrentCutscene = 0;
     gSPTaskNum = 0;
+    gSaveDataFlags = input_update(gSaveDataFlags, 0);
+    sBootDelayTimer = 0;
+    gGameMode = GAMEMODE_INTRO;
     osTvType = OS_TV_NTSC;
 
     gCurrDisplayList = gDisplayLists[gSPTaskNum];
@@ -293,7 +293,7 @@ void main_game_loop(void) {
 
     osSetTime(0);
 
-    static u8 balls = 0;
+    //static u8 balls = 0;
 
     if (input_pressed(0) & L_TRIG) {
         //*(volatile int *) 0 = 0;
