@@ -18,6 +18,7 @@
 #include "string.h"
 #include "stdarg.h"
 #include "audiomgr.h"
+#include "autoplay.h"
 
 //#define MAP_PARSE
 
@@ -1783,6 +1784,7 @@ void crash_thread(UNUSED void *var) {
     oldH = gScreenHeight;
     gScreenWidth = 512;
     gScreenHeight = 240;
+    gAutoplayTest = 0;
     if (gVideoCurrFramebuffer != NULL) {
         if (gBitDepth == G_IM_SIZ_16b) {
             framebuffer_scale_16b(gVideoCurrFramebuffer, gVideoDepthBuffer, oldW, oldH, gScreenWidth, gScreenHeight);
