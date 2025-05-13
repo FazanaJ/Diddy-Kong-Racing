@@ -1,0 +1,1 @@
+make assets -j; python3 ./tools/python/map_gen.py ./build/dkr.us.v77.map ./assets/map_symbols.bin; make assets -j
