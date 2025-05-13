@@ -139,7 +139,9 @@ void audio_init(OSSched *sc) {
     audConfig.numGroups = 1;
     audConfig.heap = &gALHeap;
     sndp_init_player(&audConfig);
+#ifndef DISABLE_AUDIO
     audioStartThread();
+#endif
     sound_volume_change(VOLUME_NORMAL);
     mempool_free(addrPtr);
     sndp_set_active_sound_limit(10);
@@ -302,6 +304,10 @@ void music_volume_reset(void) {
 void sound_update_queue(u8 updateRate) {
     s32 i;
     s32 j;
+
+#ifdef DISABLE_AUDIO
+    return;
+#endif
 
     if (sMusicDelayLength > 0) {
         sMusicDelayTimer += updateRate;

@@ -244,6 +244,8 @@ s32 set_scene_viewport_num(s32 numPorts) {
     return 0;
 }
 
+extern s32 gObjectCount;
+
 /**
  * Initialises the level.
  * Allocates RAM to load generate the level geometry, spawn objects and generate shadows.
@@ -340,6 +342,15 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
         D_8011B0E3 = gCurrentLevelHeader2->unkB6;
         func_80025510(numberOfPlayers + 1);
     }
+
+#ifdef OPEN_ALL_DOORS
+    for (i = 0; i < gObjectCount; i++) {
+        Object *obj = get_object(i);
+        if (obj->objectID == ASSET_OBJECT_ID_PIGHEADCOLOURS) {
+            free_object(obj);
+        }
+    }
+#endif
 }
 
 void aa_manage(s32 mode) {

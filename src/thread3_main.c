@@ -269,6 +269,10 @@ void main_game_loop(void) {
         if (gAutoplayTest != AUTOPLAY_OFF) {
             if (get_game_mode() == GAMEMODE_MENU && gCurrentMenuId == MENU_TRACK_SELECT) {
                 sched_framecap(0);
+            } else if ((get_map_race_type(get_current_map_id()) == RACETYPE_HUBWORLD && get_current_map_id() != ASSET_LEVEL_CENTRALAREAHUB) || 
+                        get_map_race_type(get_current_map_id()) == RACETYPE_CUTSCENE_1 || 
+                        get_map_race_type(get_current_map_id()) == RACETYPE_CUTSCENE_2) {
+                sched_framecap(0);
             } else if (get_current_map_id() == ASSET_LEVEL_CENTRALAREAHUB) {
                 sLogicUpdateRate = 2;
             } else if (get_current_map_id() == ASSET_LEVEL_SNOWFLAKEMOUNTAINHUB) {

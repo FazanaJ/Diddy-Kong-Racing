@@ -8,6 +8,7 @@
 #include "PRinternal/piint.h"
 #include "usb/usb.h"
 #include "thread0_epc.h"
+#include "autoplay.h"
 
 /************ .bss ************/
 
