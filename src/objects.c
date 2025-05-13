@@ -572,7 +572,7 @@ Object *racerfx_get_boost(s32 boostID) {
 void allocate_object_pools(void) {
     s32 i;
 
-    //gObjectMemoryPool = (Object *) mempool_new_sub(OBJECT_POOL_SIZE, OBJECT_SLOT_COUNT);
+    gObjectMemoryPool = (Object *) mempool_new_sub(OBJECT_POOL_SIZE, OBJECT_SLOT_COUNT);
     gParticlePtrList = mempool_alloc_safe(sizeof(uintptr_t) * 200, PP_RAM_OBJLISTS);
     D_8011AE6C = mempool_alloc_safe(sizeof(uintptr_t) * 20, PP_RAM_OBJLISTS);
     D_8011AE74 = mempool_alloc_safe(sizeof(uintptr_t) * 128, PP_RAM_OBJLISTS);
