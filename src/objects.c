@@ -2320,9 +2320,6 @@ void obj_update(s32 updateRate) {
     dialogue_try_close();
     func_800179D0();
 
-    // @fake
-    do {
-    } while (0);
     if (D_8011AF00 == 1) {
         if ((gEventCountdown == 0x50) && (gCutsceneID == 0)) {
             sp54 = 0;

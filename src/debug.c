@@ -186,10 +186,25 @@ typedef struct ProfilerGraph {
 void debug_graph(DebugData *d, Gfx **dList, s32 x, u32 *timer0, u32 *timer1, u32 *timer2, u32 *timer3, s32 divType, u32 colour0, u32 colour1, u32 colour2, u32 colour3, s32 nameIdx) {
     s32 i;
     f32 divisor = 1.0f;
-    const s32 num = MIN(NUM_PERF_ITERATIONS, 60);
-    u32 *idx[4] = {timer0, timer1, timer2, timer3};
-    u32 colours[4] = {colour0, colour1, colour2, colour3};
     s32 iterCount;
+    s32 k;
+    s32 origin;
+    s32 origin2;
+    u32 *ref;
+    u32 prevColour;
+    u32 *idx[4];
+    u32 colours[4];
+    const s32 num = MIN(NUM_PERF_ITERATIONS, 60);
+
+    idx[0] = timer0;
+    idx[1] = timer1;
+    idx[2] = timer2;
+    idx[3] = timer3;
+
+    colours[0] = colour0;
+    colours[1] = colour1;
+    colours[2] = colour2;
+    colours[3] = colour3;
 
     iterCount = 0;
     for (i = 0; i < 4; i++) {
@@ -203,17 +218,16 @@ void debug_graph(DebugData *d, Gfx **dList, s32 x, u32 *timer0, u32 *timer1, u32
     set_text_background_colour(0, 0, 0, 0);
     set_kerning(FALSE);
     gDPSetRenderMode((*dList)++, G_RM_XLU_SURF, G_RM_XLU_SURF2);
-    s32 origin = x + (((num * 1)) / 2);
-    s32 origin2 = x;
-    u32 *ref;
+    origin = x + (((num * 1)) / 2);
+    origin2 = x;
     gDPSetCombineMode((*dList)++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
     // bg
     gDPSetPrimColor((*dList)++, 0, 0, 0, 0, 0, 127);
     gDPFillRectangle((*dList)++, x - 1, SCREEN_HEIGHT - 16 - 54, x + (num * 1) + 1, SCREEN_HEIGHT - 15);
     gDPPipeSync((*dList)++);
     gDPSetRenderMode((*dList)++, G_RM_OPA_SURF, G_RM_OPA_SURF2);
-    u32 prevColour = 0;
-    for (int i = 0; i < num; i++) {
+    prevColour = 0;
+    for (i = 0; i < num; i++) {
         s32 iter = d->iter + i;
         u32 count;
         s32 yT = 0;
@@ -223,7 +237,7 @@ void debug_graph(DebugData *d, Gfx **dList, s32 x, u32 *timer0, u32 *timer1, u32
             iter -= num;
         }
 
-        for (int k = 0; k < iterCount; k++) {
+        for (k = 0; k < iterCount; k++) {
             count = *(idx[k] + iter);
             yT += (count / 1536) * divisor;
             if (d->pageViewMode == 2) {
