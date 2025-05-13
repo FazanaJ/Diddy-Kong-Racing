@@ -20,7 +20,7 @@
 #include "audiomgr.h"
 #include "autoplay.h"
 
-//#define MAP_PARSE
+#define MAP_PARSE
 
 u16 gObjectStackTrace[3];
 

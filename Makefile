@@ -302,7 +302,7 @@ $(GCC_SAFE_FILES): CFLAGS := -DNDEBUG -DAVOID_UB -DNON_MATCHING -Os $(INCLUDE_CF
 	-falign-functions=16 \
 	-G 0
 
-default: all
+default: all 
 
 all: $(VERIFY)
 

@@ -98,6 +98,20 @@ SECTIONS
     assets_ROM_END = __romPos;
     assets_VRAM_END = .;
 
+    map_ROM_START = __romPos;
+    map_VRAM = ADDR(.map);
+    .map assets_VRAM_END : AT(map_ROM_START) SUBALIGN(16)
+    {
+        FILL(0x00000000);
+        map_DATA_START = .;
+        build/assets/map_symbols.bin.o(.data);
+        map_DATA_END = .;
+        map_DATA_SIZE = ABSOLUTE(map_DATA_END - map_DATA_START);
+    }
+    __romPos += SIZEOF(.map);
+    map_ROM_END = __romPos;
+    map_VRAM_END = .;
+
     /DISCARD/ :
     {
         *(*);
