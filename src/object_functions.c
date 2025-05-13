@@ -25,7 +25,6 @@
 #include "fade_transition.h"
 #include "audio_vehicle.h"
 #include "object_models.h"
-#include "libultra/src/libc/rmonPrintf.h"
 #include "collision.h"
 #include "joypad.h"
 #include "printf.h"
@@ -195,7 +194,7 @@ void obj_loop_fireball_octoweapon(Object *obj, s32 updateRate) {
     Object_Racer *racer;
     UNUSED s32 pad2[6];
     ObjectInteraction *interactObj;
-    s32 soundMask;
+    SoundHandle soundMask;
     f32 waveHeight;
 
     someObj = obj->properties.fireball.obj;
@@ -6531,7 +6530,7 @@ void obj_loop_pigrocketeer(Object *obj, s32 updateRate) {
     Object_Wizpig2 *obj64;
 
     func_8001F460(obj, updateRate, obj);
-    someObj = func_8000BF44(-1);
+    someObj = racerfx_get_boost(BOOST_DEFAULT);
 
     if (someObj != NULL) {
         obj64 = &someObj->unk64->wizpig2;

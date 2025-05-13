@@ -157,8 +157,6 @@ typedef struct TempTexHeader {
 /* 0x25 */ u8 pad25[3]; // padding
 } TempTexHeader;
 
-extern u8 gUseAntiAliasing;
-
 void tex_disable_modes(s32 flags);
 void tex_enable_modes(s32 flags);
 s32 tex_get_table_2D(void);

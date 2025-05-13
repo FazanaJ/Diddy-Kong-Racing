@@ -47,7 +47,7 @@ typedef struct ConfigBits {
     unsigned magic : 8;     // Checksum-ish
     // General
     unsigned sameStats : 1;
-    unsigned screenRegion : 3;
+    unsigned screenRegion : 2;
     // Graphics
     unsigned antiAliasing : 2;
     signed screenPosX : 5;
@@ -57,7 +57,7 @@ typedef struct ConfigBits {
     unsigned frameCap : 2;
     unsigned screenBits : 1;
     unsigned terrainQuality : 1;
-    // Multiplayer
+    // Multiplayer - every option needs to be 2 bits, because the option will be 0-3, representing how many players before it's disabled
     unsigned multiMusic : 2;
     unsigned multiObjects : 2;
     unsigned multiWaves : 2;
@@ -65,7 +65,7 @@ typedef struct ConfigBits {
     unsigned multiWeather : 2;
     unsigned multiModels : 2;
     unsigned multiSky : 2;
-    signed multiAA : 2;
+    unsigned multiAA : 2;
 } ConfigBits;
 
 typedef struct UserConfig {
@@ -105,14 +105,14 @@ void get_platform(void);
 
 typedef enum DebugPages {
     PAGE_MINIMAL,
+    PAGE_MEMORY,
+    PAGE_MISC,
     PAGE_OVERVIEW,
     PAGE_GENERAL,
     PAGE_BREAKDOWN,
-    PAGE_MEMORY,
     PAGE_AUDIO,
     PAGE_LOG,
     PAGE_VISCVG,
-    PAGE_MISC,
 } DebugPages;
 
 typedef enum DebugProfiles {
@@ -211,6 +211,8 @@ typedef enum DebugRam {
     PP_RAM_OBJHEADERS,
     PP_RAM_OBJGFX,
     PP_RAM_DEBUG,
+    PP_RAM_AUDIOLINE,
+    PP_RAM_PARTICLES,
 
     PP_RAM_TOTAL,
 } DebugRam;
@@ -272,7 +274,9 @@ typedef enum DebugRam {
     "Obj Lists", \
     "Obj Headers", \
     "Obj Gfx\t", \
-    "Debug\t"
+    "Debug\t", \
+    "Aud Lines", \
+    "Particles"
 
 #define NUM_PERF_ITERATIONS 60
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS
@@ -282,12 +286,18 @@ typedef enum DebugRam {
 
 typedef u32 DebugTimer[NUM_PERF_ITERATIONS + 2];
 
+typedef struct DebugMiscVars {
+    unsigned drawBG : 1;
+    unsigned invertBG : 1;
+
+    u16 texLoads;
+} DebugMiscVars;
+
 typedef struct DebugData {
     u8 enabled;
     u8 pageCurrent;
     u8 pagePrev;
     u8 pageSelected;
-    u8 pageScroll;
     u8 pageViewMode;
     u8 pageMenuOpen;
     u8 pauseGame;
@@ -300,6 +310,7 @@ typedef struct DebugData {
     u8 threadIter[THREAD_CONTEXT_COUNT];
     u8 threadReset[THREAD_CONTEXT_COUNT];
 
+    s16 pageScroll;
     u16 logLen;
     u16 logStart;
     char logText[NUM_LOG_CHARACTERS];
@@ -307,11 +318,14 @@ typedef struct DebugData {
     u32 cpuTotal;
     u32 rspTotal;
     u32 rdpTotal;
+    u32 fpsGraph[NUM_PERF_ITERATIONS];
     u32 rspTimers[RSP_CONTEXT_COUNT][4];
     u32 threadTimers[THREAD_CONTEXT_COUNT][NUM_THREAD_ITERATIONS];
     DebugTimer timers[PP_TOTAL];
     u32 ramSegments[PP_RAM_TOTAL];
     u32 ramTotal;
+
+    DebugMiscVars misc;
 } DebugData;
 
 typedef struct DebugPage {
@@ -322,6 +336,9 @@ typedef struct DebugPage {
 } DebugPage;
 
 extern DebugData *gDebug;
+extern char *sPuppyprintMemColours[];
+extern u8 *main_BSS_START[];
+extern f32 gFPS;
 
 void debug_init();
 void debug_log(s32 logLevel, char *str, ...);
@@ -336,6 +353,8 @@ s32 debug_tag_index(s32 colourTag);
 void debug_printf(const char* message, ...);
 void crash_assert(s32 cond, const char *str, ...);
 void debug_ram_dump(void);
+
+#define DEBUG_VAR(x, value) (x = value)
 #else
 #define debug_init()
 #define debug_render(dList, updateRate)
@@ -354,6 +373,7 @@ void debug_ram_dump(void);
 #define debug_log(logLevel, str, ...)
 #define debug_printf(str, ...)
 #define crash_assert(cond, str, ...);
+#define DEBUG_VAR(x, value)
 #endif
 #endif
 

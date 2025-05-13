@@ -219,8 +219,6 @@ Gfx dBasicRenderModes[][2] = {
 
 /************ .bss ************/
 
-s32 *gTextureAssetTable[2];
-
 s32 *gTextureCache;
 
 u8 *gCiPalettes;
@@ -241,7 +239,6 @@ Vertex *D_80126360;
 Gfx *D_80126364;
 Triangle *D_80126368;
 
-TempTexHeader *gTempTextureHeader;
 u8 *D_80126370;
 s32 gCurrentRenderFlags;
 s32 gBlockedRenderFlags;
@@ -249,7 +246,6 @@ TextureHeader *gCurrentTextureHeader;
 s16 gUsingTexture;
 s16 gForceFlags;
 s16 gUsePrimColour;
-u8 gUseAntiAliasing;
 
 /******************************/
 
@@ -258,19 +254,22 @@ u8 gUseAntiAliasing;
  */
 void tex_init_textures(void) {
     s32 i;
+    s32 *table;
 
     gTextureCache = mempool_alloc_safe(sizeof(TextureHeader) * TEX_HEADER_COUNT, PP_RAM_ASSET_CACHE);
     gCiPalettes = mempool_alloc_safe(TEX_PALLETE_COLOURS, PP_RAM_ASSET_CACHE);
     gNumberOfLoadedTextures = 0;
     gCiPalettesSize = 0;
-    gTextureAssetTable[TEX_TABLE_2D] = (s32 *) load_asset_section_from_rom(ASSET_TEXTURES_2D_TABLE);
-    gTextureAssetTable[TEX_TABLE_3D] = (s32 *) load_asset_section_from_rom(ASSET_TEXTURES_3D_TABLE);
 
-    for (i = 0; gTextureAssetTable[TEX_TABLE_2D][i] != -1; i++) {}
+    table = (s32 *) load_asset_section_from_rom(ASSET_TEXTURES_2D_TABLE);
+    for (i = 0; table[i] != -1; i++) {}
     gTextureAssetID[TEX_TABLE_2D] = --i;
+    mempool_free(table);
 
-    for (i = 0; gTextureAssetTable[TEX_TABLE_3D][i] != -1; i++) {}
+    table = (s32 *) load_asset_section_from_rom(ASSET_TEXTURES_3D_TABLE);
+    for (i = 0; table[i] != -1; i++) {}
     gTextureAssetID[TEX_TABLE_3D] = --i;
+    mempool_free(table);
 
     gSpriteCache = mempool_alloc_safe(sizeof(Sprite) * TEX_SPRITE_COUNT, PP_RAM_ASSET_CACHE);
     gCurrentSprite = mempool_alloc_safe(sizeof(Sprite) * 32, PP_RAM_ASSET_CACHE);
@@ -281,8 +280,6 @@ void tex_init_textures(void) {
         gSpriteTableSize++;
     }
     gSpriteTableSize--;
-
-    gTempTextureHeader = mempool_alloc_safe(sizeof(TempTexHeader), PP_RAM_ASSETTABLE);
     D_80126344 = 0;
 }
 
@@ -302,26 +299,24 @@ void tex_enable_modes(s32 flags) {
     gBlockedRenderFlags &= ~flags;
 }
 
-#ifdef NON_EQUIVALENT
-// Minor matching issues with loops, but should be functionally the same.
-// Official Name: texLoadTexture
+//  Official Name: texLoadTexture
 TextureHeader *load_texture(s32 arg0) {
-    s32 assetSection;
+    TextureHeader *tex;
+    TextureHeader *texTemp;
+    u32 temp_a1;
     s32 assetIndex;
     s32 assetOffset;
     s32 assetSize;
-    s32 assetTable;
-    s32 texIndex;
-    s32 temp_a1;
     s32 paletteOffset;
+    s32 assetSection;
+    s32 texIndex;
+    s32 assetTable;
     s32 i;
-    u8 *alignedAddress;
-    TextureHeader *tex;
-    TextureHeader *texTemp;
-    s32 numberOfTextures;
+    u16 numberOfTextures;
     s32 sp3C;
-    s32 temp_a0;
-    s32 temp_v0_5;
+    s32 tableID;
+    u8 headerHeap[sizeof(TempTexHeader)];
+    TempTexHeader *header = (TempTexHeader *) &headerHeap;
 
     arg0 &= 0xFFFF;
     assetIndex = arg0;
@@ -336,48 +331,50 @@ TextureHeader *load_texture(s32 arg0) {
         arg0 = 0;
     }
     for (i = 0; i < gNumberOfLoadedTextures; i++) {
-        if (arg0 == gTextureCache[(i << 1)]) {
-            tex = (TextureHeader *) gTextureCache[(i << 1) + 1];
+        if (arg0 == gTextureCache[ASSETCACHE_ID(i)]) {
+            tex = (TextureHeader *) gTextureCache[ASSETCACHE_PTR(i)];
             tex->numberOfInstances++;
             return tex;
         }
     }
-    assetOffset = gTextureAssetTable[assetTable][assetIndex];
-    assetSize = gTextureAssetTable[assetTable][assetIndex + 1] - assetOffset;
-    load_asset_to_address(assetSection, (u32) gTempTextureHeader, assetOffset, 0x28);
-    numberOfTextures = (gTempTextureHeader->header.numOfTextures >> 8) & 0xFFFF;
-
-    if (!gTempTextureHeader->header.isCompressed) {
-        tex = (TextureHeader *) mempool_alloc((numberOfTextures * 0x60) + assetSize, gTexColourTag);
+    if (assetTable == 0) {
+        tableID = ASSET_TEXTURES_2D_TABLE;
+    } else {
+        tableID = ASSET_TEXTURES_3D_TABLE;
+    }
+    assettable_seek_s32(assetIndex, &assetOffset, &assetSize, tableID);
+    load_asset_to_address(assetSection, (u32) header, assetOffset, sizeof(TempTexHeader));
+    numberOfTextures = header->header.numOfTextures >> 8;
+    if (!header->header.isCompressed) {
+        tex = (TextureHeader *) mempool_alloc(numberOfTextures * (sizeof(Gfx) * 6) + assetSize, gTexColourTag);
         if (tex == NULL) {
             return NULL;
         }
         load_asset_to_address(assetSection, (u32) tex, assetOffset, assetSize);
     } else {
-        temp_v0_5 = byteswap32((u8 *) &gTempTextureHeader->uncompressedSize);
-        temp_a0 = (numberOfTextures * 0x60) + temp_v0_5;
-        sp3C = temp_v0_5 + 0x20;
-        tex = (TextureHeader *) mempool_alloc(temp_a0 + 0x20, gTexColourTag);
+        sp3C = byteswap32((u8 *) &header->uncompressedSize) + sizeof(TextureHeader);
+        tex = (TextureHeader *) mempool_alloc(numberOfTextures * (sizeof(Gfx) * 6) + sp3C, gTexColourTag);
         if (tex == NULL) {
             return NULL;
         }
-        temp_a1 = ((s32) tex + sp3C) - assetSize;
-        temp_a1 -= temp_a1 % 0x10;
+        temp_a1 = (((s32) tex + sp3C) - assetSize);
+        temp_a1 = (s32) temp_a1 - (s32) temp_a1 % 16;
         load_asset_to_address(assetSection, temp_a1, assetOffset, assetSize);
-        gzip_inflate((u8 *) (temp_a1 + 0x20), (u8 *) tex);
-        assetSize = sp3C - 0x20;
+        gzip_inflate((u8 *) (temp_a1 + sizeof(TextureHeader)), (u8 *) tex);
+        assetSize = sp3C - sizeof(TextureHeader);
     }
     texIndex = -1;
     for (i = 0; i < gNumberOfLoadedTextures; i++) {
-        if (gTextureCache[(i << 1)] == -1) {
+        if (gTextureCache[ASSETCACHE_ID(i)] == -1) {
             texIndex = i;
         }
     }
     if (texIndex == -1) {
-        texIndex = gNumberOfLoadedTextures++;
+        texIndex = gNumberOfLoadedTextures;
+        gNumberOfLoadedTextures++;
     }
-    gTextureCache[(texIndex << 1)] = arg0;
-    gTextureCache[(texIndex << 1) + 1] = (s32) tex;
+    gTextureCache[ASSETCACHE_ID(texIndex)] = arg0;
+    gTextureCache[ASSETCACHE_PTR(texIndex)] = (s32) tex;
     paletteOffset = -1;
     if ((tex->format & 0xF) == TEX_FORMAT_CI4) {
         if (D_80126344 == 0) {
@@ -396,28 +393,23 @@ TextureHeader *load_texture(s32 arg0) {
         paletteOffset = gCiPalettesSize - 128;
     }
     D_80126344 = 0;
+
+    assetOffset = (s32)align16((u8 *) ((s32) tex + assetSize));
     texTemp = tex;
-    alignedAddress = align16((u8 *) ((s32) texTemp + assetSize));
     for (i = 0; i < numberOfTextures; i++) {
-        material_init(texTemp, (Gfx *) alignedAddress);
+        material_init(texTemp, (Gfx *) assetOffset);
         if (paletteOffset >= 0) {
             texTemp->ciPaletteOffset = paletteOffset;
-            alignedAddress += 0x30; // I'm guessing it takes 6 f3d commands to load the palette
+            assetOffset += (sizeof(Gfx) * 6); // I'm guessing it takes 6 f3d commands to load the palette
         }
-        alignedAddress += 0x60; // I'm guessing it takes 12 f3d commands to load the texture
+        assetOffset += (sizeof(Gfx) * 6); // I'm guessing it takes 12 f3d commands to load the texture
         texTemp = (TextureHeader *) ((s32) texTemp + texTemp->textureSize);
     }
     if (gCiPalettesSize >= 0x280) {
         return NULL;
     }
-    if (gNumberOfLoadedTextures >= 701) {
-        return NULL;
-    }
     return tex;
 }
-#else
-#pragma GLOBAL_ASM("asm/nonmatchings/textures_sprites/load_texture.s")
-#endif
 
 /**
  * This function attempts to free the texture from memory.
@@ -532,6 +524,7 @@ void material_set(Gfx **dList, TextureHeader *texhead, s32 flags, s32 texOffset)
         flags |= texhead->flags;
         if (texhead != gCurrentTextureHeader) {
             gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(texhead->cmd), texhead->numberOfCommands);
+            DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
             loadTex = TRUE;
             gCurrentTextureHeader = texhead;
             doPipeSync = FALSE;
@@ -754,14 +747,14 @@ s32 sprite_cache_index(s32 cacheID) {
 
 s32 tex_asset_size(s32 id) {
     s32 textureRomOffset;
-    TempTexHeader *new_var2;
     UNUSED s32 pad;
     u32 textureTable;
     s32 size;
-    s32 new_var3;
     s32 textureTableType;
     s32 numOfTextures;
-    TempTexHeader *new_var4;
+    s32 tableID;
+    u8 headerHeap[sizeof(TempTexHeader)];
+    TempTexHeader *header = (TempTexHeader *) &headerHeap;
 
     textureTable = ASSET_TEXTURES_2D;
     textureTableType = TEX_TABLE_2D;
@@ -773,18 +766,18 @@ s32 tex_asset_size(s32 id) {
     if (id >= gTextureAssetID[textureTableType] || id < 0) {
         return 0;
     }
-    textureRomOffset = gTextureAssetTable[textureTableType][id];
-    new_var3 = textureRomOffset;
-    size = gTextureAssetTable[textureTableType][id + 1] - new_var3;
-    new_var2 = gTempTextureHeader;
-    if (new_var2->header.isCompressed) {
-        load_asset_to_address(textureTable, (u32) new_var2, textureRomOffset, sizeof(TempTexHeader));
-        new_var4 = gTempTextureHeader;
-        size = byteswap32((u8 *) (&new_var4->uncompressedSize));
+    if (textureTable == TEX_TABLE_2D) {
+        tableID = ASSET_TEXTURES_2D_TABLE;
+    } else {
+        tableID = ASSET_TEXTURES_3D_TABLE;
     }
-    new_var2 = gTempTextureHeader;
-    numOfTextures = new_var2->header.numOfTextures;
-    return (((numOfTextures >> 8) & 0xFFFF) * 0x60) + size;
+    assettable_seek_s32(id, &textureRomOffset, &size, tableID);
+    if (header->header.isCompressed) {
+        load_asset_to_address(textureTable, (u32) header, textureRomOffset, sizeof(TempTexHeader));
+        size = byteswap32((u8 *) (&header->uncompressedSize));
+    }
+    numOfTextures = header->header.numOfTextures;
+    return (((numOfTextures >> 8) & 0xFFFF) * (sizeof(Gfx) * 6)) + size;
 }
 
 s32 load_sprite_info(s32 spriteIndex, s32 *numOfInstancesOut, s32 *unkOut, s32 *numFramesOut, s32 *formatOut,

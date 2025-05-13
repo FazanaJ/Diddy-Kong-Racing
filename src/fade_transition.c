@@ -230,7 +230,7 @@ s32 transition_begin(FadeTransition *transition) {
     gCurFadeTransition = transition->type & 0x3F;
     gTransitionInvert = transition->type & FADE_FLAG_INVERT;
     sLevelTransitionDelayTimer = 0;
-    if (!gTransitionFadeIn && !sLevelTransitionDelayTimer) {
+    if (!gTransitionFadeIn && sLevelTransitionDelayTimer == 0) {
         sLevelTransitionDelayTimer = 2;
     }
     if (sTransitionFadeTimer > 0) {
@@ -834,9 +834,9 @@ void transition_init_blank(UNUSED FadeTransition *transition) {
  * Shifts the colours of the transition over time while the timer ticks down.
  */
 void transition_update_blank(s32 updateRate) {
-    s32 var_v0 = FALSE;
-    do {
-        var_v0 = TRUE;
+    s32 breakout = FALSE;
+    while (!breakout) {
+        breakout = TRUE;
         if (sTransitionFadeTimer > 0) {
             gLastFadeRed += gLastFadeRedStep * updateRate;
             gLastFadeGreen += gLastFadeGreenStep * updateRate;
@@ -858,7 +858,7 @@ void transition_update_blank(s32 updateRate) {
                 }
             }
         }
-    } while (var_v0 == FALSE);
+    }
 }
 
 /**

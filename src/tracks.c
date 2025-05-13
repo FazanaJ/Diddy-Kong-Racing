@@ -15,7 +15,6 @@
 #include "game_ui.h"
 #include "weather.h"
 #include "particles.h"
-#include "libultra/src/libc/rmonPrintf.h"
 #include "objects.h"
 #include "math_util.h"
 #include "printf.h"
@@ -83,9 +82,9 @@ s32 gSceneStartSegment;
 s32 D_8011B0D8;
 s32 gSceneRenderSkyDome;
 s8 gDrawLevelSegments;
-u8 D_8011B0E1;
-u8 D_8011B0E2;
-u8 D_8011B0E3;
+u8 D_8011B0E1; // R of RGB
+u8 D_8011B0E2; // G of RGB
+u8 D_8011B0E3; // B of RGB
 f32 D_8011B0E4;
 f32 D_8011B0E8;
 f32 D_8011B0EC;
@@ -157,19 +156,91 @@ Triangle *D_8011D490[2];
 Triangle *D_8011D498;
 s16 D_8011D49C;
 s16 D_8011D49E;
-f32 D_8011D4A0;
-f32 D_8011D4A4;
+f32 D_8011D4A0; // something x coordinate related
+f32 D_8011D4A4; // something z coordinate related
 f32 D_8011D4A8;
-f32 D_8011D4AC;
-f32 D_8011D4B0;
+f32 D_8011D4AC; // something x coordinate related
+f32 D_8011D4B0; // something z coordinate related
 s8 D_8011D4B4;
 s8 gAntiAliasing;
-s16 D_8011D4B6;
+typedef struct Unk8011D4B6 {
+    union {
+        struct {
+            u8 one, two;
+        };
+        s16 whole;
+    };
+} Unk8011D4B6;
+Unk8011D4B6 D_8011D4B6;
 s16 D_8011D4B8;
 s16 D_8011D4BA;
 s16 D_8011D4BC;
 
+u8 gSortMats;
+s16 gSortBufCount;
+SortBuffer *gSortBuffer;
+
+
 /******************************/
+
+void sortbuffer_find(SortBuffer *b) {
+    s32 i;
+    SortBuffer *slot;
+    s32 nextIdx;
+
+    // This is the first entry, we don't need to sort anything.
+    if (gSortBufCount == 1) {
+        b->nextIndex = -1;
+        return;
+    }
+
+    for (i = 0; i != -1; i = slot->nextIndex) {
+        slot = &gSortBuffer[i];
+
+        if ((s32) slot->material == (s32) b->material) {
+            nextIdx = slot->nextIndex;
+            slot->nextIndex = b->index;
+            b->nextIndex = nextIdx;
+            return;
+        }
+    }
+
+    slot->nextIndex = b->index;
+    b->nextIndex = -1;
+}
+
+void sortbuffer_pop(Gfx **dList) {
+    s32 i;
+    SortBuffer *slot;
+    s32 nextIdx;
+    u32 prevPrim = 0;
+
+    // Just return if there's nothing.
+    if (gSortBufCount == 0) {
+        return;
+    }
+
+    for (i = 0; i != -1; i = slot->nextIndex) {
+        slot = &gSortBuffer[i];
+        if (slot->primColour != prevPrim) {
+            gDPSetPrimColorRGBA((*dList)++, slot->primColour);
+            prevPrim = slot->primColour;
+        }
+        if (slot->material) {
+            material_set(dList, slot->material, slot->flags, slot->texOffset);
+        }
+        if (slot->material) {
+            
+        }
+        gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(slot->vtx), slot->vtxCount, 0);
+        gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(slot->tri), slot->triCount, slot->material != NULL);
+    }
+
+    gSortBuffer[0].nextIndex = -1;
+    gSortBuffer[0].index = 0;
+
+    gSortBufCount = 0;
+}
 
 /**
  * Sets the number of expected viewports in the scene.
@@ -180,6 +251,8 @@ s32 set_scene_viewport_num(s32 numPorts) {
     gScenePlayerViewports = numPorts;
     return 0;
 }
+
+extern s32 gObjectCount;
 
 /**
  * Initialises the level.
@@ -195,6 +268,14 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     D_8011B104 = 0;
     D_8011B108 = 0;
     D_8011B10C = 0;
+
+    if (gSortBuffer) {
+        mempool_free(gSortBuffer);
+    }
+
+    if (gSortMats) {
+        gSortBuffer = mempool_alloc(sizeof(SortBuffer) * 200, PP_RAM_STACK);
+    }
 
     if (gCurrentLevelHeader2->race_type == RACETYPE_CUTSCENE_1 ||
         gCurrentLevelHeader2->race_type == RACETYPE_CUTSCENE_2) {
@@ -236,7 +317,7 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     func_8000C8F8(collectables, 1);
     gScenePlayerViewports = numberOfPlayers;
     func_8000CC7C(vehicle, entranceId, numberOfPlayers);
-    func_8000B020(72, 64);
+    racerfx_alloc(72, 64);
 
     if (geometry == 0 && entranceId == 0) {
         transition_begin(&gCircleFadeToBlack);
@@ -264,11 +345,20 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     shadow_update(SHADOW_ACTORS, SHADOW_ACTORS, LOGIC_NULL);
     gShadowHeapFlip = 0;
     if (gCurrentLevelHeader2->unkB7) {
-        D_8011B0E1 = gCurrentLevelHeader2->unkB4;
-        D_8011B0E2 = gCurrentLevelHeader2->unkB5;
-        D_8011B0E3 = gCurrentLevelHeader2->unkB6;
+        D_8011B0E1 = gCurrentLevelHeader2->rgb.red;
+        D_8011B0E2 = gCurrentLevelHeader2->rgb.green;
+        D_8011B0E3 = gCurrentLevelHeader2->rgb.blue;
         func_80025510(numberOfPlayers + 1);
     }
+
+#ifdef OPEN_ALL_DOORS
+    for (i = 0; i < gObjectCount; i++) {
+        Object *obj = get_object(i);
+        if (obj->objectID == ASSET_OBJECT_ID_PIGHEADCOLOURS) {
+            free_object(obj);
+        }
+    }
+#endif
 }
 
 void aa_manage(s32 mode) {
@@ -450,7 +540,7 @@ void render_scene(Gfx **dList, MatrixS **mtx, Vertex **vtx, Triangle **tris, s32
     viewport_reset(&gSceneCurrDisplayList);
     gDPPipeSync(gSceneCurrDisplayList++);
     gDkrDisableBillboard(gSceneCurrDisplayList++);
-    gShadowHeapFlip = 1 - gShadowHeapFlip;
+    gShadowHeapFlip ^= 1;
     *dList = gSceneCurrDisplayList;
     *mtx = gSceneCurrMatrix;
     *vtx = gSceneCurrVertexList;
@@ -515,10 +605,6 @@ void func_800257D0(void) {
     }
 }
 
-#ifdef NON_MATCHING
-void func_80026070(LevelModelSegmentBoundingBox *, f32, f32, f32);
-void func_80026430(LevelModelSegment *, f32, f32, f32);
-// URL: https://decomp.me/scratch/Hz4qp
 void func_8002581C(u8 *segmentIds, s32 numberOfSegments, s32 viewportIndex) {
     s16 i;
     s16 j;
@@ -530,12 +616,12 @@ void func_8002581C(u8 *segmentIds, s32 numberOfSegments, s32 viewportIndex) {
     s16 temp_s3;
     s16 var_s0;
     s16 var_s4;
-    s32 breakLoop;
+    s16 breakLoop;
     s32 *ptr2;
     LevelModelSegmentBoundingBox *bbox;
     s16 sum;
-    s8 sp7C[20]; // possible UB here, real size is unknown
-    s16 tmp;
+    s8 sp7C[24]; // possible UB here, real size is unknown
+    s32 pad;
 
     D_8011D490[0] = D_8011D474[viewportIndex].unk0;
     D_8011D490[1] = D_8011D474[viewportIndex].unk4;
@@ -560,12 +646,12 @@ void func_8002581C(u8 *segmentIds, s32 numberOfSegments, s32 viewportIndex) {
     i = 0;
     for (; i < numberOfSegments; i++) {
         bbox = &gCurrentLevelModel->segmentsBoundingBoxes[segmentIds[i]];
-        sum = 0;
-        sum += bbox->x1 * yCameraSins + yCameraCoss * bbox->z1 + temp_f22 <= 0.0;
-        sum += yCameraSins * bbox->x2 + yCameraCoss * bbox->z1 + temp_f22 <= 0.0;
-        sum += bbox->x1 * yCameraSins + yCameraCoss * bbox->z2 + temp_f22 <= 0.0;
-        sum += yCameraSins * bbox->x2 + yCameraCoss * bbox->z2 + temp_f22 <= 0.0;
-        if (sum & 3) {
+        breakLoop = 0;
+        breakLoop += bbox->x1 * yCameraSins + yCameraCoss * bbox->z1 + temp_f22 <= 0.0;
+        breakLoop += yCameraSins * bbox->x2 + yCameraCoss * bbox->z1 + temp_f22 <= 0.0;
+        breakLoop += bbox->x1 * yCameraSins + yCameraCoss * bbox->z2 + temp_f22 <= 0.0;
+        breakLoop += yCameraSins * bbox->x2 + yCameraCoss * bbox->z2 + temp_f22 <= 0.0;
+        if (breakLoop & 3) {
             func_80026430(&gCurrentLevelModel->segments[segmentIds[i]], yCameraSins, yCameraCoss, temp_f22);
             if (gCurrentLevelModel->segments[segmentIds[i]].unk3C & 2) {
                 func_80026070(bbox, yCameraSins, yCameraCoss, temp_f22);
@@ -605,12 +691,12 @@ void func_8002581C(u8 *segmentIds, s32 numberOfSegments, s32 viewportIndex) {
     var_s0 = 0;
 
     for (i = 0; i < D_8011D49E; i++) {
-        tmp = D_8011D478[i].unk7 * 2;
-        if (D_8011D47C[tmp] == -1) {
+        j = D_8011D478[i].unk7 * 2;
+        if (D_8011D47C[j] == -1) {
             D_8011D478[i].unk6 |= 2;
-            D_8011D47C[tmp] = i;
+            D_8011D47C[j] = i;
         } else {
-            D_8011D47C[tmp + 1] = i;
+            D_8011D47C[j + 1] = i;
         }
     }
     var_s4 = temp_s3 = D_8011D478[0].unk0;
@@ -623,7 +709,7 @@ void func_8002581C(u8 *segmentIds, s32 numberOfSegments, s32 viewportIndex) {
     D_8011D4B4 = 1 - D_8011D4B4;
     D_8011D488 = gSceneCurrVertexList;
     D_8011D498 = gSceneCurrTriList;
-    D_8011D4B6 = 0;
+    D_8011D4B6.whole = 0;
     D_8011D4B8 = 0;
 
     i = 0;
@@ -653,16 +739,13 @@ void func_8002581C(u8 *segmentIds, s32 numberOfSegments, s32 viewportIndex) {
             }
         }
     }
-    if (D_8011D4B6 != 0) {
-        gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(D_8011D488), D_8011D4B6, 0);
-        gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(D_8011D498), D_8011D4B6 >> 1, TRIN_DISABLE_TEXTURE);
+    if (D_8011D4B6.whole != 0) {
+        gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(D_8011D488), D_8011D4B6.whole, 0);
+        gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(D_8011D498), D_8011D4B6.whole >> 1, TRIN_DISABLE_TEXTURE);
     }
     gSceneCurrVertexList = spAC;
     gSceneCurrTriList = spA8;
 }
-#else
-#pragma GLOBAL_ASM("asm/nonmatchings/tracks/func_8002581C.s")
-#endif
 
 void func_80026070(LevelModelSegmentBoundingBox *arg0, f32 arg1, f32 arg2, f32 arg3) {
     f32 sp80[4];
@@ -972,114 +1055,112 @@ void func_80026E54(s16 arg0, s8 *arg1, f32 arg2, f32 arg3) {
     }
 }
 
-#ifdef NON_EQUIVALENT
 s32 func_80027184(f32 *arg0, f32 *arg1, f32 arg2, f32 arg3) {
     Vertex *verts;
     Triangle *tris;
-    u8 triIndex;
-    s32 vertZ1;
-    s32 vertX2;
-    s32 vertZ2;
-    s32 vertX1;
-    s32 colour_r;
-    s32 colour_g;
-    s32 colour_b;
+    s32 triIndex;
+    s16 vertZ1;
+    s16 vertX2;
+    s16 vertZ2;
+    s16 vertX1;
+    u8 colour_r;
+    u8 colour_g;
+    u8 colour_b;
+    u8 colour_a;
 
     if (D_8011D4B8 >= D_8011D4BC) {
-        return 0;
-    } else {
-        if (D_8011D4B6 == 24) {
-            gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(D_8011D488), D_8011D4B6, 0);
-            gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(D_8011D498), (D_8011D4B6 >> 1), TRIN_DISABLE_TEXTURE);
-            D_8011D488 = gSceneCurrVertexList;
-            D_8011D4B6 = 0;
-            D_8011D498 = gSceneCurrTriList;
-        }
-
-        colour_r = D_8011B0E1;
-        colour_g = D_8011B0E2;
-        colour_b = D_8011B0E3;
-
-        vertX1 = arg2 * D_8011D4A0 + D_8011D4AC;
-        vertZ1 = arg2 * D_8011D4A4 + D_8011D4B0;
-        vertX2 = arg3 * D_8011D4A0 + D_8011D4AC;
-        vertZ2 = arg3 * D_8011D4A4 + D_8011D4B0;
-
-        verts = gSceneCurrVertexList;
-        verts->x = vertX1;
-        verts->y = arg0[0] + 2;
-        verts->z = vertZ1;
-        verts->r = colour_r;
-        verts->g = colour_g;
-        verts->b = colour_b;
-        verts->a = 255;
-        verts++;
-
-        verts->x = vertX2;
-        verts->y = arg0[1] + 2;
-        verts->z = vertZ2;
-        verts->r = colour_r;
-        verts->g = colour_g;
-        verts->b = colour_b;
-        verts->a = 255;
-        verts++;
-
-        verts->x = vertX1;
-        verts->y = arg1[0] - 2;
-        verts->z = vertZ1;
-        verts->r = colour_r;
-        verts->g = colour_g;
-        verts->b = colour_b;
-        verts->a = 255;
-        verts++;
-
-        verts->x = vertX2;
-        verts->y = arg1[1] - 2;
-        verts->z = vertZ2;
-        verts->r = colour_r;
-        verts->g = colour_g;
-        verts->b = colour_b;
-        verts->a = 255;
-        verts++;
-
-        gSceneCurrVertexList = verts;
-        triIndex = (u8) D_8011D4B6;
-
-        tris = gSceneCurrTriList;
-        tris->flags = BACKFACE_DRAW;
-        tris->vi0 = triIndex + 2;
-        tris->vi1 = triIndex + 1;
-        tris->vi2 = triIndex;
-        tris->uv0.u = 0x3E0;
-        tris->uv0.v = 0x3E0;
-        tris->uv1.u = 0x3E0;
-        tris->uv1.v = 0;
-        tris->uv2.u = 1;
-        tris->uv2.v = 0;
-        tris++;
-
-        tris->flags = BACKFACE_DRAW;
-        tris->vi1 = triIndex + 1;
-        tris->vi2 = triIndex + 2;
-        tris->vi0 = triIndex + 3;
-        tris->uv0.u = 1;
-        tris->uv0.v = 0x3E0;
-        tris->uv1.u = 0x3E0;
-        tris->uv1.v = 0x3E0;
-        tris->uv2.u = 1;
-        tris->uv2.v = 0;
-        tris++;
-        gSceneCurrTriList = tris;
-
-        D_8011D4B6 += 4;
-        D_8011D4B8++;
+        return NULL;
     }
 
-    return 0;
+    if (D_8011D4B6.whole == 24) {
+        gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(D_8011D488), D_8011D4B6.whole, 0);
+        gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(D_8011D498), (D_8011D4B6.whole >> 1),
+                   TRIN_DISABLE_TEXTURE);
+        D_8011D488 = gSceneCurrVertexList;
+        D_8011D4B6.whole = 0;
+        D_8011D498 = gSceneCurrTriList;
+    }
+
+    vertX1 = arg2 * D_8011D4A0 + D_8011D4AC;
+    vertZ1 = arg2 * D_8011D4A4 + D_8011D4B0;
+    vertX2 = arg3 * D_8011D4A0 + D_8011D4AC;
+    vertZ2 = arg3 * D_8011D4A4 + D_8011D4B0;
+
+    colour_r = D_8011B0E1;
+    colour_g = D_8011B0E2;
+    colour_b = D_8011B0E3;
+    colour_a = 0xFF;
+
+    verts = gSceneCurrVertexList;
+    verts[0].x = vertX1;
+    verts[0].y = arg0[0] + 2.0f;
+    verts[0].z = vertZ1;
+    verts[0].r = colour_r;
+    verts[0].g = colour_g;
+    verts[0].b = colour_b;
+    verts[0].a = colour_a;
+
+    verts[1].x = vertX2;
+    verts[1].y = arg0[1] + 2.0f;
+    verts[1].z = vertZ2;
+    verts[1].r = colour_r;
+    verts[1].g = colour_g;
+    verts[1].b = colour_b;
+    verts[1].a = colour_a;
+
+    verts[2].x = vertX1;
+    verts[2].y = arg1[0] - 2.0f;
+    verts[2].z = vertZ1;
+    verts[2].r = colour_r;
+    verts[2].g = colour_g;
+    verts[2].b = colour_b;
+    verts[2].a = colour_a;
+
+    verts[3].x = vertX2;
+    verts[3].y = arg1[1] - 2.0f;
+    verts[3].z = vertZ2;
+    verts[3].r = colour_r;
+    verts[3].g = colour_g;
+    verts[3].b = colour_b;
+    verts[3].a = colour_a;
+    // @fake
+    if (1) {}
+    verts += 4;
+    gSceneCurrVertexList = verts;
+
+    tris = gSceneCurrTriList;
+    triIndex = D_8011D4B6.two;
+
+    // @fake, using index 0 directly doesn't match
+    vertX2 = 0;
+    tris[vertX2].flags = BACKFACE_DRAW;
+    tris[vertX2].vi0 = triIndex + 2;
+    tris[vertX2].vi1 = triIndex + 1;
+    tris[vertX2].vi2 = triIndex;
+    tris[vertX2].uv0.u = 0x3E0;
+    tris[vertX2].uv0.v = 0x3E0;
+    tris[vertX2].uv1.u = 0x3E0;
+    tris[vertX2].uv1.v = 0;
+    tris[vertX2].uv2.u = 1;
+    tris[vertX2].uv2.v = 0;
+
+    tris[1].flags = BACKFACE_DRAW;
+    tris[1].vi0 = triIndex + 3;
+    tris[1].vi1 = triIndex + 1;
+    tris[1].vi2 = triIndex + 2;
+    tris[1].uv0.u = 1;
+    tris[1].uv0.v = 0x3E0;
+    tris[1].uv1.u = 0x3E0;
+    tris[1].uv1.v = 0x3E0;
+    tris[1].uv2.u = 1;
+    tris[1].uv2.v = 0;
+    tris += 2;
+    gSceneCurrTriList = tris;
+
+    D_8011D4B6.whole += 4;
+    D_8011D4B8++;
+    return NULL;
 }
-#else
-#pragma GLOBAL_ASM("asm/nonmatchings/tracks/func_80027184.s")
-#endif
 
 #ifdef NON_EQUIVALENT
 typedef struct Unk80027568_2 {
@@ -1358,9 +1439,184 @@ void set_skydome_visbility(s32 renderSky) {
     gSceneRenderSkyDome = renderSky;
 }
 
+#ifdef NON_EQUIVALENT
+// This function creates the flashy sky effect in the wizpig 2 race.
 // init_skydome
-// https://decomp.me/scratch/80umh
+// https://decomp.me/scratch/F52TP
+void func_80028050(void) {
+    // sp154 ?
+    s32 uCoordMask; // sp150 ?
+    s32 vCoordMask; // sp14C
+    s16 uCoords[9]; // sp128
+    s16 vCoords[9]; // sp114
+    f32 yRotCos;    // sp10C
+    f32 yRotSin;
+    f32 xPositions[9]; // spDC
+    f32 zPositions[9]; // spB8
+    f32 spB4;
+    s8 *sp7C;
+    s32 sp78;
+    TextureHeader *sp74;
+    f32 sp48;
+    f32 sp3C;
+    f32 sp38;
+    f32 sp2C;
+    ObjectSegment *objSeg;
+    s16 temp_a1;
+    s16 temp_v0_2;
+    s16 temp_v1_2;
+    Vertex *verts;
+    Triangle *tris;
+    s8 *var_t2;
+    s8 *var_v0;
+    u8 *var_v0_3;
+    u32 var_a2;
+    u32 var_a3;
+    s32 i;
+    s16 yPos;
+
+    verts = gSceneCurrVertexList;
+    tris = gSceneCurrTriList;
+    objSeg = get_active_camera_segment();
+    sp74 = gCurrentLevelHeader2->unkA4;
+    uCoordMask = (sp74->width << 5) - 1;
+    vCoordMask = (sp74->height << 5) - 1;
+    yRotCos = coss_f(-objSeg->trans.rotation.y_rotation);
+    yRotSin = sins_f(-objSeg->trans.rotation.y_rotation);
+
+    xPositions[0] = -(yRotSin * 1280.0f) - (yRotCos * 1280.0f); // spDC OK
+    zPositions[0] = -(yRotSin * 1280.0f) + (yRotCos * 1280.0f); // spB8 OK
+
+    zPositions[1] = (yRotSin * 1280.0f) - (yRotCos * 1280.0f);  // spE0 OK
+    xPositions[1] = -(yRotSin * 1280.0f) - (yRotCos * 1280.0f); // spBC OK
+
+    xPositions[2] = (yRotSin * 1280.0f) + (yRotCos * 1280.0f); // spE4 OK
+    zPositions[2] = (yRotSin * 1280.0f) - (yRotCos * 1280.0f); // spC0 OK
+
+    xPositions[3] = -(yRotSin * 1280.0f) + (yRotCos * 1280.0f); // spE8 OK
+    zPositions[3] = (yRotSin * 1280.0f) + (yRotCos * 1280.0f);  // spC4 OK
+
+    xPositions[4] = 0.0f; // spEC OK
+    zPositions[4] = 0.0f; // spC8 OK
+
+    xPositions[5] = -(yRotSin * 1280.0f) - (2.0f * (yRotCos * 1280.0f)); // spF0
+    zPositions[5] = (yRotCos * 1280.0f) - (2.0f * (yRotSin * 1280.0f));  // spCC
+
+    zPositions[6] = -(2.0f * (yRotSin * 1280.0f)) - (yRotCos * 1280.0f); // spF4
+    xPositions[6] = (yRotSin * 1280.0f) - (2.0f * (yRotCos * 1280.0f));  // spD0
+
+    xPositions[7] = (yRotSin * 1280.0f) + (2.0f * (yRotCos * 1280.0f)); // spF8
+    zPositions[7] = (2.0f * (yRotSin * 1280.0f)) - (yRotCos * 1280.0f); // spD4
+
+    xPositions[8] = -(yRotSin * 1280.0f) + (2.0f * (yRotCos * 1280.0f)); // spFC
+    zPositions[8] = (2.0f * (yRotSin * 1280.0f)) + (yRotCos * 1280.0f);  // spD8
+
+    sp38 = (f32) (sp74->width * 16 * gCurrentLevelHeader2->unkA0);
+    temp_v0_2 =
+        ((s32) (objSeg->trans.x_position * ((1280.0f * 0.25f) / sp38)) + ((s16) gCurrentLevelHeader2->unkA8 >> 4)) &
+        uCoordMask;
+    sp48 = (f32) (sp74->height * 16 * gCurrentLevelHeader2->unkA1);
+    temp_v1_2 =
+        ((s32) (objSeg->trans.z_position * ((1280.0f * 0.25f) / sp48)) + ((s16) gCurrentLevelHeader2->unkAA >> 4)) &
+        vCoordMask;
+
+    uCoords[0] = (s32) (-(sp38 * yRotSin) - (sp48 * yRotCos)) + temp_v0_2;
+    vCoords[0] = (s32) ((sp48 * yRotCos) - (sp38 * yRotSin)) + temp_v1_2;
+
+    uCoords[1] = (s32) ((sp38 * yRotSin) - (sp48 * yRotCos)) + temp_v0_2;
+    vCoords[1] = (s32) (-(sp38 * yRotSin) - (sp48 * yRotCos)) + temp_v1_2;
+
+    uCoords[2] = (s32) ((sp38 * yRotSin) + (sp48 * yRotCos)) + temp_v0_2;
+    vCoords[2] = (s32) ((sp38 * yRotSin) - (sp48 * yRotCos)) + temp_v1_2;
+
+    uCoords[3] = (s32) ((sp48 * yRotCos) - (sp38 * yRotSin)) + temp_v0_2;
+    vCoords[3] = (s32) ((sp38 * yRotSin) + (sp48 * yRotCos)) + temp_v1_2;
+
+    uCoords[4] = temp_v0_2;
+    vCoords[4] = temp_v1_2;
+
+    uCoords[5] = (s32) (-(sp38 * yRotSin) - (2.0f * (sp48 * yRotCos))) + temp_v0_2;
+    vCoords[5] = (s32) ((sp48 * yRotCos) - (2.0f * (sp38 * yRotSin))) + temp_v1_2;
+
+    uCoords[6] = (s32) ((sp38 * yRotSin) - (2.0f * (sp48 * yRotCos))) + temp_v0_2;
+    vCoords[6] = (s32) (-(2.0f * (sp38 * yRotSin)) - (sp48 * yRotCos)) + temp_v1_2;
+
+    uCoords[7] = (s32) ((sp38 * yRotSin) + (2.0f * (sp48 * yRotCos))) + temp_v0_2;
+    vCoords[7] = (s32) ((2.0f * (sp38 * yRotSin)) - (sp48 * yRotCos)) + temp_v1_2;
+
+    uCoords[8] = (s32) ((2.0f * (sp48 * yRotCos)) - (sp38 * yRotSin)) + temp_v0_2;
+    vCoords[8] = (s32) ((2.0f * (sp38 * yRotSin)) + (sp48 * yRotCos)) + temp_v1_2;
+
+    matrix_world_origin(&gSceneCurrDisplayList, &gSceneCurrMatrix);
+    var_t2 = gCurrentLevelHeader2->unk74[0];
+    var_a2 = 0xFFFFFFFF;
+    if (var_t2 != (s8 *) -1) {
+        var_v0 = gCurrentLevelHeader2->unk74[1];
+        if (var_v0 == (s8 *) -1) {
+            var_v0 = var_t2;
+        }
+    } else {
+        var_v0 = sp78;
+        var_t2 = NULL;
+    }
+    var_a3 = 0xFFFFFF00;
+    if (var_t2 != NULL) {
+        var_a2 = var_t2[0x10];
+        var_a3 = var_v0[0x10] & ~0xFF;
+    }
+    sp7C = var_t2;
+    gfx_init_basic_xlu(&gSceneCurrDisplayList, 1, var_a2, var_a3);
+    sp74 = (TextureHeader *) set_animated_texture_header(sp74, D_8011B110 << 8);
+    gDkrDmaDisplayList(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(sp74->cmd), sp74->numberOfCommands);
+    gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(gSceneCurrVertexList), 9, 0);
+    gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(gSceneCurrTriList), 8, 1);
+    gDPPipeSync(gSceneCurrDisplayList++);
+    if (var_t2 != NULL) {
+        gDPSetPrimColor(gSceneCurrDisplayList++, 0, 0, 255, 255, 255, 255);
+        gDPSetEnvColor(gSceneCurrDisplayList++, 255, 255, 255, 0);
+    }
+    rendermode_reset(&gSceneCurrDisplayList);
+
+    yPos = objSeg->trans.y_position + 192.0f;
+    for (i = 0; i < 9; i++) {
+        verts->y = yPos;
+        verts->x = objSeg->trans.x_position + xPositions[i];
+        verts->z = objSeg->trans.z_position + zPositions[i];
+        verts->r = 255;
+        verts->g = 255;
+        verts->b = 255;
+        verts->a = (i <= 4) ? 255 : 0;
+        verts++;
+    }
+
+    var_v0_3 = D_800DC92C;
+    for (i = 0; i < 8; i++) {
+        tris->flags = 0x40;
+
+        tris->vi0 = *var_v0_3;
+        tris->uv0.u = uCoords[*var_v0_3];
+        tris->uv0.v = vCoords[*var_v0_3];
+        var_v0_3++;
+
+        tris->vi1 = *var_v0_3;
+        tris->uv1.u = uCoords[*var_v0_3];
+        tris->uv1.v = vCoords[*var_v0_3];
+        var_v0_3++;
+
+        tris->vi2 = *var_v0_3;
+        tris->uv2.u = uCoords[*var_v0_3];
+        tris->uv2.v = vCoords[*var_v0_3];
+        var_v0_3++;
+
+        tris++;
+    }
+
+    gSceneCurrVertexList = verts;
+    gSceneCurrTriList = tris;
+}
+#else
 #pragma GLOBAL_ASM("asm/nonmatchings/tracks/func_80028050.s")
+#endif
 
 /**
  * Instead of drawing the skydome with textures, draw a solid coloured background.
@@ -1580,6 +1836,7 @@ void render_level_geometry_and_objects(void) {
             objectsVisible[segmentIds[i] + 1] = TRUE;
         }
     }
+    sortbuffer_pop(&gSceneCurrDisplayList);
     aa_manage(TRACKAA_OBJECT);
 
     if (gCurrentLevelModel->numberOfSegments < 2) {
@@ -1646,6 +1903,7 @@ void render_level_geometry_and_objects(void) {
             render_level_segment(segmentIds[i], TRUE); // Render transparent segments
         }
     }
+    sortbuffer_pop(&gSceneCurrDisplayList);
     aa_manage(AA_OFF);
 
     if (gWaveBlockCount != 0) {
@@ -1694,9 +1952,12 @@ void render_level_geometry_and_objects(void) {
         }
     }
 
+    sortbuffer_pop(&gSceneCurrDisplayList);
+
     if (D_800DC924 != NULL && func_80027568()) {
         func_8002581C(segmentIds, numberOfSegments, get_current_viewport());
     }
+    
 }
 
 /**
@@ -1723,9 +1984,10 @@ void render_level_segment(s32 segmentId, s32 nonOpaque) {
     s32 endPos;
     s32 batchFlags;
     s32 textureFlags;
+    //! @bug: batchInfo is uninitalized
     numberVertices = (batchInfo + 1)->verticesOffset - batchInfo->verticesOffset;
     segment = &gCurrentLevelModel->segments[segmentId];
-    sp78 = (nonOpaque && gWaveBlockCount) ? (func_800B9228(segment)) : (0);
+    sp78 = (nonOpaque && gWaveBlockCount) ? func_800B9228(segment) : 0;
     if (nonOpaque) {
         startPos = segment->numberofOpaqueBatches;
         endPos = segment->numberOfBatches;
@@ -1749,9 +2011,6 @@ void render_level_segment(s32 segmentId, s32 nonOpaque) {
             textureFlags = texture->flags;
         }
         batchFlags |= BATCH_FLAGS_UNK00000008 | BATCH_FLAGS_UNK00000002;
-        if (!(batchFlags & BATCH_FLAGS_DEPTH_WRITE) && !(batchFlags & BATCH_FLAGS_RECEIVE_SHADOWS)) {
-            batchFlags |= gUseAntiAliasing;
-        }
         if ((!(textureFlags & RENDER_SEMI_TRANSPARENT) && !(batchFlags & BATCH_FLAGS_WATER)) ||
             batchFlags & BATCH_FLAGS_RECEIVE_SHADOWS) {
             renderBatch = TRUE;
@@ -1792,13 +2051,30 @@ void render_level_segment(s32 segmentId, s32 nonOpaque) {
             gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(triangles), numberTriangles, TRIN_ENABLE_TEXTURE);
             gDPSetPrimColor(gSceneCurrDisplayList++, 0, 0, 255, 255, 255, 255);
         } else {
-            material_set(&gSceneCurrDisplayList, texture, batchFlags, texOffset);
-            batchFlags = TRUE;
-            if (texture == NULL) {
-                batchFlags = FALSE;
+            if (gSortMats) {
+                    SortBuffer *buf = &gSortBuffer[gSortBufCount];
+                    buf->flags = batchFlags;
+                    buf->tri = triangles;
+                    buf->vtx = vertices;
+                    buf->triCount = numberTriangles;
+                    buf->vtxCount = numberVertices;
+                    buf->material = texture;
+                    buf->texOffset = texOffset;
+                    buf->mtx = NULL;
+                    buf->primColour = COLOUR_RGBA32(255, 255, 255, 255);
+                    buf->index = gSortBufCount;
+                    gSortBufCount++;
+                    buf->matType = 0;
+                    sortbuffer_find(buf);
+            } else {
+                material_set(&gSceneCurrDisplayList, texture, batchFlags, texOffset);
+                batchFlags = TRUE;
+                if (texture == NULL) {
+                    batchFlags = FALSE;
+                }
+                gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vertices), numberVertices, 0);
+                gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(triangles), numberTriangles, batchFlags);
             }
-            gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vertices), numberVertices, 0);
-            gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(triangles), numberTriangles, batchFlags);
         }
     }
 }
@@ -2659,10 +2935,7 @@ void func_8002C0C4(s32 modelId) {
         j = (s32) align16(((u8 *) (gCurrentLevelModel->segments[k].unk32 * 2)) + j);
     }
     temp_s4 = j - (s32) gCurrentLevelModel;
-    mempool_free_timer(0);
-    mempool_free(gTrackModelHeap);
-    mempool_alloc_fixed(temp_s4, (u8 *) gTrackModelHeap, PP_RAM_LEVELMDL);
-    mempool_free_timer(2);
+    mempool_realloc(gTrackModelHeap, temp_s4, PP_RAM_LEVELMDL);
     minimap_init(gCurrentLevelModel);
 
     for (i = 0; i < gCurrentLevelModel->numberOfSegments; i++) {
@@ -2720,7 +2993,7 @@ LevelModel *get_current_level_model(void) {
 void free_track(void) {
     s32 i;
 
-    func_8000B290();
+    racerfx_free();
     if (gWaveBlockCount != 0) {
         mempool_free(D_8011C3B8);
         mempool_free(D_8011C8B8);
@@ -3119,14 +3392,13 @@ void shadow_render(Object *obj, ShadowData *shadow) {
             alpha = gCurrShadowVerts[gCurrShadowHeapData[i].vtxCount].a;
             flags = RENDER_FOG_ACTIVE | RENDER_Z_COMPARE;
             if (alpha == 0 || obj->segment.object.opacity == 0) {
-                i = shadow->meshEnd; // It'd be easier to just return...
+                return;
             } else if (alpha != 255 || obj->segment.object.opacity != 255) {
                 flags = RENDER_FOG_ACTIVE | RENDER_SEMI_TRANSPARENT | RENDER_Z_COMPARE;
                 alpha = (obj->segment.object.opacity * alpha) >> 8;
                 gDPSetPrimColor(gSceneCurrDisplayList++, 0, 0, 255, 255, 255, alpha);
             }
             while (i < shadow->meshEnd) {
-                material_set_no_tex_offset(&gSceneCurrDisplayList, gCurrShadowHeapData[i].texture, flags);
                 // I hope we can clean this part up.
                 triCount = gCurrShadowHeapData[i].triCount; // Fakematch
                 vtxCount = gCurrShadowHeapData[i].vtxCount;
@@ -3134,8 +3406,26 @@ void shadow_render(Object *obj, ShadowData *shadow) {
                 numVerts = gCurrShadowHeapData[i + 1].vtxCount - vtxCount;
                 tri = &gCurrShadowTris[triCount];
                 vtx = &gCurrShadowVerts[vtxCount];
-                gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
-                gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
+                if (gSortMats) {
+                    SortBuffer *buf = &gSortBuffer[gSortBufCount];
+                    buf->flags = flags;
+                    buf->tri = tri;
+                    buf->vtx = vtx;
+                    buf->triCount = numTris;
+                    buf->vtxCount = numVerts;
+                    buf->material = gCurrShadowHeapData[i].texture;
+                    buf->texOffset = 0;
+                    buf->mtx = NULL;
+                    buf->primColour = COLOUR_RGBA32(255, 255, 255, alpha);
+                    buf->index = gSortBufCount;
+                    buf->matType = 0;
+                    gSortBufCount++;
+                    sortbuffer_find(buf);
+                } else {
+                    material_set_no_tex_offset(&gSceneCurrDisplayList, gCurrShadowHeapData[i].texture, flags);
+                    gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
+                    gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
+                }
                 i++;
             }
 
@@ -3178,13 +3468,30 @@ void watereffect_render(Object *obj, WaterEffect *effect) {
             gCurrShadowTris = gShadowHeapTris[gWaterEffectIndex];
             gCurrShadowVerts = gShadowHeapVerts[gWaterEffectIndex];
             while (i < effect->meshEnd) {
-                material_set_no_tex_offset(&gSceneCurrDisplayList, gCurrShadowHeapData[i].texture, flags);
                 numTris = gCurrShadowHeapData[i + 1].triCount - gCurrShadowHeapData[i].triCount;
                 numVerts = gCurrShadowHeapData[i + 1].vtxCount - gCurrShadowHeapData[i].vtxCount;
                 tri = &gCurrShadowTris[gCurrShadowHeapData[i].triCount];
                 vtx = &gCurrShadowVerts[gCurrShadowHeapData[i].vtxCount];
-                gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
-                gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
+                if (gSortMats) {
+                    SortBuffer *buf = &gSortBuffer[gSortBufCount];
+                    buf->flags = flags;
+                    buf->tri = tri;
+                    buf->vtx = vtx;
+                    buf->triCount = numTris;
+                    buf->vtxCount = numVerts;
+                    buf->material = gCurrShadowHeapData[i].texture;
+                    buf->texOffset = 0;
+                    buf->mtx = NULL;
+                    buf->primColour = COLOUR_RGBA32(255, 255, 255, 255);
+                    buf->index = gSortBufCount;
+                    buf->matType = 0;
+                    gSortBufCount++;
+                    sortbuffer_find(buf);
+                } else {
+                    material_set_no_tex_offset(&gSceneCurrDisplayList, gCurrShadowHeapData[i].texture, flags);
+                    gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
+                    gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
+                }
                 i++;
             }
         }
@@ -3251,8 +3558,7 @@ void shadow_update(s32 group, s32 waterGroup, s32 updateRate) {
             shadow->meshStart = -1;
             skipShading = FALSE;
             // Multiplayer
-            if (objHeader->shadowGroup == SHADOW_ACTORS && numViewports >= TWO_PLAYERS &&
-                numViewports <= FOUR_PLAYERS) {
+            if (objHeader->shadowGroup == SHADOW_ACTORS && numViewports >= TWO_PLAYERS) {
                 if (obj->behaviorId == BHV_RACER) {
                     playerIndex = obj->unk64->racer.playerIndex;
                     if (playerIndex != PLAYER_COMPUTER) {
@@ -3289,8 +3595,7 @@ void shadow_update(s32 group, s32 waterGroup, s32 updateRate) {
             }
 
             // Multiplayer
-            if (objHeader->shadowGroup == SHADOW_ACTORS && numViewports >= TWO_PLAYERS &&
-                numViewports <= FOUR_PLAYERS) {
+            if (objHeader->shadowGroup == SHADOW_ACTORS && numViewports) {
                 if (obj->behaviorId == BHV_RACER) {
                     playerIndex = obj->unk64->racer.playerIndex;
                     if (playerIndex != PLAYER_COMPUTER) {

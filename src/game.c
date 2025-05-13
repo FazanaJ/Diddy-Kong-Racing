@@ -1,22 +1,14 @@
 #include "game.h"
 
-#include <PR/os_cont.h>
-#include <PR/gu.h>
-#include <PR/os_time.h>
 #include "memory.h"
 #include "types.h"
 #include "macros.h"
 #include "structs.h"
-#include "f3ddkr.h"
 #include "asset_enums.h"
 #include "asset_loading.h"
 #include "menu.h"
 #include "video.h"
 #include "set_rsp_segment.h"
-#include "gzip.h"
-#include "printf.h"
-#include "thread0_epc.h"
-#include "thread30_bgload.h"
 #include "weather.h"
 #include "audio.h"
 #include "objects.h"
@@ -24,24 +16,14 @@
 #include "save_data.h"
 #include "rcp_dkr.h"
 #include "audiosfx.h"
-#include "audiomgr.h"
 #include "lights.h"
 #include "textures_sprites.h"
-#include "PR/os_internal.h"
-#include "printf.h"
-#include "fade_transition.h"
-#include "borders.h"
 #include "audio_spatial.h"
 #include "tracks.h"
-#include "game_text.h"
-#include "game_ui.h"
-#include "main.h"
-#include "object_models.h"
 #include "racer.h"
-#include "particles.h"
-#include "math_util.h"
 #include "joypad.h"
 #include "common.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -67,7 +49,6 @@ LevelHeader *gCurrentLevelHeader;
 char **gLevelNames;
 s32 gNumberOfLevelHeaders;
 s32 gNumberOfWorlds;
-s8 *D_80121178;
 LevelGlobalData *gGlobalLevelTable;
 AIBehaviourTable *gAIBehaviourTable;
 s16 gLevelPropertyStack[5 * 4]; // Stores level info for cutscenes. 5 sets of four properties.
@@ -107,19 +88,8 @@ void init_level_globals(void) {
         gGlobalLevelTable[i].raceType = gCurrentLevelHeader->race_type;
         gGlobalLevelTable[i].vehicles = ((u16) gCurrentLevelHeader->available_vehicles) << 4;
         gGlobalLevelTable[i].vehicles |= gCurrentLevelHeader->vehicle & 0xF;
-        gGlobalLevelTable[i].unk3 = 1;
-        gGlobalLevelTable[i].unk4 = gCurrentLevelHeader->unkB0;
     }
     gNumberOfWorlds++;
-    D_80121178 = mempool_alloc_safe(gNumberOfWorlds, PP_RAM_ASSETTABLE);
-    for (i = 0; i < gNumberOfWorlds; i++) {
-        D_80121178[i] = -1;
-    }
-    for (i = 0; i < gNumberOfLevelHeaders; i++) {
-        if (gGlobalLevelTable[i].raceType == 5) {
-            D_80121178[gGlobalLevelTable[i].world] = i;
-        }
-    }
     mempool_free(gTempAssetTable);
     mempool_free(header);
     gTempAssetTable = (s32 *) load_asset_section_from_rom(ASSET_LEVEL_NAMES_TABLE);

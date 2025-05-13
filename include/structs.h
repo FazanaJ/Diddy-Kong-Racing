@@ -4,11 +4,9 @@
 /* Note: Structs are not complete, take them with a grain of salt. */
 
 #include "types.h"
-#include "enums.h"
 #include "level_object_entries.h"
 #include "object_properties.h"
 #include "gbi.h"
-#include "PR/libaudio.h"
 #include "audio.h"
 
 typedef struct Vec4f {
@@ -407,6 +405,12 @@ typedef struct PulsatingLightData {
     PulsatingLightDataFrame frames[1]; // Length varies based on numberFrames.
 } PulsatingLightData;
 
+typedef struct ByteColour {
+  u8 red;
+  u8 green;
+  u8 blue;
+} ByteColour;
+
 /* Size: 0xC4 bytes */
 typedef struct LevelHeader {
   /* 0x00 */ s8 world;
@@ -491,7 +495,8 @@ typedef struct LevelHeader {
   /* 0x9D */ u8 bgColorRed;
   /* 0x9E */ u8 bgColorGreen;
   /* 0x9F */ u8 bgColorBlue;
-  /* 0xA0 */ s16 unkA0;
+  /* 0xA0 */ u8 unkA0;
+  /* 0xA1 */ u8 unkA1;
   /* 0xA2 */ s8 unkA2;
   /* 0xA3 */ s8 unkA3;
   /* 0xA4 */ TextureHeader *unkA4;
@@ -502,9 +507,7 @@ typedef struct LevelHeader {
   /* 0xB0 */ s16 unkB0;
   /* 0xB2 */ u8 unkB2;
   /* 0xB3 */ u8 voiceLimit;
-  /* 0xB4 */ u8 unkB4;
-  /* 0xB5 */ u8 unkB5;
-  /* 0xB6 */ u8 unkB6;
+  /* 0xB4 */ ByteColour rgb;
   /* 0xB7 */ u8 unkB7;
   /* 0xB8 */ s8 bossRaceID;
   /* 0xB9 */ u8 unkB9;
@@ -1052,10 +1055,23 @@ typedef struct Object_Fish {
   /* 0x11c */ f32 unk11C;
 } Object_Fish;
 
+typedef struct Object_Boost_Inner {
+  Vec3f position;
+  f32 unkC;
+  f32 unk10;
+  u8 pad[0x24 - 0x14];
+} Object_Boost_Inner;
+
 typedef struct Object_Boost {
-  /* 0x000 */ u8 pad[0x70];
-  /* 0x070 */ u8 unk70;
-  /* 0x074 */ f32 unk74;
+  Object_Boost_Inner unk0;
+  Object_Boost_Inner unk24;
+  Object_Boost_Inner unk48;
+  u8 pad6C[4];
+  u8 unk70;
+  u8 unk71;
+  u8 unk72;
+  u8 unk73;
+  f32 unk74;
 } Object_Boost;
 
 typedef struct Object_EffectBox {
@@ -1688,8 +1704,7 @@ typedef struct Object_68 {
       ObjectModel *objModel;
       TextureHeader *texHeader;
   };
-  /* 0x04 */ Vertex *vertices[2];
-  /* 0x0C */ s32 *unkC;
+  /* 0x04 */ Vertex *vertices[3];
   /* 0x10 */ s16 animationID;
   /* 0x12 */ s16 animationFrame;
   /* 0x14 */ s16 animationFrameCount;
@@ -1869,12 +1884,6 @@ typedef struct GhostNode {
   /* 0x08 */ s16 xRotation;
   /* 0x0A */ s16 yRotation;
 } GhostNode;
-
-typedef struct ByteColour {
-    u8 red;
-    u8 green;
-    u8 blue;
-} ByteColour;
 
 typedef struct {
 union {

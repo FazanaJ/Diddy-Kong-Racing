@@ -1,7 +1,6 @@
 #include "memory.h"
 #include "printf.h"
 #include "thread0_epc.h"
-#include "joypad.h"
 #include "math_util.h"
 #include "main.h"
 
@@ -19,7 +18,8 @@
 
 MemoryPool gMemoryPools[POOL_COUNT]; // Only two are used.
 s32 gNumberOfMemoryPools;
-FreeQueueSlot gFreeQueue[FREE_QUEUE_SIZE];
+void *gFreeQueueAddr[FREE_QUEUE_SIZE];
+u8 gFreeQueueTicks[FREE_QUEUE_SIZE];
 s32 gFreeQueueCount;
 s32 gFreeQueueTimer; // Official Name: mmDelay
 
@@ -124,6 +124,17 @@ MemoryPoolSlot *mempool_alloc_largest(u32 colourTag) {
     return mempool_slot_find(POOL_MAIN, 0x10, colourTag, 1);
 }
 
+/**
+ * Resize the memory block while preserving the contents.
+ * Can only go lower, not higher.
+*/
+void mempool_realloc(void *addr, s32 size, s32 colourTag) {
+    mempool_free_timer(0);
+    mempool_free(addr);
+    addr = mempool_alloc_fixed(size, (u8 *) addr, colourTag, FALSE);
+    mempool_free_timer(2);
+}
+
 u32 biggestSize = 0;
 
 /**
@@ -143,7 +154,7 @@ MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag
     crash_assert(size == 0, "Alloc size 0");
     intFlags = interrupts_disable();
     pool = &gMemoryPools[poolIndex];
-    if ((pool->curNumSlots + 1) == (*pool).maxNumSlots) {
+    if (pool->maxNumSlots == pool->curNumSlots + 1) {
         interrupts_enable(intFlags);
         gMemoryPools[poolIndex].curNumSlots++;
         crash_nomemory(0, COLOUR_TAG_NONE);
@@ -201,6 +212,7 @@ MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag
  */
 void *mempool_alloc_pool(MemoryPoolSlot *slots, s32 size) {
     s32 i;
+    //return mempool_alloc(size, PP_RAM_OBJECTS);
     for (i = gNumberOfMemoryPools; i != 0; i--) {
         if (slots == gMemoryPools[i].slots) {
             return mempool_slot_find(i, size, PP_RAM_OBJECTS, 0);
@@ -215,6 +227,7 @@ void *mempool_alloc_pool(MemoryPoolSlot *slots, s32 size) {
  */
 void *mempool_alloc_pool_tag(MemoryPoolSlot *slots, s32 size, s32 colourTag) {
     s32 i;
+    //return mempool_alloc(size, colourTag);
     for (i = gNumberOfMemoryPools; i != 0; i--) {
         if (slots == gMemoryPools[i].slots) {
             return mempool_slot_find(i, size, colourTag, 0);
@@ -228,19 +241,17 @@ void *mempool_alloc_pool_tag(MemoryPoolSlot *slots, s32 size, s32 colourTag) {
  * Rearranges the memory slots to place one at that address if possible.
  * Official Name: mmAllocAtAddr
  */
-void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag) {
+void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag, s32 markFixed) {
     s32 i;
     MemoryPoolSlot *curSlot;
     MemoryPoolSlot *slots;
     u32 intFlags;
 
+    crash_assert(size == 0, "Alloc size 0");
     intFlags = interrupts_disable();
-    if (size == 0) {
-        stubbed_printf("*** mmAllocAtAddr: size = 0 ***\n");
-    }
     if ((gMemoryPools[POOL_MAIN].curNumSlots + 1) == gMemoryPools[POOL_MAIN].maxNumSlots) {
         interrupts_enable(intFlags);
-        stubbed_printf("\n*** mm Error *** ---> No more slots available.\n");
+        crash_nomemory(0, COLOUR_TAG_NONE);
     } else {
         if (size & ALIGNCHECK) {
             size = _ALIGN8(size);
@@ -255,14 +266,22 @@ void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag) {
                         mempool_slot_assign(POOL_MAIN, i, size, 1, 0, colorTag);
                         interrupts_enable(intFlags);
                         debug_ram(size, colorTag);
-                        curSlot->flags = 2;
+                        if (markFixed) {
+                            curSlot->flags = SLOT_FIXED;
+                        } else {
+                            curSlot->flags = SLOT_USED;
+                        }
                         return curSlot->data;
                     } else {
                         i = mempool_slot_assign(POOL_MAIN, i, (u32) address - (u32) curSlot->data, 0, 1, colorTag);
                         mempool_slot_assign(POOL_MAIN, i, size, 1, 0, colorTag);
                         interrupts_enable(intFlags);
                         debug_ram(size, colorTag);
-                        (slots + i)->flags = 2;
+                        if (markFixed) {
+                            (slots + i)->flags = SLOT_FIXED;
+                        } else {
+                            (slots + i)->flags = SLOT_USED;
+                        }
                         return (slots + i)->data;
                     }
                 }
@@ -270,8 +289,7 @@ void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag) {
         }
         interrupts_enable(intFlags);
     }
-    *(volatile int *) 0 = 0;
-    stubbed_printf("\n*** mm Error *** ---> Can't allocate memory at desired address.\n");
+    crash_nomemory(size, colorTag);
     return NULL;
 }
 
@@ -286,7 +304,7 @@ void mempool_free_timer(s32 state) {
     gFreeQueueTimer = state;
     if (state == 0) { // flush free queue if state is 0.
         while (gFreeQueueCount > 0) {
-            mempool_free_addr(gFreeQueue[--gFreeQueueCount].dataAddress);
+            mempool_free_addr(gFreeQueueAddr[--gFreeQueueCount]);
         }
     }
     interrupts_enable(intFlags);
@@ -318,14 +336,14 @@ void mempool_free_queue_clear(void) {
     intFlags = interrupts_disable();
 
     for (i = 0; i < gFreeQueueCount;) {
-        gFreeQueue[i].freeTimer--;
-        if (gFreeQueue[i].freeTimer == 0) {
-            mempool_free_addr(gFreeQueue[i].dataAddress);
-            gFreeQueue[i].dataAddress = gFreeQueue[gFreeQueueCount - 1].dataAddress;
-            gFreeQueue[i].freeTimer = gFreeQueue[gFreeQueueCount - 1].freeTimer;
+        gFreeQueueTicks[i]--;
+        if (gFreeQueueTicks[i] == 0) {
+            mempool_free_addr(gFreeQueueAddr[i]);
+            gFreeQueueAddr[i] = gFreeQueueAddr[gFreeQueueCount - 1];
+            gFreeQueueTicks[i] = gFreeQueueTicks[gFreeQueueCount - 1];
             gFreeQueueCount--;
         } else {
-            stubbed_printf("\n*** mm Error *** ---> Can't free ram at this location: %x\n", gFreeQueue[i].dataAddress);
+            stubbed_printf("\n*** mm Error *** ---> Can't free ram at this location: %x\n", gFreeQueueAddr[i]);
             i++;
         }
     }
@@ -365,11 +383,11 @@ void mempool_free_addr(u8 *address) {
  * Adds the current memory address to the back of the queue, so it can be freed.
  */
 void mempool_free_queue(void *dataAddress) {
-    gFreeQueue[gFreeQueueCount].dataAddress = dataAddress;
-    gFreeQueue[gFreeQueueCount].freeTimer = gFreeQueueTimer;
+    gFreeQueueAddr[gFreeQueueCount] = dataAddress;
+    gFreeQueueTicks[gFreeQueueCount] = gFreeQueueTimer;
     gFreeQueueCount++;
 
-    if (gFreeQueueCount >= ARRAY_COUNT(gFreeQueue)) {
+    if (gFreeQueueCount >= FREE_QUEUE_SIZE) {
         stubbed_printf("\n*** mm Error *** ---> stbf stack too deep!\n");
     }
 }

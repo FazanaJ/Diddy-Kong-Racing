@@ -88,12 +88,4 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-// A few systems in the game use an array as a cache table. This gives you the asset ID
-#define ASSETCACHE_ID(x)    ((x << 1) + 0)
-// A few systems in the game use an array as a cache table. This gives you the pointer to the asset
-#define ASSETCACHE_PTR(x)   ((x << 1) + 1)
-
-#define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b))
-
 #endif

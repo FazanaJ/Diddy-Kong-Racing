@@ -8,6 +8,8 @@
 #include "video.h"
 #include "game.h"
 #include "game_ui.h"
+#include "main.h"
+#include "tracks.h"
 
 /**
  * Renders the black borders that separate each viewport during multiplayer.
@@ -62,6 +64,11 @@ void divider_clear_coverage(Gfx **dList) {
     u32 width;
     u32 tempX;
     u32 tempY;
+
+    aa_manage(AA_FAST);
+    if (gAntiAliasing == AA_OFF) {
+        return;
+    }
 
     screenSize = fb_size();
     screenHeight = GET_VIDEO_HEIGHT(screenSize);

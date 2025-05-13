@@ -2334,7 +2334,7 @@ void func_80080BC8(Gfx **dList) {
         }
     }
     gWoodPanelCount = 0;
-    gMenuTrisFlip = 1 - gMenuTrisFlip;
+    gMenuTrisFlip ^= 1;
     rendermode_reset(dList);
 }
 
@@ -2343,7 +2343,7 @@ void func_80080BC8(Gfx **dList) {
  */
 void menu_geometry_end(void) {
     gWoodPanelCount = 0;
-    gMenuTrisFlip = 1 - gMenuTrisFlip;
+    gMenuTrisFlip ^= 1;
 }
 
 void func_80080E90(Gfx **dList, s32 startX, s32 startY, s32 width, s32 height, s32 borderWidth, s32 borderHeight,
@@ -7263,7 +7263,6 @@ void gameselect_render(UNUSED s32 updateRate) {
 
     if (gMenuDelay > -22 && gMenuDelay < 22) {
         fade = gOptionBlinkTimer * 8;
-        fade = fade;
         if (fade > 255) {
             fade = 511 - fade;
         }
@@ -7347,7 +7346,6 @@ s32 menu_game_select_loop(s32 updateRate) {
         if ((gMenuDelay == 0) && (gOpacityDecayTimer == 0)) {
             playerInputs = input_pressed(PLAYER_ONE);
             playerYDir = gControllersYAxisDirection[0];
-            playerInputs = playerInputs;
             if (gNumberOfActivePlayers == 2) {
                 playerInputs |= input_pressed(1);
                 playerYDir += gControllersYAxisDirection[1];
@@ -8772,7 +8770,7 @@ void func_8008FF1C(UNUSED s32 updateRate) {
                                     gTrackSelectRenderDetails[i].copyViewPort & 0x7F);
             }
         }
-        gTrackSelectVertsFlip = 1 - gTrackSelectVertsFlip;
+        gTrackSelectVertsFlip ^= 1;
     }
 }
 #else

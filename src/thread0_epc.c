@@ -14,8 +14,15 @@
 #include "math_util.h"
 #include "main.h"
 #include "usb/usb.h"
+#include "video.h"
+#include "string.h"
+#include "stdarg.h"
+#include "audiomgr.h"
+#include "autoplay.h"
 
-//#define MAP_PARSE
+#define MAP_PARSE
+
+u16 gObjectStackTrace[3];
 
 /**
  * Mark the object type given, so if the game crashes while processing it, the debug screen will tell you which object
@@ -27,10 +34,6 @@ void update_object_stack_trace(s32 index, s32 value) {
     }
 }
 
-#include "video.h"
-#include "string.h"
-#include "stdarg.h"
-#include "audiomgr.h"
 
 u64 *gCrashThreadStack;
 u64 *gCrashThreadStack2;
@@ -460,7 +463,7 @@ s32 crash_thread_name(s32 threadID) {
 /**
  * High chance the framebuffer size doesn't match the crash screens, so copy it with scaling applied.
 */
-void framebuffer_scale(u16 *srcFB, u16 *dstFB, s32 srcW, s32 srcH, s32 dstW, s32 dstH) {
+void framebuffer_scale_16b(u16 *srcFB, u16 *dstFB, s32 srcW, s32 srcH, s32 dstW, s32 dstH) {
     s32 y;
     s32 x;
     for (y = 0; y < dstH; y++) {
@@ -469,6 +472,26 @@ void framebuffer_scale(u16 *srcFB, u16 *dstFB, s32 srcW, s32 srcH, s32 dstW, s32
             s32 srcY = y * srcH / dstH;
             u16 pixel = srcFB[srcY * srcW + srcX];
             dstFB[y * dstW + x] = pixel;
+        }
+    }
+}
+
+void framebuffer_scale_32b(u32 *srcFB, u16 *dstFB, s32 srcW, s32 srcH, s32 dstW, s32 dstH) {
+    s32 y;
+    s32 x;
+    for (y = 0; y < dstH; y++) {
+        for (x = 0; x < dstW; x++) {
+            s32 srcX = x * srcW / dstW;
+            s32 srcY = y * srcH / dstH;
+            u32 pixel32 = srcFB[srcY * srcW + srcX];
+
+            s32 r = (pixel32 >> 24) & 0xFF;
+            s32 g = (pixel32 >> 16) & 0xFF;
+            s32 b = (pixel32 >> 8) & 0xFF;
+
+            u16 pixel16 = GPACK_RGBA5551(r, g, b, 1);
+
+            dstFB[y * dstW + x] = pixel16;
         }
     }
 }
@@ -985,6 +1008,11 @@ extern s32 *gSpriteCache;
 extern s32 gSpriteCacheCount;
 extern s32 *gModelCache;
 extern s32 gModelCacheCount;
+extern void *gMusicSequenceData;
+extern void *gJingleSequenceData;
+extern u64 *gGfxSPTaskOutputBuffer;
+extern Gfx *gDisplayLists[2];
+extern u8 *gAudioHeapStack;
 
 void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
     s32 i;
@@ -999,14 +1027,6 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
     ObjectModel_44 *objAnim;
 
     switch (tag) {
-        case PP_RAM_FRAMEBUFFERS:
-            if ((u32)slot->data <= 0x80300000) {
-                crash_text(x + 40, y, col, "Colour Buffer");
-
-            } else {
-                crash_text(x + 40, y, col, "Depth Buffer");
-            }
-            break;
         case PP_RAM_OBJHEADERS:
             objHeader = (ObjectHeader *) slot->data;
             crash_text(x + 40, y, col, "%s", objHeader->internalName);
@@ -1015,7 +1035,49 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
             obj = (Object *) slot->data;
             crash_text(x + 40, y, col, "%s", obj->segment.header->internalName);
             break;
+        case PP_RAM_ANIMATIONS:
+            texID = -200;
+            objAnim = (ObjectModel_44 *) slot->data;
+            for (i = 0; i < gModelCacheCount; i++) {
+                objModel = (ObjectModel *) gModelCache[(i << 1) + 1];
+                if (objModel && objAnim && objModel->animations == objAnim) {
+                    texID = gModelCache[i << 1];
+                }
+            }
+            if (texID != -200) {
+                crash_text(x + 40, y, col, "Obj Mdl:%d", texID);
+                return;
+            } else {
+                crash_text(x + 40, y, col, "Unknown");
+            }
+            break;
         default:
+            if ((s32) slot->data == (s32) gVideoFramebuffers[0] || 
+                (s32) slot->data == (s32) gVideoFramebuffers[1] ||
+                (s32) slot->data == (s32) gVideoFramebuffers[2]) {
+                crash_text(x + 40, y, col, "Colour Buffer");
+                return;
+            } else if ((s32) slot->data == (s32) gVideoDepthBuffer) {
+                crash_text(x + 40, y, col, "Depth Buffer");
+                return;
+            } else if ((s32) slot->data == (s32) gMusicSequenceData) {
+                crash_text(x + 40, y, col, "Music");
+                return;
+            } else if ((s32) slot->data == (s32) gJingleSequenceData) {
+                crash_text(x + 40, y, col, "Jingle");
+                return;
+            } else if ((s32) slot->data == (s32) gGfxSPTaskOutputBuffer) {
+                crash_text(x + 40, y, col, "FIFO Task Buf");
+                return;
+            } else if ((s32) slot->data == (s32) gDisplayLists[0] || 
+                       (s32) slot->data == (s32) gDisplayLists[1]) {
+                crash_text(x + 40, y, col, "Displaylists");
+                return;
+            } else if ((s32) slot->data == (s32) gAudioHeapStack) {
+                crash_text(x + 40, y, col, "alHeap Stack");
+                return;
+            }
+
             texHeader = (TextureHeader *) slot->data;
             texID = -200;
             // First see if it's a texture
@@ -1047,17 +1109,6 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
             objModel = (ObjectModel *) slot->data;
             for (i = 0; i < gModelCacheCount; i++) {
                 if ((ObjectModel *) gModelCache[(i << 1) + 1] == objModel) {
-                    texID = gModelCache[i << 1];
-                }
-            }
-            if (texID != -200) {
-                crash_text(x + 40, y, col, "Obj Mdl:%d", texID);
-                return;
-            }
-            objAnim = (ObjectModel_44 *) slot->data;
-            for (i = 0; i < gModelCacheCount; i++) {
-                objModel = (ObjectModel *) gModelCache[(i << 1) + 1];
-                if (objModel && objAnim && objModel->animations == objAnim) {
                     texID = gModelCache[i << 1];
                 }
             }
@@ -1246,7 +1297,7 @@ void crash_page_memory(void) {
     stopCounting = FALSE;
     y = 68 - (gCrashScroll * 9);
     for (i = 0; i < PP_RAM_TOTAL; i++) {
-        if (d->ramSegments[gCrashMemPrintOrder[i]]) {
+        //if (d->ramSegments[gCrashMemPrintOrder[i]]) {
             scrollSize++;
             if (y < 68) {
                 y += 9;
@@ -1282,7 +1333,7 @@ void crash_page_memory(void) {
             crash_text(x + 90, y, col, "%2.3f%s", (f64) size, sMemLabels[tag]);
             crash_text(x + 156, y, col, "(%2.3f%%)", (f64) (((f32) d->ramSegments[gCrashMemPrintOrder[i]] / (f32) ramSize) * 100.0f));
             y += 9;
-        }
+        //}
     }
     
     if (useScroll) {
@@ -1412,9 +1463,9 @@ void crash_render(OSThread *t) {
                 debug_ram_dump();
             }
             for (i = 0; i < PP_RAM_TOTAL; i++) {
-                if (gDebug->ramSegments[i] != 0) {
+                //if (gDebug->ramSegments[i] != 0) {
                     numValids++;
-                }
+                //}
             }
             if (gCrashInput & U_JPAD || gCrashInput & U_CBUTTONS) {
                 if (gCrashInput & U_JPAD) {
@@ -1733,9 +1784,15 @@ void crash_thread(UNUSED void *var) {
     oldH = gScreenHeight;
     gScreenWidth = 512;
     gScreenHeight = 240;
+    gAutoplayTest = 0;
     if (gVideoCurrFramebuffer != NULL) {
-        framebuffer_scale(gVideoCurrFramebuffer, gVideoDepthBuffer, oldW, oldH, gScreenWidth, gScreenHeight);
+        if (gBitDepth == G_IM_SIZ_16b) {
+            framebuffer_scale_16b(gVideoCurrFramebuffer, gVideoDepthBuffer, oldW, oldH, gScreenWidth, gScreenHeight);
+        } else {
+            framebuffer_scale_32b((u32 *) gVideoCurrFramebuffer, gVideoDepthBuffer, oldW, oldH, gScreenWidth, gScreenHeight);
+        }
     }
+    gConfig.screenBits = SCREENBITS_16b;
     if (gVideoFramebuffers[1] == NULL) {
         gVideoFramebuffers[1] = (u16 *) 0x80300000;
     }

@@ -1,10 +1,12 @@
-#ifdef DEBUG
-
+#include "math_util.h"
+#include "macros.h"
 #include "autoplay.h"
 #include "objects.h"
 #include "thread3_main.h"
 #include "printf.h"
 #include "thread30_bgload.h"
+
+#ifdef DEBUG
 
 extern s32 gCurrentMenuId;
 extern s8 gDoneTalkingToNPC[];
@@ -479,7 +481,7 @@ void autoplay_single_player(void) {
                                 }
                                 break;
                             case 4:
-                                if (autoplay_drive(5997.0f, 75.0f, -461.0f, 300.0f)) {
+                                if (autoplay_drive(3290.0f, 100.0f, -1835.0f, 300.0f)) {
                                     sCheckpointID++;
                                     if (override != 3) {
                                         override += 2;
@@ -488,7 +490,12 @@ void autoplay_single_player(void) {
                                 }
                                 break;
                             case 5:
-                                if (autoplay_drive(5066.0f, -200.0f, -1093.0f, 1.0f)) {
+                                if (autoplay_drive(4723.0f, 100.0f, -300.0f, 300.0f)) {
+                                    sCheckpointID++;
+                                }
+                                break;
+                            case 6:
+                                if (autoplay_drive(5066.0f, -200.0f, -1188.0f, 1.0f)) {
                                     sCheckpointID++;
                                 }
                                 break;
@@ -821,6 +828,8 @@ void autoplay_tracks(s32 playerCount) {
     s32 i;
 
     if (sControllerFlip) {
+        gControllerCurrData[sPlayerID[0]].stick_x = 0;
+        gControllerCurrData[sPlayerID[0]].stick_y = 0;
         return;
     }
     trackX = (sAutoplayActiveTrack % 6);
@@ -834,7 +843,7 @@ void autoplay_tracks(s32 playerCount) {
                 sAutoplayTrackStage = AUTOPLAY_TRACKS_RESET;
             }
             if (bgload_active() == FALSE) {
-                if (trackTime++ > 15) {
+                if (trackTime++ > 30) {
                     if ((gTrackSelectCursorY % 2) == 0) {
                         if (gTrackSelectCursorX < 5) {
                             gControllerCurrData[sPlayerID[0]].stick_x = 70;

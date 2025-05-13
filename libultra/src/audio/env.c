@@ -102,11 +102,6 @@ Acmd *alEnvmixerPull(void *filter, s16 *outp, s32 outCount, s32 sampleOffset,
 #if BUILD_VERSION < VERSION_J
 #line 103
 #endif
-        // Something must have gone wrong when compiling this file, and the asserts got left in.
-        if (samples >= 0) {} 
-        else { __assert("samples >= 0", "env.c", 104); }
-        if (samples <= AL_MAX_RSP_SAMPLES) {} 
-        else { __assert("samples <= AL_MAX_RSP_SAMPLES", "env.c", 105); }
 
         switch (e->ctrlList->type) {
           case (AL_FILTER_START_VOICE_ALT):
@@ -372,10 +367,6 @@ static Acmd* _pullSubFrame(void *filter, s16 *inp, s16 *outp, s32 outCount,
      * ask all filters upstream from us to build their command
      * lists.
      */
-
-    // Something must have gone wrong when compiling this file, and the asserts got left in.
-    if (source) {}
-    else { __assert("source", "env.c", 373); }
     
     ptr = (*source->handler)(source, inp, outCount, sampleOffset, p);
 

@@ -93,6 +93,7 @@ extern u16 *gVideoCurrDepthBuffer;
 extern u16 *gVideoLastDepthBuffer;
 extern s32 gVideoSkipNextRate;
 extern u16 *gVideoFramebuffers[3];
+extern u8 gBitDepth;
 
 extern OSViMode osViModeNtscLpn1, osViModePalLpn1, osViModeMpalLpn1, osViModePalLan1, osViModeNtscLan1, osViModeMpalLan1;
 

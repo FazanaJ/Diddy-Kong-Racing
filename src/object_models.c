@@ -7,7 +7,6 @@
 #include "asset_loading.h"
 #include "textures_sprites.h"
 #include "racer.h"
-#include "save_data.h"
 #include "objects.h"
 #include "main.h"
 
@@ -25,14 +24,11 @@ s32 gTrackRenderFuncLength = 1980;
 
 /************ .bss ************/
 
-s32 *gObjectModelTable;
 s32 *gModelCache; // A table of two entries. The first half is the model ID, while the second half is the model data.
 s32 *D_8011D628;
 s32 gModelCacheCount;
 s32 gNumModelIDs;
 s32 D_8011D634;
-s16 *gAnimationTable;
-s32 *gObjectAnimationTable;
 s32 D_8011D640;
 s32 D_8011D644;
 
@@ -44,19 +40,19 @@ s32 D_8011D644;
 void allocate_object_model_pools(void) {
     s32 i;
     s32 checksum;
+    s32 *assetTable;
 
     gModelCache = mempool_alloc_safe(MODEL_LOADED_MAX * ((sizeof(uintptr_t)) * 2), PP_RAM_ASSET_CACHE);
     D_8011D628 = mempool_alloc_safe(100 * sizeof(uintptr_t), PP_RAM_ASSET_CACHE);
     gModelCacheCount = 0;
     D_8011D634 = 0;
-    gObjectModelTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_MODELS_TABLE);
+    assetTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_MODELS_TABLE);
     gNumModelIDs = 0;
-    while (gObjectModelTable[gNumModelIDs] != -1) {
+    while (assetTable[gNumModelIDs] != -1) {
         gNumModelIDs++;
     }
+    mempool_free(assetTable);
     gNumModelIDs--;
-    gAnimationTable = (s16 *) load_asset_section_from_rom(ASSET_ANIMATION_IDS);
-    gObjectAnimationTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_ANIMATIONS_TABLE);
     D_8011D644 = (s32) mempool_alloc_safe(0xC00, PP_RAM_ASSET_CACHE);
     D_8011D640 = 0;
 
@@ -71,6 +67,7 @@ void allocate_object_model_pools(void) {
     }
 #endif
 }
+
 
 /**
  * Load the associated model ID and assign it to the objects gfx data.
@@ -126,8 +123,7 @@ Object_68 *object_model_init(s32 modelID, s32 flags) {
         gModelCacheCount++;
     }
 
-    temp_s0 = gObjectModelTable[modelID];
-    sp48 = gObjectModelTable[modelID + 1] - temp_s0;
+    assettable_seek_s32(modelID, &temp_s0, &sp48, ASSET_OBJECT_MODELS_TABLE);
     modelSize = get_asset_uncompressed_size(ASSET_OBJECT_MODELS, temp_s0) + sizeof(ObjectModel);
     objMdl = (ObjectModel *) mempool_alloc(modelSize, PP_RAM_OBJMDL);
     if (objMdl == NULL) {
@@ -435,8 +431,7 @@ s32 func_80061A00(ObjectModel *model, s32 animTableIndex) {
     u32 animAddress;
     s32 *temp;
 
-    start = gAnimationTable[animTableIndex];
-    end = gAnimationTable[animTableIndex + 1];
+    assettable_seek_s16(animTableIndex, &start, &end, ASSET_ANIMATION_IDS);
     if (start == end) {
         model->numberOfAnimations = 0;
         return 0;
@@ -455,8 +450,7 @@ s32 func_80061A00(ObjectModel *model, s32 animTableIndex) {
     i = 0;
     i2 = 0;
     do {
-        assetOffset = gObjectAnimationTable[start];
-        animAddress = gObjectAnimationTable[start + 1] - assetOffset;
+        assettable_seek_s32(start, &assetOffset, (s32 *) &animAddress, ASSET_OBJECT_ANIMATIONS_TABLE);
         assetSize = animAddress;
         size = get_asset_uncompressed_size(ASSET_OBJECT_ANIMATIONS, assetOffset) + 0x80;
         model->animations[i].animData = (u8 *) mempool_alloc(size, PP_RAM_ANIMATIONS);

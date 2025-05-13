@@ -26,36 +26,30 @@ BackgroundFunction gBGDrawFunc = { NULL };
 s32 gGfxBufCounter = 0;
 s32 gGfxTaskIsRunning = FALSE;
 
-Gfx dRaceFinishBackgroundSettings[] = {
-    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
+
+Gfx dScaledRectangleBaseModes[] = {
     gsDPPipeSync(),
+    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
     gsDPSetTextureLOD(G_TL_TILE),
     gsDPSetTextureLUT(G_TT_NONE),
     gsDPSetAlphaCompare(G_AC_NONE),
+    gsSPEndDisplayList(),
+};
+
+Gfx dRaceFinishBackgroundSettings[] = {
+    gsSPDisplayList(dScaledRectangleBaseModes),
     gsDPSetCombineMode(G_CC_DECALRGBA, G_CC_DECALRGBA),
     gsDPSetOtherMode(DKR_OMH_1CYC_POINT_NOPERSP, DKR_OML_COMMON | G_RM_OPA_SURF | G_RM_OPA_SURF2),
     gsSPEndDisplayList(),
 };
 
 Gfx dTextureRectangleModes[] = {
-    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
-    gsDPPipeSync(),
-    gsDPSetTextureLOD(G_TL_TILE),
-    gsDPSetTextureLUT(G_TT_NONE),
-    gsDPSetAlphaCompare(G_AC_NONE),
+    gsSPDisplayList(dScaledRectangleBaseModes),
     gsDPSetCombineMode(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM),
     gsDPSetOtherMode(DKR_OMH_1CYC_POINT_NOPERSP, DKR_OML_COMMON | G_RM_XLU_SURF | G_RM_XLU_SURF2),
     gsSPEndDisplayList(),
 };
 
-Gfx dScaledRectangleBaseModes[] = {
-    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
-    gsDPPipeSync(),
-    gsDPSetTextureLOD(G_TL_TILE),
-    gsDPSetTextureLUT(G_TT_NONE),
-    gsDPSetAlphaCompare(G_AC_NONE),
-    gsSPEndDisplayList(),
-};
 
 Gfx dTextureRectangleScaledOpa[][2] = {
     // Bilinear Filtered texture
@@ -307,15 +301,18 @@ void bgdraw_render(Gfx **dList, MatrixS **mtx, s32 drawBG) {
     h = GET_VIDEO_HEIGHT(widthAndHeight) - 1;
     wP = w + 1;
 
+    DEBUG_VAR(gDebug->misc.drawBG, drawBG);
+    DEBUG_VAR(gDebug->misc.invertBG, gInvertBG);
+
     gDPPipeSync((*dList)++);
     //!@bug: the scissor does not need the off by one here, despite being intended for fill mode.
     gDPSetScissor((*dList)++, 0, 0, 0, wP, h + 1);
     gDPSetCycleType((*dList)++, G_CYC_FILL);
-    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, wP, SEGMENT_ZBUFFER << 24);
+    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, gBitDepth, wP, SEGMENT_ZBUFFER << 24);
     gDPSetFillColor((*dList)++, GPACK_RGBA5551(255, 255, 240, 0) << 16 | GPACK_RGBA5551(255, 255, 240, 0));
     gDPFillRectangle((*dList)++, 0, 0, w, h);
     gDPPipeSync((*dList)++);
-    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, wP, SEGMENT_FRAMEBUFFER << 24);
+    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, gBitDepth, wP, SEGMENT_FRAMEBUFFER << 24);
     if (check_viewport_background_flag(PLAYER_ONE)) {
         if (gTexBGTex1) {
             bgdraw_texture(dList);
@@ -372,7 +369,7 @@ void bgdraw_render(Gfx **dList, MatrixS **mtx, s32 drawBG) {
  */
 void rdp_init(Gfx **dList) {
     s32 width = GET_VIDEO_WIDTH(fb_size());
-    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, G_IM_SIZ_16b, width, SEGMENT_FRAMEBUFFER << 24);
+    gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, gBitDepth, width, SEGMENT_FRAMEBUFFER << 24);
     gDPSetDepthImage((*dList)++, SEGMENT_ZBUFFER << 24);
     //gSPDisplayList((*dList)++, dRdpInit);
 }
@@ -535,6 +532,7 @@ void texrect_draw(Gfx **dList, DrawTexture *element, s32 xPos, s32 yPos, u8 red,
                 uly = 0;
             }
             gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(tex->cmd), tex->numberOfCommands);
+            DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
             gSPTextureRectangle((*dList)++, ulx, uly, lrx, lry, G_TX_RENDERTILE, s, t, 1024, 1024);
         }
     }
@@ -635,6 +633,7 @@ void texrect_draw_scaled(Gfx **dList, DrawTexture *element, f32 xPos, f32 yPos, 
                 }
 
                 gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(tex->cmd), tex->numberOfCommands);
+                DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
                 gSPTextureRectangle((*dList)++, ulx, uly, lrx, lry, G_TX_RENDERTILE, s, t, dsdx, dtdy);
             }
         }

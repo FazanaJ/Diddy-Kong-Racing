@@ -1,7 +1,3 @@
-/* These seem to be needed because of some weird match things going on. 
-   The exact address isn't the same for each region, so I'm doing a hacky 
-   offset from the previous BSS variable that is declared  */
-
 /* We have to define these addresses because they're hasm and share space with the coss funcs. */
 
 sins_s16 = coss_s16 + 0x4;

@@ -28,6 +28,7 @@ s8 D_8012A787;
 s8 D_8012A788;
 u8 gShowOnscreenMessage;
 u8 D_8012A78A;
+s8 gGameTextStaleTimer;
 s16 D_8012A78E;
 s16 gTextTableEntries;
 char *gGameTextTableEntries[2]; // 960 x2 bytes
@@ -71,6 +72,15 @@ void init_dialogue_text(void) {
     gDialogueYPos1 = SCREEN_HEIGHT - 38;
     gDialogueYPos2 = SCREEN_HEIGHT - 18;
     clear_dialogue_box_open_flag(6);
+}
+
+void textbox_cycle(s32 updateRate) {
+    if (gGameTextStaleTimer > 0) {
+        gGameTextStaleTimer -= updateRate;
+        if (gGameTextStaleTimer <= 0) {
+            free_game_text_table();
+        }
+    }
 }
 
 /**
@@ -146,6 +156,7 @@ void render_subtitles(void) {
         textY += SUBTITLE_Y_OFFSET;
     }
     open_dialogue_box(6);
+    gGameTextStaleTimer = 20;
 }
 
 /**
@@ -179,10 +190,10 @@ void find_next_subtitle(void) {
             done = TRUE;
         }
         gCurrentTextProperties++;
-        new_var3 = (new_var2 = gCurrentTextProperties[0]);
+        new_var2 = gCurrentTextProperties[0];
         if (gCurrentTextProperties[0] == 10) {
             gCurrentTextProperties++;
-        } else if (new_var3 == 12) {
+        } else if (new_var2 == 12) {
             gCurrentTextProperties++;
             done = TRUE;
         }
@@ -290,7 +301,11 @@ void set_current_text(s32 textID) {
     s32 language;
     s32 temp;
 
+    if (gTextTableExists == FALSE) {
+        load_game_text_table();
+    }
     if (gTextTableExists && textID >= 0 && textID < gTextTableEntries) {
+        gGameTextStaleTimer = 20;
         language = get_language();
         switch (language) {
             case LANGUAGE_GERMAN:
@@ -461,6 +476,7 @@ s32 dialogue_challenge_loop(void) {
         }
     }
     D_8012A78A = 0;
+    gGameTextStaleTimer = 20;
     return 1;
 }
 

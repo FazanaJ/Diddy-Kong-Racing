@@ -1986,7 +1986,6 @@ void update_camera_plane(f32 updateRate, Object *obj, Object_Racer *racer) {
         if (angle > 0x8000) {
             angle -= 0xFFFF;
         }
-        angle = angle;
         if (angle < -0x8000) {
             angle += 0xFFFF;
         }
