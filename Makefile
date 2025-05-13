@@ -325,6 +325,7 @@ else
 endif
 
 no_verify: $(TARGET).z64
+	$(V)$(CRC)
 	$(V)$(PRINT) "$(GREEN)Build Complete!$(NO_COL)\n"
 
 extract:
@@ -384,13 +385,6 @@ distcleanall: cleanall
 	rm -f $(SYMBOLS_DIR)/*auto.jpn.v79.txt
 	rm -f $(SYMBOLS_DIR)/*auto.us.v80.txt
 	rm -f $(SYMBOLS_DIR)/*auto.pal.v80.txt
-
-link: $(TARGET).elf 
-	$(CRC)
-
-$(TARGET).elf: $(LD_SCRIPT) $(O_FILES) | $(ALL_ASSETS_BUILT)
-	@$(PRINT) "$(GREEN)Linking: $(BLUE)$@$(NO_COL)\n"
-	$(V)$(LD) $(LD_FLAGS) -o $@
 
 ROM := $(TARGET).z64
 
