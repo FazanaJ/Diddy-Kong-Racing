@@ -265,7 +265,7 @@ u32 osGetMemSize(void) {
 }
 
 void config_init(void) {
-    gConfig.antiAliasing = AA_FAST;
+    gConfig.antiAliasing = AA_OFF;
     gConfig.terrainQuality = 0;
     gConfig.dedither = FALSE;
     gConfig.frameCap = 1;
@@ -321,6 +321,14 @@ void mainproc(void) {
 }
 
 void crash_init(void);
+void func_80019808(s32 updateRate);
+extern u32 D_B0000574;
+
+void patch_func_antitamper(void) {
+    u8 *funcAddr = (u8 *) &func_80019808;
+    u16 newVar = (D_B0000574) & 0xFFFF;
+    bcopy(&newVar ,funcAddr + 0xD4C + 6,  2);
+}
 
 /**
  * Initialise the crash handler thread, then initialise the main game thread.
@@ -330,6 +338,7 @@ void crash_init(void);
 void thread1_main(UNUSED void *unused) {
     crash_init();
     config_init();
+    patch_func_antitamper();
     osCreateThread(&gThread3, 3, &thread3_main, 0, gThread3Stack + STACKSIZE(STACK_GAME), 10);
     gThread3Stack[STACKSIZE(STACK_GAME) - 1] = 0;
     gThread3Stack[0] = 0;

@@ -815,7 +815,7 @@ void autoplay_charselect_multi(s32 playerCount) {
 
 void autoplay_tracks(s32 playerCount) {
     static u8 trackTime = 0;
-    const u8 skipCheck = TRUE;
+    const u8 skipCheck = FALSE;
     s32 trackX;
     s32 trackY;
     s32 i;
@@ -851,6 +851,7 @@ void autoplay_tracks(s32 playerCount) {
                     if (gTrackSelectCursorY == 4 && gTrackSelectCursorX == 4) {
                         sAutoplayTrackStage = AUTOPLAY_TRACKS_RESET;
                     }
+                    trackTime = 0;
                 }
             } else {
                 trackTime = 0;
