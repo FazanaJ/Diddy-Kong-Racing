@@ -299,6 +299,7 @@ void tex_enable_modes(s32 flags) {
     gBlockedRenderFlags &= ~flags;
 }
 
+//  Official Name: texLoadTexture
 TextureHeader *load_texture(s32 arg0) {
     TextureHeader *tex;
     TextureHeader *texTemp;
