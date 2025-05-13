@@ -2256,6 +2256,9 @@ void obj_update(s32 updateRate) {
             }
         }
     }
+    for (i = 0; i < gNumRacers; i++) {
+        update_player_racer((*gRacers)[i], updateRate);
+    }
     if (get_current_level_race_type() == RACETYPE_DEFAULT) {
         for (i = 0; i < gNumRacers; i++) {
             racer = &gRacersByPosition[i]->unk64->racer;
@@ -6851,9 +6854,6 @@ s32 obj_init_property_flags(s32 behaviorId) {
 void run_object_loop_func(Object *obj, s32 updateRate) {
     update_object_stack_trace(OBJECT_UPDATE, obj->objectID);
     switch (obj->behaviorId) {
-        case BHV_RACER:
-            update_player_racer(obj, updateRate);
-            break;
         case BHV_SCENERY:
             obj_loop_scenery(obj, updateRate);
             break;
