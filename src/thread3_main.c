@@ -205,6 +205,7 @@ void init_game(void) {
     init_controller_paks();
     init_save_data();
     bgload_init();
+    init_particle_buffers(4, 4, 110, 48, 32, 0);
     osCreateMesgQueue(&gGameMesgQueue, gGameMesgBuf, 3);
     osScAddClient(&gMainSched, (OSScClient*) gNMISched, &gGameMesgQueue, OS_SC_ID_VIDEO);
     gNMIMesgBuf = 0;
@@ -440,7 +441,7 @@ void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     //load_game_text_table();
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, gGameCurrentCutscene);
     hud_init(get_viewport_count());
-    init_particle_buffers(8, 16, 150, 100, 50, 0);
+    //init_particle_buffers(8, 16, 150, 100, 50, 0);
     ainode_update();
     osSetTime(0);
     mempool_free_timer(2);
@@ -464,7 +465,7 @@ void unload_level_game(void) {
     }
     clear_audio_and_track();
     transition_begin(&D_800DD3F4);
-    reset_particles();
+    //reset_particles();
     hud_free();
     gCurrDisplayList = gDisplayLists[gSPTaskNum];
     gDPFullSync(gCurrDisplayList++);
@@ -925,7 +926,6 @@ void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     //load_game_text_table();
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, cutsceneId);
     hud_init(get_viewport_count());
-    init_particle_buffers(4, 4, 110, 48, 32, 0);
     ainode_update();
     osSetTime(0);
     mempool_free_timer(2);
@@ -943,7 +943,7 @@ void unload_level_menu(void) {
         mempool_free_timer(0);
         clear_audio_and_track();
         transition_begin(&D_800DD3F4);
-        reset_particles();
+        //reset_particles();
         hud_free();
         mempool_free_timer(2);
     }
