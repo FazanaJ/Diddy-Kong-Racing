@@ -199,6 +199,7 @@ CFLAGS += $(INCLUDE_CFLAGS)
 
 CHECK_WARNINGS := -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-parameter -Wno-switch -Werror-implicit-function-declaration
 ifeq ($(DETECTED_OS), macos)
+	CHECK_WARNINGS += -Wno-incompatible-pointer-types -Wno-int-conversion -Wno-pointer-to-int-cast
 	ifeq ($(NON_MATCHING),0)
 		CHECK_WARNINGS += -Wno-unused-value -Wno-deprecated-non-prototype -Wno-array-bounds -Wno-self-assign -Wno-uninitialized -Wno-unused-but-set-variable -Wno-unused-variable
 		CHECK_WARNINGS += -Wno-pointer-to-int-cast -Wno-constant-conversion -Wno-int-to-pointer-cast
@@ -282,6 +283,8 @@ $(GCC_SAFE_FILES): CFLAGS := -DNDEBUG -DAVOID_UB -DNON_MATCHING -Os $(INCLUDE_CF
 	-EB \
 	-march=vr4300 \
 	-mabi=32 \
+	-Wno-int-conversion \
+	-Wno-incompatible-pointer-types \
 	-mno-check-zero-division \
 	-mno-abicalls \
 	-mgp32 \

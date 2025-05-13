@@ -37,14 +37,22 @@ Gfx dScaledRectangleBaseModes[] = {
 };
 
 Gfx dRaceFinishBackgroundSettings[] = {
-    gsSPDisplayList(dScaledRectangleBaseModes),
+    gsDPPipeSync(),
+    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
+    gsDPSetTextureLOD(G_TL_TILE),
+    gsDPSetTextureLUT(G_TT_NONE),
+    gsDPSetAlphaCompare(G_AC_NONE),
     gsDPSetCombineMode(G_CC_DECALRGBA, G_CC_DECALRGBA),
     gsDPSetOtherMode(DKR_OMH_1CYC_POINT_NOPERSP, DKR_OML_COMMON | G_RM_OPA_SURF | G_RM_OPA_SURF2),
     gsSPEndDisplayList(),
 };
 
 Gfx dTextureRectangleModes[] = {
-    gsSPDisplayList(dScaledRectangleBaseModes),
+    gsDPPipeSync(),
+    gsSPClearGeometryMode(G_ZBUFFER | G_FOG),
+    gsDPSetTextureLOD(G_TL_TILE),
+    gsDPSetTextureLUT(G_TT_NONE),
+    gsDPSetAlphaCompare(G_AC_NONE),
     gsDPSetCombineMode(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM),
     gsDPSetOtherMode(DKR_OMH_1CYC_POINT_NOPERSP, DKR_OML_COMMON | G_RM_XLU_SURF | G_RM_XLU_SURF2),
     gsSPEndDisplayList(),
