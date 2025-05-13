@@ -407,9 +407,6 @@ TextureHeader *load_texture(s32 arg0) {
     if (gCiPalettesSize >= 0x280) {
         return NULL;
     }
-    if (gNumberOfLoadedTextures > 700) {
-        return NULL;
-    }
     return tex;
 }
 

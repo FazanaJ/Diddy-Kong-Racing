@@ -212,6 +212,7 @@ MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag
  */
 void *mempool_alloc_pool(MemoryPoolSlot *slots, s32 size) {
     s32 i;
+    return mempool_alloc(size, PP_RAM_OBJECTS);
     for (i = gNumberOfMemoryPools; i != 0; i--) {
         if (slots == gMemoryPools[i].slots) {
             return mempool_slot_find(i, size, PP_RAM_OBJECTS, 0);
@@ -226,11 +227,12 @@ void *mempool_alloc_pool(MemoryPoolSlot *slots, s32 size) {
  */
 void *mempool_alloc_pool_tag(MemoryPoolSlot *slots, s32 size, s32 colourTag) {
     s32 i;
-    for (i = gNumberOfMemoryPools; i != 0; i--) {
+    return mempool_alloc(size, colourTag);
+    /*for (i = gNumberOfMemoryPools; i != 0; i--) {
         if (slots == gMemoryPools[i].slots) {
             return mempool_slot_find(i, size, colourTag, 0);
         }
-    }
+    }*/
     return (void *) NULL;
 }
 
