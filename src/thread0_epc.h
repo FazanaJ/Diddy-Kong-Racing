@@ -118,6 +118,8 @@ void thread0_Main(UNUSED void *unused);
 void render_epc_lock_up_display(void);
 void crash_nomemory(s32 size, s32 colourTag);
 f32 memsize_float(s32 size, s32 *tag);
+#ifdef DEBUG
 void crash_reorder_ram(DebugData *d);
+#endif
 
 #endif

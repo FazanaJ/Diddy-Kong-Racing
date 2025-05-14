@@ -346,14 +346,14 @@ TextureHeader *load_texture(s32 arg0) {
     load_asset_to_address(assetSection, (u32) header, assetOffset, sizeof(TempTexHeader));
     numberOfTextures = header->header.numOfTextures >> 8;
     if (!header->header.isCompressed) {
-        tex = (TextureHeader *) mempool_alloc(numberOfTextures * (sizeof(Gfx) * 6) + assetSize, gTexColourTag);
+        tex = (TextureHeader *) mempool_alloc(numberOfTextures * (sizeof(Gfx) * 12) + assetSize, gTexColourTag);
         if (tex == NULL) {
             return NULL;
         }
         load_asset_to_address(assetSection, (u32) tex, assetOffset, assetSize);
     } else {
         sp3C = byteswap32((u8 *) &header->uncompressedSize) + sizeof(TextureHeader);
-        tex = (TextureHeader *) mempool_alloc(numberOfTextures * (sizeof(Gfx) * 6) + sp3C, gTexColourTag);
+        tex = (TextureHeader *) mempool_alloc(numberOfTextures * (sizeof(Gfx) * 12) + sp3C, gTexColourTag);
         if (tex == NULL) {
             return NULL;
         }
@@ -402,7 +402,7 @@ TextureHeader *load_texture(s32 arg0) {
             texTemp->ciPaletteOffset = paletteOffset;
             assetOffset += (sizeof(Gfx) * 6); // I'm guessing it takes 6 f3d commands to load the palette
         }
-        assetOffset += (sizeof(Gfx) * 6); // I'm guessing it takes 12 f3d commands to load the texture
+        assetOffset += (sizeof(Gfx) * 12); // I'm guessing it takes 12 f3d commands to load the texture
         texTemp = (TextureHeader *) ((s32) texTemp + texTemp->textureSize);
     }
     if (gCiPalettesSize >= 0x280) {
@@ -524,7 +524,9 @@ void material_set(Gfx **dList, TextureHeader *texhead, s32 flags, s32 texOffset)
         flags |= texhead->flags;
         if (texhead != gCurrentTextureHeader) {
             gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(texhead->cmd), texhead->numberOfCommands);
+#ifdef DEBUG
             DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
+#endif
             loadTex = TRUE;
             gCurrentTextureHeader = texhead;
             doPipeSync = FALSE;
@@ -777,7 +779,7 @@ s32 tex_asset_size(s32 id) {
         size = byteswap32((u8 *) (&header->uncompressedSize));
     }
     numOfTextures = header->header.numOfTextures;
-    return (((numOfTextures >> 8) & 0xFFFF) * (sizeof(Gfx) * 6)) + size;
+    return (((numOfTextures >> 8) & 0xFFFF) * (sizeof(Gfx) * 12)) + size;
 }
 
 s32 load_sprite_info(s32 spriteIndex, s32 *numOfInstancesOut, s32 *unkOut, s32 *numFramesOut, s32 *formatOut,

@@ -217,6 +217,9 @@ typedef enum DebugRam {
     PP_RAM_TOTAL,
 } DebugRam;
 
+
+extern u8 *main_BSS_START[];
+
 #ifdef DEBUG
 
 #define MEMSTRINGS \
@@ -337,7 +340,6 @@ typedef struct DebugPage {
 
 extern DebugData *gDebug;
 extern char *sPuppyprintMemColours[];
-extern u8 *main_BSS_START[];
 extern f32 gFPS;
 
 void debug_init();

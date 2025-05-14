@@ -870,7 +870,7 @@ GameMode get_game_mode(void) {
  * Used for every kind of menu that's not ingame.
  */
 void load_menu_with_level_background(s32 menuId, s32 levelId, s32 cutsceneId) {
-    alloc_displaylist_heap(PLAYER_ONE);
+    alloc_displaylist_heap(get_active_player_count() - 1);
     gGameMode = GAMEMODE_MENU;
     gRenderMenu = TRUE;
     sndp_set_group_volume(0, 32767);

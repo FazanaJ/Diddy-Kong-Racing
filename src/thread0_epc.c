@@ -995,8 +995,6 @@ extern u8 *main_RODATA_START[];
 extern u8 *main_RODATA_END[];
 extern u8 *main_BSS_START[];
 extern u8 *main_BSS_END[];
-extern u8 *map_ROM_START[];
-extern u8 *map_ROM_END[];
 
 extern u8 *main_TEXT_SIZE[];
 extern u8 *main_DATA_SIZE[];
@@ -1359,6 +1357,8 @@ void crash_screen_sleep(s32 ms) {
 u8 viSetOnce = 0;
 
 #ifdef MAP_PARSE
+extern u8 *map_ROM_START[];
+extern u8 *map_ROM_END[];
 
 /* Relies on the linker being different which is a little annoying until custom linker support is added
     map_ROM_START = __romPos;
@@ -1784,7 +1784,7 @@ void crash_thread(UNUSED void *var) {
     oldH = gScreenHeight;
     gScreenWidth = 512;
     gScreenHeight = 240;
-    gAutoplayTest = 0;
+    DEBUG_VAR(gAutoplayTest, 0);
     if (gVideoCurrFramebuffer != NULL) {
         if (gBitDepth == G_IM_SIZ_16b) {
             framebuffer_scale_16b(gVideoCurrFramebuffer, gVideoDepthBuffer, oldW, oldH, gScreenWidth, gScreenHeight);
