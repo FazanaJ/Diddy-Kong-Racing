@@ -996,6 +996,17 @@ extern u8 *main_RODATA_END[];
 extern u8 *main_BSS_START[];
 extern u8 *main_BSS_END[];
 
+extern u8 *tex2d_ROM_START[];
+extern u8 *tex2d_ROM_END[];
+extern u8 *tex3d_ROM_START[];
+extern u8 *tex3d_ROM_END[];
+extern u8 *sprites_ROM_START[];
+extern u8 *sprites_ROM_END[];
+extern u8 *objmdl_ROM_START[];
+extern u8 *objmdl_ROM_END[];
+extern u8 *objanim_ROM_START[];
+extern u8 *objanim_ROM_END[];
+
 extern u8 *main_TEXT_SIZE[];
 extern u8 *main_DATA_SIZE[];
 extern u8 *main_RODATA_SIZE[];
@@ -1012,7 +1023,54 @@ extern u64 *gGfxSPTaskOutputBuffer;
 extern Gfx *gDisplayLists[2];
 extern u8 *gAudioHeapStack;
 
-void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
+char sAssetName[32];
+
+char *debug_asset_name(s32 assetType, s32 assetID, s32 extra) {
+    u32 searchAddr;
+    char *typeStr;
+    s32 dmaCount;
+
+    switch (assetType) {
+        case ASSET_TEXTURES_2D:
+            typeStr = "Tex 2D";
+            searchAddr = (u32) tex2d_ROM_START;
+            break;
+        case ASSET_TEXTURES_3D:
+            typeStr = "Tex 3D";
+            searchAddr = (u32) tex3d_ROM_START;
+            break;
+        case ASSET_SPRITES:
+            typeStr = "Sprite";
+            searchAddr = (u32) sprites_ROM_START;
+            break;
+        case ASSET_OBJECT_MODELS:
+            typeStr = "Object Model";
+            searchAddr = (u32) objmdl_ROM_START;
+            break;
+        case ASSET_OBJECT_ANIMATIONS:
+            typeStr = "Object Animation";
+            searchAddr = (u32) objanim_ROM_START;
+            break;
+    }
+
+    searchAddr += (assetID * 32);
+
+    if (extra) {
+        dmaCount = 32;
+    } else {
+        dmaCount = 20;
+    }
+    dmacopy(searchAddr, (u32) sAssetName, dmaCount);
+    if (extra) {
+        crash_text(CRASH_BORDER_X + 280, 25, GPACK_RGBA5551(255, 255, 0, 1), "%s:%X", assetID);
+        crash_text(CRASH_BORDER_X + 280, 34, GPACK_RGBA5551(255, 255, 0, 1), sAssetName);
+    }
+    sAssetName[20] = 0;
+
+    return sAssetName;
+}
+
+void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col, s32 useExtra) {
     s32 i;
     s32 texID;
     s32 tag = slot->colourTag;
@@ -1034,20 +1092,7 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
             crash_text(x + 40, y, col, "%s", obj->segment.header->internalName);
             break;
         case PP_RAM_ANIMATIONS:
-            texID = -200;
-            objAnim = (ObjectModel_44 *) slot->data;
-            for (i = 0; i < gModelCacheCount; i++) {
-                objModel = (ObjectModel *) gModelCache[(i << 1) + 1];
-                if (objModel && objAnim && objModel->animations == objAnim) {
-                    texID = gModelCache[i << 1];
-                }
-            }
-            if (texID != -200) {
-                crash_text(x + 40, y, col, "Obj Mdl:%d", texID);
-                return;
-            } else {
-                crash_text(x + 40, y, col, "Unknown");
-            }
+            crash_text(x + 40, y, col, "Unknown");
             break;
         default:
             if ((s32) slot->data == (s32) gVideoFramebuffers[0] || 
@@ -1086,9 +1131,9 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
             }
             if (texID != -200) {
                 if (texID & 0x8000) {
-                    crash_text(x + 40, y, col, "Tex3D ID:%d", texID & 0x7FFF);
+                    crash_text(x + 40, y, col, debug_asset_name(ASSET_TEXTURES_3D, texID & 0x7FFF, useExtra));
                 } else {
-                    crash_text(x + 40, y, col, "Tex2D ID:%d", texID & 0x7FFF);
+                    crash_text(x + 40, y, col, debug_asset_name(ASSET_TEXTURES_2D, texID, useExtra));
                 }
                 return;
             }
@@ -1100,7 +1145,7 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
                 }
             }
             if (texID != -200) {
-                crash_text(x + 40, y, col, "Sprite ID:%d", texID);
+                crash_text(x + 40, y, col, debug_asset_name(ASSET_SPRITES, texID, useExtra));
                 return;
             }
             // Try object models
@@ -1111,7 +1156,7 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
                 }
             }
             if (texID != -200) {
-                crash_text(x + 40, y, col, "Obj Mdl:%d", texID);
+                crash_text(x + 40, y, col, debug_asset_name(ASSET_OBJECT_MODELS, texID, useExtra));
                 return;
             }
             // I give up :(
@@ -1157,6 +1202,7 @@ void crash_mem_details(void) {
     f32 scrollLen;
     s32 scrollSize;
     s32 j;
+    s32 extra;
 
     x = 240;
     y = 77 - (gCrashAltScroll * 9);
@@ -1209,12 +1255,14 @@ void crash_mem_details(void) {
                             crash_rectangle(x + 37, y - 1, 192, 9, 255, 255, 255, 144);
                             col = GPACK_RGBA5551(0, 0, 0, 1);
                             crash_text(x + 166, y, col, "0#%X", (u32) slot->data);
+                            extra = 1;
                         } else {
                             col = GPACK_RGBA5551(255, 255, 255, 1);
                             size = memsize_float(slot->size, &tag);
                             crash_text(x + 172, y, col, "%2.3f%s", (f64) size, sMemLabels[tag]);
+                            extra = 0;
                         }
-                        crash_mem_info_text(slot, x, y, col);
+                        crash_mem_info_text(slot, x, y, col, extra);
                         y += 9;
                         numSlots++;
                     }
