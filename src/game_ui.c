@@ -268,7 +268,7 @@ u8 gHudSlide;
 u8 gHideRaceTimer;
 u8 gNumActivePlayers;
 u8 gWrongWayNagPrefix;
-SoundHandle gRaceStartSoundMask;
+AudioPoint *gRaceStartSoundMask;
 SoundHandle gHUDVoiceSoundMask;
 SoundHandle gHudBalloonSoundMask;
 u16 gHudTTSoundID;
@@ -1877,7 +1877,7 @@ void hud_race_start(s32 countdown, s32 updateRate) {
                 s32 numRacerObjects;
                 racerGroup = get_racer_objects(&numRacerObjects);
                 randomRacer = racerGroup[get_random_number_from_range(1, numRacerObjects) - 1];
-                racer = (Object_Racer *) randomRacer->unk64;
+                racer = &randomRacer->unk64->racer;
                 if (racer->vehicleID == VEHICLE_CAR) {
                     if (get_random_number_from_range(0, 100) >= 96) {
                         frequency = 1.25 - ((get_random_number_from_range(0, 7) * 0.5) / 7.0);
@@ -3014,7 +3014,7 @@ void hud_weapon(Object *obj, s32 updateRate) {
  * If currently using a magnet, render a reticle over the racer that's being targeted.
  */
 void hud_magnet_reticle(Object *racerObj) {
-    unk80068514_arg4 *entry;
+    Sprite *entry;
     HudElement *hud;
     Object_Racer *racer;
 
