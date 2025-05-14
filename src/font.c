@@ -206,6 +206,16 @@ void set_kerning(s32 setting) {
     gCompactKerning = setting;
 }
 
+TextureHeader *font_seek(FontData *font, s32 texID) {
+    if (font->texturePointers[texID] == NULL) {
+        set_texture_colour_tag(PP_RAM_FONTS);
+        font->texturePointers[texID] = load_texture(font->textureID[texID]);
+        set_texture_colour_tag(COLOUR_TAG_MAGENTA);
+    }
+
+    return font->texturePointers[texID];
+}
+
 #if REGION != REGION_JP
 /**
  * Load the texture assets of the given font into RAM.
@@ -217,10 +227,17 @@ void load_font(s32 fontID) {
         FontData *fontData = &gFonts[fontID];
         fontData->loadedFonts[0]++;
         if (fontData->loadedFonts[0] == 1) {
-            s32 i = 0;
-            while (i < 32 && fontData->textureID[i] != -1) {
-                fontData->texturePointers[i] = load_texture(fontData->textureID[i]);
-                i++;
+            s32 i;
+            if (gCurrentMenuId == MENU_TRACK_SELECT && fontID == ASSET_FONTS_BIGFONT) {
+                i = 0;
+                while (i < 32 && fontData->textureID[i] != -1) {
+                    fontData->texturePointers[i] = load_texture(fontData->textureID[i]);
+                    i++;
+                }
+            } else {
+                for (i = 0; i < 32; i++) {
+                    fontData->texturePointers[i] = NULL;
+                }
             }
         }
     }
@@ -365,6 +382,9 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
         xpos = box->xpos;
         ypos = box->ypos;
         fontData = font_get(box->font);
+        if (fontData == NULL) {
+            return;
+        }
         gSPDisplayList((*dList)++, dDialogueBoxBegin);
         if (box != gDialogueBoxBackground) {
             scisOffset = (((box->y2 - box->y1) + 1) / (f32) 2) * scisScale;
@@ -435,9 +455,12 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
                     newData = TRUE;
                     if (lastTextureIndex != textureIndex) {
                         lastTextureIndex = textureIndex;
-                        texture = fontData->texturePointers[textureIndex];
-                        DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
-                        gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(texture->cmd), texture->numberOfCommands);
+                        //texture = fontData->texturePointers[textureIndex];
+                        texture = font_seek(fontData, textureIndex); 
+                        if (texture) {
+                            DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
+                            gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(texture->cmd), texture->numberOfCommands);
+                        }
                     }
                     textureWidth = fontData->letter[curChar].width;
                     textureHeight = fontData->letter[curChar].height;
@@ -446,7 +469,6 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
                     xAlignmentDiff = fontData->letter[curChar].lrx;
                     yAlignmentDiff = fontData->letter[curChar].lry;
                     charSpace = (fontData->x == 0) ? (fontData->letter[curChar].ulx) : (fontData->x);
-                    newData = TRUE;
                 }
             }
             if (newData) {
@@ -466,7 +488,6 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
                 }
                 gSPTextureRectangle((*dList)++, textureUlx, textureUly, textureLrx, newTempY, 0, textureS, textureT,
                                     1 << 10, 1 << 10);
-                if (lastTextureIndex) {} // Fakematch
             }
             if (gCompactKerning && charSpace) {
                 charSpace--;
@@ -698,6 +719,9 @@ s32 get_text_width(char *text, s32 x, s32 font) {
         font = gDialogueBoxBackground[0].font;
     }
     fontData = font_get(font);
+    if (fontData == NULL) {
+        return 0;
+    }
     for (index = 0; text[index] != '\0'; index++) {
         thisDiffX = diffX;
         ch = text[index];
@@ -880,6 +904,9 @@ void *render_dialogue_text(s32 dialogueBoxID, s32 posX, s32 posY, char *text, s3
         }
         if (bg->font != FONT_UNK_FF) {
             fontData = font_get(bg->font);
+            if (fontData == NULL) {
+                return NULL;
+            }
             if (flags & (HORZ_ALIGN_CENTER | HORZ_ALIGN_RIGHT)) {
                 parse_string_with_number(text, buffer, number);
                 width = get_text_width(buffer, posX, bg->font);

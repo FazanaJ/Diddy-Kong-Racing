@@ -265,7 +265,6 @@ void init_particle_assets(void) {
  * Generate particle shapes.
  * Load sprites from asset 47.
  */
-#ifdef NON_MATCHING
 void init_particle_buffers(s32 maxTriangleParticles, s32 maxRectangleParticles, s32 maxSpriteParticles,
                            s32 maxLineParticles, s32 maxPointParticles, s32 unused_arg) {
     unsigned int new_var2;
@@ -403,9 +402,6 @@ void init_particle_buffers(s32 maxTriangleParticles, s32 maxRectangleParticles, 
         mempool_free(asset2F);
     }*/
 }
-#else
-#pragma GLOBAL_ASM("asm/nonmatchings/particles/init_particle_buffers.s")
-#endif
 
 /**
  * Generate a triangle shaped particle mesh.
@@ -661,7 +657,6 @@ void emitter_init_with_pos(ParticleEmitter *emitter, s32 behaviourID, s32 partic
  * Scrolls textures downward for point and line particles.
  * Texture state repeats in an 8-frame loop.
  */
-#ifdef NON_EQUIVALENT
 void scroll_particle_textures(s32 updateRate) {
     s32 i;
 
@@ -679,9 +674,6 @@ void scroll_particle_textures(s32 updateRate) {
         gPointParticleTriangles[i].uv2.v = gPointParticleVCoords[i].s[2] + gParticleTextureScrollOffset;
     }
 }
-#else
-#pragma GLOBAL_ASM("asm/nonmatchings/particles/scroll_particle_textures.s")
-#endif
 
 /**
  * Initializes the emitter if it has been activated for an object.
