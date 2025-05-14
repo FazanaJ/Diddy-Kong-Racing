@@ -213,6 +213,8 @@ typedef enum DebugRam {
     PP_RAM_DEBUG,
     PP_RAM_AUDIOLINE,
     PP_RAM_PARTICLES,
+    PP_RAM_MISCASSET,
+    PP_RAM_SFXPROPTABLE,
 
     PP_RAM_TOTAL,
 } DebugRam;
@@ -279,7 +281,9 @@ extern u8 *main_BSS_START[];
     "Obj Gfx\t", \
     "Debug\t", \
     "Aud Lines", \
-    "Particles"
+    "Particles", \
+    "Misc Assets", \
+    "SFX Params"
 
 #define NUM_PERF_ITERATIONS 60
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS

@@ -11,6 +11,7 @@
 #include "game_ui.h"
 #include "math_util.h"
 #include "printf.h"
+#include "main.h"
 
 /************ .data ************/
 

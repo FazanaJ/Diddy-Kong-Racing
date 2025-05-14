@@ -14,5 +14,6 @@ void dmacopy(u32 romOffset, u32 ramAddress, s32 numBytes);
 void dmacopy_v1(u32 romOffset, u32 ramAddress, s32 numBytes);
 void assettable_seek_s32(s32 modelID, s32 *offset, s32 *size, s32 assetIndex);
 void assettable_seek_s16(s32 modelID, s32 *offset, s32 *size, s32 assetIndex);
+void assettable_tag(u32 tag);
 
 #endif

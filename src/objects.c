@@ -302,11 +302,11 @@ s32 D_8011AFFC;
 s32 gBoostTriCount;
 s32 D_8011B004;
 s32 gBoostVertFlip; // indexes gBoostVerts and gBoostTris
-u8 gShieldSineTime[16];
+u8 gShieldSineTime[NUMBER_OF_CHARACTERS];
 Object *gBoostEffectObjects[NUMBER_OF_CHARACTERS];
-u8 D_8011B048[16];
-u8 D_8011B058[16];
-u8 D_8011B068[16];
+u8 D_8011B048[NUMBER_OF_CHARACTERS];
+u8 D_8011B058[NUMBER_OF_CHARACTERS];
+u8 D_8011B068[NUMBER_OF_CHARACTERS];
 RacerFXData gRacerFXData[NUMBER_OF_CHARACTERS];
 
 extern s16 gGhostMapID;
@@ -373,7 +373,7 @@ void racerfx_alloc(s32 numberOfVertices, s32 numberOfTriangles) {
         gBoostVertFlip = 0;
         miscAsset20 = (Object_Boost *) get_misc_asset(ASSET_MISC_20);
         // Makes 10 boost objects, but only 8 racers can actually exist at once.
-        for (i = 0; i < 10; i++) {
+        for (i = 0; i < NUMBER_OF_CHARACTERS; i++) {
             // This is for shields, not boosts.
             gShieldSineTime[i] = get_random_number_from_range(0, 255);
         }
@@ -696,12 +696,14 @@ void allocate_object_pools(void) {
         (*gObjectHeaderReferences)[i] = 0;
     }
 
+    assettable_tag(PP_RAM_MISCASSET);
     gAssetsMiscSection = (s32 *) load_asset_section_from_rom(ASSET_MISC);
     gAssetsMiscTable = (s32 *) load_asset_section_from_rom(ASSET_MISC_TABLE);
     gAssetsMiscTableLength = 0;
     while (-1 != gAssetsMiscTable[gAssetsMiscTableLength]) {
         gAssetsMiscTableLength++;
     }
+    assettable_tag(COLOUR_TAG_GREY);
 
     decrypt_magic_codes(
         &gAssetsMiscSection[gAssetsMiscTable[ASSET_MISC_MAGIC_CODES]],
