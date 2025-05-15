@@ -1739,7 +1739,8 @@ void obj_loop_animator(Object *obj, s32 updateRate) {
 
     if (textureIndex != TEX_INDEX_NO_TEXTURE) {
         if (!curBatch) {} // Fake
-        tex = levelModel->textures[textureIndex].texture;
+        tex = track_tex_seek(textureIndex);
+        //tex = levelModel->textures[textureIndex].texture;
         shift2 = tex->width << 7;
         shift = tex->width << 7;
         for (tri = trisStart; tri < trisEnd; tri++) {
@@ -5467,7 +5468,8 @@ void obj_loop_texscroll(Object *obj, s32 updateRate) {
     t0 = obj64->tex_scroll.unk4;
     t1 = obj64->tex_scroll.unk6;
 
-    tex = levelModel->textures[obj64->tex_scroll.textureIndex].texture;
+    tex = track_tex_seek(obj64->tex_scroll.textureIndex);
+    //tex = levelModel->textures[obj64->tex_scroll.textureIndex].texture;
 
     uShift = tex->width;
     vShift = tex->height;

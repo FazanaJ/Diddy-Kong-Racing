@@ -371,6 +371,7 @@ void main_game_loop(void) {
     gSkipGfxTask = FALSE;
     font_cycle(sLogicUpdateRate);
     textbox_cycle(sLogicUpdateRate);
+    track_tex_cycle(sLogicUpdateRate);
     mempool_free_queue_clear();
     if (!gIsPaused) {
         disable_cutscene_camera();
