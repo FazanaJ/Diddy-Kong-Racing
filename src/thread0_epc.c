@@ -1062,7 +1062,7 @@ char *debug_asset_name(s32 assetType, s32 assetID, s32 extra) {
     }
     dmacopy(searchAddr, (u32) sAssetName, dmaCount);
     if (extra) {
-        crash_text(CRASH_BORDER_X + 280, 25, GPACK_RGBA5551(255, 255, 0, 1), "%s:%X", assetID);
+        crash_text(CRASH_BORDER_X + 280, 25, GPACK_RGBA5551(255, 255, 0, 1), "%s:%X", typeStr, assetID);
         crash_text(CRASH_BORDER_X + 280, 34, GPACK_RGBA5551(255, 255, 0, 1), sAssetName);
     }
     sAssetName[20] = 0;
