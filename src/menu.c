@@ -661,6 +661,7 @@ s16 sGameTitleTileTextures[12] = { TEXTURE_TITLE_SEGMENT_01, TEXTURE_TITLE_SEGME
                                    TEXTURE_TITLE_SEGMENT_10, TEXTURE_TITLE_SEGMENT_11, -1 };
 #endif
 
+// Final value is all NULL so that the texrect_draw function knows when to stop.
 DrawTexture sGameTitleTileOffsets[12] = { { NULL, -75, -32 }, { NULL, -60, -32 }, { NULL, -45, -32 },
                                           { NULL, -30, -32 }, { NULL, -15, -32 }, { NULL, 0, -32 },
                                           { NULL, 15, -32 },  { NULL, 30, -32 },  { NULL, 45, -32 },
@@ -3299,7 +3300,7 @@ void menu_title_screen_init(void) {
     gTitleAudioCounter = 0;
     gMenuStage = TITLESCREEN_START;
     menu_assetgroup_load(sGameTitleTileTextures);
-    for (i = 0; i < 11; i++) {
+    for (i = 0; i < ARRAY_COUNT(sGameTitleTileOffsets) - 1; i++) {
         sGameTitleTileOffsets[i].texture = gMenuAssets[sGameTitleTileTextures[i]];
     }
     music_voicelimit_set(27);
@@ -5384,7 +5385,7 @@ void menu_boot_init(void) {
     menu_assetgroup_load(sGameTitleTileTextures);
 
     // Sets up the 11 texture pointers for the "Diddy Kong Racing" logo.
-    for (i = 0; i < 11; i++) {
+    for (i = 0; i < ARRAY_COUNT(sGameTitleTileOffsets) - 1; i++) {
         sGameTitleTileOffsets[i].texture = gMenuAssets[sGameTitleTileTextures[i]];
     }
 
@@ -13549,9 +13550,9 @@ void menu_asset_load(s32 assetID) {
         i = (*gAssetsMenuElementIds)[assetID];
 
         if ((i & ASSET_MASK_TEXTURE) == ASSET_MASK_TEXTURE) {
-            gMenuAssets[assetID] = (TextureHeader *) load_texture(i & 0x3FFF);
+            gMenuAssets[assetID] = load_texture(i & 0x3FFF);
         } else if (i & ASSET_MASK_SPRITE) {
-            gMenuAssets[assetID] = (TextureHeader *) func_8007C12C(i & 0x3FFF, 0);
+            gMenuAssets[assetID] = func_8007C12C(i & 0x3FFF, 0);
         } else if (i & ASSET_MASK_OBJECT) {
             if (gMenuElementIdCount) {} // Fakematch
             entry.objectID = i & 0xFFFF;
@@ -13559,9 +13560,9 @@ void menu_asset_load(s32 assetID) {
             entry.x = 0;
             entry.y = 0;
             entry.z = 0;
-            gMenuAssets[assetID] = (TextureHeader *) spawn_object(&entry, 0);
+            gMenuAssets[assetID] = spawn_object(&entry, 0);
         } else {
-            gMenuAssets[assetID] = (TextureHeader *) object_model_init(i & 0x3FFF, 0);
+            gMenuAssets[assetID] = object_model_init(i & 0x3FFF, 0);
         }
 
         gMenuAssetActive[assetID] = TRUE;
