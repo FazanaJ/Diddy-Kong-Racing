@@ -326,7 +326,9 @@ void mainproc(void) {
 #endif
     memsize_init();
     mempool_init_main();
+#ifdef DEBUG
     debug_init();
+#endif
     gThread3Stack = (u64 *) mempool_alloc(STACK_GAME, PP_RAM_STACK);
     osCreateThread(&gThread1, 1, &thread1_main, 0, gThread3Stack + STACKSIZE(STACK_GAME), OS_PRIORITY_IDLE);
     gThread3Stack[STACKSIZE(STACK_GAME) - 1] = 0;

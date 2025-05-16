@@ -1065,5 +1065,3 @@ void autoplay_inputs(void) {
     }
     
 }
-
-#endif

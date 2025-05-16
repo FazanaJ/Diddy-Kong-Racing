@@ -119,6 +119,7 @@ OBJCOPY  = $(CROSS)objcopy
 VENV     = .venv
 PYTHON   = $(VENV)/bin/python3
 GCC      = gcc
+FLIPS    = $(TOOLS_DIR)/Flips/flips
 
 #Options
 CC       = $(RECOMP_DIR)/cc
@@ -199,6 +200,7 @@ CFLAGS += $(INCLUDE_CFLAGS)
 
 CHECK_WARNINGS := -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-parameter -Wno-switch -Werror-implicit-function-declaration
 ifeq ($(DETECTED_OS), macos)
+	CHECK_WARNINGS += -Wno-incompatible-pointer-types -Wno-int-conversion -Wno-pointer-to-int-cast
 	ifeq ($(NON_MATCHING),0)
 		CHECK_WARNINGS += -Wno-unused-value -Wno-deprecated-non-prototype -Wno-array-bounds -Wno-self-assign -Wno-uninitialized -Wno-unused-but-set-variable -Wno-unused-variable
 		CHECK_WARNINGS += -Wno-pointer-to-int-cast -Wno-constant-conversion -Wno-int-to-pointer-cast
@@ -282,6 +284,8 @@ $(GCC_SAFE_FILES): CFLAGS := -DNDEBUG -DAVOID_UB -DNON_MATCHING -Os $(INCLUDE_CF
 	-EB \
 	-march=vr4300 \
 	-mabi=32 \
+	-Wno-int-conversion \
+	-Wno-incompatible-pointer-types \
 	-mno-check-zero-division \
 	-mno-abicalls \
 	-mgp32 \
@@ -387,6 +391,9 @@ ROM := $(TARGET).z64
 
 test_ares: $(ROM) $(VERIFY)
 	/Applications/ares.app/Contents/MacOS/ares "$(TARGET).z64"
+
+patch: $(ROM)
+	$(FLIPS) --create --bps $(ROM) ./baseroms/baserom.$(REGION).$(VERSION).z64 $(TARGET).bps
 
 #When you just need to wipe old symbol names and re-extract
 cleanextract: distclean extract
@@ -510,24 +517,6 @@ $(TARGET).bin: $(TARGET).elf | $(ALL_ASSETS_BUILT)
 $(TARGET).z64: $(TARGET).bin | $(ALL_ASSETS_BUILT)
 	$(call print,CopyRom:,$<,$@)
 	$(V)$(PYTHON) $(TOOLS_DIR)/python/CopyRom.py $< $@
-
-$(BUILD_DIR)/map_symbols.bin: $(BUILD_DIR)/$(BASENAME).map
-	$(call print,Generating Map Symbols:,$<,$@)
-	$(V)$(PYTHON) $(TOOLS_DIR)/python/map_gen.py $< $@
-
-$(BUILD_DIR)/map_symbols.bin.o: $(BUILD_DIR)/map_symbols.bin
-	$(call print,Linking Map Symbols:,$<,$@)
-	$(V)$(LD) -r -b binary -o $@ $<
-
-O_FILES += $(BUILD_DIR)/map_symbols.bin.o
-
-$(BUILD_DIR)/map_symbols.bin: $(BUILD_DIR)/$(BASENAME).map
-	$(call print,Generating Map Symbols:,$<,$@)
-	$(V)$(PYTHON) $(TOOLS_DIR)/python/map_gen.py $< $@
-
-$(BUILD_DIR)/map_symbols.bin.o: $(BUILD_DIR)/map_symbols.bin
-	$(call print,Linking Map Symbols:,$<,$@)
-	$(V)$(LD) -r -b binary -o $@ $<
 
 ### Settings
 .PHONY: all clean cleanextract default assets

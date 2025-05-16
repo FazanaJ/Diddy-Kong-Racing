@@ -40,6 +40,7 @@ void bgload_kill(void) {
     mempool_free(gThread30Stack);
     mempool_free(gThread30);
     gThread30Stack = NULL;
+    gThread30 = NULL;
 }
 
 /**

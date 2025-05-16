@@ -22,6 +22,7 @@
 #include "PRinternal/viint.h"
 #include "common.h"
 #include "main.h"
+#include "thread30_bgload.h"
 
 // Maximum size for a level model is 522.5 KiB
 #define LEVEL_MODEL_MAX_SIZE 0x82A00
@@ -1385,7 +1386,8 @@ void animate_level_textures(s32 updateRate) {
         for (batchNumber = 0; batchNumber < segment[segmentNumber].numberOfBatches; batchNumber++) {
             if (batch[batchNumber].flags & BATCH_FLAGS_TEXTURE_ANIM) {
                 if (batch[batchNumber].textureIndex != 0xFF) {
-                    texture = gCurrentLevelModel->textures[batch[batchNumber].textureIndex].texture;
+                    texture = track_tex_seek(batch[batchNumber].textureIndex);
+                    //texture = gCurrentLevelModel->textures[batch[batchNumber].textureIndex].texture;
                     if (texture->numOfTextures != 0x100 && texture->frameAdvanceDelay) {
                         temp = batch[batchNumber].unk7 << 6;
                         if (batch[batchNumber].flags & BATCH_FLAGS_UNK80000000) {
@@ -1415,7 +1417,7 @@ void spawn_skydome(s32 objectID) {
     // Antipiracy measure
     drm_checksum_balloon();
 #endif
-    if (objectID == -1) {
+    if (objectID == -1 || get_current_map_id() == ASSET_LEVEL_TROPHYRACE) {
         gSkydomeSegment = NULL;
         return;
     }
@@ -2007,7 +2009,8 @@ void render_level_segment(s32 segmentId, s32 nonOpaque) {
         if (batchInfo->textureIndex == 0xFF) {
             texture = FALSE;
         } else {
-            texture = gCurrentLevelModel->textures[batchInfo->textureIndex].texture;
+            //texture = gCurrentLevelModel->textures[batchInfo->textureIndex].texture;
+            texture = track_tex_seek(batchInfo->textureIndex);
             textureFlags = texture->flags;
         }
         batchFlags |= BATCH_FLAGS_UNK00000008 | BATCH_FLAGS_UNK00000002;
@@ -2859,6 +2862,36 @@ s32 func_8002BAB0(s32 levelSegmentIndex, f32 xIn, f32 zIn, f32 *yOut) {
 #pragma GLOBAL_ASM("asm/nonmatchings/tracks/func_8002BAB0.s")
 #endif
 
+u16 *gTrackTexIDs;
+s8 *gTrackTexStaleTimer;
+
+TextureHeader *track_tex_seek(s32 texID) {
+    if (gCurrentLevelModel->textures[texID].texture == NULL) {
+        set_texture_colour_tag(PP_RAM_LEVELTEX);
+        gCurrentLevelModel->textures[texID].texture = load_texture(gTrackTexIDs[texID]);
+        set_texture_colour_tag(COLOUR_TAG_MAGENTA);
+    }
+
+    gTrackTexStaleTimer[texID] = 10;
+    return gCurrentLevelModel->textures[texID].texture;
+}
+
+void track_tex_cycle(s32 updateRate) {
+    s32 i;
+    if (gCurrentLevelModel == NULL || bgload_active()) {
+        return;
+    }
+    for (i = 0; i < gCurrentLevelModel->numberOfTextures; i++) {
+        if (gTrackTexStaleTimer[i] > 0) {
+            gTrackTexStaleTimer[i] -= updateRate;
+            if (gTrackTexStaleTimer[i] <= 0) {
+                tex_free(gCurrentLevelModel->textures[i].texture);
+                gCurrentLevelModel->textures[i].texture = NULL;
+            }
+        }
+    }
+}
+
 #ifdef NON_MATCHING
 // generate_track
 // Loads a level track from the index in the models table.
@@ -2868,14 +2901,16 @@ void func_8002C0C4(s32 modelId) {
     s32 temp_s4;
     s32 temp;
     LevelModel *mdl;
+    s32 maxTextures;
 
     set_texture_colour_tag(PP_RAM_LEVELTEX);
-    gTrackModelHeap = (LevelModel *) mempool_alloc_largest(PP_RAM_LEVELMDL);
-    gCurrentLevelModel = gTrackModelHeap;
     D_8011D370 = mempool_alloc_safe(0x7D0, PP_RAM_LEVELMDL);
     D_8011D374 = mempool_alloc_safe(0x1F4, PP_RAM_LEVELMDL);
-    D_8011D378 = 0;
     gLevelModelTable = (s32 *) load_asset_section_from_rom(ASSET_LEVEL_MODELS_TABLE);
+    // Allocate this last, so it ends up being the latest thing allocated, and then first thing freed.
+    gTrackModelHeap = (LevelModel *) mempool_alloc_largest(PP_RAM_LEVELMDL);
+    gCurrentLevelModel = gTrackModelHeap;
+    D_8011D378 = 0;
     ghost_alloc();
 
     for (i = 0; gLevelModelTable[i] != -1; i++) {}
@@ -2905,22 +2940,21 @@ void func_8002C0C4(s32 modelId) {
     LOCAL_OFFSET_TO_RAM_ADDRESS(u8 *, gCurrentLevelModel->segmentsBitfields);
     LOCAL_OFFSET_TO_RAM_ADDRESS(BspTreeNode *, gCurrentLevelModel->segmentsBspTree);
 
-    if (1) {}
-    if (1) {}
-    if (1) {}
-    if (1) {}
-    if (1) {}
-    if (1) {} // Fakematch
-
     for (k = 0; k < gCurrentLevelModel->numberOfSegments; k++) {
         LOCAL_OFFSET_TO_RAM_ADDRESS(Vertex *, gCurrentLevelModel->segments[k].vertices);
         LOCAL_OFFSET_TO_RAM_ADDRESS(Triangle *, gCurrentLevelModel->segments[k].triangles);
         LOCAL_OFFSET_TO_RAM_ADDRESS(TriangleBatchInfo *, gCurrentLevelModel->segments[k].batches);
         LOCAL_OFFSET_TO_RAM_ADDRESS(CollisionNode *, gCurrentLevelModel->segments[k].unk14);
     }
-    for (k = 0; k < gCurrentLevelModel->numberOfTextures; k++) {
-        gCurrentLevelModel->textures[k].texture =
-            load_texture(((s32) gCurrentLevelModel->textures[k].texture) | 0x8000);
+    maxTextures = gCurrentLevelModel->numberOfTextures;
+    if (maxTextures > 128) {
+        maxTextures = 128;
+    }
+    gTrackTexIDs = mempool_alloc(maxTextures * sizeof(u16), PP_RAM_ASSET_CACHE);
+    gTrackTexStaleTimer = mempool_alloc(maxTextures * sizeof(s8), PP_RAM_ASSET_CACHE);
+    for (k = 0; k < maxTextures; k++) {
+        gTrackTexIDs[k] = ((u16) gCurrentLevelModel->textures[k].texture) | ASSET_MASK_TEX3D;
+        gCurrentLevelModel->textures[k].texture = NULL;
     }
     j = (s32) gCurrentLevelModel + gCurrentLevelModel->modelSize;
     for (k = 0; k < gCurrentLevelModel->numberOfSegments; k++) {
@@ -2999,8 +3033,14 @@ void free_track(void) {
         mempool_free(D_8011C8B8);
         free_waves();
     }
-    for (i = 0; i < gCurrentLevelModel->numberOfTextures; i++) {
-        tex_free(gCurrentLevelModel->textures[i].texture);
+    if (gTrackTexIDs) {
+        for (i = 0; i < gCurrentLevelModel->numberOfTextures; i++) {
+            if (gCurrentLevelModel->textures[i].texture) {
+                tex_free(gCurrentLevelModel->textures[i].texture);
+            }
+        }
+        mempool_free(gTrackTexIDs);
+        mempool_free(gTrackTexStaleTimer);
     }
     mempool_free(gTrackModelHeap);
     mempool_free(D_8011D370);

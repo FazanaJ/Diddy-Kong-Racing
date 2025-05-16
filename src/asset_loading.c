@@ -23,6 +23,7 @@ OSMesgQueue gDmaMesgQueueV2;
 #define dmacopy_internal dmacopy
 #endif
 u32 gAssetTableCount;
+u32 gAssetTableTag;
 
 /*******************************/
 
@@ -39,6 +40,7 @@ void init_PI_mesg_queue(void) {
     u32 assetTableSize;
     u32 *table;
 
+    gAssetTableTag = COLOUR_TAG_GREY;
     osCreateMesgQueue(&gPIMesgQueue, gPIMesgBuf, ARRAY_COUNT(gPIMesgBuf));
     osCreateMesgQueue(&gDmaMesgQueue, &gDmaMesg, 1);
     osCreatePiManager((OSPri) 150, &gPIMesgQueue, gPIMesgBuf, ARRAY_COUNT(gPIMesgBuf));
@@ -62,6 +64,10 @@ void assettable_seek(s32 assetID, u32 *table0, s32 *table1) {
     *table1 = table[1] - table[0];
 }
 
+void assettable_tag(u32 tag) {
+    gAssetTableTag = tag;
+}
+
 /**
  * Returns the memory address containing an asset section loaded from ROM.
  * Official Name: piRomLoad
@@ -82,7 +88,7 @@ u32 *load_asset_section_from_rom(u32 assetIndex) {
     }
     assetIndex++;
     assettable_seek(assetIndex, &start, &size);
-    out = (u32 *) mempool_alloc_safe(size, COLOUR_TAG_GREY);
+    out = (u32 *) mempool_alloc_safe(size, gAssetTableTag);
     if (out == 0) {
         return 0;
     }

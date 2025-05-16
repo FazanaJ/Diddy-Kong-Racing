@@ -921,8 +921,7 @@ void sprite_anim_off(s32 setting) {
 /**
  * Calculates angle from object to camera, then renders the sprite as a billboard, facing the camera.
  */
-s32 render_sprite_billboard(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Object *obj, unk80068514_arg4 *arg4,
-                            s32 flags) {
+s32 render_sprite_billboard(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Object *obj, Sprite *arg4, s32 flags) {
     f32 diffX;
     f32 diffY;
     Vertex *v;
@@ -1016,7 +1015,7 @@ s32 render_sprite_billboard(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Obj
         gDkrEnableBillboard((*dList)++);
     }
     if (gSpriteAnimOff == FALSE) {
-        textureFrame = ((textureFrame & 0xFF) * arg4->textureCount) >> 8;
+        textureFrame = ((textureFrame & 0xFF) * arg4->baseTextureId) >> 8;
     }
     flags &= ~RENDER_VEHICLE_PART;
     if (flags & RENDER_SEMI_TRANSPARENT) {
@@ -1027,7 +1026,7 @@ s32 render_sprite_billboard(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Obj
     if (!(flags & RENDER_Z_UPDATE)) {
         gDPSetPrimColor((*dList)++, 0, 0, 255, 255, 255, 255);
     }
-    gSPDisplayList((*dList)++, arg4->unk8[textureFrame + 1]);
+    gSPDisplayList((*dList)++, arg4->gfx[textureFrame + 1]);
     DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
     gModelMatrixStackPos--;
     if (gModelMatrixStackPos == 0) {

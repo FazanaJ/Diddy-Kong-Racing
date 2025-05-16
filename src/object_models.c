@@ -68,6 +68,22 @@ void allocate_object_model_pools(void) {
 #endif
 }
 
+s32 obj_model_blacklist(s32 modelID) {
+    switch (modelID) {
+        default:
+            return FALSE;
+        case ASSET_OBJECTMODEL_MIDIFADE:
+        case ASSET_OBJECTMODEL_DINOSAUR3:
+        case ASSET_OBJECTMODEL_EXIT:
+        case ASSET_OBJECTMODEL_EFFECTBOX:
+        case ASSET_OBJECTMODEL_CHECKPOINT:
+        case ASSET_OBJECTMODEL_RGBALIGHT_1:
+        case ASSET_OBJECTMODEL_ANIMATION:
+        case ASSET_OBJECTMODEL_ANIMCAMERA:
+            return TRUE;
+    }
+    return FALSE;
+}
 
 /**
  * Load the associated model ID and assign it to the objects gfx data.
@@ -88,6 +104,13 @@ Object_68 *object_model_init(s32 modelID, s32 flags) {
 #endif
     u32 compressedData;
     s32 modelSize;
+    s32 stubModel;
+
+    stubModel = obj_model_blacklist(modelID);
+
+    if (stubModel) {
+        modelID = ASSET_OBJECTMODEL_ANIMCAMERA;
+    }
 
     if (modelID >= gNumModelIDs) {
         modelID = 0;
@@ -156,14 +179,20 @@ Object_68 *object_model_init(s32 modelID, s32 flags) {
     objMdl->numberOfAnimations = 0;
     objMdl->animations = NULL;
     sp3F = 0;
-    set_texture_colour_tag(PP_RAM_OBJTEX);
-    for (i = 0; i < objMdl->numberOfTextures; i++) {
-        objMdl->textures[i].texture = load_texture(((s32) objMdl->textures[i].texture) | 0x8000);
-        if (objMdl->textures[i].texture == NULL) {
-            sp3F = 1;
+    if (stubModel == FALSE) {
+        set_texture_colour_tag(PP_RAM_OBJTEX);
+        for (i = 0; i < objMdl->numberOfTextures; i++) {
+            objMdl->textures[i].texture = load_texture(((s32) objMdl->textures[i].texture) | 0x8000);
+            if (objMdl->textures[i].texture == NULL) {
+                sp3F = 1;
+            }
+        }
+        set_texture_colour_tag(COLOUR_TAG_MAGENTA);
+    } else {
+        for (i = 0; i < objMdl->numberOfTextures; i++) {
+            objMdl->textures[i].texture = NULL;
         }
     }
-    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
     if (!sp3F) {
         for (i = 0; i < objMdl->numberOfBatches; i++) {
             if ((objMdl->batches[i].textureIndex != 0xFF) &&
@@ -178,6 +207,9 @@ Object_68 *object_model_init(s32 modelID, s32 flags) {
                 gModelCache[ASSETCACHE_PTR(cacheIndex)] = (s32) objMdl;
                 if (gModelCacheCount < MODEL_LOADED_MAX) {
                     ret->animUpdateTimer = 0;
+                    if (stubModel) {
+                        ret->headTilt = -1;
+                    }
                     return ret;
                 } else {
                 }

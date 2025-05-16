@@ -45,9 +45,7 @@ u8 sTimerChecks[4];
 u8 sWroteRDP;
 #endif
 
-#ifdef DEBUG
 u8 sWroteRDP;
-#endif
 
 u8 gSchedFrameCap;
 
@@ -95,12 +93,10 @@ static void __scExec(OSSched *sc, OSScTask *t) {
 
     if (t->state & OS_SC_NEEDS_RDP) {
         sc->curRDPTask = t;
-#ifdef DEBUG
         if (sWroteRDP) {
             IO_WRITE(DPC_STATUS_REG, DPC_CLR_CLOCK_CTR | DPC_CLR_CMD_CTR | DPC_CLR_PIPE_CTR | DPC_CLR_TMEM_CTR);
             sWroteRDP = 0;
         }
-#endif
     }
 }
 
@@ -211,10 +207,8 @@ static void __scHandleRDP(OSSched *sc) {
     sc->curRDPTask = NULL;
 
     t->state &= ~OS_SC_NEEDS_RDP;
-#ifdef DEBUG
     debug_rdp();
     sWroteRDP = 1;
-#endif
 
     if ((t->state & OS_SC_RCP_MASK) == 0) {
 #ifdef PUPPYPRINT_DEBUG
@@ -312,7 +306,5 @@ void osCreateScheduler(OSSched *sc, void *stack, OSPri priority, UNUSED u8 mode,
 
     osCreateThread(&sc->thread, 5, __scMain, (void *)sc, stack, priority);
     osStartThread(&sc->thread);
-#ifdef DEBUG
     sWroteRDP = 1;
-#endif
 }

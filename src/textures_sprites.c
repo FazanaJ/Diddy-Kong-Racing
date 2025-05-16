@@ -346,14 +346,14 @@ TextureHeader *load_texture(s32 arg0) {
     load_asset_to_address(assetSection, (u32) header, assetOffset, sizeof(TempTexHeader));
     numberOfTextures = header->header.numOfTextures >> 8;
     if (!header->header.isCompressed) {
-        tex = (TextureHeader *) mempool_alloc(numberOfTextures * (sizeof(Gfx) * 6) + assetSize, gTexColourTag);
+        tex = (TextureHeader *) mempool_alloc(numberOfTextures * (sizeof(Gfx) * 12) + assetSize, gTexColourTag);
         if (tex == NULL) {
             return NULL;
         }
         load_asset_to_address(assetSection, (u32) tex, assetOffset, assetSize);
     } else {
         sp3C = byteswap32((u8 *) &header->uncompressedSize) + sizeof(TextureHeader);
-        tex = (TextureHeader *) mempool_alloc(numberOfTextures * (sizeof(Gfx) * 6) + sp3C, gTexColourTag);
+        tex = (TextureHeader *) mempool_alloc(numberOfTextures * (sizeof(Gfx) * 12) + sp3C, gTexColourTag);
         if (tex == NULL) {
             return NULL;
         }
@@ -394,7 +394,7 @@ TextureHeader *load_texture(s32 arg0) {
     }
     D_80126344 = 0;
 
-    assetOffset = (s32)align16((u8 *) ((s32) tex + assetSize));
+    assetOffset = (s32) align16((u8 *) ((s32) tex + assetSize));
     texTemp = tex;
     for (i = 0; i < numberOfTextures; i++) {
         material_init(texTemp, (Gfx *) assetOffset);
@@ -402,7 +402,7 @@ TextureHeader *load_texture(s32 arg0) {
             texTemp->ciPaletteOffset = paletteOffset;
             assetOffset += (sizeof(Gfx) * 6); // I'm guessing it takes 6 f3d commands to load the palette
         }
-        assetOffset += (sizeof(Gfx) * 6); // I'm guessing it takes 12 f3d commands to load the texture
+        assetOffset += (sizeof(Gfx) * 12); // I'm guessing it takes 12 f3d commands to load the texture
         texTemp = (TextureHeader *) ((s32) texTemp + texTemp->textureSize);
     }
     if (gCiPalettesSize >= 0x280) {
@@ -777,7 +777,7 @@ s32 tex_asset_size(s32 id) {
         size = byteswap32((u8 *) (&header->uncompressedSize));
     }
     numOfTextures = header->header.numOfTextures;
-    return (((numOfTextures >> 8) & 0xFFFF) * (sizeof(Gfx) * 6)) + size;
+    return (((numOfTextures >> 8) & 0xFFFF) * (sizeof(Gfx) * 12)) + size;
 }
 
 s32 load_sprite_info(s32 spriteIndex, s32 *numOfInstancesOut, s32 *unkOut, s32 *numFramesOut, s32 *formatOut,
@@ -851,15 +851,10 @@ void sprite_free(Sprite *sprite) {
     }
 }
 
-#ifdef NON_MATCHING
 void func_8007CDC0(Sprite *sprite1, Sprite *sprite2, s32 arg2) {
     UNUSED s32 pad[2];
-    s32 sprUnk4;
-    s32 sprUnk6;
-    s32 y0;
-    s32 x0;
-    s32 x1;
-    s32 y1;
+    s32 spriteCount;
+    s32 spriteDrawFlags;
     s32 xTemp;
     s32 yTemp;
     s32 left;
@@ -872,15 +867,13 @@ void func_8007CDC0(Sprite *sprite1, Sprite *sprite2, s32 arg2) {
     Vertex *vertices;
     Vertex *curVerts;
     Triangle *triangles;
-    u8 *temp_a3;
     Gfx *dlptr;
     TextureHeader *tex;
 
-    temp_a3 = &sprite1->unkC.val[arg2];
-    sprUnk4 = sprite1->numberOfInstances;
-    sprUnk6 = sprite1->drawFlags;
-    i = temp_a3[0];
-    j = temp_a3[1];
+    spriteCount = sprite1->numberOfInstances;
+    spriteDrawFlags = sprite1->drawFlags;
+    i = sprite1->unkC.val[arg2];
+    j = sprite1->unkC.val[arg2 + 1];
     dlptr = D_80126364;
     vertices = D_80126360;
     triangles = D_80126368;
@@ -891,29 +884,28 @@ void func_8007CDC0(Sprite *sprite1, Sprite *sprite2, s32 arg2) {
     curVertIndex = 0;
     var_t5 = 0;
     while (i < j) {
+        curVerts = vertices;
         tex = sprite2->frames[i];
         texWidth = tex->width;
         texHeight = tex->height;
-        xTemp = (tex->unk3 - sprUnk4);
-        x0 = xTemp;
-        x1 = (xTemp + texWidth) - 1;
-        yTemp = (sprUnk6 - tex->unk4);
-        y0 = yTemp - 1;
-        y1 = (yTemp - texHeight);
-        curVerts = vertices;
-        vertices[0].x = x0;
-        vertices[0].y = y0;
-        vertices[0].z = 0;
-        vertices[1].x = x1;
-        vertices[1].y = y0;
-        vertices[1].z = 0;
-        vertices[2].x = x1;
-        vertices[2].y = y1;
-        vertices[2].z = 0;
-        vertices[3].x = x0;
-        vertices[3].y = y1;
-        vertices[3].z = 0;
-        vertices += 4;
+        xTemp = tex->unk3 - spriteCount;
+        yTemp = spriteDrawFlags - tex->unk4;
+        vertices->x = xTemp;
+        vertices->y = yTemp - 1;
+        vertices->z = 0;
+        vertices++;
+        vertices->x = xTemp + texWidth - 1;
+        vertices->y = yTemp - 1;
+        vertices->z = 0;
+        vertices++;
+        vertices->x = xTemp + texWidth - 1;
+        vertices->y = yTemp - texHeight;
+        vertices->z = 0;
+        vertices++;
+        vertices->x = xTemp;
+        vertices->y = yTemp - texHeight;
+        vertices->z = 0;
+        vertices++;
         gDkrDmaDisplayList(dlptr++, OS_K0_TO_PHYSICAL(tex->cmd), tex->numberOfCommands);
         if (var_t5 == 0) {
             left = j - i;
@@ -958,9 +950,6 @@ void func_8007CDC0(Sprite *sprite1, Sprite *sprite2, s32 arg2) {
     D_80126360 = vertices;
     D_80126368 = triangles;
 }
-#else
-#pragma GLOBAL_ASM("asm/nonmatchings/textures_sprites/func_8007CDC0.s")
-#endif
 
 s32 get_tile_bytes(s32 type, s32 siz) {
     if (type == 0) {

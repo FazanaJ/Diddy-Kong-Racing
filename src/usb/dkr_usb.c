@@ -1,8 +1,6 @@
 #include "config.h"
 #include "main.h"
 
-#ifdef DEBUG
-
 #include "dkr_usb.h"
 #include "usb.h"
 #include "reset.h"
@@ -238,5 +236,4 @@ void render_usb_info(void) {
     render_printf("%s\n", textBuffer);
 }
 
-#endif
 #endif

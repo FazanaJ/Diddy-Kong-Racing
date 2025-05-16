@@ -218,7 +218,6 @@ char *write_to_buf(char *buffer, const char *data, size_t size) {
 typedef char *outfun(char*,const char*,size_t);
 s32 _Printf(outfun prout, char *dst, const char *fmt, va_list args);
 
-#ifdef DEBUG
 void crash_assert(s32 cond, const char *str, ...) {
     char *ptr;
     va_list args;
@@ -237,7 +236,6 @@ void crash_assert(s32 cond, const char *str, ...) {
     gCrashAssetTripped = TRUE;
     *(volatile int *) 0 = 0;
 }
-#endif
 
 void crash_nomemory(s32 size, s32 colourTag) {
     if (colourTag != COLOUR_TAG_NONE) {
@@ -543,14 +541,12 @@ u32 crash_stack_pos(s32 threadID) {
             } else {
                 return 0;
             }
-#ifdef DEBUG
         case 69:
             if (gThreadUsbStack) {
                 return (u32) (gThreadUsbStack + (STACKSIZE(STACK_USB) - 1));
             } else {
                 return 0;
             }
-#endif
         default:
             return 0;
     }
@@ -570,11 +566,9 @@ s32 crash_check_stack(void) {
     if (gThread30Stack && (gThread30Stack[STACKSIZE(STACK_BGLOAD) - 1] != gThread30Stack[0])) {
         return 30;
     }
-#ifdef DEBUG
     if (gThreadUsbStack && (gThreadUsbStack[STACKSIZE(STACK_USB) - 1] != gThreadUsbStack[0])) {
         return 69;
     }
-#endif
 
     return 0;
 }
@@ -734,10 +728,8 @@ OSThread *crash_thread_id(s32 threadID) {
             } else {
                 return NULL;
             }
-#ifdef DEBUG
         case 69:
             return &gThreadUsb;
-#endif
         default:
             return NULL;
     }
@@ -782,7 +774,6 @@ void crash_page_stacks(OSThread *t) {
     }
 }
 
-#ifdef DEBUG
 void crash_page_assert(void) {
     if (gCrashAssetTripped) {
         crash_text(CRASH_BORDER_X + 16, 54, GPACK_RGBA5551(255, 255, 255, 1), gCrashAssert);
@@ -995,8 +986,17 @@ extern u8 *main_RODATA_START[];
 extern u8 *main_RODATA_END[];
 extern u8 *main_BSS_START[];
 extern u8 *main_BSS_END[];
-extern u8 *map_ROM_START[];
-extern u8 *map_ROM_END[];
+
+extern u8 *tex2d_ROM_START[];
+extern u8 *tex2d_ROM_END[];
+extern u8 *tex3d_ROM_START[];
+extern u8 *tex3d_ROM_END[];
+extern u8 *sprites_ROM_START[];
+extern u8 *sprites_ROM_END[];
+extern u8 *objmdl_ROM_START[];
+extern u8 *objmdl_ROM_END[];
+extern u8 *objanim_ROM_START[];
+extern u8 *objanim_ROM_END[];
 
 extern u8 *main_TEXT_SIZE[];
 extern u8 *main_DATA_SIZE[];
@@ -1014,7 +1014,54 @@ extern u64 *gGfxSPTaskOutputBuffer;
 extern Gfx *gDisplayLists[2];
 extern u8 *gAudioHeapStack;
 
-void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
+char sAssetName[32];
+
+char *debug_asset_name(s32 assetType, s32 assetID, s32 extra) {
+    u32 searchAddr;
+    char *typeStr;
+    s32 dmaCount;
+
+    switch (assetType) {
+        case ASSET_TEXTURES_2D:
+            typeStr = "Tex 2D";
+            searchAddr = (u32) tex2d_ROM_START;
+            break;
+        case ASSET_TEXTURES_3D:
+            typeStr = "Tex 3D";
+            searchAddr = (u32) tex3d_ROM_START;
+            break;
+        case ASSET_SPRITES:
+            typeStr = "Sprite";
+            searchAddr = (u32) sprites_ROM_START;
+            break;
+        case ASSET_OBJECT_MODELS:
+            typeStr = "Object Model";
+            searchAddr = (u32) objmdl_ROM_START;
+            break;
+        case ASSET_OBJECT_ANIMATIONS:
+            typeStr = "Object Animation";
+            searchAddr = (u32) objanim_ROM_START;
+            break;
+    }
+
+    searchAddr += (assetID * 32);
+
+    if (extra) {
+        dmaCount = 32;
+    } else {
+        dmaCount = 20;
+    }
+    dmacopy(searchAddr, (u32) sAssetName, dmaCount);
+    if (extra) {
+        crash_text(CRASH_BORDER_X + 280, 25, GPACK_RGBA5551(255, 255, 0, 1), "%s:%X", typeStr, assetID);
+        crash_text(CRASH_BORDER_X + 280, 34, GPACK_RGBA5551(255, 255, 0, 1), sAssetName);
+    }
+    sAssetName[20] = 0;
+
+    return sAssetName;
+}
+
+void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col, s32 useExtra) {
     s32 i;
     s32 texID;
     s32 tag = slot->colourTag;
@@ -1036,20 +1083,7 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
             crash_text(x + 40, y, col, "%s", obj->segment.header->internalName);
             break;
         case PP_RAM_ANIMATIONS:
-            texID = -200;
-            objAnim = (ObjectModel_44 *) slot->data;
-            for (i = 0; i < gModelCacheCount; i++) {
-                objModel = (ObjectModel *) gModelCache[(i << 1) + 1];
-                if (objModel && objAnim && objModel->animations == objAnim) {
-                    texID = gModelCache[i << 1];
-                }
-            }
-            if (texID != -200) {
-                crash_text(x + 40, y, col, "Obj Mdl:%d", texID);
-                return;
-            } else {
-                crash_text(x + 40, y, col, "Unknown");
-            }
+            crash_text(x + 40, y, col, "Unknown");
             break;
         default:
             if ((s32) slot->data == (s32) gVideoFramebuffers[0] || 
@@ -1088,9 +1122,9 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
             }
             if (texID != -200) {
                 if (texID & 0x8000) {
-                    crash_text(x + 40, y, col, "Tex3D ID:%d", texID & 0x7FFF);
+                    crash_text(x + 40, y, col, debug_asset_name(ASSET_TEXTURES_3D, texID & 0x7FFF, useExtra));
                 } else {
-                    crash_text(x + 40, y, col, "Tex2D ID:%d", texID & 0x7FFF);
+                    crash_text(x + 40, y, col, debug_asset_name(ASSET_TEXTURES_2D, texID, useExtra));
                 }
                 return;
             }
@@ -1102,7 +1136,7 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
                 }
             }
             if (texID != -200) {
-                crash_text(x + 40, y, col, "Sprite ID:%d", texID);
+                crash_text(x + 40, y, col, debug_asset_name(ASSET_SPRITES, texID, useExtra));
                 return;
             }
             // Try object models
@@ -1113,7 +1147,7 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col) {
                 }
             }
             if (texID != -200) {
-                crash_text(x + 40, y, col, "Obj Mdl:%d", texID);
+                crash_text(x + 40, y, col, debug_asset_name(ASSET_OBJECT_MODELS, texID, useExtra));
                 return;
             }
             // I give up :(
@@ -1159,6 +1193,7 @@ void crash_mem_details(void) {
     f32 scrollLen;
     s32 scrollSize;
     s32 j;
+    s32 extra;
 
     x = 240;
     y = 77 - (gCrashAltScroll * 9);
@@ -1211,12 +1246,14 @@ void crash_mem_details(void) {
                             crash_rectangle(x + 37, y - 1, 192, 9, 255, 255, 255, 144);
                             col = GPACK_RGBA5551(0, 0, 0, 1);
                             crash_text(x + 166, y, col, "0#%X", (u32) slot->data);
+                            extra = 1;
                         } else {
                             col = GPACK_RGBA5551(255, 255, 255, 1);
                             size = memsize_float(slot->size, &tag);
                             crash_text(x + 172, y, col, "%2.3f%s", (f64) size, sMemLabels[tag]);
+                            extra = 0;
                         }
-                        crash_mem_info_text(slot, x, y, col);
+                        crash_mem_info_text(slot, x, y, col, extra);
                         y += 9;
                         numSlots++;
                     }
@@ -1348,7 +1385,6 @@ void crash_page_memory(void) {
 
     crash_memory_chart(32, gScreenHeight - 40, gScreenWidth - 64, 12);
 }
-#endif
 
 void crash_screen_sleep(s32 ms) {
     u32 cycles = ms * 1000 * osClockRate / 1000000;
@@ -1359,6 +1395,8 @@ void crash_screen_sleep(s32 ms) {
 u8 viSetOnce = 0;
 
 #ifdef MAP_PARSE
+extern u8 *map_ROM_START[];
+extern u8 *map_ROM_END[];
 
 /* Relies on the linker being different which is a little annoying until custom linker support is added
     map_ROM_START = __romPos;
@@ -1454,7 +1492,6 @@ void crash_render(OSThread *t) {
             break;
         case CRASH_PAGE_STACKS:
             break;
-#ifdef DEBUG
         case CRASH_PAGE_ASSERTS:
             break;
         case CRASH_PAGE_MEMORY:
@@ -1552,7 +1589,6 @@ void crash_render(OSThread *t) {
                 }
             } 
             break;
-#endif
     }
 
     if (gCrashFBUpdate == FALSE) {
@@ -1601,14 +1637,12 @@ void crash_render(OSThread *t) {
         case CRASH_PAGE_STACKS:
             crash_page_stacks(t);
             break;
-#ifdef DEBUG
         case CRASH_PAGE_ASSERTS:
             crash_page_assert();
             break;
         case CRASH_PAGE_MEMORY:
             crash_page_memory();
             break;
-#endif
     }
 
     crash_text(CRASH_BORDER_X + 16, gScreenHeight - 20, GPACK_RGBA5551(255, 255, 255, 1), "%2.3fms", (f64) ((f32) OS_CYCLES_TO_USEC(osGetCount() - first) / 1000.0f));
@@ -1643,13 +1677,11 @@ void crash_default_page(OSThread *t) {
     s32 threadID;
     __OSThreadContext *c;
 
-#ifdef DEBUG
     if (gCrashAssetTripped) {
         gCrashPage = CRASH_PAGE_ASSERTS;
     } else if (gCrashCause == 20) {
         gCrashPage = CRASH_PAGE_MEMORY;
     } else {
-#endif
         threadID = crash_check_stack();
         if (threadID) {
             switch(threadID) {
@@ -1678,13 +1710,11 @@ void crash_default_page(OSThread *t) {
                     gThreadStackSize = STACK_BGLOAD;
                     gCrashCause = 18;
                     break;
-#ifdef DEBUG
                 case 69:
                     __osFaultedThread = &gThreadUsb;
                     gThreadStackSize = STACK_USB;
                     gCrashCause = 18;
                     break;
-#endif
             }
             gCrashPage = CRASH_PAGE_STACKS;
         } else {
@@ -1695,9 +1725,7 @@ void crash_default_page(OSThread *t) {
                 gCrashPage = CRASH_PAGE_FPREGS;
             }
         }
-#ifdef DEBUG
     }
-#endif
 }
 
 void crash2_render(void) {
@@ -1784,7 +1812,7 @@ void crash_thread(UNUSED void *var) {
     oldH = gScreenHeight;
     gScreenWidth = 512;
     gScreenHeight = 240;
-    gAutoplayTest = 0;
+    DEBUG_VAR(gAutoplayTest, 0);
     if (gVideoCurrFramebuffer != NULL) {
         if (gBitDepth == G_IM_SIZ_16b) {
             framebuffer_scale_16b(gVideoCurrFramebuffer, gVideoDepthBuffer, oldW, oldH, gScreenWidth, gScreenHeight);

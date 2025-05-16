@@ -112,6 +112,76 @@ SECTIONS
     map_ROM_END = __romPos;
     map_VRAM_END = .;
 
+    tex2d_ROM_START = __romPos;
+    tex2d_VRAM = ADDR(.tex2d);
+    .tex2d assets_VRAM_END : AT(tex2d_ROM_START) SUBALIGN(16)
+    {
+        FILL(0x00000000);
+        tex2d_DATA_START = .;
+        build/assets/asset_textures_2d_list.bin.o(.data);
+        tex2d_DATA_END = .;
+        tex2d_DATA_SIZE = ABSOLUTE(tex2d_DATA_END - tex2d_DATA_START);
+    }
+    __romPos += SIZEOF(.tex2d);
+    tex2d_ROM_END = __romPos;
+    tex2d_VRAM_END = .;
+
+    tex3d_ROM_START = __romPos;
+    tex3d_VRAM = ADDR(.tex3d);
+    .tex3d assets_VRAM_END : AT(tex3d_ROM_START) SUBALIGN(16)
+    {
+        FILL(0x00000000);
+        tex3d_DATA_START = .;
+        build/assets/asset_textures_3d_list.bin.o(.data);
+        tex3d_DATA_END = .;
+        tex3d_DATA_SIZE = ABSOLUTE(tex3d_DATA_END - tex3d_DATA_START);
+    }
+    __romPos += SIZEOF(.tex3d);
+    tex3d_ROM_END = __romPos;
+    tex3d_VRAM_END = .;
+
+    sprites_ROM_START = __romPos;
+    sprites_VRAM = ADDR(.sprites);
+    .sprites assets_VRAM_END : AT(sprites_ROM_START) SUBALIGN(16)
+    {
+        FILL(0x00000000);
+        sprites_DATA_START = .;
+        build/assets/asset_sprites_list.bin.o(.data);
+        sprites_DATA_END = .;
+        sprites_DATA_SIZE = ABSOLUTE(sprites_DATA_END - sprites_DATA_START);
+    }
+    __romPos += SIZEOF(.sprites);
+    sprites_ROM_END = __romPos;
+    sprites_VRAM_END = .;
+
+    objmdl_ROM_START = __romPos;
+    objmdl_VRAM = ADDR(.objmdl);
+    .objmdl assets_VRAM_END : AT(objmdl_ROM_START) SUBALIGN(16)
+    {
+        FILL(0x00000000);
+        objmdl_DATA_START = .;
+        build/assets/asset_object_models_list.bin.o(.data);
+        objmdl_DATA_END = .;
+        objmdl_DATA_SIZE = ABSOLUTE(objmdl_DATA_END - objmdl_DATA_START);
+    }
+    __romPos += SIZEOF(.objmdl);
+    objmdl_ROM_END = __romPos;
+    objmdl_VRAM_END = .;
+
+    objanim_ROM_START = __romPos;
+    objanim_VRAM = ADDR(.objanim);
+    .objanim assets_VRAM_END : AT(objanim_ROM_START) SUBALIGN(16)
+    {
+        FILL(0x00000000);
+        objanim_DATA_START = .;
+        build/assets/asset_object_models_list.bin.o(.data);
+        objanim_DATA_END = .;
+        objanim_DATA_SIZE = ABSOLUTE(objanim_DATA_END - objanim_DATA_START);
+    }
+    __romPos += SIZEOF(.objanim);
+    objanim_ROM_END = __romPos;
+    objanim_VRAM_END = .;
+
     /DISCARD/ :
     {
         *(*);

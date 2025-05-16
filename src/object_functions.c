@@ -1341,7 +1341,7 @@ void obj_loop_stopwatchman(Object *obj, s32 updateRate) {
                 slowly_change_fog(PLAYER_ONE, tt->fogR, tt->fogG, tt->fogB, tt->fogNear, tt->fogFar, 180);
                 music_play(header->music);
                 music_dynamic_set(header->instruments);
-                racer->vehicleSound = func_80004B40(racer->characterId, racer->vehicleID);
+                racer->vehicleSound = racer_sound_init(racer->characterId, racer->vehicleID);
             }
             obj->properties.npc.timer = 180;
             move_object(obj, obj->segment.x_velocity * updateRateF, obj->segment.y_velocity * updateRateF,
@@ -1739,7 +1739,8 @@ void obj_loop_animator(Object *obj, s32 updateRate) {
 
     if (textureIndex != TEX_INDEX_NO_TEXTURE) {
         if (!curBatch) {} // Fake
-        tex = levelModel->textures[textureIndex].texture;
+        tex = track_tex_seek(textureIndex);
+        //tex = levelModel->textures[textureIndex].texture;
         shift2 = tex->width << 7;
         shift = tex->width << 7;
         for (tri = trisStart; tri < trisEnd; tri++) {
@@ -2848,7 +2849,7 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
                 }
                 obj->properties.npc.action = TAJ_MODE_TELEPORT_AWAY_BEGIN;
                 sound_play(SOUND_WHOOSH4, NULL);
-                racer->vehicleSound = func_80004B40(racer->characterId, racer->vehicleID);
+                racer->vehicleSound = racer_sound_init(racer->characterId, racer->vehicleID);
             }
             break;
         case TAJ_MODE_TELEPORT_TO_PLAYER_BEGIN:
@@ -2907,7 +2908,7 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
             if (obj->segment.object.opacity > var_a2) {
                 obj->segment.object.opacity -= var_a2;
             } else {
-                racer->vehicleSound = func_80004B40(racer->characterId, racer->vehicleID);
+                racer->vehicleSound = racer_sound_init(racer->characterId, racer->vehicleID);
                 slowly_change_fog(PLAYER_ONE, taj->fogR, taj->fogG, taj->fogB, taj->fogNear, taj->fogFar, 180);
                 music_voicelimit_set(levelHeader->voiceLimit);
                 music_play(levelHeader->music);
@@ -5467,7 +5468,8 @@ void obj_loop_texscroll(Object *obj, s32 updateRate) {
     t0 = obj64->tex_scroll.unk4;
     t1 = obj64->tex_scroll.unk6;
 
-    tex = levelModel->textures[obj64->tex_scroll.textureIndex].texture;
+    tex = track_tex_seek(obj64->tex_scroll.textureIndex);
+    //tex = levelModel->textures[obj64->tex_scroll.textureIndex].texture;
 
     uShift = tex->width;
     vShift = tex->height;
@@ -6278,7 +6280,8 @@ void obj_loop_bubbler(Object *obj, s32 updateRate) {
 }
 
 void obj_init_boost(Object *obj, LevelObjectEntry_Boost2 *entry) {
-    obj->unk64 = (Object_64 *) ((s32) get_misc_asset(ASSET_MISC_20) + (entry->unk8[0] << 7));
+    Object_Boost *asset20 = (Object_Boost *) get_misc_asset(ASSET_MISC_20);
+    obj->unk64 = (Object_64 *) &asset20[entry->unk8[0]];
     obj->segment.level_entry = NULL;
 }
 

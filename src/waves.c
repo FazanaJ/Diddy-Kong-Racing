@@ -1287,7 +1287,8 @@ void func_800BBE08(LevelModel *level, LevelHeader *header) {
     gWaveBoundingBoxX1 = bb->x1;
     gWaveBoundingBoxZ1 = bb->z1;
     gWaveBatch = curBatch;
-    gWaveTexture = level->textures[curBatch->textureIndex].texture;
+    //gWaveTexture = level->textures[curBatch->textureIndex].texture;
+    gWaveTexture = track_tex_seek(curBatch->textureIndex);
     temp_t6 = (curBatch->flags & (BATCH_FLAGS_UNK40000000 | BATCH_FLAGS_UNK20000000 | BATCH_FLAGS_UNK10000000)) >> 28;
     if (temp_t6 > 0) {
         D_800E3180 = header->unk70[temp_t6];

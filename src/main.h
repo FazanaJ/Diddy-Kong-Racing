@@ -107,6 +107,7 @@ typedef enum DebugPages {
     PAGE_MINIMAL,
     PAGE_MEMORY,
     PAGE_MISC,
+    PAGE_ASSETS,
     PAGE_OVERVIEW,
     PAGE_GENERAL,
     PAGE_BREAKDOWN,
@@ -213,11 +214,14 @@ typedef enum DebugRam {
     PP_RAM_DEBUG,
     PP_RAM_AUDIOLINE,
     PP_RAM_PARTICLES,
+    PP_RAM_MISCASSET,
+    PP_RAM_SFXPROPTABLE,
 
     PP_RAM_TOTAL,
 } DebugRam;
 
-#ifdef DEBUG
+
+extern u8 *main_BSS_START[];
 
 #define MEMSTRINGS \
     "Red\t", \
@@ -276,7 +280,9 @@ typedef enum DebugRam {
     "Obj Gfx\t", \
     "Debug\t", \
     "Aud Lines", \
-    "Particles"
+    "Particles", \
+    "Misc Assets", \
+    "SFX Params"
 
 #define NUM_PERF_ITERATIONS 60
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS
@@ -311,6 +317,7 @@ typedef struct DebugData {
     u8 threadReset[THREAD_CONTEXT_COUNT];
 
     s16 pageScroll;
+    s16 pageScrollMax;
     u16 logLen;
     u16 logStart;
     char logText[NUM_LOG_CHARACTERS];
@@ -337,7 +344,6 @@ typedef struct DebugPage {
 
 extern DebugData *gDebug;
 extern char *sPuppyprintMemColours[];
-extern u8 *main_BSS_START[];
 extern f32 gFPS;
 
 void debug_init();
@@ -354,27 +360,7 @@ void debug_printf(const char* message, ...);
 void crash_assert(s32 cond, const char *str, ...);
 void debug_ram_dump(void);
 
-#define DEBUG_VAR(x, value) (x = value)
-#else
-#define debug_init()
-#define debug_render(dList, updateRate)
-#define debug_update(updateRate)
-#define debug_rsp(context)
-#define debug_rdp()
-#define debug_thread(field, offset)
-#define debug_newframe(updateRate)
-#define debug_ram(size, tag)
-#define debug_tag_index(colourTag)
-#if defined(__sgi)
-#define debug_log
-#define debug_printf
-#define crash_assert 
-#else
-#define debug_log(logLevel, str, ...)
-#define debug_printf(str, ...)
-#define crash_assert(cond, str, ...);
-#define DEBUG_VAR(x, value)
-#endif
-#endif
+#define DEBUG_VAR(x, value) \
+    { if (gDebug) {(x = value);}}
 
 #endif

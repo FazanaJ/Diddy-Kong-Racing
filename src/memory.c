@@ -481,9 +481,7 @@ s32 mempool_slot_assign(MemoryPools poolIndex, s32 slotIndex, s32 size, s32 slot
     poolSlots[slotIndex].flags = slotIsTaken;
     poolSize = poolSlots[slotIndex].size;
     poolSlots[slotIndex].size = size;
-#ifdef DEBUG
     poolSlots[slotIndex].colourTag = debug_tag_index(colourTag);
-#endif
     index = poolSlots[pool->curNumSlots].index;
     if (size < poolSize) {
         index = (pool->curNumSlots + poolSlots)->index;

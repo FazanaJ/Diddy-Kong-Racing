@@ -268,7 +268,7 @@ u8 gHudSlide;
 u8 gHideRaceTimer;
 u8 gNumActivePlayers;
 u8 gWrongWayNagPrefix;
-SoundHandle gRaceStartSoundMask;
+AudioPoint *gRaceStartSoundMask;
 SoundHandle gHUDVoiceSoundMask;
 SoundHandle gHudBalloonSoundMask;
 u16 gHudTTSoundID;
@@ -334,14 +334,16 @@ void hud_init(UNUSED s32 viewportCount) {
         gAssetHudElementStaleCounter[i] = 0;
         gAssetHudElements->entry[i] = NULL;
     }
-    gAssetHudElements->entry[HUD_ELEMENT_UNK_01] =
-        func_8007C12C(gAssetHudElementIds[HUD_ELEMENT_UNK_01] & 0x3FFF, 1); // ID: 86 - 0x56
-    gAssetHudElements->entry[HUD_ELEMENT_UNK_17] =
-        func_8007C12C(gAssetHudElementIds[HUD_ELEMENT_UNK_17] & 0x3FFF, 1); // ID: 291 - 0x123
-    gAssetHudElements->entry[HUD_ELEMENT_UNK_08] =
-        func_8007C12C(gAssetHudElementIds[HUD_ELEMENT_UNK_08] & 0x3FFF, 1); // ID: 156 - 0x9C
-    gAssetHudElements->entry[HUD_ELEMENT_UNK_11] =
-        func_8007C12C(gAssetHudElementIds[HUD_ELEMENT_UNK_11] & 0x3FFF, 1); // ID: 60 - 0x3C
+    if (get_current_level_race_type() != RACETYPE_HUBWORLD && is_time_trial_enabled() == FALSE) {
+        gAssetHudElements->entry[HUD_ELEMENT_UNK_01] =
+            func_8007C12C(gAssetHudElementIds[HUD_ELEMENT_UNK_01] & 0x3FFF, 1); // ID: 86 - 0x56
+        gAssetHudElements->entry[HUD_ELEMENT_UNK_17] =
+            func_8007C12C(gAssetHudElementIds[HUD_ELEMENT_UNK_17] & 0x3FFF, 1); // ID: 291 - 0x123
+        gAssetHudElements->entry[HUD_ELEMENT_UNK_08] =
+            func_8007C12C(gAssetHudElementIds[HUD_ELEMENT_UNK_08] & 0x3FFF, 1); // ID: 156 - 0x9C
+        gAssetHudElements->entry[HUD_ELEMENT_UNK_11] =
+            func_8007C12C(gAssetHudElementIds[HUD_ELEMENT_UNK_11] & 0x3FFF, 1); // ID: 60 - 0x3C
+    }
     if (gNumActivePlayers != 3) {
         playerCount = gNumActivePlayers;
     } else {
@@ -1877,7 +1879,7 @@ void hud_race_start(s32 countdown, s32 updateRate) {
                 s32 numRacerObjects;
                 racerGroup = get_racer_objects(&numRacerObjects);
                 randomRacer = racerGroup[get_random_number_from_range(1, numRacerObjects) - 1];
-                racer = (Object_Racer *) randomRacer->unk64;
+                racer = &randomRacer->unk64->racer;
                 if (racer->vehicleID == VEHICLE_CAR) {
                     if (get_random_number_from_range(0, 100) >= 96) {
                         frequency = 1.25 - ((get_random_number_from_range(0, 7) * 0.5) / 7.0);
@@ -3014,7 +3016,7 @@ void hud_weapon(Object *obj, s32 updateRate) {
  * If currently using a magnet, render a reticle over the racer that's being targeted.
  */
 void hud_magnet_reticle(Object *racerObj) {
-    unk80068514_arg4 *entry;
+    Sprite *entry;
     HudElement *hud;
     Object_Racer *racer;
 
@@ -3259,10 +3261,12 @@ void hud_render_general(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 updateRate
 
     hud_audio_update(updateRate);
 
-    gAssetHudElementStaleCounter[HUD_ELEMENT_UNK_01] = 0;
-    gAssetHudElementStaleCounter[HUD_ELEMENT_UNK_17] = 0;
-    gAssetHudElementStaleCounter[HUD_ELEMENT_UNK_08] = 0;
-    gAssetHudElementStaleCounter[HUD_ELEMENT_UNK_11] = 0;
+    if (get_current_level_race_type() != RACETYPE_HUBWORLD && is_time_trial_enabled() == FALSE) {
+        gAssetHudElementStaleCounter[HUD_ELEMENT_UNK_01] = 0;
+        gAssetHudElementStaleCounter[HUD_ELEMENT_UNK_17] = 0;
+        gAssetHudElementStaleCounter[HUD_ELEMENT_UNK_08] = 0;
+        gAssetHudElementStaleCounter[HUD_ELEMENT_UNK_11] = 0;
+    }
     D_80127180 = 0;
 
     if (gMinimapXlu & 2) {
