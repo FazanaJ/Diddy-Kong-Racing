@@ -524,9 +524,7 @@ void material_set(Gfx **dList, TextureHeader *texhead, s32 flags, s32 texOffset)
         flags |= texhead->flags;
         if (texhead != gCurrentTextureHeader) {
             gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(texhead->cmd), texhead->numberOfCommands);
-#ifdef DEBUG
             DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
-#endif
             loadTex = TRUE;
             gCurrentTextureHeader = texhead;
             doPipeSync = FALSE;

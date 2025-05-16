@@ -223,8 +223,6 @@ typedef enum DebugRam {
 
 extern u8 *main_BSS_START[];
 
-#ifdef DEBUG
-
 #define MEMSTRINGS \
     "Red\t", \
     "Green\t", \
@@ -362,27 +360,7 @@ void debug_printf(const char* message, ...);
 void crash_assert(s32 cond, const char *str, ...);
 void debug_ram_dump(void);
 
-#define DEBUG_VAR(x, value) (x = value)
-#else
-#define debug_init()
-#define debug_render(dList, updateRate)
-#define debug_update(updateRate)
-#define debug_rsp(context)
-#define debug_rdp()
-#define debug_thread(field, offset)
-#define debug_newframe(updateRate)
-#define debug_ram(size, tag)
-#define debug_tag_index(colourTag)
-#if defined(__sgi)
-#define debug_log
-#define debug_printf
-#define crash_assert 
-#else
-#define debug_log(logLevel, str, ...)
-#define debug_printf(str, ...)
-#define crash_assert(cond, str, ...);
-#define DEBUG_VAR(x, value)
-#endif
-#endif
+#define DEBUG_VAR(x, value) \
+    { if (gDebug) {(x = value);}}
 
 #endif

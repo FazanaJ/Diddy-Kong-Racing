@@ -95,10 +95,8 @@ enum CrashPages {
     CRASH_PAGE_EXTRA,
     CRASH_PAGE_STACKS,
     CRASH_PAGE_LOG,
-#ifdef DEBUG
     CRASH_PAGE_MEMORY,
     CRASH_PAGE_ASSERTS,
-#endif
     CRASH_PAGE_EMPTY,
 
     CRASH_PAGE_COUNT,
@@ -118,8 +116,6 @@ void thread0_Main(UNUSED void *unused);
 void render_epc_lock_up_display(void);
 void crash_nomemory(s32 size, s32 colourTag);
 f32 memsize_float(s32 size, s32 *tag);
-#ifdef DEBUG
 void crash_reorder_ram(DebugData *d);
-#endif
 
 #endif

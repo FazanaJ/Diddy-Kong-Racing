@@ -10,8 +10,6 @@
 #include "objects.h"
 #include "tracks.h"
 
-#ifdef DEBUG
-
 DebugData *gDebug;
 
 void debug_init(void) {
@@ -65,6 +63,11 @@ void debug_fillrect(Gfx **gfx, s32 x1, s32 y1, s32 x2, s32 y2, u32 colour) {
 void debug_timer_update(DebugData *d, s32 field, u32 time) {
     s32 i;
     s32 it;
+    
+    if (d == NULL) {
+        return;
+    }
+
     if (time > OS_USEC_TO_CYCLES(99999)) {
         time = OS_USEC_TO_CYCLES(99999);
     }
@@ -83,6 +86,10 @@ void debug_timer_update(DebugData *d, s32 field, u32 time) {
 void debug_rdp(void) {
     DebugData *d = gDebug;
 
+    if (d == NULL) {
+        return;
+    }
+
     debug_timer_update(d, PP_RDP_CLK, RDP_TO_USEC(IO_READ(DPC_CLOCK_REG)));
     debug_timer_update(d, PP_RDP_BUF, RDP_TO_USEC(IO_READ(DPC_BUFBUSY_REG)));
     debug_timer_update(d, PP_RDP_BUS, RDP_TO_USEC(IO_READ(DPC_PIPEBUSY_REG)));
@@ -94,6 +101,10 @@ void debug_rdp(void) {
 void debug_rsp(s32 context) {
     DebugData *d = gDebug;
     u32 time = osGetCount();
+    
+    if (d == NULL) {
+        return;
+    }
 
     switch (context) {
         case RSP_GFX_START:
@@ -614,7 +625,7 @@ void debug_render_page_menu(Gfx **dList, s32 updateRate) {
 void debug_render(Gfx **dList, s32 updateRate) {
     DebugData *d = gDebug;
 
-    if (d->enabled == FALSE) {
+    if (d == NULL || d->enabled == FALSE) {
         return;
     }
 
@@ -627,6 +638,11 @@ void debug_render(Gfx **dList, s32 updateRate) {
 
 void debug_thread(s32 field, s32 offset) {
     DebugData *d = gDebug;
+
+    if (d == NULL) {
+        return;
+    }
+
     s32 count = field >> 1;
     d->threadTimers[field][d->threadIter[count]] = osGetCount() - offset;
     if (field % 2) {
@@ -759,6 +775,11 @@ void debug_update(s32 updateRate) {
     s32 inputHeld;
     s32 count;
     s32 offset;
+
+    
+    if (d == NULL) {
+        return;
+    }
 
     inputPressed = 0;
     inputHeld = 0;
@@ -907,5 +928,3 @@ void debug_update(s32 updateRate) {
 #include "usb/dkr_usb.c"
 #include "usb/usb.c"
 #include "usb/reset.c"
-
-#endif

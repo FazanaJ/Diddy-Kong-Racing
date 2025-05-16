@@ -903,9 +903,7 @@ void wave_load_material(TextureHeader *tex, s32 rtile) {
         }
     }
 
-#ifdef DEBUG
     DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
-#endif
     // difference is G_IM_SIZ_32b vs G_IM_SIZ_16b
     if (TEX_FORMAT(tex->format) == TEX_FORMAT_RGBA32) {
         gDPLoadMultiBlock(gWaveDL++, OS_PHYSICAL_TO_K0(tex + 1), tmem, rtile, G_IM_FMT_RGBA, G_IM_SIZ_32b, texWidth,

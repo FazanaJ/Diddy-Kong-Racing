@@ -6,8 +6,6 @@
 #include "printf.h"
 #include "thread30_bgload.h"
 
-#ifdef DEBUG
-
 extern s32 gCurrentMenuId;
 extern s8 gDoneTalkingToNPC[];
 extern s32 sLogicUpdateRate;
@@ -1065,5 +1063,3 @@ void autoplay_inputs(void) {
     }
     
 }
-
-#endif

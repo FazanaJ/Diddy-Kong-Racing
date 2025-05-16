@@ -218,7 +218,6 @@ char *write_to_buf(char *buffer, const char *data, size_t size) {
 typedef char *outfun(char*,const char*,size_t);
 s32 _Printf(outfun prout, char *dst, const char *fmt, va_list args);
 
-#ifdef DEBUG
 void crash_assert(s32 cond, const char *str, ...) {
     char *ptr;
     va_list args;
@@ -237,7 +236,6 @@ void crash_assert(s32 cond, const char *str, ...) {
     gCrashAssetTripped = TRUE;
     *(volatile int *) 0 = 0;
 }
-#endif
 
 void crash_nomemory(s32 size, s32 colourTag) {
     if (colourTag != COLOUR_TAG_NONE) {
@@ -543,14 +541,12 @@ u32 crash_stack_pos(s32 threadID) {
             } else {
                 return 0;
             }
-#ifdef DEBUG
         case 69:
             if (gThreadUsbStack) {
                 return (u32) (gThreadUsbStack + (STACKSIZE(STACK_USB) - 1));
             } else {
                 return 0;
             }
-#endif
         default:
             return 0;
     }
@@ -570,11 +566,9 @@ s32 crash_check_stack(void) {
     if (gThread30Stack && (gThread30Stack[STACKSIZE(STACK_BGLOAD) - 1] != gThread30Stack[0])) {
         return 30;
     }
-#ifdef DEBUG
     if (gThreadUsbStack && (gThreadUsbStack[STACKSIZE(STACK_USB) - 1] != gThreadUsbStack[0])) {
         return 69;
     }
-#endif
 
     return 0;
 }
@@ -734,10 +728,8 @@ OSThread *crash_thread_id(s32 threadID) {
             } else {
                 return NULL;
             }
-#ifdef DEBUG
         case 69:
             return &gThreadUsb;
-#endif
         default:
             return NULL;
     }
@@ -782,7 +774,6 @@ void crash_page_stacks(OSThread *t) {
     }
 }
 
-#ifdef DEBUG
 void crash_page_assert(void) {
     if (gCrashAssetTripped) {
         crash_text(CRASH_BORDER_X + 16, 54, GPACK_RGBA5551(255, 255, 255, 1), gCrashAssert);
@@ -1394,7 +1385,6 @@ void crash_page_memory(void) {
 
     crash_memory_chart(32, gScreenHeight - 40, gScreenWidth - 64, 12);
 }
-#endif
 
 void crash_screen_sleep(s32 ms) {
     u32 cycles = ms * 1000 * osClockRate / 1000000;
@@ -1502,7 +1492,6 @@ void crash_render(OSThread *t) {
             break;
         case CRASH_PAGE_STACKS:
             break;
-#ifdef DEBUG
         case CRASH_PAGE_ASSERTS:
             break;
         case CRASH_PAGE_MEMORY:
@@ -1600,7 +1589,6 @@ void crash_render(OSThread *t) {
                 }
             } 
             break;
-#endif
     }
 
     if (gCrashFBUpdate == FALSE) {
@@ -1649,14 +1637,12 @@ void crash_render(OSThread *t) {
         case CRASH_PAGE_STACKS:
             crash_page_stacks(t);
             break;
-#ifdef DEBUG
         case CRASH_PAGE_ASSERTS:
             crash_page_assert();
             break;
         case CRASH_PAGE_MEMORY:
             crash_page_memory();
             break;
-#endif
     }
 
     crash_text(CRASH_BORDER_X + 16, gScreenHeight - 20, GPACK_RGBA5551(255, 255, 255, 1), "%2.3fms", (f64) ((f32) OS_CYCLES_TO_USEC(osGetCount() - first) / 1000.0f));
@@ -1691,13 +1677,11 @@ void crash_default_page(OSThread *t) {
     s32 threadID;
     __OSThreadContext *c;
 
-#ifdef DEBUG
     if (gCrashAssetTripped) {
         gCrashPage = CRASH_PAGE_ASSERTS;
     } else if (gCrashCause == 20) {
         gCrashPage = CRASH_PAGE_MEMORY;
     } else {
-#endif
         threadID = crash_check_stack();
         if (threadID) {
             switch(threadID) {
@@ -1726,13 +1710,11 @@ void crash_default_page(OSThread *t) {
                     gThreadStackSize = STACK_BGLOAD;
                     gCrashCause = 18;
                     break;
-#ifdef DEBUG
                 case 69:
                     __osFaultedThread = &gThreadUsb;
                     gThreadStackSize = STACK_USB;
                     gCrashCause = 18;
                     break;
-#endif
             }
             gCrashPage = CRASH_PAGE_STACKS;
         } else {
@@ -1743,9 +1725,7 @@ void crash_default_page(OSThread *t) {
                 gCrashPage = CRASH_PAGE_FPREGS;
             }
         }
-#ifdef DEBUG
     }
-#endif
 }
 
 void crash2_render(void) {

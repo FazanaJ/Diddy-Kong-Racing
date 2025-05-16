@@ -9,8 +9,6 @@
 
 /************ .data ************/
 
-#ifdef DEBUG
-
 s32 D_800E2EF0 = FALSE;
 
 // Char width is (v - u) + 1
@@ -497,16 +495,3 @@ void debug_text_newline(void) {
     gDebugTextX = gDebugBoundsX1;
     gDebugTextY += 11;
 }
-
-#else
-void set_render_printf_position(u16 x, u16 y) {
-
-}
-
-s32 render_printf(const char *format, ...) {
-    va_list args;
-    s32 written;
-    va_start(args, format);
-    return 0;
-}
-#endif
