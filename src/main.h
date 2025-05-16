@@ -107,6 +107,7 @@ typedef enum DebugPages {
     PAGE_MINIMAL,
     PAGE_MEMORY,
     PAGE_MISC,
+    PAGE_ASSETS,
     PAGE_OVERVIEW,
     PAGE_GENERAL,
     PAGE_BREAKDOWN,
@@ -318,6 +319,7 @@ typedef struct DebugData {
     u8 threadReset[THREAD_CONTEXT_COUNT];
 
     s16 pageScroll;
+    s16 pageScrollMax;
     u16 logLen;
     u16 logStart;
     char logText[NUM_LOG_CHARACTERS];

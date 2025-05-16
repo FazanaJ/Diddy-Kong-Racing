@@ -442,6 +442,130 @@ void debug_render_misc(DebugData *d, Gfx **dList, s32 updateRate) {
 
 }
 
+extern s32 *gTextureCache;
+extern s32 gNumberOfLoadedTextures;
+extern s32 *gSpriteCache;
+extern s32 gSpriteCacheCount;
+extern s32 *gModelCache;
+extern s32 gModelCacheCount;
+extern u8 *tex2d_ROM_START[];
+extern u8 *tex2d_ROM_END[];
+extern u8 *tex3d_ROM_START[];
+extern u8 *tex3d_ROM_END[];
+extern u8 *sprites_ROM_START[];
+extern u8 *sprites_ROM_END[];
+extern u8 *objmdl_ROM_START[];
+extern u8 *objmdl_ROM_END[];
+extern u8 *objanim_ROM_START[];
+extern u8 *objanim_ROM_END[];
+
+char sDebugAssetName[32];
+
+char *assettable_name(s32 assetType, s32 assetID) {
+    u32 searchAddr;
+    char *typeStr;
+    s32 dmaCount;
+
+    switch (assetType) {
+        case ASSET_TEXTURES_2D:
+            searchAddr = (u32) tex2d_ROM_START;
+            break;
+        case ASSET_TEXTURES_3D:
+            searchAddr = (u32) tex3d_ROM_START;
+            break;
+        case ASSET_SPRITES:
+            searchAddr = (u32) sprites_ROM_START;
+            break;
+        case ASSET_OBJECT_MODELS:
+            searchAddr = (u32) objmdl_ROM_START;
+            break;
+        case ASSET_OBJECT_ANIMATIONS:
+            searchAddr = (u32) objanim_ROM_START;
+            break;
+    }
+
+    searchAddr += (assetID * 32);
+
+    dmacopy(searchAddr, (u32) sDebugAssetName, 32);
+
+    return sDebugAssetName;
+}
+
+void debug_render_assets(DebugData *d, Gfx **dList, s32 updateRate) {
+    char textBytes[32];
+    s32 *table;
+    s32 count;
+    s32 i;
+    s32 y;
+    s32 assetID;
+    s32 name;
+    char *tableName;
+
+    debug_fillrect(dList, SCREEN_WIDTH - 136, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0x0000009F);
+    set_text_font(ASSET_FONTS_SMALLFONT);
+    set_text_colour(255, 255, 255, 255, 255);
+    set_text_background_colour(0, 0, 0, 0);
+    set_kerning(FALSE);
+
+    switch (d->pageViewMode) {
+        case 0:
+            table = gTextureCache;
+            count = gNumberOfLoadedTextures;
+            name = -1;
+            tableName = "Textures";
+            break;
+        case 1:
+            table = gSpriteCache;
+            count = gSpriteCacheCount;
+            name = ASSET_SPRITES;
+            tableName = "Sprites";
+            break;
+        case 2:
+            table = gModelCache;
+            count = gModelCacheCount;
+            name = ASSET_OBJECT_MODELS;
+            tableName = "Models";
+            break;
+    }
+
+    draw_text(dList, SCREEN_WIDTH - 136 + 4, 5, tableName, ALIGN_TOP_LEFT);
+    y = 0;
+    for (i = 0; i < count; i++) {
+        assetID = table[ASSETCACHE_ID(i)];
+        if (assetID != -1) {
+            y++;
+        }
+    }
+    sprintf(textBytes, "Loaded: %d", y);
+    draw_text(dList, SCREEN_WIDTH - 136 + 4, 15, textBytes, ALIGN_TOP_LEFT);
+    y = 30 - d->pageScroll;
+    d->pageScrollMax = 0;
+    gDPSetScissor((*dList)++, G_SC_NON_INTERLACE, SCREEN_WIDTH - 136, 30, SCREEN_WIDTH, SCREEN_HEIGHT);
+    for (i = 0; i < count; i++) {
+        assetID = table[ASSETCACHE_ID(i)];
+        if (assetID == -1) {
+            continue;
+        }
+        d->pageScrollMax += 10;
+        if (table == gTextureCache) {
+            if (assetID & 0x8000) {
+                name = ASSET_TEXTURES_3D;
+                assetID &= 0x7FFF;
+            } else {
+                name = ASSET_TEXTURES_2D;
+            }
+        }
+        if (y > SCREEN_HEIGHT) {
+            break;
+        }
+        if (y > 30 - 10) {
+            draw_text(dList, SCREEN_WIDTH - 136 + 4, y, assettable_name(name, assetID), ALIGN_TOP_LEFT);
+        }
+        y += 10;
+    }
+    gDPSetScissor((*dList)++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+}
+
 void debug_page_minimal(DebugData *d) {
     
 }
@@ -453,6 +577,7 @@ DebugPage gDebugPages[] = {
     {"Minimal", PAGE_MINIMAL, debug_page_minimal, debug_render_minimal},
     {"Memory", PAGE_MEMORY, debug_page_memory, debug_render_memory},
     {"Misc", PAGE_MISC, debug_page_memory, debug_render_misc},
+    {"Assets", PAGE_ASSETS, debug_page_memory, debug_render_assets},
 };
 
 void debug_render_page_menu(Gfx **dList, s32 updateRate) {
@@ -666,6 +791,32 @@ void debug_update(s32 updateRate) {
             case PAGE_MISC:
                 if (inputPressed & R_JPAD || inputPressed & L_JPAD) {
                     d->pageViewMode ^= 1;
+                }
+                break;
+            case PAGE_ASSETS:
+                if (inputPressed & R_JPAD) {
+                    d->pageViewMode++;
+                    d->pageScroll = 0;
+                    if (d->pageViewMode == 3) {
+                        d->pageViewMode = 0;
+                    }
+                } else if (inputPressed & L_JPAD) {
+                    d->pageViewMode--;
+                    d->pageScroll = 0;
+                    if (d->pageViewMode == 255) {
+                        d->pageViewMode = 2;
+                    }
+                }
+                if (inputHeld & U_JPAD) {
+                    d->pageScroll -= 4 * updateRate;
+                } else if (inputHeld & D_JPAD) {
+                    d->pageScroll += 4 * updateRate;
+                }
+                if (d->pageScroll > (d->pageScrollMax) - (SCREEN_HEIGHT - 30) + 4) {
+                    d->pageScroll = (d->pageScrollMax) - (SCREEN_HEIGHT - 30) + 4;
+                }
+                if (d->pageScroll < 0) {
+                    d->pageScroll = 0;
                 }
                 break;
             case PAGE_MEMORY:

@@ -1417,7 +1417,7 @@ void spawn_skydome(s32 objectID) {
     // Antipiracy measure
     drm_checksum_balloon();
 #endif
-    if (objectID == -1) {
+    if (objectID == -1 || get_current_map_id() == ASSET_LEVEL_TROPHYRACE) {
         gSkydomeSegment = NULL;
         return;
     }
