@@ -249,7 +249,10 @@ typedef enum MENU_ID {
     MENU_CREDITS,
     MENU_BOOT,
     MENU_UNUSED_27,
-    MENU_CAUTION
+    MENU_CAUTION,
+#if EXPANSION_PAK_SUPPORT == 2
+    MENU_EXPANSION_ERROR,
+#endif
 } MENU_ID;
 
 typedef enum PakError {
@@ -476,6 +479,8 @@ s32 get_random_number_from_range(s32, s32); // No file to pull from yet.
 
 void savedata_free(void);
 void savedata_alloc(void);
+void menu_expansionerror_init(void);
+s32 menu_expansionerror_loop(s32 updateRate);
 
 void menu_button_free(void);
 void menu_geometry_end(void);

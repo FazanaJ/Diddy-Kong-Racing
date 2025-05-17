@@ -1598,6 +1598,12 @@ void mode_intro(void) {
 #else
     sBootDelayTimer = 8;
 #endif
+#if EXPANSION_PAK_SUPPORT == 2
+    if (gExpansionPak == FALSE) {
+        load_menu_with_level_background(MENU_EXPANSION_ERROR, ASSET_LEVEL_OPTIONSBACKGROUND, 0);
+        return;
+    }
+#endif
     if (sBootDelayTimer >= 8) {
         load_menu_with_level_background(BOOT_LVL, ASSET_LEVEL_OPTIONSBACKGROUND, 2);
     }

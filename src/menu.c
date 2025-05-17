@@ -2570,8 +2570,12 @@ void menu_init(u32 menuId) {
         case MENU_CAUTION:
             menu_caution_init();
             break;
+#if EXPANSION_PAK_SUPPORT == 2
+        case MENU_EXPANSION_ERROR:
+            menu_expansionerror_init();
+            break;
+#endif
     }
-    sUnused_80126470 = 0xD000;
 }
 
 /**
@@ -2648,6 +2652,11 @@ s32 menu_loop(Gfx **currDisplayList, MatrixS **currHudMat, Vertex **currHudVerts
         case MENU_CAUTION:
             ret = menu_caution_loop(updateRate);
             break;
+#if EXPANSION_PAK_SUPPORT == 2
+        case MENU_EXPANSION_ERROR:
+            ret = menu_expansionerror_loop(updateRate);
+            break;
+#endif
     }
     *currDisplayList = sMenuCurrDisplayList;
     *currHudMat = sMenuCurrHudMat;
@@ -14638,3 +14647,102 @@ s32 is_drumstick_unlocked(void) {
     return gActiveMagicCodes & CHEAT_CONTROL_DRUMSTICK;
 #endif
 }
+
+#if EXPANSION_PAK_SUPPORT == 2
+s32 sExpansionErrorTimer;
+s32 sExpansionErrorLang;
+
+void menu_expansionerror_init(void) {
+    Settings *settings;
+    load_font(FONT_LARGE);
+    load_font(FONT_COLOURFUL);
+    music_play(SEQUENCE_NO_TROPHY_FOR_YOU);
+    settings = get_settings();
+    osContSetMask(CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4);
+    sExpansionErrorTimer = 0;
+    sExpansionErrorLang = get_language();
+}
+
+// English, French, German
+char *sMenuExpansionErrorStrings[][3] = {
+ {"ERROR", "ERROR", "ERROR"},
+ {"THE EXPANSION PAK IS REQUIRED",  "THE EXPANSION PAK IS REQUIRED",    "THE EXPANSION PAK IS REQUIRED"},
+ {"IN ORDER TO PLAY THIS GAME.",    "IN ORDER TO PLAY THIS GAME.",      "IN ORDER TO PLAY THIS GAME."},
+ {"FIRST PLEASE POWER OFF THE",     "FIRST PLEASE POWER OFF THE",       "FIRST PLEASE POWER OFF THE"},
+ {"NINTENDO 64 CONTROL DECK",       "NINTENDO 64 CONTROL DECK",         "NINTENDO 64 CONTROL DECK"},
+ {"AND INSERT THE EXPANSION PAK.",  "AND INSERT THE EXPANSION PAK.",    "AND INSERT THE EXPANSION PAK."},
+ {"AFTERWARDS, YOU WILL BE PLAYING","AFTERWARDS, YOU WILL BE PLAYING",  "AFTERWARDS, YOU WILL BE PLAYING"},
+ {"WITH EXPANDED 64 BIT POWER!",    "WITH EXPANDED 64 BIT POWER!",      "WITH EXPANDED 64 BIT POWER!"},
+ {"ENGLISH",                        "GERMAN",                           "FRENCH"},
+};
+
+s32 menu_expansionerror_loop(s32 updateRate) {
+    s32 highlight;
+    s32 i;
+    s32 lang = sExpansionErrorLang;
+
+    set_text_font(ASSET_FONTS_BIGFONT);
+    set_text_background_colour(0, 0, 0, 0);
+    set_text_colour(0, 0, 0, 0, 127);
+    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, 10 + 1, sMenuExpansionErrorStrings[0][lang], ALIGN_TOP_CENTER);
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2), 10, sMenuExpansionErrorStrings[0][lang], ALIGN_TOP_CENTER);
+    
+    set_text_font(ASSET_FONTS_FUNFONT);
+    set_text_colour(0, 0, 0, 0, 127);
+    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, 48 + 1, sMenuExpansionErrorStrings[1][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, 64 + 1, sMenuExpansionErrorStrings[2][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, 88 + 1, sMenuExpansionErrorStrings[3][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, 104 + 1, sMenuExpansionErrorStrings[4][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, 120 + 1, sMenuExpansionErrorStrings[5][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, 144 + 1, sMenuExpansionErrorStrings[6][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, 160 + 1, sMenuExpansionErrorStrings[7][lang], ALIGN_TOP_CENTER);
+
+    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, 190 + 1, sMenuExpansionErrorStrings[8][lang], ALIGN_TOP_CENTER);
+
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2), 48, sMenuExpansionErrorStrings[1][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2), 64, sMenuExpansionErrorStrings[2][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2), 88, sMenuExpansionErrorStrings[3][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2), 104, sMenuExpansionErrorStrings[4][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2), 120, sMenuExpansionErrorStrings[5][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2), 144, sMenuExpansionErrorStrings[6][lang], ALIGN_TOP_CENTER);
+    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2), 160, sMenuExpansionErrorStrings[7][lang], ALIGN_TOP_CENTER);
+
+    gOptionBlinkTimer = (gOptionBlinkTimer + updateRate) & 0x3F;
+    highlight = gOptionBlinkTimer * 8;
+    if (gOptionBlinkTimer >= 32) {
+        highlight = 511 - highlight;
+    }
+
+    set_text_colour(255, 255, 255, highlight, 255);
+    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2), 190, sMenuExpansionErrorStrings[8][lang], ALIGN_TOP_CENTER);
+
+    for (i = 0; i < 4; i++) {
+        if (gControllersXAxisDirection[i] > 0) {
+            sExpansionErrorLang++;
+            if (sExpansionErrorLang > LANGUAGE_FRENCH) {
+                sExpansionErrorLang = LANGUAGE_ENGLISH;
+            }
+            sound_play(SOUND_MENU_PICK2, NULL);
+            break;
+        } else if (gControllersXAxisDirection[i] < 0) {
+            sExpansionErrorLang--;
+            if (sExpansionErrorLang < LANGUAGE_ENGLISH) {
+                sExpansionErrorLang = LANGUAGE_FRENCH;
+            }
+            sound_play(SOUND_MENU_PICK2, NULL);
+            break;
+        }
+    }
+
+    if (sExpansionErrorTimer < 140) {
+        sExpansionErrorTimer += updateRate;
+        if (sExpansionErrorTimer >= 140) {
+            sound_play(SOUND_VOICE_BANJO_NEGATIVE6, NULL);
+        }
+    }
+    
+    return MENU_RESULT_CONTINUE;
+}
+#endif
