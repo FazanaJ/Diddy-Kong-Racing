@@ -522,16 +522,22 @@ void debug_render_assets(DebugData *d, Gfx **dList, s32 updateRate) {
         case 0:
             table = gTextureCache;
             count = gNumberOfLoadedTextures;
-            name = -1;
-            tableName = "Textures";
+            name = ASSET_TEXTURES_2D;
+            tableName = "Tex 2D";
             break;
         case 1:
+            table = gTextureCache;
+            count = gNumberOfLoadedTextures;
+            name = ASSET_TEXTURES_3D;
+            tableName = "Tex 3D";
+            break;
+        case 2:
             table = gSpriteCache;
             count = gSpriteCacheCount;
             name = ASSET_SPRITES;
             tableName = "Sprites";
             break;
-        case 2:
+        case 3:
             table = gModelCache;
             count = gModelCacheCount;
             name = ASSET_OBJECT_MODELS;
@@ -544,7 +550,13 @@ void debug_render_assets(DebugData *d, Gfx **dList, s32 updateRate) {
     for (i = 0; i < count; i++) {
         assetID = table[ASSETCACHE_ID(i)];
         if (assetID != -1) {
-            y++;
+            if (d->pageViewMode == 0) {
+                if ((assetID & 0x8000) == 0) {
+                    y++;
+                }
+            } else {
+                y++;
+            }
         }
     }
     sprintf(textBytes, "Loaded: %d", y);
@@ -554,18 +566,11 @@ void debug_render_assets(DebugData *d, Gfx **dList, s32 updateRate) {
     gDPSetScissor((*dList)++, G_SC_NON_INTERLACE, SCREEN_WIDTH - 136, 30, SCREEN_WIDTH, SCREEN_HEIGHT);
     for (i = 0; i < count; i++) {
         assetID = table[ASSETCACHE_ID(i)];
-        if (assetID == -1) {
+        if (assetID == -1 || (d->pageViewMode == 0 && assetID & 0x8000)) {
             continue;
         }
+        assetID &= 0x7FFF;
         d->pageScrollMax += 10;
-        if (table == gTextureCache) {
-            if (assetID & 0x8000) {
-                name = ASSET_TEXTURES_3D;
-                assetID &= 0x7FFF;
-            } else {
-                name = ASSET_TEXTURES_2D;
-            }
-        }
         if (y > SCREEN_HEIGHT) {
             break;
         }
@@ -818,14 +823,14 @@ void debug_update(s32 updateRate) {
                 if (inputPressed & R_JPAD) {
                     d->pageViewMode++;
                     d->pageScroll = 0;
-                    if (d->pageViewMode == 3) {
+                    if (d->pageViewMode == 4) {
                         d->pageViewMode = 0;
                     }
                 } else if (inputPressed & L_JPAD) {
                     d->pageViewMode--;
                     d->pageScroll = 0;
                     if (d->pageViewMode == 255) {
-                        d->pageViewMode = 2;
+                        d->pageViewMode = 3;
                     }
                 }
                 if (inputHeld & U_JPAD) {
