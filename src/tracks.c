@@ -3045,7 +3045,9 @@ void free_track(void) {
     mempool_free(gTrackModelHeap);
     mempool_free(D_8011D370);
     mempool_free(D_8011D374);
-    sprite_free((Sprite *) gCurrentLevelModel->minimapSpriteIndex);
+    if (gCurrentLevelModel->minimapSpriteIndex) {
+        sprite_free((Sprite *) gCurrentLevelModel->minimapSpriteIndex);
+    }
     for (i = 0; i < ARRAY_COUNT(gShadowHeapData); i++) {
         mempool_free(gShadowHeapData[i]);
         mempool_free(gShadowHeapTris[i]);
