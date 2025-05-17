@@ -1944,6 +1944,12 @@ char *gConPakAdvSavePrefix = " (ADV.";
 
 /*******************************/
 
+char *sVideoOptionsString[3][4] = {
+    {"VIDEO OPTIONS", "VIDEO OPTIONS", "VIDEO OPTIONS", "VIDEO OPTIONS"},
+    {"GENERAL", "GENERAL", "GENERAL", "GENERAL"},
+    {"MULTIPLAYER", "MULTIPLAYER", "MULTIPLAYER", "MULTIPLAYER"}
+};
+
 void load_menu_text(s32 language) {
     char **menuText;
     char **temp;
@@ -1992,6 +1998,9 @@ void load_menu_text(s32 language) {
         }
     }
 
+    mempool_free(gMenuTextLangTable);
+    gMenuTextLangTable = NULL;
+
     menuText = gMenuText;
     gAudioOutputStrings[0] = menuText[ASSET_MENU_TEXT_STEREO];                       // "STEREO"
     gAudioOutputStrings[1] = menuText[ASSET_MENU_TEXT_MONO];                         // "MONO"
@@ -2015,11 +2024,7 @@ void load_menu_text(s32 language) {
     gRecordTimesMenuElements[2].t.asciiText = menuText[ASSET_MENU_TEXT_BESTTIME];    // "BEST TIME"
     gRecordTimesMenuElements[5].t.asciiText = menuText[ASSET_MENU_TEXT_BESTLAP];     // "BEST LAP"
     gOptionMenuStrings[0] = menuText[ASSET_MENU_TEXT_LANGUAGE];                      // "ENGLISH"
-    if (sEepromSettings & 0x2000000) {
-        gOptionMenuStrings[1] = menuText[ASSET_MENU_TEXT_SUBTITLESON]; // "SUBTITLES ON"
-    } else {
-        gOptionMenuStrings[1] = menuText[ASSET_MENU_TEXT_SUBTITLESOFF]; // "SUBTITLES OFF"
-    }
+    gOptionMenuStrings[1] = sVideoOptionsString[0][0];
     gOptionMenuStrings[2] = menuText[ASSET_MENU_TEXT_AUDIOOPTIONS];                          // "AUDIO OPTIONS"
     gOptionMenuStrings[3] = menuText[ASSET_MENU_TEXT_SAVEOPTIONS];                           // "SAVE OPTIONS"
     gOptionMenuStrings[4] = menuText[ASSET_MENU_TEXT_MAGICCODES];                            // "MAGIC CODES"
@@ -2522,6 +2527,9 @@ void menu_init(u32 menuId) {
         case MENU_AUDIO_OPTIONS:
             menu_audio_options_init();
             break;
+        case MENU_VIDEO_OPTIONS:
+            menu_video_options_init();
+            break;
         case MENU_SAVE_OPTIONS:
             menu_save_options_init();
             break;
@@ -2603,6 +2611,9 @@ s32 menu_loop(Gfx **currDisplayList, MatrixS **currHudMat, Vertex **currHudVerts
             break;
         case MENU_AUDIO_OPTIONS:
             ret = menu_audio_options_loop(updateRate);
+            break;
+        case MENU_VIDEO_OPTIONS:
+            ret = menu_video_options_loop(updateRate);
             break;
         case MENU_SAVE_OPTIONS:
             ret = menu_save_options_loop(updateRate);
@@ -3659,7 +3670,7 @@ s32 menu_options_loop(s32 updateRate) {
         gMenuDelay = -1;
         transition_begin(&sMenuTransitionFadeIn);
         sound_play(SOUND_MENU_BACK3, NULL);
-    } else if ((buttonsPressed & (A_BUTTON | START_BUTTON)) && gMenuCurIndex >= 2) {
+    } else if ((buttonsPressed & (A_BUTTON | START_BUTTON)) && gMenuCurIndex >= 1) {
         // Go to a sub-menu
         gMenuDelay = 31;
         sound_play(SOUND_SELECT2, NULL);
@@ -3696,19 +3707,6 @@ s32 menu_options_loop(s32 updateRate) {
 #endif
         sound_play(SOUND_MENU_PICK2, NULL);
 #endif
-    } else if (gMenuCurIndex == 1 && analogueX != 0) {
-        if (sEepromSettings & 0x2000000) {
-            // 0x2000000 SUBTITLES ENABLED?
-            sound_play(SOUND_MENU_PICK2, NULL);
-            unset_eeprom_settings_value(0x2000000);
-            set_subtitles(0);
-            gOptionMenuStrings[1] = gMenuText[ASSET_MENU_TEXT_SUBTITLESOFF];
-        } else {
-            sound_play(SOUND_MENU_PICK2, NULL);
-            set_eeprom_settings_value(0x2000000);
-            set_subtitles(1);
-            gOptionMenuStrings[1] = gMenuText[ASSET_MENU_TEXT_SUBTITLESON];
-        }
     } else {
         s32 prevOption = gMenuCurIndex;
         if (analogueY < 0) {
@@ -3735,6 +3733,13 @@ s32 menu_options_loop(s32 updateRate) {
     }
     if (gMenuDelay > 30) {
         // Change screen to a sub-menu
+        if (gMenuCurIndex == 1) {
+            optionscreen_free();
+            load_level_for_menu(ASSET_LEVEL_FROSTYVILLAGE, 0, 100);
+            menu_init(MENU_VIDEO_OPTIONS);
+            gMenuOption = 0;
+            return MENU_RESULT_CONTINUE;
+        }
         if (gMenuCurIndex == 2) {
             optionscreen_free();
             menu_init(MENU_AUDIO_OPTIONS);
@@ -8809,7 +8814,7 @@ void trackmenu_track_view(s32 updateRate) {
             gSelectedTrackX = gTrackSelectCursorX;
             gSelectedTrackY = gTrackSelectCursorY;
         } else if (gTrackIdForPreview != gTrackmenuLoadedLevel && gTrackIdForPreview != -1 &&
-                   bgload_start(gTrackIdForPreview, 1)) {
+                   bgload_start(gTrackIdForPreview, -1, 1)) {
             gTrackmenuLoadedLevel = gTrackIdForPreview;
             gSelectedTrackX = gTrackSelectCursorX;
             gSelectedTrackY = gTrackSelectCursorY;
@@ -10336,7 +10341,9 @@ void postrace_start(s32 finishState, s32 worldID) {
     gOpacityDecayTimer = 0;
     gMenuDelay = 0;
     gMenuCurIndex = 0;
-    gMenuOption = 0;
+    if (gCurrentMenuId != MENU_VIDEO_OPTIONS) {
+        gMenuOption = 0;
+    }
     gIgnorePlayerInputTime = 1;
     gPostRace.unk0_s32 = -1;
     gMenuSubOption = 0;
@@ -13086,7 +13093,7 @@ s32 menu_credits_loop(s32 updateRate) {
     switch (gMenuStage) {
         case 0:
             tempBackgroundLevelData = &creditsBackgroundLevelData[D_80126BCC];
-            bgload_start(tempBackgroundLevelData->levelId, tempBackgroundLevelData->cutsceneId);
+            bgload_start(tempBackgroundLevelData->levelId, -1, tempBackgroundLevelData->cutsceneId);
             gMenuStage = 1;
             gOpacityDecayTimer = 40;
             break;
@@ -14665,15 +14672,15 @@ void menu_expansionerror_init(void) {
 
 // English, French, German
 char *sMenuExpansionErrorStrings[][3] = {
- {"ERROR", "ERROR", "ERROR"},
- {"THE EXPANSION PAK IS REQUIRED",  "THE EXPANSION PAK IS REQUIRED",    "THE EXPANSION PAK IS REQUIRED"},
- {"IN ORDER TO PLAY THIS GAME.",    "IN ORDER TO PLAY THIS GAME.",      "IN ORDER TO PLAY THIS GAME."},
- {"FIRST PLEASE POWER OFF THE",     "FIRST PLEASE POWER OFF THE",       "FIRST PLEASE POWER OFF THE"},
- {"NINTENDO 64 CONTROL DECK",       "NINTENDO 64 CONTROL DECK",         "NINTENDO 64 CONTROL DECK"},
- {"AND INSERT THE EXPANSION PAK.",  "AND INSERT THE EXPANSION PAK.",    "AND INSERT THE EXPANSION PAK."},
- {"AFTERWARDS, YOU WILL BE PLAYING","AFTERWARDS, YOU WILL BE PLAYING",  "AFTERWARDS, YOU WILL BE PLAYING"},
- {"WITH EXPANDED 64 BIT POWER!",    "WITH EXPANDED 64 BIT POWER!",      "WITH EXPANDED 64 BIT POWER!"},
- {"ENGLISH",                        "GERMAN",                           "FRENCH"},
+ {"ERROR",                              "FEHLER",                               "ERREUR"},
+ {"THE EXPANSION PAK IS REQUIRED",      "DIESES SPIEL BENOTIGT EIN",            "UN EXPANSION PAK EST REQUIS"},
+ {"IN ORDER TO PLAY THIS GAME.",        "EXPANSION PAK UM GESPEILT ZU WERDEN.", "POUR JOUER A CE JEU."},
+ {"FIRST PLEASE POWER OFF THE",         "BITTE SCHALTE ERST DAS",               "ETEINGEZ D'ABORD LA CONSOLE,"},
+ {"NINTENDO 64 CONTROL DECK",           "NINTENDO 64 AUS UND STECKE",           "PUIS INSEREZ L'EXPANSION PAK."},
+ {"AND INSERT THE EXPANSION PAK.",      "DANN DAS EXPANSION PAK EIN.",          ""},
+ {"AFTERWARDS, YOU WILL BE PLAYING",    "DANACH WIRST DU MIT DER",              "VOUS POURREZ ENSUITE JOUER"},
+ {"WITH EXPANDED 64 BIT POWER!",        "LEISTUNG VON 64 BIT SPIELEN!",         "AVEC LA PUISSANCE DE 64 BITS!"},
+ {"ENGLISH",                            "DEUTSCH",                              "FRANCAIS"},
 };
 
 s32 menu_expansionerror_loop(s32 updateRate) {
@@ -14746,3 +14753,450 @@ s32 menu_expansionerror_loop(s32 updateRate) {
     return MENU_RESULT_CONTINUE;
 }
 #endif
+
+extern f32 gFPS;
+
+typedef struct ConfigOptionEntry {
+    char *name;
+    s8 *option;
+    u8 flags;
+    u8 stringOffset;
+    s8 minValue;
+    s8 maxValue;
+    void (*func)();
+} ConfigOptionEntry;
+
+enum ConfigOptionFlags {
+    OPT_NONE,
+    OPT_EX_PAK = (1 << 0), // Requires the expansion pak.
+    OPT_NO_EMU = (1 << 1), // Hidden on emulator.
+    OPT_NUMBER = (1 << 2), // Displays the value of the option instead of a string.
+    OPT_PAL = (1 << 3),    // Display a different set of values for PAL users.
+    OPT_HIDDEN = (1 << 4), // Just hide it unconditionally, for debug purposes.
+#if SCREEN_HEIGHT >= 240
+    OPT_240 = (1 << 4), // Just hide it unconditionally, for debug purposes.
+#else
+    OPT_240 = (1 << 5), // Just hide it unconditionally, for debug purposes.
+#endif
+    OPT_ARES = (1 << 6), // Visible on accurate emulators.
+};
+
+
+s32 gPauseOptionScroll;
+s32 gOptionLoadTimer = 0;
+s8 gOptionPlayerCount = 0;
+
+void config_reset_players(void) {
+    gOptionLoadTimer = 1;
+}
+
+ConfigOptionEntry gOptionMenu[] = {
+    { "Screen", &gConfig.screenWidth, OPT_NONE, 5, 0, 2, NULL },
+    { "Anti Aliasing", &gConfig.antiAliasing, OPT_NONE, 2, -1, 1, NULL },
+    { "Dedither", &gConfig.dedither, OPT_NONE, 0, 0, 1, NULL },
+    { "Terrain Quality", &gConfig.terrainQuality, OPT_NONE, 3, 0, 1, NULL },
+    { "Screen Quality", &gConfig.screenBits, OPT_EX_PAK, 15, 0, 1, NULL },
+};
+
+ConfigOptionEntry gMultiOptionMenu[] = {
+    { "Preview", &gOptionPlayerCount, OPT_NONE, 17, 1, 3, config_reset_players },
+    { "Music", &gConfig.multiMusic, OPT_NONE, 18, 0, 2, NULL },
+    { "Anti Aliasing", &gConfig.multiAA, OPT_NONE, 17, 0, 3, NULL },
+    { "Decoration", &gConfig.multiObjects, OPT_EX_PAK, 18, 0, 2, NULL },
+    //{ "Waves", &gConfig.multiWaves, OPT_NONE, 18, 0, 2, NULL },
+    //{ "Particles", &gConfig.multiParticles, OPT_NONE, 18, 0, 2, NULL },
+    //{ "Weather", &gConfig.multiWeather, OPT_NONE, 17, 0, 3, NULL },
+    { "Skybox", &gConfig.multiSky, OPT_NONE, 17, 0, 3, NULL },
+};
+
+char *gPauseOptStrings[][4] = {
+    { "Off", "Off", "Off", "Off"}, 
+    { "On", "On", "On", "On"}, 
+    { "Off", "Off", "Off", "Off"}, 
+    { "Fast", "Fast", "Fast", "Fast"}, 
+    { "Fancy", "Fancy", "Fancy", "Fancy"}, 
+    { "4:3", "4:3", "4:3", "4:3"}, 
+    { "16:10", "16:10", "16:10", "16:10"}, 
+    { "16:9", "16:9", "16:9", "16:9"}, 
+    { "400x300", "400x300" , "400x300" , "400x300" },
+    { "480x360", "480x360" , "480x360" , "480x360" }, 
+    { "560x420", "560x420" , "560x420" , "560x420" }, 
+    { "60", "60" , "60" , "60" },  
+    { "30", "30" , "30" , "30" },  
+    { "50", "50" , "50" , "50" },
+    { "25", "25" , "25" , "25" },
+    { "16 bit", "16 bit" },
+    { "32 bit", "32 bit" },
+    { "1 Player",  "1 Player",  "1 Player",  "1 Player" },
+    { "2 Player",  "2 Player",  "2 Player",  "2 Player" },
+    { "3 Player",  "3 Player",  "3 Player",  "3 Player" },
+    { "4 Player",  "4 Player",  "4 Player",  "4 Player" },
+    { "Custom", "Custom", "Custom", "Custom" },
+};
+
+s8 gPrevSelectionVideo;
+s8 gMenuStopUpdating;
+
+s32 menu_option_hidden(s32 index) {
+    // Hide hidden. Duh.
+    if (gOptionMenu[index].flags & OPT_HIDDEN) {
+        return 1;
+    }
+    // Hide expansion pak required options if there's no expansion pak.
+    if (gOptionMenu[index].flags & OPT_EX_PAK && gExpansionPak == FALSE) {
+        return 1;
+    }
+    if (gPlatform & EMULATOR) {
+        // Hide certain options on emulator.
+        if (gOptionMenu[index].flags & OPT_ARES && gPlatform & ARES) {
+            return 0;
+        } else if (gOptionMenu[index].flags & OPT_NO_EMU) {
+            return 1;
+        }
+    }
+    return 0;
+}
+
+void menu_video_options_init(void) {
+    gOptionsMenuItemIndex = 0;
+    gOptionBlinkTimer = 0;
+    gMenuDelay = 0;
+    gSoundOptionMask = NULL;
+    gOpacityDecayTimer = -1;
+    transition_begin(&sMenuTransitionFadeOut);
+    music_voicelimit_set(32);
+    gMenuStage = 5;
+    gOptionLoadTimer = 0;
+    gOptionPlayerCount = 0;
+    gNumberOfActivePlayers = 4;
+    gDialogueSubmenu = 0;
+    gMenuStopUpdating = 0;
+}
+
+s32 menu_video_options_loop(s32 updateRate) {
+    char textBytes[32];
+    s32 i;
+    s32 intendedScroll;
+    s32 alpha;
+    s32 y;
+    s32 numRacers;
+    s32 moveDir = 0;
+    s32 inputs;
+    s32 inputHeld;
+    s32 stickX;
+    s32 stickY;
+    s32 al;
+    s32 moveOpt = FALSE;
+    s32 prevOpt;
+    s32 lang;
+    s32 optionCount;
+    s32 menuCount;
+    s32 racerStart;
+    ConfigOptionEntry *menu;
+    gOptionBlinkTimer = (gOptionBlinkTimer + updateRate) & 0x3F;
+    alpha = gOptionBlinkTimer * 8;
+    if (alpha > 255) {
+        alpha = 511 - alpha;
+    }
+    if (bgload_active() == FALSE) {
+        // We're allowed a little bit of evil code as a treat.
+        get_racer_objects(&numRacers);
+        if (gDialogueSubmenu == 2) {
+            racerStart = gNumberOfActivePlayers;
+        } else {
+            racerStart = 1;
+        }
+        if (numRacers != 0) {
+            for (i = 0; i < numRacers; i++) {
+                Object *obj = get_racer_object(i);
+                if (i < racerStart) {
+                    Object_Racer *racer = (Object_Racer *) get_racer_object(i)->unk64;
+                    //racer->raceFinished = TRUE;
+                    racer->lap = 0;
+                    obj->segment.trans.flags &= ~OBJ_FLAGS_INVISIBLE;
+                } else {
+                    obj->segment.trans.flags |= OBJ_FLAGS_INVISIBLE;
+                    obj->segment.trans.x_position = 10000.0f;
+                    obj->segment.trans.y_position = 10000.0f;
+                    obj->segment.trans.z_position = 10000.0f;
+                }
+            }
+        }
+    }
+    gDPSetScissor(sMenuCurrDisplayList++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    if (gOptionLoadTimer > 0) {
+        s32 opa;
+        if (bgload_active() == FALSE) {
+            gOptionLoadTimer += updateRate;
+        }
+        if (gOptionLoadTimer < 30) {
+            opa = gOptionLoadTimer * 16;
+            if (opa > 255) {
+                opa = 255;
+            }
+        } else {
+            opa = (46 - gOptionLoadTimer) * 16;
+            if (opa > 255) {
+                opa = 255;
+            }
+        }
+        if (opa > 0) {
+            debug_fillrect(&sMenuCurrDisplayList, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, COLOUR_RGBA32(0, 0, 0, opa));
+        }
+        if (gOptionLoadTimer > 16 && gOptionLoadTimer < 30) {
+            s32 playerCount;
+            s32 trackID;
+            if (gDialogueSubmenu != 2) {
+                playerCount = 0;
+                trackID = ASSET_LEVEL_FROSTYVILLAGE;
+            } else {
+                playerCount = gOptionPlayerCount;
+                trackID = ASSET_LEVEL_WHALEBAY;
+            }
+            gNumberOfActivePlayers = playerCount + 1;
+            bgload_start(trackID, playerCount, 100);
+            gOptionLoadTimer = 30;
+        }
+        if (gOptionLoadTimer >= 46) {
+            gOptionLoadTimer = 0;
+            music_change_on();
+            if (gNumberOfActivePlayers > gConfig.multiMusic + 2) {
+                music_stop();
+                music_play(SEQUENCE_NONE);
+            } else {
+                music_play(SEQUENCE_MAIN_MENU);
+            }
+            music_change_off();
+        }
+        bgload_tick();
+    }
+
+    inputs = 0;
+    inputHeld = 0;
+    stickX = 0;
+    for (i = 0; i < 4; i++) {
+        inputHeld |= input_held(i);
+        inputs |= input_pressed(i);
+        stickX = gControllersXAxisDirection[i];
+        stickY = gControllersYAxisDirection[i];
+
+        if (stickX | stickY) {
+            break;
+        }
+    }
+
+    lang = get_language();
+    
+    if ((inputHeld & Z_TRIG) == FALSE) {
+        set_text_font(ASSET_FONTS_BIGFONT);
+        set_text_colour(0, 0, 0, 0, 127);
+        draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 2, 16 + 2, sVideoOptionsString[gDialogueSubmenu][lang], ALIGN_TOP_CENTER);
+        set_text_colour(255, 255, 255, 0, 255);
+        draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH / 2, 16, sVideoOptionsString[gDialogueSubmenu][lang], ALIGN_TOP_CENTER);
+    }
+
+    set_text_font(ASSET_FONTS_FUNFONT);
+    set_text_background_colour(0, 0, 0, 0);
+    sprintf(textBytes, "FPS: %2.2f", (f64) gFPS);
+    draw_text(&sMenuCurrDisplayList, 32, 64, textBytes, ALIGN_MIDDLE_LEFT);
+    y = 0;
+    optionCount = 0;
+    intendedScroll = gPauseOptionScroll;
+    if ((inputHeld & Z_TRIG) == FALSE) {
+        switch (gDialogueSubmenu) {
+            case 0:
+                for (i = 0; i < 2; i++) {
+                    optionCount++;
+                    if (gMenuOption == i) {
+                        al = alpha;
+                    } else {
+                        al = 0;
+                    }
+                    set_text_colour(255, 255, 255, al, 255);
+                    draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH / 2, SCREEN_HEIGHT - 72 + y, sVideoOptionsString[1 + i][lang], ALIGN_TOP_CENTER);
+                    y += 16;
+                }
+                break;
+            case 1:
+                menuCount = ARRAY_COUNT(gOptionMenu);
+                menu = gOptionMenu;
+                break;
+            case 2:
+                menuCount = ARRAY_COUNT(gMultiOptionMenu);
+                menu = gMultiOptionMenu;
+                break;
+        }
+    }
+
+    if ((inputHeld & Z_TRIG) == FALSE) {
+        if (gDialogueSubmenu != 0) {
+            for (i = 0; i < menuCount; i++) {
+                s32 stringOffset = menu[i].stringOffset;
+                if (menu_option_hidden(i)) {
+                    continue;
+                }
+                // If the value can be negative, offset the string by the amount it takes to not be negative.
+                if (menu[i].minValue < 0) {
+                    stringOffset -= menu[i].minValue;
+                }
+                // Offset PAL by the max value.
+                if ((menu[i].flags & OPT_PAL) && osTvType == OS_TV_PAL) {
+                    stringOffset += menu[i].maxValue + 1;
+                }
+                if (gMenuOption == i) {
+                    al = alpha;
+                    while (y - (intendedScroll * 16) > (16 * 4) - 24) {
+                        intendedScroll++;
+                    }
+                    while (y - (intendedScroll * 16) < 0) {
+                        intendedScroll--;
+                    }
+                } else {
+                    al = 0;
+                }
+                
+                if (y - (intendedScroll * 16) < 72 && y - (intendedScroll * 16) >= 0) {
+                    set_text_colour(255, 255, 255, al, 255);
+                    if (menu[i].flags & OPT_NUMBER) {
+                        sprintf(textBytes, "%s: %d", menu[i].name, *menu[i].option);
+                    } else {
+                        sprintf(textBytes, "%s: %s", menu[i].name, gPauseOptStrings[*menu[i].option + stringOffset][0]);
+                    }
+                    draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH / 2, SCREEN_HEIGHT - 72 + y - (intendedScroll * 16), textBytes, ALIGN_TOP_CENTER);
+                }
+                y += 16;
+                optionCount++;
+            }
+        }
+        
+        if (gMenuOption == optionCount) {
+            set_text_colour(255, 255, 255, alpha, 255);
+        } else {
+            set_text_colour(255, 255, 255, 0, 255);
+        }
+        draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH / 2, SCREEN_HEIGHT - 72 + y - (intendedScroll * 16), "Back", ALIGN_TOP_CENTER);
+        gPauseOptionScroll = intendedScroll;
+
+        prevOpt = gMenuOption;
+        if (stickY < 0) {
+            gMenuOption++;
+            while (menu_option_hidden(gMenuOption)) {
+                gMenuOption++;
+                if (gMenuOption > optionCount) {
+                    gMenuOption = prevOpt;
+                }
+            }
+            if (gMenuOption > optionCount) {
+                gMenuOption = optionCount;
+            } else {
+                sound_play(SOUND_MENU_PICK2, NULL);
+            }
+        }
+        if (stickY > 0) {
+            gMenuOption--;
+            while (menu_option_hidden(gMenuOption)) {
+                gMenuOption--;
+                if (gMenuOption < 0) {
+                    gMenuOption = prevOpt;
+                }
+            }
+            if (gMenuOption < 0) {
+                gMenuOption = 0;
+            } else {
+                sound_play(SOUND_MENU_PICK2, NULL);
+            }
+        }
+        
+        if (gDialogueSubmenu != 0 && stickX != 0 && gMenuOption < optionCount) {
+            if (stickX > 0) {
+                moveDir = 1;
+                if (*menu[gMenuOption].option < menu[gMenuOption].maxValue) {
+                    moveOpt = TRUE;
+                }
+            } else {
+                moveDir = -1;
+                if (*menu[gMenuOption].option > menu[gMenuOption].minValue) {
+                    moveOpt = TRUE;
+                }
+            }
+            if (moveOpt) {
+                if (menu[gMenuOption].minValue == 0 &&
+                    menu[gMenuOption].maxValue == 1) {
+                    *menu[gMenuOption].option ^= 1;
+                } else {
+                    *menu[gMenuOption].option += moveDir;
+                }
+                sound_play(SOUND_SELECT2, NULL);
+                if (menu[gMenuOption].func) {
+                    (menu[gMenuOption].func)();
+                }
+            }
+        }
+
+
+        /*if (bgload_active() == FALSE && gOptionLoadTimer < 16) {
+            if (gDialogueSubmenu != 2) {
+                viewport_menu_set(0, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+            } else {
+                switch (gOptionPlayerCount) {
+                    case 1:
+                        viewport_menu_set(0, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT / 2);
+                        break;
+                    case 2:
+                    case 3:
+                        viewport_menu_set(0, 0, 0, SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2);
+                        break;
+                }
+            }
+        }*/
+
+        if (gDialogueSubmenu == 0 && inputs & A_BUTTON && gMenuOption < optionCount) {
+            gPrevSelectionVideo = gMenuOption;
+            gDialogueSubmenu = gMenuOption + 1;
+            gPauseOptionScroll = 0;
+            gMenuOption = 0;
+            if (gDialogueSubmenu == 2) {
+                gOptionPlayerCount = 1;
+                gOptionLoadTimer = 1;
+            }
+            sound_play(SOUND_SELECT2, NULL);
+        }
+
+        if ((inputs & B_BUTTON) || (inputs & A_BUTTON && gMenuOption == optionCount)) {
+            if (gDialogueSubmenu == 0) {
+                gMenuDelay = 1;
+                transition_begin(&sMenuTransitionFadeIn);
+                //save_config_write();
+                sound_play(SOUND_MENU_BACK3, NULL);
+            } else {
+                gPauseOptionScroll = 0;
+                gMenuOption = gPrevSelectionVideo;
+                if (gDialogueSubmenu == 2) {
+                    gOptionLoadTimer = 1;
+                }
+                gDialogueSubmenu = 0;
+                sound_play(SOUND_MENU_BACK3, NULL);
+            }
+        }
+    }
+
+    if (gMenuDelay == 0 && gOptionLoadTimer == 0) {
+        if (inputs & R_TRIG) {
+            gMenuStopUpdating ^= 1;
+        }
+    } else {
+        gMenuStopUpdating = 0;
+    }
+
+    if (gMenuDelay) {
+        gMenuDelay += updateRate;
+
+        if (gMenuDelay > 20) {
+            load_level_for_menu(ASSET_LEVEL_OPTIONSBACKGROUND, -1, 0);
+            menu_init(MENU_OPTIONS);
+        }
+    }
+
+    return MENU_RESULT_CONTINUE;
+}

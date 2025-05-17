@@ -865,7 +865,14 @@ GameMode get_game_mode(void) {
  * Used for every kind of menu that's not ingame.
  */
 void load_menu_with_level_background(s32 menuId, s32 levelId, s32 cutsceneId) {
-    alloc_displaylist_heap(get_active_player_count() - 1);
+    s32 playerCount;
+
+    //if (gCurrentMenuId == MENU_OPTIONS) {
+        playerCount = FOUR_PLAYERS;
+    //} else {
+    //    playerCount = get_active_player_count() - 1;
+    //}
+    alloc_displaylist_heap(playerCount);
     gGameMode = GAMEMODE_MENU;
     gRenderMenu = TRUE;
     sndp_set_group_volume(0, 32767);
@@ -937,7 +944,9 @@ void unload_level_menu(void) {
         gIsLoading = TRUE;
         mempool_free_timer(0);
         clear_audio_and_track();
-        transition_begin(&D_800DD3F4);
+        if (gCurrentMenuId != MENU_VIDEO_OPTIONS) {
+            transition_begin(&D_800DD3F4);
+        }
         //reset_particles();
         hud_free();
         mempool_free_timer(2);
@@ -951,9 +960,11 @@ void unload_level_menu(void) {
  */
 void update_menu_scene(s32 updateRate) {
     if (bgload_active() == FALSE) {
-        obj_update(updateRate);
-        gParticlePtrList_flush();
-        ainode_update();
+        if (gMenuStopUpdating == FALSE) {
+            obj_update(updateRate);
+            gParticlePtrList_flush();
+            ainode_update();
+        }
         render_scene(&gCurrDisplayList, &gGameCurrMatrix, &gGameCurrVertexList, &gGameCurrTriList, updateRate);
         process_onscreen_textbox(updateRate);
         rdp_init(&gCurrDisplayList);

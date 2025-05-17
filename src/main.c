@@ -270,7 +270,7 @@ void config_init(void) {
     gConfig.terrainQuality = 0;
     gConfig.dedither = FALSE;
     gConfig.frameCap = 1;
-    gConfig.multiAA = AA_OFF;
+    gConfig.multiAA = 0;
     gConfig.screenBits = SCREENBITS_16b;
     osTvType = OS_TV_NTSC;
 }

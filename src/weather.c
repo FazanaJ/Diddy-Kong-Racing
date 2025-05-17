@@ -498,6 +498,10 @@ void snow_update(s32 updateRate, s32 index) {
     Vec3i *snowPos;
     s32 i;
 
+    if (gMenuStopUpdating) {
+        return;
+    }
+
     for (i = 0; i < gSnowDensity[index]; i++) {
         snowPos = &gSnowGfx.pos[gSnowPhysics[index][i].index];
         gSnowPhysics[index][i].x_position =

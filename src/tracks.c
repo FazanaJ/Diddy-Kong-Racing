@@ -254,6 +254,8 @@ s32 set_scene_viewport_num(s32 numPorts) {
 }
 
 extern s32 gObjectCount;
+extern Object **gObjPtrList;
+extern s32 gObjectListStart;
 
 /**
  * Initialises the level.
@@ -320,10 +322,28 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     func_8000CC7C(vehicle, entranceId, numberOfPlayers);
     racerfx_alloc(72, 64);
 
-    if (geometry == 0 && entranceId == 0) {
-        transition_begin(&gCircleFadeToBlack);
-    } else {
-        transition_begin(&gFullFadeToBlack);
+    if (get_game_mode() != GAMEMODE_MENU || gCurrentMenuId != MENU_VIDEO_OPTIONS) {
+        if (geometry == 0 && entranceId == 0) {
+            transition_begin(&gCircleFadeToBlack);
+        } else {
+            transition_begin(&gFullFadeToBlack);
+        }
+    } else if (get_game_mode() == GAMEMODE_MENU || gCurrentMenuId == MENU_VIDEO_OPTIONS) {
+        s32 objCount;
+        s32 sp160 = get_first_active_object(&objCount);
+        for (i = sp160; i < objCount; i++) {
+            Object *obj = get_object(i);
+            if (obj && obj->segment.header) {
+                s32 tajFlags = obj->segment.header->flags;
+                s32 multiObjNum = gConfig.multiObjects;
+                if (multiObjNum < THREE_PLAYERS) {
+                    multiObjNum = THREE_PLAYERS;
+                }
+                if (tajFlags & OBJ_FLAGS_DESPAWN_MULTIPLAYER && get_number_of_active_players() >= 3) {
+                    free_object(obj);
+                }
+            }
+        }
     }
     set_active_viewports_and_max(gScenePlayerViewports);
 
@@ -3637,7 +3657,7 @@ void shadow_update(s32 group, s32 waterGroup, s32 updateRate) {
             }
 
             // Multiplayer
-            if (objHeader->shadowGroup == SHADOW_ACTORS && numViewports) {
+            if (objHeader->shadowGroup == SHADOW_ACTORS && numViewports >= TWO_PLAYERS) {
                 if (obj->behaviorId == BHV_RACER) {
                     playerIndex = obj->unk64->racer.playerIndex;
                     if (playerIndex != PLAYER_COMPUTER) {

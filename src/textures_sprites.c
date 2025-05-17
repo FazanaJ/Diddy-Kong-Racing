@@ -1165,6 +1165,10 @@ void tex_animate_texture(TextureHeader *texture, u32 *triangleBatchInfoFlags, s3
     s32 bit26Set;
     s32 breakVar;
 
+    if (gMenuStopUpdating) {
+        return;
+    }
+
     bit23Set = *triangleBatchInfoFlags & BATCH_FLAGS_UNK00800000;
     bit26Set = *triangleBatchInfoFlags & BATCH_FLAGS_UNK04000000;
     bit25Set = *triangleBatchInfoFlags & BATCH_FLAGS_UNK02000000;

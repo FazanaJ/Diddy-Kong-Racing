@@ -250,6 +250,7 @@ typedef enum MENU_ID {
     MENU_BOOT,
     MENU_UNUSED_27,
     MENU_CAUTION,
+    MENU_VIDEO_OPTIONS,
 #if EXPANSION_PAK_SUPPORT == 2
     MENU_EXPANSION_ERROR,
 #endif
@@ -474,6 +475,7 @@ typedef struct TrackRenderDetails {
 extern s32 gShowControllerPakMenu;
 extern u8 *__ROM_END;
 extern s32 gCurrentMenuId;
+extern s8 gMenuStopUpdating;
 
 s32 get_random_number_from_range(s32, s32); // No file to pull from yet.
 
@@ -481,6 +483,8 @@ void savedata_free(void);
 void savedata_alloc(void);
 void menu_expansionerror_init(void);
 s32 menu_expansionerror_loop(s32 updateRate);
+void menu_video_options_init(void);
+s32 menu_video_options_loop(s32 updateRate);
 
 void menu_button_free(void);
 void menu_geometry_end(void);

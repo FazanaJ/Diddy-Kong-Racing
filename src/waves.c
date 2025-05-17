@@ -730,6 +730,10 @@ void func_800B9C18(s32 arg0) {
     s32 j_2;
     s32 i_2;
 
+    if (gMenuStopUpdating) {
+        return;
+    }
+
     gWaveVertexFlip ^= 1;
     for (i_2 = 0, j_2 = 0; i_2 < D_80129FC8.unk4; i_2++) {
         for (k_2 = 0; k_2 < D_80129FC8.unk4; k_2++) {
