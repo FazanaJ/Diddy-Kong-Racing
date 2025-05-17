@@ -3192,6 +3192,10 @@ void hud_timer_render(s32 x, s32 y, s32 minutes, s32 seconds, s32 hundredths, s3
  */
 void minimap_init(LevelModel *model) {
     s32 sp2C;
+
+    if (model->minimapOffsetXAdv1 == 0 && model->minimapOffsetYAdv1 == 0) {
+        return;
+    }
     gMinimapRed = (model->minimapColor >> 16) & 0xFF;
     gMinimapGreen = (model->minimapColor >> 8) & 0xFF;
     gMinimapBlue = model->minimapColor & 0xFF;
