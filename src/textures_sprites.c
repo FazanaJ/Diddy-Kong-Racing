@@ -227,11 +227,9 @@ s32 D_80126334;
 s32 gTextureAssetID[2];
 s32 gCiPalettesSize;
 s32 D_80126344;
-s32 *gSpriteOffsetTable;
 
 s32 *gSpriteCache;
 
-Sprite *gCurrentSprite;
 s32 gSpriteTableSize;
 s32 gSpriteCacheCount;
 s32 D_8012635C;
@@ -272,14 +270,14 @@ void tex_init_textures(void) {
     mempool_free(table);
 
     gSpriteCache = mempool_alloc_safe(sizeof(Sprite) * TEX_SPRITE_COUNT, PP_RAM_ASSET_CACHE);
-    gCurrentSprite = mempool_alloc_safe(sizeof(Sprite) * 32, PP_RAM_ASSET_CACHE);
     gSpriteCacheCount = 0;
-    gSpriteOffsetTable = (s32 *) load_asset_section_from_rom(ASSET_SPRITES_TABLE);
+    table = (s32 *) load_asset_section_from_rom(ASSET_SPRITES_TABLE);
     gSpriteTableSize = 0;
-    while (gSpriteOffsetTable[gSpriteTableSize] != -1) {
+    while (table[gSpriteTableSize] != -1) {
         gSpriteTableSize++;
     }
     gSpriteTableSize--;
+    mempool_free(table);
     D_80126344 = 0;
 }
 
@@ -728,7 +726,114 @@ void material_load_simple(Gfx **dList, s32 flags) {
 /**
  * Official Name: texLoadSprite
  */
-#pragma GLOBAL_ASM("asm/nonmatchings/textures_sprites/func_8007C12C.s")
+Sprite *func_8007C12C(s32 spriteID, s32 arg1) {
+    Sprite *refSprite;
+    Sprite *newSprite;
+    s32 cacheNum;
+    Sprite* sprite;
+    TextureHeader* tex;
+    s32 i;
+    s32 size;
+    s8 allocFailed;
+    s8 cacheFull;
+    s16 frameCount;
+    s32 allocSize;
+    s32 offset;
+    u8 spriteBuf[0x200];
+
+    D_8012635C = arg1;
+    if (spriteID < 0 || spriteID >= gSpriteTableSize) {
+        return NULL;
+    }
+    
+    for (i = 0, cacheFull = 0; i < gSpriteCacheCount; i++) {
+        if (spriteID == gSpriteCache[ASSETCACHE_ID(i)]) {
+            refSprite = gSpriteCache[ASSETCACHE_PTR(i)];
+            refSprite->numberOfInstances++;
+            return refSprite;
+        }
+    }
+    cacheNum = -1;
+    i = 0;
+    while (i < gSpriteCacheCount) {
+        // @fake
+        if (newSprite) {}
+        if (gSpriteCache[ASSETCACHE_ID(i)] == -1) {
+            cacheNum = i;
+        }
+        i++;
+    }
+    if (cacheNum == -1) {
+        cacheFull = TRUE;
+        cacheNum = gSpriteCacheCount;
+        gSpriteCacheCount++;
+    }
+    sprite = &spriteBuf;
+    assettable_seek_s32(spriteID, &offset, &size, ASSET_SPRITES_TABLE);
+    load_asset_to_address(12, sprite, offset, size);
+
+    frameCount = sprite->unkC.val[sprite->numberOfFrames];
+    size = frameCount * 4;
+    allocSize = size * sizeof(Vertex);
+    allocSize += size << 3;
+    allocSize += sprite->numberOfFrames * sizeof(Gfx);
+    allocSize += frameCount << 4 << 1;
+    allocSize += size;
+    allocSize += (s32) align16(0x10); 
+    allocSize += (s32) align16((sprite->numberOfFrames * 4));
+    newSprite = (Sprite *) mempool_alloc(allocSize, COLOUR_TAG_MAGENTA);
+    if (newSprite == NULL) {
+        if (cacheFull) {
+            gSpriteCacheCount--;
+        }
+        return NULL;
+    }
+
+    size = (s32)newSprite + (s32)align16(sizeof(Sprite)) + (s32)align16(sprite->numberOfFrames * 4);\
+    D_80126368 = (Triangle *) size;
+    D_80126364 = (Gfx *)(&((u8*)D_80126368)[frameCount << 5]); // `<< 5` is `sizeof(Triangle) * 2`
+    D_80126360 = (Vertex *) ((Gfx *)(((s32)&((u8*)D_80126364)[frameCount << 5]) + (sprite->numberOfFrames << 3)));
+    newSprite->gfx[0] = (Gfx *) &((u8*)D_80126360)[frameCount * sizeof(Vertex) * 4];
+    
+    allocFailed = FALSE;
+    for (i = 0; i < frameCount; i++) {
+        gTexColourTag = COLOUR_TAG_LIME;
+        tex = load_texture(sprite->baseTextureId + i);
+        newSprite->frames[i] = tex;
+        if (newSprite->frames[i] == NULL) {
+            allocFailed = TRUE;
+        }
+        gTexColourTag = COLOUR_TAG_MAGENTA;
+        D_80126344 = 1;
+    }
+    D_80126344 = 0;
+    if (allocFailed) {
+        for (i = 0; i < frameCount; i++) {
+            tex = (TextureHeader *) newSprite->frames[i];
+            if (tex != NULL) {
+                tex_free(tex);
+            }
+        }
+        if (cacheFull) {
+            gSpriteCacheCount--;
+        }
+        mempool_free(newSprite);
+        return NULL;
+    }
+    newSprite->numberOfFrames = frameCount;
+    newSprite->baseTextureId = sprite->numberOfFrames;
+    for (i = 0; i < sprite->numberOfFrames; i++) {
+        newSprite->unkC.ptr[i] = (u8 *) D_80126364;
+        func_8007CDC0(sprite, newSprite, i);
+    }
+    if (gSpriteCacheCount >= 100) {
+        return NULL;
+    }
+    gSpriteCache[ASSETCACHE_ID(cacheNum)] = spriteID;
+    gSpriteCache[ASSETCACHE_PTR(cacheNum)] = newSprite;
+    newSprite->numberOfInstances = 1;
+    return newSprite;
+}
 
 /**
  * Gets the sprite cache index from the argument.
@@ -789,6 +894,7 @@ s32 load_sprite_info(s32 spriteIndex, s32 *numOfInstancesOut, s32 *unkOut, s32 *
     s32 start;
     s32 size;
     s32 new_var;
+    u8 spriteBuf[0x200];
 
     if ((spriteIndex < 0) || (spriteIndex >= gSpriteTableSize)) {
     textureCouldNotBeLoaded:
@@ -797,11 +903,10 @@ s32 load_sprite_info(s32 spriteIndex, s32 *numOfInstancesOut, s32 *unkOut, s32 *
         *numFramesOut = 0;
         return 0;
     }
-    start = gSpriteOffsetTable[spriteIndex];
-    size = gSpriteOffsetTable[spriteIndex + 1] - start;
-    new_var2 = gCurrentSprite;
+    new_var2 = &spriteBuf;
+    assettable_seek_s32(spriteIndex, &start, &size, ASSET_SPRITES_TABLE);
     new_var = size;
-    load_asset_to_address(ASSET_SPRITES, (u32) new_var2, start, new_var);
+    load_asset_to_address(ASSET_SPRITES, (u32) new_var2, start, size);
     set_texture_colour_tag(PP_RAM_SPRITES);
     tex = load_texture(new_var2->unkC.val[0] + new_var2->baseTextureId);
     set_texture_colour_tag(COLOUR_TAG_MAGENTA);
@@ -834,6 +939,9 @@ void func_8007CA68(s32 arg0, s32 arg1, s32 *arg2, s32 *arg3, s32 *arg4) {
     s32 var_s6;
     s32 temp_a1;
     s32 temp_a2;
+    s32 offset;
+    s32 size;
+    u8 spriteBuf[0x200];
 
     if ((arg0 < 0) || (arg0 >= gSpriteTableSize)) {
         *arg2 = 0;
@@ -841,12 +949,11 @@ void func_8007CA68(s32 arg0, s32 arg1, s32 *arg2, s32 *arg3, s32 *arg4) {
         return;
     }
 
-    temp_a2 = gSpriteOffsetTable[arg0];
-
     // Must be on the same line. (maybe a macro?)
     // clang-format off
-    sprite = gCurrentSprite; \
-    load_asset_to_address(12, sprite, temp_a2, gSpriteOffsetTable[arg0 + 1] - temp_a2);
+    sprite = &spriteBuf;
+    assettable_seek_s32(arg0, &offset, &size, ASSET_SPRITES_TABLE);
+    load_asset_to_address(12, sprite, offset, size);
     // clang-format on
 
     if (sprite->numberOfFrames < arg1) {

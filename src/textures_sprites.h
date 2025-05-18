@@ -174,6 +174,7 @@ void sprite_free(Sprite *sprite);
 void tex_free(TextureHeader *tex);
 void material_load_simple(Gfx **dList, s32 flags);
 s32 get_tile_bytes(s32 type, s32 siz);
+Sprite *func_8007C12C(s32 spriteID, s32 arg1);
 
 // There might be a file boundary here.
 void tex_animate_texture(TextureHeader *texture, u32 *triangleBatchInfoFlags, s32 *arg2, s32 updateRate);
@@ -188,7 +189,6 @@ s32 load_sprite_info(s32 spriteIndex, s32 *numOfInstancesOut, s32 *unkOut, s32 *
                      s32 *sizeOut);                                                   // Non Matching
 void gfx_init_basic_xlu(Gfx **dList, u32 index, u32 primitiveColor, u32 environmentColor); // Non Matching
 void func_8007CA68(s32 spriteID, s32 arg1, s32 *arg2, s32 *arg3, s32 *arg4); // Non Matching
-MemoryPoolSlot *func_8007C12C(s32 spriteID, s32 arg1); // Non Matching
 void tex_init_textures(void); // Non Matching
 void material_set_blinking_lights(Gfx **dList, TextureHeader *texture_list, u32 flags,
                                   s32 texture_index);        // Non Matching
