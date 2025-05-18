@@ -58,7 +58,6 @@ void video_init(s32 videoModeIndex, OSSched *sc) {
     //fb_init_vi();
     vi_change(SCREEN_WIDTH, SCREEN_HEIGHT);
     sBlackScreenTimer = 12;
-    osViBlack(TRUE);
     gVideoDeltaCounter = 0;
     D_801262E4 = 3;
 }
@@ -85,6 +84,9 @@ void vi_change(int width, int height) {
     s32 addPAL = 0;
     s32 addX = 0;
     s32 mul;
+    static u16 prevWidth = 0;
+    static u16 prevHeight = 0;
+    static u8 prevBits = 0;
     OSViMode *mode = &gGlobalVI;
     if (osTvType == OS_TV_TYPE_PAL) {
         gGlobalVI = osViModePalLan1;
@@ -145,6 +147,14 @@ void vi_change(int width, int height) {
     gVideoAspectRatio = ((f32) width / (f32) height);
     osViSetMode(mode);
     vi_dither();
+
+    if (width != prevWidth || height != prevHeight || prevBits != gBitDepth) {
+        prevWidth = width;
+        prevHeight = height;
+        prevBits = gBitDepth;
+        osViBlack(TRUE);
+        sBlackScreenTimer = 10;
+    }
 }
 
 void vi_dither(void) {
@@ -258,8 +268,6 @@ void fb_update(s32 updateRate) {
             sBlackScreenTimer = 0;
         }
     }
-    osViSetSpecialFeatures(OS_VI_DIVOT_OFF);
-    osViSetSpecialFeatures(OS_VI_DITHER_FILTER_OFF);
     osViSetSpecialFeatures(OS_VI_GAMMA_OFF);
     fb_swap();
     /*if (gBootTimer) {

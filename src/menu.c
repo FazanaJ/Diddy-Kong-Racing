@@ -14793,12 +14793,16 @@ void config_reset_players(void) {
     gOptionLoadTimer = 1;
 }
 
+void video_refresh(void) {
+    vi_change(SCREEN_WIDTH, SCREEN_HEIGHT);
+}
+
 ConfigOptionEntry gOptionMenu[] = {
-    { "Screen", &gConfig.screenWidth, OPT_NONE, 5, 0, 2, NULL },
-    { "Anti Aliasing", &gConfig.antiAliasing, OPT_NONE, 2, -1, 1, NULL },
-    { "Dedither", &gConfig.dedither, OPT_NONE, 0, 0, 1, NULL },
+    { "Screen", &gConfig.screenWidth, OPT_NONE, 5, 0, 2, video_refresh },
+    { "Anti Aliasing", &gConfig.antiAliasing, OPT_NONE, 2, -1, 1, video_refresh },
+    { "Dedither", &gConfig.dedither, OPT_NONE, 0, 0, 1, vi_dither },
     { "Terrain Quality", &gConfig.terrainQuality, OPT_NONE, 3, 0, 1, NULL },
-    { "Screen Quality", &gConfig.screenBits, OPT_EX_PAK, 15, 0, 1, NULL },
+    { "Screen Quality", &gConfig.screenBits, OPT_EX_PAK, 15, 0, 1, video_refresh },
 };
 
 // This crashes when objects are updating. It's going to want to pause updating for a frame while it sets all this
@@ -14833,7 +14837,7 @@ void multiplayer_trigger_objects(void) {
 ConfigOptionEntry gMultiOptionMenu[] = {
     { "Preview", &gOptionPlayerCount, OPT_NONE, 17, 1, 3, config_reset_players },
     { "Music", &gConfig.multiMusic, OPT_NONE, 18, 0, 2, NULL },
-    { "Anti Aliasing", &gConfig.multiAA, OPT_NONE, 17, 0, 3, NULL },
+    { "Anti Aliasing", &gConfig.multiAA, OPT_NONE, 17, 0, 3, video_refresh },
     { "Decoration", &gConfig.multiObjects, OPT_EX_PAK, 18, 0, 2, multiplayer_trigger_objects },
     //{ "Waves", &gConfig.multiWaves, OPT_NONE, 18, 0, 2, NULL },
     //{ "Particles", &gConfig.multiParticles, OPT_NONE, 18, 0, 2, NULL },
@@ -15058,7 +15062,7 @@ s32 menu_video_options_loop(s32 updateRate) {
     if ((inputHeld & Z_TRIG) == FALSE) {
         switch (gDialogueSubmenu) {
             case 0:
-                for (i = 0; i < 2; i++) {
+                for (i = 0; i < 1; i++) {
                     optionCount++;
                     if (gMenuOption == i) {
                         al = alpha;
@@ -15242,6 +15246,7 @@ s32 menu_video_options_loop(s32 updateRate) {
 
     if (gMenuDelay) {
         gMenuDelay += updateRate;
+        gMenuStopUpdating = FALSE;
 
         if (gMenuDelay > 20) {
             load_level_for_menu(ASSET_LEVEL_OPTIONSBACKGROUND, -1, 0);
