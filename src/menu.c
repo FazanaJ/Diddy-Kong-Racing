@@ -14785,6 +14785,9 @@ enum ConfigOptionFlags {
 s32 gPauseOptionScroll;
 s32 gOptionLoadTimer = 0;
 s8 gOptionPlayerCount = 0;
+s8 gOptionSetTimer;
+s8 gOptionSetMenuUpdate;
+s8 gOptionRefreshObjects;
 
 void config_reset_players(void) {
     gOptionLoadTimer = 1;
@@ -14798,11 +14801,40 @@ ConfigOptionEntry gOptionMenu[] = {
     { "Screen Quality", &gConfig.screenBits, OPT_EX_PAK, 15, 0, 1, NULL },
 };
 
+// This crashes when objects are updating. It's going to want to pause updating for a frame while it sets all this
+void multiplayer_refresh_objects(void) {
+    s32 objCount;
+    s32 num;
+    s32 i;
+    s32 sp160 = get_first_active_object(&objCount);
+    
+    num = 2 + gConfig.multiObjects;
+    for (i = sp160; i < objCount; i++) {
+        Object *obj = get_object(i);
+        if (obj && obj->segment.header) {
+            if (obj->segment.header->flags & OBJ_FLAGS_DESPAWN_MULTIPLAYER) {
+                if (get_number_of_active_players() > num) {
+                    obj->segment.trans.flags |= OBJ_FLAGS_INVISIBLE;
+                } else {
+                    obj->segment.trans.flags &= ~OBJ_FLAGS_INVISIBLE;
+                }
+            }
+        }
+    }
+}
+
+void multiplayer_trigger_objects(void) {
+    if (gMenuStopUpdating == FALSE) {
+        gMenuStopUpdating = TRUE;
+        gOptionSetMenuUpdate = TRUE;
+    }
+}
+
 ConfigOptionEntry gMultiOptionMenu[] = {
     { "Preview", &gOptionPlayerCount, OPT_NONE, 17, 1, 3, config_reset_players },
     { "Music", &gConfig.multiMusic, OPT_NONE, 18, 0, 2, NULL },
     { "Anti Aliasing", &gConfig.multiAA, OPT_NONE, 17, 0, 3, NULL },
-    { "Decoration", &gConfig.multiObjects, OPT_EX_PAK, 18, 0, 2, NULL },
+    { "Decoration", &gConfig.multiObjects, OPT_EX_PAK, 18, 0, 2, multiplayer_trigger_objects },
     //{ "Waves", &gConfig.multiWaves, OPT_NONE, 18, 0, 2, NULL },
     //{ "Particles", &gConfig.multiParticles, OPT_NONE, 18, 0, 2, NULL },
     //{ "Weather", &gConfig.multiWeather, OPT_NONE, 17, 0, 3, NULL },
@@ -14871,6 +14903,8 @@ void menu_video_options_init(void) {
     gNumberOfActivePlayers = 4;
     gDialogueSubmenu = 0;
     gMenuStopUpdating = 0;
+    gOptionSetTimer = 0;
+    gOptionSetMenuUpdate = 0;
 }
 
 s32 menu_video_options_loop(s32 updateRate) {
@@ -14924,6 +14958,24 @@ s32 menu_video_options_loop(s32 updateRate) {
         }
     }
     gDPSetScissor(sMenuCurrDisplayList++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
+
+    if (gOptionSetTimer != 0) {
+        gOptionSetTimer++;
+        if (gDialogueSubmenu == 2 && gMenuOption == 3) {
+            if (gOptionSetTimer == 10) {
+                multiplayer_refresh_objects();
+            }
+            if (gOptionSetTimer == 20) {
+                if (gOptionSetMenuUpdate) {
+                    gMenuStopUpdating = FALSE;
+                    gOptionSetMenuUpdate = FALSE;
+                }
+                gOptionSetTimer = 0;
+            }
+        } else {
+            gOptionSetTimer = 0;
+        }
+    }
 
     if (gOptionLoadTimer > 0) {
         s32 opa;
@@ -15108,7 +15160,7 @@ s32 menu_video_options_loop(s32 updateRate) {
             }
         }
         
-        if (gDialogueSubmenu != 0 && stickX != 0 && gMenuOption < optionCount) {
+        if (gDialogueSubmenu != 0 && stickX != 0 && gMenuOption < optionCount && gOptionSetTimer == 0) {
             if (stickX > 0) {
                 moveDir = 1;
                 if (*menu[gMenuOption].option < menu[gMenuOption].maxValue) {
@@ -15121,6 +15173,7 @@ s32 menu_video_options_loop(s32 updateRate) {
                 }
             }
             if (moveOpt) {
+                gOptionSetTimer = 1;
                 if (menu[gMenuOption].minValue == 0 &&
                     menu[gMenuOption].maxValue == 1) {
                     *menu[gMenuOption].option ^= 1;
@@ -15151,7 +15204,7 @@ s32 menu_video_options_loop(s32 updateRate) {
             }
         }*/
 
-        if (gDialogueSubmenu == 0 && inputs & A_BUTTON && gMenuOption < optionCount) {
+        if (gDialogueSubmenu == 0 && inputs & A_BUTTON && gMenuOption < optionCount && gOptionSetTimer == 0) {
             gPrevSelectionVideo = gMenuOption;
             gDialogueSubmenu = gMenuOption + 1;
             gPauseOptionScroll = 0;
@@ -15163,7 +15216,7 @@ s32 menu_video_options_loop(s32 updateRate) {
             sound_play(SOUND_SELECT2, NULL);
         }
 
-        if ((inputs & B_BUTTON) || (inputs & A_BUTTON && gMenuOption == optionCount)) {
+        if (((inputs & B_BUTTON) || (inputs & A_BUTTON && gMenuOption == optionCount)) && gOptionSetTimer == 0) {
             if (gDialogueSubmenu == 0) {
                 gMenuDelay = 1;
                 transition_begin(&sMenuTransitionFadeIn);
@@ -15181,12 +15234,10 @@ s32 menu_video_options_loop(s32 updateRate) {
         }
     }
 
-    if (gMenuDelay == 0 && gOptionLoadTimer == 0) {
+    if (gMenuDelay == 0 && gOptionLoadTimer == 0 && gOptionSetTimer == 0) {
         if (inputs & R_TRIG) {
             gMenuStopUpdating ^= 1;
         }
-    } else {
-        gMenuStopUpdating = 0;
     }
 
     if (gMenuDelay) {

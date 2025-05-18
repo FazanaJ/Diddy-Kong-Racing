@@ -61,10 +61,6 @@ s16 gLevelLoadTimer = 0;
 s8 gPauseLockTimer = 0; // If this is above zero, the player cannot pause the game.
 s8 gFutureFunLandLevelTarget = FALSE;
 s8 gDmemInvalid = FALSE;
-s16 gNumF3dCmdsPerPlayer = 5000;
-s16 gNumHudVertsPerPlayer = 200;
-s16 gNumHudMatPerPlayer = 400;
-s8 gNumHudTrisPerPlayer = 12;
 s8 gDrawFrameTimer = 0;
 FadeTransition D_800DD3F4 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_BLACK, 20, 0);
 s32 sLogicUpdateRate = LOGIC_5FPS;
@@ -347,10 +343,10 @@ void main_game_loop(void) {
     debug_thread(THREAD3_END, 0);
     debug_render(&gCurrDisplayList, sLogicUpdateRate);
     //set_render_printf_background_colour(0, 0, 0, 255);
-    //render_printf("Gfx: %d/%d\n", ((u32) gCurrDisplayList - (u32) gDisplayLists[gSPTaskNum]) / sizeof(Gwords), gNumF3dCmdsPerPlayer);
-    //render_printf("Mtx: %d/%d\n", ((u32) gGameCurrMatrix - (u32) gMatrixHeap[gSPTaskNum]) / sizeof(MatrixS), gNumHudMatPerPlayer);
-    //render_printf("Vtx: %d/%d\n", ((u32) gGameCurrVertexList - (u32) gVertexHeap[gSPTaskNum]) / sizeof(Vertex), gNumHudVertsPerPlayer);
-    //render_printf("Tri: %d/%d\n", ((u32) gGameCurrTriList - (u32) gTriangleHeap[gSPTaskNum]) / sizeof(Triangle), gNumHudTrisPerPlayer);
+    //render_printf("Gfx: %d/%d\n", ((u32) gCurrDisplayList - (u32) gDisplayLists[gSPTaskNum]) / sizeof(Gwords), NUM_GFX_COMMANDS);
+    //render_printf("Mtx: %d/%d\n", ((u32) gGameCurrMatrix - (u32) gMatrixHeap[gSPTaskNum]) / sizeof(MatrixS), NUM_MTX_COMMANDS);
+    //render_printf("Vtx: %d/%d\n", ((u32) gGameCurrVertexList - (u32) gVertexHeap[gSPTaskNum]) / sizeof(Vertex), NUM_VTX_COMMANDS);
+    //render_printf("Tri: %d/%d\n", ((u32) gGameCurrTriList - (u32) gTriangleHeap[gSPTaskNum]) / sizeof(Triangle), NUM_TRI_COMMANDS);
 
     gDPFullSync(gCurrDisplayList++);
     gSPEndDisplayList(gCurrDisplayList++);
@@ -1399,27 +1395,27 @@ void default_alloc_displaylist_heap(void) {
     s32 gfxAdd;
 
     if (gDebug) {
-        gfxAdd = 2000;
+        gfxAdd = NUM_DEBUG_GFX;
     } else {
         gfxAdd = 0;
     }
 
     numberOfPlayers = FOUR_PLAYERS;
     gPrevPlayerCount = numberOfPlayers;
-    totalSize = ((gNumF3dCmdsPerPlayer + gfxAdd) * sizeof(Gwords)) +
-                (gNumHudMatPerPlayer * sizeof(Matrix)) +
-                (gNumHudVertsPerPlayer * sizeof(Vertex)) +
-                (gNumHudTrisPerPlayer * sizeof(Triangle));
+    totalSize = ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)) +
+                (NUM_MTX_COMMANDS * sizeof(Matrix)) +
+                (NUM_VTX_COMMANDS * sizeof(Vertex)) +
+                (NUM_TRI_COMMANDS * sizeof(Triangle));
 
     gDisplayLists[0] = (Gfx *) mempool_alloc_safe(totalSize, PP_RAM_CMDBUF);
-    gMatrixHeap[0] = (MatrixS *) ((u8 *) gDisplayLists[0] + ((gNumF3dCmdsPerPlayer + gfxAdd) * sizeof(Gwords)));
-    gVertexHeap[0] = (Vertex *) ((u8 *) gMatrixHeap[0] + (gNumHudMatPerPlayer * sizeof(Matrix)));
-    gTriangleHeap[0] = (Triangle *) ((u8 *) gVertexHeap[0] + (gNumHudVertsPerPlayer * sizeof(Vertex)));
+    gMatrixHeap[0] = (MatrixS *) ((u8 *) gDisplayLists[0] + ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)));
+    gVertexHeap[0] = (Vertex *) ((u8 *) gMatrixHeap[0] + (NUM_MTX_COMMANDS * sizeof(Matrix)));
+    gTriangleHeap[0] = (Triangle *) ((u8 *) gVertexHeap[0] + (NUM_VTX_COMMANDS * sizeof(Vertex)));
 
     gDisplayLists[1] = (Gfx *) mempool_alloc_safe(totalSize, PP_RAM_CMDBUF);
-    gMatrixHeap[1] = (MatrixS *) ((u8 *) gDisplayLists[1] + ((gNumF3dCmdsPerPlayer + gfxAdd) * sizeof(Gwords)));
-    gVertexHeap[1] = (Vertex *) ((u8 *) gMatrixHeap[1] + (gNumHudMatPerPlayer * sizeof(Matrix)));
-    gTriangleHeap[1] = (Triangle *) ((u8 *) gVertexHeap[1] + (gNumHudVertsPerPlayer * sizeof(Vertex)));
+    gMatrixHeap[1] = (MatrixS *) ((u8 *) gDisplayLists[1] + ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)));
+    gVertexHeap[1] = (Vertex *) ((u8 *) gMatrixHeap[1] + (NUM_MTX_COMMANDS * sizeof(Matrix)));
+    gTriangleHeap[1] = (Triangle *) ((u8 *) gVertexHeap[1] + (NUM_VTX_COMMANDS * sizeof(Vertex)));
 }
 
 /**

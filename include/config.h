@@ -21,6 +21,12 @@
 //#define DISABLE_AUDIO
 //#define USE_DYNLIGHTS     // Not used in vanilla, so optionally stubbed out until somebody figures out how they work
 
+#define NUM_DEBUG_GFX 2000
+#define NUM_GFX_COMMANDS 5000
+#define NUM_VTX_COMMANDS 300
+#define NUM_MTX_COMMANDS 400
+#define NUM_TRI_COMMANDS 12
+
 #ifndef NON_MATCHING
 #define NON_MATCHING 1
 #endif

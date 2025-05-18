@@ -331,16 +331,14 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     } else if (get_game_mode() == GAMEMODE_MENU || gCurrentMenuId == MENU_VIDEO_OPTIONS) {
         s32 objCount;
         s32 sp160 = get_first_active_object(&objCount);
+        s32 num = 2 + gConfig.multiObjects;
         for (i = sp160; i < objCount; i++) {
             Object *obj = get_object(i);
             if (obj && obj->segment.header) {
                 s32 tajFlags = obj->segment.header->flags;
-                s32 multiObjNum = gConfig.multiObjects;
-                if (multiObjNum < THREE_PLAYERS) {
-                    multiObjNum = THREE_PLAYERS;
-                }
-                if (tajFlags & OBJ_FLAGS_DESPAWN_MULTIPLAYER && get_number_of_active_players() >= 3) {
-                    free_object(obj);
+                if (tajFlags & OBJ_FLAGS_DESPAWN_MULTIPLAYER && get_number_of_active_players() > num) {
+                    obj->segment.trans.flags |= OBJ_FLAGS_INVISIBLE;
+                    //free_object(obj);
                 }
             }
         }
