@@ -726,7 +726,7 @@ void material_load_simple(Gfx **dList, s32 flags) {
 /**
  * Official Name: texLoadSprite
  */
-Sprite *func_8007C12C(s32 spriteID, s32 arg1) {
+Sprite *tex_load_sprite(s32 spriteID, s32 arg1) {
     Sprite *refSprite;
     Sprite *newSprite;
     s32 cacheNum;
