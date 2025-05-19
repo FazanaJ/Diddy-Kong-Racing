@@ -159,7 +159,6 @@ void thread3_main(UNUSED void *unused) {
 void init_game(void) {
     s32 viMode;
 
-    init_usb_thread();
     gzip_init();
 #ifdef ANTI_TAMPER
     sAntiPiracyTriggered = TRUE;
@@ -184,6 +183,7 @@ void init_game(void) {
 #endif
     video_init(VIDEO_MODE_LOWRES_LPN, &gMainSched);
     init_PI_mesg_queue();
+    init_usb_thread();
     gfxtask_init(&gMainSched);
     audio_init(&gMainSched);
     audspat_init();
@@ -200,6 +200,7 @@ void init_game(void) {
     load_fonts();
     init_controller_paks();
     init_save_data();
+    //save_detect();
     bgload_init();
     init_particle_buffers(4, 4, 110, 48, 32, 0);
     osCreateMesgQueue(&gGameMesgQueue, gGameMesgBuf, 3);
