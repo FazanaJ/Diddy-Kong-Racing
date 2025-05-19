@@ -27,6 +27,17 @@ typedef char *outfun(char *dst, const char *src, size_t count);
 void debug_log(s32 logLevel, char *str, ...) {
 }
 
+void debug_dump_hex(u8 *var, s32 size) {
+    for (int i = 0; i < size; i++) {
+        debug_printf("0x%02X, ", (u32) var[i]);
+
+        if (i && ((i + 1) % 8)== 0) {
+            debug_printf("\n");
+        }
+    }
+    debug_printf("\n");
+}
+
 void debug_fillrect(Gfx **gfx, s32 x1, s32 y1, s32 x2, s32 y2, u32 colour) {
     s32 alpha = (colour) & 0xFF;
     if (alpha != 255) {

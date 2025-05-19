@@ -40,4 +40,20 @@
 #include <PR/ultraerror.h>
 #include <PR/ultralog.h>
 
+extern u32 __osBbEepromAddress;
+extern u32 __osBbEepromSize;
+extern u32 __osBbFlashAddress;
+extern u32 __osBbFlashSize;
+extern u32 __osBbSramAddress;
+extern u32 __osBbSramSize;
+extern u32 __osBbPakAddress[4];
+extern u32 __osBbPakSize;
+extern u32 __osBbIsBb;
+extern u32 __osBbHackFlags;
+extern u32 __osBbStashMagic;
+extern u32 __osBbPakBindings[4];
+extern char __osBbStateName[10];
+extern u32 __osBbStateDirty;
+extern u32 __osBbAuxDataLimit;
+
 #endif

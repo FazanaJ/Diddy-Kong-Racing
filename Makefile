@@ -2,6 +2,7 @@ BASENAME  = dkr
 REGION  := us
 VERSION  := v77
 NON_MATCHING ?= 1
+SAVE_TYPE ?= sram
 
 # NM is shorthand for NON_MATCHING
 ifneq ($(NM),)
@@ -155,6 +156,16 @@ else
 	C_STANDARD := -std=gnu90
 endif
 
+ifeq ($(SAVE_TYPE),eep4k)
+	DEFINES += EEP4K=1
+else ifeq ($(SAVE_TYPE),eep16k)
+	DEFINES += EEP16K=1
+else ifeq ($(SAVE_TYPE),sram)
+	DEFINES += SRAM=1
+else ifeq ($(SAVE_TYPE),flash)
+	DEFINES += FLASH=1
+endif
+
 DEFINES += $(MATCHDEFS)
 C_DEFINES := $(foreach d,$(DEFINES),-D$(d)) $(LIBULTRA_VERSION_DEFINE) -D_MIPS_SZLONG=32
 ASM_DEFINES = $(foreach d,$(DEFINES),$(if $(findstring =,$(d)),--defsym $(d),)) --defsym _MIPS_SIM=1 --defsym mips=1 --defsym VERSION_$(REGION)_$(VERSION)=1
@@ -285,7 +296,7 @@ endif
 $(GCC_SAFE_FILES): CC := $(CROSS)gcc
 $(GCC_SAFE_FILES): CC_WARNINGS := 
 $(GCC_SAFE_FILES): MIPSISET := -mips3
-$(GCC_SAFE_FILES): CFLAGS := -DNDEBUG -DAVOID_UB -DNON_MATCHING -Os $(INCLUDE_CFLAGS) $(C_DEFINES) \
+$(GCC_SAFE_FILES): CFLAGS := -DNDEBUG -DAVOID_UB -DNON_MATCHING -O2 $(INCLUDE_CFLAGS) $(C_DEFINES) \
 	-EB \
 	-march=vr4300 \
 	-mabi=32 \

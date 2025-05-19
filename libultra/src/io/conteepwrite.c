@@ -4,27 +4,45 @@
 #include "PRinternal/controller.h"
 #include "PRinternal/siint.h"
 
+#if defined(EEP4K) || defined(EEP16K)
+extern s32 __osEepromRead16K;
 static void __osPackEepWriteData(u8 address, u8* buffer);
 s32 osEepromWrite(OSMesgQueue* mq, u8 address, u8* buffer) {
     s32 ret = 0;
-#if BUILD_VERSION < VERSION_J
-    int i;
-#endif
-    u8* ptr = (u8*)&__osEepPifRam.ramarray;
+    u8 *ptr;
     __OSContEepromFormat eepromformat;
     OSContStatus sdata;
-#if BUILD_VERSION >= VERSION_L
+    s32 type;
     u8 temp[8];
-#endif
 
-    if (address > EEPROM_MAXBLOCKS)  {
-        return -1;
+    if (__osBbIsBb) {
+
+        if (__osBbEepromSize == 0x200) {
+            if (address >= 0x40) {
+                ret = -1;
+            }
+        } else if (__osBbEepromSize != 0x800) {
+            ret = 8;
+        }
+
+        if (ret == 0) {
+            int i;
+
+            __osSiGetAccess();
+            for (i = 0; i < 8; i++) {
+                *(u8*)(__osBbEepromAddress + (address * 8) + i) = buffer[i];
+            }
+            __osSiRelAccess();
+        }
+
+        return ret;
     }
 
+    ptr = (u8*)&__osEepPifRam.ramarray;
     __osSiGetAccess();
     ret = __osEepStatus(mq, &sdata);
+    type = sdata.type & (CONT_EEPROM | CONT_EEP16K);
 
-#if BUILD_VERSION >= VERSION_J
     if (ret == 0) {
         switch (type) {
             case CONT_EEPROM:
@@ -37,14 +55,12 @@ s32 osEepromWrite(OSMesgQueue* mq, u8 address, u8* buffer) {
                     // not technically possible
                     ret = CONT_RANGE_ERROR;
                 }
-#if BUILD_VERSION >= VERSION_L
                 else if (__osEepromRead16K) {
                     __osEepromRead16K = 0;
                     __osSiRelAccess();
                     osEepromRead(mq, (address ^ 1), temp);
                     __osSiGetAccess();
                 }
-#endif
                 break;
             default:
                 ret = CONT_NO_RESPONSE_ERROR;
@@ -55,12 +71,6 @@ s32 osEepromWrite(OSMesgQueue* mq, u8 address, u8* buffer) {
         __osSiRelAccess();
         return ret;
     }
-#else
-    if (ret != 0 || sdata.type != CONT_EEPROM)
-    {
-        return CONT_NO_RESPONSE_ERROR;
-    }
-#endif
 
     while (sdata.status & CONT_EEPROM_BUSY) {
         __osEepStatus(mq, &sdata);
@@ -69,25 +79,12 @@ s32 osEepromWrite(OSMesgQueue* mq, u8 address, u8* buffer) {
     __osPackEepWriteData(address, buffer);
     ret = __osSiRawStartDma(OS_WRITE, &__osEepPifRam); // send command to pif
     osRecvMesg(mq, NULL, OS_MESG_BLOCK);
-
-    for (i = 0; i <= ARRLEN(__osEepPifRam.ramarray); i++) {
-        __osEepPifRam.ramarray[i] = 255;
-    }
-
-    __osEepPifRam.pifstatus = CONT_CMD_REQUEST_STATUS;
-
     ret = __osSiRawStartDma(OS_READ, &__osEepPifRam); // recv response
     __osContLastCmd = CONT_CMD_WRITE_EEPROM;
     osRecvMesg(mq, NULL, OS_MESG_BLOCK);
 
     // skip the first 4 bytes
-#if BUILD_VERSION >= VERSION_J
     ptr += 4;
-#else
-    for (i = 0; i < 4; i++) {
-        ptr++;
-    }
-#endif
 
     eepromformat = *(__OSContEepromFormat*)ptr;
 
@@ -102,11 +99,6 @@ static void __osPackEepWriteData(u8 address, u8* buffer) {
     __OSContEepromFormat eepromformat;
     int i;
 
-#if BUILD_VERSION < VERSION_J
-    for (i = 0; i < ARRLEN(__osEepPifRam.ramarray) + 1; i++) {
-        __osEepPifRam.ramarray[i] = CONT_CMD_NOP;
-    }
-#endif
     __osEepPifRam.pifstatus = CONT_CMD_EXE;
 
     eepromformat.txsize = CONT_CMD_WRITE_EEPROM_TX;
@@ -158,11 +150,7 @@ s32 __osEepStatus(OSMesgQueue* mq, OSContStatus* data) {
 
     ret = __osSiRawStartDma(OS_WRITE, &__osEepPifRam);
     osRecvMesg(mq, NULL, OS_MESG_BLOCK);
-#if BUILD_VERSION >= VERSION_J
     __osContLastCmd = CONT_CMD_END;
-#else
-    __osContLastCmd = CONT_CMD_WRITE_EEPROM;
-#endif
     ret = __osSiRawStartDma(OS_READ, &__osEepPifRam);
     osRecvMesg(mq, NULL, OS_MESG_BLOCK);
 
@@ -187,3 +175,4 @@ s32 __osEepStatus(OSMesgQueue* mq, OSContStatus* data) {
 
     return 0;
 }
+#endif

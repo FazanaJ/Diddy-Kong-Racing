@@ -96,6 +96,8 @@ extern s32 osEepromRead(OSMesgQueue *, u8, u8 *);
 extern s32 osEepromWrite(OSMesgQueue *, u8, u8 *);
 extern s32 osEepromLongRead(OSMesgQueue *, u8, u8 *, int);
 extern s32 osEepromLongWrite(OSMesgQueue *, u8, u8 *, int);
+int nuPiInitSram(void);
+int nuPiReadWriteSram(u32 addr, void* buf_ptr, u32 size, s32 flag);
 
 
 #endif  /* defined(_LANGUAGE_C) || defined(_LANGUAGE_C_PLUS_PLUS) */

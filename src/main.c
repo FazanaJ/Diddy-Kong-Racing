@@ -125,15 +125,18 @@ void get_platform(void) {
     u32 cf;
     u32 magic;
     u16 halfMagic;
+    if (__osBbIsBb > 2) {
+        __osBbIsBb = 0;
+    }
     if ((u32)IO_READ(DPC_PIPEBUSY_REG) | (u32)IO_READ(DPC_TMEM_REG) | (u32)IO_READ(DPC_BUFBUSY_REG)) {
         gPlatform |= emux_detect() ? ARES : CONSOLE;
 
         if (gPlatform & CONSOLE) {
-            /*if (__osBbIsBb) {
+            if (__osBbIsBb) {
                 gPlatform = IQUE | CONSOLE;
                 //puppyprint_log(LOG_INFO, "iQue Player detected.\n");
                 return;
-            } else {*/
+            } else {
                 char region[5];
                 if (osTvType == OS_TV_PAL) {
                     //puppyprintf(region, "PAL");
@@ -143,7 +146,7 @@ void get_platform(void) {
                     //puppyprintf(region, "MPAL");
                 }
                 //puppyprint_log(LOG_INFO, "%s N64 Console detected.\n", region);
-            //}
+            }
         } else {
             //puppyprint_log(LOG_INFO, "Ares N64 Emulator Detected.\n");
         }

@@ -361,6 +361,7 @@ void debug_printf(const char* message, ...);
 void crash_assert(s32 cond, const char *str, ...);
 void debug_ram_dump(void);
 void debug_fillrect(Gfx **gfx, s32 x1, s32 y1, s32 x2, s32 y2, u32 colour);
+void debug_dump_hex(u8 *var, s32 size);
 
 #define DEBUG_VAR(x, value) \
     { if (gDebug) {(x = value);}}

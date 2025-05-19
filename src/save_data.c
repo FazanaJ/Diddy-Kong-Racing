@@ -801,38 +801,82 @@ s32 write_time_data_to_controller_pak(s32 controllerIndex, Settings *arg1) {
     return ret;
 }
 
+u8 gSaveMissing;
+u8 gSaveInit = FALSE;
+
+s32 save_detect(void) {
+    s32 status;
+    if (gSaveInit == FALSE) {
+        gSaveMissing = FALSE;
+    #if EEP4K || EEP16K
+        status = osEepromProbe(si_mesg());
+    #elif SRAM == 1
+        status = nuPiInitSram();
+    #elif FLASHRAM == 1
+        status = ((u32) osFlashInit()) & 1;
+    #endif
+        //gSaveInit = TRUE;
+        if (status == 0) {
+            gSaveMissing = TRUE;
+            debug_printf("Save type unavailable.\n");
+        }
+    } else {
+        return gSaveMissing == FALSE;
+    }
+    return status;
+}
+
+char *sSaveResponses[] = {
+    "Failed",
+    "Success",
+    "Bruh"
+};
+
+s32 save_readwrite(u64 *data, u32 offset, u32 size, s32 type) {
+    u32 i;
+    u32 addr;
+    s32 result;
+    s32 (*func)(OSMesgQueue *, s32 address, u8 *buffer);
+    u32 first;
+#if EEP4K || EEP16K
+    if (type == OS_READ) {
+        //puppyprint_log(LOG_EXTRA, "Reading 0x%X bytes at 0x%X from eeprom.\n", size, offset);
+        debug_printf("Reading 0x%X bytes at 0x%X from eeprom.\n", size, offset);
+        func = (s32 *) osEepromRead;
+    } else {
+        //puppyprint_log(LOG_EXTRA, "Writing 0x%X bytes at 0x%X to eeprom.\n", size, offset);
+        debug_printf("Writing 0x%X bytes at 0x%X to eeprom.\n", size, offset);
+        func = (s32 *) osEepromWrite;
+    }
+    first = osGetCount();
+    for (i = 0, addr = offset / sizeof(u64); i < size / sizeof(u64); i++, addr++) {
+        result = (*func)(si_mesg(), addr, (u8 *) &data[i]);
+    }
+#elif SRAM
+    first = osGetCount();
+    result = nuPiReadWriteSram(offset, (u8 *) &data[0], size, type);
+#endif
+    if (result == 8) {
+        result = 2;
+    }
+    //puppyprint_log(LOG_EXTRA, "Finished (%2.3fs) Result: %s\n", (f64) (f32)((osGetCount() - first) / 46875000.0f), sSaveResponses[result + 1]);
+    debug_printf("Finished (%2.3fs) Result: %s\n", (f64) (f32)((osGetCount() - first) / 46875000.0f), sSaveResponses[result + 1]);
+    return result;
+}
+
 // Returns TRUE / FALSE for whether a given save file is a new game. Also populates the settings object.
 s32 read_save_file(s32 saveFileNum, Settings *settings) {
     s32 startingAddress;
     u64 *saveData;
-    s32 address;
-    s32 blocks;
-    s32 block;
     s32 ret;
 
-    if (osEepromProbe(si_mesg()) == 0) {
-        stubbed_printf("WARNING : No Eprom\n");
+    if (save_detect() == 0) {
         return -1;
     }
-    switch (saveFileNum) {
-        case 0:
-            startingAddress = BLOCK_SIZE(SAVE_START + (sizeof(SaveFile) * 0));
-            break;
-        case 1:
-            startingAddress = BLOCK_SIZE(SAVE_START + (sizeof(SaveFile) * 1));
-            break;
-        case 2:
-            startingAddress = BLOCK_SIZE(SAVE_START + (sizeof(SaveFile) * 2));
-            break;
-        default:
-            startingAddress = BLOCK_SIZE(SAVE_START + (sizeof(SaveFile) * 2));
-            break;
-    }
-    blocks = 5;
-    saveData = mempool_alloc_safe(blocks * sizeof(u64), PP_RAM_SAVES);
-    for (block = 0, address = startingAddress; block < blocks; block++, address++) {
-        osEepromRead(si_mesg(), address, (u8 *) &saveData[block]);
-    }
+    startingAddress = SAVE_START + (sizeof(SaveFile) * saveFileNum);
+    saveData = mempool_alloc_safe(sizeof(SaveFile), PP_RAM_SAVES);
+    save_readwrite(saveData, startingAddress, sizeof(SaveFile), OS_READ);
+    debug_dump_hex(saveData, sizeof(SaveFile));
     populate_settings_from_save_data(settings, (u8 *) saveData);
     mempool_free(saveData);
     ret = settings->newGame;
@@ -847,57 +891,39 @@ void erase_save_file(s32 saveFileNum, Settings *settings) {
     s32 startingAddress;
     u8 *saveData;
     u64 *alloc;
-    s32 blockSize;
     s32 levelCount;
     s32 worldCount;
-    s32 address;
     s32 i;
 
-    if (osEepromProbe(si_mesg()) != 0) {
-        get_number_of_levels_and_worlds(&levelCount, &worldCount);
-        for (i = 0; i < levelCount; i++) {
-            settings->courseFlagsPtr[i] = 0;
-        }
-        for (i = 0; i < worldCount; i++) {
-            settings->balloonsPtr[i] = 0;
-        }
-        settings->trophies = 0;
-        settings->bosses = 0;
-        settings->tajFlags = 0;
-        settings->cutsceneFlags = 0;
-        settings->newGame = TRUE;
-        switch (saveFileNum) {
-            case 0:
-                startingAddress = BLOCK_SIZE(SAVE_START + (sizeof(SaveFile) * 0));
-                break;
-            case 1:
-                startingAddress = BLOCK_SIZE(SAVE_START + (sizeof(SaveFile) * 1));
-                break;
-            case 2:
-                startingAddress = BLOCK_SIZE(SAVE_START + (sizeof(SaveFile) * 2));
-                break;
-            default:
-                startingAddress = BLOCK_SIZE(SAVE_START + (sizeof(SaveFile) * 2));
-                break;
-        }
-        blockSize = 5;
-        alloc = mempool_alloc_safe(blockSize * sizeof(u64), PP_RAM_SAVES);
-        saveData = (u8 *) alloc;
-
-        // clang-format off
-        // Blank out the data before writing it.
-        for (i = 0; i < blockSize * (s32) sizeof(u64); i++) { saveData[i] = 0xFF; } // Must be one line
-        // clang-format on
-
-        if (!is_reset_pressed()) {
-            for (i = 0, address = startingAddress; i < blockSize; i++, address++) {
-                osEepromWrite(si_mesg(), address, (u8 *) &alloc[i]);
-            }
-        }
-        mempool_free(alloc);
-    } else {
-        stubbed_printf("WARNING : No Eprom\n");
+    if (save_detect() == 0) {
+        return;
     }
+
+    get_number_of_levels_and_worlds(&levelCount, &worldCount);
+    for (i = 0; i < levelCount; i++) {
+        settings->courseFlagsPtr[i] = 0;
+    }
+    for (i = 0; i < worldCount; i++) {
+        settings->balloonsPtr[i] = 0;
+    }
+    settings->trophies = 0;
+    settings->bosses = 0;
+    settings->tajFlags = 0;
+    settings->cutsceneFlags = 0;
+    settings->newGame = TRUE;
+    startingAddress = SAVE_START + (sizeof(SaveFile) * saveFileNum);
+    alloc = mempool_alloc_safe(sizeof(SaveFile), PP_RAM_SAVES);
+    saveData = (u8 *) alloc;
+
+    // clang-format off
+    // Blank out the data before writing it.
+    for (i = 0; i < (s32) sizeof(SaveFile); i++) { saveData[i] = 0xFF; } // Must be one line
+    // clang-format on
+
+    if (!is_reset_pressed()) {
+        save_readwrite(alloc, startingAddress, sizeof(SaveFile), OS_WRITE);
+    }
+    mempool_free(alloc);
 }
 
 /**
@@ -911,37 +937,20 @@ s32 write_save_data(s32 saveFileNum, Settings *settings) {
     s32 startingAddress;
     u64 *alloc;
     s32 address;
-    s32 blocks;
     s32 i;
 
-    if (osEepromProbe(si_mesg()) == 0) {
-        stubbed_printf("WARNING : No Eprom\n");
+    if (save_detect() == 0) {
         return -1;
     }
 
-    switch (saveFileNum) {
-        case 0:
-            startingAddress = BLOCK_SIZE(SAVE_START + (sizeof(SaveFile) * 0));
-            break;
-        case 1:
-            startingAddress = BLOCK_SIZE(SAVE_START + (sizeof(SaveFile) * 1));
-            break;
-        case 2:
-            startingAddress = BLOCK_SIZE(SAVE_START + (sizeof(SaveFile) * 2));
-            break;
-        default:
-            startingAddress = BLOCK_SIZE(SAVE_START + (sizeof(SaveFile) * 2));
-            break;
-    }
+    startingAddress = SAVE_START + (sizeof(SaveFile) * saveFileNum);
 
-    blocks = 5;
-    alloc = mempool_alloc_safe(blocks * sizeof(u64), PP_RAM_SAVES);
+    alloc = mempool_alloc_safe(sizeof(SaveFile), PP_RAM_SAVES);
     func_800732E8(settings, (u8 *) alloc);
 
     if (!is_reset_pressed()) {
-        for (i = 0, address = startingAddress; i < blocks; i++, address++) {
-            osEepromWrite(si_mesg(), address, (u8 *) &alloc[i]);
-        }
+        debug_dump_hex(alloc, sizeof(SaveFile));
+        save_readwrite(alloc, startingAddress, sizeof(SaveFile), OS_WRITE);
     }
 
     mempool_free(alloc);
@@ -958,29 +967,20 @@ s32 write_save_data(s32 saveFileNum, Settings *settings) {
  */
 s32 read_eeprom_data(Settings *settings, u8 flags) {
     u64 *alloc;
-    s32 i;
 
-    if (osEepromProbe(si_mesg()) == 0) {
-        stubbed_printf("WARNING : No Eprom\n");
+    if (save_detect() == 0) {
         return -1;
     }
 
     alloc = mempool_alloc_safe(COURSE_TIMES_START + sizeof(CourseRecords), PP_RAM_SAVES);
 
     if (flags & SAVE_DATA_FLAG_READ_FLAP_TIMES) {
-        s32 blocks = BLOCK_SIZE(sizeof(CourseRecords));
-        for (i = 0; i < blocks; i++) {
-            osEepromRead(si_mesg(), BLOCK_SIZE(FASTEST_LAPS_START) + i, (u8 *) &alloc[i]);
-        }
+        save_readwrite(alloc, FASTEST_LAPS_START, sizeof(CourseRecords), OS_READ);
         func_80073588(settings, (u8 *) alloc, SAVE_DATA_FLAG_READ_FLAP_TIMES);
     }
 
     if (flags & SAVE_DATA_FLAG_READ_COURSE_TIMES) {
-        s32 blocks = BLOCK_SIZE(sizeof(CourseRecords));
-        for (i = 0; i < blocks; i++) {
-            osEepromRead(si_mesg(), BLOCK_SIZE(COURSE_TIMES_START) + i,
-                         (u8 *) (&alloc[sizeof(CourseRecords) / sizeof(u64)] + i));
-        }
+        save_readwrite(alloc, COURSE_TIMES_START, sizeof(CourseRecords), OS_READ);
         func_80073588(settings, (u8 *) alloc, SAVE_DATA_FLAG_READ_COURSE_TIMES);
     }
 
@@ -998,10 +998,8 @@ s32 read_eeprom_data(Settings *settings, u8 flags) {
  */
 s32 write_eeprom_data(Settings *settings, u8 flags) {
     u64 *alloc;
-    s32 i;
 
-    if (osEepromProbe(si_mesg()) == 0) {
-        stubbed_printf("WARNING : No Eprom\n");
+    if (save_detect() == 0) {
         return -1;
     }
 
@@ -1010,23 +1008,11 @@ s32 write_eeprom_data(Settings *settings, u8 flags) {
     func_800738A4(settings, (u8 *) alloc);
 
     if (flags & SAVE_DATA_FLAG_READ_FLAP_TIMES) {
-        s32 blocks = BLOCK_SIZE(sizeof(CourseRecords));
-        if (1) {} // Fake Match
-        if (is_reset_pressed() == FALSE) {
-            for (i = 0; i != blocks; i++) {
-                osEepromWrite(si_mesg(), BLOCK_SIZE(FASTEST_LAPS_START) + i, (u8 *) &alloc[i]);
-            }
-        }
+        save_readwrite(alloc, FASTEST_LAPS_START, sizeof(CourseRecords), OS_WRITE);
     }
 
     if (flags & SAVE_DATA_FLAG_READ_COURSE_TIMES) {
-        s32 blocks = BLOCK_SIZE(sizeof(CourseRecords));
-        if (is_reset_pressed() == FALSE) {
-            for (i = 0; i != blocks; i++) {
-                osEepromWrite(si_mesg(), BLOCK_SIZE(COURSE_TIMES_START) + i,
-                              (u8 *) (&alloc[sizeof(CourseRecords) / sizeof(u64)] + i));
-            }
-        }
+        save_readwrite(alloc, COURSE_TIMES_START, sizeof(CourseRecords), OS_WRITE);
     }
 
     mempool_free(alloc);
@@ -1057,12 +1043,12 @@ s32 read_eeprom_settings(u64 *eepromSettings) {
     s32 checksum;
     s32 expected;
 
-    if (osEepromProbe(si_mesg()) == 0) {
-        stubbed_printf("WARNING : No Eprom\n");
+    if (save_detect() == 0) {
         return -1;
     }
 
-    osEepromRead(si_mesg(), BLOCK_SIZE(CONFIG_START), (u8 *) eepromSettings);
+    save_readwrite(eepromSettings, CONFIG_START, sizeof(SaveConfig), OS_READ);
+    debug_dump_hex(eepromSettings, sizeof(SaveConfig));
     expected = calculate_eeprom_settings_checksum(*eepromSettings);
     checksum = *eepromSettings >> 56;
     if (expected != checksum) {
@@ -1088,15 +1074,17 @@ s32 read_eeprom_settings(u64 *eepromSettings) {
  * Address (0xF * sizeof(u64)) = 0x78 - 0x80 of the actual save data file
  */
 s32 write_eeprom_settings(u64 *eepromSettings) {
-    if (osEepromProbe(si_mesg()) == 0) {
-        stubbed_printf("WARNING : No Eprom\n");
+    if (save_detect() == 0) {
         return -1;
     }
     *eepromSettings <<= 8;
     *eepromSettings >>= 8;
     *eepromSettings |= (u64) (calculate_eeprom_settings_checksum(*eepromSettings)) << 56;
     if (is_reset_pressed() == FALSE) {
-        osEepromWrite(si_mesg(), BLOCK_SIZE(CONFIG_START), (u8 *) eepromSettings);
+        save_readwrite(eepromSettings, CONFIG_START, sizeof(SaveConfig), OS_WRITE);
+        debug_dump_hex(eepromSettings, sizeof(SaveConfig));
+        save_readwrite(eepromSettings, CONFIG_START, sizeof(SaveConfig), OS_READ);
+        debug_dump_hex(eepromSettings, sizeof(SaveConfig));
     }
     return 1;
 }
@@ -1195,7 +1183,6 @@ s32 func_80074B34(s32 controllerIndex, s16 levelId, s16 vehicleId, u16 *ghostCha
                         wcopy(cPakFile->data + 1, ghostData, *ghostNodeCount * sizeof(GhostNode));
                         pakStatus = CONTROLLER_PAK_GOOD;
                     } else {
-                        stubbed_printf("warning: corrupt ghost\n");
                         pakStatus = CONTROLLER_PAK_BAD_DATA;
                     }
                 } else {
