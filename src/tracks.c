@@ -264,6 +264,7 @@ extern s32 gObjectListStart;
 void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, u32 entranceId, u32 collectables,
                 u32 arg6) {
     s32 i;
+    u32 first = osGetCount();
 
     gCurrentLevelHeader2 = get_current_level_header();
     D_8011B0F8 = FALSE;

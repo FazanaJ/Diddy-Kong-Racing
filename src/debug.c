@@ -445,6 +445,17 @@ void debug_render_misc(DebugData *d, Gfx **dList, s32 updateRate) {
         draw_text(dList, SCREEN_WIDTH - 96 + 4, 24, textBytes, ALIGN_TOP_LEFT);
         sprintf(textBytes, "Tex Loads: %d", d->misc.texLoads);
         draw_text(dList, SCREEN_WIDTH - 96 + 4, 34, textBytes, ALIGN_TOP_LEFT);
+
+        
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 150, "Loading", ALIGN_TOP_LEFT);
+        sprintf(textBytes, "Total: %2.3fs", d->loading.total);
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 160, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "DMA: %2.3fs", d->loading.dma);
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 170, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "Unzip: %2.3fs", d->loading.decompress);
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 180, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "Malloc: %2.3fs", d->loading.malloc);
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 190, textBytes, ALIGN_TOP_LEFT);
     }
 
     if (showRacer) {

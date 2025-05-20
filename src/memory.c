@@ -150,6 +150,7 @@ MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag
     u32 intFlags;
     s32 nextIndex;
     s32 currIndex;
+    u32 first = osGetCount();
 
     crash_assert(size == 0, "Alloc size 0");
     intFlags = interrupts_disable();
@@ -199,6 +200,9 @@ MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag
         mempool_slot_assign(poolIndex, (s32) currIndex, size, 1, 0, colourTag);
         interrupts_enable(intFlags);
         debug_ram(size, colourTag);
+        if (gDebug && gDebug->loading.active) {
+            gDebug->loading.malloc += (f32) (osGetCount() - first) / 46875000.0f;
+        }
         return (MemoryPoolSlot *) (slots + currIndex)->data;
     }
     interrupts_enable(intFlags);
@@ -343,7 +347,6 @@ void mempool_free_queue_clear(void) {
             gFreeQueueTicks[i] = gFreeQueueTicks[gFreeQueueCount - 1];
             gFreeQueueCount--;
         } else {
-            stubbed_printf("\n*** mm Error *** ---> Can't free ram at this location: %x\n", gFreeQueueAddr[i]);
             i++;
         }
     }
@@ -361,6 +364,7 @@ void mempool_free_addr(u8 *address) {
     MemoryPool *pool;
     MemoryPoolSlot *slots;
     MemoryPoolSlot *slot;
+    u32 first = osGetCount();
 
     poolIndex = mempool_get_pool(address);
     pool = gMemoryPools;
@@ -376,7 +380,9 @@ void mempool_free_addr(u8 *address) {
         }
         slot = &slots[slotIndex];
     }
-    stubbed_printf("\n*** mm Error *** ---> No match found for mmFree.\n");
+    if (gDebug && gDebug->loading.active) {
+        gDebug->loading.malloc += (f32) (osGetCount() - first) / 46875000.0f;
+    }
 }
 
 /**

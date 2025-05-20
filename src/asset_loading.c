@@ -208,6 +208,7 @@ void dmacopy(u32 romOffset, u32 ramAddress, s32 numBytes) {
 // Looks like v2 ROMs made an alternate version of this function, and this is the original.
 void dmacopy_internal(u32 romOffset, u32 ramAddress, s32 numBytes) {
 #endif
+    u32 first = osGetCount();
     OSMesg dmaMesg;
     s32 numBytesToDMA;
 
@@ -223,6 +224,9 @@ void dmacopy_internal(u32 romOffset, u32 ramAddress, s32 numBytes) {
         numBytes -= numBytesToDMA;
         romOffset += numBytesToDMA;
         ramAddress += numBytesToDMA;
+    }
+    if (gDebug && gDebug->loading.active) {
+        gDebug->loading.dma += (f32) (osGetCount() - first) / 46875000.0f;
     }
 }
 

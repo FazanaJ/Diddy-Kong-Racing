@@ -300,6 +300,17 @@ typedef struct DebugMiscVars {
     u16 texLoads;
 } DebugMiscVars;
 
+typedef struct DebugLoadVars {
+    u8 active;
+    f32 dma;
+    f32 decompress;
+    f32 objectSpawns;
+    f32 trackBuild;
+    f32 malloc;
+    f32 unknown;
+    f32 total;
+} DebugLoadVars;
+
 typedef struct DebugData {
     u8 enabled;
     u8 pageCurrent;
@@ -334,6 +345,7 @@ typedef struct DebugData {
     u32 ramTotal;
 
     DebugMiscVars misc;
+    DebugLoadVars loading;
 } DebugData;
 
 typedef struct DebugPage {
