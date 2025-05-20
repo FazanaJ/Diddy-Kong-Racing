@@ -74,6 +74,7 @@ u8 gCameraZoomLevels[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 
 /************ .bss ************/
 
+f32 gSpriteWidth;
 ObjectSegment gCameraSegment[8];
 s32 gNumberOfViewports;
 s32 gActiveCameraID;
@@ -108,6 +109,7 @@ void cam_persp_init(void) {
                    CAMERA_SCALE);
     f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gProjectionMatrixS);
     gCurCamFOV = CAMERA_DEFAULT_FOV;
+    gSpriteWidth = ((4.0f / 3.0f) / gVideoAspectRatio);
 }
 
 /**
@@ -1012,7 +1014,7 @@ s32 render_sprite_billboard(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Obj
         textureFrame = obj->segment.animFrame;
         gModelMatrixStackPos++;
         f32_matrix_from_rotation_and_scale((f32(*)[4]) gModelMatrixF[gModelMatrixStackPos], angleDiff,
-                                           obj->segment.trans.scale, gVideoAspectRatio);
+                                           obj->segment.trans.scale * gSpriteWidth, gVideoAspectRatio);
         f32_matrix_to_s16_matrix(gModelMatrixF[gModelMatrixStackPos], *mtx);
         gModelMatrixS[gModelMatrixStackPos] = *mtx;
         gSPMatrix((*dList)++, OS_PHYSICAL_TO_K0((*mtx)++), G_MTX_DKR_INDEX_2);

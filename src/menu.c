@@ -15088,7 +15088,7 @@ s32 menu_video_options_loop(s32 updateRate) {
 
     set_text_font(ASSET_FONTS_FUNFONT);
     set_text_background_colour(0, 0, 0, 0);
-    sprintf(textBytes, "FPS: %2.2f", (f64) gFPS);
+    sprintf(textBytes, "FPS: %02d", (s32) gFPS);
     draw_text(&sMenuCurrDisplayList, 32, 64, textBytes, ALIGN_MIDDLE_LEFT);
     y = 0;
     optionCount = 0;
