@@ -14945,6 +14945,13 @@ void menu_video_options_init(void) {
     gOptionSetMenuUpdate = 0;
 }
 
+char *sMenuOptionsControls[] = {
+    "Press R to pause. Hold Z to hide text.",
+    "Press R to pause. Hold Z to hide text.",
+    "Press R to pause. Hold Z to hide text.",
+    "Japanese"
+};
+
 s32 menu_video_options_loop(s32 updateRate) {
     char textBytes[32];
     s32 i;
@@ -15109,9 +15116,9 @@ s32 menu_video_options_loop(s32 updateRate) {
                 }
                 set_text_font(ASSET_FONTS_SMALLFONT);
                 set_text_colour(0, 0, 0, 255, 255);
-                draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, (SCREEN_HEIGHT - 24) + 1, "Press R to pause. Hold Z to hide text.", ALIGN_TOP_CENTER);
+                draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, (SCREEN_HEIGHT - 24) + 1, sMenuOptionsControls[lang], ALIGN_TOP_CENTER);
                 set_text_colour(255, 255, 255, 0, 255);
-                draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH / 2, SCREEN_HEIGHT - 24, "Press R to pause. Hold Z to hide text.", ALIGN_TOP_CENTER);
+                draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH / 2, SCREEN_HEIGHT - 24, sMenuOptionsControls[lang], ALIGN_TOP_CENTER);
                 set_text_font(ASSET_FONTS_FUNFONT);
                 break;
             case 1:

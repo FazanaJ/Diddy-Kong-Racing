@@ -181,7 +181,9 @@ void init_game(void) {
 #endif
     video_init(VIDEO_MODE_LOWRES_LPN, &gMainSched);
     init_PI_mesg_queue();
-    init_usb_thread();
+    if (gDebug) {
+        init_usb_thread();
+    }
     gfxtask_init(&gMainSched);
     audio_init(&gMainSched);
     audspat_init();

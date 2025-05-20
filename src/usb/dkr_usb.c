@@ -112,6 +112,9 @@ void init_usb_thread(void) {
 // Called from main thread.
 void tick_usb_thread(void) {
     usbMesg msg;
+    if (sUSBEnabled == FALSE) {
+        return;
+    }
     // Update USB thread
     msg.msgtype = (OSMesg) OS_MESG_TYPE_LOOPBACK;
     osSendMesg(&gThreadUsbMesgQueue, (OSMesg *) &msg, OS_MESG_NOBLOCK);
