@@ -7,6 +7,8 @@
 #include "string.h"
 #include "stdarg.h"
 #include "src/stacks.h"
+#include "src/memory.h"
+#include "src/main.h"
 
 /*
     TODO:
@@ -46,12 +48,11 @@ OSThread gThreadUsb;
 OSMesgQueue gThreadUsbMesgQueue;
 OSMesg gThreadUsbMessage;
 u64 *gThreadUsbStack;
-ALIGNED16 char debug_buffer[BUFFER_SIZE];
+char *debug_buffer;
 u8 sUSBEnabled = FALSE;
 int usbState = -1;
 int cartType = -1;
-char textBuffer[64];
-u8 usbBuffer[512]; // UNFLoader only supports reads/writes of up to 512 bytes.
+//char textBuffer[64];
 s32 isHotReloading = FALSE;
 
 void threadusb_loop(UNUSED void *arg);
@@ -96,8 +97,9 @@ void init_usb_thread(void) {
     RETURN_IF_USB_NOT_VALID();
     cartType = usb_getcart();
     RETURN_IF_CART_NOT_VALID();
-    bzero(&debug_buffer, sizeof(debug_buffer));
     isHotReloading = FALSE;
+    debug_buffer = mempool_alloc(BUFFER_SIZE, PP_RAM_DEBUG);
+    bzero(debug_buffer, BUFFER_SIZE);
 
     // Create USB thread.
     osCreateMesgQueue(&gThreadUsbMesgQueue, &gThreadUsbMessage, 1);
@@ -132,7 +134,7 @@ void dkr_usb_poll(void) {
             usb_skip(numBytesToRead);
             continue;
         }
-        usb_read((u8 *) textBuffer, numBytesToRead);
+        //usb_read((u8 *) textBuffer, numBytesToRead);
     }
     usb_purge(); // Not sure if this is needed?
 }
@@ -170,8 +172,8 @@ void check_hot_reload(void) {
                 numBytesToRead = 512;
             }
 
-            // Note: I don't do anything with the usbBuffer, the data is already at the start of the ROM.
-            usb_read(usbBuffer, numBytesToRead);
+            // Note: I don't do anything with the debug_buffer, the data is already at the start of the ROM.
+            usb_read(debug_buffer, numBytesToRead);
             numBytesReadHR += numBytesToRead;
         }
 
