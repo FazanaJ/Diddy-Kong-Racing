@@ -134,21 +134,21 @@ void get_platform(void) {
         if (gPlatform & CONSOLE) {
             if (__osBbIsBb) {
                 gPlatform = IQUE | CONSOLE;
-                //puppyprint_log(LOG_INFO, "iQue Player detected.\n");
+                debug_printf("iQue Player detected.\n");
                 return;
             } else {
                 char region[5];
                 if (osTvType == OS_TV_PAL) {
-                    //puppyprintf(region, "PAL");
+                    sprintf(region, "PAL");
                 } else if (osTvType == OS_TV_NTSC) {
-                    //puppyprintf(region, "NTSC");
+                    sprintf(region, "NTSC");
                 } else {
-                    //puppyprintf(region, "MPAL");
+                    sprintf(region, "MPAL");
                 }
-                //puppyprint_log(LOG_INFO, "%s N64 Console detected.\n", region);
+                debug_printf("%s N64 Console detected.\n", region);
             }
         } else {
-            //puppyprint_log(LOG_INFO, "Ares N64 Emulator Detected.\n");
+            debug_printf("Ares N64 Emulator Detected.\n");
         }
         return;
     }
@@ -167,7 +167,7 @@ void get_platform(void) {
     if (magic == 0u) {
         // Older versions of mupen (and pre-2.12 ParallelN64) just always read 0
         gPlatform |= MUPEN_OLD;
-        //puppyprint_log(LOG_INFO, "Mupen64 Emulator Detected.\n");
+        debug_printf("Mupen64 Emulator Detected.\n");
     } else {
         __osPiGetAccess();
         while (IO_READ(PI_STATUS_REG) & (PI_STATUS_DMA_BUSY|PI_STATUS_IO_BUSY));
@@ -184,20 +184,20 @@ void get_platform(void) {
                 if (magic == 0x00500000u) {
                     // libpl is supported. Must be ParallelN64
                     gPlatform |= PARALLEL_LAUNCHER;
-                    //puppyprint_log(LOG_INFO, "Ares N64 Emulator Detected.\n");
+                    debug_printf("Ares N64 Emulator Detected.\n");
                     break;
                 }
                 
                 // If the cache is emulated, it's Ares
                 if (check_cache_emulation()) {
                     gPlatform |= ARES;
-                    //puppyprint_log(LOG_INFO, "Ares N64 Emulator Detected.\n");
+                    debug_printf("Ares N64 Emulator Detected.\n");
                     break;
                 }
 
                 // its the Project64 4.0 interpreter core
                 gPlatform |= PJ64_4;
-                //puppyprint_log(LOG_INFO, "Project64 Emulator Detected.\n");
+                debug_printf("Project64 Emulator Detected.\n");
                 break;
             }
             // This looks like it should be the expected result considering what we got when we
@@ -206,10 +206,10 @@ void get_platform(void) {
             case 0x0104:
                 if (check_cache_emulation()) {
                     gPlatform |= SIMPLE64;
-                    //puppyprint_log(LOG_INFO, "Simple64 Emulator Detected.\n");
+                    debug_printf("Simple64 Emulator Detected.\n");
                 } else {
                     gPlatform |= MUPEN_NEXT;
-                    //puppyprint_log(LOG_INFO, "Mupen64 Emulator Detected.\n");
+                    debug_printf("Mupen64 Emulator Detected.\n");
                 }
                 break;
             // If reading a word gives the correct response, but reading a halfword always gives 0,
@@ -217,16 +217,16 @@ void get_platform(void) {
             // to find out which version we're dealing with.
             case 0x0000:
                 get_pj64_version();
-                //puppyprint_log(LOG_INFO, "Project64 Emulator Detected.\n");
+                debug_printf("Project64 Emulator Detected.\n");
                 break;
             // No known emulator gives any other value. If we somehow manage to get here, just return 0
             default:
-                //puppyprint_log(LOG_INFO, "Cannot determine run environment.\n");
+                debug_printf("Cannot determine run environment.\n");
                 gPlatform = 0;
                 break;
         }
     }
-    //puppyprint_log(LOG_INFO, "Counter Factor Setting: %d.\n", cf);
+    debug_printf("Counter Factor Setting: %d.\n", cf);
 } 
 
 #define STEP 0x100000
@@ -269,7 +269,7 @@ u32 osGetMemSize(void) {
 }
 
 void config_init(void) {
-    gConfig.antiAliasing = AA_FAST;
+    gConfig.antiAliasing = AA_OFF;
     gConfig.terrainQuality = 0;
     gConfig.dedither = FALSE;
     gConfig.frameCap = 1;
@@ -285,19 +285,19 @@ void memsize_init(void) {
     #ifdef FORCE_4MB_MEMORY
         gExpansionPak = FALSE;
         gUseExpansionMemory = FALSE;
-        //puppyprint_log(LOG_INFO, "4MB Memory Forced.\n");
+        debug_printf("4MB Memory Forced.\n");
         return;
     #endif
         if (osGetMemSize() > 0x400000) {
             gExpansionPak = TRUE;
-            //puppyprint_log(LOG_INFO, "Expansion Pak Detected\n");
+            debug_printf("Expansion Pak Detected\n");
     #if EXPANSION_PAK_SUPPORT == 0
             gUseExpansionMemory = FALSE;
     #else
             gUseExpansionMemory = TRUE;
     #endif
         } else {
-            //puppyprint_log(LOG_INFO, "Expansion Pak Missing\n");
+            debug_printf("Expansion Pak Missing\n");
             gExpansionPak = FALSE;
             gUseExpansionMemory = FALSE;
         }

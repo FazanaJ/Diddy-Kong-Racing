@@ -158,12 +158,10 @@ int nuPiReadWriteSram(u32 addr, void* buf_ptr, u32 size, s32 flag) {
 
     if (flag == OS_READ){
 	    /* Make CPU cache invalid */
-        //puppyprint_log(LOG_EXTRA, "Reading 0x%X bytes at 0x%X from sram.\n", size, (u32) addr);
         debug_printf("Reading 0x%X bytes at 0x%X from sram.\n", size, (u32) addr);
 	    osInvalDCache((void*)buf_ptr, (s32)size);
     } else {
         /* Write back */
-        //puppyprint_log(LOG_EXTRA, "Writing 0x%X bytes at 0x%X to sram.\n", size, (u32) addr);
         debug_printf("Writing 0x%X bytes at 0x%X to sram.\n", size, (u32) addr);
         osWritebackDCache((void*)buf_ptr, (s32)size);
     }

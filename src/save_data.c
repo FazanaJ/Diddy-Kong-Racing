@@ -840,11 +840,9 @@ s32 save_readwrite(u64 *data, u32 offset, u32 size, s32 type) {
     u32 first;
 #if EEP4K || EEP16K
     if (type == OS_READ) {
-        //puppyprint_log(LOG_EXTRA, "Reading 0x%X bytes at 0x%X from eeprom.\n", size, offset);
         debug_printf("Reading 0x%X bytes at 0x%X from eeprom.\n", size, offset);
         func = (s32 *) osEepromRead;
     } else {
-        //puppyprint_log(LOG_EXTRA, "Writing 0x%X bytes at 0x%X to eeprom.\n", size, offset);
         debug_printf("Writing 0x%X bytes at 0x%X to eeprom.\n", size, offset);
         func = (s32 *) osEepromWrite;
     }
@@ -859,7 +857,6 @@ s32 save_readwrite(u64 *data, u32 offset, u32 size, s32 type) {
     if (result == 8) {
         result = 2;
     }
-    //puppyprint_log(LOG_EXTRA, "Finished (%2.3fs) Result: %s\n", (f64) (f32)((osGetCount() - first) / 46875000.0f), sSaveResponses[result + 1]);
     debug_printf("Finished (%2.3fs) Result: %s\n", (f64) (f32)((osGetCount() - first) / 46875000.0f), sSaveResponses[result + 1]);
     return result;
 }
@@ -876,7 +873,6 @@ s32 read_save_file(s32 saveFileNum, Settings *settings) {
     startingAddress = SAVE_START + (sizeof(SaveFile) * saveFileNum);
     saveData = mempool_alloc_safe(sizeof(SaveFile), PP_RAM_SAVES);
     save_readwrite(saveData, startingAddress, sizeof(SaveFile), OS_READ);
-    debug_dump_hex(saveData, sizeof(SaveFile));
     populate_settings_from_save_data(settings, (u8 *) saveData);
     mempool_free(saveData);
     ret = settings->newGame;
@@ -949,7 +945,6 @@ s32 write_save_data(s32 saveFileNum, Settings *settings) {
     func_800732E8(settings, (u8 *) alloc);
 
     if (!is_reset_pressed()) {
-        debug_dump_hex(alloc, sizeof(SaveFile));
         save_readwrite(alloc, startingAddress, sizeof(SaveFile), OS_WRITE);
     }
 
@@ -1048,7 +1043,6 @@ s32 read_eeprom_settings(u64 *eepromSettings) {
     }
 
     save_readwrite(eepromSettings, CONFIG_START, sizeof(SaveConfig), OS_READ);
-    debug_dump_hex(eepromSettings, sizeof(SaveConfig));
     expected = calculate_eeprom_settings_checksum(*eepromSettings);
     checksum = *eepromSettings >> 56;
     if (expected != checksum) {
@@ -1082,9 +1076,6 @@ s32 write_eeprom_settings(u64 *eepromSettings) {
     *eepromSettings |= (u64) (calculate_eeprom_settings_checksum(*eepromSettings)) << 56;
     if (is_reset_pressed() == FALSE) {
         save_readwrite(eepromSettings, CONFIG_START, sizeof(SaveConfig), OS_WRITE);
-        debug_dump_hex(eepromSettings, sizeof(SaveConfig));
-        save_readwrite(eepromSettings, CONFIG_START, sizeof(SaveConfig), OS_READ);
-        debug_dump_hex(eepromSettings, sizeof(SaveConfig));
     }
     return 1;
 }

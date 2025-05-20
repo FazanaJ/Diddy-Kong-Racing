@@ -438,7 +438,9 @@ void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     mempool_free_timer(2);
     rumble_init(TRUE);
     gShowBG = bgdraw_init();
-    loadTime = OS_CYCLES_TO_USEC(osGetCount() - first);
+    loadTime = osGetCount() - first;
+    debug_printf("Level [%s] loaded in %2.3fs.\n", get_level_name(levelId),
+                   (f64) (f32)(loadTime / 46875000.0f));
 }
 
 /**
@@ -927,7 +929,9 @@ void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     osSetTime(0);
     mempool_free_timer(2);
     gShowBG = bgdraw_init();
-    loadTime = OS_CYCLES_TO_USEC(osGetCount() - first);
+    loadTime = osGetCount() - first;
+    debug_printf("Level [%s] (Menu) loaded in %2.3fs.\n", get_level_name(levelId),
+                   (f64) (f32)(loadTime / 46875000.0f));
 }
 
 /**
