@@ -283,6 +283,7 @@ void crash_text(s32 x, s32 y, u16 colour, const char *fmt, ...) {
     startX = x;
     if (_Printf(write_to_buf, buf, fmt, args) > 0) {
         ptr = buf;
+        debug_printf("%s\n", buf);
         while (*ptr) {
             if (*ptr == '\n') {
                 y += 8;

@@ -69,6 +69,7 @@ typedef struct ScreenViewport {
     /* 0x30 */ s32 flags;
 } ScreenViewport;
 
+void cam_persp_init(void);
 void func_80066060(s32 cameraID, s32 zoomLevel);
 void func_800660C0(void);
 void func_800660D0(void);

@@ -838,6 +838,14 @@ s32 save_readwrite(u64 *data, u32 offset, u32 size, s32 type) {
     s32 result;
     s32 (*func)(OSMesgQueue *, s32 address, u8 *buffer);
     u32 first;
+
+    if (type == OS_WRITE) {
+        if (is_reset_pressed()) {
+            debug_printf("Skip saving because of system reset.\n");
+            return -1;
+        }
+    }
+
 #if EEP4K || EEP16K
     if (type == OS_READ) {
         debug_printf("Reading 0x%X bytes at 0x%X from eeprom.\n", size, offset);
@@ -877,13 +885,13 @@ s32 read_save_file(s32 saveFileNum, Settings *settings) {
     mempool_free(saveData);
     ret = settings->newGame;
     if (settings->newGame) {
-        erase_save_file(saveFileNum, settings);
+        erase_save_file(saveFileNum, settings, FALSE);
         ret = settings->newGame;
     }
     return ret;
 }
 
-void erase_save_file(s32 saveFileNum, Settings *settings) {
+void erase_save_file(s32 saveFileNum, Settings *settings, s32 writeBuf) {
     s32 startingAddress;
     u8 *saveData;
     u64 *alloc;
@@ -907,19 +915,19 @@ void erase_save_file(s32 saveFileNum, Settings *settings) {
     settings->tajFlags = 0;
     settings->cutsceneFlags = 0;
     settings->newGame = TRUE;
-    startingAddress = SAVE_START + (sizeof(SaveFile) * saveFileNum);
-    alloc = mempool_alloc_safe(sizeof(SaveFile), PP_RAM_SAVES);
-    saveData = (u8 *) alloc;
+    if (writeBuf) {
+        startingAddress = SAVE_START + (sizeof(SaveFile) * saveFileNum);
+        alloc = mempool_alloc_safe(sizeof(SaveFile), PP_RAM_SAVES);
+        saveData = (u8 *) alloc;
 
-    // clang-format off
-    // Blank out the data before writing it.
-    for (i = 0; i < (s32) sizeof(SaveFile); i++) { saveData[i] = 0xFF; } // Must be one line
-    // clang-format on
+        // clang-format off
+        // Blank out the data before writing it.
+        for (i = 0; i < (s32) sizeof(SaveFile); i++) { saveData[i] = 0xFF; } // Must be one line
+        // clang-format on
 
-    if (!is_reset_pressed()) {
         save_readwrite(alloc, startingAddress, sizeof(SaveFile), OS_WRITE);
+        mempool_free(alloc);
     }
-    mempool_free(alloc);
 }
 
 /**
@@ -943,10 +951,7 @@ s32 write_save_data(s32 saveFileNum, Settings *settings) {
 
     alloc = mempool_alloc_safe(sizeof(SaveFile), PP_RAM_SAVES);
     func_800732E8(settings, (u8 *) alloc);
-
-    if (!is_reset_pressed()) {
-        save_readwrite(alloc, startingAddress, sizeof(SaveFile), OS_WRITE);
-    }
+    save_readwrite(alloc, startingAddress, sizeof(SaveFile), OS_WRITE);
 
     mempool_free(alloc);
 
@@ -1074,9 +1079,7 @@ s32 write_eeprom_settings(u64 *eepromSettings) {
     *eepromSettings <<= 8;
     *eepromSettings >>= 8;
     *eepromSettings |= (u64) (calculate_eeprom_settings_checksum(*eepromSettings)) << 56;
-    if (is_reset_pressed() == FALSE) {
-        save_readwrite(eepromSettings, CONFIG_START, sizeof(SaveConfig), OS_WRITE);
-    }
+    save_readwrite(eepromSettings, CONFIG_START, sizeof(SaveConfig), OS_WRITE);
     return 1;
 }
 
@@ -1094,11 +1097,9 @@ s32 userconfig_write(void) {
     b.antiAliasing = c->antiAliasing;
     b.dedither = c->dedither;
     b.screenBits = c->screenBits;
-    b.terrainQuality = c->terrainQuality;
-
-    if (is_reset_pressed() == FALSE) {
-        save_readwrite((void *) &b, VIDEOCONFIG_START, sizeof(ConfigBits), OS_WRITE);
-    }
+    //b.terrainQuality = c->terrainQuality;
+    save_readwrite((void *) &b, VIDEOCONFIG_START, sizeof(ConfigBits), OS_WRITE);
+    
     return 0;
 }
 
@@ -1124,7 +1125,7 @@ s32 userconfig_read(void) {
         c->antiAliasing = b.antiAliasing;
         c->dedither = b.dedither;
         c->screenBits = b.screenBits;
-        c->terrainQuality = b.terrainQuality;
+        //c->terrainQuality = b.terrainQuality;
     }
     return 0;
 }

@@ -3292,6 +3292,8 @@ void func_80083098(f32 updateRateF) {
 #pragma GLOBAL_ASM("asm/nonmatchings/menu/func_80083098.s")
 #endif
 
+u8 sMenuOpa;
+
 /**
  * Initialise the title screen menu.
  * Load the title textures and reset player allocation.
@@ -3301,6 +3303,7 @@ void menu_title_screen_init(void) {
     s32 i;
     s32 numberOfPlayers;
 
+    sMenuOpa = 0;
     gTitleScreenLoaded = TRUE;
     gOptionBlinkTimer = 0;
     gMenuDelay = 0;
@@ -3407,10 +3410,41 @@ s32 menu_title_screen_loop(s32 updateRate) {
     f32 updateRateF;
     ObjectSegment *sp18;
     s8 playerCount;
+    char *str;
 
     if (sMenuBoot == 0) {
         load_menu_text(get_language());
         sMenuBoot = 1;
+        sMenuOpa = 1;
+    }
+
+    if (sMenuOpa) {
+        if (sMenuBoot == 1) {
+            if (sMenuOpa + (updateRate * 4) < 255) {
+                sMenuOpa += (updateRate * 4);
+            } else {
+                sMenuOpa = 255;
+                sMenuBoot = 2;
+            }
+        } else if (sMenuBoot > 120) {
+            if (sMenuOpa - (updateRate * 4) > 0) {
+                sMenuOpa -= (updateRate * 4);
+            } else {
+                sMenuOpa = 0;
+            }
+        } else {
+            sMenuBoot += updateRate;
+        }
+        if (gExpansionPak) {
+            str = "Expansion Pak Detected";
+        } else {
+            str = "Expansion Pak Missing";
+        }
+        set_text_font(ASSET_FONTS_SMALLFONT);
+        set_text_colour(0, 0, 0, 255, sMenuOpa);
+        draw_text(&sMenuCurrDisplayList, (32) + 1, (SCREEN_HEIGHT - 24) + 1, str, ALIGN_TOP_LEFT);
+        set_text_colour(255, 255, 255, 0, sMenuOpa);
+        draw_text(&sMenuCurrDisplayList, 32, SCREEN_HEIGHT - 24, str, ALIGN_TOP_LEFT);
     }
 
     sp18 = get_active_camera_segment();
@@ -14801,7 +14835,7 @@ ConfigOptionEntry gOptionMenu[] = {
     { "Screen", &gConfig.screenWidth, OPT_NONE, 5, 0, 2, video_refresh },
     { "Anti Aliasing", &gConfig.antiAliasing, OPT_NONE, 2, -1, 1, video_refresh },
     { "Dedither", &gConfig.dedither, OPT_NONE, 0, 0, 1, vi_dither },
-    { "Terrain Quality", &gConfig.terrainQuality, OPT_NONE, 3, 0, 1, NULL },
+    //{ "Terrain Quality", &gConfig.terrainQuality, OPT_NONE, 3, 0, 1, NULL },
     { "Screen Quality", &gConfig.screenBits, OPT_EX_PAK, 15, 0, 1, video_refresh },
 };
 
@@ -15073,6 +15107,12 @@ s32 menu_video_options_loop(s32 updateRate) {
                     draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH / 2, SCREEN_HEIGHT - 72 + y, sVideoOptionsString[1 + i][lang], ALIGN_TOP_CENTER);
                     y += 16;
                 }
+                set_text_font(ASSET_FONTS_SMALLFONT);
+                set_text_colour(0, 0, 0, 255, 255);
+                draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, (SCREEN_HEIGHT - 24) + 1, "Press R to pause. Hold Z to hide text.", ALIGN_TOP_CENTER);
+                set_text_colour(255, 255, 255, 0, 255);
+                draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH / 2, SCREEN_HEIGHT - 24, "Press R to pause. Hold Z to hide text.", ALIGN_TOP_CENTER);
+                set_text_font(ASSET_FONTS_FUNFONT);
                 break;
             case 1:
                 menuCount = ARRAY_COUNT(gOptionMenu);
@@ -15190,7 +15230,6 @@ s32 menu_video_options_loop(s32 updateRate) {
                 }
             }
         }
-
 
         /*if (bgload_active() == FALSE && gOptionLoadTimer < 16) {
             if (gDialogueSubmenu != 2) {

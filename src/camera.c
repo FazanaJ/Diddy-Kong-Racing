@@ -103,6 +103,13 @@ Matrix gCurrentModelMatrixS;
 
 /******************************/
 
+void cam_persp_init(void) {
+    guPerspectiveF(gPerspectiveMatrixF, &perspNorm, CAMERA_DEFAULT_FOV, gVideoAspectRatio, CAMERA_NEAR, CAMERA_FAR,
+                   CAMERA_SCALE);
+    f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gProjectionMatrixS);
+    gCurCamFOV = CAMERA_DEFAULT_FOV;
+}
+
 /**
  * Official Name: camInit
  */
@@ -130,11 +137,8 @@ void camera_init(void) {
     gSpriteAnimOff = FALSE;
     D_80120D18 = 0;
     gAntiPiracyViewport = FALSE;
+    cam_persp_init();
 
-    guPerspectiveF(gPerspectiveMatrixF, &perspNorm, CAMERA_DEFAULT_FOV, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR,
-                   CAMERA_SCALE);
-    f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gProjectionMatrixS);
-    gCurCamFOV = CAMERA_DEFAULT_FOV;
 }
 
 void func_80066060(s32 cameraID, s32 zoomLevel) {
@@ -159,7 +163,7 @@ void func_800660D0(void) {
 void update_camera_fov(f32 camFieldOfView) {
     if (CAMERA_MIN_FOV < camFieldOfView && camFieldOfView < CAMERA_MAX_FOV && camFieldOfView != gCurCamFOV) {
         gCurCamFOV = camFieldOfView;
-        guPerspectiveF(gPerspectiveMatrixF, &perspNorm, camFieldOfView, CAMERA_ASPECT, CAMERA_NEAR, CAMERA_FAR,
+        guPerspectiveF(gPerspectiveMatrixF, &perspNorm, camFieldOfView, gVideoAspectRatio, CAMERA_NEAR, CAMERA_FAR,
                        CAMERA_SCALE);
         f32_matrix_to_s16_matrix(&gPerspectiveMatrixF, &gProjectionMatrixS);
     }

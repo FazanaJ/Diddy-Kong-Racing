@@ -388,7 +388,7 @@ void rdp_init(Gfx **dList) {
  */
 void rsp_init(Gfx **dList) {
     //gSPDisplayList((*dList)++, dRspInit);
-    if (gConfig.terrainQuality && get_viewport_count() == ONE_PLAYER) {
+    if (gConfig.terrainQuality) {
         gSPClipRatio((*dList)++, FRUSTRATIO_1);
     } else {
         gSPClipRatio((*dList)++, FRUSTRATIO_2);

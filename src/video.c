@@ -2,6 +2,7 @@
 #include "PRinternal/viint.h"
 #include "main.h"
 #include "rcp_dkr.h"
+#include "camera.h"
 
 /************ .data ************/
 
@@ -84,6 +85,7 @@ void vi_change(int width, int height) {
     s32 addPAL = 0;
     s32 addX = 0;
     s32 mul;
+    f32 tempWidth;
     static u16 prevWidth = 0;
     static u16 prevHeight = 0;
     static u8 prevBits = 0;
@@ -144,7 +146,15 @@ void vi_change(int width, int height) {
     }
     mode->fldRegs[0].origin = width * mul;
     mode->fldRegs[1].origin = width * 4;
-    gVideoAspectRatio = ((f32) width / (f32) height);
+    if (gConfig.screenWidth == RESOLUTION_384x240) {
+        tempWidth = 384;
+    } else if (gConfig.screenWidth == RESOLUTION_424x240) {
+        tempWidth = 424;
+    } else {
+        tempWidth = 320;
+    }
+    gVideoAspectRatio = ((f32) tempWidth / (f32) height);
+    cam_persp_init();
     osViSetMode(mode);
     vi_dither();
 

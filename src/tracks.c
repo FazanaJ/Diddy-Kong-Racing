@@ -385,7 +385,11 @@ void aa_manage(s32 mode) {
     if (gScenePlayerViewports == ONE_PLAYER) {
         aaMode = gConfig.antiAliasing;
     } else {
-        aaMode = gConfig.multiAA;
+        if (gConfig.multiAA >= get_viewport_count()) {
+            aaMode = gConfig.antiAliasing;
+        } else {
+            aaMode = AA_OFF;
+        }
     }
     if (mode == AA_OFF || aaMode == AA_OFF) {
         gAntiAliasing = AA_OFF;
