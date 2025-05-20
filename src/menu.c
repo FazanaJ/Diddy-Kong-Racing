@@ -15224,7 +15224,7 @@ s32 menu_video_options_loop(s32 updateRate) {
             if (gDialogueSubmenu == 0) {
                 gMenuDelay = 1;
                 transition_begin(&sMenuTransitionFadeIn);
-                //save_config_write();
+                userconfig_write();
                 sound_play(SOUND_MENU_BACK3, NULL);
             } else {
                 gPauseOptionScroll = 0;

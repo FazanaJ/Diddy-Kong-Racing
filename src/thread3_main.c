@@ -188,6 +188,7 @@ void init_game(void) {
     audio_init(&gMainSched);
     audspat_init();
     sControllerStatus = input_init();
+    userconfig_read();
     tex_init_textures();
     allocate_object_model_pools();
     allocate_object_pools();

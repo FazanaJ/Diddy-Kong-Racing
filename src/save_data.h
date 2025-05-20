@@ -118,6 +118,8 @@ typedef struct unk80075000 {
     unk80075000_body data[1];
 } unk80075000;
 
+s32 userconfig_read(void);
+s32 userconfig_write(void);
 s32 save_detect(void);
 u8 input_get_id(s32 controllerIndex);
 void rumble_init(u8 canRumble);

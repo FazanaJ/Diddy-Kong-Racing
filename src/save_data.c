@@ -1080,6 +1080,55 @@ s32 write_eeprom_settings(u64 *eepromSettings) {
     return 1;
 }
 
+s32 userconfig_write(void) {
+    ConfigBits b;
+    UserConfig *c;
+
+    if (save_detect() == 0) {
+        return -1;
+    }
+
+    c = &gConfig;
+
+    b.magic = 0x14;
+    b.antiAliasing = c->antiAliasing;
+    b.dedither = c->dedither;
+    b.screenBits = c->screenBits;
+    b.terrainQuality = c->terrainQuality;
+
+    if (is_reset_pressed() == FALSE) {
+        save_readwrite((void *) &b, VIDEOCONFIG_START, sizeof(ConfigBits), OS_WRITE);
+    }
+    return 0;
+}
+
+s32 userconfig_read(void) {
+    ConfigBits b;
+    UserConfig *c;
+
+    if (save_detect() == 0) {
+        return -1;
+    }
+
+    c = &gConfig;
+
+    save_readwrite((void *) &b, VIDEOCONFIG_START, sizeof(ConfigBits), OS_READ);
+
+    if (b.magic != 0x14) {
+        debug_printf("Bad magic! %X\n", b.magic);
+        bzero(&b, sizeof(ConfigBits));
+        b.magic = 0x14;
+        save_readwrite((void *) &b, VIDEOCONFIG_START, sizeof(ConfigBits), OS_WRITE);
+    } else {
+        debug_printf("Good magic! %X\n", b.magic);
+        c->antiAliasing = b.antiAliasing;
+        c->dedither = b.dedither;
+        c->screenBits = b.screenBits;
+        c->terrainQuality = b.terrainQuality;
+    }
+    return 0;
+}
+
 s16 calculate_ghost_header_checksum(GhostHeader *ghostHeader) {
     s16 i;
     s16 len;
