@@ -6,8 +6,6 @@
 #include "structs.h"
 #include "game.h"
 
-#define GFX_ADD 1000
-
 typedef enum GameMode {
     GAMEMODE_INTRO = -1,
     GAMEMODE_INGAME,

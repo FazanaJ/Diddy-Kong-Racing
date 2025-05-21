@@ -27,6 +27,17 @@ typedef char *outfun(char *dst, const char *src, size_t count);
 void debug_log(s32 logLevel, char *str, ...) {
 }
 
+void debug_dump_hex(u8 *var, s32 size) {
+    for (int i = 0; i < size; i++) {
+        debug_printf("0x%02X, ", (u32) var[i]);
+
+        if (i && ((i + 1) % 8)== 0) {
+            debug_printf("\n");
+        }
+    }
+    debug_printf("\n");
+}
+
 void debug_fillrect(Gfx **gfx, s32 x1, s32 y1, s32 x2, s32 y2, u32 colour) {
     s32 alpha = (colour) & 0xFF;
     if (alpha != 255) {
@@ -434,6 +445,17 @@ void debug_render_misc(DebugData *d, Gfx **dList, s32 updateRate) {
         draw_text(dList, SCREEN_WIDTH - 96 + 4, 24, textBytes, ALIGN_TOP_LEFT);
         sprintf(textBytes, "Tex Loads: %d", d->misc.texLoads);
         draw_text(dList, SCREEN_WIDTH - 96 + 4, 34, textBytes, ALIGN_TOP_LEFT);
+
+        
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 150, "Loading", ALIGN_TOP_LEFT);
+        sprintf(textBytes, "Total: %2.3fs", d->loading.total);
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 160, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "DMA: %2.3fs", d->loading.dma);
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 170, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "Unzip: %2.3fs", d->loading.decompress);
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 180, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "Malloc: %2.3fs", d->loading.malloc);
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 190, textBytes, ALIGN_TOP_LEFT);
     }
 
     if (showRacer) {
@@ -522,16 +544,22 @@ void debug_render_assets(DebugData *d, Gfx **dList, s32 updateRate) {
         case 0:
             table = gTextureCache;
             count = gNumberOfLoadedTextures;
-            name = -1;
-            tableName = "Textures";
+            name = ASSET_TEXTURES_2D;
+            tableName = "Tex 2D";
             break;
         case 1:
+            table = gTextureCache;
+            count = gNumberOfLoadedTextures;
+            name = ASSET_TEXTURES_3D;
+            tableName = "Tex 3D";
+            break;
+        case 2:
             table = gSpriteCache;
             count = gSpriteCacheCount;
             name = ASSET_SPRITES;
             tableName = "Sprites";
             break;
-        case 2:
+        case 3:
             table = gModelCache;
             count = gModelCacheCount;
             name = ASSET_OBJECT_MODELS;
@@ -544,7 +572,13 @@ void debug_render_assets(DebugData *d, Gfx **dList, s32 updateRate) {
     for (i = 0; i < count; i++) {
         assetID = table[ASSETCACHE_ID(i)];
         if (assetID != -1) {
-            y++;
+            if (d->pageViewMode == 0) {
+                if ((assetID & 0x8000) == 0) {
+                    y++;
+                }
+            } else {
+                y++;
+            }
         }
     }
     sprintf(textBytes, "Loaded: %d", y);
@@ -554,18 +588,11 @@ void debug_render_assets(DebugData *d, Gfx **dList, s32 updateRate) {
     gDPSetScissor((*dList)++, G_SC_NON_INTERLACE, SCREEN_WIDTH - 136, 30, SCREEN_WIDTH, SCREEN_HEIGHT);
     for (i = 0; i < count; i++) {
         assetID = table[ASSETCACHE_ID(i)];
-        if (assetID == -1) {
+        if (assetID == -1 || (d->pageViewMode == 0 && assetID & 0x8000)) {
             continue;
         }
+        assetID &= 0x7FFF;
         d->pageScrollMax += 10;
-        if (table == gTextureCache) {
-            if (assetID & 0x8000) {
-                name = ASSET_TEXTURES_3D;
-                assetID &= 0x7FFF;
-            } else {
-                name = ASSET_TEXTURES_2D;
-            }
-        }
         if (y > SCREEN_HEIGHT) {
             break;
         }
@@ -818,14 +845,14 @@ void debug_update(s32 updateRate) {
                 if (inputPressed & R_JPAD) {
                     d->pageViewMode++;
                     d->pageScroll = 0;
-                    if (d->pageViewMode == 3) {
+                    if (d->pageViewMode == 4) {
                         d->pageViewMode = 0;
                     }
                 } else if (inputPressed & L_JPAD) {
                     d->pageViewMode--;
                     d->pageScroll = 0;
                     if (d->pageViewMode == 255) {
-                        d->pageViewMode = 2;
+                        d->pageViewMode = 3;
                     }
                 }
                 if (inputHeld & U_JPAD) {

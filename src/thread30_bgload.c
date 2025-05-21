@@ -11,6 +11,7 @@ s32 gThread30NeedToLoadLevel = FALSE;
 s32 gThread30LevelIdToLoad = -1;
 s32 gThread30CutsceneIdToLoad = -1;
 s32 gThread30LoadDelay = 0;
+s32 gThread30Players;
 
 /*******************************/
 
@@ -73,11 +74,12 @@ void bgload_tick(void) {
  * Sets a level id and cutscene id to be loaded. Used in the tracks menu & credits menu.
  * Returns 1 if successful, or 0 if gThread30NeedToLoadLevel was already set.
  */
-s32 bgload_start(s32 levelId, s32 cutsceneId) {
+s32 bgload_start(s32 levelId, s32 playerCount, s32 cutsceneId) {
     if (!gThread30NeedToLoadLevel) {
         gThread30LoadDelay = 4;
         gThread30LevelIdToLoad = levelId;
         gThread30CutsceneIdToLoad = cutsceneId;
+        gThread30Players = playerCount;
         gThread30NeedToLoadLevel = TRUE;
         gThread30Stack = mempool_alloc_safe(STACK_BGLOAD, PP_RAM_STACK);
         gThread30 = mempool_alloc_safe(sizeof(OSThread), PP_RAM_STACK);
@@ -102,7 +104,7 @@ void thread30_bgload(UNUSED void *arg) {
             continue;
         }
         // -1 means there won't be any racers loaded.
-        load_level_for_menu(gThread30LevelIdToLoad, -1, gThread30CutsceneIdToLoad);
+        load_level_for_menu(gThread30LevelIdToLoad, gThread30Players, gThread30CutsceneIdToLoad);
         gThread30NeedToLoadLevel = FALSE;
     }
 }

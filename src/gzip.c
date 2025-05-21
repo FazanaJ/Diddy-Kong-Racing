@@ -57,11 +57,15 @@ s32 get_asset_uncompressed_size(s32 assetIndex, s32 assetOffset) {
  * Official name: rzipUncompress
  */
 u8 *gzip_inflate(u8 *compressedInput, u8 *decompressedOutput) {
+    u32 first = osGetCount();
     gzip_inflate_input = compressedInput + 5; // The compression header is 5 bytes.
     gzip_inflate_output = decompressedOutput;
     gzip_num_bits = 0;
     gzip_bit_buffer = 0;
     while (gzip_inflate_block() != 0) {} // Keep calling gzip_inflate_block() until it returns 0.
+    if (gDebug && gDebug->loading.active) {
+        gDebug->loading.decompress += (f32) (osGetCount() - first) / 46875000.0f;
+    }
     return decompressedOutput;
 }
 

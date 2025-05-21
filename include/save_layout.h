@@ -5,6 +5,7 @@
 #include "structs.h"
 #include "macros.h"
 #include "PR/os_cont.h"
+#include "main.h"
 
 /**
  * File contains the struct and macro definitions for the save layout for DKR.
@@ -220,6 +221,7 @@ typedef struct SaveBuffer {
     SaveConfig config;
     CourseRecords fastLaps;
     CourseRecords courseTimes;
+    ConfigBits videoConfig;
 } SaveBuffer ALIGNED8;
 
 // Eeprom works in 8 byte blocks, so divide by 8 for those functions.
@@ -228,6 +230,7 @@ typedef struct SaveBuffer {
 #define CONFIG_START            (SAVE_START + (sizeof(SaveFile) * NUMBER_OF_SAVE_FILES))
 #define FASTEST_LAPS_START      (CONFIG_START + sizeof(SaveConfig))
 #define COURSE_TIMES_START      (FASTEST_LAPS_START + sizeof(CourseRecords))
+#define VIDEOCONFIG_START       (COURSE_TIMES_START + sizeof(CourseRecords))
 #define SAVE_SIZE               (sizeof(SaveBuffer))
 
 #endif

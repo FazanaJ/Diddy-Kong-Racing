@@ -47,27 +47,38 @@
 
 .ifdef VERSION_us_v77
 .ascii "E"             /* Country code */
-.equ revision, 0x0
+.equ revision, 0x2
 .endif
 .ifdef VERSION_pal_v77
 .ascii "P"             /* Country code */
-.equ revision, 0x0
+.equ revision, 0x2
 .endif
 .ifdef VERSION_jpn_v79
 .ascii "J"             /* Country code */
-.equ revision, 0x0
+.equ revision, 0x2
 .endif
 .ifdef VERSION_us_v80
 .ascii "E"             /* Country code */
-.equ revision, 0x1
+.equ revision, 0x2
 .endif
 .ifdef VERSION_pal_v80
 .ascii "P"             /* Country code */
-.equ revision, 0x1
+.equ revision, 0x2
 .endif
 
 .ifdef NON_MATCHING
-.equ savetype, 0x1
+  .ifdef EEP4K
+  .equ savetype, 0x1
+  .endif
+  .ifdef EEP16K
+  .equ savetype, 0x2
+  .endif
+  .ifdef SRAM
+  .equ savetype, 0x3
+  .endif
+  .ifdef FLASH
+  .equ savetype, 0x5
+  .endif
 .else
 .equ savetype, 0x0
 .endif

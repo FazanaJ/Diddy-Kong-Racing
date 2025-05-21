@@ -247,7 +247,7 @@ void debug_text_print(Gfx **dList) {
     char *buffer;
     u32 widthAndHeight;
 
-    rdp_init(dList);
+    gDPPipeSync((*dList)++);
     widthAndHeight = fb_size();
     gDebugScreenHeight = GET_VIDEO_HEIGHT(widthAndHeight);
     gDebugScreenWidth = GET_VIDEO_WIDTH(widthAndHeight);

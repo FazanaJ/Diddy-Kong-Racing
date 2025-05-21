@@ -317,8 +317,8 @@ void hud_init(UNUSED s32 viewportCount) {
         return;
     }
 
-    gHUDNumPlayers = get_viewport_count();
-    gNumActivePlayers = set_active_viewports_and_max(gHUDNumPlayers);
+    gHUDNumPlayers = cam_get_viewport_layout();
+    gNumActivePlayers = cam_set_layout(gHUDNumPlayers);
     gHudSettings = get_settings();
     gHudSilverCoinRace = check_if_silver_coin_race();
     gAssetHudElementIds = (s16 *) load_asset_section_from_rom(ASSET_HUD_ELEMENT_IDS);
@@ -336,13 +336,13 @@ void hud_init(UNUSED s32 viewportCount) {
     }
     if (get_current_level_race_type() != RACETYPE_HUBWORLD && is_time_trial_enabled() == FALSE) {
         gAssetHudElements->entry[HUD_ELEMENT_UNK_01] =
-            func_8007C12C(gAssetHudElementIds[HUD_ELEMENT_UNK_01] & 0x3FFF, 1); // ID: 86 - 0x56
+            tex_load_sprite(gAssetHudElementIds[HUD_ELEMENT_UNK_01] & 0x3FFF, 1); // ID: 86 - 0x56
         gAssetHudElements->entry[HUD_ELEMENT_UNK_17] =
-            func_8007C12C(gAssetHudElementIds[HUD_ELEMENT_UNK_17] & 0x3FFF, 1); // ID: 291 - 0x123
+            tex_load_sprite(gAssetHudElementIds[HUD_ELEMENT_UNK_17] & 0x3FFF, 1); // ID: 291 - 0x123
         gAssetHudElements->entry[HUD_ELEMENT_UNK_08] =
-            func_8007C12C(gAssetHudElementIds[HUD_ELEMENT_UNK_08] & 0x3FFF, 1); // ID: 156 - 0x9C
+            tex_load_sprite(gAssetHudElementIds[HUD_ELEMENT_UNK_08] & 0x3FFF, 1); // ID: 156 - 0x9C
         gAssetHudElements->entry[HUD_ELEMENT_UNK_11] =
-            func_8007C12C(gAssetHudElementIds[HUD_ELEMENT_UNK_11] & 0x3FFF, 1); // ID: 60 - 0x3C
+            tex_load_sprite(gAssetHudElementIds[HUD_ELEMENT_UNK_11] & 0x3FFF, 1); // ID: 60 - 0x3C
     }
     if (gNumActivePlayers != 3) {
         playerCount = gNumActivePlayers;
@@ -824,7 +824,7 @@ void hud_render_player(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Object *
                     sprite_anim_off(TRUE);
                     if (is_in_time_trial()) {
                         hud_time_trial_finish(racer, updateRate);
-                    } else if (get_viewport_count() == VIEWPORTS_COUNT_1_PLAYER && racer->finishPosition == 1) {
+                    } else if (cam_get_viewport_layout() == VIEWPORT_LAYOUT_1_PLAYER && racer->finishPosition == 1) {
                         if (is_in_two_player_adventure()) {
                             if (get_current_level_race_type() == RACETYPE_BOSS) {
                                 goto showFinishRace;
@@ -1407,7 +1407,7 @@ void hud_main_hub(Object *obj, s32 updateRate) {
     Object_Racer *racer;
     HudElement *portrait;
 
-    if (get_viewport_count() == PLAYER_ONE) {
+    if (cam_get_viewport_layout() == PLAYER_ONE) {
         racer = (Object_Racer *) obj->unk64;
         sprite_anim_off(TRUE);
         hud_balloons(racer);
@@ -1716,7 +1716,7 @@ void hud_main_time_trial(s32 arg0, Object *playerRacerObj, s32 updateRate) {
         draw_text(&gHudDL, gStopwatchErrorX + gHudOffsetX + gHudBounceX + 1, gStopwatchErrorY + 29, SWMessage[0],
                   ALIGN_MIDDLE_CENTER);
         // Draw actual text.
-        set_text_colour(D_80127194->red, D_80127194->green, D_80127194->blue, 128, D_80127194->alpha);
+        set_text_colour(D_80127194->rgba.r, D_80127194->rgba.g, D_80127194->rgba.b, 128, D_80127194->rgba.a);
         draw_text(&gHudDL, gStopwatchErrorX + gHudOffsetX + gHudBounceX, gStopwatchErrorY, SWMessage[2],
                   ALIGN_MIDDLE_CENTER);
         draw_text(&gHudDL, gStopwatchErrorX + gHudOffsetX + gHudBounceX, gStopwatchErrorY + 14, SWMessage[1],
@@ -1899,7 +1899,7 @@ void hud_race_start(s32 countdown, s32 updateRate) {
             if (gCurrentHud->entry[HUD_RACE_START_GO].raceStartGo.musicStartTimer[gHudCurrentViewport] >= 60) {
                 if (gRaceStartShowHudStep == 4) {
                     // Mute background music in 3/4 player.
-                    if (get_viewport_count() > TWO_PLAYERS) {
+                    if (cam_get_viewport_layout() > TWO_PLAYERS) {
                         music_play(SEQUENCE_NONE);
                     } else {
                         start_level_music(1.0f);
@@ -3192,12 +3192,17 @@ void hud_timer_render(s32 x, s32 y, s32 minutes, s32 seconds, s32 hundredths, s3
  */
 void minimap_init(LevelModel *model) {
     s32 sp2C;
+
+    if (get_game_mode() != GAMEMODE_INGAME || (model->minimapOffsetXAdv1 == 0 && model->minimapOffsetYAdv1 == 0)) {
+        model->minimapSpriteIndex = NULL;
+        return;
+    }
     gMinimapRed = (model->minimapColor >> 16) & 0xFF;
     gMinimapGreen = (model->minimapColor >> 8) & 0xFF;
     gMinimapBlue = model->minimapColor & 0xFF;
     load_sprite_info(model->minimapSpriteIndex, &gMinimapDotOffsetX, &gMinimapDotOffsetY, &sp2C, &sp2C, &sp2C);
     func_8007CA68(model->minimapSpriteIndex, 0, &D_80126D14, &D_80126D18, &sp2C);
-    model->minimapSpriteIndex = (s32) func_8007C12C(model->minimapSpriteIndex, 1);
+    model->minimapSpriteIndex = (s32) tex_load_sprite(model->minimapSpriteIndex, 1);
 }
 
 /**
@@ -3246,7 +3251,7 @@ void hud_render_general(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 updateRate
     s32 sp144;
     s32 racerCount;
     UNUSED s32 pad2;
-    ObjectSegment *someObjSeg;
+    Camera *someObjSeg;
     Object **racerGroup;
     s32 spBC;
     s32 temp_s0_2;
@@ -3472,7 +3477,7 @@ void hud_render_general(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 updateRate
     if (lvlMdl == NULL) {
         return;
     }
-    someObjSeg = get_active_camera_segment();
+    someObjSeg = cam_get_active_camera();
     sprite_anim_off(TRUE);
     minimap = (Sprite *) lvlMdl->minimapSpriteIndex;
     switch (gHUDNumPlayers) {
@@ -3672,7 +3677,7 @@ void hud_element_render(Gfx **dList, MatrixS **mtx, Vertex **vtxList, HudElement
     TextureHeader **textureHeader3;
     TextureHeader *textureHeader2;
     TextureHeader *textureHeader;
-    ObjectSegment *objSegment;
+    Camera *camera;
     LevelObjectEntry_Hud objEntry;
     UNUSED s32 pad1;
     Object *tempObject;
@@ -3701,7 +3706,7 @@ void hud_element_render(Gfx **dList, MatrixS **mtx, Vertex **vtxList, HudElement
         if ((spriteElementId & ASSET_MASK_TEXTURE) == ASSET_MASK_TEXTURE) {
             gAssetHudElements->entry[hud->spriteID] = load_texture(spriteElementId & 0x3FFF);
         } else if (spriteElementId & ASSET_MASK_SPRITE) {
-            gAssetHudElements->entry[hud->spriteID] = func_8007C12C(spriteElementId & 0x3FFF, 1);
+            gAssetHudElements->entry[hud->spriteID] = tex_load_sprite(spriteElementId & 0x3FFF, 1);
         } else if (spriteElementId & ASSET_MASK_OBJECT) {
             objEntry.common.objectID = spriteElementId & 0xFF;
             objEntry.common.size = ((gAssetHudElementIds[hud->spriteID] & 0x100) >> 1) | sizeof(LevelObjectEntryCommon);
@@ -3780,11 +3785,11 @@ void hud_element_render(Gfx **dList, MatrixS **mtx, Vertex **vtxList, HudElement
             rendermode_reset(&gHudDL);
         }
     } else if (gAssetHudElementIds[spriteID] & ASSET_MASK_SPRITE) {
-        objSegment = get_active_camera_segment();
+        camera = cam_get_active_camera();
         sprite = gAssetHudElements->entry[hud->spriteID];
-        hud->rotation.z -= objSegment->trans.rotation.z;
+        hud->rotation.z -= camera->trans.rotation.z;
         render_ortho_triangle_image(&gHudDL, &gHudMtx, &gHudVtx, (ObjectSegment *) hud, sprite, 0);
-        hud->rotation.z += objSegment->trans.rotation.z;
+        hud->rotation.z += camera->trans.rotation.z;
     } else if (gAssetHudElementIds[spriteID] & ASSET_MASK_OBJECT) {
         tempObject = gAssetHudElements->entry[spriteID];
         tempObject->segment.trans.rotation.x = hud->rotation.x;
@@ -3798,7 +3803,7 @@ void hud_element_render(Gfx **dList, MatrixS **mtx, Vertex **vtxList, HudElement
         tempObject->segment.object.opacity = 0xFF;
         render_object(&gHudDL, &gHudMtx, &gHudVtx, tempObject);
     } else {
-        camera_push_model_mtx(&gHudDL, &gHudMtx, (ObjectTransform *) hud, 1.0f, 0.0f);
+        cam_push_model_mtx(&gHudDL, &gHudMtx, (ObjectTransform *) hud, 1.0f, 0.0f);
         if (0) {}
         textureHeader3 = gAssetHudElements->entry[hud->spriteID];
         hud_draw_model((ObjectModel *) *textureHeader3);

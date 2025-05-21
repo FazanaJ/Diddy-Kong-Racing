@@ -2,6 +2,7 @@
 #include "PRinternal/viint.h"
 #include "main.h"
 #include "rcp_dkr.h"
+#include "camera.h"
 
 /************ .data ************/
 
@@ -56,9 +57,8 @@ void video_init(s32 videoModeIndex, OSSched *sc) {
     gVideoCurrFbIndex = 1;
     fb_swap();
     //fb_init_vi();
-    vi_change(SCREEN_WIDTH, SCREEN_HEIGHT);
+    //vi_change(SCREEN_WIDTH, SCREEN_HEIGHT);
     sBlackScreenTimer = 12;
-    osViBlack(TRUE);
     gVideoDeltaCounter = 0;
     D_801262E4 = 3;
 }
@@ -85,6 +85,10 @@ void vi_change(int width, int height) {
     s32 addPAL = 0;
     s32 addX = 0;
     s32 mul;
+    f32 tempWidth;
+    static u16 prevWidth = 0;
+    static u16 prevHeight = 0;
+    static u8 prevBits = 0;
     OSViMode *mode = &gGlobalVI;
     if (osTvType == OS_TV_TYPE_PAL) {
         gGlobalVI = osViModePalLan1;
@@ -142,9 +146,25 @@ void vi_change(int width, int height) {
     }
     mode->fldRegs[0].origin = width * mul;
     mode->fldRegs[1].origin = width * 4;
-    gVideoAspectRatio = ((f32) width / (f32) height);
+    if (gConfig.screenWidth == RESOLUTION_384x240) {
+        tempWidth = 384;
+    } else if (gConfig.screenWidth == RESOLUTION_424x240) {
+        tempWidth = 424;
+    } else {
+        tempWidth = 320;
+    }
+    gVideoAspectRatio = ((f32) tempWidth / (f32) height);
+    cam_persp_init();
     osViSetMode(mode);
     vi_dither();
+
+    if (width != prevWidth || height != prevHeight || prevBits != gBitDepth) {
+        prevWidth = width;
+        prevHeight = height;
+        prevBits = gBitDepth;
+        osViBlack(TRUE);
+        sBlackScreenTimer = 10;
+    }
 }
 
 void vi_dither(void) {
@@ -258,8 +278,6 @@ void fb_update(s32 updateRate) {
             sBlackScreenTimer = 0;
         }
     }
-    osViSetSpecialFeatures(OS_VI_DIVOT_OFF);
-    osViSetSpecialFeatures(OS_VI_DITHER_FILTER_OFF);
     osViSetSpecialFeatures(OS_VI_GAMMA_OFF);
     fb_swap();
     /*if (gBootTimer) {

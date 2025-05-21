@@ -249,7 +249,11 @@ typedef enum MENU_ID {
     MENU_CREDITS,
     MENU_BOOT,
     MENU_UNUSED_27,
-    MENU_CAUTION
+    MENU_CAUTION,
+    MENU_VIDEO_OPTIONS,
+#if EXPANSION_PAK_SUPPORT == 2
+    MENU_EXPANSION_ERROR,
+#endif
 } MENU_ID;
 
 typedef enum PakError {
@@ -416,9 +420,12 @@ typedef struct SaveFileData {
   /* 0x0C */ u32 fileSize; // Game Data File Size
 } SaveFileData;
 
-// Size: 12 bytes
+// Size: 12 or 16 bytes
 typedef struct unk80126878 {
   /* 0x00 */ char *text;
+#if VERSION >= VERSION_79
+  /* 0x00 */ char *text2;
+#endif
   /* 0x04 */ s16 x;
   /* 0x06 */ s16 y;
   /* 0x08 */ s32 colourIndex;
@@ -471,11 +478,16 @@ typedef struct TrackRenderDetails {
 extern s32 gShowControllerPakMenu;
 extern u8 *__ROM_END;
 extern s32 gCurrentMenuId;
+extern s8 gMenuStopUpdating;
 
 s32 get_random_number_from_range(s32, s32); // No file to pull from yet.
 
 void savedata_free(void);
 void savedata_alloc(void);
+void menu_expansionerror_init(void);
+s32 menu_expansionerror_loop(s32 updateRate);
+void menu_video_options_init(void);
+s32 menu_video_options_loop(s32 updateRate);
 
 void menu_button_free(void);
 void menu_geometry_end(void);

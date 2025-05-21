@@ -6,6 +6,7 @@
 #include "macros.h"
 #include "main.h"
 #include "autoplay.h"
+#include "save_data.h"
 
 s32 sNoControllerPluggedIn =
     FALSE; // Looks to be a boolean for whether a controller is plugged in. FALSE if plugged in, and TRUE if not.
@@ -50,6 +51,7 @@ s32 input_init(void) {
     osContStartReadData(&sSIMesgQueue);
     input_assign_players();
     get_platform();
+    save_detect();
 
     sNoControllerPluggedIn = FALSE;
 
@@ -102,7 +104,7 @@ s32 input_update(s32 saveDataFlags, s32 updateRate) {
                 write_save_data(SAVE_DATA_FLAG_WRITE_SAVE_FILE_NUMBER(saveDataFlags), settings);
             }
             if (saveDataFlags & SAVE_DATA_FLAG_ERASE_SAVE_DATA) {
-                erase_save_file(SAVE_DATA_FLAG_WRITE_SAVE_FILE_NUMBER(saveDataFlags), settings);
+                erase_save_file(SAVE_DATA_FLAG_WRITE_SAVE_FILE_NUMBER(saveDataFlags), settings, TRUE);
             }
             //!@bug: These next two if statements check the same bits
             // as the ones used to set the save file number to read from.

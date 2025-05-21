@@ -48,8 +48,6 @@
 #include "usb/usb.h"
 #include "autoplay.h"
 
-u32 loadTime;
-
 /************ .data ************/
 
 s8 sAntiPiracyTriggered = FALSE;
@@ -61,10 +59,6 @@ s16 gLevelLoadTimer = 0;
 s8 gPauseLockTimer = 0; // If this is above zero, the player cannot pause the game.
 s8 gFutureFunLandLevelTarget = FALSE;
 s8 gDmemInvalid = FALSE;
-s16 gNumF3dCmdsPerPlayer[MAXCONTROLLERS] = {3000, 4000, 5000, 5000};
-s16 gNumHudVertsPerPlayer[MAXCONTROLLERS] = {125, 150, 200, 200};
-s16 gNumHudMatPerPlayer[MAXCONTROLLERS] = {200, 300, 400, 400};
-s8 gNumHudTrisPerPlayer[MAXCONTROLLERS] = {12, 12, 12, 12};
 s8 gDrawFrameTimer = 0;
 FadeTransition D_800DD3F4 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_BLACK, 20, 0);
 s32 sLogicUpdateRate = LOGIC_5FPS;
@@ -163,7 +157,6 @@ void thread3_main(UNUSED void *unused) {
 void init_game(void) {
     s32 viMode;
 
-    init_usb_thread();
     gzip_init();
 #ifdef ANTI_TAMPER
     sAntiPiracyTriggered = TRUE;
@@ -188,10 +181,14 @@ void init_game(void) {
 #endif
     video_init(VIDEO_MODE_LOWRES_LPN, &gMainSched);
     init_PI_mesg_queue();
+    if (gDebug) {
+        init_usb_thread();
+    }
     gfxtask_init(&gMainSched);
     audio_init(&gMainSched);
     audspat_init();
     sControllerStatus = input_init();
+    userconfig_read();
     tex_init_textures();
     allocate_object_model_pools();
     allocate_object_pools();
@@ -204,6 +201,9 @@ void init_game(void) {
     load_fonts();
     init_controller_paks();
     init_save_data();
+    vi_change(SCREEN_WIDTH, SCREEN_HEIGHT);
+    sBlackScreenTimer = 12;
+    //save_detect();
     bgload_init();
     init_particle_buffers(4, 4, 110, 48, 32, 0);
     osCreateMesgQueue(&gGameMesgQueue, gGameMesgBuf, 3);
@@ -243,9 +243,6 @@ void main_game_loop(void) {
     const f32 divisor = 1.0f;
     debug_thread(THREAD3_START, 0);
 
-    set_render_printf_background_colour(0, 0, 0, 255);
-    //render_printf("Load Time: %2.3f\n", (f32) loadTime / 1000000.0f);
-
     if (gVideoSkipNextRate) {
         sLogicUpdateRate = LOGIC_60FPS;
         sLogicUpdateRateF = 1.0f;
@@ -272,6 +269,8 @@ void main_game_loop(void) {
             } else if (get_current_map_id() == ASSET_LEVEL_CENTRALAREAHUB) {
                 sLogicUpdateRate = 2;
             } else if (get_current_map_id() == ASSET_LEVEL_SNOWFLAKEMOUNTAINHUB) {
+                sLogicUpdateRate = 3;
+            } else if (get_current_map_id() == ASSET_LEVEL_FIREMOUNTAIN) {
                 sLogicUpdateRate = 3;
             } else {
                 sLogicUpdateRate = 5;
@@ -347,10 +346,10 @@ void main_game_loop(void) {
     debug_thread(THREAD3_END, 0);
     debug_render(&gCurrDisplayList, sLogicUpdateRate);
     //set_render_printf_background_colour(0, 0, 0, 255);
-    //render_printf("Gfx: %d/%d\n", ((u32) gCurrDisplayList - (u32) gDisplayLists[gSPTaskNum]) / sizeof(Gwords), gNumF3dCmdsPerPlayer[get_active_player_count() - 1]);
-    //render_printf("Mtx: %d/%d\n", ((u32) gGameCurrMatrix - (u32) gMatrixHeap[gSPTaskNum]) / sizeof(MatrixS), gNumHudMatPerPlayer[get_active_player_count() - 1]);
-    //render_printf("Vtx: %d/%d\n", ((u32) gGameCurrVertexList - (u32) gVertexHeap[gSPTaskNum]) / sizeof(Vertex), gNumHudVertsPerPlayer[get_active_player_count() - 1]);
-    //render_printf("Tri: %d/%d\n", ((u32) gGameCurrTriList - (u32) gTriangleHeap[gSPTaskNum]) / sizeof(Triangle), gNumHudTrisPerPlayer[get_active_player_count() - 1]);
+    //render_printf("Gfx: %d/%d\n", ((u32) gCurrDisplayList - (u32) gDisplayLists[gSPTaskNum]) / sizeof(Gwords), NUM_GFX_COMMANDS);
+    //render_printf("Mtx: %d/%d\n", ((u32) gGameCurrMatrix - (u32) gMatrixHeap[gSPTaskNum]) / sizeof(MatrixS), NUM_MTX_COMMANDS);
+    //render_printf("Vtx: %d/%d\n", ((u32) gGameCurrVertexList - (u32) gVertexHeap[gSPTaskNum]) / sizeof(Vertex), NUM_VTX_COMMANDS);
+    //render_printf("Tri: %d/%d\n", ((u32) gGameCurrTriList - (u32) gTriangleHeap[gSPTaskNum]) / sizeof(Triangle), NUM_TRI_COMMANDS);
 
     gDPFullSync(gCurrDisplayList++);
     gSPEndDisplayList(gCurrDisplayList++);
@@ -429,20 +428,28 @@ void load_next_ingame_level(s32 numPlayers, s32 trackID, Vehicle vehicle) {
  * Used when ingame.
  */
 void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicleId) {
-    u32 first = osGetCount();
-    alloc_displaylist_heap(numberOfPlayers);
+    u32 first;
+    if (gDebug) {
+        first = osGetCount();
+        bzero(&gDebug->loading, sizeof(DebugLoadVars));
+        gDebug->loading.active = TRUE;
+    }
     mempool_free_timer(0);
-    camera_init();
+    cam_init();
     //load_game_text_table();
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, gGameCurrentCutscene);
-    hud_init(get_viewport_count());
+    hud_init(cam_get_viewport_layout());
     //init_particle_buffers(8, 16, 150, 100, 50, 0);
     ainode_update();
     osSetTime(0);
     mempool_free_timer(2);
     rumble_init(TRUE);
     gShowBG = bgdraw_init();
-    loadTime = OS_CYCLES_TO_USEC(osGetCount() - first);
+    if (gDebug) {
+        gDebug->loading.total = (f32) (osGetCount() - first)  / 46875000.0f;
+        debug_printf("Level [%s] loaded in %2.3fs.\n", get_level_name(levelId), gDebug->loading.total);
+        gDebug->loading.active = FALSE;
+    }
 }
 
 /**
@@ -865,13 +872,19 @@ GameMode get_game_mode(void) {
  * Used for every kind of menu that's not ingame.
  */
 void load_menu_with_level_background(s32 menuId, s32 levelId, s32 cutsceneId) {
-    alloc_displaylist_heap(get_active_player_count() - 1);
+    s32 playerCount;
+
+    if (gCurrentMenuId == MENU_OPTIONS) {
+        playerCount = FOUR_PLAYERS;
+    } else {
+        playerCount = get_active_player_count() - 1;
+    }
     gGameMode = GAMEMODE_MENU;
     gRenderMenu = TRUE;
     sndp_set_group_volume(0, 32767);
     sndp_set_group_volume(1, 32767);
     sndp_set_group_volume(2, 32767);
-    camera_init();
+    cam_init();
 
     if (!gIsLoading) {
         gIsLoading = FALSE;
@@ -915,17 +928,26 @@ Vehicle get_level_default_vehicle(void) {
  * Used for menus.
  */
 void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicleId, s32 cutsceneId) {
-    u32 first = osGetCount();
+    u32 first;
+    if (gDebug) {
+        first = osGetCount();
+        bzero(&gDebug->loading, sizeof(DebugLoadVars));
+        gDebug->loading.active = TRUE;
+    }
     mempool_free_timer(0);
-    camera_init();
+    cam_init();
     //load_game_text_table();
     load_level(levelId, numberOfPlayers, entranceId, vehicleId, cutsceneId);
-    hud_init(get_viewport_count());
+    hud_init(cam_get_viewport_layout());
     ainode_update();
     osSetTime(0);
     mempool_free_timer(2);
     gShowBG = bgdraw_init();
-    loadTime = OS_CYCLES_TO_USEC(osGetCount() - first);
+    if (gDebug) {
+        gDebug->loading.total = (f32) (osGetCount() - first)  / 46875000.0f;
+        debug_printf("Level [%s] (Menu) loaded in %2.3fs.\n", get_level_name(levelId), gDebug->loading.total);
+        gDebug->loading.active = FALSE;
+    }
 }
 
 /**
@@ -937,7 +959,9 @@ void unload_level_menu(void) {
         gIsLoading = TRUE;
         mempool_free_timer(0);
         clear_audio_and_track();
-        transition_begin(&D_800DD3F4);
+        if (gCurrentMenuId != MENU_VIDEO_OPTIONS) {
+            transition_begin(&D_800DD3F4);
+        }
         //reset_particles();
         hud_free();
         mempool_free_timer(2);
@@ -951,9 +975,11 @@ void unload_level_menu(void) {
  */
 void update_menu_scene(s32 updateRate) {
     if (bgload_active() == FALSE) {
-        obj_update(updateRate);
-        gParticlePtrList_flush();
-        ainode_update();
+        if (gMenuStopUpdating == FALSE) {
+            obj_update(updateRate);
+            gParticlePtrList_flush();
+            ainode_update();
+        }
         render_scene(&gCurrDisplayList, &gGameCurrMatrix, &gGameCurrVertexList, &gGameCurrTriList, updateRate);
         process_onscreen_textbox(updateRate);
         rdp_init(&gCurrDisplayList);
@@ -1369,54 +1395,6 @@ void mark_write_eeprom_settings(void) {
     gSaveDataFlags |= SAVE_DATA_FLAG_WRITE_EEPROM_SETTINGS; // Set bit 9
 }
 
-/**
- * Allocates an amount of memory for the number of players passed in.
- */
-void alloc_displaylist_heap(s32 numberOfPlayers) {
-    s32 num;
-    s32 totalSize;
-    s32 gfxAdd;
-
-    if (gDebug) {
-        gfxAdd = 1500;
-    } else {
-        gfxAdd = 0;
-    }
-
-    if (numberOfPlayers != gPrevPlayerCount) {
-        gPrevPlayerCount = numberOfPlayers;
-        num = numberOfPlayers;
-        mempool_free_timer(0);
-        mempool_free(gDisplayLists[0]);
-        mempool_free(gDisplayLists[1]);
-        totalSize = (((gNumF3dCmdsPerPlayer[num] + gfxAdd) * sizeof(Gwords))) + ((gNumHudMatPerPlayer[num] * sizeof(Matrix))) +
-                    (((gNumHudVertsPerPlayer[num] + gfxAdd) * sizeof(Vertex))) + ((gNumHudTrisPerPlayer[num] * sizeof(Triangle)));
-        gDisplayLists[0] = (Gfx *) mempool_alloc_fixed(totalSize, (u8 *) gDisplayLists[0], PP_RAM_CMDBUF, FALSE);
-        gDisplayLists[1] = (Gfx *) mempool_alloc_fixed(totalSize, (u8 *) gDisplayLists[1], PP_RAM_CMDBUF, FALSE);
-        if ((gDisplayLists[0] == NULL) || gDisplayLists[1] == NULL) {
-            if (gDisplayLists[0] != NULL) {
-                mempool_free(gDisplayLists[0]);
-                gDisplayLists[0] = NULL;
-            }
-            if (gDisplayLists[1] != NULL) {
-                mempool_free(gDisplayLists[1]);
-                gDisplayLists[1] = NULL;
-            }
-            default_alloc_displaylist_heap();
-        }
-        gMatrixHeap[0] = (MatrixS *) ((u8 *) gDisplayLists[0] + (((gNumF3dCmdsPerPlayer[num] + gfxAdd) * sizeof(Gwords))));
-        gTriangleHeap[0] = (Triangle *) ((u8 *) gMatrixHeap[0] + ((gNumHudMatPerPlayer[num] * sizeof(Matrix))));
-        gVertexHeap[0] = (Vertex *) ((u8 *) gTriangleHeap[0] + ((gNumHudTrisPerPlayer[num] * sizeof(Triangle))));
-        gMatrixHeap[1] = (MatrixS *) ((u8 *) gDisplayLists[1] + (((gNumF3dCmdsPerPlayer[num] + gfxAdd) * sizeof(Gwords))));
-        gTriangleHeap[1] = (Triangle *) ((u8 *) gMatrixHeap[1] + ((gNumHudMatPerPlayer[num] * sizeof(Matrix))));
-        gVertexHeap[1] = (Vertex *) ((u8 *) gTriangleHeap[1] + ((gNumHudTrisPerPlayer[num] * sizeof(Triangle))));
-        mempool_free_timer(2);
-    }
-
-    gDPFullSync(gCurrDisplayList++);
-    gSPEndDisplayList(gCurrDisplayList++);
-}
-
 #ifdef ANTI_TAMPER
 /**
  * Returns FALSE if dmem doesn't begin with a -1. This is checked on every main game loop iteration.
@@ -1438,27 +1416,27 @@ void default_alloc_displaylist_heap(void) {
     s32 gfxAdd;
 
     if (gDebug) {
-        gfxAdd = 1500;
+        gfxAdd = NUM_DEBUG_GFX;
     } else {
         gfxAdd = 0;
     }
 
     numberOfPlayers = FOUR_PLAYERS;
     gPrevPlayerCount = numberOfPlayers;
-    totalSize = ((gNumF3dCmdsPerPlayer[numberOfPlayers] + gfxAdd) * sizeof(Gwords)) +
-                (gNumHudMatPerPlayer[numberOfPlayers] * sizeof(Matrix)) +
-                (gNumHudVertsPerPlayer[numberOfPlayers] * sizeof(Vertex)) +
-                (gNumHudTrisPerPlayer[numberOfPlayers] * sizeof(Triangle));
+    totalSize = ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)) +
+                (NUM_MTX_COMMANDS * sizeof(Matrix)) +
+                (NUM_VTX_COMMANDS * sizeof(Vertex)) +
+                (NUM_TRI_COMMANDS * sizeof(Triangle));
 
     gDisplayLists[0] = (Gfx *) mempool_alloc_safe(totalSize, PP_RAM_CMDBUF);
-    gMatrixHeap[0] = (MatrixS *) ((u8 *) gDisplayLists[0] + ((gNumF3dCmdsPerPlayer[numberOfPlayers] + gfxAdd) * sizeof(Gwords)));
-    gVertexHeap[0] = (Vertex *) ((u8 *) gMatrixHeap[0] + (gNumHudMatPerPlayer[numberOfPlayers] * sizeof(Matrix)));
-    gTriangleHeap[0] = (Triangle *) ((u8 *) gVertexHeap[0] + (gNumHudVertsPerPlayer[numberOfPlayers] * sizeof(Vertex)));
+    gMatrixHeap[0] = (MatrixS *) ((u8 *) gDisplayLists[0] + ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)));
+    gVertexHeap[0] = (Vertex *) ((u8 *) gMatrixHeap[0] + (NUM_MTX_COMMANDS * sizeof(Matrix)));
+    gTriangleHeap[0] = (Triangle *) ((u8 *) gVertexHeap[0] + (NUM_VTX_COMMANDS * sizeof(Vertex)));
 
     gDisplayLists[1] = (Gfx *) mempool_alloc_safe(totalSize, PP_RAM_CMDBUF);
-    gMatrixHeap[1] = (MatrixS *) ((u8 *) gDisplayLists[1] + ((gNumF3dCmdsPerPlayer[numberOfPlayers] + gfxAdd) * sizeof(Gwords)));
-    gVertexHeap[1] = (Vertex *) ((u8 *) gMatrixHeap[1] + (gNumHudMatPerPlayer[numberOfPlayers] * sizeof(Matrix)));
-    gTriangleHeap[1] = (Triangle *) ((u8 *) gVertexHeap[1] + (gNumHudVertsPerPlayer[numberOfPlayers] * sizeof(Vertex)));
+    gMatrixHeap[1] = (MatrixS *) ((u8 *) gDisplayLists[1] + ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)));
+    gVertexHeap[1] = (Vertex *) ((u8 *) gMatrixHeap[1] + (NUM_MTX_COMMANDS * sizeof(Matrix)));
+    gTriangleHeap[1] = (Triangle *) ((u8 *) gVertexHeap[1] + (NUM_VTX_COMMANDS * sizeof(Vertex)));
 }
 
 /**
@@ -1597,6 +1575,12 @@ void mode_intro(void) {
     sBootDelayTimer++;
 #else
     sBootDelayTimer = 8;
+#endif
+#if EXPANSION_PAK_SUPPORT == 2
+    if (gExpansionPak == FALSE) {
+        load_menu_with_level_background(MENU_EXPANSION_ERROR, ASSET_LEVEL_OPTIONSBACKGROUND, 0);
+        return;
+    }
 #endif
     if (sBootDelayTimer >= 8) {
         load_menu_with_level_background(BOOT_LVL, ASSET_LEVEL_OPTIONSBACKGROUND, 2);

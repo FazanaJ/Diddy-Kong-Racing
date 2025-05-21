@@ -49,7 +49,8 @@ typedef struct ConfigBits {
     unsigned sameStats : 1;
     unsigned screenRegion : 2;
     // Graphics
-    unsigned antiAliasing : 2;
+    unsigned screenWidth : 2;
+    signed antiAliasing : 2;
     signed screenPosX : 5;
     signed screenPosY : 5;
     unsigned screenRes : 3;
@@ -73,7 +74,8 @@ typedef struct UserConfig {
     s8 sameStats;       // All characters use T.T stats.
     s8 screenRegion;    // What VI mode to base the game off of.
     // Graphics
-    s8 antiAliasing;     // Anti Aliasing mode
+    s8 screenWidth;     // Widescreen or no
+    s8 antiAliasing;    // Anti Aliasing mode
     s8 screenPosX;      // For sub 320 wide framebuffers, shifts it horizontally
     s8 screenPosY;      // For sub 240 high framebuffers, shifts it vertically
     s8 screenRes;       // Framebuffer size
@@ -288,7 +290,6 @@ extern u8 *main_BSS_START[];
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS
 #define PERF_TOTAL (NUM_PERF_ITERATIONS + 1)
 #define NUM_THREAD_ITERATIONS 12
-#define NUM_LOG_CHARACTERS 2048
 
 typedef u32 DebugTimer[NUM_PERF_ITERATIONS + 2];
 
@@ -299,6 +300,17 @@ typedef struct DebugMiscVars {
     u16 texLoads;
 } DebugMiscVars;
 
+typedef struct DebugLoadVars {
+    u8 active;
+    f32 dma;
+    f32 decompress;
+    f32 objectSpawns;
+    f32 trackBuild;
+    f32 malloc;
+    f32 unknown;
+    f32 total;
+} DebugLoadVars;
+
 typedef struct DebugData {
     u8 enabled;
     u8 pageCurrent;
@@ -307,8 +319,6 @@ typedef struct DebugData {
     u8 pageViewMode;
     u8 pageMenuOpen;
     u8 pauseGame;
-    u8 logLine;
-    u8 logLevel;
     u8 iter;
     u8 prevIter;
     u8 rspGfxIter;
@@ -318,9 +328,6 @@ typedef struct DebugData {
 
     s16 pageScroll;
     s16 pageScrollMax;
-    u16 logLen;
-    u16 logStart;
-    char logText[NUM_LOG_CHARACTERS];
 
     u32 cpuTotal;
     u32 rspTotal;
@@ -333,6 +340,7 @@ typedef struct DebugData {
     u32 ramTotal;
 
     DebugMiscVars misc;
+    DebugLoadVars loading;
 } DebugData;
 
 typedef struct DebugPage {
@@ -359,6 +367,8 @@ s32 debug_tag_index(s32 colourTag);
 void debug_printf(const char* message, ...);
 void crash_assert(s32 cond, const char *str, ...);
 void debug_ram_dump(void);
+void debug_fillrect(Gfx **gfx, s32 x1, s32 y1, s32 x2, s32 y2, u32 colour);
+void debug_dump_hex(u8 *var, s32 size);
 
 #define DEBUG_VAR(x, value) \
     { if (gDebug) {(x = value);}}

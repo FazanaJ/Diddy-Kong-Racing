@@ -118,6 +118,9 @@ typedef struct unk80075000 {
     unk80075000_body data[1];
 } unk80075000;
 
+s32 userconfig_read(void);
+s32 userconfig_write(void);
+s32 save_detect(void);
 u8 input_get_id(s32 controllerIndex);
 void rumble_init(u8 canRumble);
 s32 rumble_exists(s16 controllerIndex);
@@ -162,7 +165,7 @@ void func_80072E28(s32 arg0, u32 arg1);
 s32 func_80072C54(s32 arg0);
 void populate_settings_from_save_data(Settings *settings, u8 *saveData);
 s32 read_save_file(s32 saveFileNum, Settings *settings);
-void erase_save_file(s32 saveFileNum, Settings *settings);
+void erase_save_file(s32 saveFileNum, Settings *settings, s32 writeBuf);
 SIDeviceStatus func_800756D4(s32 controllerIndex, u8 *levelIDs, u8 *vehicleIDs, u8 *characterIDs, u16 *checksumIDs);
 SIDeviceStatus get_file_extension(s32 controllerIndex, s32 fileType, char *fileExt);
 void func_80073588(Settings *settings, u8 *saveData, u8 arg2);

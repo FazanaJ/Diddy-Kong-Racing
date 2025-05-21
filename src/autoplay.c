@@ -26,6 +26,7 @@ extern s32 gMenuStage;
 extern s32 gMultiplayerSelectedNumberOfRacers;
 extern s32 gTrackSelectCursorX;
 extern s32 gTrackSelectCursorY;
+extern s32 gMenuCurIndex;
 
 u8 gAutoplayTest = AUTOPLAY_DEFAULT;
 
@@ -933,15 +934,16 @@ void autoplay_multiplayer(s32 playerCount) {
     if (get_game_mode() == GAMEMODE_MENU) {
         switch (gCurrentMenuId) {
             case MENU_GAME_SELECT:
-                /*sTransform = 0;
-                sCharSelectInputs = 0;
-                sFileSelectInputs = 0;
+                    sAutoplayTrackStage = 0;
+                    sAutoplayActiveTrack = 0;
                 if (sControllerFlip) {
-                    gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
-                    gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
-                } else {
-                    gControllerButtonsReleased[sPlayerID[0]] |= A_BUTTON;
-                }*/
+                    if (gMenuCurIndex != 2) {
+                        gControllerCurrData[sPlayerID[0]].stick_y = -70;
+                    } else {
+                        gControllerCurrData[sPlayerID[0]].button |= A_BUTTON;
+                        gControllerButtonsPressed[sPlayerID[0]] |= A_BUTTON;
+                    }
+                }
                 break;
             case MENU_CHARACTER_SELECT:
                 autoplay_charselect_multi(playerCount);

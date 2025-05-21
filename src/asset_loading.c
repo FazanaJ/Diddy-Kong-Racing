@@ -208,21 +208,14 @@ void dmacopy(u32 romOffset, u32 ramAddress, s32 numBytes) {
 // Looks like v2 ROMs made an alternate version of this function, and this is the original.
 void dmacopy_internal(u32 romOffset, u32 ramAddress, s32 numBytes) {
 #endif
+    u32 first = osGetCount();
     OSMesg dmaMesg;
-    s32 numBytesToDMA;
 
     osInvalDCache((u32 *) ramAddress, numBytes);
-    numBytesToDMA = MAX_TRANSFER_SIZE;
-    while (numBytes > 0) {
-        if (numBytes < numBytesToDMA) {
-            numBytesToDMA = numBytes;
-        }
-        osPiStartDma(&gAssetsDmaIoMesg, OS_MESG_PRI_NORMAL, OS_READ, romOffset, (u32 *) ramAddress, numBytesToDMA,
-                     &gDmaMesgQueue);
-        osRecvMesg(&gDmaMesgQueue, &dmaMesg, OS_MESG_BLOCK);
-        numBytes -= numBytesToDMA;
-        romOffset += numBytesToDMA;
-        ramAddress += numBytesToDMA;
+    osPiStartDma(&gAssetsDmaIoMesg, OS_MESG_PRI_NORMAL, OS_READ, romOffset, (u32 *) ramAddress, numBytes, &gDmaMesgQueue);
+    osRecvMesg(&gDmaMesgQueue, &dmaMesg, OS_MESG_BLOCK);
+    if (gDebug && gDebug->loading.active) {
+        gDebug->loading.dma += (f32) (osGetCount() - first) / 46875000.0f;
     }
 }
 
