@@ -222,6 +222,7 @@ typedef struct SaveBuffer {
     CourseRecords fastLaps;
     CourseRecords courseTimes;
     ConfigBits videoConfig;
+    u32 testPatch[2];
 } SaveBuffer ALIGNED8;
 
 // Eeprom works in 8 byte blocks, so divide by 8 for those functions.
@@ -231,6 +232,7 @@ typedef struct SaveBuffer {
 #define FASTEST_LAPS_START      (CONFIG_START + sizeof(SaveConfig))
 #define COURSE_TIMES_START      (FASTEST_LAPS_START + sizeof(CourseRecords))
 #define VIDEOCONFIG_START       (COURSE_TIMES_START + sizeof(CourseRecords))
+#define TESTPATCH_START         (VIDEOCONFIG_START + sizeof(ConfigBits))
 #define SAVE_SIZE               (sizeof(SaveBuffer))
 
 #endif

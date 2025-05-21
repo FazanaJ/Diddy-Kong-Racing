@@ -623,7 +623,6 @@ void mode_game(s32 updateRate) {
                 break;
         }
     }
-    rdp_init(&gCurrDisplayList);
     divider_draw(&gCurrDisplayList);
     hud_render_general(&gCurrDisplayList, &gGameCurrMatrix, &gGameCurrVertexList, updateRate);
     divider_clear_coverage(&gCurrDisplayList);

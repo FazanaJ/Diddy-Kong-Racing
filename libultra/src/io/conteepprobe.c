@@ -2,6 +2,7 @@
 #include "PRinternal/siint.h"
 #include "PRinternal/piint.h"
 #include "src/main.h"
+#include "save_layout.h"
 
 #define SRAM_START_ADDR         0x08000000
 #define SRAM_SIZE               0x8000
@@ -81,6 +82,7 @@ s32 osEPiStartDma(OSPiHandle* pihandle, OSIoMesg* mb, s32 direction) {
 }
 
 int nuPiInitSram(void) {
+    u32 test[2];
     if (sSramInit) {
         return 2;
     }
@@ -118,6 +120,15 @@ int nuPiInitSram(void) {
     /* Put the SramHandle onto PiTable*/
     osEPiLinkHandle(&SramHandle);
     nuPiSramHandle = &SramHandle;
+
+    test[0] = 0x12345678;
+    nuPiReadWriteSram(TESTPATCH_START, &test, 8, OS_WRITE);
+    nuPiReadWriteSram(TESTPATCH_START, &test, 8, OS_READ);
+
+    if (test[0] != 0x12345678) {
+        return 0;
+    }
+
     sSramInit = TRUE;
 	return 1;
 }
