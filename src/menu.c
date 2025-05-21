@@ -7581,6 +7581,20 @@ void fileselect_render(UNUSED s32 updateRate) {
     set_text_font(ASSET_FONTS_FUNFONT);
     set_text_background_colour(0, 0, 0, 0);
     set_text_colour(255, 255, 255, 0, 255);
+    if (save_detect() == 0) {
+
+#if EEP4K
+        char *str = "EEP4K NOT DETECTED";
+#elif EEP16K
+        char *str = "EEP16K NOT DETECTED";
+#elif SRAM
+        char *str = "SRAM NOT DETECTED";
+#elif FLASH
+        char *str = "FLASHRAM NOT DETECTED";
+#endif
+        draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH / 2, 48, str, ALIGN_TOP_CENTER);
+        draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH / 2, 64, "GAME WILL NOT SAVE", ALIGN_TOP_CENTER);
+    }
     for (i = 0; i < NUMBER_OF_SAVE_FILES; i++) {
         var_s2 = FALSE;
         if (gFileCopy) {

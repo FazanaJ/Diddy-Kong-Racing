@@ -815,7 +815,8 @@ s32 save_detect(void) {
     #elif FLASHRAM == 1
         status = ((u32) osFlashInit()) & 1;
     #endif
-        //gSaveInit = TRUE;
+        debug_printf("%d\n", status);
+        gSaveInit = TRUE;
         if (status == 0) {
             gSaveMissing = TRUE;
             debug_printf("Save type unavailable.\n");
@@ -876,7 +877,8 @@ s32 read_save_file(s32 saveFileNum, Settings *settings) {
     s32 ret;
 
     if (save_detect() == 0) {
-        return -1;
+        erase_save_file(saveFileNum, settings, FALSE);
+        return settings->newGame;
     }
     startingAddress = SAVE_START + (sizeof(SaveFile) * saveFileNum);
     saveData = mempool_alloc_safe(sizeof(SaveFile), PP_RAM_SAVES);
@@ -899,10 +901,6 @@ void erase_save_file(s32 saveFileNum, Settings *settings, s32 writeBuf) {
     s32 worldCount;
     s32 i;
 
-    if (save_detect() == 0) {
-        return;
-    }
-
     get_number_of_levels_and_worlds(&levelCount, &worldCount);
     for (i = 0; i < levelCount; i++) {
         settings->courseFlagsPtr[i] = 0;
@@ -915,6 +913,11 @@ void erase_save_file(s32 saveFileNum, Settings *settings, s32 writeBuf) {
     settings->tajFlags = 0;
     settings->cutsceneFlags = 0;
     settings->newGame = TRUE;
+    
+    if (save_detect() == 0) {
+        return;
+    }
+    
     if (writeBuf) {
         startingAddress = SAVE_START + (sizeof(SaveFile) * saveFileNum);
         alloc = mempool_alloc_safe(sizeof(SaveFile), PP_RAM_SAVES);
