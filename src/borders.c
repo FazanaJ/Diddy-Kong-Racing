@@ -27,6 +27,7 @@ void divider_draw(Gfx **dList) {
     xOffset = width / 256;
     width += 0; // Fake match?
     yOffset = height / 128;
+    gDPPipeSync((*dList)++);
     gDPSetCycleType((*dList)++, G_CYC_FILL);
     gDPSetFillColor((*dList)++, GPACK_RGBA5551(0, 0, 0, 1) << 16 | GPACK_RGBA5551(0, 0, 0, 1)); // Black fill color
     switch (cam_get_viewport_layout()) {

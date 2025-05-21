@@ -290,7 +290,6 @@ extern u8 *main_BSS_START[];
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS
 #define PERF_TOTAL (NUM_PERF_ITERATIONS + 1)
 #define NUM_THREAD_ITERATIONS 12
-#define NUM_LOG_CHARACTERS 2048
 
 typedef u32 DebugTimer[NUM_PERF_ITERATIONS + 2];
 
@@ -320,8 +319,6 @@ typedef struct DebugData {
     u8 pageViewMode;
     u8 pageMenuOpen;
     u8 pauseGame;
-    u8 logLine;
-    u8 logLevel;
     u8 iter;
     u8 prevIter;
     u8 rspGfxIter;
@@ -331,9 +328,6 @@ typedef struct DebugData {
 
     s16 pageScroll;
     s16 pageScrollMax;
-    u16 logLen;
-    u16 logStart;
-    char logText[NUM_LOG_CHARACTERS];
 
     u32 cpuTotal;
     u32 rspTotal;

@@ -377,6 +377,7 @@ void bgdraw_render(Gfx **dList, MatrixS **mtx, s32 drawBG) {
  */
 void rdp_init(Gfx **dList) {
     s32 width = GET_VIDEO_WIDTH(fb_size());
+    gDPPipeSync((*dList)++);
     gDPSetColorImage((*dList)++, G_IM_FMT_RGBA, gBitDepth, width, SEGMENT_FRAMEBUFFER << 24);
     gDPSetDepthImage((*dList)++, SEGMENT_ZBUFFER << 24);
     //gSPDisplayList((*dList)++, dRdpInit);

@@ -270,6 +270,8 @@ void main_game_loop(void) {
                 sLogicUpdateRate = 2;
             } else if (get_current_map_id() == ASSET_LEVEL_SNOWFLAKEMOUNTAINHUB) {
                 sLogicUpdateRate = 3;
+            } else if (get_current_map_id() == ASSET_LEVEL_FIREMOUNTAIN) {
+                sLogicUpdateRate = 3;
             } else {
                 sLogicUpdateRate = 5;
             }

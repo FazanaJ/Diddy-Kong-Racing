@@ -3838,16 +3838,10 @@ void menu_audio_options_init(void) {
     func_8007FFEC(2);
     gMusicVolumeSliderValue = music_volume_config();
     gSfxVolumeSliderValue = sndp_get_global_volume();
-    if (gActiveMagicCodes & CHEAT_MUSIC_MENU) { // Check if "JUKEBOX" cheat is active
-        gAudioMenuStrings[6].text = gMusicTestString;
-        gAudioMenuStrings[3].y = 212;
-        music_voicelimit_set(32);
-        gMenuStage = 5;
-    } else {
-        gAudioMenuStrings[6].text = NULL;
-        gAudioMenuStrings[3].y = 192;
-        gMenuStage = 4;
-    }
+    gAudioMenuStrings[6].text = gMusicTestString;
+    gAudioMenuStrings[3].y = 212;
+    music_voicelimit_set(32);
+    gMenuStage = 5;
 }
 
 // Probably soundoption_render
@@ -6882,7 +6876,7 @@ void charselect_pick(void) {
                        SOUND_VOICE_CHARACTER_SELECTED,
                    &gMenuSoundMasks[characterSelected]);
         if (gNumberOfActivePlayers > 2 ||
-            (gNumberOfActivePlayers > 1 && !(gActiveMagicCodes & CHEAT_TWO_PLAYER_ADVENTURE)) ||
+            (gNumberOfActivePlayers > 1) ||
             gEnteredCharSelectFrom == 1) {
             music_fade(-128);
         }
@@ -7074,9 +7068,9 @@ s32 menu_character_select_loop(s32 updateRate) {
             confirmOffset = 0;
             if (gEnteredCharSelectFrom == 0) {
                 confirmOffset++;
-                if (gActiveMagicCodes & CHEAT_TWO_PLAYER_ADVENTURE) {
+                //if (gActiveMagicCodes & CHEAT_TWO_PLAYER_ADVENTURE) {
                     confirmOffset++;
-                }
+                //}
             }
             charselect_free();
 
@@ -8440,7 +8434,7 @@ s32 menu_track_select_loop(s32 updateRate) {
         menu_track_select_unload();
         gTrackSpecifiedWithTrackIdToLoad = 0;
         if (gNumberOfActivePlayers >= 3 ||
-            (gNumberOfActivePlayers == 2 && !(gActiveMagicCodes & CHEAT_TWO_PLAYER_ADVENTURE))) {
+            (gNumberOfActivePlayers == 2)) {
             cutsceneId = 0;
             if (is_drumstick_unlocked()) {
                 cutsceneId = 1;
