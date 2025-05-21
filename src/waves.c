@@ -954,7 +954,7 @@ void func_800BA8E4(Gfx **dList, MatrixS **mtx, s32 viewportID) {
             wave_load_material(tex1, 1);
             wave_load_material(tex2, 0);
             gDPSetCombineMode(gWaveDL++, DKR_CC_UNK14, DKR_CC_UNK15);
-            if (TEX_FORMAT(tex1->format) == TEX_FORMAT_RGBA32 && (cam_get_viewport_layout() <= VIEWPORTS_COUNT_1_PLAYER || gConfig.multiWaves)) {
+            if (TEX_FORMAT(tex1->format) == TEX_FORMAT_RGBA32 && (cam_get_viewport_layout() <= VIEWPORT_LAYOUT_1_PLAYER || gConfig.multiWaves)) {
                 mode = DKR_OML_COMMON | G_RM_ZB_CLD_SURF2;
             } else {
                 mode = DKR_OML_COMMON | G_RM_ZB_OPA_SURF2;

@@ -201,6 +201,8 @@ void init_game(void) {
     load_fonts();
     init_controller_paks();
     init_save_data();
+    vi_change(SCREEN_WIDTH, SCREEN_HEIGHT);
+    sBlackScreenTimer = 12;
     //save_detect();
     bgload_init();
     init_particle_buffers(4, 4, 110, 48, 32, 0);

@@ -75,7 +75,7 @@ u8 gCameraZoomLevels[8] = { 0, 0, 0, 0, 0, 0, 0, 0 };
 /************ .bss ************/
 
 f32 gSpriteWidth;
-ObjectSegment gCameras[8];
+Camera gCameras[8];
 s32 gViewportLayout;
 s32 gActiveCameraID;
 s32 gNumCameras;

@@ -57,7 +57,7 @@ void video_init(s32 videoModeIndex, OSSched *sc) {
     gVideoCurrFbIndex = 1;
     fb_swap();
     //fb_init_vi();
-    vi_change(SCREEN_WIDTH, SCREEN_HEIGHT);
+    //vi_change(SCREEN_WIDTH, SCREEN_HEIGHT);
     sBlackScreenTimer = 12;
     gVideoDeltaCounter = 0;
     D_801262E4 = 3;

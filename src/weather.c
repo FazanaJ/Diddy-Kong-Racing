@@ -261,7 +261,7 @@ void weather_reset(s32 weatherType, s32 density, s32 velX, s32 velY, s32 velZ, s
     Vec3i *pos;
     s32 playerCount;
 
-    playerCount = (get_viewport_count() % 4) + 1;
+    playerCount = (cam_get_viewport_layout() % 4) + 1;
     weather_free();
     for (i = 0; i < playerCount; i++) {
         gWeather[i].velX = velX;

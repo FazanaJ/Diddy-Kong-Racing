@@ -1941,9 +1941,9 @@ char *gConPakAdvSavePrefix = " (ADV.";
 /*******************************/
 
 char *sVideoOptionsString[3][4] = {
-    {"VIDEO OPTIONS", "VIDEO OPTIONS", "VIDEO OPTIONS", "VIDEO OPTIONS"},
-    {"GENERAL", "GENERAL", "GENERAL", "GENERAL"},
-    {"MULTIPLAYER", "MULTIPLAYER", "MULTIPLAYER", "MULTIPLAYER"}
+    {"VIDEO OPTIONS", "VIDEO OPTIONEN", "OPTIONS VIDEO", "JAPANESE"},
+    {"GENERAL", "ALLGEMEINE", "GENERAL", "JAPANESE"},
+    {"MULTIPLAYER", "MULTIPLAYER", "MULTIJOUERS", "JAPANESE"}
 };
 
 void load_menu_text(s32 language) {
@@ -2020,7 +2020,7 @@ void load_menu_text(s32 language) {
     gRecordTimesMenuElements[2].t.asciiText = menuText[ASSET_MENU_TEXT_BESTTIME];    // "BEST TIME"
     gRecordTimesMenuElements[5].t.asciiText = menuText[ASSET_MENU_TEXT_BESTLAP];     // "BEST LAP"
     gOptionMenuStrings[0] = menuText[ASSET_MENU_TEXT_LANGUAGE];                      // "ENGLISH"
-    gOptionMenuStrings[1] = sVideoOptionsString[0][0];
+    gOptionMenuStrings[1] = sVideoOptionsString[0][language];
     gOptionMenuStrings[2] = menuText[ASSET_MENU_TEXT_AUDIOOPTIONS];                          // "AUDIO OPTIONS"
     gOptionMenuStrings[3] = menuText[ASSET_MENU_TEXT_SAVEOPTIONS];                           // "SAVE OPTIONS"
     gOptionMenuStrings[4] = menuText[ASSET_MENU_TEXT_MAGICCODES];                            // "MAGIC CODES"
@@ -3817,6 +3817,7 @@ s32 menu_options_loop(s32 updateRate) {
  * Unloads all assets associated with the options menu.
  */
 void optionscreen_free(void) {
+    mark_write_eeprom_settings();
 }
 
 /**
@@ -10056,6 +10057,7 @@ void menu_pause_init(void) {
     s32 raceType;
     s32 i;
     Settings *settings;
+    s32 lang = get_language();
 
     rumble_init(FALSE);
     settings = get_settings();
@@ -10100,12 +10102,150 @@ void menu_pause_init(void) {
     } else {
         gMenuOptionText[gMenuOptionCap++] = gMenuText[ASSET_MENU_TEXT_QUITTROPHYRACE];
     }
+    gMenuOptionText[gMenuOptionCap++] = sVideoOptionsString[0][lang];
     gMenuOption = 0;
     gOptionBlinkTimer = 0;
     gMenuDelay = 0;
     gIgnorePlayerInputTime = 1;
     gMenuSubOption = 0;
     reset_controller_sticks();
+}
+
+typedef struct ConfigOptionEntry {
+    char *name;
+    s8 *option;
+    u8 flags;
+    u8 stringOffset;
+    s8 minValue;
+    s8 maxValue;
+    void (*func)();
+} ConfigOptionEntry;
+
+enum ConfigOptionFlags {
+    OPT_NONE,
+    OPT_EX_PAK = (1 << 0), // Requires the expansion pak.
+    OPT_NO_EMU = (1 << 1), // Hidden on emulator.
+    OPT_NUMBER = (1 << 2), // Displays the value of the option instead of a string.
+    OPT_PAL = (1 << 3),    // Display a different set of values for PAL users.
+    OPT_HIDDEN = (1 << 4), // Just hide it unconditionally, for debug purposes.
+#if SCREEN_HEIGHT >= 240
+    OPT_240 = (1 << 4), // Just hide it unconditionally, for debug purposes.
+#else
+    OPT_240 = (1 << 5), // Just hide it unconditionally, for debug purposes.
+#endif
+    OPT_ARES = (1 << 6), // Visible on accurate emulators.
+};
+
+
+s32 gPauseOptionScroll;
+s32 gOptionLoadTimer = 0;
+s8 gOptionPlayerCount = 0;
+s8 gOptionSetTimer;
+s8 gOptionSetMenuUpdate;
+s8 gOptionRefreshObjects;
+u8 gPauseSubmenu = 0;
+extern f32 gFPS;
+
+void config_reset_players(void) {
+    gOptionLoadTimer = 1;
+}
+
+void video_refresh(void) {
+    vi_change(SCREEN_WIDTH, SCREEN_HEIGHT);
+}
+
+ConfigOptionEntry gOptionMenu[] = {
+    { "Screen", &gConfig.screenWidth, OPT_NONE, 5, 0, 2, video_refresh },
+    { "Anti Aliasing", &gConfig.antiAliasing, OPT_NONE, 2, -1, 1, video_refresh },
+    { "Dedither", &gConfig.dedither, OPT_NONE, 0, 0, 1, vi_dither },
+    //{ "Terrain Quality", &gConfig.terrainQuality, OPT_NONE, 3, 0, 1, NULL },
+    { "Screen", &gConfig.screenBits, OPT_EX_PAK, 15, 0, 1, video_refresh },
+};
+
+// This crashes when objects are updating. It's going to want to pause updating for a frame while it sets all this
+void multiplayer_refresh_objects(void) {
+    s32 objCount;
+    s32 num;
+    s32 i;
+    s32 sp160 = get_first_active_object(&objCount);
+    
+    num = 2 + gConfig.multiObjects;
+    for (i = sp160; i < objCount; i++) {
+        Object *obj = get_object(i);
+        if (obj && obj->segment.header) {
+            if (obj->segment.header->flags & OBJ_FLAGS_DESPAWN_MULTIPLAYER) {
+                if (get_number_of_active_players() > num) {
+                    obj->segment.trans.flags |= OBJ_FLAGS_INVISIBLE;
+                } else {
+                    obj->segment.trans.flags &= ~OBJ_FLAGS_INVISIBLE;
+                }
+            }
+        }
+    }
+}
+
+void multiplayer_trigger_objects(void) {
+    if (gMenuStopUpdating == FALSE) {
+        gMenuStopUpdating = TRUE;
+        gOptionSetMenuUpdate = TRUE;
+    }
+}
+
+ConfigOptionEntry gMultiOptionMenu[] = {
+    { "Preview", &gOptionPlayerCount, OPT_NONE, 17, 1, 3, config_reset_players },
+    { "Music", &gConfig.multiMusic, OPT_NONE, 18, 0, 2, NULL },
+    { "Anti Aliasing", &gConfig.multiAA, OPT_NONE, 17, 0, 3, video_refresh },
+    { "Decoration", &gConfig.multiObjects, OPT_EX_PAK, 18, 0, 2, multiplayer_trigger_objects },
+    //{ "Waves", &gConfig.multiWaves, OPT_NONE, 18, 0, 2, NULL },
+    //{ "Particles", &gConfig.multiParticles, OPT_NONE, 18, 0, 2, NULL },
+    //{ "Weather", &gConfig.multiWeather, OPT_NONE, 17, 0, 3, NULL },
+    { "Skybox", &gConfig.multiSky, OPT_NONE, 17, 0, 3, NULL },
+};
+char gPauseOptionStack[ARRAY_COUNT(gOptionMenu)][40];
+
+char *gPauseOptStrings[][4] = {
+    { "Off", "Off", "Off", "Off"}, 
+    { "On", "On", "On", "On"}, 
+    { "Off", "Off", "Off", "Off"}, 
+    { "Fast", "Fast", "Fast", "Fast"}, 
+    { "Fancy", "Fancy", "Fancy", "Fancy"}, 
+    { "4:3", "4:3", "4:3", "4:3"}, 
+    { "16:10", "16:10", "16:10", "16:10"}, 
+    { "16:9", "16:9", "16:9", "16:9"}, 
+    { "400x300", "400x300" , "400x300" , "400x300" },
+    { "480x360", "480x360" , "480x360" , "480x360" }, 
+    { "560x420", "560x420" , "560x420" , "560x420" }, 
+    { "60", "60" , "60" , "60" },  
+    { "30", "30" , "30" , "30" },  
+    { "50", "50" , "50" , "50" },
+    { "25", "25" , "25" , "25" },
+    { "16 bit", "16 bit" },
+    { "32 bit", "32 bit" },
+    { "1 Player",  "1 Player",  "1 Player",  "1 Player" },
+    { "2 Player",  "2 Player",  "2 Player",  "2 Player" },
+    { "3 Player",  "3 Player",  "3 Player",  "3 Player" },
+    { "4 Player",  "4 Player",  "4 Player",  "4 Player" },
+    { "Custom", "Custom", "Custom", "Custom" },
+};
+
+s32 menu_option_hidden(s32 index) {
+    // Hide hidden. Duh.
+    if (gOptionMenu[index].flags & OPT_HIDDEN) {
+        return 1;
+    }
+    // Hide expansion pak required options if there's no expansion pak.
+    if (gOptionMenu[index].flags & OPT_EX_PAK && !gExpansionPak) {
+        return 1;
+    }
+    if (gPlatform & EMULATOR) {
+        // Hide certain options on emulator.
+        if (gOptionMenu[index].flags & OPT_ARES && gPlatform & ARES) {
+            return 0;
+        } else if (gOptionMenu[index].flags & OPT_NO_EMU) {
+            return 1;
+        }
+    }
+    return 0;
 }
 
 /**
@@ -10152,26 +10292,67 @@ void pausemenu_render(UNUSED s32 updateRate) {
         alpha = 511 - alpha;
     }
     if (gMenuSubOption != 0) {
-        i = halfTemp - 26;
-        if (gTrophyRaceWorldId != 0) {
-            render_dialogue_text(7, POS_CENTRED, i + 8, gMenuText[ASSET_MENU_TEXT_QUITTROPHYRACETITLE], 1,
-                                 ALIGN_MIDDLE_CENTER);
+        if (gPauseSubmenu == 0) {
+            i = halfTemp - 26;
+            if (gTrophyRaceWorldId != 0) {
+                render_dialogue_text(7, POS_CENTRED, i + 8, gMenuText[ASSET_MENU_TEXT_QUITTROPHYRACETITLE], 1,
+                                     ALIGN_MIDDLE_CENTER);
+            } else {
+                render_dialogue_text(7, POS_CENTRED, i + 8, gMenuText[ASSET_MENU_TEXT_QUITGAMETITLE], 1,
+                                     ALIGN_MIDDLE_CENTER);
+            }
+            if (gMenuSubOption == 1) {
+                set_current_text_colour(7, 255, 255, 255, alpha, 255);
+            } else {
+                set_current_text_colour(7, 255, 255, 255, 0, 255);
+            }
+            render_dialogue_text(7, POS_CENTRED, i + 28, gMenuText[ASSET_MENU_TEXT_OK], 1, ALIGN_MIDDLE_CENTER);
+            if (gMenuSubOption == 2) {
+                set_current_text_colour(7, 255, 255, 255, alpha, 255);
+            } else {
+                set_current_text_colour(7, 255, 255, 255, 0, 255);
+            }
+            render_dialogue_text(7, POS_CENTRED, i + 44, gMenuText[ASSET_MENU_TEXT_CANCEL], 1, ALIGN_MIDDLE_CENTER);
         } else {
-            render_dialogue_text(7, POS_CENTRED, i + 8, gMenuText[ASSET_MENU_TEXT_QUITGAMETITLE], 1,
-                                 ALIGN_MIDDLE_CENTER);
+            s32 intendedScroll = gPauseOptionScroll;
+            halfTemp = 8;
+            y = 0;
+            for (i = 0; i < (s32) ARRAY_COUNT(gOptionMenu); i++) {
+                s32 stringOffset = gOptionMenu[i].stringOffset;
+                if (menu_option_hidden(i)) {
+                    continue;
+                }
+                // If the value can be negative, offset the string by the amount it takes to not be negative.
+                if (gOptionMenu[i].minValue < 0) {
+                    stringOffset -= gOptionMenu[i].minValue;
+                }
+                // Offset PAL by the max value.
+                if ((gOptionMenu[i].flags & OPT_PAL) && osTvType == OS_TV_PAL) {
+                    stringOffset += gOptionMenu[i].maxValue + 1;
+                }
+                if (gMenuSubOption == i + 1) {
+                    set_current_text_colour(7, 255, 255, 255, alpha, 255);
+                    while (y - (intendedScroll * 16) > get_current_dialogue_box_height(7) - 24) {
+                        intendedScroll++;
+                    }
+                    while (y - (intendedScroll * 16) < 0) {
+                        intendedScroll--;
+                    }
+                } else {
+                    set_current_text_colour(7, 255, 255, 255, 0, 255);
+                }
+                if (gOptionMenu[i].flags & OPT_NUMBER) {
+                    sprintf(gPauseOptionStack[i], "%s: %d", gOptionMenu[i].name, *gOptionMenu[i].option);
+                } else {
+                    sprintf(gPauseOptionStack[i], "%s: %s", gOptionMenu[i].name,
+                                gPauseOptStrings[*gOptionMenu[i].option + stringOffset][0]);
+                }
+                render_dialogue_text(7, POS_CENTRED, halfTemp + 8 + y - (gPauseOptionScroll * 16), gPauseOptionStack[i],
+                                     1, 12);
+                y += 16;
+            }
+            gPauseOptionScroll = intendedScroll;
         }
-        if (gMenuSubOption == 1) {
-            set_current_text_colour(7, 255, 255, 255, alpha, 255);
-        } else {
-            set_current_text_colour(7, 255, 255, 255, 0, 255);
-        }
-        render_dialogue_text(7, POS_CENTRED, i + 28, gMenuText[ASSET_MENU_TEXT_OK], 1, ALIGN_MIDDLE_CENTER);
-        if (gMenuSubOption == 2) {
-            set_current_text_colour(7, 255, 255, 255, alpha, 255);
-        } else {
-            set_current_text_colour(7, 255, 255, 255, 0, 255);
-        }
-        render_dialogue_text(7, POS_CENTRED, i + 44, gMenuText[ASSET_MENU_TEXT_CANCEL], 1, ALIGN_MIDDLE_CENTER);
     } else {
         i = gLastPlayerWhoPaused + 1; // Fakematch. Seems to fix stuff?
         render_dialogue_text(7, POS_CENTRED, 12, gMenuText[ASSET_MENU_TEXT_PAUSEOPTIONS], gLastPlayerWhoPaused + 1,
@@ -10197,6 +10378,7 @@ s32 menu_pause_loop(UNUSED Gfx **dl, s32 updateRate) {
     s8 temp;
     s32 playerId;
     s32 buttonsPressed;
+    s32 lang = get_language();
 
     if (gMenuOptionCap == 0) {
         sound_volume_change(VOLUME_NORMAL);
@@ -10214,21 +10396,76 @@ s32 menu_pause_loop(UNUSED Gfx **dl, s32 updateRate) {
 
     if (gMenuDelay == 0) {
         if (gMenuSubOption != 0) {
+            if (gPauseSubmenu == 1) {
+                s32 moveDir = 0;
+                s32 moveOpt = FALSE;
+                if (gControllersXAxisDirection[gLastPlayerWhoPaused] != 0) {
+                    if (gControllersXAxisDirection[gLastPlayerWhoPaused] > 0) {
+                        moveDir = 1;
+                        if (*gOptionMenu[gMenuSubOption - 1].option < gOptionMenu[gMenuSubOption - 1].maxValue) {
+                            moveOpt = TRUE;
+                        }
+                    } else {
+                        moveDir = -1;
+                        if (*gOptionMenu[gMenuSubOption - 1].option > gOptionMenu[gMenuSubOption - 1].minValue) {
+                            moveOpt = TRUE;
+                        }
+                    }
+                    if (moveOpt) {
+                        if (gOptionMenu[gMenuSubOption - 1].minValue == 0 &&
+                            gOptionMenu[gMenuSubOption - 1].maxValue == 1) {
+                            *gOptionMenu[gMenuSubOption - 1].option ^= 1;
+                        } else {
+                            *gOptionMenu[gMenuSubOption - 1].option += moveDir;
+                        }
+                        sound_play(SOUND_SELECT2, NULL);
+                        if (gOptionMenu[gMenuSubOption - 1].func) {
+                            (gOptionMenu[gMenuSubOption - 1].func)();
+                        }
+                    }
+                }
+            }
             if (buttonsPressed & (A_BUTTON | START_BUTTON)) {
-                sound_play(SOUND_SELECT2, NULL);
-                if (gMenuSubOption == 1) {
-                    gMenuDelay = 1;
-                } else {
-                    gMenuSubOption = 0;
+                if (gPauseSubmenu == 0) {
+                    sound_play(SOUND_SELECT2, NULL);
+                    if (gMenuSubOption == 1) {
+                        gMenuDelay = 1;
+                    } else {
+                        gMenuSubOption = 0;
+                    }
                 }
             } else if (buttonsPressed & B_BUTTON) {
                 sound_play(SOUND_SELECT2, NULL);
                 gMenuSubOption = 0;
+                gPauseSubmenu = 0;
+                userconfig_write();
             } else {
                 temp = gMenuSubOption;
                 playerId = gLastPlayerWhoPaused;
                 if (gControllersYAxisDirection[playerId] != 0) {
-                    gMenuSubOption = 3 - gMenuSubOption;
+                    if (gPauseSubmenu == 0) {
+                        gMenuSubOption = 3 - gMenuSubOption;
+                    } else {
+                        if (gControllersYAxisDirection[playerId] < 0) {
+                            gMenuSubOption++;
+                            while (menu_option_hidden(gMenuSubOption - 1) && gMenuSubOption < (s32) ARRAY_COUNT(gOptionMenu) + 1) {
+                                gMenuSubOption++;
+                            }
+                            // If it's out of bounds, then just return to where it was before.
+                            if (gMenuSubOption > (s32) ARRAY_COUNT(gOptionMenu)) {
+                                gMenuSubOption = temp;
+                            }
+                        } else {
+                            gMenuSubOption--;
+                            while (menu_option_hidden(gMenuSubOption - 1) && gMenuSubOption > 0) {
+                                gMenuSubOption--;
+                            }
+                            // If it's out of bounds, then just return to where it was before.
+                            if (gMenuSubOption == 0) {
+                                gMenuSubOption = temp;
+                            }
+                        }
+                    }
                 }
                 if (temp != gMenuSubOption) {
                     sound_play(SOUND_MENU_PICK2, NULL);
@@ -10240,6 +10477,14 @@ s32 menu_pause_loop(UNUSED Gfx **dl, s32 updateRate) {
                 (gTrophyRaceWorldId != 0 &&
                  gMenuOptionText[gMenuOption] == gMenuText[ASSET_MENU_TEXT_QUITTROPHYRACE])) {
                 gMenuSubOption = 2;
+                gPauseSubmenu = 0;
+            } else if (gMenuOptionText[gMenuOption] == sVideoOptionsString[0][lang]) {
+                gMenuSubOption = 1;
+                gPauseSubmenu = 1;
+                gPauseOptionScroll = 0;
+                while (menu_option_hidden(gMenuSubOption - 1)) {
+                    gMenuSubOption++;
+                }
             } else {
                 gMenuDelay = 1;
             }
@@ -14645,7 +14890,6 @@ void set_language(s32 language) {
     sEepromSettings |= langFlag; // Then set them according to the selected lang
 
     load_menu_text(language);
-    mark_write_eeprom_settings();
 #endif
 }
 
@@ -14799,144 +15043,8 @@ s32 menu_expansionerror_loop(s32 updateRate) {
 }
 #endif
 
-extern f32 gFPS;
-
-typedef struct ConfigOptionEntry {
-    char *name;
-    s8 *option;
-    u8 flags;
-    u8 stringOffset;
-    s8 minValue;
-    s8 maxValue;
-    void (*func)();
-} ConfigOptionEntry;
-
-enum ConfigOptionFlags {
-    OPT_NONE,
-    OPT_EX_PAK = (1 << 0), // Requires the expansion pak.
-    OPT_NO_EMU = (1 << 1), // Hidden on emulator.
-    OPT_NUMBER = (1 << 2), // Displays the value of the option instead of a string.
-    OPT_PAL = (1 << 3),    // Display a different set of values for PAL users.
-    OPT_HIDDEN = (1 << 4), // Just hide it unconditionally, for debug purposes.
-#if SCREEN_HEIGHT >= 240
-    OPT_240 = (1 << 4), // Just hide it unconditionally, for debug purposes.
-#else
-    OPT_240 = (1 << 5), // Just hide it unconditionally, for debug purposes.
-#endif
-    OPT_ARES = (1 << 6), // Visible on accurate emulators.
-};
-
-
-s32 gPauseOptionScroll;
-s32 gOptionLoadTimer = 0;
-s8 gOptionPlayerCount = 0;
-s8 gOptionSetTimer;
-s8 gOptionSetMenuUpdate;
-s8 gOptionRefreshObjects;
-
-void config_reset_players(void) {
-    gOptionLoadTimer = 1;
-}
-
-void video_refresh(void) {
-    vi_change(SCREEN_WIDTH, SCREEN_HEIGHT);
-}
-
-ConfigOptionEntry gOptionMenu[] = {
-    { "Screen", &gConfig.screenWidth, OPT_NONE, 5, 0, 2, video_refresh },
-    { "Anti Aliasing", &gConfig.antiAliasing, OPT_NONE, 2, -1, 1, video_refresh },
-    { "Dedither", &gConfig.dedither, OPT_NONE, 0, 0, 1, vi_dither },
-    //{ "Terrain Quality", &gConfig.terrainQuality, OPT_NONE, 3, 0, 1, NULL },
-    { "Screen Quality", &gConfig.screenBits, OPT_EX_PAK, 15, 0, 1, video_refresh },
-};
-
-// This crashes when objects are updating. It's going to want to pause updating for a frame while it sets all this
-void multiplayer_refresh_objects(void) {
-    s32 objCount;
-    s32 num;
-    s32 i;
-    s32 sp160 = get_first_active_object(&objCount);
-    
-    num = 2 + gConfig.multiObjects;
-    for (i = sp160; i < objCount; i++) {
-        Object *obj = get_object(i);
-        if (obj && obj->segment.header) {
-            if (obj->segment.header->flags & OBJ_FLAGS_DESPAWN_MULTIPLAYER) {
-                if (get_number_of_active_players() > num) {
-                    obj->segment.trans.flags |= OBJ_FLAGS_INVISIBLE;
-                } else {
-                    obj->segment.trans.flags &= ~OBJ_FLAGS_INVISIBLE;
-                }
-            }
-        }
-    }
-}
-
-void multiplayer_trigger_objects(void) {
-    if (gMenuStopUpdating == FALSE) {
-        gMenuStopUpdating = TRUE;
-        gOptionSetMenuUpdate = TRUE;
-    }
-}
-
-ConfigOptionEntry gMultiOptionMenu[] = {
-    { "Preview", &gOptionPlayerCount, OPT_NONE, 17, 1, 3, config_reset_players },
-    { "Music", &gConfig.multiMusic, OPT_NONE, 18, 0, 2, NULL },
-    { "Anti Aliasing", &gConfig.multiAA, OPT_NONE, 17, 0, 3, video_refresh },
-    { "Decoration", &gConfig.multiObjects, OPT_EX_PAK, 18, 0, 2, multiplayer_trigger_objects },
-    //{ "Waves", &gConfig.multiWaves, OPT_NONE, 18, 0, 2, NULL },
-    //{ "Particles", &gConfig.multiParticles, OPT_NONE, 18, 0, 2, NULL },
-    //{ "Weather", &gConfig.multiWeather, OPT_NONE, 17, 0, 3, NULL },
-    { "Skybox", &gConfig.multiSky, OPT_NONE, 17, 0, 3, NULL },
-};
-
-char *gPauseOptStrings[][4] = {
-    { "Off", "Off", "Off", "Off"}, 
-    { "On", "On", "On", "On"}, 
-    { "Off", "Off", "Off", "Off"}, 
-    { "Fast", "Fast", "Fast", "Fast"}, 
-    { "Fancy", "Fancy", "Fancy", "Fancy"}, 
-    { "4:3", "4:3", "4:3", "4:3"}, 
-    { "16:10", "16:10", "16:10", "16:10"}, 
-    { "16:9", "16:9", "16:9", "16:9"}, 
-    { "400x300", "400x300" , "400x300" , "400x300" },
-    { "480x360", "480x360" , "480x360" , "480x360" }, 
-    { "560x420", "560x420" , "560x420" , "560x420" }, 
-    { "60", "60" , "60" , "60" },  
-    { "30", "30" , "30" , "30" },  
-    { "50", "50" , "50" , "50" },
-    { "25", "25" , "25" , "25" },
-    { "16 bit", "16 bit" },
-    { "32 bit", "32 bit" },
-    { "1 Player",  "1 Player",  "1 Player",  "1 Player" },
-    { "2 Player",  "2 Player",  "2 Player",  "2 Player" },
-    { "3 Player",  "3 Player",  "3 Player",  "3 Player" },
-    { "4 Player",  "4 Player",  "4 Player",  "4 Player" },
-    { "Custom", "Custom", "Custom", "Custom" },
-};
-
 s8 gPrevSelectionVideo;
 s8 gMenuStopUpdating;
-
-s32 menu_option_hidden(s32 index) {
-    // Hide hidden. Duh.
-    if (gOptionMenu[index].flags & OPT_HIDDEN) {
-        return 1;
-    }
-    // Hide expansion pak required options if there's no expansion pak.
-    if (gOptionMenu[index].flags & OPT_EX_PAK && gExpansionPak == FALSE) {
-        return 1;
-    }
-    if (gPlatform & EMULATOR) {
-        // Hide certain options on emulator.
-        if (gOptionMenu[index].flags & OPT_ARES && gPlatform & ARES) {
-            return 0;
-        } else if (gOptionMenu[index].flags & OPT_NO_EMU) {
-            return 1;
-        }
-    }
-    return 0;
-}
 
 void menu_video_options_init(void) {
     gOptionsMenuItemIndex = 0;

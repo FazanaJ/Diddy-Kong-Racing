@@ -187,6 +187,7 @@ void render_text_string(Gfx **dList, DialogueBoxBackground *box, char *text, Ali
 s32 get_text_width(char *text, s32 x, s32 font);
 void *render_dialogue_text(s32 dialogueBoxID, s32 posX, s32 posY, char *text, s32 number, s32 flags);
 void font_cycle(s32 updateRate);
+s32 get_current_dialogue_box_height(s32 dialogueBoxID);
 
 // Japanese Region exclusives
 void func_800C6464_C7064(void);

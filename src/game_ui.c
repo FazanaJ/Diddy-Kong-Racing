@@ -317,7 +317,7 @@ void hud_init(UNUSED s32 viewportCount) {
         return;
     }
 
-    gHUDNumPlayers = get_viewport_count();
+    gHUDNumPlayers = cam_get_viewport_layout();
     gNumActivePlayers = cam_set_layout(gHUDNumPlayers);
     gHudSettings = get_settings();
     gHudSilverCoinRace = check_if_silver_coin_race();

@@ -5680,7 +5680,7 @@ void obj_loop_weather(Object *obj, UNUSED s32 updateRate) {
     s32 i;
     s32 j;
 
-    playerCount = (get_viewport_count() % 4) + 1;
+    playerCount = (cam_get_viewport_layout() % 4) + 1;
     objects = get_racer_objects(&numberOfObjects);
     dist = obj->properties.distance.radius;
     entry = (LevelObjectEntry_Weather *) obj->segment.level_entry;

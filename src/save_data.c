@@ -1097,6 +1097,7 @@ s32 userconfig_write(void) {
     b.antiAliasing = c->antiAliasing;
     b.dedither = c->dedither;
     b.screenBits = c->screenBits;
+    b.screenWidth = c->screenWidth;
     //b.terrainQuality = c->terrainQuality;
     save_readwrite((void *) &b, VIDEOCONFIG_START, sizeof(ConfigBits), OS_WRITE);
     
@@ -1125,6 +1126,7 @@ s32 userconfig_read(void) {
         c->antiAliasing = b.antiAliasing;
         c->dedither = b.dedither;
         c->screenBits = b.screenBits;
+        c->screenWidth = b.screenWidth;
         //c->terrainQuality = b.terrainQuality;
     }
     return 0;

@@ -49,6 +49,7 @@ typedef struct ConfigBits {
     unsigned sameStats : 1;
     unsigned screenRegion : 2;
     // Graphics
+    unsigned screenWidth : 2;
     signed antiAliasing : 2;
     signed screenPosX : 5;
     signed screenPosY : 5;
