@@ -318,7 +318,7 @@ void hud_init(UNUSED s32 viewportCount) {
     }
 
     gHUDNumPlayers = get_viewport_count();
-    gNumActivePlayers = set_active_viewports_and_max(gHUDNumPlayers);
+    gNumActivePlayers = cam_set_layout(gHUDNumPlayers);
     gHudSettings = get_settings();
     gHudSilverCoinRace = check_if_silver_coin_race();
     gAssetHudElementIds = (s16 *) load_asset_section_from_rom(ASSET_HUD_ELEMENT_IDS);
@@ -824,7 +824,7 @@ void hud_render_player(Gfx **dList, MatrixS **mtx, Vertex **vertexList, Object *
                     sprite_anim_off(TRUE);
                     if (is_in_time_trial()) {
                         hud_time_trial_finish(racer, updateRate);
-                    } else if (get_viewport_count() == VIEWPORTS_COUNT_1_PLAYER && racer->finishPosition == 1) {
+                    } else if (cam_get_viewport_layout() == VIEWPORT_LAYOUT_1_PLAYER && racer->finishPosition == 1) {
                         if (is_in_two_player_adventure()) {
                             if (get_current_level_race_type() == RACETYPE_BOSS) {
                                 goto showFinishRace;
@@ -1407,7 +1407,7 @@ void hud_main_hub(Object *obj, s32 updateRate) {
     Object_Racer *racer;
     HudElement *portrait;
 
-    if (get_viewport_count() == PLAYER_ONE) {
+    if (cam_get_viewport_layout() == PLAYER_ONE) {
         racer = (Object_Racer *) obj->unk64;
         sprite_anim_off(TRUE);
         hud_balloons(racer);
@@ -1899,7 +1899,7 @@ void hud_race_start(s32 countdown, s32 updateRate) {
             if (gCurrentHud->entry[HUD_RACE_START_GO].raceStartGo.musicStartTimer[gHudCurrentViewport] >= 60) {
                 if (gRaceStartShowHudStep == 4) {
                     // Mute background music in 3/4 player.
-                    if (get_viewport_count() > TWO_PLAYERS) {
+                    if (cam_get_viewport_layout() > TWO_PLAYERS) {
                         music_play(SEQUENCE_NONE);
                     } else {
                         start_level_music(1.0f);
@@ -3251,7 +3251,7 @@ void hud_render_general(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 updateRate
     s32 sp144;
     s32 racerCount;
     UNUSED s32 pad2;
-    ObjectSegment *someObjSeg;
+    Camera *someObjSeg;
     Object **racerGroup;
     s32 spBC;
     s32 temp_s0_2;
@@ -3477,7 +3477,7 @@ void hud_render_general(Gfx **dList, MatrixS **mtx, Vertex **vtx, s32 updateRate
     if (lvlMdl == NULL) {
         return;
     }
-    someObjSeg = get_active_camera_segment();
+    someObjSeg = cam_get_active_camera();
     sprite_anim_off(TRUE);
     minimap = (Sprite *) lvlMdl->minimapSpriteIndex;
     switch (gHUDNumPlayers) {
@@ -3677,7 +3677,7 @@ void hud_element_render(Gfx **dList, MatrixS **mtx, Vertex **vtxList, HudElement
     TextureHeader **textureHeader3;
     TextureHeader *textureHeader2;
     TextureHeader *textureHeader;
-    ObjectSegment *objSegment;
+    Camera *camera;
     LevelObjectEntry_Hud objEntry;
     UNUSED s32 pad1;
     Object *tempObject;
@@ -3785,11 +3785,11 @@ void hud_element_render(Gfx **dList, MatrixS **mtx, Vertex **vtxList, HudElement
             rendermode_reset(&gHudDL);
         }
     } else if (gAssetHudElementIds[spriteID] & ASSET_MASK_SPRITE) {
-        objSegment = get_active_camera_segment();
+        camera = cam_get_active_camera();
         sprite = gAssetHudElements->entry[hud->spriteID];
-        hud->rotation.z -= objSegment->trans.rotation.z;
+        hud->rotation.z -= camera->trans.rotation.z;
         render_ortho_triangle_image(&gHudDL, &gHudMtx, &gHudVtx, (ObjectSegment *) hud, sprite, 0);
-        hud->rotation.z += objSegment->trans.rotation.z;
+        hud->rotation.z += camera->trans.rotation.z;
     } else if (gAssetHudElementIds[spriteID] & ASSET_MASK_OBJECT) {
         tempObject = gAssetHudElements->entry[spriteID];
         tempObject->segment.trans.rotation.x = hud->rotation.x;
@@ -3803,7 +3803,7 @@ void hud_element_render(Gfx **dList, MatrixS **mtx, Vertex **vtxList, HudElement
         tempObject->segment.object.opacity = 0xFF;
         render_object(&gHudDL, &gHudMtx, &gHudVtx, tempObject);
     } else {
-        camera_push_model_mtx(&gHudDL, &gHudMtx, (ObjectTransform *) hud, 1.0f, 0.0f);
+        cam_push_model_mtx(&gHudDL, &gHudMtx, (ObjectTransform *) hud, 1.0f, 0.0f);
         if (0) {}
         textureHeader3 = gAssetHudElements->entry[hud->spriteID];
         hud_draw_model((ObjectModel *) *textureHeader3);
