@@ -240,7 +240,7 @@ void main_game_loop(void) {
     s32 debugLoopCounter;
     s32 framebufferSize;
     s32 tempLogicUpdateRate, tempLogicUpdateRateMax;
-    const f32 divisor = 1.0f;
+    f32 divisor;
     debug_thread(THREAD3_START, 0);
 
     if (gVideoSkipNextRate) {
@@ -250,6 +250,11 @@ void main_game_loop(void) {
         sPrevTime = 0;
         gVideoSkipNextRate = FALSE;
     } else {
+        if (__osBbIsBb) {
+            divisor = IQUE_DIVISOR;
+        } else {
+            divisor = 1.0f;
+        }
         sDeltaTime = osGetCount() - sPrevTime;
         sPrevTime = osGetCount();
         sLogicUpdateRateF = (f32) sDeltaTime / (f32) (OS_USEC_TO_CYCLES(16666) * divisor);

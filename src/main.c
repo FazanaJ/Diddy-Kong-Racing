@@ -36,11 +36,11 @@ void calculate_and_update_fps(void) {
     f32 divisor;
     frameTimes[curFrameTimeIndex] = newTime;
 
-    /*if (__osBbIsBb) {
+    if (__osBbIsBb) {
         divisor = IQUE_DIVISOR;
-    } else {*/
+    } else {
         divisor = 1.0f;
-    //}
+    }
 
     curFrameTimeIndex++;
     if (curFrameTimeIndex >= FRAMETIME_COUNT) {
@@ -125,9 +125,6 @@ void get_platform(void) {
     u32 cf;
     u32 magic;
     u16 halfMagic;
-    if (__osBbIsBb > 2) {
-        __osBbIsBb = 0;
-    }
     if ((u32)IO_READ(DPC_PIPEBUSY_REG) | (u32)IO_READ(DPC_TMEM_REG) | (u32)IO_READ(DPC_BUFBUSY_REG)) {
         gPlatform |= emux_detect() ? ARES : CONSOLE;
 
@@ -242,9 +239,9 @@ u32 osGetMemSize(void) {
     u32 data0;
     u32 data1;
 
-    /*if (__osBbIsBb) {
+    if (__osBbIsBb) {
         return osMemSize;
-    }*/
+    }
 
     while (size < SIZE_8MB) {
         ptr = (vu32 *) (K1BASE + size);
@@ -319,6 +316,9 @@ void patch_func_antitamper(void) {
  */
 void mainproc(void) {
     osInitialize();
+    if (__osBbIsBb > 2) {
+        __osBbIsBb = 0;
+    }
     gPlatformSet = FALSE;
 #ifdef AVOID_UB
     bzero(&gMainMemoryPool, RAM_END - (s32) (&main_BSS_START));

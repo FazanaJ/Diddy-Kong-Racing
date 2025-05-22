@@ -199,6 +199,15 @@ INCLUDE_CFLAGS += -I $(LIBULTRA_DIR)/src/audio -I $(LIBULTRA_DIR)/src/os
 ASFLAGS        = -march=vr4300 -32 -G0 $(ASM_DEFINES) $(INCLUDE_CFLAGS)
 OBJCOPYFLAGS   = -O binary
 
+define PAD_TO_NEXT_16KB
+  size=$$(stat -c%s $1 2>/dev/null); \
+  block_size=16384; \
+  pad_size=$$((block_size - (size % block_size))); \
+  if [ $$pad_size -ne $$block_size ]; then \
+    dd if=/dev/zero bs=1 count=$$pad_size >> $1 2>/dev/null; \
+  fi
+endef
+
 # Pad to 12MB if matching, otherwise build to a necessary minimum of 1.004MB
 ifeq ($(NON_MATCHING),1)
   OBJCOPYFLAGS += --pad-to=0x101000 --gap-fill=0xFF
@@ -492,6 +501,8 @@ $(BUILD_DIR)/%.bin.o: %.bin | build_assets
 $(TARGET).bin: $(TARGET).elf | build_assets
 	$(call print,Objcopy:,$<,$@)
 	$(V)$(OBJCOPY) $(OBJCOPYFLAGS) $< $@
+	$(CROSS)objcopy --output-target=binary $< $@
+	$(call PAD_TO_NEXT_16KB, $@)
 
 $(TARGET).z64: $(TARGET).bin | build_assets
 	$(call print,CopyRom:,$<,$@)
