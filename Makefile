@@ -200,6 +200,7 @@ ASFLAGS        = -march=vr4300 -32 -G0 $(ASM_DEFINES) $(INCLUDE_CFLAGS)
 OBJCOPYFLAGS   = -O binary
 
 define PAD_TO_NEXT_16KB
+#  size=$$(wc -c < $1 2>/dev/null); \
   size=$$(stat -c%s $1 2>/dev/null); \
   block_size=16384; \
   pad_size=$$((block_size - (size % block_size))); \
@@ -501,7 +502,7 @@ $(BUILD_DIR)/%.bin.o: %.bin | build_assets
 $(TARGET).bin: $(TARGET).elf | build_assets
 	$(call print,Objcopy:,$<,$@)
 	$(V)$(OBJCOPY) $(OBJCOPYFLAGS) $< $@
-	$(CROSS)objcopy --output-target=binary $< $@
+	$(OBJCOPY) --output-target=binary $< $@
 	$(call PAD_TO_NEXT_16KB, $@)
 
 $(TARGET).z64: $(TARGET).bin | build_assets
