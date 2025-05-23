@@ -819,11 +819,12 @@ s32 save_detect(void) {
     #elif FLASHRAM == 1
         status = ((u32) osFlashInit()) & 1;
     #endif
-        debug_printf("%d\n", status);
         gSaveInit = TRUE;
         if (status == 0) {
             gSaveMissing = TRUE;
             debug_printf("Save type unavailable.\n");
+        } else {
+            debug_printf("Save type good.\n");
         }
     } else {
         return gSaveMissing == FALSE;
@@ -1124,12 +1125,12 @@ s32 userconfig_read(void) {
     save_readwrite((void *) &b, VIDEOCONFIG_START, sizeof(ConfigBits), OS_READ);
 
     if (b.magic != 0x14) {
-        debug_printf("Bad magic! %X\n", b.magic);
+        //debug_printf("Bad magic! %X\n", b.magic);
         bzero(&b, sizeof(ConfigBits));
         b.magic = 0x14;
         save_readwrite((void *) &b, VIDEOCONFIG_START, sizeof(ConfigBits), OS_WRITE);
     } else {
-        debug_printf("Good magic! %X\n", b.magic);
+        //debug_printf("Good magic! %X\n", b.magic);
         c->antiAliasing = b.antiAliasing;
         c->dedither = b.dedither;
         c->screenBits = b.screenBits;

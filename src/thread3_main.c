@@ -156,6 +156,9 @@ void thread3_main(UNUSED void *unused) {
  */
 void init_game(void) {
     s32 viMode;
+    s32 tag;
+    char *ramStr[] = {"B", "KB", "MB"};
+    f32 segSize;
 
     gzip_init();
 #ifdef ANTI_TAMPER
@@ -203,8 +206,6 @@ void init_game(void) {
     init_save_data();
     vi_change(SCREEN_WIDTH, SCREEN_HEIGHT);
     sBlackScreenTimer = 12;
-    //save_detect();
-    bgload_init();
     init_particle_buffers(4, 4, 110, 48, 32, 0);
     osCreateMesgQueue(&gGameMesgQueue, gGameMesgBuf, 3);
     osScAddClient(&gMainSched, (OSScClient*) gNMISched, &gGameMesgQueue, OS_SC_ID_VIDEO);
@@ -216,6 +217,8 @@ void init_game(void) {
     sBootDelayTimer = 0;
     gGameMode = GAMEMODE_INTRO;
     osTvType = OS_TV_NTSC;
+    segSize = memsize_float(((u32) main_BSS_START) - 0x80000000, &tag);
+    debug_printf("Main Segment Size: %2.3f%s (%2.2f%%)\n", segSize, ramStr[tag], (segSize / 1024.0f) * 100.0f);
 
     gCurrDisplayList = gDisplayLists[gSPTaskNum];
     gDPFullSync(gCurrDisplayList++);
