@@ -6,14 +6,14 @@
 
 #define SKIP_TITLE 1
 
-#define DEBUG
+//#define DEBUG
 
 /* -------------------------Memory------------------------ */
 #define EXPANSION_PAK_SUPPORT 0  // Allow the game to use the expansion pak if it's inserted. 0 Means never use, 1 means use if available, 2 means disallow 4MB
 //#define FORCE_4MB_MEMORY  // Force the game to use 4MB of memory, even if an expansion pak is inserted.
 
 #define UNLOCK_ALL
-#define SKIP_INTRO SKIP_TITLE
+//#define SKIP_INTRO SKIP_TITLE
 #define AUTOPLAY_DEFAULT AUTOPLAY_OFF
 //#define SKIP_NEW_GAME
 //#define OPEN_ALL_DOORS
