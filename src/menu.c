@@ -15589,6 +15589,42 @@ void set_animation(int animIndex) {
 
 s32 prevID = -1;
 
+void debugmodel_shade(ObjectModel *model, Object *object, s32 arg2, f32 intensity) {
+    s16 environmentMappingEnabled;
+    s32 dynamicLightingEnabled;
+    s16 i;
+
+    dynamicLightingEnabled = 0;
+    environmentMappingEnabled = 0;
+
+    for (i = 0; i < model->numberOfBatches; i++) {
+        if (model->batches[i].unk6 != 0xFF) {
+            dynamicLightingEnabled = -1; // This is a bit weird, but I guess it works.
+        }
+        if (model->batches[i].flags & BATCH_FLAGS_ENVMAP) {
+            environmentMappingEnabled = -1;
+        }
+    }
+
+    if (dynamicLightingEnabled) {
+        // Calculates dynamic lighting for the object
+        /*if (object->segment.header->unk71) {
+            // Dynamic lighting for some objects? (Intro diddy, Taj, T.T., Bosses)
+            calc_dynamic_lighting_for_object_1(object, model, arg2, object, intensity, 1.0f);
+        } else {*/
+            // Dynamic lighting for other objects? (Racers, Rare logo, Wizpig face, etc.)
+            calc_dynamic_lighting_for_object_2(&fakeObjectForModel, model, arg2, intensity);
+        //}
+    }
+
+    if (environmentMappingEnabled) {
+        // Calculates environment mapping for the object
+        calc_env_mapping_for_object(model, object->segment.trans.rotation.z_rotation,
+                                    object->segment.trans.rotation.x_rotation,
+                                    object->segment.trans.rotation.y_rotation);
+    }
+}
+
 void render_model(s32 updateRate) {
     s32 flags;
     TextureHeader *tex;
@@ -15645,6 +15681,18 @@ void render_model(s32 updateRate) {
             }
         }
     }
+
+    if (viewModel->modelType != MODELTYPE_BASIC && model->unk40 != NULL) {
+        debugmodel_shade(model, &viewModelTransform, -1, 1.0f);
+        /*if (obj->behaviorId == BHV_UNK_3F) { // 63 = stopwatchicon, stopwatchhand
+            obj_shade_fancy(model, &viewModelTransform, 0, 1.0f);
+        } else if (flags) {
+            obj_shade_fancy(model, &viewModelTransform, -1, 1.0f);
+        } else {
+            obj_shade_fast(model, &viewModelTransform, 1.0f);
+        }*/
+    }
+    
     
     // Mode 0 is opaque geometry, Mode 1 is transparent geometry.
     for(mode = 0; mode < 2; mode++) {
@@ -15667,20 +15715,20 @@ void render_model(s32 updateRate) {
                     texOffset = model->batches[i].unk7 << 14;
                 }
                 
-                isTexTransparent = tex != NULL && (TEX_RENDERMODE(tex->format) == 0 || model->batches[i].flags & BATCH_FLAGS_UNK00000004);
+                isTexTransparent = tex != NULL && (TEX_RENDERMODE(tex->format) == 0 || model->batches[i].flags & BATCH_FLAGS_RECEIVE_SHADOWS);
 
                 if(((mode == 0) && isTexTransparent) || ((mode == 1) && !isTexTransparent)) {
                     continue;
                 }
                 
-                /*isDecal = FALSE;
+                isDecal = FALSE;
                 if (mode == 1) {
-                    if (model->batches[i].flags & BATCH_FLAGS_UNK00000004) {
+                    if (model->batches[i].flags & BATCH_FLAGS_RECEIVE_SHADOWS) {
                         isDecal = TRUE;
                     }
                 }
 
-                renderFlags = RENDER_ANTI_ALIASING | RENDER_Z_COMPARE | RENDER_Z_UPDATE | RENDER_FOG_ACTIVE;
+                renderFlags = RENDER_ANTI_ALIASING | RENDER_Z_COMPARE | RENDER_Z_UPDATE;
 
                 if (isDecal) {
                     renderFlags |= RENDER_DECAL;
@@ -15692,14 +15740,7 @@ void render_model(s32 updateRate) {
                     renderFlags |= RENDER_CUTOUT;
                 }
 
-                material_set(&sMenuCurrDisplayList, tex, renderFlags, texOffset);*/
-                
-                if(mode == 0) {
-                    material_set(&sMenuCurrDisplayList, tex, RENDER_ANTI_ALIASING | RENDER_Z_UPDATE | RENDER_Z_COMPARE, texOffset);
-                } else {
-                    material_set(&sMenuCurrDisplayList, tex, RENDER_ANTI_ALIASING | RENDER_Z_COMPARE | RENDER_CUTOUT | RENDER_DECAL, texOffset);
-                }
-                
+                material_set(&sMenuCurrDisplayList, tex, renderFlags, texOffset);                
                 
                 gSPVertexDKR(sMenuCurrDisplayList++, OS_PHYSICAL_TO_K0(verts), numVerts, 0);
                 gSPPolygon(sMenuCurrDisplayList++, OS_PHYSICAL_TO_K0(tris), numTris, texEnabled);
