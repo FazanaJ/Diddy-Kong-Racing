@@ -31,6 +31,7 @@
 #include "PRinternal/viint.h"
 #include "save_layout.h"
 #include "main.h"
+#include "thread0_epc.h"
 
 /**
  * @file Contains all the code used for every menu in the game.
@@ -640,7 +641,7 @@ MenuElement *gTrophyRankingsMenuElements = NULL;
 s32 gPostraceTextOffset = 0;
 s32 gPostraceTimestampOffset = 0;
 
-char *gTitleMenuStrings[3] = { 0, 0, 0 };
+char *gTitleMenuStrings[4] = { 0, 0, 0 };
 
 // Version text shown on the title screen? See 1:15 in https://www.youtube.com/watch?v=OHSCLcA74ao.
 char gVersionDisplayText[20] = "VERSION XXXXXXXX";
@@ -2069,6 +2070,11 @@ void load_menu_text(s32 language) {
     gContPakNeed2ndAdvStrings[7] = menuText[ASSET_MENU_TEXT_CONTINUE];                  // "CONTINUE"
     gTitleMenuStrings[0] = menuText[ASSET_MENU_TEXT_START];                             // "START"
     gTitleMenuStrings[1] = menuText[ASSET_MENU_TEXT_OPTIONS];                           // "OPTIONS"
+    if (gDebug) {
+        gTitleMenuStrings[2] = "Debug Menu";
+    } else {
+        gTitleMenuStrings[2] = NULL;
+    }
     gGameSelectTextElemsNoAdv2[0].t.asciiText = menuText[ASSET_MENU_TEXT_GAMESELECT];   // "GAME SELECT"
     gGameSelectTextElemsNoAdv2[1].t.asciiText = menuText[ASSET_MENU_TEXT_GAMESELECT];   // "GAME SELECT"
     gGameSelectTextElemsNoAdv2[3].t.asciiText = menuText[ASSET_MENU_TEXT_ADVENTURE];    // "ADVENTURE"
@@ -2572,6 +2578,9 @@ void menu_init(u32 menuId) {
         case MENU_CAUTION:
             menu_caution_init();
             break;
+        case MENU_DEBUG_ROOT:
+            menu_debug_root_init();
+            break;
 #if EXPANSION_PAK_SUPPORT == 2
         case MENU_EXPANSION_ERROR:
             menu_expansionerror_init();
@@ -2656,6 +2665,9 @@ s32 menu_loop(Gfx **currDisplayList, MatrixS **currHudMat, Vertex **currHudVerts
             break;
         case MENU_CAUTION:
             ret = menu_caution_loop(updateRate);
+            break;
+        case MENU_DEBUG_ROOT:
+            ret = menu_debug_root_loop(updateRate);
             break;
 #if EXPANSION_PAK_SUPPORT == 2
         case MENU_EXPANSION_ERROR:
@@ -3422,6 +3434,7 @@ s32 menu_title_screen_loop(s32 updateRate) {
     Camera *sp18;
     s8 playerCount;
     char *str;
+    s32 optionCount;
 
     if (sMenuBoot == 0) {
         load_menu_text(get_language());
@@ -3553,7 +3566,12 @@ s32 menu_title_screen_loop(s32 updateRate) {
     } else if ((gMenuDelay == 0) && !is_controller_missing()) {
         s32 temp0 = gTitleScreenCurrentOption;
         // gMenuStickY[PLAYER_MENU] = +1 when going up, and -1 when going down.
-        if (gMenuStickY[PLAYER_MENU] < 0 && gTitleScreenCurrentOption < 1) {
+        if (gDebug) {
+            optionCount = 2;
+        } else {
+            optionCount = 1;
+        }
+        if (gMenuStickY[PLAYER_MENU] < 0 && gTitleScreenCurrentOption < optionCount) {
             gTitleScreenCurrentOption++;
         }
         if (gMenuStickY[PLAYER_MENU] > 0 && gTitleScreenCurrentOption > 0) {
@@ -3595,7 +3613,11 @@ s32 menu_title_screen_loop(s32 updateRate) {
         gMenuCurIndex = 0;
 #endif
         load_level_for_menu(ASSET_LEVEL_OPTIONSBACKGROUND, -1, 0);
-        menu_init(MENU_OPTIONS);
+        if (gTitleScreenCurrentOption == 1) {
+            menu_init(MENU_OPTIONS);
+        } else {
+            menu_init(MENU_DEBUG_ROOT);
+        }
         return MENU_RESULT_CONTINUE;
     }
     gIgnorePlayerInputTime = 0;
@@ -3620,7 +3642,6 @@ void menu_options_init(void) {
     gOptionBlinkTimer = 0;
     gMenuDelay = 0;
     transition_begin(&sMenuTransitionFadeOut);
-    set_text_font(ASSET_FONTS_BIGFONT);
     music_voicelimit_set(24);
     music_play(SEQUENCE_MAIN_MENU);
     music_change_off();
@@ -15426,6 +15447,535 @@ s32 menu_video_options_loop(s32 updateRate) {
             menu_init(MENU_OPTIONS);
         }
     }
+
+    return MENU_RESULT_CONTINUE;
+}
+
+void menu_debug_root_init(void) {
+    gOptionBlinkTimer = 0;
+    gMenuDelay = 0;
+    gPauseSubmenu = 0;
+    gMenuOption = 1;
+    gPauseOptionScroll = 0;
+    transition_begin(&sMenuTransitionFadeOut);
+    music_voicelimit_set(24);
+    music_play(SEQUENCE_MAIN_MENU);
+}
+
+char *gDebugMenuSubStrings[] = {
+    "DEBUG MENU",
+    "MODEL VIEWER",
+    "BACK",
+};
+
+void debugmenu_root(s32 updateRate, s32 input) {
+    s32 i;
+    s32 y;
+    s32 alpha;
+    s32 al;
+    s32 prevOpt;
+
+    alpha = gOptionBlinkTimer * 8;
+    if (alpha > 255) {
+        alpha = 511 - alpha;
+    }
+
+    y = 76;
+    gMenuOptionCap = ARRAY_COUNT(gDebugMenuSubStrings) - 1;
+    prevOpt = gMenuOption;
+    
+    if (gMenuStickY[PLAYER_MENU] < 0 && gMenuOption < ARRAY_COUNT(gDebugMenuSubStrings)) {
+        gMenuOption++;
+    }
+    if (gMenuStickY[PLAYER_MENU] > 0 && gMenuOption > 1) {
+        gMenuOption--;
+    }
+
+    if (prevOpt != gMenuOption) {
+        sound_play(SOUND_MENU_PICK2, NULL);
+    }
+
+    if (input & A_BUTTON) {
+        sound_play(SOUND_SELECT2, NULL);
+        if (gMenuOption == gMenuOptionCap) {
+            menu_init(MENU_TITLE);
+        } else {
+            gPauseSubmenu = gMenuOption;
+            gMenuOption = 0;
+            gPauseOptionScroll = 0;
+        }
+    }
+
+    set_text_font(ASSET_FONTS_FUNFONT);
+    for (i = 1; i < ARRAY_COUNT(gDebugMenuSubStrings); i++) {
+        if (i == gMenuOption) {
+            al = alpha;
+        } else {
+            al = 0;
+        }
+        set_text_colour(255, 255, 255, al, 255);
+        draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF, y, gDebugMenuSubStrings[i], ALIGN_MIDDLE_CENTER);
+        y += 18;
+    }
+}
+
+s32 currentModelIndex = -1;
+s32 actionDelay = 0;
+ObjectTransform viewModelTransform;
+s32 sDebugModelViewPitch;
+f32 scale = 1.0f;
+f32 targetMaxLength = 74.0f;
+f32 offsetY = 0; // Used to center the model vertically.
+s32 numberOfAnimations = 0;
+s32 animationID = 0;
+s32 animationFrame = 0;
+s32 animationFrameCount = 0;
+s32 animResult = -1;
+u16 gDebugModelTris;
+u16 gDebugModelVtx;
+u16 gDebugModelTex;
+u16 gDebugModelSize;
+Object_68 *viewModel = NULL;
+Object fakeObjectForModel;
+ObjectHeader fakeObjectHeaderForModel;
+
+void animate_model(s32 updateRate) {
+    if(numberOfAnimations < 1) {
+        animationFrame = 0;
+        return;
+    }
+    
+    if(animationFrame >= animationFrameCount) {
+        animationFrame = 0;
+    } else if(animationFrame < 0) {
+        animationFrame = animationFrameCount - 1;
+    }
+    
+    fakeObjectForModel.segment.object.animationID = animationID;
+    fakeObjectForModel.segment.animFrame = animationFrame;
+    
+    animResult = obj_animate(&fakeObjectForModel);
+    
+    animationFrame += updateRate;
+}
+
+void set_animation(int animIndex) {
+    ObjectModel *model;
+    
+    if((viewModel == NULL) || (viewModel->objModel == NULL)) {
+        return;
+    }
+    
+    model = viewModel->objModel;
+    
+    if(numberOfAnimations < 1) {
+        animationFrame = 0;
+        animationFrameCount = 0;
+        animationID = 0;
+        return;
+    }
+    
+    animationID = animIndex;
+    animationFrame = 0;
+    
+    if(animationID >= numberOfAnimations) {
+        animationID = 0;
+    } else if(animationID < 0) {
+        animationID = numberOfAnimations - 1;
+    }
+    
+    animationFrameCount = (model->animations[animationID].unk4 - 1) * 16;
+}
+
+s32 prevID = -1;
+
+void render_model(s32 updateRate) {
+    s32 flags;
+    TextureHeader *tex;
+    Triangle *tris;
+    s32 triOffset;
+    s32 vertOffset;
+    Vertex *verts;
+    s32 numVerts;
+    s32 numTris;
+    s32 texOffset;
+    s32 texEnabled;
+    s32 i, mode;
+    ObjectModel *model;
+    s32 isTexTransparent;
+    Vertex *currentVertices;
+    ObjectTransform tempForm;
+    s32 renderFlags;
+    
+    if((viewModel == NULL) || (viewModel->objModel == NULL)) {
+        return;
+    }
+    
+    model = viewModel->objModel;
+    
+    if(model->unk4A > 0) {
+        animate_model(updateRate);
+        currentVertices = viewModel->vertices[viewModel->animationTaskNum];
+    } else {
+        currentVertices = model->vertices;
+    }
+    
+    gDPSetPrimColor(sMenuCurrDisplayList++, 0, 0, 255, 255, 255, 255);
+    gDPSetEnvColor(sMenuCurrDisplayList++, 255, 255, 255, 0);
+    matrix_world_origin(&sMenuCurrDisplayList, &sMenuCurrHudMat);
+    viewModelTransform.rotation.x_rotation = 0;
+    bzero(&tempForm, sizeof(ObjectTransform));
+    tempForm.rotation.z_rotation = sDebugModelViewPitch;
+    tempForm.scale = 1.25f;
+    tempForm.x_position = 200.0f;
+    tempForm.y_position = -175.0f - offsetY;
+    tempForm.z_position = 30.0f;
+    cam_push_model_mtx(&sMenuCurrDisplayList, &sMenuCurrHudMat, &tempForm, 1.0f, 0);
+    cam_push_model_mtx(&sMenuCurrDisplayList, &sMenuCurrHudMat, &viewModelTransform, 1.0f, 0);
+
+    for (i = 0; model->unk50 > 0 && i < model->numberOfBatches; i++) {
+        s32 sp5C;
+        if (model->batches[i].flags & BATCH_FLAGS_TEXTURE_ANIM) {
+            if (model->batches[i].textureIndex != TEX_INDEX_NO_TEXTURE) {
+                tex = model->textures[model->batches[i].textureIndex].texture;
+                sp5C = model->batches[i].unk7;
+                sp5C <<= 6;
+                tex_animate_texture(tex, &model->batches[i].flags, &sp5C, updateRate);
+                model->batches[i].unk7 = (sp5C >> 6) & 0xFF;
+            }
+        }
+    }
+    
+    // Mode 0 is opaque geometry, Mode 1 is transparent geometry.
+    for(mode = 0; mode < 2; mode++) {
+        for (i = 0; i < model->numberOfBatches; i++) {
+            if (!(model->batches[i].flags & RENDER_Z_UPDATE)) {
+                s32 isDecal;
+                vertOffset = model->batches[i].verticesOffset;
+                triOffset = model->batches[i].facesOffset;
+                numVerts = model->batches[i + 1].verticesOffset - vertOffset;
+                numTris = model->batches[i + 1].facesOffset - triOffset;
+                verts = &currentVertices[vertOffset]; //&model->vertices[vertOffset];
+                tris = &model->triangles[triOffset];
+                if (model->batches[i].textureIndex == 0xFF) {
+                    tex = NULL;
+                    texEnabled = FALSE;
+                    texOffset = 0;
+                } else {
+                    tex = model->textures[model->batches[i].textureIndex].texture;
+                    texEnabled = TRUE;
+                    texOffset = model->batches[i].unk7 << 14;
+                }
+                
+                isTexTransparent = tex != NULL && (TEX_RENDERMODE(tex->format) == 0 || model->batches[i].flags & BATCH_FLAGS_UNK00000004);
+
+                if(((mode == 0) && isTexTransparent) || ((mode == 1) && !isTexTransparent)) {
+                    continue;
+                }
+                
+                /*isDecal = FALSE;
+                if (mode == 1) {
+                    if (model->batches[i].flags & BATCH_FLAGS_UNK00000004) {
+                        isDecal = TRUE;
+                    }
+                }
+
+                renderFlags = RENDER_ANTI_ALIASING | RENDER_Z_COMPARE | RENDER_Z_UPDATE | RENDER_FOG_ACTIVE;
+
+                if (isDecal) {
+                    renderFlags |= RENDER_DECAL;
+                }
+
+                if (mode == 0) {
+                    renderFlags |= RENDER_Z_UPDATE;
+                } else {
+                    renderFlags |= RENDER_CUTOUT;
+                }
+
+                material_set(&sMenuCurrDisplayList, tex, renderFlags, texOffset);*/
+                
+                if(mode == 0) {
+                    material_set(&sMenuCurrDisplayList, tex, RENDER_ANTI_ALIASING | RENDER_Z_UPDATE | RENDER_Z_COMPARE, texOffset);
+                } else {
+                    material_set(&sMenuCurrDisplayList, tex, RENDER_ANTI_ALIASING | RENDER_Z_COMPARE | RENDER_CUTOUT | RENDER_DECAL, texOffset);
+                }
+                
+                
+                gSPVertexDKR(sMenuCurrDisplayList++, OS_PHYSICAL_TO_K0(verts), numVerts, 0);
+                gSPPolygon(sMenuCurrDisplayList++, OS_PHYSICAL_TO_K0(tris), numTris, texEnabled);
+            }
+        }
+    }
+
+    if (prevID != currentModelIndex) {
+        prevID = currentModelIndex;
+    }
+    
+    apply_matrix_from_stack(&sMenuCurrDisplayList);
+    apply_matrix_from_stack(&sMenuCurrDisplayList);
+    gDPSetPrimColor(sMenuCurrDisplayList++, 0, 0, 255, 255, 255, 255);
+}
+
+void calculate_model_scale() {
+    Vertex *vertices;
+    s16 numberOfVertices;
+    f32 minX, minY, minZ;
+    f32 maxX, maxY, maxZ;
+    f32 midPointY;
+    f32 width, height, depth;
+    f32 maxLength;
+    s32 i;
+    
+    if((viewModel == NULL) || (viewModel->objModel == NULL)) {
+    failedReturn:
+        scale = 1.0f;
+        return;
+    }
+    
+    vertices = viewModel->objModel->vertices;
+    numberOfVertices = viewModel->objModel->numberOfVertices;
+
+    gDebugModelVtx = numberOfVertices;
+    gDebugModelTris = viewModel->objModel->numberOfTriangles;
+    gDebugModelTex = viewModel->objModel->numberOfTextures;
+    
+    if(numberOfVertices == 0) {
+        goto failedReturn;
+    }
+    
+    minX = maxX = vertices[0].x;
+    minY = maxY = vertices[0].y;
+    minZ = maxZ = vertices[0].z;
+    
+    for(i = 1; i < numberOfVertices; i++) {
+        f32 x = vertices[i].x;
+        f32 y = vertices[i].y;
+        f32 z = vertices[i].z;
+        
+        if(x < minX) minX = x;
+        if(x > maxX) maxX = x;
+        if(y < minY) minY = y;
+        if(y > maxY) maxY = y;
+        if(z < minZ) minZ = z;
+        if(z > maxZ) maxZ = z;
+    }
+    
+    width = (maxX - minX);
+    height = (maxY - minY);
+    depth = (maxZ - minZ);
+    
+    maxLength = width;
+    if(height>maxLength)maxLength = height;
+    if(depth>maxLength)maxLength = depth;
+    
+    scale = targetMaxLength / maxLength;
+    
+    midPointY = minY + ((maxY - minY) / 2);
+    offsetY = midPointY * scale;
+}
+
+void set_object_model(s32 modelId) {
+    s32 modelSize;
+    s32 offset;
+    s32 size;
+    s32 start;
+    s32 end;
+
+
+    if(modelId < 0) {
+        modelId = ASSET_OBJECT_MODELS_COUNT - 1;
+    } else if (modelId == ASSET_OBJECT_MODELS_COUNT) {
+        modelId = 0;
+    } else if(modelId == currentModelIndex) {
+        return;
+    }
+    
+    currentModelIndex = modelId;
+    
+    if(viewModel != NULL) {
+        free_3d_model(viewModel);
+    }
+    
+    viewModel = object_model_init(modelId, OBJECT_SPAWN_ANIMATION);
+
+    
+    assettable_seek_s32(modelId, &offset, &size, ASSET_OBJECT_MODELS_TABLE);
+    modelSize = get_asset_uncompressed_size(ASSET_OBJECT_MODELS, offset) + sizeof(ObjectModel);
+    assettable_seek_s16(modelId, &start, &end, ASSET_ANIMATION_IDS);
+    if (start != end) {
+        do {
+            assettable_seek_s32(modelId, &offset, &size, ASSET_OBJECT_ANIMATIONS_TABLE);
+            modelSize += get_asset_uncompressed_size(ASSET_OBJECT_ANIMATIONS, offset) + 0x80;
+            start++;
+        } while (start < end);
+    }
+    
+    numberOfAnimations = viewModel->objModel->numberOfAnimations;
+
+    gDebugModelSize = modelSize;
+
+    calculate_model_scale();
+    
+    viewModelTransform.scale = scale;
+    
+    //viewModelTransform.x_position = 200.0f;
+    //viewModelTransform.y_position = -175.0f - offsetY;
+    //viewModelTransform.z_position = -10.0f;
+    
+    fakeObjectForModel.unk68 = &viewModel;
+    fakeObjectForModel.segment.object.modelIndex = 0;
+    
+    set_animation(0);
+}
+
+void debugmenu_model_viewer(s32 updateRate, s32 input) {
+    char textBytes[64];
+    u32 buttonsDown;
+    s32 contX;
+    s32 contY;
+    s32 i;
+    s32 y;
+    f32 yaw, pitch;
+    char *tagStr[] = {"B", "KB", "MB"};
+    s32 tag;
+
+    if (gPauseOptionScroll == 0) {
+        fakeObjectHeaderForModel.numberOfModelIds = 1;
+        fakeObjectForModel.segment.object.modelIndex = 0;
+        fakeObjectForModel.segment.header = &fakeObjectHeaderForModel;
+        sDebugModelViewPitch = 0;
+        
+        set_object_model(0);
+        gPauseOptionScroll = 1;
+    }
+    
+    if(actionDelay < 1) {
+        buttonsDown = input_held(0);
+        contX = gControllersXAxis[0];
+        contY = gControllersYAxis[0];
+        
+        if(contX > 0) contX = 1;
+        else if(contX < 0) contX = -1;
+        if(contY > 40) contY = 1;
+        else if(contY < -40) contY = -1;
+        
+        if(buttonsDown & A_BUTTON) {
+            set_object_model(currentModelIndex + 1);
+            actionDelay = 10;
+        } else if(buttonsDown & B_BUTTON) {
+            set_object_model(currentModelIndex - 1);
+            actionDelay = 10;
+        } else if(buttonsDown & L_TRIG) {
+            set_animation(animationID - 1);
+            actionDelay = 10;
+        } else if(buttonsDown & R_TRIG) {
+            set_animation(animationID + 1);
+            actionDelay = 10;
+        }
+        
+        if(contX < 0) {
+            viewModelTransform.rotation.y_rotation -= 0x200 * updateRate;
+        } else if(contX > 0) {
+            viewModelTransform.rotation.y_rotation += 0x200 * updateRate;
+        }
+        
+        if(contY < 0) {
+            sDebugModelViewPitch -= 0x200 * updateRate;
+            if (sDebugModelViewPitch < -0x4000) {
+                sDebugModelViewPitch = -0x4000;
+            }
+        } else if(contY > 0) {
+            sDebugModelViewPitch += 0x200 * updateRate;
+
+            if (sDebugModelViewPitch > 0x4000) {
+                sDebugModelViewPitch = 0x4000;
+            }
+        }
+    } else {
+        contX = contY = buttonsDown = 0;
+        actionDelay--;
+    }
+    
+    render_model(updateRate);
+    
+    // Draw text 
+    set_text_font(ASSET_FONTS_FUNFONT);
+    set_text_colour(255, 255, 255, 0, 255);
+    
+    yaw = ((f32)viewModelTransform.rotation.y_rotation / (f32)0x10000) * 360.0f;
+    pitch = ((f32)sDebugModelViewPitch / (f32)0x10000) * 360.0f;
+    
+    sprintf(textBytes, "%d: %s", currentModelIndex, assettable_name(ASSET_OBJECT_MODELS, currentModelIndex));
+    draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH / 2, SCREEN_HEIGHT - 32, textBytes, ALIGN_TOP_CENTER);
+
+    set_text_font(ASSET_FONTS_SMALLFONT);
+    if (numberOfAnimations > 0) {
+        sprintf(textBytes, "Anim: %d of %d", (animationID + 1), numberOfAnimations);
+        set_text_colour(0, 0, 0, 255, 255);
+        draw_text(&sMenuCurrDisplayList, 20 + 1, 76 + 1, textBytes, ALIGN_TOP_LEFT);
+        set_text_colour(255, 255, 255, 0, 255);
+        draw_text(&sMenuCurrDisplayList, 20, 76, textBytes, ALIGN_TOP_LEFT);
+
+        sprintf(textBytes, "%d of %d (Key %d)", (animationFrame + 1), animationFrameCount, animationFrame >> 4);
+        set_text_colour(0, 0, 0, 255, 255);
+        draw_text(&sMenuCurrDisplayList, 20 + 1, 86 + 1, textBytes, ALIGN_TOP_LEFT);
+        set_text_colour(255, 255, 255, 0, 255);
+        draw_text(&sMenuCurrDisplayList, 20, 86, textBytes, ALIGN_TOP_LEFT);
+    }
+    
+    sprintf(textBytes, "Tri: %d Vtx: %d", gDebugModelTris, gDebugModelVtx);
+    set_text_colour(0, 0, 0, 255, 255);
+    draw_text(&sMenuCurrDisplayList, 20 + 1, 96 + 1, textBytes, ALIGN_TOP_LEFT);
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(&sMenuCurrDisplayList, 20, 96, textBytes, ALIGN_TOP_LEFT);
+    
+    sprintf(textBytes, "Materials: %d", gDebugModelTex);
+    set_text_colour(0, 0, 0, 255, 255);
+    draw_text(&sMenuCurrDisplayList, 20 + 1, 106 + 1, textBytes, ALIGN_TOP_LEFT);
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(&sMenuCurrDisplayList, 20, 106, textBytes, ALIGN_TOP_LEFT);
+
+    sprintf(textBytes, "Size: %2.3f%s", memsize_float(gDebugModelSize, &tag), tagStr[tag]);
+    set_text_colour(0, 0, 0, 255, 255);
+    draw_text(&sMenuCurrDisplayList, 20 + 1, 116 + 1, textBytes, ALIGN_TOP_LEFT);
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(&sMenuCurrDisplayList, 20, 116, textBytes, ALIGN_TOP_LEFT);
+    
+    /*if(numberOfAnimations > 0) {
+        sprintf(textBytes, "\n PTR: %08X\n Scale: %f\n\n Anim: %d of %d\n Frame: %d of %d\n Keyframe: %d\n\n Yaw: %f\n Pitch: %f", 
+            (s32)(&viewModel->objModel), scale, (animationID + 1), numberOfAnimations, (animationFrame + 1), animationFrameCount, animationFrame >> 4, yaw, pitch);
+    } else {
+        sprintf(textBytes, "\n PTR: %08X\n Scale: %f\n\n No animations\n\n Yaw: %f\n Pitch: %f", 
+            (s32)(&viewModel->objModel), scale, yaw, pitch);
+    }*/
+}
+
+s32 menu_debug_root_loop(s32 updateRate) {
+    s32 inputPressed;
+    s32 i;
+
+    gOptionBlinkTimer = (gOptionBlinkTimer + updateRate) & 0x3F;
+    inputPressed = 0;
+    //menu_input();
+    for (i = 0; i < 4; i++) {
+        inputPressed |= input_pressed(i);
+    }
+
+    switch (gPauseSubmenu) {
+        case 0:
+            debugmenu_root(updateRate, inputPressed);
+            break;
+        case 1:
+            debugmenu_model_viewer(updateRate, inputPressed);
+            break;
+    }
+
+    set_text_font(ASSET_FONTS_BIGFONT);
+    set_text_background_colour(0, 0, 0, 0);
+    set_text_colour(0, 0, 0, 255, 128);
+    draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF + 1, 35, gDebugMenuSubStrings[gPauseSubmenu], ALIGN_MIDDLE_CENTER);
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF, 32, gDebugMenuSubStrings[gPauseSubmenu], ALIGN_MIDDLE_CENTER);
 
     return MENU_RESULT_CONTINUE;
 }
