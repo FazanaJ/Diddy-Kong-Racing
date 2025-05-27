@@ -15534,10 +15534,13 @@ s32 animResult = -1;
 u16 gDebugModelTris;
 u16 gDebugModelVtx;
 u16 gDebugModelTex;
-u16 gDebugModelSize;
+u16 gDebugModelSizeMdl;
+u16 gDebugModelSizeAnim;
+u16 gDebugModelSizeTex;
 Object_68 *viewModel = NULL;
 Object fakeObjectForModel;
 ObjectHeader fakeObjectHeaderForModel;
+ShadeProperties gDebugModelShading;
 
 void animate_model(s32 updateRate) {
     if(numberOfAnimations < 1) {
@@ -15606,15 +15609,8 @@ void debugmodel_shade(ObjectModel *model, Object *object, s32 arg2, f32 intensit
         }
     }
 
-    if (dynamicLightingEnabled) {
-        // Calculates dynamic lighting for the object
-        /*if (object->segment.header->unk71) {
-            // Dynamic lighting for some objects? (Intro diddy, Taj, T.T., Bosses)
-            calc_dynamic_lighting_for_object_1(object, model, arg2, object, intensity, 1.0f);
-        } else {*/
-            // Dynamic lighting for other objects? (Racers, Rare logo, Wizpig face, etc.)
-            calc_dynamic_lighting_for_object_2(&fakeObjectForModel, model, arg2, intensity);
-        //}
+    if (dynamicLightingEnabled && model->unk40 != NULL) {
+        calc_dynamic_lighting_for_object_2(&fakeObjectForModel, model, arg2, intensity);
     }
 
     if (environmentMappingEnabled) {
@@ -15642,6 +15638,7 @@ void render_model(s32 updateRate) {
     Vertex *currentVertices;
     ObjectTransform tempForm;
     s32 renderFlags;
+    s32 shouldShade;
     
     if((viewModel == NULL) || (viewModel->objModel == NULL)) {
         return;
@@ -15655,6 +15652,11 @@ void render_model(s32 updateRate) {
     } else {
         currentVertices = model->vertices;
     }
+
+    fakeObjectForModel.curVertData = currentVertices;
+    fakeObjectForModel.segment.trans.rotation.y_rotation = viewModelTransform.rotation.y_rotation;
+    fakeObjectForModel.segment.trans.rotation.x_rotation = viewModelTransform.rotation.x_rotation;
+    fakeObjectForModel.segment.trans.rotation.z_rotation = sDebugModelViewPitch;
     
     gDPSetPrimColor(sMenuCurrDisplayList++, 0, 0, 255, 255, 255, 255);
     gDPSetEnvColor(sMenuCurrDisplayList++, 255, 255, 255, 0);
@@ -15682,15 +15684,20 @@ void render_model(s32 updateRate) {
         }
     }
 
-    if (viewModel->modelType != MODELTYPE_BASIC && model->unk40 != NULL) {
+    shouldShade = FALSE;
+    if (viewModel->modelType != MODELTYPE_BASIC) {
+        shouldShade = TRUE;
+    } else {
+        for (i = 0; i < model->numberOfBatches; i++) {
+            if (model->batches[i].flags & BATCH_FLAGS_ENVMAP) {
+                shouldShade = TRUE;
+                break;
+            }
+        }
+    }
+
+    if (shouldShade) {
         debugmodel_shade(model, &viewModelTransform, -1, 1.0f);
-        /*if (obj->behaviorId == BHV_UNK_3F) { // 63 = stopwatchicon, stopwatchhand
-            obj_shade_fancy(model, &viewModelTransform, 0, 1.0f);
-        } else if (flags) {
-            obj_shade_fancy(model, &viewModelTransform, -1, 1.0f);
-        } else {
-            obj_shade_fast(model, &viewModelTransform, 1.0f);
-        }*/
     }
     
     
@@ -15714,6 +15721,7 @@ void render_model(s32 updateRate) {
                     texEnabled = TRUE;
                     texOffset = model->batches[i].unk7 << 14;
                 }
+
                 
                 isTexTransparent = tex != NULL && (TEX_RENDERMODE(tex->format) == 0 || model->batches[i].flags & BATCH_FLAGS_RECEIVE_SHADOWS);
 
@@ -15821,6 +15829,8 @@ void set_object_model(s32 modelId) {
     s32 size;
     s32 start;
     s32 end;
+    s32 i;
+    ObjectHeader *tempHeader;
 
 
     if(modelId < 0) {
@@ -15840,20 +15850,26 @@ void set_object_model(s32 modelId) {
     viewModel = object_model_init(modelId, OBJECT_SPAWN_ANIMATION);
 
     
+    gDebugModelSizeTex = 0;
+    gDebugModelSizeAnim = 0;
     assettable_seek_s32(modelId, &offset, &size, ASSET_OBJECT_MODELS_TABLE);
-    modelSize = get_asset_uncompressed_size(ASSET_OBJECT_MODELS, offset) + sizeof(ObjectModel);
+    gDebugModelSizeMdl = get_asset_uncompressed_size(ASSET_OBJECT_MODELS, offset) + sizeof(ObjectModel);
     assettable_seek_s16(modelId, &start, &end, ASSET_ANIMATION_IDS);
     if (start != end) {
         do {
             assettable_seek_s32(modelId, &offset, &size, ASSET_OBJECT_ANIMATIONS_TABLE);
-            modelSize += get_asset_uncompressed_size(ASSET_OBJECT_ANIMATIONS, offset) + 0x80;
+            gDebugModelSizeAnim += get_asset_uncompressed_size(ASSET_OBJECT_ANIMATIONS, offset) + 0x80;
             start++;
         } while (start < end);
     }
+
+    for (i = 0; i < viewModel->objModel->numberOfTextures; i++) {
+        if (viewModel->objModel->textures[i].texture) {
+            gDebugModelSizeTex += viewModel->objModel->textures[i].texture->textureSize;
+        }
+    }
     
     numberOfAnimations = viewModel->objModel->numberOfAnimations;
-
-    gDebugModelSize = modelSize;
 
     calculate_model_scale();
     
@@ -15865,7 +15881,12 @@ void set_object_model(s32 modelId) {
     
     fakeObjectForModel.unk68 = &viewModel;
     fakeObjectForModel.segment.object.modelIndex = 0;
-    
+
+    tempHeader = load_object_header(ASSET_OBJECT_MOUSESELECT);
+    fakeObjectForModel.segment.header = tempHeader;
+    init_object_shading(&fakeObjectForModel, &gDebugModelShading);
+    try_free_object_header(ASSET_OBJECT_MOUSESELECT);
+    fakeObjectForModel.segment.header = &fakeObjectHeaderForModel;
     set_animation(0);
 }
 
@@ -15953,34 +15974,52 @@ void debugmenu_model_viewer(s32 updateRate, s32 input) {
     if (numberOfAnimations > 0) {
         sprintf(textBytes, "Anim: %d of %d", (animationID + 1), numberOfAnimations);
         set_text_colour(0, 0, 0, 255, 255);
-        draw_text(&sMenuCurrDisplayList, 20 + 1, 76 + 1, textBytes, ALIGN_TOP_LEFT);
+        draw_text(&sMenuCurrDisplayList, 56 + 1, 76 + 1, textBytes, ALIGN_TOP_CENTER);
         set_text_colour(255, 255, 255, 0, 255);
-        draw_text(&sMenuCurrDisplayList, 20, 76, textBytes, ALIGN_TOP_LEFT);
+        draw_text(&sMenuCurrDisplayList, 56, 76, textBytes, ALIGN_TOP_CENTER);
 
         sprintf(textBytes, "%d of %d (Key %d)", (animationFrame + 1), animationFrameCount, animationFrame >> 4);
         set_text_colour(0, 0, 0, 255, 255);
-        draw_text(&sMenuCurrDisplayList, 20 + 1, 86 + 1, textBytes, ALIGN_TOP_LEFT);
+        draw_text(&sMenuCurrDisplayList, 56 + 1, 86 + 1, textBytes, ALIGN_TOP_CENTER);
         set_text_colour(255, 255, 255, 0, 255);
-        draw_text(&sMenuCurrDisplayList, 20, 86, textBytes, ALIGN_TOP_LEFT);
+        draw_text(&sMenuCurrDisplayList, 56, 86, textBytes, ALIGN_TOP_CENTER);
     }
     
     sprintf(textBytes, "Tri: %d Vtx: %d", gDebugModelTris, gDebugModelVtx);
     set_text_colour(0, 0, 0, 255, 255);
-    draw_text(&sMenuCurrDisplayList, 20 + 1, 96 + 1, textBytes, ALIGN_TOP_LEFT);
+    draw_text(&sMenuCurrDisplayList, 56 + 1, 96 + 1, textBytes, ALIGN_TOP_CENTER);
     set_text_colour(255, 255, 255, 0, 255);
-    draw_text(&sMenuCurrDisplayList, 20, 96, textBytes, ALIGN_TOP_LEFT);
+    draw_text(&sMenuCurrDisplayList, 56, 96, textBytes, ALIGN_TOP_CENTER);
     
     sprintf(textBytes, "Materials: %d", gDebugModelTex);
     set_text_colour(0, 0, 0, 255, 255);
-    draw_text(&sMenuCurrDisplayList, 20 + 1, 106 + 1, textBytes, ALIGN_TOP_LEFT);
+    draw_text(&sMenuCurrDisplayList, 56 + 1, 106 + 1, textBytes, ALIGN_TOP_CENTER);
     set_text_colour(255, 255, 255, 0, 255);
-    draw_text(&sMenuCurrDisplayList, 20, 106, textBytes, ALIGN_TOP_LEFT);
+    draw_text(&sMenuCurrDisplayList, 56, 106, textBytes, ALIGN_TOP_CENTER);
 
-    sprintf(textBytes, "Size: %2.3f%s", memsize_float(gDebugModelSize, &tag), tagStr[tag]);
+    sprintf(textBytes, "Size");
     set_text_colour(0, 0, 0, 255, 255);
-    draw_text(&sMenuCurrDisplayList, 20 + 1, 116 + 1, textBytes, ALIGN_TOP_LEFT);
+    draw_text(&sMenuCurrDisplayList, 56 + 1, 116 + 1, textBytes, ALIGN_TOP_CENTER);
     set_text_colour(255, 255, 255, 0, 255);
-    draw_text(&sMenuCurrDisplayList, 20, 116, textBytes, ALIGN_TOP_LEFT);
+    draw_text(&sMenuCurrDisplayList, 56, 116, textBytes, ALIGN_TOP_CENTER);
+
+    sprintf(textBytes, "Mesh: %2.3f%s", memsize_float(gDebugModelSizeMdl, &tag), tagStr[tag]);
+    set_text_colour(0, 0, 0, 255, 255);
+    draw_text(&sMenuCurrDisplayList, 56 + 1, 126 + 1, textBytes, ALIGN_TOP_CENTER);
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(&sMenuCurrDisplayList, 56, 126, textBytes, ALIGN_TOP_CENTER);
+    
+    sprintf(textBytes, "Anims: %2.3f%s", memsize_float(gDebugModelSizeAnim, &tag), tagStr[tag]);
+    set_text_colour(0, 0, 0, 255, 255);
+    draw_text(&sMenuCurrDisplayList, 56 + 1, 136 + 1, textBytes, ALIGN_TOP_CENTER);
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(&sMenuCurrDisplayList, 56, 136, textBytes, ALIGN_TOP_CENTER);
+    
+    sprintf(textBytes, "Tex: %2.3f%s", memsize_float(gDebugModelSizeTex, &tag), tagStr[tag]);
+    set_text_colour(0, 0, 0, 255, 255);
+    draw_text(&sMenuCurrDisplayList, 56 + 1, 146 + 1, textBytes, ALIGN_TOP_CENTER);
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(&sMenuCurrDisplayList, 56, 146, textBytes, ALIGN_TOP_CENTER);
     
     /*if(numberOfAnimations > 0) {
         sprintf(textBytes, "\n PTR: %08X\n Scale: %f\n\n Anim: %d of %d\n Frame: %d of %d\n Keyframe: %d\n\n Yaw: %f\n Pitch: %f", 
