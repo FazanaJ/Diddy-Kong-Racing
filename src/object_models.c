@@ -9,6 +9,7 @@
 #include "racer.h"
 #include "objects.h"
 #include "main.h"
+#include "thread3_main.h"
 
 #undef VERSION
 #define VERSION VERSION_80
@@ -69,6 +70,9 @@ void allocate_object_model_pools(void) {
 }
 
 s32 obj_model_blacklist(s32 modelID) {
+    if (get_game_mode() == GAMEMODE_MENU && gCurrentMenuId == MENU_DEBUG_ROOT) {
+        return FALSE;
+    }
     switch (modelID) {
         default:
             return FALSE;
@@ -77,9 +81,14 @@ s32 obj_model_blacklist(s32 modelID) {
         case ASSET_OBJECTMODEL_EXIT:
         case ASSET_OBJECTMODEL_EFFECTBOX:
         case ASSET_OBJECTMODEL_CHECKPOINT:
+        case ASSET_OBJECTMODEL_RGBALIGHT_0:
         case ASSET_OBJECTMODEL_RGBALIGHT_1:
+        case ASSET_OBJECTMODEL_RGBALIGHT_2:
+        case ASSET_OBJECTMODEL_RGBALIGHT_3:
         case ASSET_OBJECTMODEL_ANIMATION:
         case ASSET_OBJECTMODEL_ANIMCAMERA:
+        case ASSET_OBJECTMODEL_BONUS:
+        case ASSET_OBJECTMODEL_MODECHANGE:
             return TRUE;
     }
     return FALSE;
@@ -109,7 +118,7 @@ Object_68 *object_model_init(s32 modelID, s32 flags) {
     stubModel = obj_model_blacklist(modelID);
 
     if (stubModel) {
-        modelID = ASSET_OBJECTMODEL_ANIMCAMERA;
+        modelID = ASSET_OBJECTMODEL_EFFECTBOX;
     }
 
     if (modelID >= gNumModelIDs) {

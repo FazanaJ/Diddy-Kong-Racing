@@ -15451,12 +15451,36 @@ s32 menu_video_options_loop(s32 updateRate) {
     return MENU_RESULT_CONTINUE;
 }
 
+s32 currentModelIndex = -1;
+s32 actionDelay = 0;
+ObjectTransform viewModelTransform;
+s32 sDebugModelViewPitch;
+f32 scale = 1.0f;
+f32 targetMaxLength = 74.0f;
+f32 offsetY = 0; // Used to center the model vertically.
+s32 numberOfAnimations = 0;
+s32 animationID = 0;
+s32 animationFrame = 0;
+s32 animationFrameCount = 0;
+s32 animResult = -1;
+u16 gDebugModelTris;
+u16 gDebugModelVtx;
+u16 gDebugModelTex;
+u16 gDebugModelSizeMdl;
+u16 gDebugModelSizeAnim;
+u16 gDebugModelSizeTex;
+Object_68 *viewModel = NULL;
+Object fakeObjectForModel;
+ObjectHeader fakeObjectHeaderForModel;
+ShadeProperties gDebugModelShading;
+
 void menu_debug_root_init(void) {
     gOptionBlinkTimer = 0;
     gMenuDelay = 0;
     gPauseSubmenu = 0;
     gMenuOption = 1;
     gPauseOptionScroll = 0;
+    viewModelTransform.rotation.y_rotation = -0x5000;
     transition_begin(&sMenuTransitionFadeOut);
     music_voicelimit_set(24);
     music_play(SEQUENCE_MAIN_MENU);
@@ -15518,29 +15542,6 @@ void debugmenu_root(s32 updateRate, s32 input) {
         y += 18;
     }
 }
-
-s32 currentModelIndex = -1;
-s32 actionDelay = 0;
-ObjectTransform viewModelTransform;
-s32 sDebugModelViewPitch;
-f32 scale = 1.0f;
-f32 targetMaxLength = 74.0f;
-f32 offsetY = 0; // Used to center the model vertically.
-s32 numberOfAnimations = 0;
-s32 animationID = 0;
-s32 animationFrame = 0;
-s32 animationFrameCount = 0;
-s32 animResult = -1;
-u16 gDebugModelTris;
-u16 gDebugModelVtx;
-u16 gDebugModelTex;
-u16 gDebugModelSizeMdl;
-u16 gDebugModelSizeAnim;
-u16 gDebugModelSizeTex;
-Object_68 *viewModel = NULL;
-Object fakeObjectForModel;
-ObjectHeader fakeObjectHeaderForModel;
-ShadeProperties gDebugModelShading;
 
 void animate_model(s32 updateRate) {
     if(numberOfAnimations < 1) {
@@ -15905,7 +15906,7 @@ void debugmenu_model_viewer(s32 updateRate, s32 input) {
         fakeObjectHeaderForModel.numberOfModelIds = 1;
         fakeObjectForModel.segment.object.modelIndex = 0;
         fakeObjectForModel.segment.header = &fakeObjectHeaderForModel;
-        sDebugModelViewPitch = 0;
+        sDebugModelViewPitch = -0x1000;
         
         set_object_model(0);
         gPauseOptionScroll = 1;
@@ -15918,8 +15919,8 @@ void debugmenu_model_viewer(s32 updateRate, s32 input) {
         
         if(contX > 0) contX = 1;
         else if(contX < 0) contX = -1;
-        if(contY > 40) contY = 1;
-        else if(contY < -40) contY = -1;
+        if(contY > 50) contY = 1;
+        else if(contY < -50) contY = -1;
         
         if(buttonsDown & A_BUTTON) {
             set_object_model(currentModelIndex + 1);
