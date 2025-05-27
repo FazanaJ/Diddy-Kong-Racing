@@ -6,6 +6,7 @@
 #include "textures_sprites.h"
 #include "rcp_dkr.h"
 #include "main.h"
+#include "libultra/src/libc/xprintf.h"
 
 /************ .data ************/
 
@@ -197,6 +198,12 @@ void sprintfSetSpacingCodes(s32 setting) {
     gSprintfSpacingCode = setting;
 }
 
+static char *proutSprintf(char *dst, const char *src, size_t count) {
+    char *ret = dst;
+    bcopy((char *) src, dst, count);
+    return ret + count;
+}
+
 /**
  * Official name: sprintf
  */
@@ -204,13 +211,10 @@ UNUSED int sprintf(char *s, const char *format, ...) {
     s32 ret;
     va_list args;
     va_start(args, format);
-    ret = vsprintf(s, format, args);
+    ret = _Printf(proutSprintf, s, format, args);
     va_end(args);
     return ret;
 }
-
-// Official Name: vsprintf
-#pragma GLOBAL_ASM("asm/nonmatchings/printf/vsprintf.s")
 
 /**
  * Load the font textures for the debug text, then set the buffer to the beginning.
@@ -235,7 +239,7 @@ s32 render_printf(const char *format, ...) {
         return -1;
     }
     sprintfSetSpacingCodes(TRUE);
-    written = vsprintf(gDebugPrintBufferEnd, format, args);
+    written = _Printf(proutSprintf, gDebugPrintBufferEnd, format, args);
     sprintfSetSpacingCodes(FALSE);
     if (written > 0) {
         gDebugPrintBufferEnd = &gDebugPrintBufferEnd[written] + 1;
