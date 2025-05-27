@@ -15473,6 +15473,9 @@ Object_68 *viewModel = NULL;
 Object fakeObjectForModel;
 ObjectHeader fakeObjectHeaderForModel;
 ShadeProperties gDebugModelShading;
+s16 gDebugModelHeadAngle;
+s16 gDebugModelHeadAngleTarget;
+s8 gDebugModelMiscCounter;
 
 void menu_debug_root_init(void) {
     gOptionBlinkTimer = 0;
@@ -15640,6 +15643,7 @@ void render_model(s32 updateRate) {
     ObjectTransform tempForm;
     s32 renderFlags;
     s32 shouldShade;
+    s32 offset;
     
     if((viewModel == NULL) || (viewModel->objModel == NULL)) {
         return;
@@ -15658,6 +15662,12 @@ void render_model(s32 updateRate) {
     fakeObjectForModel.segment.trans.rotation.y_rotation = viewModelTransform.rotation.y_rotation;
     fakeObjectForModel.segment.trans.rotation.x_rotation = viewModelTransform.rotation.x_rotation;
     fakeObjectForModel.segment.trans.rotation.z_rotation = sDebugModelViewPitch;
+    gDebugModelMiscCounter += updateRate;
+
+    if (gDebugModelMiscCounter > 90) {
+        gDebugModelMiscCounter = 0;
+        gDebugModelHeadAngleTarget = get_random_number_from_range(-0x2000, 0x2000);
+    }
     
     gDPSetPrimColor(sMenuCurrDisplayList++, 0, 0, 255, 255, 255, 255);
     gDPSetEnvColor(sMenuCurrDisplayList++, 255, 255, 255, 0);
@@ -15671,6 +15681,18 @@ void render_model(s32 updateRate) {
     tempForm.z_position = 30.0f;
     cam_push_model_mtx(&sMenuCurrDisplayList, &sMenuCurrHudMat, &tempForm, 1.0f, 0);
     cam_push_model_mtx(&sMenuCurrDisplayList, &sMenuCurrHudMat, &viewModelTransform, 1.0f, 0);
+
+    
+    if (animationID == 0 || currentModelIndex < ASSET_OBJECTMODEL_DIDDYCAR_0 || currentModelIndex > ASSET_OBJECTMODEL_MOUSEPLANE_5) {
+        if (currentModelIndex >= ASSET_OBJECTMODEL_DIDDYCAR_0 && currentModelIndex <= ASSET_OBJECTMODEL_MOUSEPLANE_5) {
+            animationFrame = 40;
+        }
+        gDebugModelHeadAngle += ((gDebugModelHeadAngleTarget - gDebugModelHeadAngle) * updateRate) >> 3;
+        apply_head_turning_matrix(&sMenuCurrDisplayList, &sMenuCurrHudMat, viewModel, gDebugModelHeadAngle);
+        offset = TRUE;
+    } else {
+        offset = FALSE;
+    }
 
     for (i = 0; model->unk50 > 0 && i < model->numberOfBatches; i++) {
         s32 sp5C;
@@ -15701,18 +15723,20 @@ void render_model(s32 updateRate) {
         debugmodel_shade(model, &viewModelTransform, -1, 1.0f);
     }
     
-    
     // Mode 0 is opaque geometry, Mode 1 is transparent geometry.
     for(mode = 0; mode < 2; mode++) {
         for (i = 0; i < model->numberOfBatches; i++) {
             if (!(model->batches[i].flags & RENDER_Z_UPDATE)) {
                 s32 isDecal;
+                s32 vtxOff;
                 vertOffset = model->batches[i].verticesOffset;
                 triOffset = model->batches[i].facesOffset;
                 numVerts = model->batches[i + 1].verticesOffset - vertOffset;
                 numTris = model->batches[i + 1].facesOffset - triOffset;
                 verts = &currentVertices[vertOffset]; //&model->vertices[vertOffset];
                 tris = &model->triangles[triOffset];
+                
+                vtxOff = (offset) ? model->batches[i].unk1 : numVerts;
                 if (model->batches[i].textureIndex == 0xFF) {
                     tex = NULL;
                     texEnabled = FALSE;
@@ -15722,7 +15746,6 @@ void render_model(s32 updateRate) {
                     texEnabled = TRUE;
                     texOffset = model->batches[i].unk7 << 14;
                 }
-
                 
                 isTexTransparent = tex != NULL && (TEX_RENDERMODE(tex->format) == 0 || model->batches[i].flags & BATCH_FLAGS_RECEIVE_SHADOWS);
 
@@ -15750,8 +15773,21 @@ void render_model(s32 updateRate) {
                 }
 
                 material_set(&sMenuCurrDisplayList, tex, renderFlags, texOffset);                
-                
-                gSPVertexDKR(sMenuCurrDisplayList++, OS_PHYSICAL_TO_K0(verts), numVerts, 0);
+
+                if (vtxOff == numVerts) {
+                    gSPVertexDKR(sMenuCurrDisplayList++, OS_K0_TO_PHYSICAL(verts), numVerts, 0);
+                } else {
+                    if (vtxOff > 0) {
+                        gSPVertexDKR(sMenuCurrDisplayList++, OS_K0_TO_PHYSICAL(verts), vtxOff, 0);
+                        gSPSelectMatrixDKR(sMenuCurrDisplayList++, G_MTX_DKR_INDEX_2);
+                        gSPVertexDKR(sMenuCurrDisplayList++, OS_K0_TO_PHYSICAL(&verts[vtxOff]),
+                                     (numVerts - vtxOff), 1);
+                    } else {
+                        gSPSelectMatrixDKR(sMenuCurrDisplayList++, G_MTX_DKR_INDEX_2);
+                        gSPVertexDKR(sMenuCurrDisplayList++, OS_K0_TO_PHYSICAL(verts), numVerts, 0);
+                    }
+                    gSPSelectMatrixDKR(sMenuCurrDisplayList++, G_MTX_DKR_INDEX_1);
+                }
                 gSPPolygon(sMenuCurrDisplayList++, OS_PHYSICAL_TO_K0(tris), numTris, texEnabled);
             }
         }
@@ -15843,6 +15879,7 @@ void set_object_model(s32 modelId) {
     }
     
     currentModelIndex = modelId;
+    gDebugModelMiscCounter = 0;
     
     if(viewModel != NULL) {
         free_3d_model(viewModel);
