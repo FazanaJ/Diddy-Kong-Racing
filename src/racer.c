@@ -168,6 +168,7 @@ s32 D_8011D5B4;
 s16 D_8011D5B8;
 s16 gRacerOffsetYaw[4];
 s16 gRacerOffsetPitch[4];
+u8 gPowerBoosting;
 
 /******************************/
 
@@ -2549,6 +2550,17 @@ void update_player_racer(Object *obj, s32 updateRate) {
                 }
                 gCurrentStickY = input_clamp_stick_y(tempVar);
                 gCurrentRacerInput = input_held(tempVar);
+                // If the player has successfully empowered their boost, then do the rest
+                // of the mechanic for them. Experienced players won't notice and new
+                // players get a small crutch.
+                if (tempRacer->boostType & EMPOWER_BOOST) {
+                    Object_Boost *boost = (Object_Boost *) get_misc_asset(ASSET_MISC_20);
+                    boost = &boost[tempRacer->racerIndex];
+                    if (tempRacer->boostTimer || boost->unk74 != 0.0f) {
+                        gCurrentRacerInput &= ~A_BUTTON;
+                        gPowerBoosting = TRUE;
+                    }
+                }
                 gCurrentButtonsPressed = input_pressed(tempVar);
                 gCurrentButtonsReleased = input_released(tempVar);
 
@@ -2608,7 +2620,7 @@ void update_player_racer(Object *obj, s32 updateRate) {
             racer_AI_pathing_inputs(obj, tempRacer, updateRate);
         }
         // Set the value that decides whether to get an empowered boost.
-        if (!(gCurrentRacerInput & A_BUTTON)) {
+        if (!(gCurrentRacerInput & A_BUTTON) || gPowerBoosting) {
             tempRacer->throttleReleased = TRUE;
         }
         if (check_if_showing_cutscene_camera() || gRaceStartTimer == 100 || tempRacer->unk1F1 || gRacerInputBlocked ||
@@ -2971,6 +2983,9 @@ void update_player_racer(Object *obj, s32 updateRate) {
         if (tempRacer->countLap < tempRacer->lap) {
             tempRacer->countLap = tempRacer->lap;
         }
+    }
+    if (tempRacer->boostTimer == 0 && !(obj->particleEmittersEnabled & 0x20000)) {
+        gPowerBoosting = FALSE;
     }
 }
 
