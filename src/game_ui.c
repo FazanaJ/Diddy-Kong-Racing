@@ -70,7 +70,7 @@ HudElementStarts gHudElementBase[HUD_ELEMENT_COUNT] = {
     {{{{-105, -98}}}, HUDSCALE(0.4f), HUD_ASSET_34},
     {{{{0, 30}}}, HUDSCALE(1.0f), HUD_SPRITE_WRONG},
     {{{{0, 30}}}, HUDSCALE(1.0f), HUD_SPRITE_WAY},
-    {{{{80, -60}}}, HUDSCALE(1.0f), HUD_SPRITE_PRO_AM},
+    /*{{{{80, -60}}}, HUDSCALE(1.0f), HUD_SPRITE_PRO_AM},
     {{{{122, -71}}}, HUDSCALE(0.5f), HUD_SPRITE_SPEEDOMETRE_ARROW},
     {{{{247, 212}}}, HUDSCALE(0.75f), HUD_ASSET_47},
     {{{{234, 196}}}, HUDSCALE(1.0f), HUD_ASSET_48},
@@ -78,7 +78,7 @@ HudElementStarts gHudElementBase[HUD_ELEMENT_COUNT] = {
     {{{{240, 159}}}, HUDSCALE(1.0f), HUD_ASSET_50},
     {{{{256, 146}}}, HUDSCALE(1.0f), HUD_ASSET_51},
     {{{{275, 143}}}, HUDSCALE(1.0f), HUD_ASSET_52},
-    {{{{246, 156}}}, HUDSCALE(1.0f), HUD_ASSET_53},
+    {{{{246, 156}}}, HUDSCALE(1.0f), HUD_ASSET_53},*/
     {{{{27, 142}}}, HUDSCALE(0.7272f), HUD_ASSET_54},
     {{{{-200, 70}}}, HUDSCALE(1.0f), HUD_ASSET_0},
     {{{{-175, 72}}}, HUDSCALE(1.0f), HUD_ASSET_3},
@@ -529,7 +529,7 @@ void hud_init_element(void) {
                 } else if (gCurrentHud->entry[i].spriteID == HUD_ASSET_54) {
                     gCurrentHud->entry[i].scale *= 0.6;
                 } else if (i != HUD_RACE_POSITION && i != HUD_RACE_POSITION_END && i != HUD_WEAPON_DISPLAY &&
-                           i != HUD_PRO_AM_LOGO && i != HUD_CHALLENGE_FINISH_POS_1 && i != HUD_CHALLENGE_FINISH_POS_2 &&
+                           i != HUD_CHALLENGE_FINISH_POS_1 && i != HUD_CHALLENGE_FINISH_POS_2 &&
                            i != HUD_LAP_COUNT_LABEL && i != HUD_CHALLENGE_PORTRAIT && i != HUD_EGG_CHALLENGE_ICON &&
                            ((i < HUD_BATTLE_BANANA_ICON || i > HUD_BATTLE_BANANA_COUNT_2) ||
                             i == HUD_BANANA_COUNT_SPARKLE || i == HUD_BANANA_COUNT_NUMBER_2)) {
@@ -1772,7 +1772,7 @@ void hud_stopwatch_face(u8 arg0, u8 arg1, u8 animID, u8 arg3, u8 arg4) {
  * Reset the angle of the speedometre's needle to the starting position.
  */
 void hud_speedometre_reset(void) {
-    gCurrentHud->entry[HUD_SPEEDOMETRE_ARROW].rotation.z_rotation = 0x6490;
+    //gCurrentHud->entry[HUD_SPEEDOMETRE_ARROW].rotation.z_rotation = 0x6490;
 }
 
 /**
@@ -1820,7 +1820,7 @@ void hud_speedometre(Object *obj, s32 updateRate) {
                 sprintf(textBytes, "%02d MPH", (s32) (vel * 4.0f));
                 draw_text(&gHudDL, x, height + y, textBytes, ALIGN_MIDDLE_RIGHT);
 
-                vel *= 4.0f;
+                /*vel *= 4.0f;
                 //!@bug: Planes and hovercraft use drift_direction for something else, applying this unintentionally.
                 if (racer->drift_direction != 0 && racer->vehicleID == VEHICLE_CAR) {
                     vel += 7.0f;
@@ -1863,7 +1863,7 @@ void hud_speedometre(Object *obj, s32 updateRate) {
                     hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_SPEEDOMETRE_90]);
                     hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_SPEEDOMETRE_120]);
                     hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_SPEEDOMETRE_150]);
-                }
+                }*/
             }
         }
     }
@@ -3754,14 +3754,14 @@ void hud_element_render(Gfx **dList, MatrixS **mtx, Vertex **vtxList, HudElement
     gHudMtx = *mtx;
     gHudVtx = *vtxList;
     spriteID = hud->spriteID;
-    if (spriteID != HUD_SPEEDOMETRE_30) {
+    //if (spriteID != HUD_SPEEDOMETRE_30) {
         if (spriteID != HUD_RACE_END_FINISH && spriteID != HUD_BANANA_COUNT_ICON_STATIC &&
             (spriteID < HUD_CHALLENGE_FINISH_POS_1 || spriteID >= HUD_BATTLE_BANANA_COUNT_1) &&
             spriteID != HUD_SILVER_COIN_TALLY && gMinimapXlu & 1) {
             hud->pos.y += objEntry.offsetY;
         }
         hud->pos.x += gHudOffsetX + gHudBounceX;
-    }
+    //}
     spriteID = hud->spriteID;
     if ((gAssetHudElementIds[spriteID] & ASSET_MASK_TEXTURE) == ASSET_MASK_TEXTURE) {
         if (spriteID >= HUD_CHALLENGE_FINISH_POS_1 && spriteID < HUD_BATTLE_BANANA_COUNT_1) {

@@ -14807,12 +14807,6 @@ s32 trophy_race_cabinet_menu_loop(void) {
 }
 
 /**
- * Blank function called when a dialogue box is opened.
- */
-void dialogue_open_stub(void) {
-}
-
-/**
  * Renders ortho geometry if the current dialogue box has anything to draw.
  */
 f32 dialogue_ortho(UNUSED DialogueBoxBackground *textbox, Gfx **dList, MatrixS **mat, Vertex **verts) {
