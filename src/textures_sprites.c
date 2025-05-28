@@ -1348,15 +1348,15 @@ void tex_animate_texture(TextureHeader *texture, u32 *triangleBatchInfoFlags, s3
     if (gMenuStopUpdating) {
         return;
     }
-
-    bit23Set = *triangleBatchInfoFlags & BATCH_FLAGS_UNK00800000;
-    bit26Set = *triangleBatchInfoFlags & BATCH_FLAGS_UNK04000000;
-    bit25Set = *triangleBatchInfoFlags & BATCH_FLAGS_UNK02000000;
+    
+    bit23Set = *triangleBatchInfoFlags & RENDER_UNK_0800000;
+    bit26Set = *triangleBatchInfoFlags & RENDER_UNK_4000000;
+    bit25Set = *triangleBatchInfoFlags & RENDER_UNK_2000000;
     if (bit23Set) {
         if (!bit25Set) {
             if (get_random_number_from_range(0, 1000) > 985) {
-                *triangleBatchInfoFlags &= ~BATCH_FLAGS_UNK04000000;
-                *triangleBatchInfoFlags |= BATCH_FLAGS_UNK02000000;
+                *triangleBatchInfoFlags &= ~RENDER_UNK_4000000;
+                *triangleBatchInfoFlags |= RENDER_UNK_2000000;
             }
         } else if (!bit26Set) {
             *arg2 += texture->frameAdvanceDelay * updateRate;
@@ -1364,16 +1364,16 @@ void tex_animate_texture(TextureHeader *texture, u32 *triangleBatchInfoFlags, s3
                 *arg2 = ((texture->numOfTextures * 2) - *arg2) - 1;
                 if (*arg2 < 0) {
                     *arg2 = 0;
-                    *triangleBatchInfoFlags &= ~(BATCH_FLAGS_UNK02000000 | BATCH_FLAGS_UNK04000000);
+                    *triangleBatchInfoFlags &= ~(RENDER_UNK_2000000 | RENDER_UNK_4000000);
                 } else {
-                    *triangleBatchInfoFlags |= BATCH_FLAGS_UNK04000000;
+                    *triangleBatchInfoFlags |= RENDER_UNK_4000000;
                 }
             }
         } else {
             *arg2 -= texture->frameAdvanceDelay * updateRate;
             if (*arg2 < 0) {
                 *arg2 = 0;
-                *triangleBatchInfoFlags &= ~(BATCH_FLAGS_UNK02000000 | BATCH_FLAGS_UNK04000000);
+                *triangleBatchInfoFlags &= ~(RENDER_UNK_2000000 | RENDER_UNK_4000000);
             }
         }
     } else if (bit25Set) {
@@ -1386,12 +1386,12 @@ void tex_animate_texture(TextureHeader *texture, u32 *triangleBatchInfoFlags, s3
             breakVar = FALSE;
             if (*arg2 < 0) {
                 *arg2 = -*arg2;
-                *triangleBatchInfoFlags &= ~BATCH_FLAGS_UNK04000000;
+                *triangleBatchInfoFlags &= ~RENDER_UNK_4000000;
                 breakVar = TRUE;
             }
             if (*arg2 >= texture->numOfTextures) {
                 *arg2 = ((texture->numOfTextures * 2) - *arg2) - 1;
-                *triangleBatchInfoFlags |= BATCH_FLAGS_UNK04000000;
+                *triangleBatchInfoFlags |= RENDER_UNK_4000000;
                 breakVar = TRUE;
             }
         } while (breakVar);

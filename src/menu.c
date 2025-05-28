@@ -15608,7 +15608,7 @@ void debugmodel_shade(ObjectModel *model, Object *object, s32 arg2, f32 intensit
         if (model->batches[i].unk6 != 0xFF) {
             dynamicLightingEnabled = -1; // This is a bit weird, but I guess it works.
         }
-        if (model->batches[i].flags & BATCH_FLAGS_ENVMAP) {
+        if (model->batches[i].flags & RENDER_ENVMAP) {
             environmentMappingEnabled = -1;
         }
     }
@@ -15696,7 +15696,7 @@ void render_model(s32 updateRate) {
 
     for (i = 0; model->unk50 > 0 && i < model->numberOfBatches; i++) {
         s32 sp5C;
-        if (model->batches[i].flags & BATCH_FLAGS_TEXTURE_ANIM) {
+        if (model->batches[i].flags & RENDER_TEX_ANIM) {
             if (model->batches[i].textureIndex != TEX_INDEX_NO_TEXTURE) {
                 tex = model->textures[model->batches[i].textureIndex].texture;
                 sp5C = model->batches[i].unk7;
@@ -15712,7 +15712,7 @@ void render_model(s32 updateRate) {
         shouldShade = TRUE;
     } else {
         for (i = 0; i < model->numberOfBatches; i++) {
-            if (model->batches[i].flags & BATCH_FLAGS_ENVMAP) {
+            if (model->batches[i].flags & RENDER_ENVMAP) {
                 shouldShade = TRUE;
                 break;
             }
@@ -15747,7 +15747,7 @@ void render_model(s32 updateRate) {
                     texOffset = model->batches[i].unk7 << 14;
                 }
                 
-                isTexTransparent = tex != NULL && (TEX_RENDERMODE(tex->format) == 0 || model->batches[i].flags & BATCH_FLAGS_RECEIVE_SHADOWS);
+                isTexTransparent = tex != NULL && (TEX_RENDERMODE(tex->format) == 0 || model->batches[i].flags & RENDER_DECAL);
 
                 if(((mode == 0) && isTexTransparent) || ((mode == 1) && !isTexTransparent)) {
                     continue;
@@ -15755,7 +15755,7 @@ void render_model(s32 updateRate) {
                 
                 isDecal = FALSE;
                 if (mode == 1) {
-                    if (model->batches[i].flags & BATCH_FLAGS_RECEIVE_SHADOWS) {
+                    if (model->batches[i].flags & RENDER_DECAL) {
                         isDecal = TRUE;
                     }
                 }
