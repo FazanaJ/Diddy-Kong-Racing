@@ -147,9 +147,6 @@ Gfx dDebugFontSettings[] = {
 
 const char gLowerCase[] = "0123456789abcdefghijklmnopqrstuvwxyz";
 const char gUpperCase[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-const char D_800E8C50[] = "";
-const char D_800E8C54[] = "(null)";
-const char D_800E8C5C[] = "(nil)";
 
 /*********************************/
 
@@ -207,7 +204,7 @@ static char *proutSprintf(char *dst, const char *src, size_t count) {
 /**
  * Official name: sprintf
  */
-UNUSED int sprintf(char *s, const char *format, ...) {
+int sprintf(char *s, const char *format, ...) {
     s32 ret;
     va_list args;
     va_start(args, format);
@@ -235,7 +232,6 @@ s32 render_printf(const char *format, ...) {
     s32 written;
     va_start(args, format);
     if ((gDebugPrintBufferEnd - gDebugPrintBufferStart) > 0x800) {
-        stubbed_printf("*** diPrintf Error *** ---> Out of string space. (Print less text!)\n");
         return -1;
     }
     sprintfSetSpacingCodes(TRUE);

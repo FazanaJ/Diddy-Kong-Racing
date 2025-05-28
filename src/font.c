@@ -1020,7 +1020,6 @@ void render_dialogue_boxes(Gfx **dList, MatrixS **mat, Vertex **verts) {
     if (sDialogueBoxIsOpen) {
         sDialogueBoxCloseTimer--;
         if (sDialogueBoxCloseTimer == 0) {
-            dialogue_close_stub();
             sDialogueBoxIsOpen = FALSE;
         }
     }
@@ -1150,7 +1149,6 @@ void render_dialogue_box(Gfx **dList, MatrixS **mat, Vertex **verts, s32 dialogu
     }
     if (mat != NULL && verts != NULL) {
         if (sDialogueBoxIsOpen == FALSE) {
-            dialogue_open_stub();
             sDialogueBoxIsOpen = TRUE;
         }
         sDialogueBoxCloseTimer = 2;

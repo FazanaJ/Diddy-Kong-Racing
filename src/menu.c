@@ -14813,12 +14813,6 @@ void dialogue_open_stub(void) {
 }
 
 /**
- * Blank function called when a dialogue box is closed.
- */
-void dialogue_close_stub(void) {
-}
-
-/**
  * Renders ortho geometry if the current dialogue box has anything to draw.
  */
 f32 dialogue_ortho(UNUSED DialogueBoxBackground *textbox, Gfx **dList, MatrixS **mat, Vertex **verts) {

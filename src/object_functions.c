@@ -3659,14 +3659,14 @@ void obj_loop_door(Object *doorObj, s32 updateRate) {
             } else if (door->openDir == DOOR_CLOSING) {
                 angleVel = doorObj->segment.trans.rotation.y_rotation - doorObj->properties.common.unk0;
             }
-            angleVel >>= 3;
-            if (angleVel > 0x200) {
-                angleVel = 0x200;
+            angleVel >>= 2;
+            if (angleVel > 0x100) {
+                angleVel = 0x100;
             }
-            if (angleVel < -0x200) {
-                angleVel = -0x200;
+            if (angleVel < -0x100) {
+                angleVel = -0x100;
             }
-            doorObj->segment.trans.rotation.y_rotation -= angleVel; //@!Delta
+            doorObj->segment.trans.rotation.y_rotation -= angleVel * updateRate;
             if (angleVel != 0) {
                 playSound = TRUE;
             }
