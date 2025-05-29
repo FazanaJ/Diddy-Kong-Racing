@@ -232,7 +232,7 @@ s32 *gSpriteCache;
 
 s32 gSpriteTableSize;
 s32 gSpriteCacheCount;
-s32 D_8012635C;
+s32 D_8012635C; // Set but never used
 Vertex *D_80126360;
 Gfx *D_80126364;
 Triangle *D_80126368;

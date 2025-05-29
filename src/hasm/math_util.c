@@ -147,7 +147,7 @@ GLOBAL_ASM("asm/math_util/f32_matrix_mult.s")
 #ifdef NON_MATCHING
 /* Official name: mathMtxF2L */
 void f32_matrix_to_s16_matrix(Matrix *input, MatrixS *output) {
-    guMtxF2L((float (*)[4]) input, (Mtx *) output);
+    guMtxF2L((float(*)[4]) input, (Mtx *) output);
 }
 #else
 GLOBAL_ASM("asm/math_util/f32_matrix_to_s16_matrix.s")
@@ -455,7 +455,7 @@ GLOBAL_ASM("asm/math_util/f32_vec3_apply_object_rotation.s")
 
 #ifdef NON_EQUIVALENT
 /* Official Name: mathOneFloatYPR */
-void f32_vec3_apply_object_rotation2(ObjectTransform *trans, f32 *arg1) {
+void f32_vec3_apply_object_rotation2(Vec3s *trans, f32 *arg1) {
     f32 yRotSine;
     f32 yRotCosine;
     f32 xRotSine;
