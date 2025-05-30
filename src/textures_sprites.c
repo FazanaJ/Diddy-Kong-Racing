@@ -521,7 +521,7 @@ void material_set(Gfx **dList, TextureHeader *texhead, s32 flags, s32 texOffset)
 
         flags |= texhead->flags;
         if (texhead != gCurrentTextureHeader) {
-            gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(texhead->cmd), texhead->numberOfCommands);
+            gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(texhead->cmd), texhead->numberOfCommands);
             DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
             loadTex = TRUE;
             gCurrentTextureHeader = texhead;
@@ -1354,7 +1354,7 @@ void tex_animate_texture(TextureHeader *texture, u32 *triangleBatchInfoFlags, s3
     bit25Set = *triangleBatchInfoFlags & RENDER_UNK_2000000;
     if (bit23Set) {
         if (!bit25Set) {
-            if (get_random_number_from_range(0, 1000) > 985) {
+            if (rand_range(0, 1000) > 985) {
                 *triangleBatchInfoFlags &= ~RENDER_UNK_4000000;
                 *triangleBatchInfoFlags |= RENDER_UNK_2000000;
             }
@@ -1544,7 +1544,7 @@ void gfx_init_basic_xlu(Gfx **dList, u32 index, u32 primitiveColor, u32 environm
 
     gfxTemp = *dList;
     gSPDisplayList(gfxTemp++, tempDlist);
-    gDkrDmaDisplayList(gfxTemp++, OS_PHYSICAL_TO_K0(dBasicRenderModes[tempIndex]),
+    gDkrDmaDisplayList(gfxTemp++, OS_K0_TO_PHYSICAL(dBasicRenderModes[tempIndex]),
                        numberOfGfxCommands(dBasicRenderModes[0]));
     gDPSetPrimColorRGBA(gfxTemp++, primitiveColor);
     gDPSetEnvColorRGBA(gfxTemp++, environmentColor);

@@ -75,8 +75,8 @@ FadeTransition D_800DD424 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FAD
 
 Gfx *gDisplayLists[2];
 Gfx *gCurrDisplayList;
-MatrixS *gMatrixHeap[2];
-MatrixS *gGameCurrMatrix;
+Mtx *gMatrixHeap[2];
+Mtx *gGameCurrMatrix;
 Vertex *gVertexHeap[2];
 Vertex *gGameCurrVertexList;
 Triangle *gTriangleHeap[2];
@@ -355,7 +355,7 @@ void main_game_loop(void) {
     debug_render(&gCurrDisplayList, sLogicUpdateRate);
     //set_render_printf_background_colour(0, 0, 0, 255);
     //render_printf("Gfx: %d/%d\n", ((u32) gCurrDisplayList - (u32) gDisplayLists[gSPTaskNum]) / sizeof(Gwords), NUM_GFX_COMMANDS);
-    //render_printf("Mtx: %d/%d\n", ((u32) gGameCurrMatrix - (u32) gMatrixHeap[gSPTaskNum]) / sizeof(MatrixS), NUM_MTX_COMMANDS);
+    //render_printf("Mtx: %d/%d\n", ((u32) gGameCurrMatrix - (u32) gMatrixHeap[gSPTaskNum]) / sizeof(Mtx), NUM_MTX_COMMANDS);
     //render_printf("Vtx: %d/%d\n", ((u32) gGameCurrVertexList - (u32) gVertexHeap[gSPTaskNum]) / sizeof(Vertex), NUM_VTX_COMMANDS);
     //render_printf("Tri: %d/%d\n", ((u32) gGameCurrTriList - (u32) gTriangleHeap[gSPTaskNum]) / sizeof(Triangle), NUM_TRI_COMMANDS);
 
@@ -1431,18 +1431,18 @@ void default_alloc_displaylist_heap(void) {
     numberOfPlayers = FOUR_PLAYERS;
     gPrevPlayerCount = numberOfPlayers;
     totalSize = ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)) +
-                (NUM_MTX_COMMANDS * sizeof(Matrix)) +
+                (NUM_MTX_COMMANDS * sizeof(Mtx)) +
                 (NUM_VTX_COMMANDS * sizeof(Vertex)) +
                 (NUM_TRI_COMMANDS * sizeof(Triangle));
 
     gDisplayLists[0] = (Gfx *) mempool_alloc_safe(totalSize, PP_RAM_CMDBUF);
-    gMatrixHeap[0] = (MatrixS *) ((u8 *) gDisplayLists[0] + ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)));
-    gVertexHeap[0] = (Vertex *) ((u8 *) gMatrixHeap[0] + (NUM_MTX_COMMANDS * sizeof(Matrix)));
+    gMatrixHeap[0] = (Mtx *) ((u8 *) gDisplayLists[0] + ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)));
+    gVertexHeap[0] = (Vertex *) ((u8 *) gMatrixHeap[0] + (NUM_MTX_COMMANDS * sizeof(Mtx)));
     gTriangleHeap[0] = (Triangle *) ((u8 *) gVertexHeap[0] + (NUM_VTX_COMMANDS * sizeof(Vertex)));
 
     gDisplayLists[1] = (Gfx *) mempool_alloc_safe(totalSize, PP_RAM_CMDBUF);
-    gMatrixHeap[1] = (MatrixS *) ((u8 *) gDisplayLists[1] + ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)));
-    gVertexHeap[1] = (Vertex *) ((u8 *) gMatrixHeap[1] + (NUM_MTX_COMMANDS * sizeof(Matrix)));
+    gMatrixHeap[1] = (Mtx *) ((u8 *) gDisplayLists[1] + ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)));
+    gVertexHeap[1] = (Vertex *) ((u8 *) gMatrixHeap[1] + (NUM_MTX_COMMANDS * sizeof(Mtx)));
     gTriangleHeap[1] = (Triangle *) ((u8 *) gVertexHeap[1] + (NUM_VTX_COMMANDS * sizeof(Vertex)));
 }
 
