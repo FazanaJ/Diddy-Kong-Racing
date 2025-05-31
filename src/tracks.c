@@ -23,6 +23,7 @@
 #include "common.h"
 #include "main.h"
 #include "thread30_bgload.h"
+#include "thread0_epc.h"
 
 // Maximum size for a level model is 522.5 KiB
 #define LEVEL_MODEL_MAX_SIZE 0x82A00
@@ -177,51 +178,75 @@ s16 D_8011D4BA;
 s16 D_8011D4BC;
 
 u8 gSortMats;
-s16 gSortBufCount;
-SortBuffer *gSortBuffer;
+s16 gSortBufCount[SORT_ENTRIES];
+SortBuffer *gSortBuffer[SORT_ENTRIES];
 
 
 /******************************/
 
-void sortbuffer_find(SortBuffer *b) {
+void sortbuffer_init(void) {
+    s32 i;
+    if (gSortBuffer[SORT_OPA]) {
+        mempool_free(gSortBuffer[SORT_OPA]);
+    }
+
+    if (gSortMats == FALSE) {
+        return;
+    }
+
+    gSortBuffer[SORT_OPA] = (SortBuffer *) mempool_alloc(sizeof(SortBuffer) * 500, PP_RAM_STACK);
+    gSortBuffer[SORT_DECAL] = (SortBuffer *) (((u8 *) gSortBuffer[SORT_OPA]) + (sizeof(SortBuffer) * 300));
+    gSortBuffer[SORT_XLU] = (SortBuffer *) (((u8 *) gSortBuffer[SORT_DECAL]) + (sizeof(SortBuffer) * 100));
+    for (i = 0; i < SORT_ENTRIES; i++) {
+        gSortBuffer[i][0].nextIndex = -1;
+        gSortBuffer[i][0].index = 0;
+        gSortBufCount[i] = 0;
+    }
+}
+
+void sortbuffer_find(SortBuffer *b, s32 index) {
     s32 i;
     SortBuffer *slot;
     s32 nextIdx;
 
     // This is the first entry, we don't need to sort anything.
-    if (gSortBufCount == 1) {
+    if (gSortBufCount[index] == 1) {
         b->nextIndex = -1;
         return;
     }
 
+    //crash_assert(gSortBufCount[index] >= 100, "Sort Buffer exceeded %d entries", 100);
+
     for (i = 0; i != -1; i = slot->nextIndex) {
-        slot = &gSortBuffer[i];
+        slot = &gSortBuffer[index][i];
 
         if ((s32) slot->material == (s32) b->material) {
             nextIdx = slot->nextIndex;
             slot->nextIndex = b->index;
             b->nextIndex = nextIdx;
+            //debug_printf("Addr: %X\n", (u32) slot);
             return;
         }
     }
 
+    //debug_printf("Addr: %X\n", (u32) slot);
     slot->nextIndex = b->index;
     b->nextIndex = -1;
 }
 
-void sortbuffer_pop(Gfx **dList) {
+void sortbuffer_pop(Gfx **dList, s32 index) {
     s32 i;
     SortBuffer *slot;
     s32 nextIdx;
     u32 prevPrim = 0;
 
     // Just return if there's nothing.
-    if (gSortBufCount == 0) {
+    if (gSortBufCount[index] == 0) {
         return;
     }
 
     for (i = 0; i != -1; i = slot->nextIndex) {
-        slot = &gSortBuffer[i];
+        slot = &gSortBuffer[index][i];
         if (slot->primColour != prevPrim) {
             gDPSetPrimColorRGBA((*dList)++, slot->primColour);
             prevPrim = slot->primColour;
@@ -229,17 +254,16 @@ void sortbuffer_pop(Gfx **dList) {
         if (slot->material) {
             material_set(dList, slot->material, slot->flags, slot->texOffset);
         }
-        if (slot->material) {
-            
-        }
         gSPVertexDKR((*dList)++, OS_PHYSICAL_TO_K0(slot->vtx), slot->vtxCount, 0);
         gSPPolygon((*dList)++, OS_PHYSICAL_TO_K0(slot->tri), slot->triCount, slot->material != NULL);
     }
 
-    gSortBuffer[0].nextIndex = -1;
-    gSortBuffer[0].index = 0;
+    gSortBuffer[index][0].nextIndex = -1;
+    gSortBuffer[index][0].index = 0;
 
-    gSortBufCount = 0;
+    render_printf("%d Buffer Size: %d\n", index, gSortBufCount[index]);
+
+    gSortBufCount[index] = 0;
 }
 
 /**
@@ -271,14 +295,6 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     D_8011B104 = 0;
     D_8011B108 = 0;
     D_8011B10C = 0;
-
-    if (gSortBuffer) {
-        mempool_free(gSortBuffer);
-    }
-
-    if (gSortMats) {
-        gSortBuffer = mempool_alloc(sizeof(SortBuffer) * 200, PP_RAM_STACK);
-    }
 
     if (gCurrentLevelHeader2->race_type == RACETYPE_CUTSCENE_1 ||
         gCurrentLevelHeader2->race_type == RACETYPE_CUTSCENE_2) {
@@ -1860,7 +1876,8 @@ void render_level_geometry_and_objects(void) {
             objectsVisible[segmentIds[i] + 1] = TRUE;
         }
     }
-    sortbuffer_pop(&gSceneCurrDisplayList);
+    sortbuffer_pop(&gSceneCurrDisplayList, SORT_OPA);
+    sortbuffer_pop(&gSceneCurrDisplayList, SORT_DECAL);
     aa_manage(TRACKAA_OBJECT);
 
     if (gCurrentLevelModel->numberOfSegments < 2) {
@@ -1921,14 +1938,15 @@ void render_level_geometry_and_objects(void) {
         }
     }
 
-    aa_manage(TRACKAA_LEVEL);
+    aa_manage(AA_OFF);
     if (gDrawLevelSegments) {
         for (i = numberOfSegments - 1; i >= 0; i--) {
             render_level_segment(segmentIds[i], TRUE); // Render transparent segments
         }
     }
-    sortbuffer_pop(&gSceneCurrDisplayList);
-    aa_manage(AA_OFF);
+    sortbuffer_pop(&gSceneCurrDisplayList, SORT_OPA);
+    sortbuffer_pop(&gSceneCurrDisplayList, SORT_DECAL);
+    sortbuffer_pop(&gSceneCurrDisplayList, SORT_XLU);
 
     if (gWaveBlockCount != 0) {
         waves_render(&gSceneCurrDisplayList, &gSceneCurrMatrix, get_current_viewport());
@@ -1976,7 +1994,9 @@ void render_level_geometry_and_objects(void) {
         }
     }
 
-    sortbuffer_pop(&gSceneCurrDisplayList);
+    sortbuffer_pop(&gSceneCurrDisplayList, SORT_OPA);
+    sortbuffer_pop(&gSceneCurrDisplayList, SORT_DECAL);
+    sortbuffer_pop(&gSceneCurrDisplayList, SORT_XLU);
 
     if (D_800DC924 != NULL && func_80027568()) {
         func_8002581C(segmentIds, numberOfSegments, get_current_viewport());
@@ -2008,8 +2028,6 @@ void render_level_segment(s32 segmentId, s32 nonOpaque) {
     s32 endPos;
     s32 batchFlags;
     s32 textureFlags;
-    //! @bug: batchInfo is uninitalized
-    numberVertices = (batchInfo + 1)->verticesOffset - batchInfo->verticesOffset;
     segment = &gCurrentLevelModel->segments[segmentId];
     sp78 = (nonOpaque && gWaveBlockCount) ? waves_block_hq(segment) : 0;
     if (nonOpaque) {
@@ -2077,20 +2095,31 @@ void render_level_segment(s32 segmentId, s32 nonOpaque) {
             gDPSetPrimColor(gSceneCurrDisplayList++, 0, 0, 255, 255, 255, 255);
         } else {
             if (gSortMats) {
-                    SortBuffer *buf = &gSortBuffer[gSortBufCount];
-                    buf->flags = batchFlags;
-                    buf->tri = triangles;
-                    buf->vtx = vertices;
-                    buf->triCount = numberTriangles;
-                    buf->vtxCount = numberVertices;
-                    buf->material = texture;
-                    buf->texOffset = texOffset;
-                    buf->mtx = NULL;
-                    buf->primColour = COLOUR_RGBA32(255, 255, 255, 255);
-                    buf->index = gSortBufCount;
-                    gSortBufCount++;
-                    buf->matType = 0;
-                    sortbuffer_find(buf);
+                s32 index;
+                SortBuffer *buf;
+                if (batchFlags & RENDER_DECAL) {
+                    index = SORT_DECAL;
+                } else {
+                    if (nonOpaque) {
+                        index = SORT_XLU;
+                    } else {
+                        index = SORT_OPA;
+                    }
+                }
+                buf = &gSortBuffer[index][gSortBufCount[index]];
+                buf->flags = batchFlags;
+                buf->tri = triangles;
+                buf->vtx = vertices;
+                buf->triCount = numberTriangles;
+                buf->vtxCount = numberVertices;
+                buf->material = texture;
+                buf->texOffset = texOffset;
+                buf->mtx = NULL;
+                buf->primColour = COLOUR_RGBA32(255, 255, 255, 255);
+                buf->index = gSortBufCount[index];
+                gSortBufCount[index]++;
+                buf->matType = 0;
+                sortbuffer_find(buf, index);
             } else {
                 material_set(&gSceneCurrDisplayList, texture, batchFlags, texOffset);
                 batchFlags = TRUE;
@@ -3470,7 +3499,7 @@ void shadow_render(Object *obj, ShadowData *shadow) {
                 tri = &gCurrShadowTris[triCount];
                 vtx = &gCurrShadowVerts[vtxCount];
                 if (gSortMats) {
-                    SortBuffer *buf = &gSortBuffer[gSortBufCount];
+                    SortBuffer *buf = &gSortBuffer[SORT_DECAL][gSortBufCount[SORT_DECAL]];
                     buf->flags = flags;
                     buf->tri = tri;
                     buf->vtx = vtx;
@@ -3480,10 +3509,10 @@ void shadow_render(Object *obj, ShadowData *shadow) {
                     buf->texOffset = 0;
                     buf->mtx = NULL;
                     buf->primColour = COLOUR_RGBA32(255, 255, 255, alpha);
-                    buf->index = gSortBufCount;
+                    buf->index = gSortBufCount[SORT_DECAL];
                     buf->matType = 0;
-                    gSortBufCount++;
-                    sortbuffer_find(buf);
+                    gSortBufCount[SORT_DECAL]++;
+                    sortbuffer_find(buf, SORT_DECAL);
                 } else {
                     material_set_no_tex_offset(&gSceneCurrDisplayList, gCurrShadowHeapData[i].texture, flags);
                     gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
@@ -3536,7 +3565,7 @@ void watereffect_render(Object *obj, WaterEffect *effect) {
                 tri = &gCurrShadowTris[gCurrShadowHeapData[i].triCount];
                 vtx = &gCurrShadowVerts[gCurrShadowHeapData[i].vtxCount];
                 if (gSortMats) {
-                    SortBuffer *buf = &gSortBuffer[gSortBufCount];
+                    SortBuffer *buf = &gSortBuffer[SORT_DECAL][gSortBufCount[SORT_DECAL]];
                     buf->flags = flags;
                     buf->tri = tri;
                     buf->vtx = vtx;
@@ -3546,10 +3575,10 @@ void watereffect_render(Object *obj, WaterEffect *effect) {
                     buf->texOffset = 0;
                     buf->mtx = NULL;
                     buf->primColour = COLOUR_RGBA32(255, 255, 255, 255);
-                    buf->index = gSortBufCount;
+                    buf->index = gSortBufCount[SORT_DECAL];
                     buf->matType = 0;
-                    gSortBufCount++;
-                    sortbuffer_find(buf);
+                    gSortBufCount[SORT_DECAL]++;
+                    sortbuffer_find(buf, SORT_DECAL);
                 } else {
                     material_set_no_tex_offset(&gSceneCurrDisplayList, gCurrShadowHeapData[i].texture, flags);
                     gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);

@@ -26,9 +26,18 @@ typedef struct SortBuffer {
     u8 matType;
 } SortBuffer;
 
-extern s16 gSortBufCount;
-extern SortBuffer *gSortBuffer;
-void sortbuffer_find(SortBuffer *b);
+enum SortBufferIDs {
+    SORT_OPA,
+    SORT_DECAL,
+    SORT_XLU,
+
+    SORT_ENTRIES
+};
+
+extern s16 gSortBufCount[SORT_ENTRIES];
+extern SortBuffer *gSortBuffer[SORT_ENTRIES];
+void sortbuffer_find(SortBuffer *b, s32 index);
+void sortbuffer_init(void);
 
 #define LOCAL_OFFSET_TO_RAM_ADDRESS(type, ptr) \
     ptr = (type)((s32)((u8*)ptr) + (s32)((u8*)mdl))
