@@ -153,7 +153,7 @@ void update_bluey(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *ra
     }
     gfxData = *obj->unk68;
     objModel = gfxData->objModel;
-    diffX = (objModel->animations[obj->segment.object.animationID].unk4 * 16) - 17;
+    diffX = (objModel->animations[obj->segment.object.animationID].animLength * 16) - 17;
     while (racer->animationSpeed < 0.0f) {
         racer->animationSpeed += diffX;
         gfxData->animationID = -1;
@@ -191,7 +191,7 @@ void update_bluey(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *ra
     if (obj->segment.object.animationID == ANIM_BLUEY_TURN) {
         racer->headAngleTarget = 0;
     }
-    racer = (Object_Racer *) firstRacerObj->unk64;
+    racer = &firstRacerObj->unk64->racer;
     if (obj == firstRacerObj->interactObj->obj && firstRacerObj->interactObj->flags & INTERACT_FLAGS_PUSHING &&
         obj->segment.object.animationID == ANIM_BLUEY_WALK) {
         racer->attackType = ATTACK_SQUISHED;

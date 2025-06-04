@@ -431,11 +431,8 @@ typedef struct LevelHeader {
   /* 0x0C */ u8 unkC[10];
   /* 0x16 */ u8 unk16[10];
   /* 0x20 */ s8 *AILevelTable;
-
   /* 0x24 */ u8 pad24[6];
-  /* 0x2A */ u8 unk2A;
-  /* 0x2B */ u8 pad2B[9];
-
+  /* 0x2A */ s8 unk2A[10];
   /* 0x34 */ s16 geometry;
   /* 0x36 */ s16 collectables; // Objects such as bananas, balloons, etc.
   /* 0x38 */ s16 skybox;
@@ -461,6 +458,7 @@ typedef struct LevelHeader {
   /* 0x52 */ u8 music;
   /* 0x53 */ u8 unk53;
   /* 0x54 */ u16 instruments;
+  // Waves
   /* 0x56 */ u8 waveSubdivisons; // values between 2 and 8 (except 5 and 7), used to determine waves count?
   /* 0x57 */ u8 unk57; // possible values: 2,4,8,16,20, related to waves
   /* 0x58 */ u8 waveSineStep0; // possible values: 1,2,4
@@ -516,8 +514,8 @@ typedef struct LevelHeader {
   /* 0xB0 */ s16 unkB0;
   /* 0xB2 */ u8 unkB2;
   /* 0xB3 */ u8 voiceLimit;
-  /* 0xB4 */ ByteColour rgb;
-  /* 0xB7 */ u8 unkB7;
+  /* 0xB4 */ ByteColour voidColour;
+  /* 0xB7 */ u8 useVoid; // Disallow the player from looking through walls by drawing a blank screen behind walls.
   /* 0xB8 */ s8 bossRaceID;
   /* 0xB9 */ u8 unkB9;
   /* 0xBA */ s16 unkBA;
@@ -611,24 +609,15 @@ typedef struct Triangle {
 /* Size: 12 bytes */
 typedef struct TriangleBatchInfo {
 /* 0x00 */ u8  textureIndex; // 0xFF = No texture
-/* 0x01 */ s8  unk1;
+/* 0x01 */ s8  vertOverride; // If used, will end a draw this many verts in, so it can do something mid mesh.
 /* 0x02 */ s16 verticesOffset;
 /* 0x04 */ s16 facesOffset;
-/* 0x06 */ u8  unk6; // 0xFF = vertex colors, otherwise use dynamic lighting normals (Objects only)
-/* 0x07 */ u8  unk7;
-/* 0x08 */ u32 flags;
-    // 0x00000002 = ???
-    // 0x00000008 = ???
-    // 0x00000010 = Depth write
-    // 0x00000100 = Hidden/Invisible geometry
-    // 0x00000200 = ??? Used in func_80060AC8
-    // 0x00000800 = ???
-    // 0x00002000 = ???
-    // 0x00008000 = Environment mapping
-    // 0x00010000 = Texture is animated
-    // 0x00040000 = Has pulsating light data.
-    // 0x70000000 = bits 28, 29, & 30 are some kind of index. Not used in any levels.
+/* 0x06 */ u8  miscData; // 0xFF = vertex colors, otherwise use dynamic lighting normals (Objects only)
+/* 0x07 */ u8  texOffset;
+/* 0x08 */ u32 flags; // See RenderFlags in textures_sprites.c
 } TriangleBatchInfo;
+
+#define BATCH_VTX_COL 0xFF
 
 /* Size: 8 bytes */
 typedef struct ObjectModel_44 {
@@ -636,7 +625,7 @@ typedef struct ObjectModel_44 {
 /* 0x00 */ s32 *anim;
 /* 0x00 */ u8 *animData;
     };
-/* 0x04 */ s32 unk4; // Number of frames in animation?
+/* 0x04 */ s32 animLength; // Animation length is the result of 16-frame length keyframes.
 } ObjectModel_44;
 
 typedef struct ObjectModel_C {
@@ -679,7 +668,7 @@ typedef struct ObjectModel {
     /* 0x4A */ s16 unk4A;
     /* 0x4C */ s32 *unk4C;
     /* 0x50 */ s16 unk50;
-    /* 0x52 */ s16 unk52;
+    /* 0x52 */ s16 texOffsetUpdateRate; // Set to the current updaterate for the first model.
     /* 0x54 */ u8 pad[0x2C];
 } ObjectModel;      
 
@@ -698,7 +687,10 @@ typedef struct LevelModelSegment {
 /* 0x0C */ TriangleBatchInfo *batches;
 /* 0x10 */ s16 *unk10;
 /* 0x14 */ CollisionNode *unk14;
+union {
 /* 0x18 */ f32 *unk18;
+/* 0x18 */ Vec4f *unk18_vec4f; // Used for objects, not levels.
+};
 /* 0x1C */ s16 numberOfVertices;
 /* 0x1E */ s16 numberOfTriangles;
 /* 0x20 */ s16 numberOfBatches;
@@ -1545,12 +1537,17 @@ typedef struct Object_FogChanger {
 typedef struct Object_NPC {
    /* 0x00 */ f32 unk0;
    /* 0x04 */ f32 animFrameF;
-   /* 0x08 */ s32 unk8;
-   /* 0x0C */ s8 nodeBack1; // One node backwards
-   /* 0x0D */ u8 nodeCurrent; // Intended target node
-   /* 0x0E */ u8 nodeBack2; // Two nodes backward
-   /* 0x0F */ u8 nodeForward1; // One node forward
-   /* 0x10 */ u8 nodeForward2; // Two nodes forward
+   /* 0x08 */ f32 unk8;
+   union {
+    /* 0x0C */ u8 nodeData[5];
+    struct {
+        /* 0x0C */ s8 nodeBack1; // One node backwards
+        /* 0x0D */ u8 nodeCurrent; // Intended target node
+        /* 0x0E */ u8 nodeBack2; // Two nodes backward
+        /* 0x0F */ u8 nodeForward1; // One node forward
+        /* 0x10 */ u8 nodeForward2; // Two nodes forward
+    };
+   };
    /* 0x11 */ u8 fogR;
    /* 0x12 */ u8 fogG;
    /* 0x13 */ u8 fogB;
@@ -1604,7 +1601,7 @@ typedef struct Object_Log {
 
 typedef struct Object_Fireball_Octoweapon {
     u8 pad0[0x1C];
-    SoundHandle soundMask;
+    struct AudioPoint *soundMask;
 } Object_Fireball_Octoweapon;
 
 typedef struct Object_AnimatedObject {
@@ -1730,6 +1727,7 @@ typedef struct Object_68_38 {
 typedef struct Object_68 {
   /* 0x00 */ union {
       ObjectModel *objModel;
+      Sprite *sprite;
       TextureHeader *texHeader;
   };
   /* 0x04 */ Vertex *vertices[3];
@@ -1853,7 +1851,7 @@ typedef struct Object {
   /* 0x0064 */ Object_64 *unk64; //player + 0x98
   /* 0x0068 */ Object_68 **unk68; //player + 0x80
   /* 0x006C */ struct ParticleEmitter *particleEmitter; //player + 0x370
-  /* 0x0070 */ Object_LightData **lightData;
+  /* 0x0070 */ struct ObjectLight **lightData;
   /* 0x0074 */ u32 particleEmittersEnabled;
   /* 0x0078 */ ObjProperties properties;
   /* 0x0080 */ void *unk80;

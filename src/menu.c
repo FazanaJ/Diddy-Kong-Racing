@@ -2142,17 +2142,16 @@ void menu_button_free(void) {
     gWoodPanelAllocCount = 0;
 }
 
-#ifdef NON_EQUIVALENT
-void func_8007FFEC(s32 arg0) {
-    s32 sp28;
-    s32 sp24;
-    s32 sp20;
-    Triangle *alloc;
+// Allocate and initalize a certain number of wooden panels used for the UI.
+void func_8007FFEC(s32 numberOfPanels) {
     s32 triListIndex;
+    s32 triItemIndex;
     s32 IndicesIndex;
-    s32 triIndex;
+    s32 panelIndex;
     s32 i;
-    s32 j;
+    s32 triangleCount;
+    s32 vertexSize;
+    s32 menuGeometrySize;
 
     if (gMenuGeometry != NULL) {
         menu_button_free();
@@ -2160,56 +2159,57 @@ void func_8007FFEC(s32 arg0) {
 
     gWoodPanelTexScaleU = 32; // 32 = 1.0x scale
     gWoodPanelTexScaleV = 32; // 32 = 1.0x scale
-    sp20 = arg0 * 0xA * 0x10;
-    // sp28 = arg0 << 5;
-    // sp24 = arg0 * 0x64 * 2;
 
-    // This is mostly wrong. Need to fix!
-    alloc = mempool_alloc_safe(arg0 * 0x2F0, COLOUR_TAG_WHITE);
-    gWoodPanelTriangles[0] = alloc;
-    gWoodPanelTriangles[1] = gWoodPanelTriangles[0] + sp20;
-    gMenuGeometry = (unk80080BC8 *) gWoodPanelTriangles[1] + sp20;
-    gWoodPanelVertices[1] = (Vertex *) gMenuGeometry;
-    gWoodPanelVertices[1] = gWoodPanelVertices[0] + arg0;
+    menuGeometrySize = sizeof(unk80080BC8) * numberOfPanels;
+    vertexSize = sizeof(Vertex) * (20 * numberOfPanels);
+    triangleCount = sizeof(Triangle) * (10 * numberOfPanels);
 
-    // This loop isn't quite right.
-    for (i = 0; i < arg0; i++) {
-        gMenuGeometry[i].vertices[0] = (Vertex *) gWoodPanelVertices[0] + i;
-        gMenuGeometry[i].vertices[1] = (Vertex *) gWoodPanelVertices[1] + i;
-        gMenuGeometry[i].triangles[0] = (Triangle *) gWoodPanelTriangles[0] + i;
-        gMenuGeometry[i].triangles[1] = (Triangle *) gWoodPanelTriangles[1] + i;
+    gWoodPanelTriangles[0] =
+        (Triangle *) mempool_alloc_safe(((vertexSize + triangleCount) * 2) + menuGeometrySize, COLOUR_TAG_WHITE);
+    gWoodPanelTriangles[1] = (Triangle *) ((u32) gWoodPanelTriangles[0] + triangleCount);
+
+    gMenuGeometry = (unk80080BC8 *) ((u32) gWoodPanelTriangles[1] + triangleCount);
+
+    gWoodPanelVertices[0] = (Vertex *) ((u32) gMenuGeometry + menuGeometrySize);
+    gWoodPanelVertices[1] = (Vertex *) ((u32) gWoodPanelVertices[0] + vertexSize);
+
+    panelIndex = 0;
+    triangleCount = 0;
+    for (i = 0; i < numberOfPanels; i++) {
+        gMenuGeometry[i].vertices[0] = &gWoodPanelVertices[0][panelIndex];
+        gMenuGeometry[i].vertices[1] = &gWoodPanelVertices[1][panelIndex];
+        gMenuGeometry[i].triangles[0] = &gWoodPanelTriangles[0][triangleCount];
+        gMenuGeometry[i].triangles[1] = &gWoodPanelTriangles[1][triangleCount];
         gMenuGeometry[i].texture[0] = 0;
         gMenuGeometry[i].texture[1] = 0;
         gMenuGeometry[i].unk18[0] = 0;
         gMenuGeometry[i].unk18[1] = 0;
+        panelIndex += 20;
+        triangleCount += 10;
     }
 
-    for (triIndex = 0; triIndex < arg0; triIndex++) {
-        for (IndicesIndex = 0; IndicesIndex < 10; IndicesIndex++) {    // Index into gWoodPanelsIndices
-            for (triListIndex = 0; triListIndex < 2; triListIndex++) { // Index into gWoodPanelTriangles?
-                (gWoodPanelTriangles[triListIndex] + triIndex)->verticesArray[0] = 0x40;
-                (gWoodPanelTriangles[triListIndex] + triIndex)->verticesArray[1] =
-                    gWoodPanelsIndices[IndicesIndex * 3 + 0];
-                (gWoodPanelTriangles[triListIndex] + triIndex)->verticesArray[2] =
-                    gWoodPanelsIndices[IndicesIndex * 3 + 1];
-                (gWoodPanelTriangles[triListIndex] + triIndex)->verticesArray[3] =
-                    gWoodPanelsIndices[IndicesIndex * 3 + 2];
-                (gWoodPanelTriangles[triListIndex] + triIndex)->uv0.u = 0;
-                (gWoodPanelTriangles[triListIndex] + triIndex)->uv0.v = 0;
-                (gWoodPanelTriangles[triListIndex] + triIndex)->uv1.u = 0;
-                (gWoodPanelTriangles[triListIndex] + triIndex)->uv1.v = 0;
-                (gWoodPanelTriangles[triListIndex] + triIndex)->uv2.u = 0;
-                (gWoodPanelTriangles[triListIndex] + triIndex)->uv2.v = 0;
+    triItemIndex = 0;
+    for (i = 0; i < numberOfPanels; i++) {
+        panelIndex = 0;
+        for (IndicesIndex = 0; IndicesIndex < 10; triItemIndex++, panelIndex += 3, IndicesIndex++) {
+            for (triListIndex = 0; triListIndex < 2; triListIndex++) {
+                gWoodPanelTriangles[triListIndex][triItemIndex].verticesArray[0] = BACKFACE_DRAW;
+                gWoodPanelTriangles[triListIndex][triItemIndex].verticesArray[1] = gWoodPanelsIndices[panelIndex];
+                gWoodPanelTriangles[triListIndex][triItemIndex].verticesArray[2] = gWoodPanelsIndices[panelIndex + 1];
+                gWoodPanelTriangles[triListIndex][triItemIndex].verticesArray[3] = gWoodPanelsIndices[panelIndex + 2];
+                gWoodPanelTriangles[triListIndex][triItemIndex].uv0.u = 0;
+                gWoodPanelTriangles[triListIndex][triItemIndex].uv0.v = 0;
+                gWoodPanelTriangles[triListIndex][triItemIndex].uv1.u = 0;
+                gWoodPanelTriangles[triListIndex][triItemIndex].uv1.v = 0;
+                gWoodPanelTriangles[triListIndex][triItemIndex].uv2.u = 0;
+                gWoodPanelTriangles[triListIndex][triItemIndex].uv2.v = 0;
             }
         }
     }
     gMenuTrisFlip = 0;
     gWoodPanelCount = 0;
-    gWoodPanelAllocCount = arg0;
+    gWoodPanelAllocCount = numberOfPanels;
 }
-#else
-#pragma GLOBAL_ASM("asm/nonmatchings/menu/func_8007FFEC.s")
-#endif
 
 void func_80080580(Gfx **dList, s32 startX, s32 startY, s32 width, s32 height, s32 borderWidth, s32 borderHeight,
                    s32 colour, TextureHeader *tex) {
@@ -2939,7 +2939,7 @@ void draw_menu_elements(s32 state, MenuElement *elems, f32 scale) {
         return;
     }
 
-    set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
+    mtx_ortho(&sMenuCurrDisplayList, &sMenuCurrHudMat);
     while (elems->t.element != NULL) {
         if ((elems->t.element != &D_80126850)) {                      // fakematch
             if (state == ((elems->t.element != (&D_80126850)) * 0)) { // fakematch
@@ -3349,7 +3349,7 @@ void menu_title_screen_init(void) {
         sGameTitleTileOffsets[i].texture = gMenuAssets[sGameTitleTileTextures[i]];
     }
     music_voicelimit_set(27);
-    func_800660C0();
+    cam_shake_off();
     set_text_font(ASSET_FONTS_FUNFONT);
     sound_volume_reset(FALSE);
     set_time_trial_enabled(FALSE);
@@ -3383,7 +3383,7 @@ void render_title_screen(UNUSED s32 updateRate, f32 updateRateF) {
     s32 posY;
 
     if (gTitleRevealTimer) {
-        set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
+        mtx_ortho(&sMenuCurrDisplayList, &sMenuCurrHudMat);
         scale = (f32) gTitleRevealTimer * (1.0f / 32.0f);
         sMenuGuiOpacity = (gTitleRevealTimer * 8) - 1;
         sprite_anim_off(FALSE);
@@ -3629,7 +3629,7 @@ s32 menu_title_screen_loop(s32 updateRate) {
 void titlescreen_free(void) {
     menu_assetgroup_free(sGameTitleTileTextures);
     music_voicelimit_set(16);
-    func_800660D0();
+    cam_shake_on();
     sound_volume_reset(TRUE);
 }
 
@@ -3895,7 +3895,7 @@ void func_80084854(UNUSED s32 updateRate) {
         temp = 511 - temp;
     }
     gAudioMenuStrings[0].text = gAudioOutputStrings[gAudioOutputType];
-    set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
+    mtx_ortho(&sMenuCurrDisplayList, &sMenuCurrHudMat);
 
     yOffset = 113;
     func_80080580(NULL, -72, 120 - yOffset, 144, 14, 6, 4, COLOUR_RGBA32(255, 192, 64, 255),
@@ -4403,7 +4403,7 @@ void savemenu_render(UNUSED s32 updateRate) {
     if (gMenuStage & 8) {
         drawDialogueBox = TRUE;
     }
-    set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
+    mtx_ortho(&sMenuCurrDisplayList, &sMenuCurrHudMat);
     set_text_background_colour(0, 0, 0, 0);
     set_text_font(ASSET_FONTS_BIGFONT);
     set_text_colour(0, 0, 0, 255, 128);
@@ -7342,7 +7342,7 @@ void gameselect_render(UNUSED s32 updateRate) {
         if (fade > 255) {
             fade = 511 - fade;
         }
-        set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
+        mtx_ortho(&sMenuCurrDisplayList, &sMenuCurrHudMat);
 
         for (i = 0; i <= gMenuStage; i++) {
             filterBlendFactor = 0;
@@ -7547,7 +7547,7 @@ void fileselect_render(UNUSED s32 updateRate) {
     yPos = 0;
 
     menu_camera_centre();
-    set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
+    mtx_ortho(&sMenuCurrDisplayList, &sMenuCurrHudMat);
     for (i = 0; i < NUMBER_OF_SAVE_FILES; i++) {
         if (gSavefileInfo[i].isAdventure2 == gIsInAdventureTwo || gSavefileInfo[i].isStarted == FALSE) {
             colour = COLOUR_RGBA32(176, 224, 192, 255);
@@ -7641,7 +7641,8 @@ void fileselect_render(UNUSED s32 updateRate) {
             if (!gSavefileInfo[i].isStarted) {
                 filename_trim(gFilenames[i], trimmedFilename);
             }
-            if (1) {
+            //!@Bug: Doesn't index the array, so always true.
+            if (trimmedFilename[0]) {
                 draw_text(&sMenuCurrDisplayList, gFileSelectButtons[i].x + gFileSelectElementPos[0],
                           gFileSelectButtons[i].y + gFileSelectElementPos[1] + yPos, trimmedFilename,
                           ALIGN_MIDDLE_CENTER);
@@ -8558,7 +8559,7 @@ s32 func_8008F618(Gfx **dList, Mtx **mtx) {
     numVertices = 0;
     camDisableUserView(0, TRUE);
     camera_init_tracks_menu(dList, mtx);
-    set_ortho_matrix_view(dList, mtx);
+    mtx_ortho(dList, mtx);
     rendermode_reset(dList);
     gDPPipeSync((*dList)++);
     sp7C = gTrackSelectX;
@@ -8844,7 +8845,7 @@ void func_8008FF1C(UNUSED s32 updateRate) {
         }
         camDisableUserView(0, TRUE);
         menu_camera_centre();
-        set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
+        mtx_ortho(&sMenuCurrDisplayList, &sMenuCurrHudMat);
         rendermode_reset(&sMenuCurrDisplayList);
         gDPPipeSync(sMenuCurrDisplayList++);
         D_80126928 = 64;
@@ -9072,7 +9073,7 @@ void trackmenu_setup_render(UNUSED s32 updateRate) {
     }
     camDisableUserView(0, TRUE);
     menu_camera_centre();
-    set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
+    mtx_ortho(&sMenuCurrDisplayList, &sMenuCurrHudMat);
     if (gMenuDelay < 0) {
         if (gSelectedTrackX == 4) {
             sp84 = 6;
@@ -9806,7 +9807,7 @@ void adventuretrack_render(UNUSED s32 updateRate, s32 arg1, s32 arg2) {
     mapID = ((Settings4C *) ((u8 *) settings->unk4C + gTrackIdForPreview))->mapID;
     gSPClearGeometryMode(sMenuCurrDisplayList++, G_CULL_FRONT);
     menu_camera_centre();
-    set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
+    mtx_ortho(&sMenuCurrDisplayList, &sMenuCurrHudMat);
     if (gMenuDelay >= -20) {
         if (gMenuDelay <= 20) {
             mask = get_map_available_vehicles(mapID);
@@ -10801,7 +10802,7 @@ void func_80094D28(UNUSED s32 updateRate) {
 
     settings = get_settings();
     if (gNumberOfActivePlayers == 1) {
-        set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
+        mtx_ortho(&sMenuCurrDisplayList, &sMenuCurrHudMat);
     }
     camDisableUserView(0, TRUE);
     var_s3 = gOptionBlinkTimer * 8;
@@ -11414,7 +11415,7 @@ void results_render(UNUSED s32 updateRate, f32 opacity) {
 
     settings = get_settings();
     offsetY = 0;
-    set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
+    mtx_ortho(&sMenuCurrDisplayList, &sMenuCurrHudMat);
     if (opacity < 0.0f) {
         opacity = 0.0f;
     }
@@ -12720,7 +12721,7 @@ void ghostmenu_render(UNUSED s32 updateRate) {
     char *levelName;
     char textBuffer[64];
 
-    set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
+    mtx_ortho(&sMenuCurrDisplayList, &sMenuCurrHudMat);
     heightAdjust = 0;
     scroll = gOpacityDecayTimer;
     set_text_font(FONT_LARGE);
@@ -13983,11 +13984,11 @@ void menu_element_render(s32 elementID) {
                         gDPSetPrimColor(sMenuCurrDisplayList++, 0, 0, 255, 255, 255, 255);
                     };
                     gDPSetEnvColor(sMenuCurrDisplayList++, 255, 255, 255, 0);
-                    cam_push_model_mtx(&sMenuCurrDisplayList, &sMenuCurrHudMat, &gMenuImages[elementID].trans,
-                                       gTrackSelectWoodFrameHeightScale, 0);
+                    mtx_cam_push(&sMenuCurrDisplayList, &sMenuCurrHudMat, &gMenuImages[elementID].trans,
+                                 gTrackSelectWoodFrameHeightScale, 0);
                     model = ((ObjectModel **) gMenuAssets[gMenuImages[elementID].trans.spriteID]);
                     render_track_selection_viewport_border(*model);
-                    apply_matrix_from_stack(&sMenuCurrDisplayList);
+                    mtx_pop(&sMenuCurrDisplayList);
                     if (sMenuGuiOpacity < 255) {
                         gDPSetPrimColor(sMenuCurrDisplayList++, 0, 0, 255, 255, 255, 255);
                     }
@@ -14030,7 +14031,7 @@ void render_track_selection_viewport_border(ObjectModel *objMdl) {
             tris = &objMdl->triangles[triOffset];
             tex = objMdl->textures[objMdl->batches[i].textureIndex].texture;
             texEnabled = TRUE;
-            texOffset = objMdl->batches[i].unk7 << 14;
+            texOffset = objMdl->batches[i].texOffset << 14;
             material_set(&sMenuCurrDisplayList, tex, flags, texOffset);
 
             gSPVertexDKR(sMenuCurrDisplayList++, OS_K0_TO_PHYSICAL(verts), numVerts, 0);
@@ -14812,7 +14813,7 @@ f32 dialogue_ortho(UNUSED DialogueBoxBackground *textbox, Gfx **dList, Mtx **mat
     sMenuCurrDisplayList = *dList;
     sMenuCurrHudMat = *mat;
     sMenuCurrHudVerts = *verts;
-    set_ortho_matrix_view(&sMenuCurrDisplayList, &sMenuCurrHudMat);
+    mtx_ortho(&sMenuCurrDisplayList, &sMenuCurrHudMat);
     if (gGameStatusVisible && sCurrentMenuID == MENU_UNUSED_4) {
         dialogue_tt_gamestatus();
     }
@@ -15578,7 +15579,7 @@ void set_animation(int animIndex) {
         animationID = numberOfAnimations - 1;
     }
     
-    animationFrameCount = (model->animations[animationID].unk4 - 1) * 16;
+    animationFrameCount = (model->animations[animationID].animLength - 1) * 16;
 }
 
 s32 prevID = -1;
@@ -15592,7 +15593,7 @@ void debugmodel_shade(ObjectModel *model, Object *object, s32 arg2, f32 intensit
     environmentMappingEnabled = 0;
 
     for (i = 0; i < model->numberOfBatches; i++) {
-        if (model->batches[i].unk6 != 0xFF) {
+        if (model->batches[i].miscData != 0xFF) {
             dynamicLightingEnabled = -1; // This is a bit weird, but I guess it works.
         }
         if (model->batches[i].flags & RENDER_ENVMAP) {
@@ -15658,7 +15659,7 @@ void render_model(s32 updateRate) {
     
     gDPSetPrimColor(sMenuCurrDisplayList++, 0, 0, 255, 255, 255, 255);
     gDPSetEnvColor(sMenuCurrDisplayList++, 255, 255, 255, 0);
-    matrix_world_origin(&sMenuCurrDisplayList, &sMenuCurrHudMat);
+    mtx_world_origin(&sMenuCurrDisplayList, &sMenuCurrHudMat);
     viewModelTransform.rotation.x_rotation = 0;
     bzero(&tempForm, sizeof(ObjectTransform));
     tempForm.rotation.z_rotation = sDebugModelViewPitch;
@@ -15666,8 +15667,8 @@ void render_model(s32 updateRate) {
     tempForm.x_position = 200.0f;
     tempForm.y_position = -175.0f - offsetY;
     tempForm.z_position = 30.0f;
-    cam_push_model_mtx(&sMenuCurrDisplayList, &sMenuCurrHudMat, &tempForm, 1.0f, 0);
-    cam_push_model_mtx(&sMenuCurrDisplayList, &sMenuCurrHudMat, &viewModelTransform, 1.0f, 0);
+    mtx_cam_push(&sMenuCurrDisplayList, &sMenuCurrHudMat, &tempForm, 1.0f, 0);
+    mtx_cam_push(&sMenuCurrDisplayList, &sMenuCurrHudMat, &viewModelTransform, 1.0f, 0);
 
     
     if (animationID == 0 || currentModelIndex < ASSET_OBJECTMODEL_DIDDYCAR_0 || currentModelIndex > ASSET_OBJECTMODEL_MOUSEPLANE_5) {
@@ -15675,7 +15676,7 @@ void render_model(s32 updateRate) {
             animationFrame = 40;
         }
         gDebugModelHeadAngle += ((gDebugModelHeadAngleTarget - gDebugModelHeadAngle) * updateRate) >> 3;
-        apply_head_turning_matrix(&sMenuCurrDisplayList, &sMenuCurrHudMat, viewModel, gDebugModelHeadAngle);
+        mtx_head_push(&sMenuCurrDisplayList, &sMenuCurrHudMat, viewModel, gDebugModelHeadAngle);
         offset = TRUE;
     } else {
         offset = FALSE;
@@ -15686,10 +15687,10 @@ void render_model(s32 updateRate) {
         if (model->batches[i].flags & RENDER_TEX_ANIM) {
             if (model->batches[i].textureIndex != TEX_INDEX_NO_TEXTURE) {
                 tex = model->textures[model->batches[i].textureIndex].texture;
-                sp5C = model->batches[i].unk7;
+                sp5C = model->batches[i].texOffset;
                 sp5C <<= 6;
                 tex_animate_texture(tex, &model->batches[i].flags, &sp5C, updateRate);
-                model->batches[i].unk7 = (sp5C >> 6) & 0xFF;
+                model->batches[i].texOffset = (sp5C >> 6) & 0xFF;
             }
         }
     }
@@ -15723,7 +15724,7 @@ void render_model(s32 updateRate) {
                 verts = &currentVertices[vertOffset]; //&model->vertices[vertOffset];
                 tris = &model->triangles[triOffset];
                 
-                vtxOff = (offset) ? model->batches[i].unk1 : numVerts;
+                vtxOff = (offset) ? model->batches[i].vertOverride: numVerts;
                 if (model->batches[i].textureIndex == 0xFF) {
                     tex = NULL;
                     texEnabled = FALSE;
@@ -15731,7 +15732,7 @@ void render_model(s32 updateRate) {
                 } else {
                     tex = model->textures[model->batches[i].textureIndex].texture;
                     texEnabled = TRUE;
-                    texOffset = model->batches[i].unk7 << 14;
+                    texOffset = model->batches[i].texOffset << 14;
                 }
                 
                 isTexTransparent = tex != NULL && (TEX_RENDERMODE(tex->format) == 0 || model->batches[i].flags & RENDER_DECAL);
@@ -15784,8 +15785,8 @@ void render_model(s32 updateRate) {
         prevID = currentModelIndex;
     }
     
-    apply_matrix_from_stack(&sMenuCurrDisplayList);
-    apply_matrix_from_stack(&sMenuCurrDisplayList);
+    mtx_pop(&sMenuCurrDisplayList);
+    mtx_pop(&sMenuCurrDisplayList);
     gDPSetPrimColor(sMenuCurrDisplayList++, 0, 0, 255, 255, 255, 255);
 }
 

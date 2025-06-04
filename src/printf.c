@@ -226,7 +226,11 @@ void debug_text_init(void) {
     gDebugPrintBufferEnd = gDebugPrintBufferStart;
 }
 
-// Official Name: diPrintf
+/**
+ * Add a string to the onscreen debug text buffer.
+ * Has variable args, so can use multiple string elements.
+ * Official Name: diPrintf
+ */
 s32 render_printf(const char *format, ...) {
     va_list args;
     s32 written;
@@ -267,7 +271,7 @@ void debug_text_print(Gfx **dList) {
     D_80127CB2 = gDebugTextY;
     while ((s32) buffer != (s32) gDebugPrintBufferEnd) {
         gDebugTextOn = FALSE;
-        buffer += func_800B653C(dList, buffer);
+        buffer += debug_text_parse(dList, buffer);
     }
     debug_text_background(dList, D_80127CB0, D_80127CB2, gDebugTextX, gDebugTextY + 10);
     buffer = (char *) gDebugPrintBufferStart;
@@ -276,7 +280,7 @@ void debug_text_print(Gfx **dList) {
     gDebugFixedWidthMode = FALSE;
     while ((s32) buffer != (s32) gDebugPrintBufferEnd) {
         gDebugTextOn = TRUE;
-        buffer += func_800B653C(dList, buffer);
+        buffer += debug_text_parse(dList, buffer);
     }
     gDebugPrintBufferEnd = gDebugPrintBufferStart;
 }
@@ -303,7 +307,11 @@ void set_render_printf_background_colour(u8 red, u8 green, u8 blue, u8 alpha) {
  */
 void set_render_printf_position(u16 x, u16 y){ RENDER_PRINTF_CMD_SET_POSITION(x, y) }
 
-s32 func_800B653C(Gfx **dList, char *buffer) {
+/**
+ * Read the current character in the debug text buffer.
+ * Also executes commands when they come up.
+ */
+s32 debug_text_parse(Gfx **dList, char *buffer) {
     char *bufferCopy;
     s32 xOffset;
     u8 red;

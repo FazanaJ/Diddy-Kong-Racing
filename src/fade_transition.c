@@ -326,7 +326,7 @@ s32 transition_update(s32 updateRate) {
 void transition_render(Gfx **dList, Mtx **mtx, Vertex **vtx) {
     if (sTransitionStatus != TRANSITION_NONE) {
         set_ortho_matrix_height(1.2f);
-        set_ortho_matrix_view(dList, mtx);
+        mtx_ortho(dList, mtx);
         set_ortho_matrix_height(1.0f);
         switch (gCurFadeTransition) {
             case FADE_FULLSCREEN:

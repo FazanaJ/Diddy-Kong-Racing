@@ -690,7 +690,7 @@ void hud_render_player(Gfx **dList, Mtx **mtx, Vertex **vertexList, Object *obj,
                 }
             }
             if (gShowHUD == FALSE) {
-                racer = (Object_Racer *) obj->unk64;
+                racer = &obj->unk64->racer;
                 if (D_8012718A) {
                     gHudController = 1 - racer->playerIndex;
                 } else {
@@ -782,7 +782,7 @@ void hud_render_player(Gfx **dList, Mtx **mtx, Vertex **vertexList, Object *obj,
                 }
                 gDPSetPrimColor(gHudDL++, 0, 0, 255, 255, 255, 255);
                 hud_magnet_reticle(obj);
-                set_ortho_matrix_view(&gHudDL, &gHudMtx);
+                mtx_ortho(&gHudDL, &gHudMtx);
                 gDPSetEnvColor(gHudDL++, 255, 255, 255, 0);
                 countdown = get_race_countdown() >> 1;
                 if (is_in_time_trial()) {
@@ -1229,7 +1229,7 @@ void hud_main_battle(s32 countdown, Object *obj, s32 updateRate) {
     s32 racersFinished;
     s32 i;
 
-    racer = (Object_Racer *) obj->unk64;
+    racer = &obj->unk64->racer;
     if (gNumActivePlayers != 1 || racer->raceFinished == FALSE) {
         sprite_anim_off(TRUE);
         hud_race_start(countdown, updateRate);
@@ -1365,7 +1365,7 @@ void hud_lives_render(Object_Racer *racer, UNUSED s32 updateRate) {
  */
 void hud_main_boss(s32 countdown, Object *obj, s32 updateRate) {
     LevelHeader *level;
-    Object_Racer *racer = (Object_Racer *) obj->unk64;
+    Object_Racer *racer = &obj->unk64->racer;
 
     sprite_anim_off(TRUE);
     hud_wrong_way(racer, updateRate);
@@ -1387,7 +1387,7 @@ void hud_main_boss(s32 countdown, Object *obj, s32 updateRate) {
  * When racing Taj in the overworld, render most of the basic race hud.
  */
 void hud_main_taj(s32 countdown, Object *obj, s32 updateRate) {
-    Object_Racer *racer = (Object_Racer *) obj->unk64;
+    Object_Racer *racer = &obj->unk64->racer;
 
     sprite_anim_off(TRUE);
     hud_wrong_way(racer, updateRate);
@@ -1408,7 +1408,7 @@ void hud_main_hub(Object *obj, s32 updateRate) {
     HudElement *portrait;
 
     if (cam_get_viewport_layout() == PLAYER_ONE) {
-        racer = (Object_Racer *) obj->unk64;
+        racer = &obj->unk64->racer;
         sprite_anim_off(TRUE);
         hud_balloons(racer);
         hud_speedometre(obj, updateRate);
@@ -1475,13 +1475,13 @@ void hud_main_time_trial(s32 arg0, Object *playerRacerObj, s32 updateRate) {
 
     ttSWBodyObject->segment.object.animationID = gStopwatchAnimID;
     obj68 = ttSWBodyObject->unk68[0];
-    obj68->objModel->unk52 = updateRate;
+    obj68->objModel->texOffsetUpdateRate = updateRate;
     if (gStopwatchAnimID != 0xFF) {
         if (gStopwatchAnimID == 4 && (get_race_countdown() || !music_is_playing())) {
             ttSWBodyObject->segment.animFrame = 16;
         } else if (gStopwatchAnimID == 4) {
             animcationFraction = music_animation_fraction();
-            temp_t6 = (obj68->objModel->animations[gStopwatchAnimID].unk4 - 1) << 4;
+            temp_t6 = (obj68->objModel->animations[gStopwatchAnimID].animLength - 1) << 4;
             if (animcationFraction == -1.0) {
                 ttSWBodyObject->segment.animFrame = 0.0;
             } else if (animcationFraction > 0.5) {
@@ -1502,7 +1502,7 @@ void hud_main_time_trial(s32 arg0, Object *playerRacerObj, s32 updateRate) {
                 }
             } else {
                 ttSWBodyObject->segment.animFrame += (updateRate * D_80126D69);
-                temp_lo = (obj68->objModel->animations[gStopwatchAnimID].unk4 - 1) << 4;
+                temp_lo = (obj68->objModel->animations[gStopwatchAnimID].animLength - 1) << 4;
                 if (ttSWBodyObject->segment.animFrame >= temp_lo) {
                     if (D_80126D68 != 0) {
                         D_80126D69 = -D_80126D69;
@@ -1792,7 +1792,7 @@ void hud_speedometre(Object *obj, s32 updateRate) {
 
     if (gNumActivePlayers == 1) {
         if (!check_if_showing_cutscene_camera()) {
-            racer = (Object_Racer *) obj->unk64;
+            racer = &obj->unk64->racer;
             if (racer->raceFinished == FALSE) {
                 if (racer->vehicleID != VEHICLE_CAR && racer->vehicleID != VEHICLE_HOVERCRAFT) {
                     vel = sqrtf((obj->segment.x_velocity * obj->segment.x_velocity) +
@@ -2956,7 +2956,7 @@ void hud_weapon(Object *obj, s32 updateRate) {
     Object_Racer *racer;
     s32 temp_a0;
 
-    racer = (Object_Racer *) obj->unk64;
+    racer = &obj->unk64->racer;
     if (racer->raceFinished == FALSE) {
         temp_a0 = (racer->balloon_type * 3) + (racer->balloon_level);
         if (gCurrentHud->entry[HUD_WEAPON_DISPLAY].weaponDisplay.prevLevel != racer->balloon_level) {
@@ -3056,7 +3056,7 @@ void hud_magnet_reticle(Object *racerObj) {
         }
         gAssetHudElementStaleCounter[hud->spriteID] = 0;
         viewport_main(&gHudDL, &gHudMtx);
-        matrix_world_origin(&gHudDL, &gHudMtx);
+        mtx_world_origin(&gHudDL, &gHudMtx);
         render_sprite_billboard(&gHudDL, &gHudMtx, &gHudVtx, (Object *) hud, entry, RENDER_Z_UPDATE);
     }
 }
@@ -3361,7 +3361,7 @@ void hud_render_general(Gfx **dList, Mtx **mtx, Vertex **vtx, s32 updateRate) {
         if (gNumActivePlayers == 2 && gHudToggleSettings[gHUDNumPlayers] == 0) {
             sprite_anim_off(TRUE);
             sprite_opaque(FALSE);
-            set_ortho_matrix_view(&gHudDL, &gHudMtx);
+            mtx_ortho(&gHudDL, &gHudMtx);
             func_800A1E48(0, updateRate);
             sprite_anim_off(FALSE);
             rendermode_reset(&gHudDL);
@@ -3380,7 +3380,7 @@ void hud_render_general(Gfx **dList, Mtx **mtx, Vertex **vtx, s32 updateRate) {
                     spE4 = gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT].pos.x;
                     spE0 = gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT].pos.y;
                     sprite_opaque(FALSE);
-                    set_ortho_matrix_view(&gHudDL, &gHudMtx);
+                    mtx_ortho(&gHudDL, &gHudMtx);
                     sprite_anim_off(TRUE);
                     gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT].pos.x = 225.0f;
                     gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT].pos.y = 165.0f;
@@ -3435,7 +3435,7 @@ void hud_render_general(Gfx **dList, Mtx **mtx, Vertex **vtx, s32 updateRate) {
             spBC = gCurrentHud->entry[HUD_TREASURE_METRE].pos.y;
             racerGroup = get_racer_objects(&racerCount);
             for (sp144 = 0; sp144 < racerCount; sp144++) {
-                someRacer = (Object_Racer *) racerGroup[sp144]->unk64;
+                someRacer = &racerGroup[sp144]->unk64->racer;
                 hud_treasure(someRacer);
                 gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT].pos.y += 55.0f;
                 gCurrentHud->entry[HUD_TREASURE_METRE].pos.y += 55.0f;
@@ -3481,7 +3481,7 @@ void hud_render_general(Gfx **dList, Mtx **mtx, Vertex **vtx, s32 updateRate) {
 
     sp113 = TRUE;
     for (i = 0; i < objectCount; i++) {
-        someRacer = (Object_Racer *) objectGroup[i]->unk64;
+        someRacer = &objectGroup[i]->unk64->racer;
         if (someRacer != NULL && someRacer->playerIndex != PLAYER_COMPUTER && someRacer->raceFinished == FALSE) {
             sp113 = FALSE;
         }
@@ -3495,7 +3495,7 @@ void hud_render_general(Gfx **dList, Mtx **mtx, Vertex **vtx, s32 updateRate) {
     }
 
     rendermode_reset(&gHudDL);
-    set_ortho_matrix_view(&gHudDL, &gHudMtx);
+    mtx_ortho(&gHudDL, &gHudMtx);
     lvlMdl = get_current_level_model();
     if (lvlMdl == NULL) {
         return;
@@ -3597,7 +3597,7 @@ void hud_render_general(Gfx **dList, Mtx **mtx, Vertex **vtx, s32 updateRate) {
     // Non AI players get an arrow instead of a blob that rotates.
     for (i = objectCount - 1; i >= 0; i--) {
         temp_v0_8 = objectGroup[i];
-        someRacer = (Object_Racer *) objectGroup[i]->unk64;
+        someRacer = &objectGroup[i]->unk64->racer;
         if (someRacer != NULL) {
             minimap_marker_pos(objectGroup[i]->segment.trans.x_position, objectGroup[i]->segment.trans.z_position,
                                sp114, sp118, sp11C);
@@ -3697,7 +3697,7 @@ void minimap_marker_pos(f32 x, f32 z, f32 angleSin, f32 angleCos, f32 modelAspec
  * deciding to draw a texture rectangle, ortho tris, or a 3D model entirely.
  */
 void hud_element_render(Gfx **dList, Mtx **mtx, Vertex **vtxList, HudElement *hud) {
-    TextureHeader **textureHeader3;
+    ObjectModel **objModels;
     TextureHeader *textureHeader2;
     TextureHeader *textureHeader;
     Camera *camera;
@@ -3804,7 +3804,7 @@ void hud_element_render(Gfx **dList, Mtx **mtx, Vertex **vtxList, HudElement *hu
             sp48.drawTexture.yOffset = 0;
             sp48.unk8 = 0;
             texrect_draw_scaled(&gHudDL, &sp48.drawTexture, hud->pos.x, hud->pos.y, hud->scale, hud->scale, gHudColour,
-                                1);
+                                TEXRECT_POINT);
             rendermode_reset(&gHudDL);
         }
     } else if (gAssetHudElementIds[spriteID] & ASSET_MASK_SPRITE) {
@@ -3826,16 +3826,17 @@ void hud_element_render(Gfx **dList, Mtx **mtx, Vertex **vtxList, HudElement *hu
         tempObject->segment.object.opacity = 0xFF;
         render_object(&gHudDL, &gHudMtx, &gHudVtx, tempObject);
     } else {
-        cam_push_model_mtx(&gHudDL, &gHudMtx, (ObjectTransform *) hud, 1.0f, 0.0f);
+        mtx_cam_push(&gHudDL, &gHudMtx, (ObjectTransform *) hud, 1.0f, 0.0f);
         if (0) {}
-        textureHeader3 = gAssetHudElements->entry[hud->spriteID];
-        hud_draw_model((ObjectModel *) *textureHeader3);
-        apply_matrix_from_stack(&gHudDL);
+        objModels = gAssetHudElements->entry[hud->spriteID];
+        hud_draw_model(*objModels);
+        mtx_pop(&gHudDL);
     }
     spriteID = hud->spriteID;
-    if (spriteID != 0x28) {
-        if ((spriteID != 0xE) && (spriteID != 0x1B) && ((spriteID < 0x2F) || (spriteID >= 0x36)) &&
-            (spriteID != 0x2E) && (gMinimapXlu & 1)) {
+    if (spriteID != HUD_SPRITE_PRO_AM) {
+        if (spriteID != HUD_SPRITE_MAP_DOT && spriteID != HUD_SPRITE_MAP_ARROW &&
+            (spriteID < HUD_ASSET_47 || spriteID >= HUD_ASSET_54) && spriteID != HUD_SPRITE_SPEEDOMETRE_ARROW &&
+            gMinimapXlu & 1) {
             hud->pos.y -= objEntry.offsetY;
         }
         hud->pos.x -= gHudOffsetX + gHudBounceX;

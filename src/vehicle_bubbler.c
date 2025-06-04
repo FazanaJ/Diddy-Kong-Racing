@@ -84,7 +84,7 @@ void update_bubbler(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *
             }
             gBubblerStartBoost = TRUE;
             *startTimer = 0;
-            *input |= 0x8000;
+            *input |= A_BUTTON;
         } else {
             gBubblerStartBoost = FALSE;
         }
@@ -113,7 +113,7 @@ void update_bubbler(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *
     }
     gfxData = *obj->unk68;
     model = gfxData->objModel;
-    diffX = (model->animations[obj->segment.object.animationID].unk4 * 16) - 17;
+    diffX = (model->animations[obj->segment.object.animationID].animLength * 16) - 17;
     obj->segment.object.animationID = ANIM_BUBBLER_MOVE;
     racer->animationSpeed += 2.0 * updateRateF;
     while (racer->animationSpeed < 0.0f) {
@@ -167,7 +167,7 @@ void update_bubbler(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *
             racer->headAngleTarget >>= 1;
         }
     }
-    racer = (Object_Racer *) firstRacerObj->unk64;
+    racer = &firstRacerObj->unk64->racer;
     if (obj == firstRacerObj->interactObj->obj && firstRacerObj->interactObj->flags & INTERACT_FLAGS_PUSHING &&
         obj->segment.object.animationID == ANIM_BUBBLER_MOVE) {
         racer->attackType = ATTACK_SQUISHED;

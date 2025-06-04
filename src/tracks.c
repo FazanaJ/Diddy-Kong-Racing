@@ -54,7 +54,7 @@ s32 D_800DC920 = -1;
 // T.T.カメラ  -  T.T. Camera
 char gJpnTTCam[] = { 0x80, 0x2D, 0x80, 0x3C, 0x80, 0x2D, 0x80, 0x3C, 0x80, 0x55, 0x80, 0x71, 0x80, 0x76 };
 #endif
-u8 *D_800DC924 = NULL;
+u8 *gVoidData = NULL;
 s32 D_800DC928 = 0; // Currently unknown, might be a different type.
 
 u8 D_800DC92C[24] = {
@@ -67,10 +67,10 @@ u8 D_800DC92C[24] = {
 
 /************ .bss ************/
 
-Gfx *gSceneCurrDisplayList;
-Mtx *gSceneCurrMatrix;
-Vertex *gSceneCurrVertexList;
-Triangle *gSceneCurrTriList;
+Gfx *gTrackDL;
+Mtx *gTrackMtxPtr;
+Vertex *gTrackVtxPtr;
+Triangle *gTrackTriPtr;
 
 Camera *gSceneActiveCamera;
 
@@ -83,9 +83,9 @@ s32 gSceneStartSegment;
 s32 D_8011B0D8;
 s32 gSceneRenderSkyDome;
 s8 gDrawLevelSegments;
-u8 D_8011B0E1; // R of RGB
-u8 D_8011B0E2; // G of RGB
-u8 D_8011B0E3; // B of RGB
+u8 gVoidColourR; // R of RGB
+u8 gVoidColourG; // G of RGB
+u8 gVoidColourB; // B of RGB
 f32 D_8011B0E4;
 f32 D_8011B0E8;
 f32 D_8011B0EC;
@@ -147,14 +147,14 @@ s32 gScenePlayerViewports;
 u32 gWaveBlockCount;
 FogData gFogData[4];
 Vec3i gScenePerspectivePos;
-unk8011D474 *D_8011D474; // 0x10 bytes struct?
+VoidMesh *gVoidMesh;     // 0x10 bytes struct?
 unk8011D478 *D_8011D478; // 0xC bytes struct?
 s8 *D_8011D47C;
-Vertex *D_8011D480[2];
-Vertex *D_8011D488;
+Vertex *gVoidVerts[2];
+Vertex *gVoidCurrVerts;
 s32 D_8011D48C;
-Triangle *D_8011D490[2];
-Triangle *D_8011D498;
+Triangle *gVoidTris[2];
+Triangle *gVoidCurrTris;
 s16 D_8011D49C;
 s16 D_8011D49E;
 f32 D_8011D4A0; // something x coordinate related
@@ -162,20 +162,12 @@ f32 D_8011D4A4; // something z coordinate related
 f32 D_8011D4A8;
 f32 D_8011D4AC; // something x coordinate related
 f32 D_8011D4B0; // something z coordinate related
-s8 D_8011D4B4;
+s8 gVoidVertexFlip;
 s8 gAntiAliasing;
-typedef struct Unk8011D4B6 {
-    union {
-        struct {
-            u8 one, two;
-        };
-        s16 whole;
-    };
-} Unk8011D4B6;
-Unk8011D4B6 D_8011D4B6;
-s16 D_8011D4B8;
+s16 gVoidVertCount;
+s16 gVoidPrimCount;
 s16 D_8011D4BA;
-s16 D_8011D4BC;
+s16 gVoidPrimLimit;
 
 u8 gSortMats;
 s16 gSortBufCount[SORT_ENTRIES];
@@ -379,11 +371,11 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     gShadowHeapFlip = 1;
     shadow_update(SHADOW_ACTORS, SHADOW_ACTORS, LOGIC_NULL);
     gShadowHeapFlip = 0;
-    if (gCurrentLevelHeader2->unkB7) {
-        D_8011B0E1 = gCurrentLevelHeader2->rgb.red;
-        D_8011B0E2 = gCurrentLevelHeader2->rgb.green;
-        D_8011B0E3 = gCurrentLevelHeader2->rgb.blue;
-        func_80025510(numberOfPlayers + 1);
+    if (gCurrentLevelHeader2->useVoid) {
+        gVoidColourR = gCurrentLevelHeader2->voidColour.red;
+        gVoidColourG = gCurrentLevelHeader2->voidColour.green;
+        gVoidColourB = gCurrentLevelHeader2->voidColour.blue;
+        void_init(numberOfPlayers + 1);
     }
 
 #ifdef OPEN_ALL_DOORS
@@ -435,10 +427,10 @@ void render_scene(Gfx **dList, Mtx **mtx, Vertex **vtx, Triangle **tris, s32 upd
     s32 posY;
     s32 j;
 
-    gSceneCurrDisplayList = *dList;
-    gSceneCurrMatrix = *mtx;
-    gSceneCurrVertexList = *vtx;
-    gSceneCurrTriList = *tris;
+    gTrackDL = *dList;
+    gTrackMtxPtr = *mtx;
+    gTrackVtxPtr = *vtx;
+    gTrackTriPtr = *tris;
     gSceneRenderSkyDome = TRUE;
     numViewports = cam_set_layout(gScenePlayerViewports);
     if (is_game_paused()) {
@@ -481,12 +473,12 @@ void render_scene(Gfx **dList, Mtx **mtx, Vertex **vtx, Triangle **tris, s32 upd
         flip = TRUE;
     }
 #endif
-    rendermode_reset(&gSceneCurrDisplayList);
-    gDkrDisableBillboard(gSceneCurrDisplayList++);
-    gSPClearGeometryMode(gSceneCurrDisplayList++, G_CULL_FRONT);
-    gDPSetBlendColor(gSceneCurrDisplayList++, 0, 0, 0, 0x64);
-    gDPSetPrimColor(gSceneCurrDisplayList++, 0, 0, 255, 255, 255, 255);
-    gDPSetEnvColor(gSceneCurrDisplayList++, 255, 255, 255, 0);
+    rendermode_reset(&gTrackDL);
+    gDkrDisableBillboard(gTrackDL++);
+    gSPClearGeometryMode(gTrackDL++, G_CULL_FRONT);
+    gDPSetBlendColor(gTrackDL++, 0, 0, 0, 100);
+    gDPSetPrimColor(gTrackDL++, 0, 0, 255, 255, 255, 255);
+    gDPSetEnvColor(gTrackDL++, 255, 255, 255, 0);
     rain_fog();
     update_fog(numViewports, tempUpdateRate);
     scroll_particle_textures(tempUpdateRate);
@@ -501,41 +493,41 @@ void render_scene(Gfx **dList, Mtx **mtx, Vertex **vtx, Triangle **tris, s32 upd
             }
         }
         if (flip) {
-            gSPSetGeometryMode(gSceneCurrDisplayList++, G_CULL_FRONT);
+            gSPSetGeometryMode(gTrackDL++, G_CULL_FRONT);
         }
         aa_manage(AA_OFF);
         apply_fog(gSceneCurrentPlayerID);
-        gDPPipeSync(gSceneCurrDisplayList++);
+        gDPPipeSync(gTrackDL++);
         set_active_camera(gSceneCurrentPlayerID);
-        viewport_main(&gSceneCurrDisplayList, &gSceneCurrMatrix);
+        viewport_main(&gTrackDL, &gTrackMtxPtr);
         func_8002A31C();
         // Show detailed skydome in single player.
         if (numViewports < 2) {
-            matrix_world_origin(&gSceneCurrDisplayList, &gSceneCurrMatrix);
+            mtx_world_origin(&gTrackDL, &gTrackMtxPtr);
             if (gCurrentLevelHeader2->skyDome == -1) {
                 func_80028050();
             } else {
                 render_skydome();
             }
         } else {
-            func_8006807C(&gSceneCurrDisplayList, &gSceneCurrMatrix);
+            mtx_perspective(&gTrackDL, &gTrackMtxPtr);
             draw_gradient_background();
-            func_80067D3C(&gSceneCurrDisplayList, &gSceneCurrMatrix);
-            matrix_world_origin(&gSceneCurrDisplayList, &gSceneCurrMatrix);
+            func_80067D3C(&gTrackDL, &gTrackMtxPtr);
+            mtx_world_origin(&gTrackDL, &gTrackMtxPtr);
         }
-        gDPPipeSync(gSceneCurrDisplayList++);
+        gDPPipeSync(gTrackDL++);
         initialise_player_viewport_vars(updateRate);
         aa_manage(AA_OFF);
         weather_clip_planes(-1, -512);
         // Show weather effects in single player.
         if (gCurrentLevelHeader2->weatherEnable > 0 && (numViewports < 2 || gConfig.multiWeather)) {
-            weather_update(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, &gSceneCurrTriList,
+            weather_update(&gTrackDL, &gTrackMtxPtr, &gTrackVtxPtr, &gTrackTriPtr,
                            tempUpdateRate);
         }
         lensflare_override(cam_get_active_camera());
-        lensflare_render(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, cam_get_active_camera());
-        hud_render_player(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList,
-                          get_racer_object_by_port(gSceneCurrentPlayerID), updateRate);
+        lensflare_render(&gTrackDL, &gTrackMtxPtr, &gTrackVtxPtr, cam_get_active_camera());
+        hud_render_player(&gTrackDL, &gTrackMtxPtr, &gTrackVtxPtr, get_racer_object_by_port(gSceneCurrentPlayerID),
+                          updateRate);
     }
     // Show TT Cam toggle for the fourth viewport when playing 3 player.
     if (numViewports == 3 && get_current_level_race_type() != RACETYPE_CHALLENGE_EGGS &&
@@ -544,113 +536,124 @@ void render_scene(Gfx **dList, Mtx **mtx, Vertex **vtx, Triangle **tris, s32 upd
         if (hud_setting() == 0) {
             aa_manage(AA_OFF);
             if (flip) {
-                gSPSetGeometryMode(gSceneCurrDisplayList++, G_CULL_FRONT);
+                gSPSetGeometryMode(gTrackDL++, G_CULL_FRONT);
             }
             apply_fog(PLAYER_FOUR);
-            gDPPipeSync(gSceneCurrDisplayList++);
+            gDPPipeSync(gTrackDL++);
             set_active_camera(PLAYER_FOUR);
             disable_cutscene_camera();
             func_800278E8(updateRate);
-            viewport_main(&gSceneCurrDisplayList, &gSceneCurrMatrix);
+            viewport_main(&gTrackDL, &gTrackMtxPtr);
             func_8002A31C();
-            func_8006807C(&gSceneCurrDisplayList, &gSceneCurrMatrix);
+            mtx_perspective(&gTrackDL, &gTrackMtxPtr);
             draw_gradient_background();
-            func_80067D3C(&gSceneCurrDisplayList, &gSceneCurrMatrix);
-            matrix_world_origin(&gSceneCurrDisplayList, &gSceneCurrMatrix);
-            gDPPipeSync(gSceneCurrDisplayList++);
+            func_80067D3C(&gTrackDL, &gTrackMtxPtr);
+            mtx_world_origin(&gTrackDL, &gTrackMtxPtr);
+            gDPPipeSync(gTrackDL++);
             initialise_player_viewport_vars(updateRate);
             weather_clip_planes(-1, -512);
             lensflare_override(cam_get_active_camera());
-            lensflare_render(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, cam_get_active_camera());
+            lensflare_render(&gTrackDL, &gTrackMtxPtr, &gTrackVtxPtr, cam_get_active_camera());
             set_text_font(FONT_COLOURFUL);
             posX = SCREEN_WIDTH_HALF + 10;
             posY = SCREEN_HEIGHT_HALF + 5;
 #if REGION == REGION_JP
-            draw_text(&gSceneCurrDisplayList, posX, posY, gJpnTTCam, ALIGN_TOP_LEFT);
+            draw_text(&gTrackDL, posX, posY, gJpnTTCam, ALIGN_TOP_LEFT);
 #else
-            draw_text(&gSceneCurrDisplayList, posX, posY, "TT CAM", ALIGN_TOP_LEFT);
+            draw_text(&gTrackDL, posX, posY, "TT CAM", ALIGN_TOP_LEFT);
 #endif
         } else {
             set_active_camera(PLAYER_FOUR);
             func_800278E8(updateRate);
         }
     }
-    viewport_reset(&gSceneCurrDisplayList);
-    gDPPipeSync(gSceneCurrDisplayList++);
-    gDkrDisableBillboard(gSceneCurrDisplayList++);
+    viewport_reset(&gTrackDL);
+    gDPPipeSync(gTrackDL++);
+    gDkrDisableBillboard(gTrackDL++);
     gShadowHeapFlip ^= 1;
-    *dList = gSceneCurrDisplayList;
-    *mtx = gSceneCurrMatrix;
-    *vtx = gSceneCurrVertexList;
-    *tris = gSceneCurrTriList;
+    *dList = gTrackDL;
+    *mtx = gTrackMtxPtr;
+    *vtx = gTrackVtxPtr;
+    *tris = gTrackTriPtr;
 }
 
 /************ .rodata ************/
 
-void func_80025510(s32 count) {
+/**
+ * Allocates control data and geometry for the void.
+ * The void refers to the flat coloured background that's shaped in real time to prevent
+ * being able to see through level geometry, breaking immersion.
+ */
+void void_init(s32 viewportCount) {
     s32 i;
     s32 sp30;
     s32 sp2C;
-    s32 sp28;
-    s32 sp24;
+    s32 vtxLimit;
+    s32 triLimit;
     u8 *ptr;
 
     D_8011D4BA = 175;
-    D_8011D4BC = 45;
-    if (count >= 2) {
-        D_8011D4BC >>= 1;
+    gVoidPrimLimit = 45;
+    // Halve the primitive limit for multiplayer.
+    if (viewportCount >= 2) {
+        gVoidPrimLimit >>= 1;
     }
 
     sp30 = (D_8011D4BA + 6) * sizeof(unk8011D478);
     sp2C = D_8011D4BA + 5;
-    sp28 = (D_8011D4BC + 5) * 4 * sizeof(Vertex);
-    sp24 = (D_8011D4BC + 5) * 2 * sizeof(Triangle);
+    vtxLimit = (gVoidPrimLimit + 5) * 4 * sizeof(Vertex);
+    triLimit = (gVoidPrimLimit + 5) * 2 * sizeof(Triangle);
 
-    D_8011D474 = mempool_alloc_safe(count * sizeof(unk8011D474), COLOUR_TAG_CYAN);
-    D_800DC924 = mempool_alloc_safe(sp30 + sp2C + (sp28 + sp24) * 2 * count, COLOUR_TAG_CYAN);
+    gVoidMesh = mempool_alloc_safe(viewportCount * sizeof(VoidMesh), COLOUR_TAG_CYAN);
+    gVoidData = mempool_alloc_safe(sp30 + sp2C + (vtxLimit + triLimit) * 2 * viewportCount, COLOUR_TAG_CYAN);
 
-    ptr = D_800DC924;
+    ptr = gVoidData;
 
     if (ptr != NULL) {
         D_8011D478 = (unk8011D478 *) ptr;
         ptr += sp30;
 
         D_8011D47C = (s8 *) ptr;
+        // Align by 8
         ptr = (u8 *) ((s32) (ptr + sp2C + 8) & ~7);
 
-        for (i = 0; i < count; i++) {
-            D_8011D474[i].unk0 = (Triangle *) ptr;
-            ptr += sp24;
+        for (i = 0; i < viewportCount; i++) {
+            gVoidMesh[i].tris[0] = (Triangle *) ptr;
+            ptr += triLimit;
 
-            D_8011D474[i].unk4 = (Triangle *) ptr;
-            ptr += sp24;
+            gVoidMesh[i].tris[1] = (Triangle *) ptr;
+            ptr += triLimit;
 
-            D_8011D474[i].unk8 = (Vertex *) ptr;
-            ptr += sp28;
+            gVoidMesh[i].verts[0] = (Vertex *) ptr;
+            ptr += vtxLimit;
 
-            D_8011D474[i].unkC = (Vertex *) ptr;
-            ptr += sp28;
+            gVoidMesh[i].verts[1] = (Vertex *) ptr;
+            ptr += vtxLimit;
         }
     }
-    D_8011D4B4 = 0;
+    gVoidVertexFlip = 0;
 }
 
-void func_800257D0(void) {
-    if (D_800DC924 != NULL) {
-        mempool_free(D_8011D474);
-        mempool_free(D_800DC924);
-        D_800DC924 = NULL;
+/**
+ * Free the void mesh and control data if it exists.
+ */
+void void_free(void) {
+    if (gVoidData != NULL) {
+        mempool_free(gVoidMesh);
+        mempool_free(gVoidData);
+        gVoidData = NULL;
     }
 }
 
-void func_8002581C(u8 *segmentIds, s32 numberOfSegments, s32 viewportIndex) {
+// root func for the out of bounds void rendering
+void void_check(u8 *segmentIds, s32 numberOfSegments, s32 viewportIndex) {
     s16 i;
     s16 j;
     f32 yCameraSins;
     f32 yCameraCoss;
     f32 temp_f22;
-    Vertex *spAC;
-    Triangle *spA8;
+    Vertex *vtx;
+    Triangle *tri;
     s16 temp_s3;
     s16 var_s0;
     s16 var_s4;
@@ -661,11 +664,11 @@ void func_8002581C(u8 *segmentIds, s32 numberOfSegments, s32 viewportIndex) {
     s8 sp7C[24]; // possible UB here, real size is unknown
     s32 pad;
 
-    D_8011D490[0] = D_8011D474[viewportIndex].unk0;
-    D_8011D490[1] = D_8011D474[viewportIndex].unk4;
-    D_8011D480[0] = D_8011D474[viewportIndex].unk8;
-    D_8011D480[1] = D_8011D474[viewportIndex].unkC;
-    material_set_no_tex_offset(&gSceneCurrDisplayList, NULL, RENDER_ANTI_ALIASING | RENDER_Z_COMPARE);
+    gVoidTris[0] = gVoidMesh[viewportIndex].tris[0];
+    gVoidTris[1] = gVoidMesh[viewportIndex].tris[1];
+    gVoidVerts[0] = gVoidMesh[viewportIndex].verts[0];
+    gVoidVerts[1] = gVoidMesh[viewportIndex].verts[1];
+    material_set_no_tex_offset(&gTrackDL, NULL, RENDER_ANTI_ALIASING | RENDER_Z_COMPARE);
     D_8011D49C = 0;
     D_8011D49E = 0;
 
@@ -739,16 +742,16 @@ void func_8002581C(u8 *segmentIds, s32 numberOfSegments, s32 viewportIndex) {
     }
     var_s4 = temp_s3 = D_8011D478[0].unk0;
 
-    spAC = gSceneCurrVertexList;
-    spA8 = gSceneCurrTriList;
-    gSceneCurrVertexList = D_8011D480[D_8011D4B4];
-    gSceneCurrTriList = D_8011D490[D_8011D4B4];
+    vtx = gTrackVtxPtr;
+    tri = gTrackTriPtr;
+    gTrackVtxPtr = gVoidVerts[gVoidVertexFlip];
+    gTrackTriPtr = gVoidTris[gVoidVertexFlip];
 
-    D_8011D4B4 = 1 - D_8011D4B4;
-    D_8011D488 = gSceneCurrVertexList;
-    D_8011D498 = gSceneCurrTriList;
-    D_8011D4B6.whole = 0;
-    D_8011D4B8 = 0;
+    gVoidVertexFlip = 1 - gVoidVertexFlip;
+    gVoidCurrVerts = gTrackVtxPtr;
+    gVoidCurrTris = gTrackTriPtr;
+    gVoidVertCount = 0;
+    gVoidPrimCount = 0;
 
     i = 0;
     while (i < D_8011D49E) {
@@ -777,12 +780,12 @@ void func_8002581C(u8 *segmentIds, s32 numberOfSegments, s32 viewportIndex) {
             }
         }
     }
-    if (D_8011D4B6.whole != 0) {
-        gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(D_8011D488), D_8011D4B6.whole, 0);
-        gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(D_8011D498), D_8011D4B6.whole >> 1, TRIN_DISABLE_TEXTURE);
+    if (gVoidVertCount != 0) {
+        gSPVertexDKR(gTrackDL++, OS_K0_TO_PHYSICAL(gVoidCurrVerts), gVoidVertCount, 0);
+        gSPPolygon(gTrackDL++, OS_K0_TO_PHYSICAL(gVoidCurrTris), gVoidVertCount >> 1, TRIN_DISABLE_TEXTURE);
     }
-    gSceneCurrVertexList = spAC;
-    gSceneCurrTriList = spA8;
+    gTrackVtxPtr = vtx;
+    gTrackTriPtr = tri;
 }
 
 void func_80026070(LevelModelSegmentBoundingBox *arg0, f32 arg1, f32 arg2, f32 arg3) {
@@ -1088,12 +1091,12 @@ void func_80026E54(s16 arg0, s8 *arg1, f32 arg2, f32 arg3) {
         if (temp0 && !temp1) {
             temp3 = (sp60[i] * 2);
             temp4 = (sp60[i + 1] * 2);
-            func_80027184(&sp94[temp3], &sp94[temp4], arg3, arg2);
+            void_generate_primitive(&sp94[temp3], &sp94[temp4], arg3, arg2);
         }
     }
 }
 
-s32 func_80027184(f32 *arg0, f32 *arg1, f32 arg2, f32 arg3) {
+s32 void_generate_primitive(f32 *arg0, f32 *arg1, f32 arg2, f32 arg3) {
     Vertex *verts;
     Triangle *tris;
     s32 triIndex;
@@ -1106,17 +1109,16 @@ s32 func_80027184(f32 *arg0, f32 *arg1, f32 arg2, f32 arg3) {
     u8 colour_b;
     u8 colour_a;
 
-    if (D_8011D4B8 >= D_8011D4BC) {
+    if (gVoidPrimCount >= gVoidPrimLimit) {
         return NULL;
     }
 
-    if (D_8011D4B6.whole == 24) {
-        gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(D_8011D488), D_8011D4B6.whole, 0);
-        gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(D_8011D498), (D_8011D4B6.whole >> 1),
-                   TRIN_DISABLE_TEXTURE);
-        D_8011D488 = gSceneCurrVertexList;
-        D_8011D4B6.whole = 0;
-        D_8011D498 = gSceneCurrTriList;
+    if (gVoidVertCount == 24) {
+        gSPVertexDKR(gTrackDL++, OS_K0_TO_PHYSICAL(gVoidCurrVerts), gVoidVertCount, 0);
+        gSPPolygon(gTrackDL++, OS_K0_TO_PHYSICAL(gVoidCurrTris), (gVoidVertCount >> 1), TRIN_DISABLE_TEXTURE);
+        gVoidCurrVerts = gTrackVtxPtr;
+        gVoidVertCount = 0;
+        gVoidCurrTris = gTrackTriPtr;
     }
 
     vertX1 = arg2 * D_8011D4A0 + D_8011D4AC;
@@ -1124,12 +1126,12 @@ s32 func_80027184(f32 *arg0, f32 *arg1, f32 arg2, f32 arg3) {
     vertX2 = arg3 * D_8011D4A0 + D_8011D4AC;
     vertZ2 = arg3 * D_8011D4A4 + D_8011D4B0;
 
-    colour_r = D_8011B0E1;
-    colour_g = D_8011B0E2;
-    colour_b = D_8011B0E3;
+    colour_r = gVoidColourR;
+    colour_g = gVoidColourG;
+    colour_b = gVoidColourB;
     colour_a = 0xFF;
 
-    verts = gSceneCurrVertexList;
+    verts = gTrackVtxPtr;
     verts[0].x = vertX1;
     verts[0].y = arg0[0] + 2.0f;
     verts[0].z = vertZ1;
@@ -1164,10 +1166,10 @@ s32 func_80027184(f32 *arg0, f32 *arg1, f32 arg2, f32 arg3) {
     // @fake
     if (1) {}
     verts += 4;
-    gSceneCurrVertexList = verts;
+    gTrackVtxPtr = verts;
 
-    tris = gSceneCurrTriList;
-    triIndex = D_8011D4B6.two;
+    tris = gTrackTriPtr;
+    triIndex = (u8) gVoidVertCount;
 
     // @fake, using index 0 directly doesn't match
     vertX2 = 0;
@@ -1175,9 +1177,9 @@ s32 func_80027184(f32 *arg0, f32 *arg1, f32 arg2, f32 arg3) {
     tris[vertX2].vi0 = triIndex + 2;
     tris[vertX2].vi1 = triIndex + 1;
     tris[vertX2].vi2 = triIndex;
-    tris[vertX2].uv0.u = 0x3E0;
-    tris[vertX2].uv0.v = 0x3E0;
-    tris[vertX2].uv1.u = 0x3E0;
+    tris[vertX2].uv0.u = 1024 - 32;
+    tris[vertX2].uv0.v = 1024 - 32;
+    tris[vertX2].uv1.u = 1024 - 32;
     tris[vertX2].uv1.v = 0;
     tris[vertX2].uv2.u = 1;
     tris[vertX2].uv2.v = 0;
@@ -1187,16 +1189,16 @@ s32 func_80027184(f32 *arg0, f32 *arg1, f32 arg2, f32 arg3) {
     tris[1].vi1 = triIndex + 1;
     tris[1].vi2 = triIndex + 2;
     tris[1].uv0.u = 1;
-    tris[1].uv0.v = 0x3E0;
-    tris[1].uv1.u = 0x3E0;
-    tris[1].uv1.v = 0x3E0;
+    tris[1].uv0.v = 1024 - 32;
+    tris[1].uv1.u = 1024 - 32;
+    tris[1].uv1.v = 1024 - 32;
     tris[1].uv2.u = 1;
     tris[1].uv2.v = 0;
     tris += 2;
-    gSceneCurrTriList = tris;
+    gTrackTriPtr = tris;
 
-    D_8011D4B6.whole += 4;
-    D_8011D4B8++;
+    gVoidVertCount += 4;
+    gVoidPrimCount++;
     return NULL;
 }
 
@@ -1426,15 +1428,15 @@ void animate_level_textures(s32 updateRate) {
                     texture = track_tex_seek(batch[batchNumber].textureIndex);
                     //texture = gCurrentLevelModel->textures[batch[batchNumber].textureIndex].texture;
                     if (texture->numOfTextures != 0x100 && texture->frameAdvanceDelay) {
-                        temp = batch[batchNumber].unk7 << 6;
+                        temp = batch[batchNumber].texOffset << 6;
                         if (batch[batchNumber].flags & RENDER_UNK_80000000) {
-                            temp |= batch[batchNumber].unk6;
+                            temp |= batch[batchNumber].miscData;
                             tex_animate_texture(texture, &batch[batchNumber].flags, &temp, updateRate);
-                            batch[batchNumber].unk6 = temp & 0x3F;
+                            batch[batchNumber].miscData = temp & 0x3F;
                         } else {
                             tex_animate_texture(texture, &batch[batchNumber].flags, &temp, updateRate);
                         }
-                        batch[batchNumber].unk7 = (temp >> 6) & 0xFF;
+                        batch[batchNumber].texOffset = (temp >> 6) & 0xFF;
                     }
                 }
             }
@@ -1517,8 +1519,8 @@ void func_80028050(void) {
     TextureHeader *texHeader; // sp74
     s32 pad[4];
 
-    verts = gSceneCurrVertexList;
-    tris = gSceneCurrTriList;
+    verts = gTrackVtxPtr;
+    tris = gTrackTriPtr;
 
     camera = cam_get_active_camera();
     texHeader = gCurrentLevelHeader2->unkA4;
@@ -1588,14 +1590,14 @@ void func_80028050(void) {
     uCoords[8] = (s16) ((2.0f * xCos) - pos.z) + var_v0;
     vCoords[8] = (s16) ((2.0f * pos.x) + var_f16) + var_v1;
 
-    matrix_world_origin(&gSceneCurrDisplayList, &gSceneCurrMatrix);
+    mtx_world_origin(&gTrackDL, &gTrackMtxPtr);
 
     var_t2 = *gCurrentLevelHeader2->unk74;
     var_a2 = -1;
 
-    if ((u32) var_t2 != -1) {
+    if ((s32) var_t2 != -1) {
         levelHeader = gCurrentLevelHeader2->unk74[1];
-        if ((u32) levelHeader == -1) {
+        if ((s32) levelHeader == -1) {
             levelHeader = var_t2;
         }
     } else {
@@ -1609,17 +1611,17 @@ void func_80028050(void) {
         var_a3 = levelHeader->rgba.word & (~0xFF);
     }
 
-    gfx_init_basic_xlu(&gSceneCurrDisplayList, 1, var_a2, var_a3);
+    gfx_init_basic_xlu(&gTrackDL, 1, var_a2, var_a3);
     texHeader = set_animated_texture_header(texHeader, D_8011B110 << 8);
-    gDkrDmaDisplayList(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(texHeader->cmd), texHeader->numberOfCommands);
-    gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(gSceneCurrVertexList), 9, 0);
-    gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(gSceneCurrTriList), 8, 1);
-    gDPPipeSync(gSceneCurrDisplayList++);
+    gDkrDmaDisplayList(gTrackDL++, OS_K0_TO_PHYSICAL(texHeader->cmd), texHeader->numberOfCommands);
+    gSPVertexDKR(gTrackDL++, OS_K0_TO_PHYSICAL(gTrackVtxPtr), 9, 0);
+    gSPPolygon(gTrackDL++, OS_K0_TO_PHYSICAL(gTrackTriPtr), 8, 1);
+    gDPPipeSync(gTrackDL++);
     if (var_t2 != NULL) {
-        gDPSetPrimColor(gSceneCurrDisplayList++, 0, 0, 255, 255, 255, 255);
-        gDPSetEnvColor(gSceneCurrDisplayList++, 255, 255, 255, 0);
+        gDPSetPrimColor(gTrackDL++, 0, 0, 255, 255, 255, 255);
+        gDPSetEnvColor(gTrackDL++, 255, 255, 255, 0);
     }
-    rendermode_reset(&gSceneCurrDisplayList);
+    rendermode_reset(&gTrackDL);
 
     vertY = camera->trans.y_position + 192.0f;
     for (i = 0; i < 9; i++) {
@@ -1651,8 +1653,8 @@ void func_80028050(void) {
         tris++;
     }
 
-    gSceneCurrVertexList = verts;
-    gSceneCurrTriList = tris;
+    gTrackVtxPtr = verts;
+    gTrackTriPtr = tris;
 }
 #else
 #pragma GLOBAL_ASM("asm/nonmatchings/tracks/func_80028050.s")
@@ -1677,8 +1679,8 @@ void draw_gradient_background(void) {
     Vertex *verts;
     Triangle *tris;
 
-    verts = (Vertex *) gSceneCurrVertexList;
-    tris = (Triangle *) gSceneCurrTriList;
+    verts = (Vertex *) gTrackVtxPtr;
+    tris = (Triangle *) gTrackTriPtr;
 
     headerRed0 = gCurrentLevelHeader2->BGColourTopR;
     headerGreen0 = gCurrentLevelHeader2->BGColourTopG;
@@ -1686,10 +1688,10 @@ void draw_gradient_background(void) {
     headerRed1 = gCurrentLevelHeader2->BGColourBottomR;
     headerGreen1 = gCurrentLevelHeader2->BGColourBottomG;
     headerBlue1 = gCurrentLevelHeader2->BGColourBottomB;
-    rendermode_reset(&gSceneCurrDisplayList);
-    material_set_no_tex_offset(&gSceneCurrDisplayList, 0, RENDER_FOG_ACTIVE);
-    gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(verts), 4, 0);
-    gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(tris), 2, 0);
+    rendermode_reset(&gTrackDL);
+    material_set_no_tex_offset(&gTrackDL, 0, RENDER_FOG_ACTIVE);
+    gSPVertexDKR(gTrackDL++, OS_K0_TO_PHYSICAL(verts), 4, 0);
+    gSPPolygon(gTrackDL++, OS_K0_TO_PHYSICAL(tris), 2, 0);
 
     z = 20;
     y0 = -150;
@@ -1758,8 +1760,8 @@ void draw_gradient_background(void) {
     tris->uv2.v = 0;
     tris++;
 
-    gSceneCurrVertexList = verts;
-    gSceneCurrTriList = tris;
+    gTrackVtxPtr = verts;
+    gTrackTriPtr = tris;
 }
 
 /**
@@ -1778,9 +1780,9 @@ void render_skydome(void) {
         gSkydomeSegment->segment.trans.z_position = cam->trans.z_position;
     }
 
-    matrix_world_origin(&gSceneCurrDisplayList, &gSceneCurrMatrix);
+    mtx_world_origin(&gTrackDL, &gTrackMtxPtr);
     if (gSceneRenderSkyDome) {
-        render_object(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, gSkydomeSegment);
+        render_object(&gTrackDL, &gTrackMtxPtr, &gTrackVtxPtr, gSkydomeSegment);
     }
 }
 
@@ -1876,15 +1878,15 @@ void render_level_geometry_and_objects(void) {
             objectsVisible[segmentIds[i] + 1] = TRUE;
         }
     }
-    sortbuffer_pop(&gSceneCurrDisplayList, SORT_OPA);
-    sortbuffer_pop(&gSceneCurrDisplayList, SORT_DECAL);
+    sortbuffer_pop(&gTrackDL, SORT_OPA);
+    sortbuffer_pop(&gTrackDL, SORT_DECAL);
     aa_manage(TRACKAA_OBJECT);
 
     if (gCurrentLevelModel->numberOfSegments < 2) {
         objectsVisible[1] = TRUE;
     }
 
-    rendermode_reset(&gSceneCurrDisplayList);
+    rendermode_reset(&gTrackDL);
     sort_objects_by_dist(sp160, objCount - 1);
     visibleFlags = OBJ_FLAGS_INVIS_PLAYER1 << (get_current_viewport() & 1);
 
@@ -1903,12 +1905,12 @@ void render_level_geometry_and_objects(void) {
         if (obj != NULL && visible == 255 && check_if_in_draw_range(obj) &&
             (objectsVisible[obj->segment.object.segmentID + 1] || obj->segment.object.unk34 > 1000.0)) {
             if (obj->segment.trans.flags & OBJ_FLAGS_PARTICLE) {
-                render_object(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, obj);
+                render_object(&gTrackDL, &gTrackMtxPtr, &gTrackVtxPtr, obj);
                 continue;
             } else if (obj->shadow != NULL) {
                 shadow_render(obj, obj->shadow);
             }
-            render_object(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, obj);
+            render_object(&gTrackDL, &gTrackMtxPtr, &gTrackVtxPtr, obj);
             if (obj->waterEffect != NULL && obj->segment.header->flags & HEADER_FLAGS_WATER_EFFECT) {
                 watereffect_render(obj, obj->waterEffect);
             }
@@ -1926,12 +1928,12 @@ void render_level_geometry_and_objects(void) {
         if (obj != NULL && visible && objFlags & OBJ_FLAGS_UNK_0100 &&
             objectsVisible[obj->segment.object.segmentID + 1] && check_if_in_draw_range(obj)) {
             if (obj->segment.trans.flags & OBJ_FLAGS_PARTICLE) {
-                render_object(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, obj);
+                render_object(&gTrackDL, &gTrackMtxPtr, &gTrackVtxPtr, obj);
                 continue;
             } else if (obj->shadow != NULL) {
                 shadow_render(obj, obj->shadow);
             }
-            render_object(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, obj);
+            render_object(&gTrackDL, &gTrackMtxPtr, &gTrackVtxPtr, obj);
             if (obj->waterEffect != NULL && obj->segment.header->flags & HEADER_FLAGS_WATER_EFFECT) {
                 watereffect_render(obj, obj->waterEffect);
             }
@@ -1944,17 +1946,17 @@ void render_level_geometry_and_objects(void) {
             render_level_segment(segmentIds[i], TRUE); // Render transparent segments
         }
     }
-    sortbuffer_pop(&gSceneCurrDisplayList, SORT_OPA);
-    sortbuffer_pop(&gSceneCurrDisplayList, SORT_DECAL);
-    sortbuffer_pop(&gSceneCurrDisplayList, SORT_XLU);
+    sortbuffer_pop(&gTrackDL, SORT_OPA);
+    sortbuffer_pop(&gTrackDL, SORT_DECAL);
+    sortbuffer_pop(&gTrackDL, SORT_XLU);
 
     if (gWaveBlockCount != 0) {
-        waves_render(&gSceneCurrDisplayList, &gSceneCurrMatrix, get_current_viewport());
+        waves_render(&gTrackDL, &gTrackMtxPtr, get_current_viewport());
     }
 
-    rendermode_reset(&gSceneCurrDisplayList);
-    material_set_no_tex_offset(&gSceneCurrDisplayList, 0, RENDER_FOG_ACTIVE | RENDER_Z_COMPARE);
-    func_80012C3C(&gSceneCurrDisplayList);
+    rendermode_reset(&gTrackDL);
+    material_set_no_tex_offset(&gTrackDL, 0, RENDER_FOG_ACTIVE | RENDER_Z_COMPARE);
+    func_80012C3C(&gTrackDL);
 
     // Particles and FX
     for (i = objCount - 1; i >= sp160; i--) {
@@ -1976,30 +1978,30 @@ void render_level_geometry_and_objects(void) {
             check_if_in_draw_range(obj)) {
             if (visible > 0) {
                 if (obj->segment.trans.flags & OBJ_FLAGS_PARTICLE) {
-                    render_object(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, obj);
+                    render_object(&gTrackDL, &gTrackMtxPtr, &gTrackVtxPtr, obj);
                     goto skip;
                 } else if (obj->shadow != NULL) {
                     shadow_render(obj, obj->shadow);
                 }
-                render_object(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, obj);
+                render_object(&gTrackDL, &gTrackMtxPtr, &gTrackVtxPtr, obj);
                 if ((obj->waterEffect != 0) && (obj->segment.header->flags & 0x10)) {
                     watereffect_render(obj, obj->waterEffect);
                 }
             }
         skip:
             if (obj->behaviorId == BHV_RACER) {
-                render_racer_shield(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, obj);
-                render_racer_magnet(&gSceneCurrDisplayList, &gSceneCurrMatrix, &gSceneCurrVertexList, obj);
+                render_racer_shield(&gTrackDL, &gTrackMtxPtr, &gTrackVtxPtr, obj);
+                render_racer_magnet(&gTrackDL, &gTrackMtxPtr, &gTrackVtxPtr, obj);
             }
         }
     }
 
-    sortbuffer_pop(&gSceneCurrDisplayList, SORT_OPA);
-    sortbuffer_pop(&gSceneCurrDisplayList, SORT_DECAL);
-    sortbuffer_pop(&gSceneCurrDisplayList, SORT_XLU);
+    sortbuffer_pop(&gTrackDL, SORT_OPA);
+    sortbuffer_pop(&gTrackDL, SORT_DECAL);
+    sortbuffer_pop(&gTrackDL, SORT_XLU);
 
-    if (D_800DC924 != NULL && func_80027568()) {
-        func_8002581C(segmentIds, numberOfSegments, get_current_viewport());
+    if (gVoidData != NULL && func_80027568()) {
+        void_check(segmentIds, numberOfSegments, get_current_viewport());
     }
     
 }
@@ -2073,26 +2075,26 @@ void render_level_segment(s32 segmentId, s32 nonOpaque) {
             vertices = (s32) &segment->vertices[batchInfo->verticesOffset];
         } while (0);
         triangles = (s32) &segment->triangles[batchInfo->facesOffset];
-        texOffset = batchInfo->unk7 << 14;
+        texOffset = batchInfo->texOffset << 14;
         levelHeaderIndex = (batchFlags >> 28) & 7;
         if (levelHeaderIndex != (batchInfo->verticesOffset * 0)) {
             gDPSetEnvColor(
-                gSceneCurrDisplayList++,
+                gTrackDL++,
                 ((LevelHeader_70 *) ((u8 **) (&((LevelHeader **) gCurrentLevelHeader2)[levelHeaderIndex]))[28])->rgba.r,
                 ((LevelHeader_70 *) ((u8 **) (&((LevelHeader **) gCurrentLevelHeader2)[levelHeaderIndex]))[28])->rgba.g,
                 ((LevelHeader_70 *) ((u8 **) (&((LevelHeader **) gCurrentLevelHeader2)[levelHeaderIndex]))[28])->rgba.b,
                 ((LevelHeader_70 *) ((u8 **) (&((LevelHeader **) gCurrentLevelHeader2)[levelHeaderIndex]))[28])
                     ->rgba.a);
         } else {
-            gDPSetEnvColor(gSceneCurrDisplayList++, 255, 255, 255, 0);
+            gDPSetEnvColor(gTrackDL++, 255, 255, 255, 0);
         }
         if (batchFlags & RENDER_PULSING_LIGHTS) {
             color = gCurrentLevelHeader2->pulseLightData->outColorValue;
-            gDPSetPrimColor(gSceneCurrDisplayList++, 0, 0, color, color, color, color);
-            material_set_blinking_lights(&gSceneCurrDisplayList, texture, batchFlags, texOffset);
-            gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vertices), numberVertices, 0);
-            gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(triangles), numberTriangles, TRIN_ENABLE_TEXTURE);
-            gDPSetPrimColor(gSceneCurrDisplayList++, 0, 0, 255, 255, 255, 255);
+            gDPSetPrimColor(gTrackDL++, 0, 0, color, color, color, color);
+            material_set_blinking_lights(&gTrackDL, texture, batchFlags, texOffset);
+            gSPVertexDKR(gTrackDL++, OS_K0_TO_PHYSICAL(vertices), numberVertices, 0);
+            gSPPolygon(gTrackDL++, OS_K0_TO_PHYSICAL(triangles), numberTriangles, TRIN_ENABLE_TEXTURE);
+            gDPSetPrimColor(gTrackDL++, 0, 0, 255, 255, 255, 255);
         } else {
             if (gSortMats) {
                 s32 index;
@@ -2121,13 +2123,13 @@ void render_level_segment(s32 segmentId, s32 nonOpaque) {
                 buf->matType = 0;
                 sortbuffer_find(buf, index);
             } else {
-                material_set(&gSceneCurrDisplayList, texture, batchFlags, texOffset);
+                material_set(&gTrackDL, texture, batchFlags, texOffset);
                 batchFlags = TRUE;
                 if (texture == NULL) {
                     batchFlags = FALSE;
                 }
-                gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vertices), numberVertices, 0);
-                gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(triangles), numberTriangles, batchFlags);
+                gSPVertexDKR(gTrackDL++, OS_K0_TO_PHYSICAL(vertices), numberVertices, 0);
+                gSPPolygon(gTrackDL++, OS_K0_TO_PHYSICAL(triangles), numberTriangles, batchFlags);
             }
         }
     }
@@ -2487,7 +2489,7 @@ s32 check_if_in_draw_range(Object *obj) {
             case BHV_HIT_TESTER_2:      // animated objects?
             case BHV_ANIMATED_OBJECT_2: // space ships
                 obj64 = obj->unk64;
-                obj->segment.object.opacity = obj64->wizpig2.pad0[0x42];
+                obj->segment.object.opacity = obj64->animation.unk42;
                 break;
             case BHV_PARK_WARDEN:
             case BHV_GOLDEN_BALLOON:
@@ -2857,8 +2859,7 @@ s32 func_8002BAB0(s32 levelSegmentIndex, f32 xIn, f32 zIn, f32 *yOut) {
 
     yOutCount = 0;
     for (batchNum = 0; batchNum < currentSegment->numberOfBatches; batchNum++) {
-        do {
-        } while (0);
+        if (1) {}
         currentBatch = &currentSegment->batches[batchNum];
         currentFaceOffset = currentBatch->facesOffset;
         nextFaceOffset = currentBatch[1].facesOffset;
@@ -2878,6 +2879,7 @@ s32 func_8002BAB0(s32 levelSegmentIndex, f32 xIn, f32 zIn, f32 *yOut) {
                 temp_ra_1 = ((((XInInt - vert2X) * (vert3Z - vert2Z)) - ((vert3X - vert2X) * (ZInInt - vert2Z))) >= 0);
                 temp_ra_2 = ((((XInInt - vert1X) * (vert2Z - vert1Z)) - ((vert2X - vert1X) * (ZInInt - vert1Z))) >= 0);
                 temp_ra_3 = ((((XInInt - vert1X) * (vert3Z - vert1Z)) - ((vert3X - vert1X) * (ZInInt - vert1Z))) >= 0);
+                var_v0 = faceNum; // fake?
                 if (temp_ra_1 == temp_ra_2 && temp_ra_2 != temp_ra_3) {
                     temp = currentSegment->unk14[faceNum].triangleIndex;
                     temp_v1_4 = (f32 *) &currentSegment->unk18[temp * 4];
@@ -2885,6 +2887,11 @@ s32 func_8002BAB0(s32 levelSegmentIndex, f32 xIn, f32 zIn, f32 *yOut) {
                     tempVec4f.y = temp_v1_4[1];
                     tempVec4f.z = temp_v1_4[2];
                     tempVec4f.w = temp_v1_4[3];
+                    // temp = currentSegment->unk14[faceNum].triangleIndex;
+                    // tempVec4f.x = currentSegment->unk18_vec4f[temp].x;
+                    // tempVec4f.y = currentSegment->unk18_vec4f[temp].y;
+                    // tempVec4f.z = currentSegment->unk18_vec4f[temp].z;
+                    // tempVec4f.w = currentSegment->unk18_vec4f[temp].w;
                     if (tempVec4f.y != 0.0) {
                         yOut[yOutCount] = -(((tempVec4f.x * xIn) + (tempVec4f.z * zIn) + tempVec4f.w) / tempVec4f.y);
                         yOutCount++;
@@ -3103,7 +3110,7 @@ void free_track(void) {
         mempool_free(gShadowHeapTris[i]);
         mempool_free(gShadowHeapVerts[i]);
     }
-    func_800257D0();
+    void_free();
     if (gSkydomeSegment != NULL) {
         free_object(gSkydomeSegment);
         gParticlePtrList_flush();
@@ -3488,7 +3495,7 @@ void shadow_render(Object *obj, ShadowData *shadow) {
             } else if (alpha != 255 || obj->segment.object.opacity != 255) {
                 flags = RENDER_FOG_ACTIVE | RENDER_SEMI_TRANSPARENT | RENDER_Z_COMPARE;
                 alpha = (obj->segment.object.opacity * alpha) >> 8;
-                gDPSetPrimColor(gSceneCurrDisplayList++, 0, 0, 255, 255, 255, alpha);
+                gDPSetPrimColor(gTrackDL++, 0, 0, 255, 255, 255, alpha);
             }
             while (i < shadow->meshEnd) {
                 // I hope we can clean this part up.
@@ -3514,15 +3521,15 @@ void shadow_render(Object *obj, ShadowData *shadow) {
                     gSortBufCount[SORT_DECAL]++;
                     sortbuffer_find(buf, SORT_DECAL);
                 } else {
-                    material_set_no_tex_offset(&gSceneCurrDisplayList, gCurrShadowHeapData[i].texture, flags);
-                    gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
-                    gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
+                    material_set_no_tex_offset(&gTrackDL, gCurrShadowHeapData[i].texture, flags);
+                    gSPVertexDKR(gTrackDL++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
+                    gSPPolygon(gTrackDL++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
                 }
                 i++;
             }
 
             if (flags != RENDER_Z_COMPARE) {
-                gDPSetPrimColor(gSceneCurrDisplayList++, 0, 0, 255, 255, 255, 255);
+                gDPSetPrimColor(gTrackDL++, 0, 0, 255, 255, 255, 255);
             }
         }
     }
@@ -3580,9 +3587,9 @@ void watereffect_render(Object *obj, WaterEffect *effect) {
                     gSortBufCount[SORT_DECAL]++;
                     sortbuffer_find(buf, SORT_DECAL);
                 } else {
-                    material_set_no_tex_offset(&gSceneCurrDisplayList, gCurrShadowHeapData[i].texture, flags);
-                    gSPVertexDKR(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
-                    gSPPolygon(gSceneCurrDisplayList++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
+                    material_set_no_tex_offset(&gTrackDL, gCurrShadowHeapData[i].texture, flags);
+                    gSPVertexDKR(gTrackDL++, OS_K0_TO_PHYSICAL(vtx), numVerts, 0);
+                    gSPPolygon(gTrackDL++, OS_K0_TO_PHYSICAL(tri), numTris, 1);
                 }
                 i++;
             }
@@ -3767,9 +3774,9 @@ void func_8002DE30(Object *obj) {
                         }
                         if (maxYPos >= sp90 && sp94 >= minYPos) {
                             if (tri2d_xz_contains_point(obj->segment.trans.x_position, obj->segment.trans.z_position,
-                                                        &vertices[triangle->verticesArray[1]].x,
-                                                        &vertices[triangle->verticesArray[2]].x,
-                                                        &vertices[triangle->verticesArray[3]].x)) {
+                                                        (Vec3s *) &vertices[triangle->verticesArray[1]],
+                                                        (Vec3s *) &vertices[triangle->verticesArray[2]],
+                                                        (Vec3s *) &vertices[triangle->verticesArray[3]])) {
                                 foundResult = TRUE;
                                 obj->shading->unk0 += (((1.0f - D_800DC884[batchFlags]) - obj->shading->unk0) * 0.2);
                             }
@@ -4124,7 +4131,98 @@ void func_8002F2AC(void) {
 #pragma GLOBAL_ASM("asm/nonmatchings/tracks/func_8002F2AC.s")
 #endif
 
-#pragma GLOBAL_ASM("asm/nonmatchings/tracks/func_8002F440.s")
+void func_8002F440(void) {
+    s32 spAC;
+    s32 var_t0;
+    Triangle *tri;
+    Vertex *vert;
+    s32 alpha;
+    s16 sp90[6];
+    s32 var_s2;
+    s16 sp80[6];
+    f32 temp_f18;
+    f32 yRotCos;
+    f32 yRotSin;
+    f32 zDiff;
+    f32 someY;
+    f32 scale;
+    f32 xDiff;
+    s32 i;
+    UNUSED s32 pad;
+
+    alpha = 255;
+    yRotSin = sins_f(gNewShadowObj->segment.trans.rotation.y_rotation);
+    yRotCos = coss_f(gNewShadowObj->segment.trans.rotation.y_rotation);
+    temp_f18 = gNewShadowTexture->width * 16;
+    scale = ((gNewShadowTexture->width * 16) / gNewShadowWidth);
+    scale *= 1.4142f;
+    if (D_8011D0F0 > 0.0f) {
+        someY = gNewShadowObj->segment.trans.y_position - D_8011D0D0;
+        if (D_8011D0F0 < someY) {
+            alpha = 255;
+            alpha -= (s32) ((255 * (someY - D_8011D0F0)) / D_8011D0F4);
+            if (alpha < 0) {
+                alpha = 0;
+            }
+        }
+        if (someY > 0.0f) {
+            scale *= 1.0f + (0.005f * someY);
+        }
+    }
+    alpha *= gShadowOpacity;
+    var_s2 = 25;
+    for (spAC = 0; spAC < D_8011C230; spAC++) {
+        if ((D_8011C238[spAC].unk0 + var_s2) >= 24) {
+            gCurrShadowHeapData[gShadowTail].texture = gNewShadowTexture;
+            gCurrShadowHeapData[gShadowTail].triCount = gNewShadowTriCount;
+            gCurrShadowHeapData[gShadowTail].vtxCount = gNewShadowVtxCount;
+            gShadowTail++;
+            var_s2 = 0;
+        }
+        var_t0 = D_8011C238[spAC].unk1;
+
+        for (i = 0; i < D_8011C238[spAC].unk0; i++) {
+            vert = &gCurrShadowVerts[gNewShadowVtxCount];
+            gNewShadowVtxCount++;
+            if (var_t0 & 1) {
+                vert->x = D_8011B330[D_8011C238[spAC].unk2[i]].x;
+                xDiff = D_8011B330[D_8011C238[spAC].unk2[i]].x - gNewShadowObj->segment.trans.x_position;
+                vert->y = (D_8011B330[D_8011C238[spAC].unk2[i]].y + D_8011D0C8);
+                vert->z = D_8011B330[D_8011C238[spAC].unk2[i]].z;
+                zDiff = D_8011B330[D_8011C238[spAC].unk2[i]].z - gNewShadowObj->segment.trans.z_position;
+            } else {
+                vert->x = D_8011B120[D_8011C238[spAC].unk2[i]].x;
+                xDiff = D_8011B120[D_8011C238[spAC].unk2[i]].x - gNewShadowObj->segment.trans.x_position;
+                vert->y = (D_8011B120[D_8011C238[spAC].unk2[i]].y + D_8011D0C8);
+                vert->z = D_8011B120[D_8011C238[spAC].unk2[i]].z;
+                zDiff = D_8011B120[D_8011C238[spAC].unk2[i]].z - gNewShadowObj->segment.trans.z_position;
+            }
+            var_t0 >>= 1;
+            vert->r = 255;
+            vert->g = 255;
+            vert->b = 255;
+            vert->a = alpha;
+            sp90[i] = ((((xDiff * yRotCos) - (zDiff * yRotSin)) * scale) + temp_f18);
+            sp80[i] = ((((zDiff * yRotCos) + (xDiff * yRotSin)) * scale) + temp_f18);
+        }
+
+        for (i = 1; i < (D_8011C238[spAC].unk0 - 1); i++) {
+            tri = &gCurrShadowTris[gNewShadowTriCount];
+            gNewShadowTriCount++;
+            tri->flags = 0x40;
+            tri->vi0 = var_s2 + i;
+            tri->vi1 = var_s2 + i + 1;
+            tri->vi2 = var_s2;
+            tri->uv0.u = sp90[i];
+            tri->uv0.v = sp80[i];
+            tri->uv1.u = sp90[i + 1];
+            tri->uv1.v = sp80[i + 1];
+            tri->uv2.u = sp90[0];
+            tri->uv2.v = sp80[0];
+        }
+        var_s2 += D_8011C238[spAC].unk0;
+    }
+}
 
 // Transition points between different lighting levels, used by certain objects
 f32 func_8002FA64(void) {
@@ -4497,9 +4595,9 @@ void update_fog(s32 viewportCount, s32 updateRate) {
  * Sets the fog settings for the active viewport based on the parameters of the environment data.
  */
 void apply_fog(s32 playerID) {
-    gDPSetFogColor(gSceneCurrDisplayList++, gFogData[playerID].fog.r >> 0x10, gFogData[playerID].fog.g >> 0x10,
+    gDPSetFogColor(gTrackDL++, gFogData[playerID].fog.r >> 0x10, gFogData[playerID].fog.g >> 0x10,
                    gFogData[playerID].fog.b >> 0x10, 0xFF);
-    gSPFogPosition(gSceneCurrDisplayList++, gFogData[playerID].fog.near >> 0x10, gFogData[playerID].fog.far >> 0x10);
+    gSPFogPosition(gTrackDL++, gFogData[playerID].fog.near >> 0x10, gFogData[playerID].fog.far >> 0x10);
 }
 
 /**
