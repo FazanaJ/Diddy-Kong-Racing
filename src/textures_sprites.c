@@ -7,10 +7,12 @@
 #include "game_ui.h"
 #include "main.h"
 
-#define TEX_HEADER_COUNT 175
+#define MAX_NUM_TEXTURES 700
 #define TEX_SPRITE_COUNT 50
 #define TEX_PALLETE_COUNT 20
-#define TEX_PALLETE_COLOURS 640
+#define MAX_TEX_PALETTE_SIZE 640
+#define TEXTURE_GFX_SIZE (12 * sizeof(Gfx))
+#define PALETTE_GFX_SIZE (6 * sizeof(Gfx))
 
 /************ .data ************/
 
@@ -19,13 +21,30 @@ s32 gSpriteOpaque = TRUE;
 
 // See "include/f3ddkr.h" for the defines
 
+/**
+ * Description of how these rendering modes work.
+ *
+ * First, the color combiner:
+ * Color – the texture color is modulated by vertex shading. In the second cycle, the result is blended with the
+ * environmental lighting color. Alpha – the texture alpha is multiplied by the vertex alpha (!) and then by the alpha
+ * of PrimColor, which controls the overall transparency of the model.
+ *
+ * Now regarding the rendering modes: the base mode is XLU_SURF. However, in the first group, every mode has Z buffer
+ * updates enabled. Presumably, this speeds up rendering of overlapping translucent primitives by allowing Z-based
+ * rejection, but the visual result depends on draw order. For example: if you draw the far primitive first, then the
+ * near one, both will be visible. But if drawn in the reverse order, only the near one will appear — the far one won't
+ * render at all, even though the background behind the near primitive will remain visible.
+ *
+ * It’s also unclear why G_RM_NOOP is used in the first cycle instead of G_RM_PASS, but the effect should be the same:
+ * the pixel color is passed unchanged to the second cycle.
+ */
 Gfx dRenderSettingsVtxAlpha[][2] = {
     // Semitransparent Vertex Alpha'd surface (Zsorted)
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA, DKR_CC_UNK0, DKR_OMH_2CYC_BILERP, DKR_RM_UNKNOWN0, G_RM_XLU_SURF2),
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA, DKR_CC_UNK0, DKR_OMH_2CYC_BILERP, DKR_RM_UNKNOWN0, G_RM_ZB_XLU_SURF2),
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA, DKR_CC_UNK1, DKR_OMH_2CYC_BILERP, DKR_RM_UNKNOWN1, G_RM_XLU_SURF2),
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA, DKR_CC_UNK1, DKR_OMH_2CYC_BILERP, DKR_RM_UNKNOWN1, G_RM_ZB_XLU_SURF2),
+    DRAW_TABLE_ENTRY(G_CC_MODULATERGBA, G_CC_MODULATEA_PRIM2, DKR_OMH_2CYC_BILERP, G_RM_NOOP, G_RM_XLU_SURF2 | Z_UPD),
+    DRAW_TABLE_ENTRY(G_CC_MODULATERGBA, G_CC_MODULATEA_PRIM2, DKR_OMH_2CYC_BILERP, G_RM_NOOP, G_RM_ZB_XLU_SURF2 | Z_UPD),
     // Semitransparent Vertex Alpha'd surface (No Zsort)
+    DRAW_TABLE_ENTRY(G_CC_MODULATERGBA, G_CC_BLENDI_ENV_ALPHA_PRIM2, DKR_OMH_2CYC_BILERP, G_RM_NOOP, G_RM_XLU_SURF2),
+    DRAW_TABLE_ENTRY(G_CC_MODULATERGBA, G_CC_BLENDI_ENV_ALPHA_PRIM2, DKR_OMH_2CYC_BILERP, G_RM_NOOP, G_RM_ZB_XLU_SURF2),
 };
 
 Gfx dRenderSettingsSpriteCld[][2] = {
@@ -38,21 +57,13 @@ Gfx dRenderSettingsSpriteCld[][2] = {
 // Should probably be merged with dRenderSettingsSpriteCld
 Gfx dRenderSettingsSpriteXlu[][2] = {
     // Semitransparent Sprite (Overwrite coverage)
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_POINT, G_RM_XLU_SURF, G_RM_XLU_SURF2),
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_POINT, DKR_RM_UNKNOWN2_1,
-                     DKR_RM_UNKNOWN2_2),
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_POINT, DKR_RM_UNKNOWN3_1,
-                     DKR_RM_UNKNOWN3_2),
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_POINT, G_RM_AA_ZB_XLU_INTER,
-                     G_RM_AA_ZB_XLU_INTER2),
+    DRAW_TABLE_GROUP(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_POINT, G_RM_XLU_SURF, G_RM_XLU_SURF2,
+                     G_RM_AA_XLU_SURF, G_RM_AA_XLU_SURF2, G_RM_AA_ZB_TEX_EDGE, G_RM_AA_ZB_TEX_EDGE2,
+                     G_RM_AA_ZB_XLU_INTER, G_RM_AA_ZB_XLU_INTER2),
     // Semitransparent Sprite (Overwrite coverage) (Copy)
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_POINT, G_RM_XLU_SURF, G_RM_XLU_SURF2),
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_POINT, DKR_RM_UNKNOWN2_1,
-                     DKR_RM_UNKNOWN2_2),
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_POINT, DKR_RM_UNKNOWN3_1,
-                     DKR_RM_UNKNOWN3_2),
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_POINT, G_RM_AA_ZB_XLU_INTER,
-                     G_RM_AA_ZB_XLU_INTER2)
+    DRAW_TABLE_GROUP(G_CC_MODULATEIA_PRIM, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_POINT, G_RM_XLU_SURF, G_RM_XLU_SURF2,
+                     G_RM_AA_XLU_SURF, G_RM_AA_XLU_SURF2, G_RM_AA_ZB_TEX_EDGE, G_RM_AA_ZB_TEX_EDGE2,
+                     G_RM_AA_ZB_XLU_INTER, G_RM_AA_ZB_XLU_INTER2)
 };
 
 Gfx dRenderSettingsCommon[][2] = {
@@ -65,11 +76,11 @@ Gfx dRenderSettingsCommon[][2] = {
                      G_RM_XLU_SURF, G_RM_XLU_SURF2, G_RM_RA_ZB_TEX_EDGE, G_RM_RA_ZB_TEX_EDGE2,
                      G_RM_AA_ZB_XLU_INTER, G_RM_AA_ZB_XLU_INTER2),
     // Cutout Surface with primitive colour and fog
-    DRAW_TABLE_GROUP(G_CC_MODULATEIA_PRIM, DKR_CC_UNK2, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_XLU_SURF2,
+    DRAW_TABLE_GROUP(G_CC_MODULATEIA_PRIM, G_CC_BLEND_ENV_ALPHA2, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_XLU_SURF2,
                      G_RM_FOG_SHADE_A, G_RM_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_RA_ZB_TEX_EDGE2, G_RM_FOG_SHADE_A,
                      G_RM_AA_ZB_XLU_INTER2),
     // Cutout Surface with primitive colour and fog (Zsorted interpenetrating)
-    DRAW_TABLE_GROUP(G_CC_MODULATEIA_PRIM, DKR_CC_UNK2, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_XLU_SURF2,
+    DRAW_TABLE_GROUP(G_CC_MODULATEIA_PRIM, G_CC_BLEND_ENV_ALPHA2, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_XLU_SURF2,
                      G_RM_FOG_SHADE_A, G_RM_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_ZB_XLU_INTER2 | Z_UPD,
                      G_RM_FOG_SHADE_A, G_RM_AA_ZB_XLU_INTER2),
 };
@@ -86,12 +97,12 @@ Gfx dRenderSettingsCommon_ext[][2] = {
                          G_RM_ZB_XLU_SURF2, G_RM_ZB_XLU_SURF, G_RM_ZB_XLU_SURF2, G_RM_ZB_XLU_SURF,
                          G_RM_ZB_XLU_SURF2),
     // Opaque Surface with fog
-    DRAW_TABLE_GROUP_EXT(G_CC_MODULATEIDECALA, DKR_CC_UNK1, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_OPA_SURF2,
+    DRAW_TABLE_GROUP_EXT(G_CC_MODULATEIDECALA, G_CC_BLENDI_ENV_ALPHA_PRIM2, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_OPA_SURF2,
                          G_RM_FOG_SHADE_A, G_RM_RA_OPA_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_OPA_SURF2, G_RM_FOG_SHADE_A,
                          G_RM_ZB_OPA_SURF2, G_RM_FOG_SHADE_A, G_RM_RA_ZB_OPA_SURF2, G_RM_FOG_SHADE_A,
                          G_RM_AA_ZB_OPA_SURF2),
     // Semitransparent Surface with fog
-    DRAW_TABLE_GROUP_EXT(G_CC_MODULATEIDECALA, DKR_CC_UNK1, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_XLU_SURF2,
+    DRAW_TABLE_GROUP_EXT(G_CC_MODULATEIDECALA, G_CC_BLENDI_ENV_ALPHA_PRIM2, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_XLU_SURF2,
                          G_RM_FOG_SHADE_A, G_RM_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_XLU_SURF2, G_RM_FOG_SHADE_A,
                          G_RM_ZB_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_ZB_XLU_SURF2, G_RM_FOG_SHADE_A,
                          G_RM_ZB_XLU_SURF2),
@@ -107,13 +118,13 @@ Gfx dRenderSettingsCutout[][2] = {
     // Semitransparent surface ZB
     DRAW_TABLE_ENTRY(G_CC_MODULATEIDECALA, G_CC_MODULATEIA_PRIM, DKR_OMH_1CYC_BILERP, G_RM_RA_ZB_TEX_EDGE, G_RM_RA_ZB_TEX_EDGE2),
     // Cutout surface with fog
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIDECALA, DKR_CC_UNK1, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_XLU_SURF2),
+    DRAW_TABLE_ENTRY(G_CC_MODULATEIDECALA, G_CC_BLENDI_ENV_ALPHA_PRIM2, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_XLU_SURF2),
     // Cutout surface ZB with fog
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIDECALA, DKR_CC_UNK1, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_RA_ZB_TEX_EDGE2),
+    DRAW_TABLE_ENTRY(G_CC_MODULATEIDECALA, G_CC_BLENDI_ENV_ALPHA_PRIM2, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_RA_ZB_TEX_EDGE2),
     // Semitransparent surface with fog
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIDECALA, DKR_CC_UNK1, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_XLU_SURF2),
+    DRAW_TABLE_ENTRY(G_CC_MODULATEIDECALA, G_CC_BLENDI_ENV_ALPHA_PRIM2, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_XLU_SURF2),
     // Semitransparent surface ZB with fog
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIDECALA, DKR_CC_UNK1, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_RA_ZB_TEX_EDGE2),
+    DRAW_TABLE_ENTRY(G_CC_MODULATEIDECALA, G_CC_BLENDI_ENV_ALPHA_PRIM2, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_RA_ZB_TEX_EDGE2),
 };
 
 Gfx dRenderSettingsDecal[][2] = {
@@ -122,71 +133,91 @@ Gfx dRenderSettingsDecal[][2] = {
     // Semitransparent Decal.
     DRAW_TABLE_ENTRY(G_CC_MODULATEIDECALA, G_CC_MODULATEIDECALA, DKR_OMH_1CYC_BILERP, G_RM_ZB_XLU_DECAL, G_RM_ZB_XLU_DECAL2),
     // Opaque Decal with fog.
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIDECALA, DKR_CC_UNK1, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_ZB_OPA_DECAL2),
+    DRAW_TABLE_ENTRY(G_CC_MODULATEIDECALA, G_CC_BLENDI_ENV_ALPHA_PRIM2, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_ZB_OPA_DECAL2),
     // Semitransparent Decal with fog.
-    DRAW_TABLE_ENTRY(G_CC_MODULATEIDECALA, DKR_CC_UNK1, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_ZB_XLU_DECAL2),
+    DRAW_TABLE_ENTRY(G_CC_MODULATEIDECALA, G_CC_BLENDI_ENV_ALPHA_PRIM2, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_ZB_XLU_DECAL2),
 };
 
 Gfx dRenderSettingsSolidColourVtxAlpha[][2] = {
-    DRAW_TABLE_ENTRY(DKR_CC_UNK3, G_CC_MODULATEIA_PRIM2, DKR_OMH_2CYC_POINT, G_RM_NOOP, G_RM_XLU_SURF2),
-    DRAW_TABLE_ENTRY(DKR_CC_UNK3, G_CC_MODULATEIA_PRIM2, DKR_OMH_2CYC_POINT, G_RM_NOOP, G_RM_ZB_XLU_SURF2),
+    DRAW_TABLE_ENTRY(G_CC_BLENDI_ENV_ALPHA , G_CC_MODULATEIA_PRIM2, DKR_OMH_2CYC_POINT, G_RM_NOOP, G_RM_XLU_SURF2),
+    DRAW_TABLE_ENTRY(G_CC_BLENDI_ENV_ALPHA , G_CC_MODULATEIA_PRIM2, DKR_OMH_2CYC_POINT, G_RM_NOOP, G_RM_ZB_XLU_SURF2),
 };
 
 Gfx dRenderSettingsSolidColour[][2] = {
     // Opaque Surface
-    DRAW_TABLE_GROUP(DKR_CC_UNK4, DKR_CC_UNK4, DKR_OMH_1CYC_BILERP, G_RM_OPA_SURF, G_RM_OPA_SURF2, G_RM_AA_OPA_SURF,
+    DRAW_TABLE_GROUP(G_CC_BLENDI_ENV_ALPHA_A_PRIM , G_CC_BLENDI_ENV_ALPHA_A_PRIM , DKR_OMH_1CYC_BILERP, G_RM_OPA_SURF, G_RM_OPA_SURF2, G_RM_AA_OPA_SURF,
                      G_RM_AA_OPA_SURF2, G_RM_ZB_OPA_SURF, G_RM_ZB_OPA_SURF2, G_RM_AA_ZB_OPA_INTER,
                      G_RM_AA_ZB_OPA_INTER2),
     // Semitransparent Surface
-    DRAW_TABLE_GROUP(DKR_CC_UNK4, DKR_CC_UNK4, DKR_OMH_1CYC_BILERP, G_RM_XLU_SURF, G_RM_XLU_SURF2, G_RM_AA_XLU_SURF,
+    DRAW_TABLE_GROUP(G_CC_BLENDI_ENV_ALPHA_A_PRIM , G_CC_BLENDI_ENV_ALPHA_A_PRIM , DKR_OMH_1CYC_BILERP, G_RM_XLU_SURF, G_RM_XLU_SURF2, G_RM_AA_XLU_SURF,
                      G_RM_AA_XLU_SURF2, G_RM_ZB_XLU_SURF, G_RM_ZB_XLU_SURF2, G_RM_AA_ZB_XLU_SURF, G_RM_AA_ZB_XLU_SURF2),
     // Opaque Surface with fog
-    DRAW_TABLE_GROUP(DKR_CC_UNK4, G_CC_MODULATEIA_PRIM2, DKR_OMH_2CYC_POINT, G_RM_FOG_SHADE_A, G_RM_OPA_SURF2,
-                     G_RM_FOG_SHADE_A, G_RM_AA_OPA_SURF2, G_RM_FOG_SHADE_A, G_RM_ZB_OPA_SURF2, G_RM_FOG_SHADE_A,
-                     G_RM_AA_ZB_OPA_SURF2),
-    // Semitransparent Surface
-    DRAW_TABLE_GROUP(DKR_CC_UNK4, G_CC_MODULATEIA_PRIM2, DKR_OMH_2CYC_POINT, G_RM_FOG_SHADE_A, G_RM_XLU_SURF2,
-                     G_RM_FOG_SHADE_A, G_RM_AA_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_ZB_XLU_SURF2, G_RM_FOG_SHADE_A,
-                     G_RM_AA_ZB_XLU_SURF2),
+    DRAW_TABLE_GROUP(G_CC_BLENDI_ENV_ALPHA_A_PRIM, G_CC_MODULATEIA_PRIM2, DKR_OMH_2CYC_POINT, G_RM_FOG_SHADE_A,
+                     G_RM_OPA_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_OPA_SURF2, G_RM_FOG_SHADE_A, G_RM_ZB_OPA_SURF2,
+                     G_RM_FOG_SHADE_A, G_RM_AA_ZB_OPA_SURF2),
+    // Semitransparent Surface with fog
+    DRAW_TABLE_GROUP(G_CC_BLENDI_ENV_ALPHA_A_PRIM, G_CC_MODULATEIA_PRIM2, DKR_OMH_2CYC_POINT, G_RM_FOG_SHADE_A,
+                     G_RM_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_ZB_XLU_SURF2,
+                     G_RM_FOG_SHADE_A, G_RM_AA_ZB_XLU_SURF2),
 };
 
 // Some kind of texture on top of a solid colour
 Gfx dRenderSettingsPrimOverlay[][2] = {
     // Opaque Surface
-    DRAW_TABLE_ENTRY(DKR_CC_DECALFADEPRIM, DKR_CC_DECALFADEPRIM, DKR_OMH_1CYC_BILERP, G_RM_ZB_OPA_DECAL,
-                     G_RM_ZB_OPA_DECAL2),
-    DRAW_TABLE_ENTRY(DKR_CC_DECALFADEPRIM, DKR_CC_DECALFADEPRIM, DKR_OMH_1CYC_BILERP, G_RM_AA_ZB_OPA_DECAL,
+    DRAW_TABLE_ENTRY(G_CC_DECAL_A_PRIM, G_CC_DECAL_A_PRIM, DKR_OMH_1CYC_BILERP, G_RM_ZB_OPA_DECAL, G_RM_ZB_OPA_DECAL2),
+    DRAW_TABLE_ENTRY(G_CC_DECAL_A_PRIM, G_CC_DECAL_A_PRIM, DKR_OMH_1CYC_BILERP, G_RM_AA_ZB_OPA_DECAL,
                      G_RM_AA_ZB_OPA_DECAL2),
     // Semitransparent Surface
-    DRAW_TABLE_ENTRY(DKR_CC_DECALFADEPRIM, DKR_CC_DECALFADEPRIM, DKR_OMH_1CYC_BILERP, G_RM_ZB_XLU_DECAL,
-                     G_RM_ZB_XLU_DECAL2),
-    DRAW_TABLE_ENTRY(DKR_CC_DECALFADEPRIM, DKR_CC_DECALFADEPRIM, DKR_OMH_1CYC_BILERP, G_RM_AA_ZB_XLU_DECAL,
+    DRAW_TABLE_ENTRY(G_CC_DECAL_A_PRIM, G_CC_DECAL_A_PRIM, DKR_OMH_1CYC_BILERP, G_RM_ZB_XLU_DECAL, G_RM_ZB_XLU_DECAL2),
+    DRAW_TABLE_ENTRY(G_CC_DECAL_A_PRIM, G_CC_DECAL_A_PRIM, DKR_OMH_1CYC_BILERP, G_RM_AA_ZB_XLU_DECAL,
                      G_RM_AA_ZB_XLU_DECAL2),
 };
 
-// Not sure what it is specifically, but some onscreen actors like TT and Taj use it.
-Gfx dRenderSettingsPrimCol[][2] = {
+/**
+ * Color combiner behavior:
+ *
+ * RGB: First, `PrimColor` and the texture color are blended using the vertex alpha as the blend factor
+ *      (0 = fully shaded color, 1 = pure texture).
+ *      The result is then blended with `EnvColor`, modulated by the vertex RGB color
+ *      (all RGB components are expected to be equal, representing lighting intensity).
+ *
+ * Alpha: The texture's alpha is multiplied by the alpha value of `PrimColor`.
+ *
+ * This setup enables more advanced lighting by combining directional shadowing (e.g. from the sky)
+ * with directional lighting (e.g. from a colored point light).
+ *
+ * This differs from simpler lighting models where illumination is uniform and non-directional.
+ *
+ * - `EnvColor` represents the light color.
+ * - `PrimColor` represents the shadow (shaded) color.
+ * - The vertex alpha is the **inverted shadow strength**:
+ *     - alpha = 1 → fully lit (pure texture),
+ *     - alpha = 0 → fully shaded (flat `PrimColor`).
+ * - The vertex RGB intensity acts as the **lighting intensity**.
+ */
+Gfx dRenderSettingsDirectionalLighting[][2] = {
     // Opaque Surface
-    DRAW_TABLE_GROUP(DKR_CC_UNK5, DKR_CC_UNK6, DKR_OMH_2CYC_BILERP, G_RM_NOOP, G_RM_OPA_SURF2, G_RM_NOOP,
-                     G_RM_AA_OPA_SURF2, G_RM_NOOP, G_RM_ZB_OPA_SURF2, G_RM_NOOP, G_RM_AA_ZB_OPA_SURF2),
+    DRAW_TABLE_GROUP(G_CC_BLEND_SHADEALPHA, G_CC_BLENDI_SHADE, DKR_OMH_2CYC_BILERP, G_RM_NOOP, G_RM_OPA_SURF2,
+                     G_RM_NOOP, G_RM_AA_OPA_SURF2, G_RM_NOOP, G_RM_ZB_OPA_SURF2, G_RM_NOOP, G_RM_AA_ZB_OPA_SURF2),
     // Semitransparent Surface
-    DRAW_TABLE_GROUP(DKR_CC_UNK5, DKR_CC_UNK6, DKR_OMH_2CYC_BILERP, G_RM_NOOP, G_RM_XLU_SURF2, G_RM_NOOP,
+    DRAW_TABLE_GROUP(G_CC_BLEND_SHADEALPHA, G_CC_BLENDI_SHADE, DKR_OMH_2CYC_BILERP, G_RM_NOOP, G_RM_XLU_SURF2, G_RM_NOOP,
                      G_RM_AA_XLU_SURF2, G_RM_NOOP, G_RM_ZB_XLU_SURF2, G_RM_NOOP, G_RM_AA_ZB_XLU_SURF2),
 };
 
 // Only opaque surface is actually used here.
 Gfx dRenderSettingsBlinkingLights[][2] = {
     // Opaque Surface
-    DRAW_TABLE_GROUP(DKR_CC_UNK7, DKR_CC_UNK8, DKR_OMH_2CYC_BILERP, G_RM_NOOP, G_RM_OPA_SURF2, G_RM_NOOP,
-                     G_RM_AA_OPA_SURF2, G_RM_NOOP, G_RM_ZB_OPA_SURF2, G_RM_NOOP, G_RM_AA_ZB_OPA_SURF2),
+    DRAW_TABLE_GROUP(G_CC_BLENDTEX_PRIM, G_CC_MODULATEIDECALA2, DKR_OMH_2CYC_BILERP, G_RM_NOOP, G_RM_OPA_SURF2,
+                     G_RM_NOOP, G_RM_AA_OPA_SURF2, G_RM_NOOP, G_RM_ZB_OPA_SURF2, G_RM_NOOP, G_RM_AA_ZB_OPA_SURF2),
     // Semitransparent Surface
-    DRAW_TABLE_GROUP(DKR_CC_UNK7, DKR_CC_UNK8, DKR_OMH_2CYC_BILERP, G_RM_NOOP, G_RM_XLU_SURF2, G_RM_NOOP,
-                     G_RM_AA_XLU_SURF2, G_RM_NOOP, G_RM_ZB_XLU_SURF2, G_RM_NOOP, G_RM_AA_ZB_XLU_SURF2),
+    DRAW_TABLE_GROUP(G_CC_BLENDTEX_PRIM, G_CC_MODULATEIDECALA2, DKR_OMH_2CYC_BILERP, G_RM_NOOP, G_RM_XLU_SURF2,
+                     G_RM_NOOP, G_RM_AA_XLU_SURF2, G_RM_NOOP, G_RM_ZB_XLU_SURF2, G_RM_NOOP, G_RM_AA_ZB_XLU_SURF2),
     // Opaque Surface with fog
-    DRAW_TABLE_GROUP(DKR_CC_UNK7, DKR_CC_UNK8, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_OPA_SURF2, G_RM_FOG_SHADE_A,
-                     G_RM_AA_OPA_SURF2, G_RM_FOG_SHADE_A, G_RM_ZB_OPA_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_ZB_OPA_SURF2),
+    DRAW_TABLE_GROUP(G_CC_BLENDTEX_PRIM, G_CC_MODULATEIDECALA2, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_OPA_SURF2,
+                     G_RM_FOG_SHADE_A, G_RM_AA_OPA_SURF2, G_RM_FOG_SHADE_A, G_RM_ZB_OPA_SURF2, G_RM_FOG_SHADE_A,
+                     G_RM_AA_ZB_OPA_SURF2),
     // Semitransparent Surface with fog
-    DRAW_TABLE_GROUP(DKR_CC_UNK7, DKR_CC_UNK8, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_XLU_SURF2, G_RM_FOG_SHADE_A,
+    DRAW_TABLE_GROUP(G_CC_BLENDTEX_PRIM, G_CC_MODULATEIDECALA2, DKR_OMH_2CYC_BILERP, G_RM_FOG_SHADE_A, G_RM_XLU_SURF2, G_RM_FOG_SHADE_A,
                      G_RM_AA_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_ZB_XLU_SURF2, G_RM_FOG_SHADE_A, G_RM_AA_ZB_XLU_SURF2),
 };
 
@@ -210,9 +241,10 @@ Gfx dBasicRenderSettingsZBOn[] = {
 };
 
 Gfx dBasicRenderModes[][2] = {
-    DRAW_TABLE_ENTRY(DKR_CC_UNK9, DKR_CC_UNK9, DKR_OMH_1CYC_BILERP_NOPERSP, G_RM_ZB_CLD_SURF, G_RM_ZB_CLD_SURF2),
+    DRAW_TABLE_ENTRY(G_CC_BLENDPE_A_PRIM, G_CC_BLENDPE_A_PRIM, DKR_OMH_1CYC_BILERP_NOPERSP, G_RM_ZB_CLD_SURF,
+                     G_RM_ZB_CLD_SURF2),
     DRAW_TABLE_ENTRY(G_CC_BLENDPE, G_CC_BLENDPE, DKR_OMH_1CYC_BILERP, G_RM_ZB_CLD_SURF, G_RM_ZB_CLD_SURF2),
-    DRAW_TABLE_ENTRY(DKR_CC_UNK9, G_CC_PASS2, DKR_OMH_2CYC_BILERP, G_RM_ZB_CLD_SURF, G_RM_ZB_CLD_SURF2)
+    DRAW_TABLE_ENTRY(G_CC_BLENDPE_A_PRIM, G_CC_PASS2, DKR_OMH_2CYC_BILERP, G_RM_ZB_CLD_SURF, G_RM_ZB_CLD_SURF2)
 };
 
 /*******************************/
@@ -224,9 +256,9 @@ s32 *gTextureCache;
 u8 *gCiPalettes;
 s32 gNumberOfLoadedTextures;
 s32 D_80126334;
-s32 gTextureAssetID[2];
+s32 gTextureTableSize[2];
 s32 gCiPalettesSize;
-s32 D_80126344;
+s32 gFirstTexIsLoaded;
 
 s32 *gSpriteCache;
 
@@ -243,7 +275,7 @@ s32 gBlockedRenderFlags;
 TextureHeader *gCurrentTextureHeader;
 s16 gUsingTexture;
 s16 gForceFlags;
-s16 gUsePrimColour;
+s16 gUseDirectionalLighting;
 
 /******************************/
 
@@ -254,19 +286,19 @@ void tex_init_textures(void) {
     s32 i;
     s32 *table;
 
-    gTextureCache = mempool_alloc_safe(sizeof(TextureHeader) * TEX_HEADER_COUNT, PP_RAM_ASSET_CACHE);
-    gCiPalettes = mempool_alloc_safe(TEX_PALLETE_COLOURS, PP_RAM_ASSET_CACHE);
+    gTextureCache = mempool_alloc_safe(8 *MAX_NUM_TEXTURES, PP_RAM_ASSET_CACHE);
+    gCiPalettes = mempool_alloc_safe(MAX_TEX_PALETTE_SIZE, PP_RAM_ASSET_CACHE);
     gNumberOfLoadedTextures = 0;
     gCiPalettesSize = 0;
 
     table = (s32 *) load_asset_section_from_rom(ASSET_TEXTURES_2D_TABLE);
     for (i = 0; table[i] != -1; i++) {}
-    gTextureAssetID[TEX_TABLE_2D] = --i;
+    gTextureTableSize[TEX_TABLE_2D] = --i;
     mempool_free(table);
 
     table = (s32 *) load_asset_section_from_rom(ASSET_TEXTURES_3D_TABLE);
     for (i = 0; table[i] != -1; i++) {}
-    gTextureAssetID[TEX_TABLE_3D] = --i;
+    gTextureTableSize[TEX_TABLE_3D] = --i;
     mempool_free(table);
 
     gSpriteCache = mempool_alloc_safe(sizeof(Sprite) * TEX_SPRITE_COUNT, PP_RAM_ASSET_CACHE);
@@ -278,7 +310,7 @@ void tex_init_textures(void) {
     }
     gSpriteTableSize--;
     mempool_free(table);
-    D_80126344 = 0;
+    gFirstTexIsLoaded = FALSE;
 }
 
 /**
@@ -297,113 +329,137 @@ void tex_enable_modes(s32 flags) {
     gBlockedRenderFlags &= ~flags;
 }
 
-//  Official Name: texLoadTexture
-TextureHeader *load_texture(s32 arg0) {
+/**
+ * Loads a texture into memory and initializes display lists for texture loading.
+ * First checks if the texture is already in the cache.
+ * Also loads color palettes if the texture uses them (though this game doesn't use such textures).
+ *
+ * Official Name: texLoadTexture
+ */
+TextureHeader *load_texture(s32 id) {
     TextureHeader *tex;
     TextureHeader *texTemp;
-    u32 temp_a1;
+    u32 compressedStart;
     s32 assetIndex;
     s32 assetOffset;
     s32 assetSize;
     s32 paletteOffset;
     s32 assetSection;
-    s32 texIndex;
-    s32 assetTable;
+    s32 slotIndex;
+    s32 tableType;
     s32 i;
     u16 numberOfTextures;
-    s32 sp3C;
+    s32 uncompressedSize;
     s32 tableID;
     u8 headerHeap[sizeof(TempTexHeader)];
     TempTexHeader *header = (TempTexHeader *) &headerHeap;
 
-    arg0 &= 0xFFFF;
-    assetIndex = arg0;
+    // 'id' is a 16-bit value; the highest bit determines whether it's a 2D or 3D texture
+    id &= 0xFFFF;
+    assetIndex = id;
     assetSection = ASSET_TEXTURES_2D;
-    assetTable = 0;
-    if (arg0 & 0x8000) {
-        assetTable = 1;
-        assetIndex = arg0 & 0x7FFF;
+    tableType = TEX_TABLE_2D;
+    if (id & ASSET_MASK_TEX3D) {
+        tableType = TEX_TABLE_3D;
+        assetIndex = id & 0x7FFF;
         assetSection = ASSET_TEXTURES_3D;
     }
-    if ((assetIndex >= gTextureAssetID[assetTable]) || (assetIndex < 0)) {
-        arg0 = 0;
+
+    // If the index is out of bounds, fall back to texture 0. Returning NULL would be better.
+    if (assetIndex >= gTextureTableSize[tableType] || assetIndex < 0) {
+        id = 0;
     }
+
+    // Check if texture is already loaded; if so, increment the reference count and return it.
     for (i = 0; i < gNumberOfLoadedTextures; i++) {
-        if (arg0 == gTextureCache[ASSETCACHE_ID(i)]) {
+        if (id == gTextureCache[ASSETCACHE_ID(i)]) {
             tex = (TextureHeader *) gTextureCache[ASSETCACHE_PTR(i)];
             tex->numberOfInstances++;
             return tex;
         }
     }
-    if (assetTable == 0) {
+    if (tableType == TEX_TABLE_2D) {
         tableID = ASSET_TEXTURES_2D_TABLE;
     } else {
         tableID = ASSET_TEXTURES_3D_TABLE;
     }
     assettable_seek_s32(assetIndex, &assetOffset, &assetSize, tableID);
     load_asset_to_address(assetSection, (u32) header, assetOffset, sizeof(TempTexHeader));
+    
+    // Allocate memory for the texture and its display lists.
+    // If compressed, decompress it.
     numberOfTextures = header->header.numOfTextures >> 8;
     if (!header->header.isCompressed) {
-        tex = (TextureHeader *) mempool_alloc(numberOfTextures * (sizeof(Gfx) * 12) + assetSize, gTexColourTag);
+        tex = (TextureHeader *) mempool_alloc(numberOfTextures * TEXTURE_GFX_SIZE + assetSize, gTexColourTag);
         if (tex == NULL) {
             return NULL;
         }
         load_asset_to_address(assetSection, (u32) tex, assetOffset, assetSize);
     } else {
-        sp3C = byteswap32((u8 *) &header->uncompressedSize) + sizeof(TextureHeader);
-        tex = (TextureHeader *) mempool_alloc(numberOfTextures * (sizeof(Gfx) * 12) + sp3C, gTexColourTag);
+        uncompressedSize = byteswap32((u8 *) &header->uncompressedSize) + sizeof(TextureHeader);
+        tex = (TextureHeader *) mempool_alloc(numberOfTextures * TEXTURE_GFX_SIZE + uncompressedSize, gTexColourTag);
         if (tex == NULL) {
             return NULL;
         }
-        temp_a1 = (((s32) tex + sp3C) - assetSize);
-        temp_a1 = (s32) temp_a1 - (s32) temp_a1 % 16;
-        load_asset_to_address(assetSection, temp_a1, assetOffset, assetSize);
-        gzip_inflate((u8 *) (temp_a1 + sizeof(TextureHeader)), (u8 *) tex);
-        assetSize = sp3C - sizeof(TextureHeader);
+
+        // Load the compressed texture at the end of the allocated block,
+        // so it can be decompressed into the entire block
+        compressedStart = (((s32) tex + uncompressedSize) - assetSize);
+        compressedStart = (s32) compressedStart - (s32) compressedStart % 16;
+        load_asset_to_address(assetSection, compressedStart, assetOffset, assetSize);
+        gzip_inflate((u8 *) (compressedStart + sizeof(TextureHeader)), (u8 *) tex);
+        assetSize = uncompressedSize - sizeof(TextureHeader);
     }
-    texIndex = -1;
+
+    // Find an available slot in the texture cache and store the newly loaded texture
+    slotIndex = -1;
     for (i = 0; i < gNumberOfLoadedTextures; i++) {
         if (gTextureCache[ASSETCACHE_ID(i)] == -1) {
-            texIndex = i;
+            slotIndex = i;
         }
     }
-    if (texIndex == -1) {
-        texIndex = gNumberOfLoadedTextures;
+    if (slotIndex == -1) {
+        slotIndex = gNumberOfLoadedTextures;
         gNumberOfLoadedTextures++;
     }
-    gTextureCache[ASSETCACHE_ID(texIndex)] = arg0;
-    gTextureCache[ASSETCACHE_PTR(texIndex)] = (s32) tex;
+    gTextureCache[ASSETCACHE_ID(slotIndex)] = id;
+    gTextureCache[ASSETCACHE_PTR(slotIndex)] = (s32) tex;
+
+    // Load palettes if needed. If the texture has multiple frames, the palette is shared, so we only load it once.
     paletteOffset = -1;
-    if ((tex->format & 0xF) == TEX_FORMAT_CI4) {
-        if (D_80126344 == 0) {
+    if (TEX_FORMAT(tex->format) == TEX_FORMAT_CI4) {
+        if (!gFirstTexIsLoaded) {
             load_asset_to_address(ASSET_EMPTY_14, (u32) &gCiPalettes[gCiPalettesSize], tex->ciPaletteOffset, 32);
             tex->ciPaletteOffset = gCiPalettesSize;
             gCiPalettesSize += 32; // (32 bytes / 2 bytes per color) = 16 colors.
         }
         paletteOffset = gCiPalettesSize - 32;
     }
-    if ((tex->format & 0xF) == TEX_FORMAT_CI8) {
-        if (D_80126344 == 0) {
-            load_asset_to_address(ASSET_EMPTY_14, (u32) &gCiPalettesSize[gCiPalettes], tex->ciPaletteOffset, 128);
+    if (TEX_FORMAT(tex->format) == TEX_FORMAT_CI8) {
+        if (!gFirstTexIsLoaded) {
+            // Normally, TEX_FORMAT_CI8 requires 256 colors (512 bytes),
+            // but maybe only 64 colors (128 bytes) are actually used in this game
+            load_asset_to_address(ASSET_EMPTY_14, (u32) &gCiPalettes[gCiPalettesSize], tex->ciPaletteOffset, 128);
             tex->ciPaletteOffset = gCiPalettesSize;
             gCiPalettesSize += 128; // (128 bytes / 2 bytes per color) = 64 colors.
         }
         paletteOffset = gCiPalettesSize - 128;
     }
-    D_80126344 = 0;
+    gFirstTexIsLoaded = FALSE;
 
+    // Initialize display lists for each frame of the texture
     assetOffset = (s32) align16((u8 *) ((s32) tex + assetSize));
     texTemp = tex;
     for (i = 0; i < numberOfTextures; i++) {
         material_init(texTemp, (Gfx *) assetOffset);
         if (paletteOffset >= 0) {
             texTemp->ciPaletteOffset = paletteOffset;
-            assetOffset += (sizeof(Gfx) * 6); // I'm guessing it takes 6 f3d commands to load the palette
+            assetOffset += PALETTE_GFX_SIZE; // I'm guessing it takes 6 f3d commands to load the palette
         }
-        assetOffset += (sizeof(Gfx) * 12); // I'm guessing it takes 12 f3d commands to load the texture
+        assetOffset += TEXTURE_GFX_SIZE; // I'm guessing it takes 12 f3d commands to load the texture
         texTemp = (TextureHeader *) ((s32) texTemp + texTemp->textureSize);
     }
-    if (gCiPalettesSize >= 0x280) {
+    if (gCiPalettesSize >= MAX_TEX_PALETTE_SIZE) {
         return NULL;
     }
     return tex;
@@ -417,7 +473,7 @@ TextureHeader *load_texture(s32 arg0) {
 void tex_free(TextureHeader *tex) {
     s32 i;
 
-    if (tex != 0) {
+    if (tex != NULL) {
         if ((--tex->numberOfInstances) <= 0) {
             for (i = 0; i < gNumberOfLoadedTextures; i++) {
                 if ((s32) tex == gTextureCache[ASSETCACHE_PTR(i)]) {
@@ -452,24 +508,24 @@ void rendermode_reset(Gfx **dList) {
     gUsingTexture = FALSE;
     gForceFlags = TRUE;
     gBlockedRenderFlags = RENDER_NONE;
-    gUsePrimColour = FALSE;
+    gUseDirectionalLighting = FALSE;
     gSPSetGeometryMode((*dList)++, G_SHADING_SMOOTH | G_SHADE | G_ZBUFFER);
     gDPPipeSync((*dList)++);
 }
 
 /**
- * Enables usage of combiners utilising the indidual primitive colours.
+ * Enables usage of combiners utilising the individual primitive colours.
  */
-void tex_primcolour_on(void) {
-    gUsePrimColour = TRUE;
+void directional_lighting_on(void) {
+    gUseDirectionalLighting = TRUE;
     gForceFlags = TRUE;
 }
 
 /**
- * Disables usage of combiners utilising the indidual primitive colours.
+ * Disables usage of combiners utilising the individual primitive colours.
  */
-void tex_primcolour_off(void) {
-    gUsePrimColour = FALSE;
+void directional_lighting_off(void) {
+    gUseDirectionalLighting = FALSE;
     gForceFlags = TRUE;
 }
 
@@ -538,14 +594,14 @@ void material_set(Gfx **dList, TextureHeader *texhead, s32 flags, s32 texOffset)
 
     aaMode = gAntiAliasing + 1;
 
-    flags = (gUsePrimColour) ? (flags & (RENDER_DECAL | RENDER_Z_COMPARE | RENDER_SEMI_TRANSPARENT))
+    flags = (gUseDirectionalLighting) ? (flags & (RENDER_DECAL | RENDER_Z_COMPARE | RENDER_SEMI_TRANSPARENT))
                              : (flags & (RENDER_VTX_ALPHA | RENDER_DECAL | RENDER_Z_UPDATE | RENDER_CUTOUT | RENDER_FOG_ACTIVE | RENDER_SEMI_TRANSPARENT | RENDER_Z_COMPARE));
     flags &= ~gBlockedRenderFlags;
     flags = (flags & RENDER_VTX_ALPHA) ? flags & ~RENDER_FOG_ACTIVE : flags & ~RENDER_Z_UPDATE;
 
     if (flags != gCurrentRenderFlags || forceFlags) {
         if ((flags & RENDER_VTX_ALPHA) != (gCurrentRenderFlags & RENDER_VTX_ALPHA) || gForceFlags) {
-            if (flags & RENDER_VTX_ALPHA || gUsePrimColour) {
+            if (flags & RENDER_VTX_ALPHA || gUseDirectionalLighting) {
                 gSPClearGeometryMode((*dList)++, G_FOG);
             } else {
                 gSPSetGeometryMode((*dList)++, G_FOG);
@@ -572,19 +628,19 @@ void material_set(Gfx **dList, TextureHeader *texhead, s32 flags, s32 texOffset)
             goto run;
         }
 
-        if (gUsePrimColour) {
-            if (flags & RENDER_DECAL && flags & RENDER_Z_COMPARE) {
+        if (gUseDirectionalLighting) {
+            if ((flags & RENDER_DECAL) && (flags & RENDER_Z_COMPARE)) {
                 dlIndex = 0;
                 if (flags & RENDER_ANTI_ALIASING) {
                     //dlIndex |= 1; // Anti Aliasing
                 }
                 if (flags & RENDER_SEMI_TRANSPARENT) {
-                    dlIndex |= 2; // Z Compare
+                    dlIndex |= 2; // Semi-transparent
                 }
                 cmd = dRenderSettingsPrimOverlay[dlIndex];
                 goto run;
             }
-            cmd = dRenderSettingsPrimCol[flags];
+            cmd = dRenderSettingsDirectionalLighting[flags];
             goto run;
         }
 
@@ -661,7 +717,7 @@ void material_set_blinking_lights(Gfx **dList, TextureHeader *texture_list, u32 
     gDPLoadMultiBlock((*dList)++, OS_K0_TO_PHYSICAL(mblock), 256, 1, G_IM_FMT_RGBA, G_IM_SIZ_16b, width, height, 0, 0, 0, maskW, maskH, 0, 0);
     gDPLoadTextureBlock((*dList)++, OS_K0_TO_PHYSICAL(tblock), G_IM_FMT_RGBA, G_IM_SIZ_16b, width, height, 0, 0, 0, maskW, maskH, 0, 0);
 
-    gCurrentTextureHeader = 0;
+    gCurrentTextureHeader = NULL;
     flags &= (RENDER_ANTI_ALIASING | RENDER_Z_COMPARE | RENDER_SEMI_TRANSPARENT | RENDER_FOG_ACTIVE);
     gSPSetGeometryMode((*dList)++, G_FOG);
 
@@ -804,9 +860,10 @@ Sprite *tex_load_sprite(s32 spriteID, s32 arg1) {
             allocFailed = TRUE;
         }
         gTexColourTag = COLOUR_TAG_MAGENTA;
-        D_80126344 = 1;
+        gFirstTexIsLoaded = TRUE;
     }
-    D_80126344 = 0;
+
+    gFirstTexIsLoaded = FALSE;
     if (allocFailed) {
         for (i = 0; i < frameCount; i++) {
             tex = (TextureHeader *) newSprite->frames[i];
@@ -839,7 +896,7 @@ Sprite *tex_load_sprite(s32 spriteID, s32 arg1) {
  * Gets the sprite cache index from the argument.
  * Returns NULL if the entry is invalid.
  */
-s32 sprite_cache_index(s32 cacheID) {
+UNUSED s32 sprite_cache_index(s32 cacheID) {
     if (cacheID < 0 || cacheID >= gSpriteCacheCount) {
         return NULL;
     }
@@ -868,7 +925,7 @@ s32 tex_asset_size(s32 id) {
         textureTableType = TEX_TABLE_3D;
         id &= (ASSET_MASK_TEX3D - 1);
     }
-    if (id >= gTextureAssetID[textureTableType] || id < 0) {
+    if (id >= gTextureTableSize[textureTableType] || id < 0) {
         return 0;
     }
     if (textureTable == TEX_TABLE_2D) {

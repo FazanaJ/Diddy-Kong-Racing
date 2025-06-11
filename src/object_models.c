@@ -700,7 +700,198 @@ s32 func_80060C58(Vertex *vertices, s32 i1, s32 i2, s32 i3, s32 i4) {
 #undef NEARBY
 }
 
-#pragma GLOBAL_ASM("asm/nonmatchings/object_models/func_80060EA8.s")
+s32 func_80060EA8(ObjectModel *model) {
+    Vertex *vertices;           // s3
+    Triangle *triangles;        // spB0
+    Vec3f *spAC;                // spAC
+    s16 i;                      // s1
+    TriangleBatchInfo *batches; // spA4
+    Vec3s *spA0;                // spA0
+    s16 s6;
+    s16 l;
+    s16 q;
+    s16 k; // sp98;
+    s16 a2;
+    s16 j; // s5
+    s16 a0;
+    s16 vertOffset;
+    f32 length;
+    Vec3f *v06;
+    s16 *v0;
+    s16 vx, vy, vz;
+
+    batches = model->batches;
+    model->unk40 = NULL;
+
+    k = 0;
+    for (i = 0; i < model->numberOfBatches; i++) {
+        if (batches[i].miscData != BATCH_VTX_COL || (batches[i].flags & RENDER_ENVMAP)) {
+            k += batches[i + 1].verticesOffset - batches[i].verticesOffset;
+        }
+    }
+
+    if (k > 0) {
+        vertices = model->vertices;
+        triangles = model->triangles;
+
+        spAC = (Vec3f *) mempool_alloc(model->numberOfTriangles * sizeof(Vec3f), COLOUR_TAG_ORANGE);
+        if (spAC == NULL) {
+            return 1;
+        }
+
+        spA0 = (Vec3s *) mempool_alloc(k * sizeof(Vec3s), COLOUR_TAG_ORANGE);
+        if (spA0 == NULL) {
+            mempool_free(spAC);
+            return 1;
+        }
+
+        for (i = 0; i < model->numberOfBatches; i++) {
+            vertOffset = batches[i].verticesOffset;
+            for (j = batches[i].facesOffset; j < batches[i + 1].facesOffset; j++) {
+                f32 sp70[3];
+                f32 sp64[3];
+                f32 sp58[3];
+                for (k = 0; k < 3; k++) {
+                    a2 = triangles[j].verticesArray[k + 1] + vertOffset;
+                    sp70[k] = vertices[a2].x;
+                    sp64[k] = vertices[a2].y;
+                    sp58[k] = vertices[a2].z;
+                }
+
+                spAC[j].x = (sp58[0] - sp58[2]) * (sp64[0] - sp64[1]) - (sp64[0] - sp64[2]) * (sp58[0] - sp58[1]);
+                spAC[j].y = (sp58[0] - sp58[1]) * (sp70[0] - sp70[2]) - (sp70[0] - sp70[1]) * (sp58[0] - sp58[2]);
+                spAC[j].z = (sp70[0] - sp70[1]) * (sp64[0] - sp64[2]) - (sp70[0] - sp70[2]) * (sp64[0] - sp64[1]);
+                length = sqrtf(spAC[j].x * spAC[j].x + spAC[j].y * spAC[j].y + spAC[j].z * spAC[j].z);
+                if (length != 0.0f) {
+                    spAC[j].x /= length;
+                    spAC[j].y /= length;
+                    spAC[j].z /= length;
+                }
+            }
+        }
+
+        v0 = (s16 *) mempool_alloc(model->numberOfVertices * sizeof(s16), COLOUR_TAG_ORANGE);
+        if (v0 == NULL) {
+            mempool_free(spAC);
+            mempool_free(spA0);
+            return 1;
+        }
+
+        s6 = 0;
+
+        for (i = 0; i < model->numberOfBatches; i++) {
+            for (l = batches[i].verticesOffset; l < batches[i + 1].verticesOffset; l++) {
+                if (batches[i].miscData < 0xFE) {
+                    a2 = -1;
+                    vx = vertices[l].x;
+                    vy = vertices[l].y;
+                    vz = vertices[l].z;
+
+                    for (q = 0; q <= i && a2 < 0; q++) {
+                        if (batches[i].miscData == batches[q].miscData) {
+                            a0 = batches[q].verticesOffset;
+                            while (((q == i && a0 < l) || (q != i && a0 < batches[q + 1].verticesOffset)) && a2 < 0) {
+                                if (vx == vertices[a0].x && vy == vertices[a0].y && vz == vertices[a0].z) {
+                                    a2 = v0[a0];
+                                }
+                                a0++;
+                            }
+                        }
+                    }
+                    if (a2 < 0) {
+                        v0[l] = s6++;
+                    } else {
+                        v0[l] = a2;
+                    }
+                } else if (batches[i].miscData == 0xFE) {
+                    v0[l] = s6++;
+                } else if (batches[i].flags & RENDER_ENVMAP) {
+                    a2 = -1;
+                    vx = vertices[l].x;
+                    vy = vertices[l].y;
+                    vz = vertices[l].z;
+                    for (q = 0; q <= i && a2 < 0; q++) {
+                        if (batches[q].flags & RENDER_ENVMAP) {
+                            a0 = batches[q].verticesOffset;
+                            while (((q == i && a0 < l) || (q != i && a0 < batches[q + 1].verticesOffset)) && a2 < 0) {
+                                if (vx == vertices[a0].x && vy == vertices[a0].y && vz == vertices[a0].z) {
+                                    a2 = v0[a0];
+                                }
+                                a0++;
+                            }
+                        }
+                    }
+
+                    if (a2 < 0) {
+                        v0[l] = s6++;
+                    } else {
+                        v0[l] = a2;
+                    }
+                } else {
+                    v0[l] = -1;
+                }
+            }
+        }
+
+        v06 = (Vec3f *) mempool_alloc(s6 * sizeof(Vec3f), COLOUR_TAG_ORANGE);
+        if (v06 == NULL) {
+            mempool_free(spAC);
+            mempool_free(spA0);
+            mempool_free(v0);
+            return 1;
+        }
+
+        for (k = 0; k < s6; k++) {
+            v06[k].x = 0.0f;
+            v06[k].y = 0.0f;
+            v06[k].z = 0.0f;
+        }
+
+        for (i = 0; i < model->numberOfBatches; i++) {
+            if (batches[i].miscData != BATCH_VTX_COL || (batches[i].flags & RENDER_ENVMAP)) {
+                vertOffset = batches[i].verticesOffset;
+                for (j = batches[i].facesOffset; j < batches[i + 1].facesOffset; j++) {
+                    for (k = 0; k < 3; k++) {
+                        a2 = triangles[j].verticesArray[k + 1] + vertOffset;
+                        a2 = v0[a2];
+
+                        if (a2 >= 0) {
+                            v06[a2].x += spAC[j].x;
+                            v06[a2].y += spAC[j].y;
+                            v06[a2].z += spAC[j].z;
+                        }
+                    }
+                }
+            }
+        }
+
+        for (k = 0; k < s6; k++) {
+            length = sqrtf(v06[k].x * v06[k].x + v06[k].y * v06[k].y + v06[k].z * v06[k].z);
+            if (length != 0.0f) {
+                v06[k].x /= length * (1.0f / 0x2000);
+                v06[k].y /= length * (1.0f / 0x2000);
+                v06[k].z /= length * (1.0f / 0x2000);
+            }
+        }
+
+        a0 = 0;
+        for (k = 0; k < model->numberOfVertices; k++) {
+            a2 = v0[k];
+            if (a2 >= 0) {
+                spA0[a0].x = v06[a2].x;
+                spA0[a0].y = v06[a2].y;
+                spA0[a0].z = v06[a2].z;
+                a0++;
+            }
+        }
+
+        model->unk40 = spA0;
+        mempool_free(v0);
+        mempool_free(v06);
+        mempool_free(spAC);
+    }
+    return 0;
+}
 
 void func_800619F4(s32 arg0) {
     D_8011D640 = arg0;
