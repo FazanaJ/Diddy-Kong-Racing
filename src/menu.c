@@ -2717,7 +2717,7 @@ void menu_timestamp_render(s32 frameCount, s32 xPos, s32 yPos, u8 red, u8 green,
         xOffset3 = 5;
     }
     get_timestamp_from_frames(frameCount, &minutes, &seconds, &hundredths);
-    sprite_anim_off(TRUE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
     sprite_opaque(FALSE);
 
     gMenuImages[imageIndex].spriteOffset = minutes / 10;
@@ -2757,7 +2757,7 @@ void menu_timestamp_render(s32 frameCount, s32 xPos, s32 yPos, u8 red, u8 green,
     gMenuImages[imageIndex].trans.x_position = xPos;
     menu_element_render(imageIndex);
 
-    sprite_anim_off(FALSE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
     sprite_opaque(TRUE);
     sMenuGuiColourR = 255;
     sMenuGuiColourG = 255;
@@ -2811,7 +2811,7 @@ void menu_number_render(s32 number, s32 x, s32 y, s32 r, s32 g, s32 b, s32 a, UN
     sMenuGuiColourB = b;
     sMenuGuiOpacity = a;
     sprite_opaque(0);
-    sprite_anim_off(TRUE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
     if (powerOfTen && number) {} // Fakematch
     gMenuImages[0].trans.y_position = y;
     for (i = 0; i < strLen; i++) {
@@ -2821,7 +2821,7 @@ void menu_number_render(s32 number, s32 x, s32 y, s32 r, s32 g, s32 b, s32 a, UN
         x += 12;
     }
     sprite_opaque(1);
-    sprite_anim_off(FALSE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
     sMenuGuiColourR = 255;
     sMenuGuiColourG = 255;
     sMenuGuiColourB = 255;
@@ -3001,7 +3001,7 @@ void draw_menu_elements(s32 state, MenuElement *elems, f32 scale) {
                         shouldResetRenderSettings = FALSE;
                         rendermode_reset(&sMenuCurrDisplayList);
                     }
-                    sprite_anim_off(TRUE);
+                    cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
                     sprite_opaque(FALSE);
                     gMenuImages[elems->t.assetID].trans.x_position = xPos - SCREEN_WIDTH_HALF;
                     gMenuImages[elems->t.assetID].trans.y_position =
@@ -3017,7 +3017,7 @@ void draw_menu_elements(s32 state, MenuElement *elems, f32 scale) {
                     sMenuGuiColourBlendFactor = elems->filterBlendFactor;
                     sMenuGuiOpacity = elems->opacity;
                     menu_element_render(elems->t.assetID);
-                    sprite_anim_off(FALSE);
+                    cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
                     sprite_opaque(TRUE);
                     break;
                 case 6:
@@ -3386,7 +3386,7 @@ void render_title_screen(UNUSED s32 updateRate, f32 updateRateF) {
         mtx_ortho(&sMenuCurrDisplayList, &sMenuCurrHudMat);
         scale = (f32) gTitleRevealTimer * (1.0f / 32.0f);
         sMenuGuiOpacity = (gTitleRevealTimer * 8) - 1;
-        sprite_anim_off(FALSE);
+        cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
         if (scale != 1.0f) {
             texrect_draw_scaled(&sMenuCurrDisplayList, sGameTitleTileOffsets, SCREEN_WIDTH_FLOAT_HALF, 52.0f, scale,
                                 scale, COLOUR_RGBA32(255, 255, 255, 254), TEXRECT_POINT);
@@ -4311,7 +4311,7 @@ void savemenu_render_element(SaveFileData *file, s32 x, s32 y) {
     if (file->saveFileType == SAVE_FILE_TYPE_CPAK_SAVE ||
         (file->saveFileType == SAVE_FILE_TYPE_CART_SAVE && gSavefileData[file->controllerIndex]->newGame == FALSE)) {
         i = 120;
-        sprite_anim_off(TRUE);
+        cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
         offsetY = (i - y);
         gMenuImages[2].trans.y_position = offsetY - 49;
         gMenuImages[spriteID].trans.y_position = offsetY - 24;
@@ -4325,7 +4325,7 @@ void savemenu_render_element(SaveFileData *file, s32 x, s32 y) {
         sprite_opaque(1);
         gMenuImages[spriteID].trans.x_position = x - (128 - SAVE_MENU_SPRITE_OFFSET);
         menu_element_render(spriteID);
-        sprite_anim_off(FALSE);
+        cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
     }
     if (drawTexture != NULL) {
         texrect_draw(&sMenuCurrDisplayList, drawTexture, x + (60 + SAVE_MENU_TEXT_OFFSET_1), y + 6, 255, 255, 255, 255);
@@ -7571,14 +7571,14 @@ void fileselect_render(UNUSED s32 updateRate) {
                 }
                 fileselect_render_element(var_s2, gFileSelectButtons[i].x + gFileSelectElementPos[2],
                                           gFileSelectButtons[i].y + gFileSelectElementPos[3], 0, 0, 0, 128);
-                sprite_anim_off(TRUE);
+                cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
                 gMenuImages->spriteOffset = gSavefileInfo[i].balloonCount / 10;
                 fileselect_render_element(0, gFileSelectButtons[i].x + gFileSelectElementPos[6] - 6,
                                           gFileSelectButtons[i].y + gFileSelectElementPos[7], 0, 0, 0, 128);
                 gMenuImages->spriteOffset = gSavefileInfo[i].balloonCount % 10;
                 fileselect_render_element(0, gFileSelectButtons[i].x + gFileSelectElementPos[6] + 6,
                                           gFileSelectButtons[i].y + gFileSelectElementPos[7], 0, 0, 0, 128);
-                sprite_anim_off(FALSE);
+                cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
                 sMenuGuiColourG = 64;
                 sMenuGuiColourB = 64;
                 fileselect_render_element(10, gFileSelectButtons[i].x + gFileSelectElementPos[8],
@@ -8738,6 +8738,7 @@ void trackmenu_render_2D(s32 x, s32 y, char *hubName, char *trackName, s32 rectO
     rendermode_reset(&sMenuCurrDisplayList);
 }
 
+// https://decomp.me/scratch/L6qKV
 #ifdef NON_MATCHING
 // trackmenu_render_names
 void func_8008FF1C(UNUSED s32 updateRate) {
@@ -9322,7 +9323,7 @@ void trackmenu_setup_render(UNUSED s32 updateRate) {
                               (gTwoPlayerRacerCountMenu.textPos[0] + gTwoPlayerRacerCountMenu.x) - 1,
                               (gTwoPlayerRacerCountMenu.textPos[1] + gTwoPlayerRacerCountMenu.y + regionOffset) - 1,
                               gMenuText[ASSET_MENU_TEXT_NUMBEROFRACERS], ALIGN_MIDDLE_CENTER);
-                    sprite_anim_off(TRUE);
+                    cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
                     sprite_opaque(FALSE);
 
                     for (temp2 = 0; temp2 < 3; temp2++) {
@@ -9346,7 +9347,7 @@ void trackmenu_setup_render(UNUSED s32 updateRate) {
                         sMenuGuiColourB = 255;
                     }
                     sprite_opaque(TRUE);
-                    sprite_anim_off(FALSE);
+                    cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
                 }
             }
         }
@@ -11482,7 +11483,7 @@ void results_render(UNUSED s32 updateRate, f32 opacity) {
         draw_text(&sMenuCurrDisplayList, time - 34, y2 + offsetY + 2, gRacePlacementsArray[spA0], ALIGN_MIDDLE_CENTER);
 #endif
         rendermode_reset(&sMenuCurrDisplayList);
-        sprite_anim_off(TRUE);
+        cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
         sprite_opaque(FALSE);
         sMenuGuiColourR = 255;
         sMenuGuiColourG = 255 - 64 * spA0;
@@ -11526,7 +11527,7 @@ void results_render(UNUSED s32 updateRate, f32 opacity) {
             menu_element_render(0);
         }
         y2 += 17;
-        sprite_anim_off(FALSE);
+        cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
         sprite_opaque(TRUE);
         sMenuGuiColourG = 255;
         sMenuGuiColourBlendFactor = 0;
@@ -14692,7 +14693,7 @@ void dialogue_tt_gamestatus(void) {
         return;
     }
     settings = get_settings();
-    sprite_anim_off(TRUE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
     y = 20;
     numOfItem = 8;
     if (settings->cutsceneFlags & 4) {
@@ -14766,7 +14767,7 @@ void dialogue_tt_gamestatus(void) {
         }
         menu_element_render(14);
     }
-    sprite_anim_off(FALSE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
 }
 
 /**
@@ -15464,6 +15465,78 @@ ShadeProperties gDebugModelShading;
 s16 gDebugModelHeadAngle;
 s16 gDebugModelHeadAngleTarget;
 s8 gDebugModelMiscCounter;
+s8 gDebugModelWheelFrame;
+s8 gDebugModelPropellorFrame;
+Sprite *testSprite[8];
+ObjectSegment fakeSpriteSegment;
+Mtx spriteMatrix[4]; // Unsure of needed length.
+Vertex spriteVertex[4]; // Unsure of needed length.
+
+void init_fake_sprite() {
+    testSprite[0] = tex_load_sprite(ASSET_SPRITE_VEHICLE_PARTS_TYRE0, 0);
+    testSprite[1] = tex_load_sprite(ASSET_SPRITE_VEHICLE_PARTS_TYRE1, 0);
+    testSprite[2] = tex_load_sprite(ASSET_SPRITE_VEHICLE_PARTS_TYRE2, 0);
+    testSprite[3] = tex_load_sprite(ASSET_SPRITE_VEHICLE_PARTS_TYRE3, 0);
+    testSprite[4] = tex_load_sprite(ASSET_SPRITE_VEHICLE_PARTS_PROPELLER0, 0);
+    testSprite[5] = tex_load_sprite(ASSET_SPRITE_VEHICLE_PARTS_PROPELLER1, 0);
+    testSprite[6] = tex_load_sprite(ASSET_SPRITE_VEHICLE_PARTS_FAN0, 0);
+    testSprite[7] = tex_load_sprite(ASSET_SPRITE_VEHICLE_PARTS_FAN1, 0);
+    fakeSpriteSegment.trans.scale = 2.66f;
+    gDebugModelWheelFrame = 0;
+    gDebugModelPropellorFrame = 0;
+}
+
+// 0: wheel0
+// 1: wheel1
+// 2: wheel2
+// 3: wheel3
+// 4: propellor0
+// 5: propellor1
+// 6: fan0
+// 7: fan1
+
+void render_test_sprite(f32 x, f32 y, f32 z, s32 spriteID) {
+    s32 frame;
+
+    if (spriteID > 3) {
+        frame = spriteID + gDebugModelPropellorFrame;
+        fakeSpriteSegment.trans.rotation.y_rotation = -0x4000;
+    } else {
+        frame = spriteID + gDebugModelWheelFrame;
+        fakeSpriteSegment.trans.rotation.y_rotation = 0;
+    }
+
+    fakeSpriteSegment.trans.x_position = x;
+    fakeSpriteSegment.trans.y_position = y;
+    fakeSpriteSegment.trans.z_position = z;
+    render_sprite_billboard(&sMenuCurrDisplayList, &sMenuCurrHudMat, &sMenuCurrHudVerts, (Object*)&fakeSpriteSegment, testSprite[frame], RENDER_Z_COMPARE | RENDER_FOG_ACTIVE | RENDER_Z_UPDATE | RENDER_VEHICLE_PART);
+}
+
+u16 HSV2RGB16(u8 h, u8 s, u8 v) {
+    u8 r, g, b, region, remainder, p, q, t;
+
+    if (s == 0) {
+        r = v, g = v, b = v;
+    } else {
+        region = h / 43;
+        remainder = (h - (region * 43)) * 6;
+
+        p = (v * (255 - s)) >> 8;
+        q = (v * (255 - ((s * remainder) >> 8))) >> 8;
+        t = (v * (255 - ((s * (255 - remainder)) >> 8))) >> 8;
+
+        switch (region) {
+            case 0:  r = v, g = t, b = p; break;
+            case 1:  r = q, g = v, b = p; break;
+            case 2:  r = p, g = v, b = t; break;
+            case 3:  r = p, g = q, b = v; break;
+            case 4:  r = t, g = p, b = v; break;
+            default: r = v, g = p, b = q; break;
+        }
+    }
+
+    return GPACK_RGBA5551(r, g, b, 1);
+}
 
 void menu_debug_root_init(void) {
     gOptionBlinkTimer = 0;
@@ -15781,6 +15854,39 @@ void render_model(s32 updateRate) {
         }
     }
 
+    gDebugModelWheelFrame++;
+    if (gDebugModelWheelFrame > 3) {
+        gDebugModelWheelFrame = 0;
+    }
+    gDebugModelPropellorFrame ^= 1;;
+
+    if (model->unk18 > 0) {
+        if (model->unk18 == 1) { // Hovercraft
+            render_test_sprite(model->vertices[model->unk14[0]].x, model->vertices[model->unk14[0]].y, model->vertices[model->unk14[0]].z, 6);
+        } else {
+            Vertex *attachPoint[2];
+            attachPoint[0] = &model->vertices[model->unk14[0]];
+            attachPoint[1] = &model->vertices[model->unk14[2]];
+            
+            if (ABS(attachPoint[0]->y - attachPoint[1]->y) >= 8) { // Plane
+                render_test_sprite(model->vertices[model->unk14[0]].x, model->vertices[model->unk14[0]].y, model->vertices[model->unk14[0]].z, 4);
+                render_test_sprite(model->vertices[model->unk14[2]].x, model->vertices[model->unk14[2]].y, model->vertices[model->unk14[2]].z, 0);
+                render_test_sprite(model->vertices[model->unk14[3]].x, model->vertices[model->unk14[3]].y, model->vertices[model->unk14[3]].z, 0);
+            } else { // Car
+                render_test_sprite(model->vertices[model->unk14[0]].x, model->vertices[model->unk14[0]].y, model->vertices[model->unk14[0]].z, 0);
+                render_test_sprite(model->vertices[model->unk14[1]].x, model->vertices[model->unk14[1]].y, model->vertices[model->unk14[1]].z, 0);
+                render_test_sprite(model->vertices[model->unk14[2]].x, model->vertices[model->unk14[2]].y, model->vertices[model->unk14[2]].z, 0);
+                render_test_sprite(model->vertices[model->unk14[3]].x, model->vertices[model->unk14[3]].y, model->vertices[model->unk14[3]].z, 0);
+            }
+        }
+    }
+
+    // Render attach points using the debug red sphere sprite.
+    /*for(i = 0; i < model->unk18; i++) {
+        Vertex *attachPoint = &model->vertices[model->unk14[i]];
+        render_test_sprite(attachPoint->x, attachPoint->y, attachPoint->z, 0);
+    }*/
+
     if (prevID != currentModelIndex) {
         prevID = currentModelIndex;
     }
@@ -15931,6 +16037,7 @@ void debugmenu_model_viewer(s32 updateRate, s32 input) {
         fakeObjectHeaderForModel.numberOfModelIds = 1;
         fakeObjectForModel.segment.object.modelIndex = 0;
         fakeObjectForModel.segment.header = &fakeObjectHeaderForModel;
+        init_fake_sprite();
         sDebugModelViewPitch = -0x1000;
         
         set_object_model(0);

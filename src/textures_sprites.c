@@ -8,8 +8,9 @@
 #include "main.h"
 
 #define MAX_NUM_TEXTURES 700
-#define TEX_SPRITE_COUNT 50
+#define MAX_NUM_SPRITES 100
 #define TEX_PALLETE_COUNT 20
+#define MAX_SPRITE_ASSET_SIZE 512
 #define MAX_TEX_PALETTE_SIZE 640
 #define TEXTURE_GFX_SIZE (12 * sizeof(Gfx))
 #define PALETTE_GFX_SIZE (6 * sizeof(Gfx))
@@ -265,9 +266,9 @@ s32 *gSpriteCache;
 s32 gSpriteTableSize;
 s32 gSpriteCacheCount;
 s32 D_8012635C; // Set but never used
-Vertex *D_80126360;
-Gfx *D_80126364;
-Triangle *D_80126368;
+Vertex *gSpriteVertices;
+Gfx *gSpriteDLists;
+Triangle *gSpriteTriangles;
 
 u8 *D_80126370;
 s32 gCurrentRenderFlags;
@@ -301,7 +302,7 @@ void tex_init_textures(void) {
     gTextureTableSize[TEX_TABLE_3D] = --i;
     mempool_free(table);
 
-    gSpriteCache = mempool_alloc_safe(sizeof(Sprite) * TEX_SPRITE_COUNT, PP_RAM_ASSET_CACHE);
+    gSpriteCache = mempool_alloc_safe(8 * MAX_NUM_SPRITES, PP_RAM_ASSET_CACHE);
     gSpriteCacheCount = 0;
     table = (s32 *) load_asset_section_from_rom(ASSET_SPRITES_TABLE);
     gSpriteTableSize = 0;
@@ -455,6 +456,7 @@ TextureHeader *load_texture(s32 id) {
         if (paletteOffset >= 0) {
             texTemp->ciPaletteOffset = paletteOffset;
             assetOffset += PALETTE_GFX_SIZE; // I'm guessing it takes 6 f3d commands to load the palette
+                                             //!@bug — no memory was allocated for this!
         }
         assetOffset += TEXTURE_GFX_SIZE; // I'm guessing it takes 12 f3d commands to load the texture
         texTemp = (TextureHeader *) ((s32) texTemp + texTemp->textureSize);
@@ -780,19 +782,21 @@ void material_load_simple(Gfx **dList, s32 flags) {
 }
 
 /**
- * Official Name: texLoadSprite
+ * Loads a sprite from its asset, allocates memory for vertices, triangles, and display lists,
+ * and initializes the display list for each texture and frame.
+ * If the sprite is already cached, returns it from the cache.
  */
 Sprite *tex_load_sprite(s32 spriteID, s32 arg1) {
     Sprite *refSprite;
-    Sprite *newSprite;
+    Sprite *sprite;
     s32 cacheNum;
-    Sprite* sprite;
-    TextureHeader* tex;
+    SpriteAsset *spriteAsset;
+    TextureHeader *tex;
     s32 i;
     s32 size;
     s8 allocFailed;
     s8 cacheFull;
-    s16 frameCount;
+    s16 numTextures;
     s32 allocSize;
     s32 offset;
     u8 spriteBuf[0x200];
@@ -801,72 +805,75 @@ Sprite *tex_load_sprite(s32 spriteID, s32 arg1) {
     if (spriteID < 0 || spriteID >= gSpriteTableSize) {
         return NULL;
     }
-    
+
     for (i = 0, cacheFull = 0; i < gSpriteCacheCount; i++) {
         if (spriteID == gSpriteCache[ASSETCACHE_ID(i)]) {
-            refSprite = gSpriteCache[ASSETCACHE_PTR(i)];
+            refSprite = (Sprite *) gSpriteCache[ASSETCACHE_PTR(i)];
             refSprite->numberOfInstances++;
             return refSprite;
         }
     }
+
     cacheNum = -1;
-    i = 0;
-    while (i < gSpriteCacheCount) {
+    for (i = 0; i < gSpriteCacheCount; i++) {
         // @fake
-        if (newSprite) {}
+        if (sprite) {}
         if (gSpriteCache[ASSETCACHE_ID(i)] == -1) {
             cacheNum = i;
         }
-        i++;
     }
+
     if (cacheNum == -1) {
         cacheFull = TRUE;
         cacheNum = gSpriteCacheCount;
         gSpriteCacheCount++;
     }
-    sprite = &spriteBuf;
-    assettable_seek_s32(spriteID, &offset, &size, ASSET_SPRITES_TABLE);
-    load_asset_to_address(12, sprite, offset, size);
 
-    frameCount = sprite->unkC.val[sprite->numberOfFrames];
-    size = frameCount * 4;
-    allocSize = size * sizeof(Vertex);
-    allocSize += size << 3;
-    allocSize += sprite->numberOfFrames * sizeof(Gfx);
-    allocSize += frameCount << 4 << 1;
-    allocSize += size;
-    allocSize += (s32) align16(0x10); 
-    allocSize += (s32) align16((sprite->numberOfFrames * 4));
-    newSprite = (Sprite *) mempool_alloc(allocSize, COLOUR_TAG_MAGENTA);
-    if (newSprite == NULL) {
+    spriteAsset = (SpriteAsset *) &spriteBuf;
+    assettable_seek_s32(spriteID, &offset, &size, ASSET_SPRITES_TABLE);
+    load_asset_to_address(ASSET_SPRITES, (u32) spriteAsset, offset, size);
+
+    numTextures = spriteAsset->frameTexOffsets[spriteAsset->numberOfFrames];
+    allocSize = numTextures * 4 * sizeof(Vertex);
+    allocSize += (numTextures * 4) << 3;
+    allocSize += spriteAsset->numberOfFrames * sizeof(Gfx);
+    allocSize += numTextures << 4 << 1;
+    allocSize += numTextures * 4;
+    allocSize += (s32) align16((u8 *) 0x10);
+    allocSize += (s32) align16((u8 *) (spriteAsset->numberOfFrames * 4));
+    sprite = (Sprite *) mempool_alloc(allocSize, COLOUR_TAG_MAGENTA);
+    if (sprite == NULL) {
         if (cacheFull) {
             gSpriteCacheCount--;
         }
+
         return NULL;
     }
 
-    size = (s32)newSprite + (s32)align16(sizeof(Sprite)) + (s32)align16(sprite->numberOfFrames * 4);\
-    D_80126368 = (Triangle *) size;
-    D_80126364 = (Gfx *)(&((u8*)D_80126368)[frameCount << 5]); // `<< 5` is `sizeof(Triangle) * 2`
-    D_80126360 = (Vertex *) ((Gfx *)(((s32)&((u8*)D_80126364)[frameCount << 5]) + (sprite->numberOfFrames << 3)));
-    newSprite->gfx[0] = (Gfx *) &((u8*)D_80126360)[frameCount * sizeof(Vertex) * 4];
-    
+    gSpriteTriangles = (Triangle *) ((s32) sprite + (s32) align16((u8 *) sizeof(Sprite)) +
+                                     (s32) align16((u8 *) (spriteAsset->numberOfFrames * 4)));
+    gSpriteDLists = (Gfx *) ((s32) gSpriteTriangles + numTextures * 0x20); // 0x20 = sizeof(Triangle) * 2
+    gSpriteVertices = (Vertex *) ((s32) gSpriteDLists + numTextures * 0x20 +
+                                  spriteAsset->numberOfFrames * sizeof(Gfx)); // 0x20 = sizeof(Gfx) * 4
+    sprite->textures = (TextureHeader **) ((s32) gSpriteVertices + numTextures * sizeof(Vertex) * 4);
+
     allocFailed = FALSE;
-    for (i = 0; i < frameCount; i++) {
+    for (i = 0; i < numTextures; i++) {
         gTexColourTag = COLOUR_TAG_LIME;
-        tex = load_texture(sprite->baseTextureId + i);
-        newSprite->frames[i] = tex;
-        if (newSprite->frames[i] == NULL) {
+        tex = load_texture(spriteAsset->baseTextureId + i);
+        sprite->textures[i] = tex;
+        if (sprite->textures[i] == NULL) {
             allocFailed = TRUE;
         }
+
         gTexColourTag = COLOUR_TAG_MAGENTA;
         gFirstTexIsLoaded = TRUE;
     }
 
     gFirstTexIsLoaded = FALSE;
     if (allocFailed) {
-        for (i = 0; i < frameCount; i++) {
-            tex = (TextureHeader *) newSprite->frames[i];
+        for (i = 0; i < numTextures; i++) {
+            tex = (TextureHeader *) sprite->textures[i];
             if (tex != NULL) {
                 tex_free(tex);
             }
@@ -874,22 +881,25 @@ Sprite *tex_load_sprite(s32 spriteID, s32 arg1) {
         if (cacheFull) {
             gSpriteCacheCount--;
         }
-        mempool_free(newSprite);
+        mempool_free(sprite);
         return NULL;
     }
-    newSprite->numberOfFrames = frameCount;
-    newSprite->baseTextureId = sprite->numberOfFrames;
-    for (i = 0; i < sprite->numberOfFrames; i++) {
-        newSprite->unkC.ptr[i] = (u8 *) D_80126364;
-        func_8007CDC0(sprite, newSprite, i);
+
+    sprite->numberOfTextures = numTextures;
+    sprite->numberOfFrames = spriteAsset->numberOfFrames;
+    for (i = 0; i < spriteAsset->numberOfFrames; i++) {
+        sprite->frames[i] = gSpriteDLists;
+        sprite_init_frame(spriteAsset, sprite, i);
     }
-    if (gSpriteCacheCount >= 100) {
+
+    if (gSpriteCacheCount >= MAX_NUM_SPRITES) {
         return NULL;
     }
+
     gSpriteCache[ASSETCACHE_ID(cacheNum)] = spriteID;
-    gSpriteCache[ASSETCACHE_PTR(cacheNum)] = newSprite;
-    newSprite->numberOfInstances = 1;
-    return newSprite;
+    gSpriteCache[ASSETCACHE_PTR(cacheNum)] = (s32) sprite;
+    sprite->numberOfInstances = 1;
+    return sprite;
 }
 
 /**
@@ -942,11 +952,11 @@ s32 tex_asset_size(s32 id) {
     return (((numOfTextures >> 8) & 0xFFFF) * (sizeof(Gfx) * 12)) + size;
 }
 
-s32 load_sprite_info(s32 spriteIndex, s32 *numOfInstancesOut, s32 *unkOut, s32 *numFramesOut, s32 *formatOut,
+s32 load_sprite_info(s32 spriteIndex, s32 *anchorXOut, s32 *anchorYOut, s32 *numFramesOut, s32 *formatOut,
                      s32 *sizeOut) {
     TextureHeader *tex;
     s32 i;
-    Sprite *new_var2;
+    SpriteAsset *spriteAsset;
     s32 j;
     s32 start;
     s32 size;
@@ -955,37 +965,37 @@ s32 load_sprite_info(s32 spriteIndex, s32 *numOfInstancesOut, s32 *unkOut, s32 *
 
     if ((spriteIndex < 0) || (spriteIndex >= gSpriteTableSize)) {
     textureCouldNotBeLoaded:
-        *numOfInstancesOut = 0;
-        *unkOut = 0;
+        *anchorXOut = 0;
+        *anchorYOut = 0;
         *numFramesOut = 0;
         return 0;
     }
-    new_var2 = &spriteBuf;
+    spriteAsset = (SpriteAsset *) &spriteBuf;
     assettable_seek_s32(spriteIndex, &start, &size, ASSET_SPRITES_TABLE);
     new_var = size;
-    load_asset_to_address(ASSET_SPRITES, (u32) new_var2, start, size);
+    load_asset_to_address(ASSET_SPRITES, (u32) spriteAsset, start, size);
     set_texture_colour_tag(PP_RAM_SPRITES);
-    tex = load_texture(new_var2->unkC.val[0] + new_var2->baseTextureId);
+    tex = load_texture(spriteAsset->frameTexOffsets[0] + spriteAsset->baseTextureId);
     set_texture_colour_tag(COLOUR_TAG_MAGENTA);
     if (tex != NULL) {
         *formatOut = TEX_FORMAT(tex->format);
         tex_free(tex);
         *sizeOut = 0;
-        for (i = 0; i < new_var2->numberOfFrames; i++) {
-            for (j = new_var2->unkC.val[i]; j < (s32) new_var2->unkC.val[i + 1]; j++) {
-                *sizeOut += tex_asset_size(new_var2->baseTextureId + j);
+        for (i = 0; i < spriteAsset->numberOfFrames; i++) {
+            for (j = spriteAsset->frameTexOffsets[i]; j < (s32) spriteAsset->frameTexOffsets[i + 1]; j++) {
+                *sizeOut += tex_asset_size(spriteAsset->baseTextureId + j);
             }
         }
-        *numFramesOut = new_var2->numberOfFrames;
-        *numOfInstancesOut = new_var2->numberOfInstances;
-        *unkOut = new_var2->drawFlags;
+        *numFramesOut = spriteAsset->numberOfFrames;
+        *anchorXOut = spriteAsset->anchor.x;
+        *anchorYOut = spriteAsset->anchor.y;
         return 1;
     }
     goto textureCouldNotBeLoaded;
 }
 
 void func_8007CA68(s32 arg0, s32 arg1, s32 *arg2, s32 *arg3, s32 *arg4) {
-    Sprite *sprite;
+    SpriteAsset *spriteAsset;
     TextureHeader *tex;
     s32 temp_a0;
     s32 temp_v1;
@@ -1008,39 +1018,39 @@ void func_8007CA68(s32 arg0, s32 arg1, s32 *arg2, s32 *arg3, s32 *arg4) {
 
     // Must be on the same line. (maybe a macro?)
     // clang-format off
-    sprite = &spriteBuf;
+    spriteAsset = (SpriteAsset *) &spriteBuf;
     assettable_seek_s32(arg0, &offset, &size, ASSET_SPRITES_TABLE);
-    load_asset_to_address(12, sprite, offset, size);
+    load_asset_to_address(12, (u32) spriteAsset, offset, size);
     // clang-format on
 
-    if (sprite->numberOfFrames < arg1) {
+    if (spriteAsset->numberOfFrames < arg1) {
     failedExit:
         *arg2 = 0;
         *arg3 = 0;
         *arg4 = 0;
         return;
     }
-    tex = load_texture(sprite->unkC.val[arg1] + sprite->baseTextureId);
+    tex = load_texture(spriteAsset->frameTexOffsets[arg1] + spriteAsset->baseTextureId);
     if (tex == NULL) {
         goto failedExit;
     }
-    *arg4 = tex_asset_size(sprite->unkC.val[arg1] + sprite->baseTextureId);
-    var_s3 = tex->unk3 - sprite->numberOfInstances;
-    var_s4 = sprite->drawFlags - tex->unk4;
+    *arg4 = tex_asset_size(spriteAsset->frameTexOffsets[arg1] + spriteAsset->baseTextureId);
+    var_s3 = tex->posX - spriteAsset->anchor.x;
+    var_s4 = spriteAsset->anchor.y - tex->posY;
     temp_a1 = tex->width;
     temp_a2 = tex->height;
     var_s5 = var_s3 + temp_a1;
     var_s6 = var_s4 - temp_a2;
     tex_free(tex);
 
-    for (var_s1 = sprite->unkC.val[arg1] + 1; var_s1 < sprite->unkC.val[arg1 + 1]; var_s1++) {
-        tex = load_texture(sprite->baseTextureId + var_s1);
+    for (var_s1 = spriteAsset->frameTexOffsets[arg1] + 1; var_s1 < spriteAsset->frameTexOffsets[arg1 + 1]; var_s1++) {
+        tex = load_texture(spriteAsset->baseTextureId + var_s1);
         if (tex == NULL) {
             goto failedExit;
         }
-        *arg4 += tex_asset_size(sprite->baseTextureId + var_s1);
-        temp_v1 = tex->unk3 - sprite->numberOfInstances;
-        temp_a0 = sprite->drawFlags - tex->unk4;
+        *arg4 += tex_asset_size(spriteAsset->baseTextureId + var_s1);
+        temp_v1 = tex->posX - spriteAsset->anchor.x;
+        temp_a0 = spriteAsset->anchor.y - tex->posY;
         temp_a1 = tex->width;
         temp_a2 = tex->height;
         if (temp_v1 < var_s3) {
@@ -1075,8 +1085,8 @@ void sprite_free(Sprite *sprite) {
         if (sprite->numberOfInstances <= 0) {
             for (i = 0; i < gSpriteCacheCount; i++) {
                 if (sprite == (Sprite *) gSpriteCache[ASSETCACHE_PTR(i)]) {
-                    for (frame = 0; frame < sprite->numberOfFrames; frame++) {
-                        tex_free(sprite->frames[frame]);
+                    for (frame = 0; frame < sprite->numberOfTextures; frame++) {
+                        tex_free(sprite->textures[frame]);
                     }
                     mempool_free(sprite);
                     gSpriteCache[ASSETCACHE_ID(i)] = -1;
@@ -1088,104 +1098,149 @@ void sprite_free(Sprite *sprite) {
     }
 }
 
-void func_8007CDC0(Sprite *sprite1, Sprite *sprite2, s32 arg2) {
+/**
+ * Creates a display list that renders the specified sprite frame.
+ * A frame may consist of multiple tiles.
+ * For correct rendering, billboard mode must be enabled in the RSP beforehand,
+ * and the anchor vertex must already be pushed.
+ */
+void sprite_init_frame(SpriteAsset *spriteAsset, Sprite *sprite, s32 frameId) {
     UNUSED s32 pad[2];
-    s32 spriteCount;
-    s32 spriteDrawFlags;
-    s32 xTemp;
-    s32 yTemp;
+    s32 anchorX;
+    s32 anchorY;
+    s32 tileOffsetX;
+    s32 tileOffsetY;
     s32 left;
-    s32 var_t5;
+    s32 numQuads;
     s32 curVertIndex;
-    s32 j;
+    s32 tileEnd;
     s32 texWidth;
     s32 texHeight;
-    s32 i;
-    Vertex *vertices;
+    s32 tileIndex;
+    Vertex *vertex;
     Vertex *curVerts;
-    Triangle *triangles;
+    Triangle *triangle;
     Gfx *dlptr;
     TextureHeader *tex;
 
-    spriteCount = sprite1->numberOfInstances;
-    spriteDrawFlags = sprite1->drawFlags;
-    i = sprite1->unkC.val[arg2];
-    j = sprite1->unkC.val[arg2 + 1];
-    dlptr = D_80126364;
-    vertices = D_80126360;
-    triangles = D_80126368;
-    if (i < j) {
-        tex = sprite2->frames[i];
-        sprite2->drawFlags = ((tex->flags & 0xFFFF) & 0x3B);
+    anchorX = spriteAsset->anchor.x;
+    anchorY = spriteAsset->anchor.y;
+    tileIndex = spriteAsset->frameTexOffsets[frameId];
+    tileEnd = spriteAsset->frameTexOffsets[frameId + 1];
+    dlptr = gSpriteDLists;
+    vertex = gSpriteVertices;
+    triangle = gSpriteTriangles;
+
+    // Extract draw flags from the first tile's texture
+    if (tileIndex < tileEnd) {
+        tex = sprite->textures[tileIndex];
+        sprite->drawFlags = ((tex->flags & 0xFFFF) & (RENDER_ANTI_ALIASING | RENDER_Z_COMPARE | RENDER_FOG_ACTIVE |
+                                                      RENDER_CUTOUT | RENDER_COLOUR_INDEX));
     }
+
     curVertIndex = 0;
-    var_t5 = 0;
-    while (i < j) {
-        curVerts = vertices;
-        tex = sprite2->frames[i];
+    numQuads = 0;
+    while (tileIndex < tileEnd) {
+        curVerts = vertex;
+        tex = sprite->textures[tileIndex];
+
         texWidth = tex->width;
         texHeight = tex->height;
-        xTemp = tex->unk3 - spriteCount;
-        yTemp = spriteDrawFlags - tex->unk4;
-        vertices->x = xTemp;
-        vertices->y = yTemp - 1;
-        vertices->z = 0;
-        vertices++;
-        vertices->x = xTemp + texWidth - 1;
-        vertices->y = yTemp - 1;
-        vertices->z = 0;
-        vertices++;
-        vertices->x = xTemp + texWidth - 1;
-        vertices->y = yTemp - texHeight;
-        vertices->z = 0;
-        vertices++;
-        vertices->x = xTemp;
-        vertices->y = yTemp - texHeight;
-        vertices->z = 0;
-        vertices++;
+        // Calculate tile position relative to the sprite's anchor point
+        // Positive tileOffsetY means up
+        tileOffsetX = tex->posX - anchorX;
+        tileOffsetY = anchorY - tex->posY;
+
+        vertex->x = tileOffsetX;
+        vertex->y = tileOffsetY - 1;
+        vertex->z = 0;
+        //vertex->r = 255;
+        //vertex->g = 255;
+        //vertex->b = 255;
+        //vertex->a = 255;
+        vertex++;
+
+        vertex->x = tileOffsetX + texWidth - 1;
+        vertex->y = tileOffsetY - 1;
+        vertex->z = 0;
+        //vertex->r = 255;
+        //vertex->g = 255;
+        //vertex->b = 255;
+        //vertex->a = 255;
+        vertex++;
+
+        vertex->x = tileOffsetX + texWidth - 1;
+        vertex->y = tileOffsetY - texHeight;
+        vertex->z = 0;
+        //vertex->r = 255;
+        //vertex->g = 255;
+        //vertex->b = 255;
+        //vertex->a = 255;
+        vertex++;
+
+        vertex->x = tileOffsetX;
+        vertex->y = tileOffsetY - texHeight;
+        vertex->z = 0;
+        //vertex->r = 255;
+        //vertex->g = 255;
+        //vertex->b = 255;
+        //vertex->a = 255;
+        vertex++;
+
+        // Upload display list commands for the current tile
         gDkrDmaDisplayList(dlptr++, OS_K0_TO_PHYSICAL(tex->cmd), tex->numberOfCommands);
-        if (var_t5 == 0) {
-            left = j - i;
-            if (left >= 6) {
+
+        // Upload up to 20 vertices to the RSP at once (5 quads max)
+        // G_VTX_APPEND is required for billboard rendering
+        if (numQuads == 0) {
+            left = tileEnd - tileIndex;
+            if (left > 5) {
                 left = 5;
             }
-            gSPVertexDKR(dlptr++, OS_K0_TO_PHYSICAL(curVerts), (left * 4), 1);
+            gSPVertexDKR(dlptr++, OS_K0_TO_PHYSICAL(curVerts), (left * 4), G_VTX_APPEND);
         }
-        gSPPolygon(dlptr++, OS_K0_TO_PHYSICAL(triangles), 2, 1);
-        triangles[0].flags = 0x40;
-        triangles[0].vi0 = curVertIndex + 3;
-        triangles[0].vi1 = curVertIndex + 2;
-        triangles[0].vi2 = curVertIndex + 1;
-        triangles[0].uv0.u = (texWidth - 1) << 5;
-        triangles[0].uv0.v = (texHeight - 1) << 5;
-        triangles[0].uv1.u = (texWidth - 1) << 5;
-        triangles[0].uv1.v = 0;
-        triangles[0].uv2.u = 1;
-        triangles[0].uv2.v = 0;
-        triangles[1].flags = 0x40;
-        triangles[1].vi0 = curVertIndex + 4;
-        triangles[1].vi1 = curVertIndex + 3;
-        triangles[1].vi2 = curVertIndex + 1;
-        triangles[1].uv0.u = 1;
-        triangles[1].uv0.v = (texHeight - 1) << 5;
-        triangles[1].uv1.u = (texWidth - 1) << 5;
-        triangles[1].uv1.v = (texHeight - 1) << 5;
-        triangles[1].uv2.u = 1;
-        triangles[1].uv2.v = 0;
-        triangles += 2;
+
+        // vertex index 0 is reserved for the billboard anchor vertex, already loaded into RSP
+        gSPPolygon(dlptr++, OS_K0_TO_PHYSICAL(triangle), 2, TRIN_ENABLE_TEXTURE);
+        triangle->flags = BACKFACE_DRAW;
+        triangle->vi0 = curVertIndex + 3;
+        triangle->vi1 = curVertIndex + 2;
+        triangle->vi2 = curVertIndex + 1;
+        triangle->uv0.u = (texWidth - 1) << 5;
+        triangle->uv0.v = (texHeight - 1) << 5;
+        triangle->uv1.u = (texWidth - 1) << 5;
+        triangle->uv1.v = 0;
+        triangle->uv2.u = 1;
+        triangle->uv2.v = 0;
+        triangle++;
+
+        triangle->flags = BACKFACE_DRAW;
+        triangle->vi0 = curVertIndex + 4;
+        triangle->vi1 = curVertIndex + 3;
+        triangle->vi2 = curVertIndex + 1;
+        triangle->uv0.u = 1;
+        triangle->uv0.v = (texHeight - 1) << 5;
+        triangle->uv1.u = (texWidth - 1) << 5;
+        triangle->uv1.v = (texHeight - 1) << 5;
+        triangle->uv2.u = 1;
+        triangle->uv2.v = 0;
+        triangle++;
+
         curVertIndex += 4;
-        var_t5 += 1;
-        i += 1;
-        if (var_t5 >= 5) {
-            var_t5 = 0;
+
+        numQuads++;
+        tileIndex++;
+        if (numQuads >= 5) {
+            numQuads = 0;
             curVertIndex = 0;
         }
     }
+
     gDPPipeSync(dlptr++);
     gSPEndDisplayList(dlptr++);
-    D_80126364 = dlptr;
-    D_80126360 = vertices;
-    D_80126368 = triangles;
+    gSpriteDLists = dlptr;
+    gSpriteVertices = vertex;
+    gSpriteTriangles = triangle;
 }
 
 s32 get_tile_bytes(s32 type, s32 siz) {

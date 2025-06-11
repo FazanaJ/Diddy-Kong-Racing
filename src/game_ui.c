@@ -371,8 +371,8 @@ void hud_init(UNUSED s32 viewportCount) {
     gMinimapXlu = 0;
     D_80127194 = (LevelHeader_70 *) get_misc_asset(ASSET_MISC_58);
     func_8007F1E8(D_80127194);
-    sndp_set_group_volume(0, 32767);
-    sndp_set_group_volume(2, 32767);
+    sndp_set_group_volume(0, AL_SNDP_GROUP_VOLUME_MAX);
+    sndp_set_group_volume(2, AL_SNDP_GROUP_VOLUME_MAX);
     for (i = 0; i < 2; i++) {
         gHudAudioData[i].volume = 0;
         gHudAudioData[i].volumeRamp = 0;
@@ -789,9 +789,9 @@ void hud_render_player(Gfx **dList, Mtx **mtx, Vertex **vertexList, Object *obj,
                     hud_main_time_trial(countdown, obj, updateRate);
                 } else {
                     if (cutscene_id() == 10) {
-                        sprite_anim_off(TRUE);
+                        cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
                         hud_balloons(racer);
-                        sprite_anim_off(FALSE);
+                        cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
                     } else {
                         switch (get_current_level_race_type()) {
                             case RACETYPE_DEFAULT:
@@ -821,7 +821,7 @@ void hud_render_player(Gfx **dList, Mtx **mtx, Vertex **vertexList, Object *obj,
                     }
                 }
                 if (racer->raceFinished == TRUE) {
-                    sprite_anim_off(TRUE);
+                    cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
                     if (is_in_time_trial()) {
                         hud_time_trial_finish(racer, updateRate);
                     } else if (cam_get_viewport_layout() == VIEWPORT_LAYOUT_1_PLAYER && racer->finishPosition == 1) {
@@ -837,7 +837,7 @@ void hud_render_player(Gfx **dList, Mtx **mtx, Vertex **vertexList, Object *obj,
                     block_95:
                         hud_race_finish_multiplayer(racer, updateRate);
                     }
-                    sprite_anim_off(FALSE);
+                    cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
                 }
                 gMinimapFade = FALSE;
                 sprite_opaque(TRUE);
@@ -934,7 +934,7 @@ void hud_audio_update(s32 updateRate) {
 void hud_main_race(s32 countdown, Object *obj, s32 updateRate) {
     Object_Racer *racer = &obj->unk64->racer;
 
-    sprite_anim_off(TRUE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
     hud_course_arrows(racer, updateRate);
     hud_wrong_way(racer, updateRate);
     hud_race_start(countdown, updateRate);
@@ -953,7 +953,7 @@ void hud_main_race(s32 countdown, Object *obj, s32 updateRate) {
     }
 
     hud_weapon(obj, updateRate);
-    sprite_anim_off(FALSE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
 }
 
 /**
@@ -1065,7 +1065,7 @@ void hud_main_treasure(s32 countdown, Object *obj, s32 updateRate) {
 
     racer = &obj->unk64->racer;
     racers = get_racer_objects(&numRacers);
-    sprite_anim_off(TRUE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
     hud_race_start(countdown, updateRate);
     switch (gNumActivePlayers) {
         case 1:
@@ -1092,7 +1092,7 @@ void hud_main_treasure(s32 countdown, Object *obj, s32 updateRate) {
     rendermode_reset(&gHudDL);
     hud_bananas(racer, updateRate);
     hud_weapon(obj, updateRate);
-    sprite_anim_off(FALSE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
 }
 
 /**
@@ -1101,7 +1101,7 @@ void hud_main_treasure(s32 countdown, Object *obj, s32 updateRate) {
 void hud_main_eggs(s32 countdown, Object *obj, s32 updateRate) {
     Object_Racer *racer = &obj->unk64->racer;
     if (racer->raceFinished == FALSE) {
-        sprite_anim_off(TRUE);
+        cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
         hud_race_start(countdown, updateRate);
         hud_weapon(obj, updateRate);
         if ((127 - (updateRate * 2)) >= gCurrentHud->entry[HUD_EGG_CHALLENGE_ICON].challengeEggs.alphaTimer) {
@@ -1114,7 +1114,7 @@ void hud_main_eggs(s32 countdown, Object *obj, s32 updateRate) {
         if (gNumActivePlayers != 2) {
             hud_draw_eggs(obj, updateRate);
         }
-        sprite_anim_off(FALSE);
+        cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
     }
 }
 
@@ -1152,7 +1152,7 @@ void hud_draw_eggs(Object *racerObj, s32 updateRate) {
         racer = &racers[0]->unk64->racer;
     }
     if (numRacers == MAXCONTROLLERS) {
-        sprite_anim_off(TRUE);
+        cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
         portraitX = gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT].pos.x;
         portraitY = gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT].pos.y;
         diffX = (gCurrentHud->entry[HUD_EGG_CHALLENGE_ICON].pos.x - portraitX);
@@ -1176,7 +1176,7 @@ void hud_draw_eggs(Object *racerObj, s32 updateRate) {
         gCurrentHud->entry[HUD_EGG_CHALLENGE_ICON].pos.x = portraitX + diffX;
         gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT].pos.y = portraitY;
         gCurrentHud->entry[HUD_EGG_CHALLENGE_ICON].pos.y = portraitY + diffY;
-        sprite_anim_off(FALSE);
+        cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
     }
 }
 
@@ -1231,7 +1231,7 @@ void hud_main_battle(s32 countdown, Object *obj, s32 updateRate) {
 
     racer = &obj->unk64->racer;
     if (gNumActivePlayers != 1 || racer->raceFinished == FALSE) {
-        sprite_anim_off(TRUE);
+        cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
         hud_race_start(countdown, updateRate);
         hud_weapon(obj, updateRate);
         racerObjs = get_racer_objects(&numRacers);
@@ -1255,7 +1255,7 @@ void hud_main_battle(s32 countdown, Object *obj, s32 updateRate) {
                 hud_bananas(racer, updateRate);
                 break;
         }
-        sprite_anim_off(FALSE);
+        cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
     }
 }
 
@@ -1280,7 +1280,7 @@ void func_800A1E48(Object *racerObj, s32 updateRate) {
         racer = &racers[PLAYER_ONE]->unk64->racer;
     }
 
-    sprite_anim_off(TRUE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
     if (numRacers == 4) {
         offsetX = 0;
         offsetY = 0;
@@ -1324,7 +1324,7 @@ void func_800A1E48(Object *racerObj, s32 updateRate) {
         gCurrentHud->entry[HUD_BATTLE_BANANA_COUNT_2].pos.y += tempY;
     }
 
-    sprite_anim_off(FALSE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
 }
 
 /**
@@ -1367,7 +1367,7 @@ void hud_main_boss(s32 countdown, Object *obj, s32 updateRate) {
     LevelHeader *level;
     Object_Racer *racer = &obj->unk64->racer;
 
-    sprite_anim_off(TRUE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
     hud_wrong_way(racer, updateRate);
     hud_race_start(countdown, updateRate);
     hud_race_time(racer, updateRate);
@@ -1380,7 +1380,7 @@ void hud_main_boss(s32 countdown, Object *obj, s32 updateRate) {
 
     hud_speedometre(obj, updateRate);
     hud_race_position(racer, updateRate);
-    sprite_anim_off(FALSE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
 }
 
 /**
@@ -1389,14 +1389,14 @@ void hud_main_boss(s32 countdown, Object *obj, s32 updateRate) {
 void hud_main_taj(s32 countdown, Object *obj, s32 updateRate) {
     Object_Racer *racer = &obj->unk64->racer;
 
-    sprite_anim_off(TRUE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
     hud_wrong_way(racer, updateRate);
     hud_lap_count(racer, updateRate);
     hud_race_position(racer, updateRate);
     hud_race_time(racer, updateRate);
     hud_race_start(countdown, updateRate);
     hud_speedometre(obj, updateRate);
-    sprite_anim_off(FALSE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
 }
 
 /**
@@ -1409,7 +1409,7 @@ void hud_main_hub(Object *obj, s32 updateRate) {
 
     if (cam_get_viewport_layout() == PLAYER_ONE) {
         racer = &obj->unk64->racer;
-        sprite_anim_off(TRUE);
+        cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
         hud_balloons(racer);
         hud_speedometre(obj, updateRate);
         if (is_in_two_player_adventure()) {
@@ -1417,7 +1417,7 @@ void hud_main_hub(Object *obj, s32 updateRate) {
             portrait->spriteID = (get_settings()->racers[1].character + HUD_SPRITE_PORTRAIT);
             hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, portrait);
         }
-        sprite_anim_off(FALSE);
+        cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
     }
 }
 
@@ -1542,7 +1542,7 @@ void hud_main_time_trial(s32 arg0, Object *playerRacerObj, s32 updateRate) {
     }
 
     obj68->animUpdateTimer = 0;
-    sprite_anim_off(TRUE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
     hud_course_arrows(curRacer, updateRate);
     if (curRacer->raceFinished == FALSE) {
         spB8 = gCurrentHud->entry[HUD_LAP_TIME_TEXT].pos.y;
@@ -1727,7 +1727,7 @@ void hud_main_time_trial(s32 arg0, Object *playerRacerObj, s32 updateRate) {
         set_kerning(FALSE);
     }
 
-    sprite_anim_off(FALSE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
 }
 
 void hud_stopwatch_face(u8 arg0, u8 arg1, u8 animID, u8 arg3, u8 arg4) {
@@ -1874,7 +1874,6 @@ void hud_speedometre(Object *obj, s32 updateRate) {
  * This function will also call to begin the background music for 1 and 2 player. 3 and 4 are treated with silence.
  */
 void hud_race_start(s32 countdown, s32 updateRate) {
-
     if (!is_game_paused()) {
         if (countdown == 0 && gHudAudioData[0].playerIndex == PLAYER_COMPUTER) {
             gHudAudioData[0].volumeRamp = -1;
@@ -2002,11 +2001,11 @@ void hud_bananas(Object_Racer *racer, s32 updateRate) {
             }
         } else {
             gCurrentHud->entry[HUD_BANANA_COUNT_ICON_SPIN].spriteOffset = prevSprite + 128;
-            sprite_anim_off(FALSE);
+            cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
             sprite_opaque(TRUE);
             hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_BANANA_COUNT_ICON_SPIN]);
             sprite_opaque(FALSE);
-            sprite_anim_off(TRUE);
+            cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
             gCurrentHud->entry[HUD_BANANA_COUNT_ICON_SPIN].spriteOffset -= 128;
         }
         temp_lo = bananas / 10;
@@ -3359,11 +3358,11 @@ void hud_render_general(Gfx **dList, Mtx **mtx, Vertex **vtx, s32 updateRate) {
     } else if (gHudLevelHeader->race_type == RACETYPE_CHALLENGE_BATTLE) {
         // Show life counter and icons in 2 player.
         if (gNumActivePlayers == 2 && gHudToggleSettings[gHUDNumPlayers] == 0) {
-            sprite_anim_off(TRUE);
+            cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
             sprite_opaque(FALSE);
             mtx_ortho(&gHudDL, &gHudMtx);
             func_800A1E48(0, updateRate);
-            sprite_anim_off(FALSE);
+            cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
             rendermode_reset(&gHudDL);
             sprite_opaque(TRUE);
         } else {
@@ -3381,7 +3380,7 @@ void hud_render_general(Gfx **dList, Mtx **mtx, Vertex **vtx, s32 updateRate) {
                     spE0 = gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT].pos.y;
                     sprite_opaque(FALSE);
                     mtx_ortho(&gHudDL, &gHudMtx);
-                    sprite_anim_off(TRUE);
+                    cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
                     gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT].pos.x = 225.0f;
                     gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT].pos.y = 165.0f;
                     var_a0_5 = 66.0f - gCurrentHud->entry[HUD_BANANA_COUNT_ICON_STATIC].pos.x;
@@ -3423,7 +3422,7 @@ void hud_render_general(Gfx **dList, Mtx **mtx, Vertex **vtx, s32 updateRate) {
                     gCurrentHud->entry[HUD_CHALLENGE_PORTRAIT].pos.y = spE0;
                     sprite_opaque(TRUE);
                     rendermode_reset(&gHudDL);
-                    sprite_anim_off(FALSE);
+                    cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
                 }
             }
         }
@@ -3501,7 +3500,7 @@ void hud_render_general(Gfx **dList, Mtx **mtx, Vertex **vtx, s32 updateRate) {
         return;
     }
     someObjSeg = cam_get_active_camera();
-    sprite_anim_off(TRUE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
     minimap = (Sprite *) lvlMdl->minimapSpriteIndex;
     switch (gHUDNumPlayers) {
         case TWO_PLAYERS:
@@ -3647,7 +3646,7 @@ void hud_render_general(Gfx **dList, Mtx **mtx, Vertex **vtx, s32 updateRate) {
         }
     }
     gDPPipeSync(gHudDL++);
-    sprite_anim_off(FALSE);
+    cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
     sprite_opaque(TRUE);
     *dList = gHudDL;
     *mtx = gHudMtx;

@@ -293,7 +293,7 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
         D_8011B0F8 = TRUE;
     }
 
-    func_8002C0C4(geometry);
+    generate_track(geometry);
 
     gWaveBlockCount = 0;
 
@@ -1213,6 +1213,7 @@ typedef struct Unk80027568_1 {
     Vec4f *unk18;
 } Unk80027568_1;
 
+// https://decomp.me/scratch/duMgr
 s32 func_80027568(void) {
     f32 projectedRacerPos;
     f32 projectedCamPos;
@@ -1465,7 +1466,7 @@ void spawn_skydome(s32 objectID) {
     spawnObject.z = 0;
     spawnObject.size = sizeof(LevelObjectEntryCommon);
     spawnObject.objectID = objectID;
-    gSkydomeSegment = spawn_object(&spawnObject, 2);
+    gSkydomeSegment = spawn_object(&spawnObject, OBJECT_SPAWN_SHADOW);
     if (gSkydomeSegment != NULL) {
         gSkydomeSegment->segment.level_entry = NULL;
         gSkydomeSegment->objectID = -1;
@@ -1480,10 +1481,10 @@ void set_skydome_visbility(s32 renderSky) {
     gSceneRenderSkyDome = renderSky;
 }
 
+// https://decomp.me/scratch/E1DFy
 #ifdef NON_MATCHING
 // This function creates the flashy sky effect in the wizpig 2 race.
 // init_skydome
-// https://decomp.me/scratch/E1DFy
 void func_80028050(void) {
     Triangle *tris;
     Vertex *verts;
@@ -2577,6 +2578,7 @@ s32 get_wave_properties(f32 yPos, f32 *waterHeight, Vec3f *rotation) {
     return gTrackWaves[index]->type;
 }
 
+// https://decomp.me/scratch/X1SBi
 #ifdef NON_EQUIVALENT
 s32 func_8002B0F4(s32 levelSegmentIndex, f32 xIn, f32 zIn, WaterProperties ***arg3) {
     LevelModelSegment *currentSegment;
@@ -2780,6 +2782,7 @@ s32 func_8002B9BC(Object *obj, f32 *arg1, Vec3f *arg2, s32 arg3) {
     }
 }
 
+// https://decomp.me/scratch/Y39p2
 #ifdef NON_MATCHING
 // Collision: Returns the Y Values in yOut, and the number of values in the array as the return.
 // Get's the Y Offset acrross a surface.
@@ -2949,15 +2952,12 @@ void track_tex_cycle(s32 updateRate) {
     }
 }
 
-#ifdef NON_MATCHING
-// generate_track
 // Loads a level track from the index in the models table.
-// Has regalloc issues.
-void func_8002C0C4(s32 modelId) {
+void generate_track(s32 modelId) {
     s32 i, j, k;
     s32 temp_s4;
     s32 temp;
-    LevelModel *mdl;
+    s32 mdl;
     s32 maxTextures;
 
     set_texture_colour_tag(PP_RAM_LEVELTEX);
@@ -2976,19 +2976,18 @@ void func_8002C0C4(s32 modelId) {
         modelId = 0;
     }
 
-    // offset = gLevelModelTable[modelId];
-    temp_s4 = gLevelModelTable[modelId + 1] - gLevelModelTable[modelId];
+    mdl = gLevelModelTable[modelId];
+    temp_s4 = gLevelModelTable[modelId + 1] - mdl;
 
-    // temp = compressedRamAddr
     temp = (s32) gCurrentLevelModel;
     temp += (LEVEL_MODEL_MAX_SIZE - temp_s4);
     temp -= ((s32) temp % 16); // Align to 16-byte boundary.
 
-    load_asset_to_address(ASSET_LEVEL_MODELS, temp, gLevelModelTable[modelId], temp_s4);
+    load_asset_to_address(ASSET_LEVEL_MODELS, temp, mdl, temp_s4);
     gzip_inflate((u8 *) temp, (u8 *) gCurrentLevelModel);
     mempool_free(gLevelModelTable); // Done with the level models table, so free it.
 
-    mdl = gCurrentLevelModel;
+    mdl = (s32) gCurrentLevelModel;
 
     LOCAL_OFFSET_TO_RAM_ADDRESS(TextureInfo *, gCurrentLevelModel->textures);
     LOCAL_OFFSET_TO_RAM_ADDRESS(LevelModelSegment *, gCurrentLevelModel->segments);
@@ -3047,9 +3046,6 @@ void func_8002C0C4(s32 modelId) {
     }
     set_texture_colour_tag(COLOUR_TAG_MAGENTA);
 }
-#else
-#pragma GLOBAL_ASM("asm/nonmatchings/tracks/func_8002C0C4.s")
-#endif
 
 void func_8002C71C(LevelModelSegment *segment) {
     s32 curVertY;
@@ -3202,6 +3198,7 @@ void func_8002C954(LevelModelSegment *segment, LevelModelSegmentBoundingBox *bbo
     }
 }
 
+// https://decomp.me/scratch/0JT8R
 #ifdef NON_EQUIVALENT
 s32 func_8002CC30(LevelModelSegment *segment) {
     s32 spF4;
@@ -4435,7 +4432,8 @@ s32 func_8002FF6C(s32 arg0, unk8011C8B8 *arg1, s32 arg2, Vec2f *arg3) {
     return var_s2;
 }
 
-#ifdef NON_EQUIUVALENT
+// https://decomp.me/scratch/QF6FF
+#ifdef NON_EQUIVALENT
 void func_800304C8(unk8011C8B8 *arg0) {
     s16 found1;
     s16 found2;
@@ -4471,7 +4469,7 @@ void func_800304C8(unk8011C8B8 *arg0) {
         if (found2 == found3) {
             f32 test = (-(((D_8011D0BC->x * gNewShadowObj->segment.trans.x_position) +
                            (D_8011D0BC->z * gNewShadowObj->segment.trans.z_position)) +
-                          D_8011D0BC->w)) /
+                          D_8011D0BC->unkC_union.w)) /
                        D_8011D0BC->y;
             if (D_8011D0D0 < test) {
                 D_8011D0D0 = test;
@@ -4629,7 +4627,7 @@ void obj_loop_fogchanger(Object *obj) {
     camera = NULL;
 
     if (check_if_showing_cutscene_camera()) {
-        camera = get_cutscene_camera_segment();
+        camera = cam_get_cameras();
         views = cam_get_viewport_layout() + 1;
     } else {
         racers = get_racer_objects(&views);

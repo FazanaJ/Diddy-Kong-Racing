@@ -3,6 +3,7 @@
 #include "macros.h"
 #include "f3ddkr.h"
 #include "stdarg.h"
+#include "libc/string.h"
 #include "textures_sprites.h"
 #include "rcp_dkr.h"
 #include "main.h"

@@ -186,7 +186,7 @@ void audspat_update_all(Object **objList, s32 numObjects, s32 updateRate) {
     jingleVolume = 0;
     viewportLayout = cam_get_viewport_layout();
     numCameras = cam_set_layout(viewportLayout);
-    cameras = get_cutscene_camera_segment();
+    cameras = cam_get_cameras();
 
     if (gReverbOverride > 0) {
         gReverbOverride -= updateRate;
