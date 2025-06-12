@@ -15512,32 +15512,6 @@ void render_test_sprite(f32 x, f32 y, f32 z, s32 spriteID) {
     render_sprite_billboard(&sMenuCurrDisplayList, &sMenuCurrHudMat, &sMenuCurrHudVerts, (Object*)&fakeSpriteSegment, testSprite[frame], RENDER_Z_COMPARE | RENDER_FOG_ACTIVE | RENDER_Z_UPDATE | RENDER_VEHICLE_PART);
 }
 
-u16 HSV2RGB16(u8 h, u8 s, u8 v) {
-    u8 r, g, b, region, remainder, p, q, t;
-
-    if (s == 0) {
-        r = v, g = v, b = v;
-    } else {
-        region = h / 43;
-        remainder = (h - (region * 43)) * 6;
-
-        p = (v * (255 - s)) >> 8;
-        q = (v * (255 - ((s * remainder) >> 8))) >> 8;
-        t = (v * (255 - ((s * (255 - remainder)) >> 8))) >> 8;
-
-        switch (region) {
-            case 0:  r = v, g = t, b = p; break;
-            case 1:  r = q, g = v, b = p; break;
-            case 2:  r = p, g = v, b = t; break;
-            case 3:  r = p, g = q, b = v; break;
-            case 4:  r = t, g = p, b = v; break;
-            default: r = v, g = p, b = q; break;
-        }
-    }
-
-    return GPACK_RGBA5551(r, g, b, 1);
-}
-
 void menu_debug_root_init(void) {
     gOptionBlinkTimer = 0;
     gMenuDelay = 0;
@@ -15553,6 +15527,7 @@ void menu_debug_root_init(void) {
 char *gDebugMenuSubStrings[] = {
     "DEBUG MENU",
     "MODEL VIEWER",
+    "SPRITE VIEWER",
     "BACK",
 };
 
@@ -15572,7 +15547,7 @@ void debugmenu_root(s32 updateRate, s32 input) {
     gMenuOptionCap = ARRAY_COUNT(gDebugMenuSubStrings) - 1;
     prevOpt = gMenuOption;
     
-    if (gMenuStickY[PLAYER_MENU] < 0 && gMenuOption < ARRAY_COUNT(gDebugMenuSubStrings)) {
+    if (gMenuStickY[PLAYER_MENU] < 0 && gMenuOption < ARRAY_COUNT(gDebugMenuSubStrings) - 1) {
         gMenuOption++;
     }
     if (gMenuStickY[PLAYER_MENU] > 0 && gMenuOption > 1) {
@@ -16033,6 +16008,15 @@ void debugmenu_model_viewer(s32 updateRate, s32 input) {
     char *tagStr[] = {"B", "KB", "MB"};
     s32 tag;
 
+    if (input & START_BUTTON) {
+        for (i = 0; i < 8; i++) {
+            mempool_free(testSprite);
+        }
+        gPauseSubmenu = 0;
+        gPauseOptionScroll = 0;
+        gMenuOption = 1;
+    }
+
     if (gPauseOptionScroll == 0) {
         fakeObjectHeaderForModel.numberOfModelIds = 1;
         fakeObjectForModel.segment.object.modelIndex = 0;
@@ -16163,14 +16147,163 @@ void debugmenu_model_viewer(s32 updateRate, s32 input) {
     }*/
 }
 
+void debugmenu_sprite_viewer(s32 updateRate, s32 input) {
+    ObjectTransform tempForm;
+    char textBytes[64];
+    char *tagStr[] = {"B", "KB", "MB"};
+    s32 tag;
+    s32 i;
+    u32 buttonsDown;
+    s32 newSprite;
+
+    newSprite = FALSE;
+    if (gPauseOptionScroll == 0) {
+        currentModelIndex = 0;
+        newSprite = TRUE;
+        gPauseOptionScroll = 1;
+    }
+
+
+    if(actionDelay < 1) {
+        buttonsDown = input_held(0);
+        if (buttonsDown & A_BUTTON) {
+            actionDelay = 10;
+            currentModelIndex++;
+            if (currentModelIndex >= ASSET_SPRITES_COUNT) {
+                currentModelIndex = 0;
+            }
+            newSprite = TRUE;
+        } else if (buttonsDown & B_BUTTON) {
+            actionDelay = 10;
+            currentModelIndex--;
+            if (currentModelIndex < 0) {
+                currentModelIndex = ASSET_SPRITES_COUNT - 1;
+            }
+            newSprite = TRUE;
+        }
+    } else {
+        actionDelay -= updateRate;
+        if (actionDelay < 0) {
+            actionDelay = 0;
+        }
+    }
+
+    if (newSprite) {
+        sprite_free(testSprite[0]);
+        testSprite[0] = tex_load_sprite(currentModelIndex, 0);
+        gDebugModelTex = testSprite[0]->numberOfTextures;
+        gDebugModelTris = testSprite[0]->numberOfFrames;
+        animationFrame = 0;
+        offsetY = 0;
+        gDebugModelSizeTex = 0;
+        for (i = 0; i < gDebugModelTex; i++) {
+            gDebugModelSizeTex += testSprite[0]->textures[i]->textureSize;
+        }
+    }
+
+    if (gDebugModelTris > 1) {
+        if (input & R_TRIG) {
+            animationFrame++;
+            if (animationFrame > gDebugModelTris - 1) {
+                animationFrame = 0;
+            }
+        }
+        if (input & L_TRIG) {
+            animationFrame--;
+            if (animationFrame < 0) {
+                animationFrame = gDebugModelTris - 1;
+            }
+        }
+    }
+
+    if (input & Z_TRIG) {
+        gDebugModelMiscCounter ^= 1;
+    }
+
+    if (gDebugModelMiscCounter) {
+        gDebugModelWheelFrame++;
+        if (gDebugModelWheelFrame > 4) {
+            gDebugModelWheelFrame = 0;
+            animationFrame++;
+            if (animationFrame > gDebugModelTris - 1) {
+                animationFrame = 0;
+            }
+        }
+    }
+
+    if (input & START_BUTTON) {
+        mempool_free(testSprite[0]);
+        gPauseSubmenu = 0;
+        gPauseOptionScroll = 0;
+        gMenuOption = 1;
+    }
+    
+    fakeSpriteSegment.trans.x_position = 200.0f;
+    fakeSpriteSegment.trans.y_position = -175.0f - offsetY;
+    fakeSpriteSegment.trans.z_position = 30.0f;
+    fakeSpriteSegment.trans.scale = 1.0f;
+    fakeSpriteSegment.animFrame = ((f32) (animationFrame + 1) / (f32) gDebugModelTris) * 0xFF;
+
+    gDPSetPrimColor(sMenuCurrDisplayList++, 0, 0, 255, 255, 255, 255);
+    gDPSetEnvColor(sMenuCurrDisplayList++, 255, 255, 255, 0);
+    mtx_world_origin(&sMenuCurrDisplayList, &sMenuCurrHudMat);
+    viewModelTransform.scale = 1.0f;
+    viewModelTransform.rotation.x_rotation = 0;
+    bzero(&tempForm, sizeof(ObjectTransform));
+    tempForm.rotation.z_rotation = sDebugModelViewPitch;
+    tempForm.scale = 1.0f;
+    tempForm.x_position = 200.0f;
+    tempForm.y_position = -175.0f - offsetY;
+    tempForm.z_position = 30.0f;
+
+    render_sprite_billboard(&sMenuCurrDisplayList, &sMenuCurrHudMat, &sMenuCurrHudVerts, (Object*)&fakeSpriteSegment, testSprite[0], 0);
+
+    
+    // Draw text 
+    set_text_font(ASSET_FONTS_FUNFONT);
+    set_text_colour(255, 255, 255, 0, 255);
+    
+    sprintf(textBytes, "%d: %s", currentModelIndex, assettable_name(ASSET_SPRITES, currentModelIndex));
+    draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH / 2, SCREEN_HEIGHT - 32, textBytes, ALIGN_TOP_CENTER);
+
+    set_text_font(ASSET_FONTS_SMALLFONT);
+
+    sprintf(textBytes, "Frames: %d/%d", animationFrame + 1, gDebugModelTris);
+    set_text_colour(0, 0, 0, 255, 255);
+    draw_text(&sMenuCurrDisplayList, 56 + 1, 96 + 1, textBytes, ALIGN_TOP_CENTER);
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(&sMenuCurrDisplayList, 56, 96, textBytes, ALIGN_TOP_CENTER);
+    
+    sprintf(textBytes, "Images: %d", gDebugModelTex);
+    set_text_colour(0, 0, 0, 255, 255);
+    draw_text(&sMenuCurrDisplayList, 56 + 1, 106 + 1, textBytes, ALIGN_TOP_CENTER);
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(&sMenuCurrDisplayList, 56, 106, textBytes, ALIGN_TOP_CENTER);
+
+    sprintf(textBytes, "Size");
+    set_text_colour(0, 0, 0, 255, 255);
+    draw_text(&sMenuCurrDisplayList, 56 + 1, 116 + 1, textBytes, ALIGN_TOP_CENTER);
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(&sMenuCurrDisplayList, 56, 116, textBytes, ALIGN_TOP_CENTER);
+    
+    sprintf(textBytes, "Tex: %2.3f%s", memsize_float(gDebugModelSizeTex, &tag), tagStr[tag]);
+    set_text_colour(0, 0, 0, 255, 255);
+    draw_text(&sMenuCurrDisplayList, 56 + 1, 126 + 1, textBytes, ALIGN_TOP_CENTER);
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(&sMenuCurrDisplayList, 56, 126, textBytes, ALIGN_TOP_CENTER);
+}
+
 s32 menu_debug_root_loop(s32 updateRate) {
     s32 inputPressed;
     s32 i;
 
     gOptionBlinkTimer = (gOptionBlinkTimer + updateRate) & 0x3F;
     inputPressed = 0;
-    //menu_input();
+    gMenuStickX[PLAYER_MENU] = 0;
+    gMenuStickY[PLAYER_MENU] = 0;
     for (i = 0; i < 4; i++) {
+        gMenuStickX[PLAYER_MENU] += gControllersXAxisDirection[i];
+        gMenuStickY[PLAYER_MENU] += gControllersYAxisDirection[i];
         inputPressed |= input_pressed(i);
     }
 
@@ -16180,6 +16313,9 @@ s32 menu_debug_root_loop(s32 updateRate) {
             break;
         case 1:
             debugmenu_model_viewer(updateRate, inputPressed);
+            break;
+        case 2:
+            debugmenu_sprite_viewer(updateRate, inputPressed);
             break;
     }
 
