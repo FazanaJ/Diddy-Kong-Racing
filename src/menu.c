@@ -15469,8 +15469,8 @@ s8 gDebugModelWheelFrame;
 s8 gDebugModelPropellorFrame;
 Sprite *testSprite[8];
 ObjectSegment fakeSpriteSegment;
-Mtx spriteMatrix[4]; // Unsure of needed length.
-Vertex spriteVertex[4]; // Unsure of needed length.
+Mtx spriteMatrix; // Unsure of needed length.
+Vertex spriteVertex; // Unsure of needed length.
 
 void init_fake_sprite() {
     testSprite[0] = tex_load_sprite(ASSET_SPRITE_VEHICLE_PARTS_TYRE0, 0);
@@ -15781,7 +15781,7 @@ void render_model(s32 updateRate) {
     }
 
     if (shouldShade) {
-        debugmodel_shade(model, &viewModelTransform, -1, 1.0f);
+        debugmodel_shade(model, (Object *) &viewModelTransform, -1, 1.0f);
     }
     
     // Mode 0 is opaque geometry, Mode 1 is transparent geometry.
@@ -15976,7 +15976,7 @@ void set_object_model(s32 modelId) {
     gDebugModelMiscCounter = 0;
     
     if(viewModel != NULL) {
-        free_3d_model(viewModel);
+        free_3d_model((ObjectModel **) viewModel);
     }
     
     viewModel = object_model_init(modelId, OBJECT_SPAWN_ANIMATION);
