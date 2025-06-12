@@ -1651,8 +1651,8 @@ void crash_render(OSThread *t) {
     osWritebackDCacheAll();
     osViSwapBuffer(gCrashFB);
     if (viSetOnce == 0) {
-        osViBlack(FALSE);
         vi_change(gScreenWidth, gScreenHeight);
+        osViBlack(FALSE);
     }
     viSetOnce = 1;
     gCrashFB = gVideoFramebuffers[(gCrashFBFlip ^= 1) + 1];
