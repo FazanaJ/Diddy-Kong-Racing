@@ -169,6 +169,7 @@ s16 D_8011D5B8;
 s16 gRacerOffsetYaw[4];
 s16 gRacerOffsetPitch[4];
 u8 gPowerBoosting;
+u8 gRacerFlipCam;
 
 /******************************/
 
@@ -4321,27 +4322,26 @@ void update_player_racer(Object *obj, s32 updateRate) {
                 gCurrentButtonsPressed = input_pressed(tempVar);
                 gCurrentButtonsReleased = input_released(tempVar);
 
-                if (gDialogueCameraAngle == 0 && tempRacer->playerIndex != PLAYER_COMPUTER && gCurrentRacerInput & D_CBUTTONS) {
-
-                    if (gCurrentStickX > 0 || gCurrentStickX < -0) {
-                        gRacerOffsetYaw[tempRacer->playerIndex] += (gCurrentStickX * 0x8) * updateRate;
-                    }
-                    if (gCurrentStickY > 0 || gCurrentStickY < -0) {
-                        gRacerOffsetPitch[tempRacer->playerIndex] += (gCurrentStickY * 0x8) * updateRate;
-                        if (gRacerOffsetPitch[tempRacer->playerIndex] > 0x1000) {
-                            gRacerOffsetPitch[tempRacer->playerIndex] = 0x1000;
-                        } else if (gRacerOffsetPitch[tempRacer->playerIndex] < -0x1000) {
-                            gRacerOffsetPitch[tempRacer->playerIndex] = -0x1000;
+                if (tempRacer->playerIndex != PLAYER_COMPUTER) {
+                    gRacerFlipCam = FALSE;
+                    if (gCurrentRacerInput & D_CBUTTONS) {
+                        if (gCurrentStickX > 0 || gCurrentStickX < -0) {
+                            gRacerOffsetYaw[tempRacer->playerIndex] += (gCurrentStickX * 0x8) * updateRate;
                         }
-                    }
-                    gCurrentStickX = 0;
-                    gCurrentStickY = 0;
-                    gCurrentRacerInput = 0;
-                    gCurrentButtonsPressed = 0;
-                    gCurrentButtonsReleased = 0;
-                } else {
-
-                    if (gDialogueCameraAngle != 0 || tempRacer->velocity > 1.0f || tempRacer->velocity < -1.0f) {
+                        if (gCurrentStickY > 0 || gCurrentStickY < -0) {
+                            gRacerOffsetPitch[tempRacer->playerIndex] += (gCurrentStickY * 0x8) * updateRate;
+                            if (gRacerOffsetPitch[tempRacer->playerIndex] > 0x1000) {
+                                gRacerOffsetPitch[tempRacer->playerIndex] = 0x1000;
+                            } else if (gRacerOffsetPitch[tempRacer->playerIndex] < -0x1000) {
+                                gRacerOffsetPitch[tempRacer->playerIndex] = -0x1000;
+                            }
+                        }
+                        gCurrentStickX = 0;
+                        gCurrentStickY = 0;
+                        gCurrentRacerInput = 0;
+                        gCurrentButtonsPressed = 0;
+                        gCurrentButtonsReleased = 0;
+                    } else if (gDialogueCameraAngle != 0 || tempRacer->velocity > 1.0f || tempRacer->velocity < -1.0f) {
                         if (gRacerOffsetYaw[tempRacer->playerIndex] > 0) {
                             gRacerOffsetYaw[tempRacer->playerIndex] -= 0x200 * updateRate;
                             if (gRacerOffsetYaw[tempRacer->playerIndex] < 0) {
@@ -4367,6 +4367,10 @@ void update_player_racer(Object *obj, s32 updateRate) {
                                 gRacerOffsetPitch[tempRacer->playerIndex] = 0;
                             }
                         }
+                    }
+                    
+                    if (gCurrentRacerInput & L_TRIG) {
+                        gRacerFlipCam = TRUE;
                     }
                 }
 
@@ -7768,6 +7772,10 @@ void update_player_camera(Object *obj, Object_Racer *racer, f32 updateRateF) {
     if (racer->playerIndex != PLAYER_COMPUTER) {
         racer->steerVisualRotation += gRacerOffsetYaw[racer->playerIndex];
         racer->cameraYaw += gRacerOffsetYaw[racer->playerIndex];
+        if (gRacerFlipCam) {
+            racer->cameraYaw += 0x8000;
+            racer->steerVisualRotation += 0x8000;
+        }
     }
     // Set the camera behaviour based on current mode.
     switch (gCameraObject->mode) {
@@ -7825,6 +7833,10 @@ void update_player_camera(Object *obj, Object_Racer *racer, f32 updateRateF) {
     if (racer->playerIndex != PLAYER_COMPUTER) {
         racer->steerVisualRotation -= gRacerOffsetYaw[racer->playerIndex];
         racer->cameraYaw -= gRacerOffsetYaw[racer->playerIndex];
+        if (gRacerFlipCam) {
+            racer->cameraYaw -= 0x8000;
+            racer->steerVisualRotation -= 0x8000;
+        }
     }
 
     angle = gDialogueCameraAngle;
