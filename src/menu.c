@@ -4154,7 +4154,6 @@ void menu_save_options_init(void) {
  * This has the file name, and then a background and icon based on kind of file it is.
  * DKR save files will display the balloon count and adventure type.
  */
-#if REGION != REGION_JP
 void savemenu_render_element(SaveFileData *file, s32 x, s32 y) {
     s32 i;
     s32 firstDigit;
@@ -4345,10 +4344,6 @@ void savemenu_render_element(SaveFileData *file, s32 x, s32 y) {
         draw_text(&sMenuCurrDisplayList, x + (79 + SAVE_MENU_TEXT_OFFSET_2), y + 47, text2, ALIGN_TOP_CENTER);
     }
 }
-// No match JPN savemenu_render_element
-#else
-#pragma GLOBAL_ASM("asm/nonmatchings/menu/savemenu_render_element.s")
-#endif
 
 /**
  * Render all of the save option elements onscreen.
@@ -8739,7 +8734,6 @@ void trackmenu_render_2D(s32 x, s32 y, char *hubName, char *trackName, s32 rectO
 }
 
 // https://decomp.me/scratch/L6qKV
-#ifdef NON_MATCHING
 // trackmenu_render_names
 void func_8008FF1C(UNUSED s32 updateRate) {
     s32 i; // sp7C
@@ -8865,9 +8859,6 @@ void func_8008FF1C(UNUSED s32 updateRate) {
         gTrackSelectVertsFlip ^= 1;
     }
 }
-#else
-#pragma GLOBAL_ASM("asm/nonmatchings/menu/func_8008FF1C.s")
-#endif
 
 /**
  * If the track hasn't been loaded already, tell thread30 to load the track in the background.
@@ -11395,8 +11386,6 @@ void menu_results_init(void) {
  * Draw the portraits of the four player onscreen, then draw the scoreboard below.
  * After, draw the text options at the bottom.
  */
-#if REGION != REGION_JP
-// NON_EQUIVALENT IN JP - Too lazy to fix it right now, there's so many others to worry about.
 void results_render(UNUSED s32 updateRate, f32 opacity) {
     s32 x2;
     s32 y2;
@@ -11577,10 +11566,6 @@ void results_render(UNUSED s32 updateRate, f32 opacity) {
         open_dialogue_box(7);
     }
 }
-// No match JPN results_render
-#else
-#pragma GLOBAL_ASM("asm/nonmatchings/menu/results_render.s")
-#endif
 
 /**
  * When someone presses A, decide whether to play the stage again,
@@ -13179,7 +13164,6 @@ void credits_fade(s32 x1, s32 y1, s32 x2, s32 y2, s32 a) {
     rendermode_reset(&sMenuCurrDisplayList);
 }
 
-#if REGION != REGION_JP
 /**
  * Handles the credits for the game
  */
@@ -13478,9 +13462,6 @@ s32 menu_credits_loop(s32 updateRate) {
     }
     return 0;
 }
-#else
-#pragma GLOBAL_ASM("asm/nonmatchings/menu/menu_credits_loop.s")
-#endif
 
 /**
  * Unload associated assets with the credits scene.

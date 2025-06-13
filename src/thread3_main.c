@@ -117,8 +117,10 @@ u8 gShowBG;
  * Main looping function for the main thread.
  * Official Name: mainThread
  */
-void thread3_main(UNUSED void *unused) {
-    OSMesg mesg;
+// O2 attribute is here because it doesn't work in Os and I haven't yet figured out why.
+__attribute__((optimize("O2"))) void thread3_main(UNUSED void *unused) {
+    OSMesg mesg = NULL;
+
     init_game();
     while (1) {
         while (gNumGfxTasksAtScheduler < 2) {
