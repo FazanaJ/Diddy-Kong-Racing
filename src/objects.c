@@ -6292,14 +6292,14 @@ void func_80019808(s32 updateRate) {
     do {
         curRacer = &(*gRacers)[i]->unk64->racer;
         if (curRacer->lap >= currentLevelHeader->laps && curRacer->raceFinished == FALSE) {
-            if (get_game_mode() != GAMEMODE_UNUSED_4) {
+            //if (get_game_mode() != GAMEMODE_UNUSED_4) {
                 curRacer->raceFinished = TRUE;
                 curRacer->finishPosition = D_8011ADC0;
                 if (D_8011ADC0 == 1 && curRacer->playerIndex == PLAYER_COMPUTER) {
                     sound_play(SOUND_WHOOSH5, NULL);
                 }
                 D_8011ADC0++;
-            }
+            //}
         }
         if (curRacer->playerIndex != PLAYER_COMPUTER) {
             numHumanRacers++;

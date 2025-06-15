@@ -836,7 +836,7 @@ void race_postrace_type(s32 finishState) {
 
 void func_8006D8F0(UNUSED s32 arg0) {
     s32 temp;
-    if (gGameMode != GAMEMODE_UNUSED_4) {
+    //if (gGameMode != GAMEMODE_UNUSED_4) {
         gPlayableMapId = gLevelSettings[0];
         gGameCurrentEntrance = 0;
         gGameCurrentCutscene = CUTSCENE_ID_UNK_64;
@@ -848,13 +848,13 @@ void func_8006D8F0(UNUSED s32 arg0) {
             gGameCurrentCutscene = gLevelSettings[temp + 8];
         }
         D_801234F8 = TRUE;
-    }
+    //}
 }
 
 void func_8006D968(s8 *arg0) {
     // Is arg0 LevelObjectEntry_Exit?
     s32 i;
-    if (gGameMode != GAMEMODE_UNUSED_4) {
+    //if (gGameMode != GAMEMODE_UNUSED_4) {
         gLevelSettings[0] = gPlayableMapId;
         for (i = 0; i < 2; i++) {
             gLevelSettings[i + 2] = arg0[i + 8];   // 0x8-0x9 - destinationMapId
@@ -867,7 +867,7 @@ void func_8006D968(s8 *arg0) {
         gLevelSettings[14] = arg0[22]; // 0x16 - ?
         gLevelSettings[15] = arg0[23]; // 0x17 returnSpawnIndex
         D_801234FC = 1;
-    }
+    //}
 }
 
 /**
