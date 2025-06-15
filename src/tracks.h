@@ -7,6 +7,7 @@
 #include "racer.h"
 #include "fade_transition.h"
 
+//#define STREAM_TEXTURES
 
 typedef struct SortBuffer {
     Triangle *tri;

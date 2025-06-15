@@ -274,7 +274,7 @@ void main_game_loop(void) {
             sTotalTime -= 16666;
             sLogicUpdateRate++;
         }
-        if (gAutoplayTest != AUTOPLAY_OFF) {
+        if (gAutoplayTest != AUTOPLAY_OFF && gPlatform & CONSOLE) {
             if (get_game_mode() == GAMEMODE_MENU && gCurrentMenuId == MENU_TRACK_SELECT) {
                 sched_framecap(0);
             } else if (get_current_map_id() == ASSET_LEVEL_CENTRALAREAHUB) {

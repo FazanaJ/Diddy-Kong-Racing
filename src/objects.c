@@ -33,6 +33,7 @@
 #include "printf.h"
 #include "weather.h"
 #include "PRinternal/piint.h"
+#include "autoplay.h"
 
 #define MAX_CHECKPOINTS 60
 #define OBJECT_POOL_SIZE 0x15800
@@ -6457,6 +6458,10 @@ void func_80019808(s32 updateRate) {
                 gFirstTimeFinish = FALSE;
             }
 #endif
+            if (gAutoplayTest != AUTOPLAY_OFF) { // Temp measure until autoplay is updated to support balloons.
+                gFirstTimeFinish = FALSE;
+                i = FALSE;
+            }
 
             if (!i) {
                 if (is_in_two_player_adventure()) {

@@ -2924,8 +2924,12 @@ s32 func_8002BAB0(s32 levelSegmentIndex, f32 xIn, f32 zIn, f32 *yOut) {
 
 u16 *gTrackTexIDs;
 s8 *gTrackTexStaleTimer;
+TextureHeader gTrackTexStub;
 
 TextureHeader *track_tex_seek(s32 texID) {
+#ifndef STREAM_TEXTURES
+    return gCurrentLevelModel->textures[texID].texture;
+#else
     if (gCurrentLevelModel->textures[texID].texture == NULL) {
         set_texture_colour_tag(PP_RAM_LEVELTEX);
         gCurrentLevelModel->textures[texID].texture = load_texture(gTrackTexIDs[texID]);
@@ -2934,10 +2938,14 @@ TextureHeader *track_tex_seek(s32 texID) {
 
     gTrackTexStaleTimer[texID] = 10;
     return gCurrentLevelModel->textures[texID].texture;
+#endif
 }
 
 void track_tex_cycle(s32 updateRate) {
     s32 i;
+#ifndef STREAM_TEXTURES
+    return;
+#else
     if (gCurrentLevelModel == NULL || bgload_active()) {
         return;
     }
@@ -2950,6 +2958,7 @@ void track_tex_cycle(s32 updateRate) {
             }
         }
     }
+#endif
 }
 
 // Loads a level track from the index in the models table.
@@ -3002,8 +3011,10 @@ void generate_track(s32 modelId) {
         LOCAL_OFFSET_TO_RAM_ADDRESS(TriangleBatchInfo *, gCurrentLevelModel->segments[k].batches);
         LOCAL_OFFSET_TO_RAM_ADDRESS(CollisionNode *, gCurrentLevelModel->segments[k].unk14);
     }
+#ifdef STREAM_TEXTURES
     maxTextures = gCurrentLevelModel->numberOfTextures;
     if (maxTextures > 128) {
+        debug_printf("Track tex limit reached: %d. Setting to %d\n", gCurrentLevelModel->numberOfTextures, 128);
         maxTextures = 128;
     }
     gTrackTexIDs = mempool_alloc(maxTextures * sizeof(u16), PP_RAM_ASSET_CACHE);
@@ -3012,6 +3023,12 @@ void generate_track(s32 modelId) {
         gTrackTexIDs[k] = ((u16) gCurrentLevelModel->textures[k].texture) | ASSET_MASK_TEX3D;
         gCurrentLevelModel->textures[k].texture = NULL;
     }
+#else
+    for (k = 0; k < gCurrentLevelModel->numberOfTextures; k++) {
+        gCurrentLevelModel->textures[k].texture =
+            load_texture(((s32) gCurrentLevelModel->textures[k].texture) | 0x8000);
+    }
+#endif
     j = (s32) gCurrentLevelModel + gCurrentLevelModel->modelSize;
     for (k = 0; k < gCurrentLevelModel->numberOfSegments; k++) {
         gCurrentLevelModel->segments[k].unk10 = (s16 *) j;
@@ -3086,15 +3103,19 @@ void free_track(void) {
         mempool_free(D_8011C8B8);
         waves_free();
     }
+#ifdef STREAM_TEXTURES
     if (gTrackTexIDs) {
+#endif
         for (i = 0; i < gCurrentLevelModel->numberOfTextures; i++) {
             if (gCurrentLevelModel->textures[i].texture) {
                 tex_free(gCurrentLevelModel->textures[i].texture);
             }
         }
+#ifdef STREAM_TEXTURES
         mempool_free(gTrackTexIDs);
         mempool_free(gTrackTexStaleTimer);
     }
+#endif
     mempool_free(gTrackModelHeap);
     mempool_free(D_8011D370);
     mempool_free(D_8011D374);
