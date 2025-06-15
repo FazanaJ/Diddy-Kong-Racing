@@ -1440,12 +1440,14 @@ void default_alloc_displaylist_heap(void) {
 
     gDisplayLists[0] = (Gfx *) mempool_alloc_safe(totalSize, PP_RAM_CMDBUF);
     gMatrixHeap[0] = (Mtx *) ((u8 *) gDisplayLists[0] + ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)));
-    gVertexHeap[0] = (Vertex *) ((u8 *) gMatrixHeap[0] + (NUM_MTX_COMMANDS * sizeof(Mtx)));
+    gMatrixHeap[0] = align16((u8 *) gMatrixHeap[0]);
+    gVertexHeap[0] = (Vertex *) ((u8 *) gMatrixHeap[0] + ((NUM_MTX_COMMANDS - 1) * sizeof(Mtx)));
     gTriangleHeap[0] = (Triangle *) ((u8 *) gVertexHeap[0] + (NUM_VTX_COMMANDS * sizeof(Vertex)));
 
     gDisplayLists[1] = (Gfx *) mempool_alloc_safe(totalSize, PP_RAM_CMDBUF);
     gMatrixHeap[1] = (Mtx *) ((u8 *) gDisplayLists[1] + ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)));
-    gVertexHeap[1] = (Vertex *) ((u8 *) gMatrixHeap[1] + (NUM_MTX_COMMANDS * sizeof(Mtx)));
+    gMatrixHeap[1] = align16((u8 *) gMatrixHeap[1]);
+    gVertexHeap[1] = (Vertex *) ((u8 *) gMatrixHeap[1] + ((NUM_MTX_COMMANDS - 1) * sizeof(Mtx)));
     gTriangleHeap[1] = (Triangle *) ((u8 *) gVertexHeap[1] + (NUM_VTX_COMMANDS * sizeof(Vertex)));
 }
 

@@ -333,6 +333,8 @@ $(GCC_SAFE_FILES): CFLAGS := -DNDEBUG -DAVOID_UB -DNON_MATCHING $(INCLUDE_CFLAGS
 	-falign-functions=16 \
 	-G 0
 
+$(BUILD_DIR)/src/hasm/math_util_gcc.c.o: OPT_FLAGS := -Ofast
+
 default: all 
 
 all: $(VERIFY)

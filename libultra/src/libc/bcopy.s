@@ -82,15 +82,19 @@ $LVL4_wcopy = .
         addiu   $2,$2,4
 .end wcopy
 leaf dcopy
-        addu    $a2, $a1, $a2          # Calculate end address: end = dst + size
+        addu    $a2, $a1, $a2           # Calculate end address: end = dst + size
 .Lcopy_loop:
-        ld      $t0, 0($a0)            # Load 8 bytes from src
-        ld      $t1, 8($a0)            # Load next 8 bytes from src
-        addiu   $a0, $a0, 16           # Increment src by 16 bytes
-        sd      $t0, 0($a1)            # Store 8 bytes to dst
-        sd      $t1, 8($a1)            # Store next 8 bytes to dst
-        addiu   $a1, $a1, 16           # Increment dst by 16 bytes
-        bne     $a1, $a2, .Lcopy_loop  # Repeat until dst == end
+        ld      $t0, 0($a0)             # Load 8 bytes from src
+        ld      $t1, 8($a0)             # Load next 8 bytes from src
+        ld      $t2, 16($a0)            # Load next 8 bytes from src
+        ld      $t3, 24($a0)            # Load next 8 bytes from src
+        addiu   $a0, $a0, 32            # Increment src by 64 bytes
+        sd      $t0, 0($a1)             # Store 8 bytes to dst
+        sd      $t1, 8($a1)             # Store next 8 bytes to dst
+        sd      $t2, 16($a1)            # Store next 8 bytes to dst
+        sd      $t3, 24($a1)            # Store next 8 bytes to dst
+        addiu   $a1, $a1, 32            # Increment dst by 64 bytes
+        bne     $a1, $a2, .Lcopy_loop   # Repeat until dst == end
         nop
         jr      $ra                    # Return
         nop
