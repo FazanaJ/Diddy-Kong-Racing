@@ -75,8 +75,8 @@ FadeTransition D_800DD424 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FAD
 
 Gfx *gDisplayLists[2];
 Gfx *gCurrDisplayList;
-MatrixS *gMatrixHeap[2];
-MatrixS *gGameCurrMatrix;
+Mtx *gMatrixHeap[2];
+Mtx *gGameCurrMatrix;
 Vertex *gVertexHeap[2];
 Vertex *gGameCurrVertexList;
 Triangle *gTriangleHeap[2];
@@ -117,8 +117,10 @@ u8 gShowBG;
  * Main looping function for the main thread.
  * Official Name: mainThread
  */
-void thread3_main(UNUSED void *unused) {
-    OSMesg mesg;
+// O2 attribute is here because it doesn't work in Os and I haven't yet figured out why.
+__attribute__((optimize("O2"))) void thread3_main(UNUSED void *unused) {
+    OSMesg mesg = NULL;
+
     init_game();
     while (1) {
         while (gNumGfxTasksAtScheduler < 2) {
@@ -156,6 +158,9 @@ void thread3_main(UNUSED void *unused) {
  */
 void init_game(void) {
     s32 viMode;
+    s32 tag;
+    char *ramStr[] = {"B", "KB", "MB"};
+    f32 segSize;
 
     gzip_init();
 #ifdef ANTI_TAMPER
@@ -203,11 +208,10 @@ void init_game(void) {
     init_save_data();
     vi_change(SCREEN_WIDTH, SCREEN_HEIGHT);
     sBlackScreenTimer = 12;
-    //save_detect();
-    bgload_init();
     init_particle_buffers(4, 4, 110, 48, 32, 0);
     osCreateMesgQueue(&gGameMesgQueue, gGameMesgBuf, 3);
     osScAddClient(&gMainSched, (OSScClient*) gNMISched, &gGameMesgQueue, OS_SC_ID_VIDEO);
+    sortbuffer_init();
     gNMIMesgBuf = 0;
     gGameCurrentEntrance = 0;
     gGameCurrentCutscene = 0;
@@ -216,6 +220,8 @@ void init_game(void) {
     sBootDelayTimer = 0;
     gGameMode = GAMEMODE_INTRO;
     osTvType = OS_TV_NTSC;
+    segSize = memsize_float(((u32) main_BSS_START) - 0x80000000, &tag);
+    debug_printf("Main Segment Size: %2.3f%s (%2.2f%%)\n", segSize, ramStr[tag], (segSize / 1024.0f) * 100.0f);
 
     gCurrDisplayList = gDisplayLists[gSPTaskNum];
     gDPFullSync(gCurrDisplayList++);
@@ -240,7 +246,7 @@ void main_game_loop(void) {
     s32 debugLoopCounter;
     s32 framebufferSize;
     s32 tempLogicUpdateRate, tempLogicUpdateRateMax;
-    const f32 divisor = 1.0f;
+    f32 divisor;
     debug_thread(THREAD3_START, 0);
 
     if (gVideoSkipNextRate) {
@@ -250,6 +256,11 @@ void main_game_loop(void) {
         sPrevTime = 0;
         gVideoSkipNextRate = FALSE;
     } else {
+        if (__osBbIsBb) {
+            divisor = IQUE_DIVISOR;
+        } else {
+            divisor = 1.0f;
+        }
         sDeltaTime = osGetCount() - sPrevTime;
         sPrevTime = osGetCount();
         sLogicUpdateRateF = (f32) sDeltaTime / (f32) (OS_USEC_TO_CYCLES(16666) * divisor);
@@ -263,7 +274,7 @@ void main_game_loop(void) {
             sTotalTime -= 16666;
             sLogicUpdateRate++;
         }
-        if (gAutoplayTest != AUTOPLAY_OFF) {
+        if (gAutoplayTest != AUTOPLAY_OFF && gPlatform & CONSOLE) {
             if (get_game_mode() == GAMEMODE_MENU && gCurrentMenuId == MENU_TRACK_SELECT) {
                 sched_framecap(0);
             } else if (get_current_map_id() == ASSET_LEVEL_CENTRALAREAHUB) {
@@ -347,7 +358,7 @@ void main_game_loop(void) {
     debug_render(&gCurrDisplayList, sLogicUpdateRate);
     //set_render_printf_background_colour(0, 0, 0, 255);
     //render_printf("Gfx: %d/%d\n", ((u32) gCurrDisplayList - (u32) gDisplayLists[gSPTaskNum]) / sizeof(Gwords), NUM_GFX_COMMANDS);
-    //render_printf("Mtx: %d/%d\n", ((u32) gGameCurrMatrix - (u32) gMatrixHeap[gSPTaskNum]) / sizeof(MatrixS), NUM_MTX_COMMANDS);
+    //render_printf("Mtx: %d/%d\n", ((u32) gGameCurrMatrix - (u32) gMatrixHeap[gSPTaskNum]) / sizeof(Mtx), NUM_MTX_COMMANDS);
     //render_printf("Vtx: %d/%d\n", ((u32) gGameCurrVertexList - (u32) gVertexHeap[gSPTaskNum]) / sizeof(Vertex), NUM_VTX_COMMANDS);
     //render_printf("Tri: %d/%d\n", ((u32) gGameCurrTriList - (u32) gTriangleHeap[gSPTaskNum]) / sizeof(Triangle), NUM_TRI_COMMANDS);
 
@@ -825,7 +836,7 @@ void race_postrace_type(s32 finishState) {
 
 void func_8006D8F0(UNUSED s32 arg0) {
     s32 temp;
-    if (gGameMode != GAMEMODE_UNUSED_4) {
+    //if (gGameMode != GAMEMODE_UNUSED_4) {
         gPlayableMapId = gLevelSettings[0];
         gGameCurrentEntrance = 0;
         gGameCurrentCutscene = CUTSCENE_ID_UNK_64;
@@ -837,13 +848,13 @@ void func_8006D8F0(UNUSED s32 arg0) {
             gGameCurrentCutscene = gLevelSettings[temp + 8];
         }
         D_801234F8 = TRUE;
-    }
+    //}
 }
 
 void func_8006D968(s8 *arg0) {
     // Is arg0 LevelObjectEntry_Exit?
     s32 i;
-    if (gGameMode != GAMEMODE_UNUSED_4) {
+    //if (gGameMode != GAMEMODE_UNUSED_4) {
         gLevelSettings[0] = gPlayableMapId;
         for (i = 0; i < 2; i++) {
             gLevelSettings[i + 2] = arg0[i + 8];   // 0x8-0x9 - destinationMapId
@@ -856,7 +867,7 @@ void func_8006D968(s8 *arg0) {
         gLevelSettings[14] = arg0[22]; // 0x16 - ?
         gLevelSettings[15] = arg0[23]; // 0x17 returnSpawnIndex
         D_801234FC = 1;
-    }
+    //}
 }
 
 /**
@@ -880,9 +891,9 @@ void load_menu_with_level_background(s32 menuId, s32 levelId, s32 cutsceneId) {
     }
     gGameMode = GAMEMODE_MENU;
     gRenderMenu = TRUE;
-    sndp_set_group_volume(0, 32767);
-    sndp_set_group_volume(1, 32767);
-    sndp_set_group_volume(2, 32767);
+    sndp_set_group_volume(0, AL_SNDP_GROUP_VOLUME_MAX);
+    sndp_set_group_volume(1, AL_SNDP_GROUP_VOLUME_MAX);
+    sndp_set_group_volume(2, AL_SNDP_GROUP_VOLUME_MAX);
     cam_init();
 
     if (!gIsLoading) {
@@ -1423,18 +1434,18 @@ void default_alloc_displaylist_heap(void) {
     numberOfPlayers = FOUR_PLAYERS;
     gPrevPlayerCount = numberOfPlayers;
     totalSize = ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)) +
-                (NUM_MTX_COMMANDS * sizeof(Matrix)) +
+                (NUM_MTX_COMMANDS * sizeof(Mtx)) +
                 (NUM_VTX_COMMANDS * sizeof(Vertex)) +
                 (NUM_TRI_COMMANDS * sizeof(Triangle));
 
     gDisplayLists[0] = (Gfx *) mempool_alloc_safe(totalSize, PP_RAM_CMDBUF);
-    gMatrixHeap[0] = (MatrixS *) ((u8 *) gDisplayLists[0] + ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)));
-    gVertexHeap[0] = (Vertex *) ((u8 *) gMatrixHeap[0] + (NUM_MTX_COMMANDS * sizeof(Matrix)));
+    gMatrixHeap[0] = (Mtx *) ((u8 *) gDisplayLists[0] + ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)));
+    gVertexHeap[0] = (Vertex *) ((u8 *) gMatrixHeap[0] + (NUM_MTX_COMMANDS * sizeof(Mtx)));
     gTriangleHeap[0] = (Triangle *) ((u8 *) gVertexHeap[0] + (NUM_VTX_COMMANDS * sizeof(Vertex)));
 
     gDisplayLists[1] = (Gfx *) mempool_alloc_safe(totalSize, PP_RAM_CMDBUF);
-    gMatrixHeap[1] = (MatrixS *) ((u8 *) gDisplayLists[1] + ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)));
-    gVertexHeap[1] = (Vertex *) ((u8 *) gMatrixHeap[1] + (NUM_MTX_COMMANDS * sizeof(Matrix)));
+    gMatrixHeap[1] = (Mtx *) ((u8 *) gDisplayLists[1] + ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)));
+    gVertexHeap[1] = (Vertex *) ((u8 *) gMatrixHeap[1] + (NUM_MTX_COMMANDS * sizeof(Mtx)));
     gTriangleHeap[1] = (Triangle *) ((u8 *) gVertexHeap[1] + (NUM_VTX_COMMANDS * sizeof(Vertex)));
 }
 

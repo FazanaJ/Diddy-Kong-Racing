@@ -19,14 +19,14 @@ public:
     void add_build_info(std::string sectionBuildId, std::string buildId, const JsonFile &src, const fs::path &dir, const BuildInfoContext &infoContext);
     
     // Adds deferred info to the end of the list. Returns the fileIndex of the added asset.
-    size_t add_deferred_build_info(std::string sectionBuildId, std::string buildId, const std::vector<uint8_t> &out, 
-        const fs::path &dir, const BuildInfoContext &infoContext);
+    size_t add_deferred_build_info(std::string sectionBuildId, std::string buildId, std::string deferredFromBuildId, std::string deferredFromSectionId, 
+        const std::vector<uint8_t> &out, const fs::path &dir, const BuildInfoContext &infoContext);
         
     // Adds deferred info to a specific file index.
-    void add_deferred_build_info(std::string sectionBuildId, std::string buildId, size_t fileIndex, const std::vector<uint8_t> &out, 
-        const fs::path &dir, const BuildInfoContext &infoContext);
+    void add_deferred_build_info(std::string sectionBuildId, std::string buildId, std::string deferredFromBuildId, std::string deferredFromSectionId, 
+        size_t fileIndex, const std::vector<uint8_t> &out, const fs::path &dir, const BuildInfoContext &infoContext);
     
-    void run_builds(std::function<void(BuildInfo &info)> callbackFunction);
+    void run_builds(std::function<void(BuildInfo &info)> callbackFunction, const std::vector<std::string> &sectionsOrder);
     
     void get_infos_for_section(std::string sectionBuildId, std::function<void(BuildInfo &info)> callbackFunction);
     
@@ -48,8 +48,6 @@ private:
     // Place for all of the build infos to exist.
     // Note: Should only ever be added to! Do NOT erase any entries during the building process!
     std::vector<BuildInfo> _buildInfos; 
-    
-    std::vector<std::string> _sectionOrder;
     
     // <key: Section build id, value: Array of indices into _buildInfos for files associated with the section>
     std::unordered_map<std::string, std::vector<int>> _buildInfoSections;

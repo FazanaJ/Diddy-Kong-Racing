@@ -59,7 +59,10 @@ void osViSetMode(OSViMode* modep) {
 #endif
 
     saveMask = __osDisableInt();
-
+    
+    if (__osBbIsBb) {
+        modep->comRegs.ctrl &= ~0x2000;
+    }
     __osViNext->modep = modep;
     __osViNext->state = VI_STATE_MODE_UPDATED;
     __osViNext->control = __osViNext->modep->comRegs.ctrl;

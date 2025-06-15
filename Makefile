@@ -199,6 +199,16 @@ INCLUDE_CFLAGS += -I $(LIBULTRA_DIR)/src/audio -I $(LIBULTRA_DIR)/src/os
 ASFLAGS        = -march=vr4300 -32 -G0 $(ASM_DEFINES) $(INCLUDE_CFLAGS)
 OBJCOPYFLAGS   = -O binary
 
+define PAD_TO_NEXT_16KB
+#  size=$$(wc -c < $1 2>/dev/null); \
+  size=$$(stat -c%s $1 2>/dev/null); \
+  block_size=16384; \
+  pad_size=$$((block_size - (size % block_size))); \
+  if [ $$pad_size -ne $$block_size ]; then \
+    dd if=/dev/zero bs=1 count=$$pad_size >> $1 2>/dev/null; \
+  fi
+endef
+
 # Pad to 12MB if matching, otherwise build to a necessary minimum of 1.004MB
 ifeq ($(NON_MATCHING),1)
   OBJCOPYFLAGS += --pad-to=0x101000 --gap-fill=0xFF
@@ -250,6 +260,7 @@ ASM_PROCESSOR      = $(PYTHON) $(ASM_PROCESSOR_DIR)/build.py
 ### Optimisation Overrides
 ####################### LIBULTRA #########################
 
+ifeq ($(COMPILER),ido)
 $(BUILD_DIR)/$(LIBULTRA_DIR)/%.c.o: OPT_FLAGS := -O2
 $(BUILD_DIR)/$(LIBULTRA_DIR)/src/audio/%.c.o: OPT_FLAGS := -O3
 $(BUILD_DIR)/$(LIBULTRA_DIR)/src/audio/mips1/%.c.o: OPT_FLAGS := -O2
@@ -280,7 +291,6 @@ $(BUILD_DIR)/$(LIBULTRA_DIR)/src/audio/env.c.o: MIPSISET := -mips1
 $(BUILD_DIR)/$(LIBULTRA_DIR)/%.c.o: CC_WARNINGS := -w
 $(BUILD_DIR)/$(LIBULTRA_DIR)/%.c.o: CC_CHECK := :
 
-ifeq ($(COMPILER),ido)
 # Allow dollar sign to be used in var names for this file alone
 # It allows us to return the current stack pointer
 $(BUILD_DIR)/$(SRC_DIR)/get_stack_pointer.c.o: OPT_FLAGS += -dollar
@@ -296,7 +306,8 @@ endif
 $(GCC_SAFE_FILES): CC := $(CROSS)gcc
 $(GCC_SAFE_FILES): CC_WARNINGS := 
 $(GCC_SAFE_FILES): MIPSISET := -mips3
-$(GCC_SAFE_FILES): CFLAGS := -DNDEBUG -DAVOID_UB -DNON_MATCHING -O2 $(INCLUDE_CFLAGS) $(C_DEFINES) \
+$(GCC_SAFE_FILES): OPT_FLAGS := -Os
+$(GCC_SAFE_FILES): CFLAGS := -DNDEBUG -DAVOID_UB -DNON_MATCHING $(INCLUDE_CFLAGS) $(C_DEFINES) \
 	-EB \
 	-march=vr4300 \
 	-mabi=32 \
@@ -433,7 +444,7 @@ endif
 
 build_assets:
 	$(info Building Assets...)
-	$(TOOLS_DIR)/dkr_assets_tool build -o $(ASSETS_OUTPUT) -dkrv $(REGION).$(VERSION) $(MODDED_ARG) >&2 || echo FAIL
+	@$(TOOLS_DIR)/dkr_assets_tool build -o $(ASSETS_OUTPUT) -dkrv $(REGION).$(VERSION) $(MODDED_ARG) >&2 || echo FAIL
 	$(V)$(PYTHON) $(TOOLS_DIR)/python/asset_table.py $(REGION) $(VERSION)
 
 ###############################
@@ -471,11 +482,6 @@ $(BUILD_DIR)/%.s.o: %.s | build_assets
 	$(call print,Assembling:,$<,$@)
 	$(V)$(AS) $(ASFLAGS) -MD $(BUILD_DIR)/$*.d -o $@ $< 
 
-# Specifically override the assets bin output location to match what splat output to the ld file.
-$(BUILD_DIR)/asm/assets/assets.s.o: asm/assets/assets.s | build_assets
-	$(call print,Assembling Assets:,$<,$@)
-	$(V)$(AS) $(ASFLAGS) -o $(BUILD_DIR)/assets/assets.bin.o $<
-
 # Specifically override the header file from what splat extracted to be replaced by what we have in the hasm folder
 $(BUILD_DIR)/asm/header.s.o: src/hasm/header.s | build_assets
 	$(call print,Assembling Header:,$<,$@)
@@ -497,6 +503,8 @@ $(BUILD_DIR)/%.bin.o: %.bin | build_assets
 $(TARGET).bin: $(TARGET).elf | build_assets
 	$(call print,Objcopy:,$<,$@)
 	$(V)$(OBJCOPY) $(OBJCOPYFLAGS) $< $@
+	$(OBJCOPY) --output-target=binary $< $@
+	$(call PAD_TO_NEXT_16KB, $@)
 
 $(TARGET).z64: $(TARGET).bin | build_assets
 	$(call print,CopyRom:,$<,$@)

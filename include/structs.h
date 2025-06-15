@@ -112,8 +112,8 @@ typedef struct TextureHeader {
       // 6 = IA4
       // 7 = CI4 (16 colors)
       // 8 = CI8 (64 colors)
-  /* 0x03 */ s8 unk3;
-  /* 0x04 */ s8 unk4;
+  /* 0x03 */ s8 posX; // X coordinate of the texture in the sprite's 2D space
+  /* 0x04 */ s8 posY; // Y coordinate of the texture in the sprite's 2D space
   /* 0x05 */ u8 numberOfInstances; // Always 1 in the ROM.
   /* 0x06 */ s16 flags;
       // 0x04 = Interlaced texture
@@ -151,19 +151,21 @@ typedef struct ShadowHeapProperties {
   s16 vtxCount; // Offset from the center of the screen.
 } ShadowHeapProperties;
 
+typedef struct SpriteAsset {
+    /* 0x00 */ s16 baseTextureId;
+    /* 0x02 */ s16 numberOfFrames; // 1 means static texture
+    /* 0x04 */ Vec2s anchor;  // 2D coordinates on the sprite used as the anchor point for positioning in 3D space
+    /* 0x08 */ s32 unused_field;
+    /* 0x0C */ u8 frameTexOffsets[1]; // actual size is numberOfFrames + 1
+} SpriteAsset;
+
 typedef struct Sprite {
-  /* 0x00 */ s16 baseTextureId;
-  /* 0x02 */ s16 numberOfFrames; // 1 means static texture
-  /* 0x04 */ s16 numberOfInstances;
-  /* 0x06 */ s16 drawFlags;
-  union {
-    /* 0x08 */ TextureHeader **frames;
-    /* 0x08 */ Gfx *gfx[1];
-  };
-  union {
-    /* 0x0C */ u8 val[1]; // Actual size varies.
-    /* 0x0C */ u8 *ptr[1]; // Display list?
-  } unkC;
+    /* 0x00 */ s16 numberOfFrames; // 1 means static texture
+    /* 0x02 */ s16 numberOfTextures;
+    /* 0x04 */ s16 numberOfInstances;
+    /* 0x06 */ s16 drawFlags;
+    /* 0x08 */ TextureHeader **textures;
+    /* 0x0C */ Gfx *frames[1]; // Actual size varies.
 } Sprite;
 
 /* Size: 0x20 bytes */
@@ -431,11 +433,8 @@ typedef struct LevelHeader {
   /* 0x0C */ u8 unkC[10];
   /* 0x16 */ u8 unk16[10];
   /* 0x20 */ s8 *AILevelTable;
-
   /* 0x24 */ u8 pad24[6];
-  /* 0x2A */ u8 unk2A;
-  /* 0x2B */ u8 pad2B[9];
-
+  /* 0x2A */ s8 unk2A[10];
   /* 0x34 */ s16 geometry;
   /* 0x36 */ s16 collectables; // Objects such as bananas, balloons, etc.
   /* 0x38 */ s16 skybox;
@@ -461,31 +460,32 @@ typedef struct LevelHeader {
   /* 0x52 */ u8 music;
   /* 0x53 */ u8 unk53;
   /* 0x54 */ u16 instruments;
-  /* 0x56 */ u8 unk56; // values between 2 and 8 (except 5 and 7), used to determine waves count?
+  // Waves
+  /* 0x56 */ u8 waveSubdivisons; // values between 2 and 8 (except 5 and 7), used to determine waves count?
   /* 0x57 */ u8 unk57; // possible values: 2,4,8,16,20, related to waves
-  /* 0x58 */ u8 unk58; // possible values: 1,2,4
-  /* 0x59 */ u8 unk59; // always 0?
-  /* 0x5A */ s16 unk5A; // values between 512 and 4608
-  /* 0x5C */ u8 unk5C; // possible values: 1,2,4
-  /* 0x5D */ u8 unk5D; // always 0?
-  /* 0x5E */ s16 unk5E; // values between 512 and 4963
-  /* 0x60 */ s16 unk60; // possible values: 120, 130, 157, 178, 187
+  /* 0x58 */ u8 waveSineStep0; // possible values: 1,2,4
+  /* 0x59 */ u8 waveSineBase0; // always 0?
+  /* 0x5A */ s16 waveSineHeight0; // values between 512 and 4608
+  /* 0x5C */ u8 waveSineStep1; // possible values: 1,2,4
+  /* 0x5D */ u8 waveSineBase1; // always 0?
+  /* 0x5E */ s16 waveSineHeight1; // values between 512 and 4963
+  /* 0x60 */ s16 waveSeedSize; // possible values: 120, 130, 157, 178, 187
   /* 0x62 */ s16 wavePower; // always 256
   /* 0x64 */ s16 unk64; // Always 153 except in Smokey Castle where it's 0 and the title screen where it's 256 (Some form of secondary power)
   /* 0x66 */ s16 unk66; // values between 908 and 2560
-  /* 0x68 */ s16 textureId; // always 62 except in the trophy race where it's 205
-  /* 0x6A */ u8 unk6A; // values between 1 and 6
-  /* 0x6B */ u8 unk6B; // values between 1 and 6
-  /* 0x6C */ s8 unk6C; // values between 0 and 4
-  /* 0x6D */ s8 unk6D; // values between 0 and 2 except in Hot Top Volcano where it's -2
-  /* 0x6E */ s16 unk6E; // possible values: 3,5
+  /* 0x68 */ s16 waveTexID; // always 62 except in the trophy race where it's 205
+  /* 0x6A */ u8 waveUVScaleX; // values between 1 and 6
+  /* 0x6B */ u8 waveUVScaleY; // values between 1 and 6
+  /* 0x6C */ s8 waveUVScrollX; // values between 0 and 4
+  /* 0x6D */ s8 waveUVScrollY; // values between 0 and 2 except in Hot Top Volcano where it's -2
+  /* 0x6E */ s16 waveViewDist; // possible values: 3,5
 
-    //func_800B8134 Seems to use this struct, and it differs on unk70 only.
+    //waves_init_header Seems to use this struct, and it differs on unk70 only.
   union {
   /* 0x70 */ LevelHeader_70 *unk70[1]; // unknown size, however only size of 1 matches
       struct {
-  /* 0x70 */ u8 darkVertexColours; // always 1 except in Hot Top Volcano where it's 0
-  /* 0x71 */ u8 unk71; // possible values: 0,1
+  /* 0x70 */ u8 wavesXlu; // always 1 except in Hot Top Volcano where it's 0
+  /* 0x71 */ u8 waveDoubleDensity; // possible values: 0,1
       };
   };
 
@@ -516,8 +516,8 @@ typedef struct LevelHeader {
   /* 0xB0 */ s16 unkB0;
   /* 0xB2 */ u8 unkB2;
   /* 0xB3 */ u8 voiceLimit;
-  /* 0xB4 */ ByteColour rgb;
-  /* 0xB7 */ u8 unkB7;
+  /* 0xB4 */ ByteColour voidColour;
+  /* 0xB7 */ u8 useVoid; // Disallow the player from looking through walls by drawing a blank screen behind walls.
   /* 0xB8 */ s8 bossRaceID;
   /* 0xB9 */ u8 unkB9;
   /* 0xBA */ s16 unkBA;
@@ -589,7 +589,7 @@ typedef struct TexCoords {
 #define BACKFACE_CULL 0x00
 #define BACKFACE_DRAW 0x40
 
-#define DKR_TRIANGLE(flags, ind0, ind1, ind2) ((flags << 24) | (ind0 << 16) | (ind1 << 8) | (ind2 << 0))
+#define DKR_TRIANGLE(flags, ind0, ind1, ind2) (((flags) << 24) | ((ind0) << 16) | ((ind1) << 8) | ((ind2) << 0))
 
 /* Size: 0x10 bytes */
 typedef struct Triangle {
@@ -611,24 +611,15 @@ typedef struct Triangle {
 /* Size: 12 bytes */
 typedef struct TriangleBatchInfo {
 /* 0x00 */ u8  textureIndex; // 0xFF = No texture
-/* 0x01 */ s8  unk1;
+/* 0x01 */ s8  vertOverride; // If used, will end a draw this many verts in, so it can do something mid mesh.
 /* 0x02 */ s16 verticesOffset;
 /* 0x04 */ s16 facesOffset;
-/* 0x06 */ u8  unk6; // 0xFF = vertex colors, otherwise use dynamic lighting normals (Objects only)
-/* 0x07 */ u8  unk7;
-/* 0x08 */ u32 flags;
-    // 0x00000002 = ???
-    // 0x00000008 = ???
-    // 0x00000010 = Depth write
-    // 0x00000100 = Hidden/Invisible geometry
-    // 0x00000200 = ??? Used in func_80060AC8
-    // 0x00000800 = ???
-    // 0x00002000 = ???
-    // 0x00008000 = Environment mapping
-    // 0x00010000 = Texture is animated
-    // 0x00040000 = Has pulsating light data.
-    // 0x70000000 = bits 28, 29, & 30 are some kind of index. Not used in any levels.
+/* 0x06 */ u8  miscData; // 0xFF = vertex colors, otherwise use dynamic lighting normals (Objects only)
+/* 0x07 */ u8  texOffset;
+/* 0x08 */ u32 flags; // See RenderFlags in textures_sprites.c
 } TriangleBatchInfo;
+
+#define BATCH_VTX_COL 0xFF
 
 /* Size: 8 bytes */
 typedef struct ObjectModel_44 {
@@ -636,15 +627,26 @@ typedef struct ObjectModel_44 {
 /* 0x00 */ s32 *anim;
 /* 0x00 */ u8 *animData;
     };
-/* 0x04 */ s32 unk4; // Number of frames in animation?
+/* 0x04 */ s32 animLength; // Animation length is the result of 16-frame length keyframes.
 } ObjectModel_44;
+
+typedef struct ObjectModel_C {
+    u16 unk0[4];
+} ObjectModel_C;
+
+typedef struct ObjectModel_10 {
+    f32 A;
+    f32 B;
+    f32 C;
+    f32 D;
+} ObjectModel_10;
 
 typedef struct ObjectModel {
     /* 0x00 */ TextureInfo* textures;
     /* 0x04 */ Vertex* vertices;
     /* 0x08 */ Triangle* triangles;
-    /* 0x0C */ s32* unkC;
-    /* 0x10 */ s32* unk10;
+    /* 0x0C */ ObjectModel_C *unkC;
+    /* 0x10 */ ObjectModel_10 *unk10;
     /* 0x14 */ s16 *unk14;
     /* 0x18 */ s16 unk18;
     /* 0x1A */ s16 unk1A;
@@ -662,13 +664,13 @@ typedef struct ObjectModel {
     /* 0x34 */ u8 pad34[4];
     /* 0x38 */ TriangleBatchInfo* batches;
     /* 0x3C */ f32 unk3C;
-    /* 0x40 */ s32* unk40;
+    /* 0x40 */ Vec3s* unk40;
     /* 0x44 */ ObjectModel_44* animations;
     /* 0x48 */ s16 numberOfAnimations;
     /* 0x4A */ s16 unk4A;
     /* 0x4C */ s32 *unk4C;
     /* 0x50 */ s16 unk50;
-    /* 0x52 */ s16 unk52;
+    /* 0x52 */ s16 texOffsetUpdateRate; // Set to the current updaterate for the first model.
     /* 0x54 */ u8 pad[0x2C];
 } ObjectModel;      
 
@@ -687,7 +689,10 @@ typedef struct LevelModelSegment {
 /* 0x0C */ TriangleBatchInfo *batches;
 /* 0x10 */ s16 *unk10;
 /* 0x14 */ CollisionNode *unk14;
+union {
 /* 0x18 */ f32 *unk18;
+/* 0x18 */ Vec4f *unk18_vec4f; // Used for objects, not levels.
+};
 /* 0x1C */ s16 numberOfVertices;
 /* 0x1E */ s16 numberOfTriangles;
 /* 0x20 */ s16 numberOfBatches;
@@ -796,8 +801,8 @@ typedef struct ObjectHeader {
   /* 0x1C */ ObjHeaderParticleEntry *objectParticles;
              s32 pad20;
   /* 0x24 */ ObjectHeader24 *unk24;
-  /* 0x28 */ f32 shadeBrightness;
-  /* 0x2C */ f32 shadeAmbient;
+  /* 0x28 */ f32 shadeAmbient;
+  /* 0x2C */ f32 shadeDiffuse;
   /* 0x30 */ u16 flags;
   /* 0x32 */ s16 shadowGroup;
   /* 0x34 */ s16 unk34;
@@ -832,9 +837,13 @@ typedef struct ObjectHeader {
   /* 0x5E */ u8 pad5E[0x2];
   /* 0x60 */ char internalName[16];
   /* 0x70 */ u8 unk70;
-  /* 0x71 */ u8 unk71;
+  /* 0x71 */ u8 directionalPointLighting; // If enabled, the model is lit from the direction of the light source; if disabled, lighting is applied evenly from all sides
   /* 0x72 */ u8 unk72;
-             u8 pad73[0x5];
+  /* 0x73 */ u8 unk73;
+  /* 0x74 */ s8 unk74;
+  /* 0x75 */ s8 unk75;
+  /* 0x76 */ u8 unk76;
+  /* 0x77 */ u8 unk77;
 } ObjectHeader;
 
 typedef struct ObjectInteraction {
@@ -873,40 +882,40 @@ typedef struct WaterEffect {
 } WaterEffect;
 
 typedef struct ShadeProperties {
-    f32 unk0;
-    u8 unk4;
-    u8 unk5;
-    u8 unk6;
-    u8 unk7;
-    s16 unk8;
-    s16 unkA;
-    s16 unkC;
-    u8 unkE;
-    u8 unkF;
-    u8 unk10;
-    u8 unk11;
-    s16 unk12;
-    s16 unk14;
-    s16 unk16;
-    u8 unk18;
-    u8 unk19;
-    u8 unk1A;
-    u8 unk1B;
-    s16 unk1C;
-    s16 unk1E;
-    s16 unk20;
-    s16 unk22;
-    s16 unk24;
-    s16 unk26;
-    f32 brightness;
-    f32 ambient;
+    /* 0x00 */ f32 unk0;
+    /* 0x04 */ u8 lightR;
+    /* 0x05 */ u8 lightG;
+    /* 0x06 */ u8 lightB;
+    /* 0x07 */ u8 lightIntensity;
+    /* 0x08 */ s16 lightDirX;
+    /* 0x0A */ s16 lightDirY;
+    /* 0x0C */ s16 lightDirZ;
+    /* 0x0E */ u8 secondaryLightR;
+    /* 0x0F */ u8 secondaryLightG;
+    /* 0x10 */ u8 secondaryLightB;
+    /* 0x11 */ u8 secondaryLightIntensity;
+    /* 0x12 */ s16 secondaryLightDirX;
+    /* 0x14 */ s16 secondaryLightDirY;
+    /* 0x16 */ s16 secondaryLightDirZ;
+    /* 0x18 */ u8 shadowR;
+    /* 0x19 */ u8 shadowG;
+    /* 0x1A */ u8 shadowB;
+    /* 0x1B */ u8 unk1B;
+    /* 0x1C */ s16 shadowDirX;
+    /* 0x1E */ s16 shadowDirY;
+    /* 0x20 */ s16 shadowDirZ;
+    /* 0x22 */ s16 unk22;
+    /* 0x24 */ s16 unk24;
+    /* 0x26 */ s16 unk26;
+    /* 0x28 */ f32 ambient;
+    /* 0x2C */ f32 diffuse;
 } ShadeProperties;
 
 typedef f32 FakeHalfMatrix[2][4];
 typedef struct Object_5C {
     union {
-  /* 0x0000 */ Matrix matrices[4];
-  /* 0x0000 */ FakeHalfMatrix _matrices[8]; // This is a hack. The Matrix[4] is the real one.
+  /* 0x0000 */ MtxF matrices[4];
+  /* 0x0000 */ FakeHalfMatrix _matrices[8]; // This is a hack. The MtxF[4] is the real one.
  };
   /* 0x0100 */ void *unk100;
   /* 0x0104 */ u8 unk104;
@@ -1075,18 +1084,18 @@ typedef struct Object_Boost_Inner {
 } Object_Boost_Inner;
 
 typedef struct Object_Boost {
-  Object_Boost_Inner unk0;
-  Object_Boost_Inner unk24;
-  Object_Boost_Inner unk48;
-  s16 unk6C;
-  s16 unk6E;
-  u8 unk70;
-  u8 unk71;
-  u8 unk72;
-  s8 unk73;
-  f32 unk74;
-  Sprite *unk78;
-  TextureHeader *unk7C;
+    /* 0x00 */ Object_Boost_Inner carBoostData;
+    /* 0x24 */ Object_Boost_Inner hovercraftBoostData;
+    /* 0x48 */ Object_Boost_Inner flyingBoostData;
+    /* 0x6C */ s16 spriteId;
+    /* 0x6E */ s16 textureId;
+    /* 0x70 */ u8 unk70;
+    /* 0x71 */ u8 unk71;
+    /* 0x72 */ u8 unk72;
+    /* 0x73 */ s8 unk73;
+    /* 0x74 */ f32 unk74;
+    /* 0x78 */ Sprite *sprite;
+    /* 0x7C */ TextureHeader *tex;
 } Object_Boost;
 
 typedef struct Object_EffectBox {
@@ -1514,6 +1523,12 @@ typedef struct Object_MidiFadePoint {
   /* 0x1C */ u8 unk1C;
 } Object_MidiFadePoint;
 
+typedef struct Object_MidiChannelSet {
+    s16 unk0;
+    u8 unk2;
+    u8 unk3;
+} Object_MidiChannelSet;
+
 typedef struct Object_PosArrow {
   /* 0x000 */ s16 unk0;
   /* 0x004 */ u8 pad4[0x14E];
@@ -1534,12 +1549,17 @@ typedef struct Object_FogChanger {
 typedef struct Object_NPC {
    /* 0x00 */ f32 unk0;
    /* 0x04 */ f32 animFrameF;
-   /* 0x08 */ s32 unk8;
-   /* 0x0C */ s8 nodeBack1; // One node backwards
-   /* 0x0D */ u8 nodeCurrent; // Intended target node
-   /* 0x0E */ u8 nodeBack2; // Two nodes backward
-   /* 0x0F */ u8 nodeForward1; // One node forward
-   /* 0x10 */ u8 nodeForward2; // Two nodes forward
+   /* 0x08 */ f32 unk8;
+   union {
+    /* 0x0C */ u8 nodeData[5];
+    struct {
+        /* 0x0C */ s8 nodeBack1; // One node backwards
+        /* 0x0D */ u8 nodeCurrent; // Intended target node
+        /* 0x0E */ u8 nodeBack2; // Two nodes backward
+        /* 0x0F */ u8 nodeForward1; // One node forward
+        /* 0x10 */ u8 nodeForward2; // Two nodes forward
+    };
+   };
    /* 0x11 */ u8 fogR;
    /* 0x12 */ u8 fogG;
    /* 0x13 */ u8 fogB;
@@ -1587,13 +1607,13 @@ typedef struct Object_Log {
     /* 0x06 */ u16 unk6;
     /* 0x08 */ u16 unk8;
     /* 0x0A */ u16 unkA;
-    /* 0x0C */ u16 unkC;
+    /* 0x0C */ u16 blockID;
     /* 0x0E */ s8 unkE[2];
 } Object_Log;
 
 typedef struct Object_Fireball_Octoweapon {
     u8 pad0[0x1C];
-    SoundHandle soundMask;
+    struct AudioPoint *soundMask;
 } Object_Fireball_Octoweapon;
 
 typedef struct Object_AnimatedObject {
@@ -1660,6 +1680,7 @@ typedef struct Object_CharacterSelect {
 
 typedef struct Object_64 {
     union {
+        struct Object *obj;
         Object_Laser laser;
         Object_TrophyCabinet trophy_cabinet;
         Object_Animator animator;
@@ -1690,6 +1711,7 @@ typedef struct Object_64 {
         Object_Audio audio;
         Object_MidiFade midi_fade;
         Object_MidiFadePoint midi_fade_point;
+        Object_MidiChannelSet midi_channel_set;
         Object_PosArrow pos_arrow;
         Object_Banana banana;
         Object_FogChanger fog_changer;
@@ -1718,6 +1740,7 @@ typedef struct Object_68_38 {
 typedef struct Object_68 {
   /* 0x00 */ union {
       ObjectModel *objModel;
+      Sprite *sprite;
       TextureHeader *texHeader;
   };
   /* 0x04 */ Vertex *vertices[3];
@@ -1761,7 +1784,10 @@ typedef struct unk800B2260_C {
 /* Size: 0x018 bytes */
 typedef struct ObjectTransform {
   /* 0x0000 */ Vec3s rotation;
+  union {
   /* 0x0006 */ s16 flags;
+  /* 0x0006 */ s16 spriteID;
+  };
   /* 0x0008 */ f32 scale;
   /* 0x000C */ f32 x_position;
   /* 0x0010 */ f32 y_position;
@@ -1838,7 +1864,7 @@ typedef struct Object {
   /* 0x0064 */ Object_64 *unk64; //player + 0x98
   /* 0x0068 */ Object_68 **unk68; //player + 0x80
   /* 0x006C */ struct ParticleEmitter *particleEmitter; //player + 0x370
-  /* 0x0070 */ Object_LightData **lightData;
+  /* 0x0070 */ struct ObjectLight **lightData;
   /* 0x0074 */ u32 particleEmittersEnabled;
   /* 0x0078 */ ObjProperties properties;
   /* 0x0080 */ void *unk80;

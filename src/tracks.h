@@ -7,12 +7,13 @@
 #include "racer.h"
 #include "fade_transition.h"
 
+//#define STREAM_TEXTURES
 
 typedef struct SortBuffer {
     Triangle *tri;
     Vertex *vtx;
     TextureHeader *material;
-    MatrixS *mtx;
+    Mtx *mtx;
     u32 flags;
     s32 texOffset;
     s16 triCount;
@@ -26,48 +27,21 @@ typedef struct SortBuffer {
     u8 matType;
 } SortBuffer;
 
-extern s16 gSortBufCount;
-extern SortBuffer *gSortBuffer;
-void sortbuffer_find(SortBuffer *b);
+enum SortBufferIDs {
+    SORT_OPA,
+    SORT_DECAL,
+    SORT_XLU,
+
+    SORT_ENTRIES
+};
+
+extern s16 gSortBufCount[SORT_ENTRIES];
+extern SortBuffer *gSortBuffer[SORT_ENTRIES];
+void sortbuffer_find(SortBuffer *b, s32 index);
+void sortbuffer_init(void);
 
 #define LOCAL_OFFSET_TO_RAM_ADDRESS(type, ptr) \
     ptr = (type)((s32)((u8*)ptr) + (s32)((u8*)mdl))
-
-enum TriangleBatchFlags {
-    BATCH_FLAGS_NONE = 0,
-    BATCH_FLAGS_UNK00000001 = (1 << 0),
-    BATCH_FLAGS_UNK00000002 = (1 << 1),
-    BATCH_FLAGS_UNK00000004 = (1 << 2),
-    BATCH_FLAGS_UNK00000008 = (1 << 3),
-    BATCH_FLAGS_DEPTH_WRITE = (1 << 4),
-    BATCH_FLAGS_UNK00000020 = (1 << 5),
-    BATCH_FLAGS_UNK00000040 = (1 << 6),
-    BATCH_FLAGS_UNK00000080 = (1 << 7),
-    BATCH_FLAGS_HIDDEN = (1 << 8),
-    BATCH_FLAGS_UNK00000200 = (1 << 9),
-    BATCH_FLAGS_UNK00000400 = (1 << 10),
-    BATCH_FLAGS_RECEIVE_SHADOWS = (1 << 11),
-    BATCH_FLAGS_UNK00001000 = (1 << 12),
-    BATCH_FLAGS_WATER =             (1 << 13),
-    BATCH_FLAGS_FORCE_NO_SHADOWS =  (1 << 14),
-    BATCH_FLAGS_ENVMAP = (1 << 15),
-    BATCH_FLAGS_TEXTURE_ANIM = (1 << 16),
-    BATCH_FLAGS_UNK00020000 = (1 << 17),
-    BATCH_FLAGS_PULSATING_LIGHTS = (1 << 18),
-    BATCH_FLAGS_UNK00080000 = (1 << 19),
-    BATCH_FLAGS_UNK00100000 = (1 << 20),
-    BATCH_FLAGS_UNK00200000 = (1 << 21),
-    BATCH_FLAGS_UNK00400000 = (1 << 22),
-    BATCH_FLAGS_UNK00800000 = (1 << 23),
-    BATCH_FLAGS_UNK01000000 = (1 << 24),
-    BATCH_FLAGS_UNK02000000 = (1 << 25),
-    BATCH_FLAGS_UNK04000000 = (1 << 26),
-    BATCH_FLAGS_UNK08000000 = (1 << 27),
-    BATCH_FLAGS_UNK10000000 = (1 << 28),
-    BATCH_FLAGS_UNK20000000 = (1 << 29),
-    BATCH_FLAGS_UNK40000000 = (1 << 30),
-    BATCH_FLAGS_UNK80000000 = (1 << 31),
-};
 
 enum ShadowUpdate {
 	SHADOW_NONE,
@@ -77,40 +51,43 @@ enum ShadowUpdate {
 
 /* Size: 0x10 bytes */
 typedef struct unk8011C8B8 {
-    f32 unk0;
-    f32 unk4;
-    f32 unk8;
-    s16 unkC;
-    s16 unkE;
+    /* 0x00 */ f32 x;
+    /* 0x04 */ f32 y;
+    /* 0x08 */ f32 z;
+    union {
+        /* 0x0C */ f32 w;
+        struct {
+            /* 0x0C */ s16 unkC;
+            /* 0x0E */ s16 unkE;
+        } s;
+    } unkC_union;
 } unk8011C8B8;
 
 /* Size: 0x10 bytes */
 typedef struct unk8011B120 {
-    f32 x;
-    f32 y;
-    f32 z;
-    unk8011C8B8 *unkC;
+    /* 0x00 */ f32 x;
+    /* 0x04 */ f32 y;
+    /* 0x08 */ f32 z;
+    /* 0x0C */ unk8011C8B8 *unkC;
 } unk8011B120;
 
 /* Size: 0x20 bytes */
 typedef struct unk8011B330 {
-    f32 x;
-    f32 y;
-    f32 z;
-    unk8011C8B8 *unkC;
-    f32 unk10;
-    f32 unk14;
-    f32 unk18;
-    f32 unk1C;
+    /* 0x00 */ f32 x;
+    /* 0x04 */ f32 y;
+    /* 0x08 */ f32 z;
+    /* 0x0C */ unk8011C8B8 *unkC;
+    /* 0x10 */ f32 unk10;
+    /* 0x14 */ f32 unk14;
+    /* 0x18 */ f32 unk18;
+    /* 0x1C */ f32 unk1C;
 } unk8011B330;
 
 /* Size: 0x10 bytes */
-typedef struct unk8011D474 {
-    Triangle *unk0;
-    Triangle *unk4;
-    Vertex *unk8;
-    Vertex *unkC;
-} unk8011D474;
+typedef struct VoidMesh {
+    Triangle *tris[2];
+    Vertex *verts[2];
+} VoidMesh;
 
 typedef struct unk8011C238 {
   u8 unk0;
@@ -130,16 +107,16 @@ typedef struct unk8011D478 {
 
 /* Size: 0x14 bytes */
 typedef struct unk8011C3B8 {
-    s16 unk0;
-    s16 unk2;
-    s16 unk4;
-    s16 unk6;
-    s16 unk8;
-    s16 unkA;
-    s16 unkC;
-    s16 unkE;
-    s16 unk10;
-    s16 unk12;
+ /* 0x00 */ s16 x1;
+ /* 0x02 */ s16 y1;
+ /* 0x04 */ s16 z1;
+ /* 0x06 */ s16 x2;
+ /* 0x08 */ s16 y2;
+ /* 0x0A */ s16 z2;
+ /* 0x0C */ s16 x3;
+ /* 0x0E */ s16 y3;
+ /* 0x10 */ s16 z3;
+ /* 0x12 */ s16 unk12;
 } unk8011C3B8;
 
 // In this struct, data is rightshifted 16 bytes, so make the smooth transition more precise.
@@ -190,7 +167,7 @@ enum TrackAA {
 extern s8 gAntiAliasing;
 
 s32 set_scene_viewport_num(s32 numPorts);
-void func_800257D0(void);
+void void_free(void);
 void spawn_skydome(s32 objectID);
 void set_skydome_visbility(s32 renderSky);
 void render_skydome(void);
@@ -226,7 +203,7 @@ void obj_loop_fogchanger(Object* obj);
 void initialise_player_viewport_vars(s32 updateRate);
 s32 get_wave_properties(f32 yPos, f32 *waterHeight, Vec3f *rotation);
 void render_level_segment(s32 segmentId, s32 nonOpaque);
-void render_scene(Gfx** dList, MatrixS** mtx, Vertex** vtx, Triangle** tris, s32 updateRate);
+void render_scene(Gfx** dList, Mtx** mtx, Vertex** vtx, Triangle** tris, s32 updateRate);
 void set_fog(s32 fogIdx, s16 near, s16 far, u8 red, u8 green, u8 blue);
 void slowly_change_fog(s32 fogIdx, s32 red, s32 green, s32 blue, s32 near, s32 far, s32 switchTimer);
 s32 func_8002FD74(f32 x0, f32 z0, f32 x1, f32 x2, s32 count, Vec4f *arg5);
@@ -239,7 +216,7 @@ TextureHeader *track_tex_seek(s32 texID);
 void track_tex_cycle(s32 updateRate);
 
 void free_track(void);
-void func_8002581C(u8 *segmentIds, s32 numberOfSegments, s32 viewportIndex);
+void void_check(u8 *segmentIds, s32 numberOfSegments, s32 viewportIndex);
 s32 func_80027568(void);
 s32 func_8002CC30(LevelModelSegment*);
 s32 func_8002B0F4(s32, f32 xIn, f32 zIn, WaterProperties***); // Definitely not triple pointer, but easiest way to fix warns.
@@ -248,8 +225,8 @@ void func_80028050(void);
 void initialise_player_viewport_vars(s32);
 void func_8002A31C(void);
 void update_colour_cycle(LevelHeader_70 *arg0, s32 updateRate);
-void func_800B9C18(s32);
-void func_800BA8E4(Gfx**, MatrixS**, s32);
+void waves_update(s32);
+void waves_render(Gfx**, Mtx**, s32);
 void func_8002DE30(Object*);
 void shadow_generate(Object*, s32);
 void func_8002E904(LevelModelSegment *, s32, s32 arg2);
@@ -259,11 +236,11 @@ void func_8002F440(void);
 f32 func_8002FA64(void);
 s32 func_8002BAB0(s32 levelSegmentIndex, f32 xIn, f32 zIn, f32 *yOut);
 void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, u32 entranceId, u32 collectables, u32 arg6);
-void func_800B82B4(LevelModel *, LevelHeader *, s32);
-void func_80025510(s32);
-void func_8002C0C4(s32 modelId);
+void waves_init(LevelModel *, LevelHeader *, s32);
+void void_init(s32);
+void generate_track(s32 modelId);
 void func_800304C8(unk8011C8B8 *arg0);
-s32 func_80027184(f32 *arg0, f32 *arg1, f32 arg2, f32 arg3);
+s32 void_generate_primitive(f32 *arg0, f32 *arg1, f32 arg2, f32 arg3);
 s32 func_8002FF6C(s32, unk8011C8B8 *, s32, Vec2f *);
 s32 func_800BDC80(s32, unk8011C3B8 *, unk8011C8B8 *, f32, f32, f32, f32);
 

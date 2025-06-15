@@ -93,6 +93,11 @@ void debug_printf(const char* message, ...) {
 }
 
 void init_usb_thread(void) {
+
+    if (__osBbIsBb) {
+        return;
+    }
+
     usbState = usb_initialize();
     RETURN_IF_USB_NOT_VALID();
     cartType = usb_getcart();

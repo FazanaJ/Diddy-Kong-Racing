@@ -73,16 +73,18 @@ enum RenderFlags {
     RENDER_CLAMP_X =            (1 << 6), // Prevent texture repeating on the X axis.
     RENDER_CLAMP_Y =            (1 << 7), // Prevent texture repeating on the Y axis.
     RENDER_Z_UPDATE =           (1 << 8), // Updates the depth buffer when rendering.
+    RENDER_HIDDEN =             (1 << 8), // Shares a spot with Z update, as that's generally a given with level geometry.
     RENDER_PRESERVE_COVERAGE =  (1 << 9), // Coverage is used to help smooth the image. This won't write over existing coverage values.
+    RENDER_UNK_200 =            (1 << 9), // Shares a slot with coverage, being normal geometry doesn't care about coverage.
     RENDER_LINE_SWAP =          (1 << 10), // Texture has swapped lines, for speed. Makes the load process slightly different.
     RENDER_DECAL =              (1 << 11), // Projects a surface on existing geometry, taking precedent to not zfight.
     RENDER_UNK_0001000 =        (1 << 12),
-    RENDER_UNK_0002000 =        (1 << 13),
-    RENDER_UNK_0004000 =        (1 << 14),
-    RENDER_UNK_0008000 =        (1 << 15),
-    RENDER_UNK_0010000 =        (1 << 16),
+    RENDER_WATER =              (1 << 13), // Marks geometry as water. Not rendered if the block is utilising wavegen.
+    RENDER_NO_SHADOW =          (1 << 14), // Do not render shadows on this geometry.
+    RENDER_ENVMAP =             (1 << 15), // Calculate envmaps on this geometry.
+    RENDER_TEX_ANIM =           (1 << 16), // Animated textures.
     RENDER_UNK_0020000 =        (1 << 17),
-    RENDER_UNK_0040000 =        (1 << 18),
+    RENDER_PULSING_LIGHTS =     (1 << 18), // Use a different material to apply a pulsating colour effect.
     RENDER_UNK_0080000 =        (1 << 19),
     RENDER_UNK_0100000 =        (1 << 20),
     RENDER_UNK_0200000 =        (1 << 21),
@@ -92,7 +94,11 @@ enum RenderFlags {
     RENDER_UNK_2000000 =        (1 << 25),
     RENDER_UNK_4000000 =        (1 << 26),
     RENDER_VTX_ALPHA   =        (1 << 27),  // Allows use of vertex alpha, disabling fog if necessary.
-    RENDER_ALL         =        0xFFFFFFFF
+    RENDER_UNK_10000000 =       (1 << 28),
+    RENDER_UNK_20000000 =       (1 << 29),
+    RENDER_UNK_40000000 =       (1 << 30),
+    RENDER_UNK_80000000 =       (1 << 31),
+    RENDER_ALL =                0xFFFFFFFF
 };
 
 typedef enum  TextureRenderModes {
@@ -164,8 +170,8 @@ s32 tex_get_table_3D(void);
 s32 sprite_table_size(void);
 void set_texture_colour_tag(s32 tagID);
 void rendermode_reset(Gfx **dList);
-void tex_primcolour_on(void);
-void tex_primcolour_off(void);
+void directional_lighting_on(void);
+void directional_lighting_off(void);
 void material_set_no_tex_offset(Gfx **dList, TextureHeader *texhead, u32 flags);
 void sprite_opaque(s32 setting);
 s32 tex_palette_id(s16 paletteID);
@@ -174,7 +180,6 @@ void sprite_free(Sprite *sprite);
 void tex_free(TextureHeader *tex);
 void material_load_simple(Gfx **dList, s32 flags);
 s32 get_tile_bytes(s32 type, s32 siz);
-Sprite *tex_load_sprite(s32 spriteID, s32 arg1);
 
 // There might be a file boundary here.
 void tex_animate_texture(TextureHeader *texture, u32 *triangleBatchInfoFlags, s32 *arg2, s32 updateRate);
@@ -182,17 +187,18 @@ void func_8007F1E8(LevelHeader_70 *arg0);
 void init_pulsating_light_data(PulsatingLightData *data);
 void update_pulsating_light_data(PulsatingLightData *data, s32 timeDelta);
 TextureHeader *set_animated_texture_header(TextureHeader *texHead, s32 offset);
-TextureHeader *load_texture(s32 arg0); // Non Matching
-s32 tex_asset_size(s32 id);  // Non Matching
-s32 tex_cache_asset_id(s32 cacheID); // Non Matching
-s32 load_sprite_info(s32 spriteIndex, s32 *numOfInstancesOut, s32 *unkOut, s32 *numFramesOut, s32 *formatOut,
-                     s32 *sizeOut);                                                   // Non Matching
-void gfx_init_basic_xlu(Gfx **dList, u32 index, u32 primitiveColor, u32 environmentColor); // Non Matching
-void func_8007CA68(s32 spriteID, s32 arg1, s32 *arg2, s32 *arg3, s32 *arg4); // Non Matching
-void tex_init_textures(void); // Non Matching
+TextureHeader *load_texture(s32 id);
+s32 tex_asset_size(s32 id); 
+s32 tex_cache_asset_id(s32 cacheID);
+s32 load_sprite_info(s32 spriteIndex, s32 *anchorXOut, s32 *anchorYOut, s32 *numFramesOut, s32 *formatOut,
+                     s32 *sizeOut);
+void gfx_init_basic_xlu(Gfx **dList, u32 index, u32 primitiveColor, u32 environmentColor);
+void func_8007CA68(s32 arg0, s32 arg1, s32 *arg2, s32 *arg3, s32 *arg4);
+Sprite *tex_load_sprite(s32 spriteID, s32 arg1);
+void tex_init_textures(void);
 void material_set_blinking_lights(Gfx **dList, TextureHeader *texture_list, u32 flags,
-                                  s32 texture_index);        // Non Matching
-void material_init(TextureHeader *tex, Gfx *_dList);   // Non Matching
-void func_8007CDC0(Sprite *sprite1, Sprite *sprite2, s32 arg2); // Non Matching
+                                  s32 texture_index);       
+void material_init(TextureHeader *tex, Gfx *_dList);
+void sprite_init_frame(SpriteAsset *spriteAsset, Sprite *sprite, s32 frameId);
 
 #endif

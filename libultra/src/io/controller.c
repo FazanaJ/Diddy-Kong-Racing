@@ -124,11 +124,13 @@ s32 osContSetMask(u8 ch) {
     s32 ret = 0;
     s32 i;
 
-#ifdef BBPLAYER
-    __osControllerMask = (CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4);
-    __osMaxControllers = MAXCONTROLLERS;
-    return ret;
-#else
+    if (__osBbIsBb) {
+
+        __osControllerMask = (CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4);
+        __osMaxControllers = MAXCONTROLLERS;
+        return ret;
+    }
+    
     __osSiGetAccess();
 
     if ((ch == 0) || (ch > (CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4))) {
@@ -147,5 +149,4 @@ s32 osContSetMask(u8 ch) {
     __osContLastCmd = CONT_CMD_END;
     __osSiRelAccess();
     return ret;
-#endif
 }

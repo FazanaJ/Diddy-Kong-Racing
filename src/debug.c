@@ -27,11 +27,11 @@ typedef char *outfun(char *dst, const char *src, size_t count);
 void debug_log(s32 logLevel, char *str, ...) {
 }
 
-void debug_dump_hex(u8 *var, s32 size) {
+void debug_dump_hex(u8 *var, s32 size, s32 lineWidth) {
     for (int i = 0; i < size; i++) {
         debug_printf("0x%02X, ", (u32) var[i]);
 
-        if (i && ((i + 1) % 8)== 0) {
+        if (i && ((i + 1) % lineWidth)== 0) {
             debug_printf("\n");
         }
     }
@@ -742,6 +742,86 @@ char *sPuppyprintMemColours[] = {
     MEMSTRINGS
 };
 
+char *debug_asset_lookup(MemoryPoolSlot *slot) {
+    s32 i;
+    s32 texID;
+    s32 tag = slot->colourTag;
+    char *str;
+    TextureHeader *texHeader;
+    Sprite *sprite;
+    ObjectHeader *objHeader;
+    Object *obj;
+    ObjectModel *objModel;
+    Object_68 *objGfx;
+    ObjectModel_44 *objAnim;
+
+    str = " ";
+
+    switch (tag) {
+        case PP_RAM_OBJHEADERS:
+            objHeader = (ObjectHeader *) slot->data;
+            return objHeader->internalName;
+        case PP_RAM_OBJECTS:
+            obj = (Object *) slot->data;
+            return obj->segment.header->internalName;
+        default:
+            return str;
+        case PP_RAM_OBJMDL:
+            // Try object models
+            objModel = (ObjectModel *) slot->data;
+            for (i = 0; i < gModelCacheCount; i++) {
+                if ((ObjectModel *) gModelCache[(i << 1) + 1] == objModel) {
+                    texID = gModelCache[i << 1];
+                }
+            }
+            if (texID != -200) {
+                return assettable_name(ASSET_OBJECT_MODELS, texID);
+            }
+            return str;
+        case PP_RAM_LIME:
+            // Okay, lets try for a sprite?
+            sprite = (Sprite *) slot->data;
+            for (i = 0; i < gSpriteCacheCount; i++) {
+                if ((Sprite *) gSpriteCache[(i << 1) + 1] == sprite) {
+                    texID = gSpriteCache[i << 1];
+                }
+            }
+            if (texID != -200) {
+                return assettable_name(ASSET_SPRITES, texID);
+            }
+            return str;
+        case PP_RAM_OBJTEX:
+        case PP_RAM_LEVELTEX:
+        case PP_RAM_MAGENTA:
+            texHeader = (TextureHeader *) slot->data;
+            texID = -200;
+            // First see if it's a texture
+            for (i = 0; i < gNumberOfLoadedTextures; i++) {
+                if ((TextureHeader *) gTextureCache[(i << 1) + 1] == texHeader) {
+                    texID = gTextureCache[i << 1];
+                }
+            }
+            if (texID != -200) {
+                if (texID & 0x8000) {
+                    return assettable_name(ASSET_TEXTURES_3D, texID & 0x7FFF);
+                } else {
+                    return assettable_name(ASSET_TEXTURES_2D, texID);
+                }
+            }
+            // Okay, lets try for a sprite?
+            sprite = (Sprite *) slot->data;
+            for (i = 0; i < gSpriteCacheCount; i++) {
+                if ((Sprite *) gSpriteCache[(i << 1) + 1] == sprite) {
+                    texID = gSpriteCache[i << 1];
+                }
+            }
+            if (texID != -200) {
+                return assettable_name(ASSET_SPRITES, texID);
+            }
+            return str;
+    }
+}
+
 void debug_ram_dump(void) {
     int flags;
     int nextIndex;
@@ -766,8 +846,8 @@ void debug_ram_dump(void) {
                 debug_printf("Pool: %d Idx: %d   \t Free Slot\t\t\t\t\t Size: 0x%X\t (%2.3fKiB) \t %2.2f%%\t Addr: %X\n", i, slot->index, slot->size, (double) slot->size / 1024.0, 
                 (double) ((f32) slot->size / (f32) ramTotal) * 100.0, slot->data);
             } else {
-                debug_printf("Pool: %d Idx: %d   \t %s\t Tag: %s \t\t Size: 0x%X\t (%2.3fKiB) \t %2.2f%% \t Addr: %X\n", i, slot->index, sMemDumpStrings[flags], 
-                sPuppyprintMemColours[colourTag], slot->size, (double) slot->size / 1024.0, (double) ((f32) slot->size / (f32) ramTotal) * 100.0, slot->data);
+                debug_printf("Pool: %d Idx: %d   \t %s\t Tag: %s \t\t Size: 0x%X\t (%2.3fKiB) \t %2.2f%% \t Addr: %X\t Name: %s\n", i, slot->index, sMemDumpStrings[flags], 
+                sPuppyprintMemColours[colourTag], slot->size, (double) slot->size / 1024.0, (double) ((f32) slot->size / (f32) ramTotal) * 100.0, slot->data, debug_asset_lookup(slot));
             }
 
             skip:
@@ -876,6 +956,9 @@ void debug_update(s32 updateRate) {
                 } else if (inputHeld & D_JPAD) {
                     d->pageScroll += 2 * updateRate;
                 }
+                if (inputPressed & R_JPAD) {
+                    debug_ram_dump();
+                }
                 if (d->pageScroll > (PP_RAM_TOTAL * 10) - (SCREEN_HEIGHT - 50) + 4) {
                     d->pageScroll = (PP_RAM_TOTAL * 10) - (SCREEN_HEIGHT - 50) + 4;
                 }
@@ -899,10 +982,6 @@ void debug_update(s32 updateRate) {
             d->pageScroll = 0;
             debug_pause(d);
         }
-    }
-
-    if (inputPressed & R_JPAD) {
-        //debug_ram_dump();
     }
 
     d->cpuTotal = 0;

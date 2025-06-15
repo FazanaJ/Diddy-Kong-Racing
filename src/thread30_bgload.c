@@ -25,13 +25,6 @@ u64 *gThread30Stack;
 /*****************************/
 
 /**
- * Initalizes and starts thread30()
- */
-void bgload_init(void) {
-    osCreateMesgQueue(&gThread30MesgQueue, gThread30Message, ARRAY_COUNT(gThread30Message));
-}
-
-/**
  * Stop thread30()
  * Official Name: amStop
  */
@@ -81,6 +74,7 @@ s32 bgload_start(s32 levelId, s32 playerCount, s32 cutsceneId) {
         gThread30CutsceneIdToLoad = cutsceneId;
         gThread30Players = playerCount;
         gThread30NeedToLoadLevel = TRUE;
+        osCreateMesgQueue(&gThread30MesgQueue, gThread30Message, ARRAY_COUNT(gThread30Message));
         gThread30Stack = mempool_alloc_safe(STACK_BGLOAD, PP_RAM_STACK);
         gThread30 = mempool_alloc_safe(sizeof(OSThread), PP_RAM_STACK);
         osCreateThread(gThread30, 30, &thread30_bgload, NULL, gThread30Stack + STACKSIZE(STACK_BGLOAD), 8);

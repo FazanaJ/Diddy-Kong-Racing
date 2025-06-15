@@ -46,23 +46,42 @@ size_t BuildModelBatch::number_of_vertices() {
     return _vertices.size();
 }
 
-void BuildModelBatch::write_batch(const std::map<std::string, int> &materialIds, DkrBatch* outBatch, DkrVertex*& outVertices, DkrTriangle*& outTriangles) {
+void BuildModelBatch::write_batch(const std::map<std::string, int> &materialIds, std::vector<BuildModelMaterial> &materials, 
+  DkrBatch* outBatch, DkrVertex*& outVertices, DkrTriangle*& outTriangles, float modelScale) {
+    uint32_t flags = 0x03; // Default is (RENDER_ANTI_ALIASING | RENDER_Z_COMPARE)
+    bool materialDoubleSided = false;
+    
     if(_materialId.has_value()) {
         outBatch->textureIndex = materialIds.at(_materialId.value());
+        BuildModelMaterial &material = materials[outBatch->textureIndex];
+        if(material.has_render_flags()) {
+            flags = material.get_render_flags();
+        }
+        if(material.is_texture_animated()) {
+            flags |= 0x10000; // RENDER_TEX_ANIM
+        }
+        materialDoubleSided = material.is_texture_double_sided();
     } else {
         outBatch->textureIndex = 0xFF; // No texture
     }
     
-    //outBatch->lightSource = 0; // 0xFF = vertex colors, 0 = Use generated normals.
-    outBatch->flags = 0x00000003; // TODO
+    outBatch->flags = flags;
     
-    for(auto &vertex : _vertices) {
-        vertex.write_to(outVertices);
+    bool useVertexColors = false;
+    for(BuildModelVertex &vertex : _vertices) {
+        vertex.write_to(outVertices, modelScale);
         outVertices++; // Next out vertex.
+        if(!vertex.is_color_white()) {
+            useVertexColors = true;
+        }
     }
     
-    for(auto &tri : _triangles) {
-        outTriangles->flags = 0x40; // double-sided (debug)
+    outBatch->lightSource = useVertexColors ? 0xFF : 0x00;
+    
+    uint8_t triFlags = materialDoubleSided ? 0x40 : 0x00;
+    
+    for(BuildModelTriangle &tri : _triangles) {
+        outTriangles->flags = triFlags; 
         outTriangles->vi0 = tri.a;
         outTriangles->vi1 = tri.b;
         outTriangles->vi2 = tri.c;
@@ -73,6 +92,12 @@ void BuildModelBatch::write_batch(const std::map<std::string, int> &materialIds,
         outTriangles->uv2.u = tri.uv2.u;
         outTriangles->uv2.v = tri.uv2.v;
         outTriangles++; // next out triangle.
+    }
+}
+
+void BuildModelBatch::process_vertices(std::function<void(BuildModelVertex &vertex)> callbackFunction) {
+    for(BuildModelVertex &vertex : _vertices) {
+        callbackFunction(vertex);
     }
 }
 

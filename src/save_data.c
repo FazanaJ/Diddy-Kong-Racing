@@ -188,6 +188,10 @@ void rumble_update(s32 updateRate) {
     u8 controllerToCheck;
     u8 pfsBitPattern;
 
+    if (__osBbIsBb) {
+        return;
+    }
+
     if (
 #if VERSION >= VERSION_79
         (gRumbleEnable) &&
@@ -815,11 +819,12 @@ s32 save_detect(void) {
     #elif FLASHRAM == 1
         status = ((u32) osFlashInit()) & 1;
     #endif
-        debug_printf("%d\n", status);
         gSaveInit = TRUE;
         if (status == 0) {
             gSaveMissing = TRUE;
             debug_printf("Save type unavailable.\n");
+        } else {
+            debug_printf("Save type good.\n");
         }
     } else {
         return gSaveMissing == FALSE;
@@ -1120,12 +1125,12 @@ s32 userconfig_read(void) {
     save_readwrite((void *) &b, VIDEOCONFIG_START, sizeof(ConfigBits), OS_READ);
 
     if (b.magic != 0x14) {
-        debug_printf("Bad magic! %X\n", b.magic);
+        //debug_printf("Bad magic! %X\n", b.magic);
         bzero(&b, sizeof(ConfigBits));
         b.magic = 0x14;
         save_readwrite((void *) &b, VIDEOCONFIG_START, sizeof(ConfigBits), OS_WRITE);
     } else {
-        debug_printf("Good magic! %X\n", b.magic);
+        //debug_printf("Good magic! %X\n", b.magic);
         c->antiAliasing = b.antiAliasing;
         c->dedither = b.dedither;
         c->screenBits = b.screenBits;
@@ -1543,7 +1548,7 @@ SIDeviceStatus get_si_device_status(s32 controllerIndex) {
     s32 bytes_not_used;
     s32 i;
 
-    if (sControllerMesgQueue->validCount == 0) {
+    if (sControllerMesgQueue->validCount == 0 && __osBbIsBb == FALSE) {
         if (osMotorInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex) == 0) {
             return CONTROLLER_PAK_RUMBLE_PAK_FOUND;
         }
@@ -1561,12 +1566,12 @@ SIDeviceStatus get_si_device_status(s32 controllerIndex) {
         if (ret == PFS_ERR_INVALID) {
             ret = osPfsInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex);
         }
-        if (ret == PFS_ERR_ID_FATAL) {
+        if (ret == PFS_ERR_ID_FATAL && __osBbIsBb == FALSE) {
             if (osMotorInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex) == 0) {
                 return CONTROLLER_PAK_RUMBLE_PAK_FOUND;
             }
         }
-        if (ret == PFS_ERR_NEW_PACK) {
+        if (ret == PFS_ERR_NEW_PACK && __osBbIsBb == FALSE) {
             if ((osPfsInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex) == PFS_ERR_ID_FATAL) &&
                 (osMotorInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex) == 0)) {
                 return CONTROLLER_PAK_RUMBLE_PAK_FOUND;

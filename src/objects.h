@@ -332,6 +332,21 @@ typedef struct RacerFXData {
     u8 unk3;
 } RacerFXData;
 
+typedef struct unk80017A18_10 {
+    f32 unk0;
+    f32 unk4;
+    f32 unk8;
+    f32 unkC;
+} unk80017A18_10;
+
+typedef struct unk80017A18 {
+    u8 pad0[0xC];
+    u16 *unkC;
+    unk80017A18_10 *unk10;
+    u8 pad14[0x1E];
+    s16 unk32;
+} unk80017A18;
+
 extern s32 osCicId; // Used for an Anti-Piracy check in render_3d_model
 extern s32 gNumRacers;
 
@@ -376,7 +391,7 @@ void func_80012C30(void);
 void func_80012C3C(Gfx **dList);
 void func_80012C98(Gfx **dList);
 void func_80012CE8(Gfx **dList);
-void render_object(Gfx **dList, MatrixS **mtx, Vertex **verts, Object *obj);
+void render_object(Gfx **dList, Mtx **mtx, Vertex **verts, Object *obj);
 void object_undo_player_tumble(Object *obj);
 void render_object_parts(Object *obj);
 void unset_temp_model_transforms(Object *obj);
@@ -404,14 +419,14 @@ Object **get_racer_objects(s32 *numRacers);
 Object **get_racer_objects_by_port(s32 *numRacers);
 Object **get_racer_objects_by_position(s32 *numRacers);
 Object *get_racer_object(s32 index);
-void debug_render_checkpoint_node(s32 checkpointID, s32 pathID, Gfx** dList, MatrixS **mtx, Vertex **vtx);
+void debug_render_checkpoint_node(s32 checkpointID, s32 pathID, Gfx** dList, Mtx **mtx, Vertex **vtx);
 Object *spectate_object(s32 cameraIndex);
 void ainode_enable(void);
 void ainode_tail_set(s32 nodeID);
 Object *ainode_tail(s32 *nodeID);
 Object *ainode_get(s32 nodeID);
-void set_world_shading(f32 brightness, f32 ambient, s16 angleX, s16 angleY, s16 angleZ);
-void set_shading_properties(ShadeProperties *arg0, f32 brightness, f32 ambient, s16 angleX, s16 angleY, s16 angleZ);
+void set_world_shading(f32 ambient, f32 diffuse, s16 angleX, s16 angleY, s16 angleZ);
+void set_shading_properties(ShadeProperties *arg0, f32 ambient, f32 diffuse, s16 angleX, s16 angleY, s16 angleZ);
 void obj_shade_fancy(ObjectModel *model, Object *object, s32 arg2, f32 intensity);
 s32 *get_misc_asset(s32 index);
 s32 func_8001E2EC(s32 arg0);
@@ -426,7 +441,7 @@ void func_8001F3C8(s32 arg0);
 void func_8001F450(void);
 s32 func_800210CC(s8 arg0);
 s8 func_800214C4(void);
-f32 lerp(f32 *arg0, u32 arg1, f32 arg2);
+f32 lerp(f32 *data, u32 index, f32 t);
 void func_800228DC(s32 arg0, s32 arg1, s32 arg2);
 void init_racer_for_challenge(s32 vehicleID);
 s8 is_taj_challenge(void);
@@ -445,8 +460,8 @@ void func_80021400(s32 arg0);
 s32 timetrial_init_player_ghost(s32 playerID);
 s32 move_object(Object *obj, f32 xPos, f32 yPos, f32 zPos);
 Object *get_racer_object_by_port(s32 index);
-void render_racer_shield(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *obj);
-void render_racer_magnet(Gfx **dList, MatrixS **mtx, Vertex **vtxList, Object *obj);
+void render_racer_shield(Gfx **dList, Mtx **mtx, Vertex **vtxList, Object *obj);
+void render_racer_magnet(Gfx **dList, Mtx **mtx, Vertex **vtxList, Object *obj);
 void update_envmap_position(f32 x, f32 y, f32 z);
 s32 init_object_water_effect(Object *obj, WaterEffect *waterEffect);
 s32 timetrial_load_staff_ghost(s32 mapId);
@@ -466,8 +481,8 @@ s32 play_footstep_sounds(Object *obj, s32 arg1, s32 frame, s32 oddSoundId, s32 e
 void render_3d_misc(Object *obj);
 Object *spectate_nearest(Object *obj, s32 *cameraId);
 s32 init_object_shadow(Object *obj, ShadowData *shadow);
-s32 render_mesh(ObjectModel *objModel, Object *obj, s32 startIndex, s32 flags, s32 someBool);
-void render_bubble_trap(ObjectTransform *trans, Object_68 *gfxData, Object *obj, s32 flags);
+s32 render_mesh(ObjectModel *objModel, Object *obj, s32 startIndex, s32 flags, s32 overrideVerts);
+void render_bubble_trap(ObjectTransform *trans, Sprite *gfxData, Object *obj, s32 flags);
 void gParticlePtrList_flush(void);
 s32 init_object_shading(Object *obj, ShadeProperties *shadeData);
 ObjectHeader *load_object_header(s32 index);
@@ -500,11 +515,16 @@ void race_finish_time_trial(void);
 s32 obj_dist_racer(f32 x, f32 y, f32 z, f32 radius, s32 is2dCheck, Object **sortObj);
 void mode_init_taj_race(void);
 void racerfx_update(s32 updateRate);
-f32 func_8002277C(f32 *data, s32 index, f32 x);
+f32 catmull_rom_derivative(f32 *data, s32 index, f32 x);
 void race_transition_adventure(s32 updateRate);
 void func_8001E4C4(void);
 void racerfx_alloc(s32 numberOfVertices, s32 numberOfTriangles);
 s32 func_80014B50(s32 arg0, s32 arg1, f32 arg2, u32 arg3);
+s32 ainode_find_next(s32 nodeId, s32 nextNodeId, s32 direction);
+unk800179D0 *func_8001790C(u32 *arg0, u32 *arg1);
+unk800179D0 *func_80017978(s32 arg0, s32 arg1);
+s8 func_800214E4(Object *obj, s32 updateRate);
+f32 lerp_and_get_derivative(f32 *data, u32 index, f32 t, f32 *derivative);
 
 /**
  * Faster variant of the shading function for objects.
@@ -524,10 +544,10 @@ void decrypt_magic_codes(s32 *data, s32 length);
 s32 get_first_active_object(s32 *);
 Object *spawn_object(LevelObjectEntryCommon *entry, s32);
 s32 func_8001F460(Object*, s32, Object*);
-void func_8000B750(Object *obj, s32 objId, s32 arg2, s32 arg3, s32 arg4);
-void func_80018CE0(Object* obj, f32 xPos, f32 yPos, f32 zPos, s32 updateRate);
-s32 func_800185E4(s8, Object* obj, f32 xPos, f32 yPos, f32 zPos, f32* checkpointDistance, u8*); 
-void func_80011134(Object *, s32);
+void func_8000B750(Object *racerObj, s32 racerIndex, s32 vehicleIDPrev, s32 boostType, s32 arg4);
+void func_80018CE0(Object* racerObj, f32 xPos, f32 yPos, f32 zPos, s32 updateRate);
+s32 func_800185E4(s32 checkpointIndex, Object *obj, f32 objX, f32 objY, f32 objZ, f32 *checkpointDistance, u8 *arg6);
+void obj_tex_animate(Object *, s32);
 Object *find_furthest_telepoint(f32 x, f32 z);
 void func_8006017C(ObjectModel *);
 void func_80012F94(Object *);
@@ -538,18 +558,18 @@ void func_80017E98(void);
 void spectate_update(void);
 void func_8001E93C(void);
 void func_80019808(s32 updateRate);
-void func_80014090(Object*, s32, ObjectHeader*);
+void func_80014090(Object*, s32);
 void audspat_update_all(Object**, s32, s32);
 void func_8001E89C(void);
 CheckpointNode *func_800230D0(Object*, Object_Racer*);
 void obj_update(s32 updateRate);
 void func_800159C8(Object *, Object *);
-void func_80011264(ObjectModel *, Object *);
+void obj_door_number(ObjectModel *, Object *);
 s16 func_8001CD28(s32 arg0, s32 arg1, s32 arg2, s32 arg3); // NON MATCHING
-
+f32 func_8001C6C4(Object_NPC *, Object *, f32, f32, s32);
+s32 func_80017A18(ObjectModel *, s32, s32*, f32*, f32*, f32*, f32*, f32*, f32*, f32*, s8 *surface, f32); // NON EQUIVALENT
 
 #if !defined(NUKE)
 #define normalise_time(x) (x)
 #endif
-
 #endif

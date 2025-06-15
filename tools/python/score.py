@@ -1,10 +1,10 @@
 import re
 import sys
 import argparse
-import time
 import os
 from file_util import FileUtil
 from score_display import ScoreDisplay
+import plotly.graph_objects as go
 
 ASM_FOLDERS = [
     './asm',
@@ -62,7 +62,7 @@ FUNCTION_REGEX = r'^(?<!static\s)(?:(\/[*][*!][*]*\n(?:[^\/]*\n)+?\s*[*]\/\n)(?:
 GLOBAL_ASM_REGEX = r'\#pragma\sGLOBAL_ASM[(]".*(?=\/)\/([^.]+).s"[)]'
 WIP_REGEX = r'ifdef\s+(?:NON_MATCHING|NON_EQUIVALENT)(?:.|\n)*?\#else\s*(\#pragma\sGLOBAL_ASM[(][^)]*[)])(.|\n)*?'
 NON_MATCHING_REGEX = re.compile(r'^#ifdef[ ]+NON_MATCHING(?:.|\n)*?(?:\s*UNUSED\s+)?(?:[^\s]+)\s(?:\s|[*])*?([0-9A-Za-z_]+)\s*[(][^)]*[)]\s*{', re.MULTILINE)
-NON_EQUVIALENT_REGEX = re.compile(r'^#ifdef[ ]+NON_EQUIVALENT', re.MULTILINE)
+NON_EQUVIALENT_REGEX = re.compile(r'^#ifdef[ ]+NON_EQUIVALENT(?:.|\n)*?(?:\s*UNUSED\s+)?(?:[^\s]+)\s(?:\s|[*])*?([0-9A-Za-z_]+)\s*[(][^)]*[)]\s*{', re.MULTILINE)
 
 CODE_START = 0x80000400
 CODE_END = 0x800D75F4
@@ -117,7 +117,7 @@ MAP_FILE = DkrMapFile()
 NOT_FUNCTION_NAMES = ['if', 'else', 'switch', 'while', 'for', 'dmacopy_internal', 'func_80082BC8_837C8', 'rumble_enable',
     'func_800C6464_C7064', 'func_800C663C_C723C', 'func_800C67F4_C73F4', 'func_800C6870_C7470',
     'func_800C68CC_C74CC', 'fontCreateDisplayList', 'func_800C7744_C8344', 'func_800C7804_C8404',
-    'fontConvertString', 'func_800C78E0_C84E0']
+    'fontConvertString', 'func_800C78E0_C84E0', 'menu_credits_loop', 'savemenu_render_element', 'results_render']
 
 class ScoreFileMatch:
     def __init__(self, comment, functionName):
@@ -142,21 +142,33 @@ class ScoreFile:
     def read_file(self):
         with open(self.path, "r") as inFile:
             self.text = inFile.read()
+            
             self.nonMatchings = re.findall(NON_MATCHING_REGEX, self.text)
             self.nonMatchingsSizes = 0
             for nonMatching in self.nonMatchings:
                 self.nonMatchingsSizes += MAP_FILE.functionSizes[nonMatching]
             self.numNonMatchings = len(self.nonMatchings)
-            self.numNonEquivalents = len(re.findall(NON_EQUVIALENT_REGEX, self.text))
+            all_nonEquivalents = re.findall(NON_EQUVIALENT_REGEX, self.text)
+            # Filter out the ones that are in NOT_FUNCTION_NAMES
+            self.nonEquivalents = [ne for ne in all_nonEquivalents if ne not in NOT_FUNCTION_NAMES]
+
+            self.nonEquivalentsSizes = 0
+            for nonEquivalent in self.nonEquivalents:
+                self.nonEquivalentsSizes += MAP_FILE.functionSizes[nonEquivalent]
+            self.numNonEquivalents = len(self.nonEquivalents)
             self.text = re.sub(WIP_REGEX, r"GLOBAL_ASM(\1)", self.text)
             
     def get_matches(self):
         matches = re.finditer(FUNCTION_REGEX, self.text, re.MULTILINE)
+        # Filter out the ones that are in NOT_FUNCTION_NAMES
+        matches = [match for match in matches if match.groups()[2] not in NOT_FUNCTION_NAMES]
         for matchNum, match in enumerate(matches, start=1):
             groups = match.groups()
             if groups[2] not in NOT_FUNCTION_NAMES:
                 self.functions.append(ScoreFileMatch(groups[0], groups[2]))
         matches = re.finditer(GLOBAL_ASM_REGEX, self.text, re.MULTILINE)
+        # Filter out the ones that are in NOT_FUNCTION_NAMES
+        matches = [match for match in matches if match.groups()[0] not in NOT_FUNCTION_NAMES]
         for matchNum, match in enumerate(matches, start=1):
             groups = match.groups()
             self.numGlobalAsms += 1
@@ -198,6 +210,7 @@ def main():
     parser.add_argument("-t", "--top", help="(Optional) Shows the top N files remaining.")
     parser.add_argument("-a", "--adventure", help="(Optional) Only shows adventure 1 or 2 based on passed in value.", choices=['1', '2'])
     parser.add_argument("-s", "--summary", help="(Optional) Only prints the percentages for adventure 1 and 2", action='store_true')
+    parser.add_argument("--treemap", help="(Optional) Generates a treemap .html file", metavar="path/to/treemap-file.html")
     args = parser.parse_args()
     adventureSelect = 3 # Show both adventures by default
     if args.adventure != None:
@@ -267,6 +280,108 @@ def main():
         print(f"Decomp progress: {adventureOnePercentage:5.2f}%")
         print(f"Documentation progress: {adventureTwoPercentage:5.2f}%")
         sys.exit(0)
+
+    if args.treemap:
+        print(f"Generating progress treemap, outputting file to {args.treemap}")
+
+        # Prepare data
+        labels = ["Decomp"]
+        parents = [None]
+        values = [0]
+        colours = [None]
+        legends = [None]
+
+        for scoreFile in scoreFiles:
+            parentName = scoreFile.path.replace('./src/', '')
+            
+            for func in scoreFile.functions:
+                color = '#92ac68'
+                legend = 'matched'
+                if func.isDocumented:
+                    color = 'green'
+                    legend = 'documented'
+                
+                labels.append(func.functionName)
+                parents.append(parentName)
+                values.append(func.size)
+                colours.append(color)
+                legends.append(legend)
+            
+            matches = re.finditer(GLOBAL_ASM_REGEX, scoreFile.text, re.MULTILINE)
+            for match in matches:
+                funcName = match.groups()[0]
+                size = MAP_FILE.functionSizes[funcName]
+                
+                color = "grey"
+                legend = "N/A"
+                if funcName in scoreFile.nonMatchings:
+                    color = 'orange'
+                    legend = "non matching"
+                elif funcName in scoreFile.nonEquivalents:
+                    color = 'red'
+                    legend = "non equivalent"
+                
+                labels.append(funcName)
+                parents.append(parentName)
+                values.append(size)
+                colours.append(color)
+                legends.append(legend)
+
+            labels.append(parentName)
+            parents.append("Decomp")
+            values.append(0)
+            colours.append(None)
+            legends.append(None)
+
+        matchPercents = []
+        for value in values:
+            if value > 0:
+                matchPercents.append(f"Size: {value} bytes<br>Total: {value / CODE_SIZE * 100:.2f}%")
+            else:
+                matchPercents.append(None)
+
+        fig = go.Figure(go.Treemap(
+            labels = labels,
+            parents = parents,
+            values = values,
+            text=matchPercents,
+            hovertemplate='<b>%{label}</b><br>Size: %{value} bytes<extra></extra>',
+            marker = dict(colors = colours),
+            root_color="lightgrey"
+        ))
+
+        # Add custom legend using annotations
+        legend_items = [
+            ("green", "documented"),
+            ("#92ac68", "matched"),
+            ("orange", "non matching"),
+            ("red", "non equivalent"), 
+            ("grey", "N/A")
+        ]
+
+        annotations = []
+        for i, (color, label) in enumerate(legend_items):
+            annotations.append(dict(
+                x=1.05,
+                y=1 - (i * 0.05),
+                xref="paper",
+                yref="paper",
+                showarrow=False,
+                text=f"<span style='color:{color}'>■</span> {label}",
+                font=dict(size=12)
+            ))
+
+
+        fig.update_layout(
+            margin=dict(t=50, l=25, r=150, b=25),  # Extra right margin for legend
+            title="Decomp Progress",
+            annotations=annotations
+        )
+        output_path = "treemap.html"
+        # This will raise an error if writing fails
+        fig.write_html(output_path)
+        sys.exit(0)
+
     scoreDisplay = ScoreDisplay()
     print(scoreDisplay.getDisplay(adventureOnePercentage, adventureOnePercentageWithNonMatching, adventureTwoPercentage, adventureSelect, totalNumberOfDecompiledFunctions, totalNumberOfGlobalAsms, totalNumberOfNonMatching, totalNumberOfNonEquivalent, totalNumberOfDocumentedFunctions, (totalNumberOfFunctions - ignoreNumberDocumentedFunctions) - totalNumberOfDocumentedFunctions))
     

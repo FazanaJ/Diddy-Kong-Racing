@@ -145,10 +145,10 @@ typedef struct LevelObjectEntry_Checkpoint {
     /* 0x14 */ s8 unk14;
     /* 0x15 */ s8 unk15;
     /* 0x16 */ s8 unk16;
-    /* 0x17 */ s8 unk17;
+    /* 0x17 */ u8 unk17;
     /* 0x18 */ s8 unk18;
     /* 0x19 */ u8 unk19;
-    /* 0x1A */ u8 unk1A;
+    /* 0x1A */ s8 unk1A;
     /* 0x1B */ u8 unk1B;
 } LevelObjectEntry_Checkpoint;
 
@@ -436,11 +436,6 @@ typedef struct LevelObjectEntry_TimeTrial_Ghost {
     /* 0x00 */ LevelObjectEntryCommon common;
 } LevelObjectEntry_TimeTrial_Ghost;
 
-typedef struct LevelObjectEntry_WaveGenerator {
-    /* 0x00 */ LevelObjectEntryCommon common;
-    /* 0x08 */ u8 unk8[10];
-} LevelObjectEntry_WaveGenerator;
-
 typedef struct LevelObjectEntry_Butterfly {
     /* 0x00 */ LevelObjectEntryCommon common;
     /* 0x08 */ u16 unk8;
@@ -711,16 +706,16 @@ typedef struct LevelObjectEntry8003FC44 {
     s8 unkA;
 } LevelObjectEntry8003FC44;
 
-typedef struct LevelObjectEntry800BF524 {
+typedef struct LevelObjectEntry_WaveGenerator {
     LevelObjectEntryCommon common;
     u8 unk8;
     u8 unk9;
-    u16 unkA;
+    u16 waveSize;
     u16 unkC;
     u16 unkE;
     u8 unk10;
     u8 unk11;
-} LevelObjectEntry800BF524;
+} LevelObjectEntry_WaveGenerator;
 
 typedef struct LevelObjectEntry_WavePower {
     LevelObjectEntryCommon common;
@@ -890,6 +885,12 @@ typedef struct LevelObjectEntry_Hud {
     s32 offsetY;
 } LevelObjectEntry_Hud;
 
+typedef struct LevelObjectEntry_BHV_UNK_5C {
+    LevelObjectEntryCommon common;
+    s8 unk8;
+    s8 unk9;
+} LevelObjectEntry_BHV_UNK_5C;
+
 typedef struct LevelObjectEntry {
     union {
         LevelObjectEntry_Racer racer;
@@ -937,7 +938,6 @@ typedef struct LevelObjectEntry {
         LevelObjectEntry_Trigger trigger;
         LevelObjectEntry_AirZippers_WaterZippers airzipper_waterzipper;
         LevelObjectEntry_TimeTrial_Ghost ghost;
-        LevelObjectEntry_WaveGenerator waverGenerator;
         LevelObjectEntry_Butterfly butterfly;
         LevelObjectEntry_Parkwarden taj;
         LevelObjectEntry_WorldKey worldKey;
@@ -980,10 +980,11 @@ typedef struct LevelObjectEntry {
         LevelObjectEntry8000E2B4 unk8000E2B4;
         LevelObjectEntry80011AD0 unk80011AD0;
         LevelObjectEntry8003FC44 unk8003FC44;
-        LevelObjectEntry800BF524 unk800BF524;
+        LevelObjectEntry_WaveGenerator waveGenerator;
         LevelObjectEntry_WavePower wavePower;
         LevelObjectEntry_CharacterSelect characterSelect;
         LevelObjectEntry_Hud hud;
+        LevelObjectEntry_BHV_UNK_5C bhv_unk_5C;
     };
 } LevelObjectEntry;
 

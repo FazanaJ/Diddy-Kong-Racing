@@ -290,6 +290,7 @@ extern u8 *main_BSS_START[];
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS
 #define PERF_TOTAL (NUM_PERF_ITERATIONS + 1)
 #define NUM_THREAD_ITERATIONS 12
+#define IQUE_DIVISOR 0.6510416667f
 
 typedef u32 DebugTimer[NUM_PERF_ITERATIONS + 2];
 
@@ -368,7 +369,8 @@ void debug_printf(const char* message, ...);
 void crash_assert(s32 cond, const char *str, ...);
 void debug_ram_dump(void);
 void debug_fillrect(Gfx **gfx, s32 x1, s32 y1, s32 x2, s32 y2, u32 colour);
-void debug_dump_hex(u8 *var, s32 size);
+void debug_dump_hex(u8 *var, s32 size, s32 lineWidth);
+char *assettable_name(s32 assetType, s32 assetID);
 
 #define DEBUG_VAR(x, value) \
     { if (gDebug) {(x = value);}}

@@ -132,7 +132,7 @@ void update_tricky(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
     }
     gfxData = *obj->unk68;
     objModel = gfxData->objModel;
-    diffX = (objModel->animations[obj->segment.object.animationID].unk4 * 16) - 17;
+    diffX = (objModel->animations[obj->segment.object.animationID].animLength * 16) - 17;
     if (obj->segment.object.animationID != ANIM_TRICKY_DAMAGE) {
         if (racer->velocity < -2.0) {
             obj->segment.object.animationID = ANIM_TRICKY_RUN;
@@ -193,7 +193,7 @@ void update_tricky(s32 updateRate, f32 updateRateF, Object *obj, Object_Racer *r
         }
     }
     // Record the players height record. Falling 400 units below that will trigger a warp.
-    racer = (Object_Racer *) firstRacerObj->unk64;
+    racer = &firstRacerObj->unk64->racer;
     if (gTrickyRacerPeakHeight < firstRacerObj->segment.trans.y_position) {
         gTrickyRacerPeakHeight = firstRacerObj->segment.trans.y_position;
     }
@@ -227,19 +227,19 @@ void set_boss_voice_clip_offset(u16 *soundID) {
  * Also has worldspace values.
  */
 void racer_boss_sound_spatial(f32 x, f32 y, f32 z, s32 offset) {
-    s8 randomOffset = get_random_number_from_range(0, 1);
+    s8 randomOffset = rand_range(0, 1);
     if (offset == 0) {
         randomOffset = 0;
     }
     offset += randomOffset;
-    audspat_play_sound_at_position(gBossSoundIDOffset[offset], x, y, z, 4, NULL);
+    audspat_play_sound_at_position(gBossSoundIDOffset[offset], x, y, z, AUDIO_POINT_FLAG_ONE_TIME_TRIGGER, NULL);
 }
 
 /**
  * Add a random amount to offset, then play a random voice clip within that range.
  */
 void play_random_boss_sound(s32 offset) {
-    s8 randomOffset = get_random_number_from_range(0, 1);
+    s8 randomOffset = rand_range(0, 1);
     if (offset == 0) {
         randomOffset = 0;
     }

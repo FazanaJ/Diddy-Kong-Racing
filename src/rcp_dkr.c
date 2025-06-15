@@ -22,7 +22,7 @@ u32 gTexBGShiftX = 64;
 TextureHeader *gTexBGTex1 = NULL;
 TextureHeader *gTexBGTex2 = NULL;
 
-BackgroundFunction gBGDrawFunc = { NULL };
+BackgroundFunction gBGDrawFunc = NULL;
 s32 gGfxBufCounter = 0;
 s32 gGfxTaskIsRunning = FALSE;
 
@@ -294,7 +294,7 @@ void bgdraw_fillcolour(s32 red, s32 green, s32 blue) {
  * over clearing the colour buffer.
  * Official Name: rcpClearScreen
  */
-void bgdraw_render(Gfx **dList, MatrixS **mtx, s32 drawBG) {
+void bgdraw_render(Gfx **dList, Mtx **mtx, s32 drawBG) {
     s32 widthAndHeight;
     s32 w;
     s32 h;
@@ -324,8 +324,8 @@ void bgdraw_render(Gfx **dList, MatrixS **mtx, s32 drawBG) {
     if (check_viewport_background_flag(PLAYER_ONE)) {
         if (gTexBGTex1) {
             bgdraw_texture(dList);
-        } else if (gBGDrawFunc.ptr != NULL) {
-            gBGDrawFunc.function(dList, mtx);
+        } else if (gBGDrawFunc != NULL) {
+            (gBGDrawFunc)(dList, mtx);
         } else {
             if (drawBG) {
                 gDPSetFillColor((*dList)++, sBackgroundFillColour);
@@ -353,8 +353,8 @@ void bgdraw_render(Gfx **dList, MatrixS **mtx, s32 drawBG) {
     } else {
         if (gTexBGTex1) {
             bgdraw_texture(dList);
-        } else if (gBGDrawFunc.ptr != NULL) {
-            gBGDrawFunc.function(dList, mtx);
+        } else if (gBGDrawFunc != NULL) {
+            (gBGDrawFunc)(dList, mtx);
         } else if (drawBG) {
             x1 = 0;
             y1 = 0;
@@ -437,7 +437,7 @@ void bgdraw_texture(Gfx **dList) {
 
     if (gTexBGTex2 == NULL) {
         // Fill the background with a single texture
-        gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(gTexBGTex1->cmd), gTexBGTex1->numberOfCommands);
+        gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(gTexBGTex1->cmd), gTexBGTex1->numberOfCommands);
         videoWidth <<= 2;
         videoHeight <<= 2;
         texWidth = gTexBGTex1->width << 2;
@@ -454,7 +454,7 @@ void bgdraw_texture(Gfx **dList) {
         }
     } else {
         // The screen is filled with alternating horizontal stripes of two textures
-        gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(gTexBGTex1->cmd), gTexBGTex1->numberOfCommands);
+        gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(gTexBGTex1->cmd), gTexBGTex1->numberOfCommands);
         videoWidth <<= 2;
         videoHeight <<= 2;
         uly = 0;
@@ -474,7 +474,7 @@ void bgdraw_texture(Gfx **dList) {
             xOffset = (xOffset + gTexBGShiftX) & (texWidth - 1);
         }
 
-        gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(gTexBGTex2->cmd), gTexBGTex2->numberOfCommands);
+        gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(gTexBGTex2->cmd), gTexBGTex2->numberOfCommands);
         // Width and height are mistakenly multiplied by 4 again, but it doesn't cause any issues
         videoWidth <<= 2;
         videoHeight <<= 2;
@@ -501,8 +501,8 @@ void bgdraw_texture(Gfx **dList) {
  * Sets the function pointer to whatever's passed through.
  * If nonzero, will override the background drawing section.
  */
-void bgdraw_set_func(void *func) {
-    gBGDrawFunc.ptr = func;
+void bgdraw_set_func(BackgroundFunction func) {
+    gBGDrawFunc = func;
 }
 
 /**
@@ -587,7 +587,7 @@ void texrect_draw_scaled(Gfx **dList, DrawTexture *element, f32 xPos, f32 yPos, 
     }
 
     gSPDisplayList((*dList)++, dScaledRectangleBaseModes);
-    gDkrDmaDisplayList((*dList)++, OS_PHYSICAL_TO_K0(dmaDlist), numberOfGfxCommands(dTextureRectangleScaledOpa[0]));
+    gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(dmaDlist), numberOfGfxCommands(dTextureRectangleScaledOpa[0]));
     gDPSetPrimColorRGBA((*dList)++, colour);
 
     bFlipX = flags & TEXRECT_FLIP_X;

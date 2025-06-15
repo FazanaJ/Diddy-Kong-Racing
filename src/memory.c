@@ -32,10 +32,32 @@ s32 gFreeQueueTimer; // Official Name: mmDelay
  */
 void mempool_init_main(void) {
     s32 ramEnd;
+    s32 i;
 
     gNumberOfMemoryPools = -1;
     if (gUseExpansionMemory) {
-        ramEnd = EXPANSION_RAM_END;
+        if (__osBbIsBb) {
+            ramEnd = 0xFFFFFFFF;
+            for (i = 0; i < 4; i++) {
+                if (__osBbPakAddress[i] != 0 && __osBbPakAddress[i] < ramEnd) {
+                    ramEnd = __osBbPakAddress[i];
+                }
+            }
+            if (__osBbEepromAddress != 0 && __osBbEepromAddress < ramEnd) {
+                ramEnd = __osBbEepromAddress;
+            }
+            if (__osBbSramAddress != 0 && __osBbSramAddress < ramEnd) {
+                ramEnd = __osBbSramAddress;
+            }
+            if (__osBbFlashAddress != 0 && __osBbFlashAddress < ramEnd) {
+                 ramEnd = __osBbFlashAddress;
+            }
+            if (ramEnd > 0x807FC000) {
+                ramEnd = 0x807FC000;
+            }
+        } else {
+            ramEnd = 0x80000000 + osGetMemSize();
+        }
     } else {
         ramEnd = RAM_END;
     }

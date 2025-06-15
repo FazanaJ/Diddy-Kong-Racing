@@ -170,6 +170,20 @@ typedef struct ObjPropertyTimeTrial {
     struct ObjectHeader *header; 
 } ObjPropertyTimeTrial;
 
+typedef struct ObjPropertyBoost {
+    struct Object *obj;
+    union {
+        s32 indexes;  // Keep this for compatibility
+        // This is a bitfield definition for the bits in indexes.
+        // It won't match when used, but it's useful for understanding the structure.
+        struct {
+            s32 racerIndex : 4;   // bits 28-31  ((indexes >> 28) & 0xF)
+            s32 vertIndex  : 14;  // bits 14-27  ((indexes >> 14) & 0x3FFF)
+            s32 trisIndex  : 14;  // bits 0-13   (indexes & 0x3FFF)
+        };
+    };
+} ObjPropertyBoost;
+
 typedef struct ObjProperties {
     union {
         ObjPropertyCommon common;
@@ -204,6 +218,7 @@ typedef struct ObjProperties {
         ObjPropertyWeapon weapon;
         ObjPropertyCamControl camControl;
         ObjPropertyTimeTrial timeTrial;
+        ObjPropertyBoost boost;
     };
 } ObjProperties;
 

@@ -49,7 +49,7 @@ void guPerspectiveF(float mf[4][4], u16 *perspNorm, float fovy, float aspect, fl
 
 void guPerspective(Mtx *m, u16 *perspNorm, float fovy, float aspect, float near, float far, float scale)
 {
-	Matrix	mf;
+	MtxF	mf;
 
 	guPerspectiveF(mf, perspNorm, fovy, aspect, near, far, scale);
 
