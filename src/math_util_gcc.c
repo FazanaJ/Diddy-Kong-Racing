@@ -12,7 +12,22 @@ extern u8 gIntDisFlag;
 extern s32 gCurrentRNGSeed; // Official Name: rngSeed
 extern s32 gPrevRNGSeed;
 extern s16 gSineTable[];
-extern s16 gArcTanTable[];
+
+s16 *gArcTanTable;
+
+void trigtable_generate(void) {
+    s32 i;
+    const f32 scale = 10491.0f;
+
+    gArcTanTable = mempool_alloc(sizeof(s16) * 1024, PP_RAM_TRIGTABLE);
+
+    for (i = 0; i < 1024; ++i) {
+        f32 x = (f32)i / 1024.0f; // x in [0, 1)
+        f32 y = x / (1.0f + 0.28f * x * x);
+        s16 value = (s16)(y * scale + 0.5f);
+        gArcTanTable[i] = value;
+    }
+}
 
 u32 interrupts_disable(void) {
     if (gIntDisFlag) {

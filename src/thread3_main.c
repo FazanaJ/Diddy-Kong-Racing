@@ -201,6 +201,7 @@ void init_game(void) {
     allocate_ghost_data();
     init_particle_assets();
     weather_init();
+    trigtable_generate();
     calc_and_alloc_heap_for_settings();
     default_alloc_displaylist_heap();
     load_fonts();

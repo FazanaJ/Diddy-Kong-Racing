@@ -79,5 +79,6 @@ u32 interrupts_disable(void);
  * operation won't work as normal.
  * Official Name: enableInterrupts */
 void interrupts_enable(u32 flags);
+void trigtable_generate(void);
 
 #endif // MATH_UTIL_H
