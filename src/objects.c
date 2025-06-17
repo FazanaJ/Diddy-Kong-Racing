@@ -3542,7 +3542,7 @@ void set_temp_model_transforms(Object *obj) {
                     var_f0 /= 2700.0f;
                     var_f0 += 1.0f;
                     obj->segment.trans.scale *= var_f0;
-                    var_v1 *= ((f32 *) get_misc_asset(ASSET_MISC_4))[objRacer->characterId];
+                    //var_v1 *= ((f32 *) get_misc_asset(ASSET_MISC_4))[objRacer->characterId];
                     // ASSET_MISC_4 is just 10 floats of 1.0f. One for each playable character.
                     if (var_v1 < -50) {
                         modelIndex = 5;
@@ -3565,6 +3565,7 @@ void set_temp_model_transforms(Object *obj) {
                         } else {
                             modelIndex = 5;
                         }
+                        modelIndex = 3;
                     }
                 }
             }

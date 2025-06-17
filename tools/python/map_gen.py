@@ -48,6 +48,7 @@ def parse():
     if os.path.isdir(args.output_file):
         return
     symbols = map_parse(args.map_file)
+    symbols.sort(key=lambda x: x[0])
     write_binary_file(symbols, args.output_file)
 
 parse()
