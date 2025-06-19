@@ -62,7 +62,7 @@ static inline void mtx_invalidate(void* addr) {
 
 void mtxf_to_mtxs(MtxF *mf, MtxS *mi) {
     s32 i, j;
-    mtx_invalidate(mi);
+    //mtx_invalidate(mi);
 
     for (i = 0; i < 4; i++) {
         for (j = 0; j < 4; j++) {
@@ -105,7 +105,7 @@ void mtxf_to_mtx(MtxF *mf, Mtx *m) {
     s32 i, j;
     s32 e1, e2;
     s32 *ai, *af;
-    mtx_invalidate(m);
+    //mtx_invalidate(m);
 
     ai = &m->m[0][0];
     af = &m->m[2][0];

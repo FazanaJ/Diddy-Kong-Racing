@@ -180,15 +180,12 @@ s8 *sTitleScreenDemoIds; // Misc Asset 66 - title_screen_demo_ids.bin - 12 or 13
 s16 gTitleDemoTimer;
 unk80126878 D_80126878[8];
 f32 D_801268D8;
-UNUSED s32 D_801268DC; // Set to 0 during the title screen, never read.
 s32 gOpeningNameID;
 s16 gTrackSelectIDs[4][6]; // Track Select values?
 s16 gFFLUnlocked;
 UNUSED s32 D_80128464;
 UNUSED s32 D_80128468;
 s32 gTrackSelectVertsFlip;
-UNUSED s32 D_80126928; // Set to 64, but never used.
-UNUSED s32 D_8012692C; // Set to 32, but never used.
 TrackRenderDetails gTrackSelectRenderDetails[9];
 s8 gPlayerSelectVehicle[4];
 s8 gPlayerSelectConfirm[4];
@@ -242,7 +239,6 @@ s32 gMenuMosaicShift;
 s32 gCreditsControlDataIndex;
 PakError sControllerPakError; // 0 = no error, 1 = fatal error, 2 = no free space, 3 = bad data
 s32 D_80126BCC;
-UNUSED s32 D_80126BD0; // Set to zero, never read.
 s32 gSaveMenuOptionSource;
 s32 D_80126BD8;
 f32 gSaveMenuScrollSource;
@@ -289,14 +285,12 @@ s32 gOptionBlinkTimer;
 unk801263C0 gMenuCurrentCharacter;
 
 s32 gIgnorePlayerInputTime;  // A set amount of time to ignore player input.
-UNUSED s32 sUnused_801263C8; // Set to 0 in menu_init, and never again.
 CharacterSelectData (*gCurrCharacterSelectData)[10];
 s32 gTrackmenuLoadedLevel;              // Compared for equality to gTrackIdForPreview
 s8 gActivePlayersArray[MAXCONTROLLERS]; // Boolean value for each controller if it's active with a player.
 s32 gOpacityDecayTimer;
 s8 gCharselectStatus[MAXCONTROLLERS];
 s32 gMenuStage;
-UNUSED s32 D_801263E4;
 s8 gPlayersCharacterArray[8]; // -1 = Non active player, or character id if >= 0
 s8 gCharacterIdSlots[8];
 s32 gRankingsPoints[8];
@@ -349,9 +343,7 @@ s8 gDialogueSubmenu;
 u8 gGhostLevelIDsPak[6];
 s8 sCurrentMenuID;
 u8 gGhostCharacterIDsPak[4];
-UNUSED s32 D_801264E8;
-u8 gGhostVehicleIDsPak[4];
-UNUSED s32 D_801264F0[2];
+u8 gGhostVehicleIDsPak[6];
 u16 gGhostChecksumIDsPak[6];
 s8 sDialogueOptionMax;
 u8 gGhostLevelIDsMenu[6];
@@ -366,7 +358,6 @@ s32 gMultiplayerSelectedNumberOfRacersCopy; // Saved version gMultiplayerSelecte
 void *gMenuAssets[128]; // lookup table? Contains Textures, Objects, and Sprites. Need to change name and type.
 u8 gMenuAssetActive[128];
 s32 gTrackmenuType;
-UNUSED s32 D_801267D4;
 s32 gMenuButtons[5]; // Buttons pressed per player plus an an extra containing each collective input.
 s8 *gCinematicParams;
 s32 buttonsPressed[5];
@@ -374,8 +365,6 @@ s8 *gCinematicPortraits;
 SoundHandle gMenuSoundMasks[MAXCONTROLLERS]; // Soundmask values
 s16 gMenuStickX[5];
 s32 gCinematicEnd;
-UNUSED s8 sUnused_80126828; // Set to 0 in menu_init, and never used again.
-UNUSED s32 D_8012682C;
 s16 gMenuStickY[5];
 s16 D_8012683A;
 s32 gCinematicSkipA;
@@ -395,16 +384,10 @@ f32 gTitleAudioCounter;
 s8 *sTitleScreenDemoIds; // Misc Asset 66 - title_screen_demo_ids.bin - 12 or 13 values.
 unk80126878 D_80126878[8];
 f32 D_801268D8;
-UNUSED s32 D_801268DC; // Set to 0 during the title screen, never read.
 s32 gOpeningNameID;
-UNUSED s32 D_801268E4;
 s16 gTrackSelectIDs[4][6]; // Track Select values?
 s16 gFFLUnlocked;
-UNUSED s32 D_8012691C;
-UNUSED s32 D_80126920;
 s32 gTrackSelectVertsFlip;
-UNUSED s32 D_80126928; // Set to 64, but never used.
-UNUSED s32 D_8012692C; // Set to 32, but never used.
 TrackRenderDetails gTrackSelectRenderDetails[9];
 s8 gPlayerSelectVehicle[4];
 s8 gPlayerSelectConfirm[4];
@@ -441,12 +424,10 @@ s32 gSaveMenuRumbleNagSet;
 char **gDeviceStatusStrings;
 s32 gSaveMenuMessageLines;
 s32 gSaveMenuMessageOption;
-UNUSED s32 D_80126A7C;
 unk80126A80 *gSaveMenuText[4];
 s32 gPostRace1Player;
 s32 gPostRaceTimer;
 s32 gTracksSaveGhost;
-UNUSED s32 D_80126A9C;
 char *gBootPakData[MAX_CPAK_FILES];                           // Text to render
 char *sCurrentControllerPakAllFileNames[MAX_CPAK_FILES];      // Every file name on the controller pak
 char *sCurrentControllerPakAllFileExtensions[MAX_CPAK_FILES]; // Every file extension on the controller pak
@@ -460,7 +441,6 @@ s32 gMenuMosaicShift;
 s32 gCreditsControlDataIndex;
 PakError sControllerPakError; // 0 = no error, 1 = fatal error, 2 = no free space, 3 = bad data
 s32 D_80126BCC;
-UNUSED s32 D_80126BD0; // Set to zero, never read.
 s32 gSaveMenuOptionSource;
 s32 D_80126BD8;
 f32 gSaveMenuScrollSource;
@@ -527,7 +507,6 @@ s32 gTitleScreenCurrentOption = 0; // 0 = "Start", 1 = "Options"
 s32 gMenuCurIndex = 0;
 
 s32 unused_800DF464 = 4;
-UNUSED s32 gMenuDisableObjAnim = FALSE; // Never set, but read once, always returning false.
 
 // Used as a short delay before printing the missing controller text.
 s32 gMissingControllerDelay = 0;
@@ -542,8 +521,6 @@ s32 gMenuDelay = 0;
 s32 gNumberOfReadyPlayers = 0;
 s32 D_800DF484 = 0;
 s32 gTitleScreenLoaded = FALSE;
-UNUSED s32 unused_800DF48C = 0;
-UNUSED s32 unused_800DF490 = 0;
 s32 gIsInAdventureTwo = FALSE;
 s32 gPlayerHasSeenCautionMenu = TRUE;
 s32 *gMenuTextLangTable = NULL;
@@ -629,10 +606,6 @@ FadeTransition sMenuTransitionFadeInFast =
 FadeTransition sMenuTransitionFadeIn =
     FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_BLACK, 18, FADE_STAY);
 FadeTransition sMenuTransitionFadeOut = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_BLACK, 18, 0);
-UNUSED FadeTransition sMenuTransitionFadeInWhite =
-    FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_WHITE, 18, FADE_STAY);
-UNUSED FadeTransition sMenuTransitionFadeOutWhite =
-    FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_WHITE, 18, 0);
 
 s32 gPostraceState = POSTRACE_SLIDE_END;
 MenuElement *gTrophyRankingsMenuElements = NULL;
@@ -718,8 +691,6 @@ u8 gTitleCinematicTextColours[] = {
     0,   0,   255, 255, 51   // Blue
 };
 
-UNUSED u8 unused_800DFA0C[] = { 0, 0, 15, 120 };
-
 char *gOptionMenuStrings[] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL };
 
 s16 gOptionMenuTextures[] = { 0x3D, 0x3C, 0x3F, 0x3E, 0x44, -1 };
@@ -780,8 +751,6 @@ char **gContPakStrings[11] = { NULL,
                                gContPakCorruptDataStrings,
                                gContPakNeed2ndAdvStrings };
 
-UNUSED DrawTexture unused_800DFC08[] = { { NULL, 0, -1 } };
-
 /*** Icons in the save options menu. ***/
 DrawTexture gDrawTexN64Icon[2] = { { NULL, 0, 0 }, { NULL, 0, 0 } };
 DrawTexture gDrawTexTTIcon[2] = { { NULL, 0, 0 }, { NULL, 0, 0 } };
@@ -789,8 +758,6 @@ DrawTexture gDrawTexGhostIcon[2] = { { NULL, 0, 0 }, { NULL, 0, 0 } };
 DrawTexture gDrawTexFileIcon[2] = { { NULL, 0, 0 }, { NULL, 0, 0 } };
 DrawTexture gDrawTexContPakIcon[2] = { { NULL, 0, 0 }, { NULL, 0, 0 } };
 DrawTexture gDrawTexTrashIcon[2] = { { NULL, 0, 0 }, { NULL, 0, 0 } };
-
-UNUSED s8 unused_800DFC70[] = { 0x40, 0x40, 0x04, 0x04, -1 };
 
 s16 gSaveMenuObjectIndices[] = { 0x0024, 0x0025, 0x0018, 0x0019, 0x001A, 0x001B, 0x001C, 0x001D, 0x003D,
                                  0x003F, 0x003E, 0x003C, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047, 0x0048,
@@ -938,19 +905,12 @@ CharacterSelectData gCharacterSelectBytesComplete[] = {
     //!@bug T.T's down input selects Tiptup. It should be set to NONE.
 };
 
-UNUSED s32 unused_800DFFCC = 0;
-
 // Set from charselect_prev()
 // Is either 0, 1, or 2. However it is never set to 2?
 // Set to 0 upon entering the Character Select menu normally.
 // Set to 1 upon entering the Char Select from the
 //   "Select Character" option on the "Pause Options" screen in a race.
 s32 gEnteredCharSelectFrom = 0;
-
-// Set from charselect_prev()
-// Set to the value *arg1 when arg0 is 2, but that never happens.
-// Not read from anywhere, so I'd consider this to be unused.
-UNUSED s32 unused_800DFFD4 = -1;
 
 // clang-format off
 
@@ -2501,8 +2461,6 @@ void menu_init(u32 menuId) {
     reset_controller_sticks();
     gIgnorePlayerInputTime = 1;
     gOptionBlinkTimer = 0;
-    sUnused_801263C8 = 0;
-    sUnused_80126828 = 0;
 
     // clang-format off
     // Needs to be one line
@@ -3360,7 +3318,6 @@ void menu_title_screen_init(void) {
     load_level_for_menu(sTitleScreenDemoIds[DEMO_LEVEL_ID], numberOfPlayers, sTitleScreenDemoIds[DEMO_CUTSCENE_ID]);
     D_801268D8 = 0;
     gOpeningNameID = 0;
-    D_801268DC = 0;
     gTitleCinematicTextColourCount = 0;
     gOpacityDecayTimer = 0;
     gIsInTracksMode = FALSE;
@@ -3514,7 +3471,6 @@ s32 menu_title_screen_loop(s32 updateRate) {
         if (sTitleScreenDemoIds[gTitleDemoIndex] == sTitleScreenDemoIds[DEMO_LEVEL_ID]) {
             D_801268D8 = 0.0f;
             gOpeningNameID = 0;
-            D_801268DC = 0;
             gTitleCinematicTextColourCount = 0;
             gOpacityDecayTimer = 0;
         }
@@ -6705,7 +6661,6 @@ void charselect_prev(s32 context, UNUSED s32 *arg1) {
             return;
         case 2: // Unused
             gEnteredCharSelectFrom = 2;
-            unused_800DFFD4 = *arg1;
             return;
     }
 }
@@ -8839,8 +8794,6 @@ void func_8008FF1C(UNUSED s32 updateRate) {
         mtx_ortho(&sMenuCurrDisplayList, &sMenuCurrHudMat);
         rendermode_reset(&sMenuCurrDisplayList);
         gDPPipeSync(sMenuCurrDisplayList++);
-        D_80126928 = 64;
-        D_8012692C = 32;
         gTrackMenuHubName = NULL;
         for (i = 0; i < ARRAY_COUNT(gTrackSelectRenderDetails); i++) {
             if (gTrackSelectRenderDetails[i].visible != 0) {
@@ -13077,7 +13030,6 @@ void menu_credits_init(void) {
     gMenuStage = 0;
     gOpacityDecayTimer = 40;
     gMenuCurIndex = 0;
-    D_80126BD0 = 0;
     D_80126BD8 = 0;
     D_80126BE0 = 0;
     bgdraw_fillcolour(0, 0, 0);
@@ -13940,10 +13892,8 @@ void menu_element_render(s32 elementID) {
                 object->segment.trans.y_position = asset->trans.y_position;
                 object->segment.trans.z_position = asset->trans.z_position;
                 object->segment.trans.scale = asset->trans.scale;
-                if (gMenuDisableObjAnim == FALSE) {
-                    object->segment.animFrame = asset->unk1D;
-                    object->segment.object.modelIndex = asset->spriteOffset;
-                }
+                object->segment.animFrame = asset->unk1D;
+                object->segment.object.modelIndex = asset->spriteOffset;
                 object->segment.object.opacity = sMenuGuiOpacity;
                 render_object(&sMenuCurrDisplayList, &sMenuCurrHudMat, &sMenuCurrHudVerts, object);
             } else {
