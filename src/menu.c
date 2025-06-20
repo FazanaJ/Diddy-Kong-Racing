@@ -33,6 +33,8 @@
 #include "main.h"
 #include "thread0_epc.h"
 
+// NON_MATCHING
+
 /**
  * @file Contains all the code used for every menu in the game.
  */
@@ -13777,7 +13779,7 @@ void menu_asset_free(s32 assetID) {
                     if ((*gAssetsMenuElementIds)[assetID] & ASSET_MASK_OBJECT) {
                         free_object((Object *) (u32) gMenuAssets[assetID]);
                     } else {
-                        free_3d_model((ObjectModel **) (u32) gMenuAssets[assetID]);
+                        free_3d_model((ModelInstance *) (u32) gMenuAssets[assetID]);
                     }
                 }
             }
@@ -13844,7 +13846,7 @@ void menu_asset_load(s32 assetID) {
             entry.x = 0;
             entry.y = 0;
             entry.z = 0;
-            gMenuAssets[assetID] = spawn_object(&entry, 0);
+            gMenuAssets[assetID] = spawn_object(&entry, OBJECT_SPAWN_NONE);
         } else {
             gMenuAssets[assetID] = object_model_init(i & 0x3FFF, 0);
         }
@@ -13895,7 +13897,7 @@ void menu_element_render(s32 elementID) {
     Object *object;
     MenuAsset *asset;
     Sprite *sprite;
-    ObjectModel **model;
+    ModelInstance *model;
 
     if (gMenuAssets[gMenuImages[elementID].trans.spriteID] != NULL) {
         if (((*gAssetsMenuElementIds)[gMenuImages[elementID].trans.spriteID] & ASSET_MASK_TEXTURE) !=
@@ -13933,8 +13935,8 @@ void menu_element_render(s32 elementID) {
                     gDPSetEnvColor(sMenuCurrDisplayList++, 255, 255, 255, 0);
                     mtx_cam_push(&sMenuCurrDisplayList, &sMenuCurrHudMat, &gMenuImages[elementID].trans,
                                  gTrackSelectWoodFrameHeightScale, 0);
-                    model = ((ObjectModel **) gMenuAssets[gMenuImages[elementID].trans.spriteID]);
-                    render_track_selection_viewport_border(*model);
+                    model = gMenuAssets[gMenuImages[elementID].trans.spriteID];
+                    render_track_selection_viewport_border(model->objModel);
                     mtx_pop(&sMenuCurrDisplayList);
                     if (sMenuGuiOpacity < 255) {
                         gDPSetPrimColor(sMenuCurrDisplayList++, 0, 0, 255, 255, 255, 255);
@@ -15404,7 +15406,7 @@ u16 gDebugModelTex;
 u16 gDebugModelSizeMdl;
 u16 gDebugModelSizeAnim;
 u16 gDebugModelSizeTex;
-Object_68 *viewModel = NULL;
+ModelInstance *viewModel = NULL;
 Object fakeObjectForModel;
 ObjectHeader fakeObjectHeaderForModel;
 ShadeProperties gDebugModelShading;
@@ -15900,7 +15902,7 @@ void set_object_model(s32 modelId) {
         free_3d_model((ObjectModel **) viewModel);
     }
     
-    viewModel = object_model_init(modelId, OBJECT_SPAWN_ANIMATION);
+    viewModel = object_model_init(modelId, OBJECT_BEHAVIOUR_ANIMATION);
 
     
     gDebugModelSizeTex = 0;
@@ -15932,7 +15934,7 @@ void set_object_model(s32 modelId) {
     //viewModelTransform.y_position = -175.0f - offsetY;
     //viewModelTransform.z_position = -10.0f;
     
-    fakeObjectForModel.unk68 = &viewModel;
+    fakeObjectForModel.modelInstances = &viewModel;
     fakeObjectForModel.segment.object.modelIndex = 0;
 
     tempHeader = load_object_header(ASSET_OBJECT_MOUSESELECT);

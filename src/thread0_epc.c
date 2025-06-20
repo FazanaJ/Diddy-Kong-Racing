@@ -1071,7 +1071,7 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col, s32 useExt
     ObjectHeader *objHeader;
     Object *obj;
     ObjectModel *objModel;
-    Object_68 *objGfx;
+    ModelInstance *objGfx;
     ObjectModel_44 *objAnim;
 
     switch (tag) {

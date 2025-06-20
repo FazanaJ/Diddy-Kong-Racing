@@ -752,7 +752,7 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
     ObjectHeader *objHeader;
     Object *obj;
     ObjectModel *objModel;
-    Object_68 *objGfx;
+    ModelInstance *objGfx;
     ObjectModel_44 *objAnim;
 
     str = " ";
