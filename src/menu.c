@@ -4160,7 +4160,7 @@ void savemenu_render_element(SaveFileData *file, s32 x, s32 y) {
             buffer[i + 3] = file->saveFileExt[0];
             buffer[i + 4] = ')';
             buffer[i + 5] = '\0';
-            text = gMenuText[86 + file->controllerIndex];
+            text = gMenuText[ASSET_MENU_TEXT_CONTPAK1 + file->controllerIndex];
             firstDigit = file->balloonCount / 10;
             secondDigit = file->balloonCount % 10;
             if (file->adventureTwo) {
@@ -4170,24 +4170,24 @@ void savemenu_render_element(SaveFileData *file, s32 x, s32 y) {
         case SAVE_FILE_TYPE_CPAK_TIMES:
 #if REGION == REGION_JP
             drawTexture = gDrawTexTTIcon;
-            text2 = gMenuText[ASSET_MENU_TEXT_TIMES];
             texture = gMenuAssets[TEXTURE_UNK_44];
             colour = gContPakSaveBgColours[file->controllerIndex];
-            for (i = 0; (text2[i] & 0xFF) != 0; i++) {
-                firstDigit = text2[ASSET_MENU_TEXT_TIMES + i];
-                buffer[i] = firstDigit;
+            for (i = 0; gMenuText[ASSET_MENU_TEXT_TIMES][i] != '\0'; i++) {
+                buffer[i] = gMenuText[ASSET_MENU_TEXT_TIMES][i];
             }
-            for (i = 0; file->saveFileExt[i] != 0 && file->saveFileExt[i] != 0x2E; i++) {}
-            buffer[i] = '.';
-            if (file->saveFileExt[i] != '\n') {
-                buffer[i - 1] = file->saveFileExt[i + 1];
+            firstDigit = 0;
+            while (file->saveFileExt[firstDigit] != '\0' && file->saveFileExt[firstDigit] != '.') {
+                firstDigit++;
+            }
+            buffer[i++] = '.';
+            if (file->saveFileExt[firstDigit] != '\0') {
+                buffer[i++] = file->saveFileExt[firstDigit + 1];
             } else {
-                buffer[i] = 'A';
+                buffer[i++] = 'A';
             }
-            buffer[i + 1] = '\n';
+            buffer[i++] = '\0';
             text2 = buffer;
             text = gMenuText[ASSET_MENU_TEXT_CONTPAK1 + file->controllerIndex];
-            firstDigit = i;
 #else
             drawTexture = gDrawTexTTIcon;
             texture = gMenuAssets[TEXTURE_UNK_44];
@@ -4239,7 +4239,7 @@ void savemenu_render_element(SaveFileData *file, s32 x, s32 y) {
             text = NULL;
             break;
     }
-#if VERSION == VERSION_79
+#if REGION == REGION_JP
 #define SAVE_MENU_TEXT_FONT ASSET_FONTS_SUBTITLEFONT
 #define SAVE_MENU_TEXT_WIDTH 208
 #define SAVE_MENU_SPRITE_OFFSET 8
@@ -5532,6 +5532,7 @@ void bootscreen_init_cpak(void) {
 #else
 #define PAKMENU_JP_OFFSET 0
 #endif
+
 /**
  * Render the controller pak menu.
  * Lists the pak index, as well as remaining pages, then displays all known files.
@@ -11411,6 +11412,7 @@ void results_render(UNUSED s32 updateRate, f32 opacity) {
     for (spA0 = 0; spA0 < 4; spA0++) {
 #endif
         time = offsetX;
+        x2 = offsetX;
 #if REGION == REGION_JP
         func_80082BC8_837C8(-1, time - 40, y2 + offsetY + 2, 2, 2, gRacePlacementsArray[spA0], ALIGN_MIDDLE_CENTER,
                             COLOUR_RGBA32(255, 255, 255, 255), 0);
@@ -11427,7 +11429,6 @@ void results_render(UNUSED s32 updateRate, f32 opacity) {
         sMenuGuiColourG = 255 - 64 * spA0;
         sMenuGuiColourB = 255;
         sMenuGuiColourBlendFactor = 255;
-        x2 = offsetX;
 #if VERSION >= VERSION_79
         for (i = 0; i < gNumberOfActivePlayers; i++, x2 += offsetX2) {
 #else
@@ -13130,7 +13131,7 @@ s32 menu_credits_loop(s32 updateRate) {
     s32 textPos;
     s32 buttonsPressedAllPlayers;
     s32 controlDataLength;
-    s32 creditsMenuElementInex;
+    s32 creditsMenuElementIndex;
     s32 var_s5;
     s32 var_s4;
     s32 textLineHeight;
@@ -13162,8 +13163,8 @@ s32 menu_credits_loop(s32 updateRate) {
         halvedFbSize >>= 17;
         halvedFbSize &= 0x7FFF;
         textPos = halvedFbSize;
-        for (i = 0; i < ARRAY_COUNT(gRacerPortraits); i++) {
-            texrect_draw(&sMenuCurrDisplayList, gRacerPortraits[i], ((sins_s16(var_s5) * var_s4) >> 16) + 140,
+        for (nextIndex = 0; nextIndex < ARRAY_COUNT(gRacerPortraits); nextIndex++) {
+            texrect_draw(&sMenuCurrDisplayList, gRacerPortraits[nextIndex], ((sins_s16(var_s5) * var_s4) >> 16) + 140,
                          (((coss_s16(var_s5) * var_s4) >> 16) + textPos) - 20, 255, 255, 255, 255);
             var_s5 += 0x1999;
         }
@@ -13209,6 +13210,9 @@ s32 menu_credits_loop(s32 updateRate) {
                     var_s5 = FONT_COLOURFUL;
                     textLineHeight = 20;
                     controlDataLength = gCreditsControlDataIndex - nextIndex;
+#if REGION == REGION_JP
+                    if (1) {}
+#endif
                     // only one thing to show for example "CREDITS"
                     if (controlDataLength == 1) {
                         textPos -= 14;
@@ -13229,36 +13233,48 @@ s32 menu_credits_loop(s32 updateRate) {
                         gCreditsMenuElements[0].right = -SCREEN_WIDTH_HALF;
                     }
 
-                    for (creditsMenuElementInex = 0, var_s4 = nextIndex; var_s4 < gCreditsControlDataIndex; var_s4++) {
-                        gCreditsMenuElements[creditsMenuElementInex].top = textPos;
-                        gCreditsMenuElements[creditsMenuElementInex].middle = textPos;
-                        gCreditsMenuElements[creditsMenuElementInex].bottom = textPos;
+                    for (creditsMenuElementIndex = 0, var_s4 = nextIndex; var_s4 < gCreditsControlDataIndex; var_s4++) {
+                        gCreditsMenuElements[creditsMenuElementIndex].top = textPos;
+                        gCreditsMenuElements[creditsMenuElementIndex].middle = textPos;
+                        gCreditsMenuElements[creditsMenuElementIndex].bottom = textPos;
                         if (isShowingBestRaceTimes) {
                             // Best time for a level. Lists level in the first row and then the time in the next row
-                            gCreditsMenuElements[creditsMenuElementInex].textFont = FONT_COLOURFUL;
-                            gCreditsMenuElements[creditsMenuElementInex].filterGreen = 0;
-                            gCreditsMenuElements[creditsMenuElementInex].filterBlendFactor = 48;
-                            gCreditsMenuElements[creditsMenuElementInex].t.asciiText =
+                            gCreditsMenuElements[creditsMenuElementIndex].textFont = FONT_COLOURFUL;
+                            gCreditsMenuElements[creditsMenuElementIndex].filterGreen = 0;
+                            gCreditsMenuElements[creditsMenuElementIndex].filterBlendFactor = 48;
+                            gCreditsMenuElements[creditsMenuElementIndex].t.asciiText =
                                 get_level_name(mainTrackIds[gCreditsControlData[var_s4]]);
 
-                            creditsMenuElementInex++;
-                            gCreditsMenuElements[creditsMenuElementInex].top = textPos + 14;
-                            gCreditsMenuElements[creditsMenuElementInex].middle = textPos + 14;
-                            gCreditsMenuElements[creditsMenuElementInex].bottom = textPos + 14;
-                            gCreditsMenuElements[creditsMenuElementInex].textFont = FONT_COLOURFUL;
-                            gCreditsMenuElements[creditsMenuElementInex].t.asciiText =
+                            creditsMenuElementIndex++;
+                            gCreditsMenuElements[creditsMenuElementIndex].top = textPos + 14;
+                            gCreditsMenuElements[creditsMenuElementIndex].middle = textPos + 14;
+                            gCreditsMenuElements[creditsMenuElementIndex].bottom = textPos + 14;
+                            gCreditsMenuElements[creditsMenuElementIndex].textFont = FONT_COLOURFUL;
+                            gCreditsMenuElements[creditsMenuElementIndex].t.asciiText =
                                 gCreditsBestTimesArray[gCreditsControlData[var_s4]];
-                            creditsMenuElementInex++;
+                            creditsMenuElementIndex++;
                         } else {
                             // every other element should have a little more green and a little less red/orange
-                            if (creditsMenuElementInex & 1) {
-                                gCreditsMenuElements[creditsMenuElementInex].filterGreen = 255;
-                                gCreditsMenuElements[creditsMenuElementInex].filterBlendFactor = 0;
+                            if (creditsMenuElementIndex & 1) {
+                                gCreditsMenuElements[creditsMenuElementIndex].filterGreen = 255;
+                                gCreditsMenuElements[creditsMenuElementIndex].filterBlendFactor = 0;
                             }
-                            gCreditsMenuElements[creditsMenuElementInex].textFont = var_s5;
-                            gCreditsMenuElements[creditsMenuElementInex].t.asciiText =
+#if REGION == REGION_JP
+                            if (creditsMenuElementIndex == 0) {
+                                if (gCreditsControlData[var_s4] == 0x55) {
+                                    gCreditsMenuElements[creditsMenuElementIndex].filterBlendFactor = 144;
+                                } else {
+                                    gCreditsMenuElements[creditsMenuElementIndex].filterBlendFactor = 48;
+                                }
+                            }
+                            if (gCreditsControlData[var_s4] == 0x56) {
+                                var_s5 = FONT_COLOURFUL;
+                            }
+#endif
+                            gCreditsMenuElements[creditsMenuElementIndex].textFont = var_s5;
+                            gCreditsMenuElements[creditsMenuElementIndex].t.asciiText =
                                 gCreditsArray[gCreditsControlData[var_s4]];
-                            creditsMenuElementInex++;
+                            creditsMenuElementIndex++;
                         }
                         // after the first iteration, whatever was the font previously, set it to large now
                         // this way to title like "Software Director" is colourful while the parts after it are "just"
@@ -13268,9 +13284,12 @@ s32 menu_credits_loop(s32 updateRate) {
                         textPos += textLineHeight;
                         // Since every element now uses large font increase the text line height
                         textLineHeight = 32;
+#if REGION == REGION_JP
+                        if (nextIndex) {}
+#endif
                     }
 
-                    gCreditsMenuElements[creditsMenuElementInex].t.element = NULL;
+                    gCreditsMenuElements[creditsMenuElementIndex].t.element = NULL;
                     postrace_offsets(gCreditsMenuElements, 0.5f, (f32) D_80126BE8 / 60.0f, 0.5f, 0, 0);
                     if (gMenuDelay == 0) {
                         D_80126BE0 = postrace_render(0) == MENU_RESULT_CONTINUE;
