@@ -10,6 +10,7 @@
 #include "objects.h"
 #include "main.h"
 #include "thread3_main.h"
+#include "thread30_bgload.h"
 
 #undef VERSION
 #define VERSION VERSION_80
@@ -35,6 +36,47 @@ s32 D_8011D644;
 
 /******************************/
 
+s8 *gObjModelStaleTimer;
+
+ModelInstance *obj_model_seek(Object *obj, s32 modelID) {
+#ifndef STREAM_MODELS
+    return obj->modelInstances[modelID];
+#else
+    if (obj->modelInstances[modelID] == NULL) {
+        obj->modelInstances[modelID] = object_model_init(obj->segment.header->modelIds[modelID], obj_init_property_flags(obj->segment.header->behaviorId));
+    }
+
+    gObjModelStaleTimer[modelID] = 10;
+    return obj->modelInstances[modelID];
+#endif
+}
+
+void obj_model_cycle(s32 updateRate) {
+    s32 i;
+    s32 modelID;
+    ObjectModel *objMdl;
+#ifndef STREAM_MODELS
+    return;
+#else
+    if (bgload_active()) {
+        return;
+    }
+    
+    for (i = 0; i < gModelCacheCount; i++) {
+        if (modelID == gModelCache[ASSETCACHE_ID(i)]) {
+            objMdl = (ObjectModel *) gModelCache[ASSETCACHE_PTR(i)];
+            if (modelID != -1) {
+                gObjModelStaleTimer[modelID] -= updateRate;
+                if (gObjModelStaleTimer[modelID] <= 0) {
+                    free_model_data(objMdl);
+                    gObjModelStaleTimer[modelID] = NULL;
+                }
+            }
+        }
+    }
+#endif
+}
+
 /**
  * Allocate memory for object model ID's and animation tables.
  */
@@ -44,6 +86,9 @@ void allocate_object_model_pools(void) {
     s32 *assetTable;
 
     gModelCache = mempool_alloc_safe(MODEL_LOADED_MAX * ((sizeof(uintptr_t)) * 2), PP_RAM_ASSET_CACHE);
+#ifdef STREAM_MODELS
+    gObjModelStaleTimer = mempool_alloc(MODEL_LOADED_MAX * (sizeof(s8)), PP_RAM_ASSET_CACHE);
+#endif
     D_8011D628 = mempool_alloc_safe(100 * sizeof(uintptr_t), PP_RAM_ASSET_CACHE);
     gModelCacheCount = 0;
     D_8011D634 = 0;

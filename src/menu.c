@@ -33,8 +33,6 @@
 #include "main.h"
 #include "thread0_epc.h"
 
-// NON_MATCHING
-
 /**
  * @file Contains all the code used for every menu in the game.
  */
@@ -8531,8 +8529,8 @@ s32 func_8008F618(Gfx **dList, Mtx **mtx) {
         curIndex = gTrackSelectBgData[index];
         tempVertices = vertices;
         // @fake
-        vertices++;
-        vertices--;
+        //vertices++;
+        //vertices--;
         tempTriangles = triangles;
         vertices[0].y = yPos;
         vertices[0].a = gTrackSelectBgData[index + 2];

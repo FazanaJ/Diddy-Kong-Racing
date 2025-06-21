@@ -5,6 +5,9 @@
 #include "PR/gbi.h"
 #include "structs.h"
 
+#define MODELALLOC_NEW 0x4000000 // Flag that signals the model creator to allocate new data.
+//#define STREAM_MODELS
+
 typedef enum AnimType {
     MODELTYPE_BASIC,    // No shading nor animation
     MODELTYPE_SHADE,    // Model is intended to be shaded.
@@ -20,6 +23,8 @@ typedef struct unk8011D624 {
 extern s32 gTractionTableChecksum;
 extern s32 gTrackRenderFuncLength;
 
+ModelInstance *obj_model_seek(Object *obj, s32 modelID);
+void obj_model_cycle(s32 updateRate);
 void allocate_object_model_pools(void);
 void func_800619F4(s32 arg0);
 void func_80061C0C(Object* obj);

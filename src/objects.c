@@ -2017,11 +2017,12 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
         sizeOfobj = _ALIGN16(sizeOfobj);
     }
 
-    sizeOfobj >>= 2;
+    wcopy(gSpawnObjectHeap, curObj, sizeOfobj);
+    /*sizeOfobj >>= 2;
     while (i < sizeOfobj) {
         ((u32 *) curObj)[i] = gSpawnObjectHeap[i];
         i++;
-    }
+    }*/
 
     if (curObj->waterEffect != NULL) {
         curObj->waterEffect =
@@ -2052,10 +2053,12 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
         curObj->particleEmitter = (ParticleEmitter *) (((uintptr_t) curObj + (uintptr_t) curObj->particleEmitter) -
                                                        (uintptr_t) gSpawnObjectHeap);
     }
+#ifdef USE_DYNLIGHTS
     if (curObj->segment.header->numLightSources > 0) {
         curObj->lightData =
             (ObjectLight **) (((uintptr_t) curObj + (uintptr_t) curObj->lightData) - (uintptr_t) gSpawnObjectHeap);
     }
+#endif
     curObj->modelInstances = (ModelInstance **) &curObj[1];
 
     if (spawnFlags & OBJECT_SPAWN_UNK01) {
@@ -2083,9 +2086,11 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
         }
         return NULL;
     }
+#ifdef USE_DYNLIGHTS
     if (curObj->segment.header->numLightSources > 0) {
         light_setup_light_sources(curObj);
     }
+#endif
     func_800619F4(0);
     update_object_stack_trace(OBJECT_SPAWN, -1);
     return curObj;
@@ -2117,17 +2122,18 @@ void objFreeAssets(Object *obj, s32 count, s32 objType) {
         }
     }
 }
+
+#ifdef USE_DYNLIGHTS
 /**
  * Official Name: lightSetupLightSources
  */
 void light_setup_light_sources(Object *obj) {
     s32 i;
-#ifdef USE_DYNLIGHTS
     for (i = 0; i < obj->segment.header->numLightSources; i++) {
         obj->lightData[i] = add_object_light(obj, &obj->segment.header->unk24[i]);
     }
-#endif
 }
+#endif
 
 /**
  * Sets the shading properties of the object.
@@ -3188,7 +3194,8 @@ void render_3d_model(Object *obj) {
     ObjectModel *objModel;
     Sprite *something;
 
-    modInst = obj->modelInstances[obj->segment.object.modelIndex];
+    //modInst = obj->modelInstances[obj->segment.object.modelIndex];
+    modInst = obj_model_seek(obj, obj->segment.object.modelIndex);
     if (modInst != NULL) {
         objModel = modInst->objModel;
         hasOpacity = FALSE;
