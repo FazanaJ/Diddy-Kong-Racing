@@ -2625,6 +2625,7 @@ void obj_update(s32 updateRate) {
     ModelInstance *modInst;
     s32 sp54;
     Object *obj;
+    void (*func)(Object *, s32);
 
     func_800245B4(-1);
     gEventStartTimer = gEventCountdown;
@@ -2650,7 +2651,11 @@ void obj_update(s32 updateRate) {
     process_object_interactions();
     func_8001E89C();
     for (i = 0; i < D_8011AE70; i++) {
-        run_object_loop_func(D_8011AE6C[i], updateRate);
+        if (D_8011AE6C[i]->lightData) {
+            func = (void *) D_8011AE6C[i]->lightData;
+            (*func)(D_8011AE6C[i], updateRate);
+        }
+        //run_object_loop_func(D_8011AE6C[i], updateRate);
     }
     func_8001E6EC(1);
     for (i = 0; i < D_8011AE70; i++) {
@@ -2664,10 +2669,18 @@ void obj_update(s32 updateRate) {
                 (obj->behaviorId != BHV_FOG_CHANGER)) {
                 if (obj->interactObj != NULL) {
                     if (obj->interactObj->unk11 != 2) {
-                        run_object_loop_func(obj, updateRate);
+                        if (obj->lightData) {
+                            func = (void *) obj->lightData;
+                            (*func)(obj, updateRate);
+                        }
+                        //run_object_loop_func(obj, updateRate);
                     }
                 } else {
-                    run_object_loop_func(obj, updateRate);
+                    if (obj->lightData) {
+                        func = (void *) obj->lightData;
+                        (*func)(obj, updateRate);
+                    }
+                    //run_object_loop_func(obj, updateRate);
                 }
                 if (obj->segment.header->modelType == OBJECT_MODEL_TYPE_3D_MODEL) {
                     for (sp54 = 0; sp54 < obj->segment.header->numberOfModelIds; sp54++) {
@@ -2700,7 +2713,11 @@ void obj_update(s32 updateRate) {
         obj = gObjPtrList[i];
         if ((!(obj->segment.trans.flags & OBJ_FLAGS_PARTICLE) && (obj->behaviorId == BHV_WEAPON)) ||
             (obj->behaviorId == BHV_FOG_CHANGER)) {
-            run_object_loop_func(obj, updateRate);
+            if (obj->lightData) {
+                func = (void *) obj->lightData;
+                (*func)(obj, updateRate);
+            }
+            //run_object_loop_func(obj, updateRate);
         }
     }
     if (gParticleCount > 0) {
@@ -10517,6 +10534,9 @@ s32 get_object_property_size(Object *obj, Object_64 *obj64) {
  * Arg2 is always zero. Effectively unused.
  */
 void run_object_init_func(Object *obj, void *entry, s32 param) {
+    void (*func)(Object *, s32);
+
+    func = NULL;
     obj->behaviorId = obj->segment.header->behaviorId;
     switch (obj->behaviorId) {
         case BHV_RACER:
@@ -10524,24 +10544,31 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             break;
         case BHV_SCENERY:
             obj_init_scenery(obj, (LevelObjectEntry_Scenery *) entry);
+            func = obj_loop_scenery;
             break;
         case BHV_FISH:
             obj_init_fish(obj, (LevelObjectEntry_Fish *) entry, param);
+            func = obj_loop_fish;
             break;
         case BHV_ANIMATOR:
             obj_init_animator(obj, (LevelObjectEntry_Animator *) entry, param);
+            func = obj_loop_animator;
             break;
         case BHV_SMOKE:
             obj_init_smoke(obj, (LevelObjectEntry_Smoke *) entry);
+            func = obj_loop_smoke;
             break;
         case BHV_UNK_19:
             obj_init_unknown25(obj, (LevelObjectEntry_Unknown25 *) entry);
+            func = obj_loop_unknown25;
             break;
         case BHV_BOMB_EXPLOSION:
             obj_init_bombexplosion(obj, (LevelObjectEntry_BombExplosion *) entry);
+            func = obj_loop_bombexplosion;
             break;
         case BHV_EXIT:
             obj_init_exit(obj, (LevelObjectEntry_Exit *) entry);
+            func = obj_loop_exit;
             break;
         case BHV_AUDIO:
             obj_init_audio(obj, (LevelObjectEntry_Audio *) entry);
@@ -10555,58 +10582,76 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             break;
         case BHV_CAMERA_CONTROL:
             obj_init_cameracontrol(obj, (LevelObjectEntry_CameraControl *) entry);
+            func = obj_loop_cameracontrol;
             break;
         case BHV_SETUP_POINT:
             obj_init_setuppoint(obj, (LevelObjectEntry_SetupPoint *) entry);
+            func = obj_loop_setuppoint;
             break;
         case BHV_DINO_WHALE:
             obj_init_dino_whale(obj, (LevelObjectEntry_Dino_Whale *) entry);
+            func = obj_loop_dino_whale;
             break;
         case BHV_CHECKPOINT:
             obj_init_checkpoint(obj, (LevelObjectEntry_Checkpoint *) entry, param);
+            func = obj_loop_checkpoint;
             break;
         case BHV_MODECHANGE:
             obj_init_modechange(obj, (LevelObjectEntry_ModeChange *) entry);
+            func = obj_loop_modechange;
             break;
         case BHV_BONUS:
             obj_init_bonus(obj, (LevelObjectEntry_Bonus *) entry);
+            func = obj_loop_bonus;
             break;
         case BHV_DOOR:
             obj_init_door(obj, (LevelObjectEntry_Door *) entry);
+            func = obj_loop_door;
             break;
         case BHV_TT_DOOR:
             obj_init_ttdoor(obj, (LevelObjectEntry_TTDoor *) entry);
+            func = obj_loop_ttdoor;
             break;
         case BHV_FOG_CHANGER:
             obj_init_fogchanger(obj, (LevelObjectEntry_FogChanger *) entry);
+            func = obj_loop_fogchanger;
             break;
         case BHV_AINODE:
             obj_init_ainode(obj, (LevelObjectEntry_AiNode *) entry);
+            func = obj_loop_ainode;
             break;
         case BHV_WEAPON_BALLOON:
             obj_init_weaponballoon(obj, (LevelObjectEntry_WeaponBalloon *) entry);
+            func = obj_loop_weaponballoon;
             break;
         case BHV_BALLOON_POP:
             obj_init_wballoonpop(obj, (LevelObjectEntry_WBalloonPop *) entry);
+            func = obj_loop_wballoonpop;
             break;
         case BHV_WEAPON:
         case BHV_WEAPON_2:
             obj_init_weapon(obj, (LevelObjectEntry_Weapon *) entry);
+            func = obj_loop_weapon;
             break;
         case BHV_SKY_CONTROL:
             obj_init_skycontrol(obj, (LevelObjectEntry_SkyControl *) entry);
+            func = obj_loop_skycontrol;
             break;
         case BHV_TORCH_MIST:
             obj_init_torch_mist(obj, (LevelObjectEntry_Torch_Mist *) entry);
+            func = obj_loop_torch_mist;
             break;
         case BHV_TEXTURE_SCROLL:
             obj_init_texscroll(obj, (LevelObjectEntry_TexScroll *) entry, param);
+            func = obj_loop_texscroll;
             break;
         case BHV_STOPWATCH_MAN:
             obj_init_stopwatchman(obj, (LevelObjectEntry_StopWatchMan *) entry);
+            func = obj_loop_stopwatchman;
             break;
         case BHV_BANANA:
             obj_init_banana(obj, (LevelObjectEntry_Banana *) entry);
+            func = obj_loop_banana;
             break;
 #ifdef USE_DYNLIGHTS
         case BHV_LIGHT_RGBA:
@@ -10615,21 +10660,27 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
 #endif
         case BHV_BUOY_PIRATE_SHIP:
             obj_init_buoy_pirateship(obj, (LevelObjectEntry_Buoy_PirateShip *) entry, param);
+            func = obj_loop_buoy_pirateship;
             break;
         case BHV_LOG:
             obj_init_log(obj, (LevelObjectEntry_Log *) entry, param);
+            func = obj_loop_log;
             break;
         case BHV_WEATHER:
             obj_init_weather(obj, (LevelObjectEntry_Weather *) entry);
+            func = obj_loop_weather;
             break;
         case BHV_BRIDGE_WHALE_RAMP:
             obj_init_bridge_whaleramp(obj, (LevelObjectEntry_Bridge_WhaleRamp *) entry);
+            func = obj_loop_bridge_whaleramp;
             break;
         case BHV_RAMP_SWITCH:
             obj_init_rampswitch(obj, (LevelObjectEntry_RampSwitch *) entry);
+            func = obj_loop_rampswitch;
             break;
         case BHV_SEA_MONSTER:
             obj_init_seamonster(obj, (LevelObjectEntry_SeaMonster *) entry);
+            func = obj_loop_seamonster;
             break;
         case BHV_LENS_FLARE:
             obj_init_lensflare(obj, (LevelObjectEntry_LensFlare *) entry);
@@ -10639,69 +10690,89 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             break;
         case BHV_COLLECT_EGG:
             obj_init_collectegg(obj, (LevelObjectEntry_CollectEgg *) entry);
+            func = obj_loop_collectegg;
             break;
         case BHV_EGG_CREATOR:
             obj_init_eggcreator(obj, (LevelObjectEntry_EggCreator *) entry);
+            func = obj_loop_eggcreator;
             break;
         case BHV_CHARACTER_FLAG:
             obj_init_characterflag(obj, (LevelObjectEntry_CharacterFlag *) entry);
+            func = obj_loop_characterflag;
             break;
         case BHV_ANIMATION:
             obj_init_animation(obj, (LevelObjectEntry_Animation *) entry, param);
             break;
         case BHV_INFO_POINT:
             obj_init_infopoint(obj, (LevelObjectEntry_InfoPoint *) entry);
+            func = obj_loop_infopoint;
             break;
         case BHV_TRIGGER:
             obj_init_trigger(obj, (LevelObjectEntry_Trigger *) entry);
+            func = obj_loop_trigger;
             break;
         case BHV_ZIPPER_WATER:
         case BHV_ZIPPER_AIR:
             obj_init_airzippers_waterzippers(obj, (LevelObjectEntry_AirZippers_WaterZippers *) entry);
+            func = obj_loop_airzippers_waterzippers;
             break;
         case BHV_TIMETRIAL_GHOST:
             obj_init_timetrialghost(obj, (LevelObjectEntry_TimeTrial_Ghost *) entry);
+            func = obj_loop_timetrialghost;
             break;
         case BHV_WAVE_GENERATOR:
             obj_init_wavegenerator(obj, (LevelObjectEntry_WaveGenerator *) entry, param);
             break;
         case BHV_BUTTERFLY:
             obj_init_butterfly(obj, (LevelObjectEntry_Butterfly *) entry, param);
+            func = obj_loop_butterfly;
             break;
         case BHV_PARK_WARDEN:
             obj_init_parkwarden(obj, (LevelObjectEntry_Parkwarden *) entry);
+            func = obj_loop_parkwarden;
             break;
         case BHV_WORLD_KEY:
             obj_init_worldkey(obj, (LevelObjectEntry_WorldKey *) entry);
+            func = obj_loop_worldkey;
             break;
         case BHV_BANANA_SPAWNER:
             obj_init_bananacreator(obj, (LevelObjectEntry_BananaCreator *) entry);
+            func = obj_loop_bananacreator;
             break;
         case BHV_TREASURE_SUCKER:
             obj_init_treasuresucker(obj, (LevelObjectEntry_TreasureSucker *) entry);
+            func = obj_loop_treasuresucker;
             break;
         case BHV_LAVA_SPURT:
             obj_init_lavaspurt(obj, (LevelObjectEntry_LavaSpurt *) entry);
+            func = obj_loop_lavaspurt;
             break;
         case BHV_POS_ARROW:
             obj_init_posarrow(obj, (LevelObjectEntry_PosArrow *) entry);
+            func = obj_loop_posarrow;
             break;
         case BHV_HIT_TESTER:
         case BHV_HIT_TESTER_3:
             obj_init_hittester(obj, (LevelObjectEntry_HitTester *) entry);
+            func = obj_loop_hittester;
             break;
         case BHV_HIT_TESTER_2:
-        case BHV_DYNAMIC_LIGHT_OBJECT_2:
         case BHV_HIT_TESTER_4:
+            obj_init_dynamic_lighting_object(obj, (LevelObjectEntry_DynamicLightingObject *) entry);
+            func = obj_loop_hittester;
+            break;
+        case BHV_DYNAMIC_LIGHT_OBJECT_2:
             obj_init_dynamic_lighting_object(obj, (LevelObjectEntry_DynamicLightingObject *) entry);
             break;
         case BHV_SNOWBALL:
         case BHV_SNOWBALL_3:
             obj_init_unknown96(obj, (LevelObjectEntry_Unknown96 *) entry);
+            func = obj_loop_snowball;
             break;
         case BHV_SNOWBALL_2:
         case BHV_SNOWBALL_4:
             obj_init_snowball(obj, (LevelObjectEntry_Snowball *) entry);
+            func = obj_loop_snowball;
             break;
         case BHV_MIDI_FADE:
             obj_init_midifade(obj, (LevelObjectEntry_MidiFade *) entry);
@@ -10714,70 +10785,111 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             break;
         case BHV_EFFECT_BOX:
             obj_init_effectbox(obj, (LevelObjectEntry_EffectBox *) entry);
+            func = obj_loop_effectbox;
             break;
         case BHV_TROPHY_CABINET:
             obj_init_trophycab(obj, (LevelObjectEntry_TrophyCab *) entry);
+            func = obj_loop_trophycab;
             break;
         case BHV_BUBBLER:
             obj_init_bubbler(obj, (LevelObjectEntry_Bubbler *) entry);
+            func = obj_loop_bubbler;
             break;
         case BHV_FLY_COIN:
             obj_init_flycoin(obj, (LevelObjectEntry_FlyCoin *) entry);
+            func = obj_loop_flycoin;
             break;
         case BHV_GOLDEN_BALLOON:
             obj_init_goldenballoon(obj, (LevelObjectEntry_GoldenBalloon *) entry);
+            func = obj_loop_goldenballoon;
             break;
         case BHV_LASER_BOLT:
             obj_init_laserbolt(obj, (LevelObjectEntry_Laserbolt *) entry);
+            func = obj_loop_laserbolt;
             break;
         case BHV_LASER_GUN:
             obj_init_lasergun(obj, (LevelObjectEntry_Lasergun *) entry);
+            func = obj_loop_lasergun;
             break;
         case BHV_ZIPPER_GROUND:
             obj_init_groundzipper(obj, (LevelObjectEntry_GroundZipper *) entry);
+            func = obj_loop_groundzipper;
             break;
         case BHV_OVERRIDE_POS:
             obj_init_overridepos(obj, (LevelObjectEntry_OverridePos *) entry);
             break;
         case BHV_WIZPIG_SHIP:
             obj_init_wizpigship(obj, (LevelObjectEntry_WizpigShip *) entry);
+            func = obj_loop_wizpigship;
             break;
         case BHV_BOOST:
             obj_init_boost(obj, (LevelObjectEntry_Boost2 *) entry);
             break;
         case BHV_SILVER_COIN:
             obj_init_silvercoin(obj, (LevelObjectEntry_SilverCoin *) entry);
+            func = obj_loop_silvercoin;
             break;
         case BHV_WARDEN_SMOKE:
             obj_init_wardensmoke(obj, (LevelObjectEntry_WardenSmoke *) entry);
+            func = obj_loop_wardensmoke;
             break;
         case BHV_UNK_5E:
             obj_init_unknown94(obj, (LevelObjectEntry_Unknown94 *) entry, param);
+            func = obj_loop_unknown94;
             break;
         case BHV_TELEPORT:
             obj_init_teleport(obj, (LevelObjectEntry_Teleport *) entry);
+            func = obj_loop_teleport;
             break;
         case BHV_ROCKET_SIGNPOST:
+            obj_init_lighthouse_rocketsignpost(obj, (LevelObjectEntry_Lighthouse_RocketSignpost *) entry);
+            break;
         case BHV_ROCKET_SIGNPOST_2:
+            func = obj_loop_rocketsignpost;
             obj_init_lighthouse_rocketsignpost(obj, (LevelObjectEntry_Lighthouse_RocketSignpost *) entry);
             break;
         case BHV_RANGE_TRIGGER:
             obj_init_rangetrigger(obj, (LevelObjectEntry_RangeTrigger *) entry);
+            func = obj_loop_rangetrigger;
             break;
         case BHV_FIREBALL_OCTOWEAPON:
         case BHV_FIREBALL_OCTOWEAPON_2:
             obj_init_fireball_octoweapon(obj, (LevelObjectEntry_Fireball_Octoweapon *) entry);
+            func = obj_loop_fireball_octoweapon;
             break;
         case BHV_FROG:
             obj_init_frog(obj, (LevelObjectEntry_Frog *) entry);
+            func = obj_loop_frog;
             break;
         case BHV_SILVER_COIN_2:
             obj_init_silvercoin_adv2(obj, (LevelObjectEntry_SilverCoinAdv2 *) entry);
+            func = obj_loop_silvercoin;
             break;
         case BHV_LEVEL_NAME:
             obj_init_levelname(obj, (LevelObjectEntry_LevelName *) entry);
+            func = obj_loop_levelname;
+            break;
+        case BHV_PIG_ROCKETEER:
+            func = obj_loop_pigrocketeer;
+            break;
+        case BHV_DOOR_OPENER:
+            func = obj_loop_dooropener;
+            break;
+        case BHV_WAVE_POWER:
+            func = obj_loop_wavepower;
+            break;
+        case BHV_VEHICLE_ANIMATION:
+            func = obj_loop_vehicleanim;
+            break;
+        case BHV_CHARACTER_SELECT:
+            func = obj_loop_char_select;
+            break;
+        case BHV_CAMERA_ANIMATION:
+            func = obj_loop_animcamera;
             break;
     }
+
+    obj->lightData = func;
 }
 
 /**
@@ -10927,7 +11039,7 @@ s32 obj_init_property_flags(s32 behaviorId) {
  * One big switch statement for whichever object.
  */
 void run_object_loop_func(Object *obj, s32 updateRate) {
-    update_object_stack_trace(OBJECT_UPDATE, obj->objectID);
+    /*update_object_stack_trace(OBJECT_UPDATE, obj->objectID);
     switch (obj->behaviorId) {
         case BHV_SCENERY:
             obj_loop_scenery(obj, updateRate);
@@ -11168,7 +11280,7 @@ void run_object_loop_func(Object *obj, s32 updateRate) {
             obj_loop_levelname(obj, updateRate);
             break;
     }
-    update_object_stack_trace(OBJECT_UPDATE, OBJECT_CLEAR);
+    update_object_stack_trace(OBJECT_UPDATE, OBJECT_CLEAR);*/
 }
 
 s16 *func_80024594(s32 *currentCount, s32 *maxCount) {
