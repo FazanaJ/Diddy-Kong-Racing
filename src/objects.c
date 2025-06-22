@@ -1911,7 +1911,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
         }
     }
 
-    failed = FALSE;
+    //failed = FALSE;
     if (objType == OBJECT_MODEL_TYPE_3D_MODEL) {
         while (i < assetCount) {
             if (i == 0 && (spawnFlags & OBJECT_SPAWN_UNK04)) {
@@ -1920,34 +1920,34 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
                 curObj->modelInstances[i] = NULL;
             } else {
                 curObj->modelInstances[i] = object_model_init(curObj->segment.header->modelIds[i], behaviourFlags);
-                if (curObj->modelInstances[i] == NULL) {
+                /*if (curObj->modelInstances[i] == NULL) {
                     failed = TRUE;
-                }
+                }*/
             }
             i++;
         }
     } else if (objType == OBJECT_MODEL_TYPE_MISC) {
         while (i < assetCount) {
             curObj->textures[i] = load_texture(curObj->segment.header->modelIds[i]);
-            if (curObj->textures[i] == NULL) {
+            /*if (curObj->textures[i] == NULL) {
                 failed = TRUE;
-            }
+            }*/
             i++;
         }
     } else {
         while (i < assetCount) {
             curObj->sprites[i] = tex_load_sprite(curObj->segment.header->modelIds[i], 10);
-            if (curObj->sprites[i] == NULL) {
+            /*if (curObj->sprites[i] == NULL) {
                 failed = TRUE;
-            }
+            }*/
             i++;
         }
     }
-    if (failed) {
+    /*if (failed) {
         objFreeAssets(curObj, assetCount, objType);
         try_free_object_header(headerType);
         return NULL;
-    }
+    }*/
 
     address = (u8 *) &curObj->modelInstances[curObj->segment.header->numberOfModelIds];
     address += get_object_property_size(curObj, (Object_64 *) address);
@@ -2328,28 +2328,28 @@ Object *func_8000FD54(s32 objectHeaderIndex) {
     modelType = object->segment.header->modelType;
     object->modelInstances = (ModelInstance **) &object[1];
 
-    failedToLoadModel = FALSE;
+    //failedToLoadModel = FALSE;
     if (modelType == OBJECT_MODEL_TYPE_3D_MODEL) {
         for (i = 0; i < numModelIds; i++) {
             object->modelInstances[i] = object_model_init(object->segment.header->modelIds[i], 0);
-            if (object->modelInstances[i] == NULL) {
+            /*if (object->modelInstances[i] == NULL) {
                 failedToLoadModel = TRUE;
-            }
+            }*/
         }
     } else {
         for (i = 0; i < numModelIds; i++) {
             object->sprites[i] = tex_load_sprite(object->segment.header->modelIds[i], 10);
-            if (object->sprites[i] == NULL) {
+            /*if (object->sprites[i] == NULL) {
                 failedToLoadModel = TRUE;
-            }
+            }*/
         }
     }
-    if (failedToLoadModel) {
+    /*if (failedToLoadModel) {
         objFreeAssets(object, numModelIds, modelType);
         try_free_object_header(objectHeaderIndex);
         mempool_free(object);
         return NULL;
-    }
+    }*/
 
     return object;
 }
@@ -3597,7 +3597,6 @@ void set_temp_model_transforms(Object *obj) {
                         } else {
                             modelIndex = 5;
                         }
-                        modelIndex = 3;
                     }
                 }
             }
@@ -10886,6 +10885,12 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             break;
         case BHV_CAMERA_ANIMATION:
             func = obj_loop_animcamera;
+            break;
+        case BHV_ANIMATED_OBJECT:
+        case BHV_ANIMATED_OBJECT_2:
+        case BHV_ANIMATED_OBJECT_3:
+        case BHV_ANIMATED_OBJECT_4:
+            func = obj_loop_animobject;
             break;
     }
 
