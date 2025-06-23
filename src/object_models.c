@@ -287,11 +287,13 @@ ModelInstance *model_init_type(ObjectModel *model, s32 flags) {
     ModelInstance *result;
     Vertex *var_v1;
     Vertex *vertex;
+    Vertex *vertex2;
     Vertex *mdlVertex;
+    u32 first;
 
     if (model->numberOfAnimations != 0 && (flags & OBJECT_BEHAVIOUR_ANIMATION)) {
         temp = ((model->numberOfVertices * 2) * sizeof(Vertex)) + sizeof(ModelInstance);
-        result = (ModelInstance *) mempool_alloc((model->unk4A * 6) + temp, PP_RAM_OBJGFX);
+        result = (ModelInstance *) mempool_alloc((model->unk4A * 6) + temp, PP_RAM_MODELINSTANCE);
         if (result == NULL) {
             return NULL;
         }
@@ -302,7 +304,7 @@ ModelInstance *model_init_type(ObjectModel *model, s32 flags) {
         result->modelType = MODELTYPE_ANIMATED;
     } else if (model->unk40 != NULL && (flags & OBJECT_BEHAVIOUR_SHADED)) {
         temp = (model->numberOfVertices * sizeof(Vertex)) + sizeof(ModelInstance);
-        result = (ModelInstance *) mempool_alloc(temp, PP_RAM_OBJGFX);
+        result = (ModelInstance *) mempool_alloc(temp, PP_RAM_MODELINSTANCE);
         if (result == NULL) {
             return NULL;
         }
@@ -312,7 +314,7 @@ ModelInstance *model_init_type(ObjectModel *model, s32 flags) {
         result->vertices[2] = NULL;
         result->modelType = MODELTYPE_SHADE;
     } else {
-        result = (ModelInstance *) mempool_alloc(sizeof(ModelInstance), PP_RAM_OBJGFX);
+        result = (ModelInstance *) mempool_alloc(sizeof(ModelInstance), PP_RAM_MODELINSTANCE);
         if (result == NULL) {
             return NULL;
         }
@@ -332,32 +334,25 @@ ModelInstance *model_init_type(ObjectModel *model, s32 flags) {
     if (result->modelType != MODELTYPE_BASIC) {
         temp = 0;
         vertex = result->vertices[0];
+        vertex2 = result->vertices[1];
         mdlVertex = &model->vertices[0];
         do {
             vertex->x = mdlVertex->x;
+            vertex2->x = mdlVertex->x;
             vertex->y = mdlVertex->y;
+            vertex2->y = mdlVertex->y;
             vertex->z = mdlVertex->z;
+            vertex2->z = mdlVertex->z;
             vertex->r = mdlVertex->r;
+            vertex2->r = mdlVertex->r;
             vertex->g = mdlVertex->g;
+            vertex2->g = mdlVertex->g;
             vertex->b = mdlVertex->b;
+            vertex2->b = mdlVertex->b;
             vertex->a = mdlVertex->a;
+            vertex2->a = mdlVertex->a;
             vertex++;
-            mdlVertex++;
-            temp++;
-        } while (temp < model->numberOfVertices);
-
-        temp = 0;
-        vertex = result->vertices[1];
-        mdlVertex = &model->vertices[0];
-        do {
-            vertex->x = mdlVertex->x;
-            vertex->y = mdlVertex->y;
-            vertex->z = mdlVertex->z;
-            vertex->r = mdlVertex->r;
-            vertex->g = mdlVertex->g;
-            vertex->b = mdlVertex->b;
-            vertex->a = mdlVertex->a;
-            vertex++;
+            vertex2++;
             mdlVertex++;
             temp++;
         } while (temp < model->numberOfVertices);
@@ -950,6 +945,10 @@ s32 model_load_anim_id(ObjectModel *model, s32 animID, s32 modelID) {
     u32 animAddress;
     s32 *temp;
     s32 end;
+
+    if (model->animations[animID].animData != NULL) {
+        return 1;
+    }
 
     assettable_seek_s16(modelID, &start, &end, ASSET_ANIMATION_IDS);
     start += animID;

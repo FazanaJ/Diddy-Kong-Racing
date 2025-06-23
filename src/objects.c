@@ -3238,9 +3238,7 @@ void obj_seek_anim(Object *obj, ModelInstance *inst) {
             //debug_printf("%s Anim Change: %d %d in %dus\n", obj->segment.header->internalName, inst->animationID, obj->segment.object.animationID, (s32) (OS_CYCLES_TO_USEC(osGetCount() - first)));
         }
     } else {*/
-        if (inst->objModel->animations[obj->segment.object.animationID].animData == NULL) {
-            model_load_anim_id(inst->objModel, obj->segment.object.animationID, modelID);
-        }
+        model_load_anim_id(inst->objModel, obj->segment.object.animationID, modelID);
     //}
 
     //inst->objModel->animations[obj->segment.object.animationID].staleTimer = 2;

@@ -212,7 +212,7 @@ typedef enum DebugRam {
     PP_RAM_UNKNOWN,
     PP_RAM_OBJLISTS,
     PP_RAM_OBJHEADERS,
-    PP_RAM_OBJGFX,
+    PP_RAM_MODELINSTANCE,
     PP_RAM_DEBUG,
     PP_RAM_AUDIOLINE,
     PP_RAM_PARTICLES,
@@ -281,7 +281,7 @@ extern u8 *main_BSS_START[];
     "Unknown\t", \
     "Obj Lists", \
     "Obj Headers", \
-    "Obj Gfx\t", \
+    "Model Instances", \
     "Debug\t", \
     "Aud Lines", \
     "Particles", \
