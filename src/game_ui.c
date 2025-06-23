@@ -1516,7 +1516,7 @@ void hud_main_time_trial(s32 arg0, Object *playerRacerObj, s32 updateRate) {
                 }
             }
         }
-        obj_animate(ttSWBodyObject);
+        obj_seek_anim(ttSWBodyObject, ttSWBodyObject->modelInstances[0]);
     }
 
     hud_element_render(&gHudDL, &gHudMtx, &gHudVtx, &gCurrentHud->entry[HUD_STOPWATCH_HANDS]);

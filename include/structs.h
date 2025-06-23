@@ -657,7 +657,8 @@ typedef struct ObjectModel {
     /* 0x24 */ s16 numberOfVertices;
     /* 0x26 */ s16 numberOfTriangles;
     /* 0x28 */ s16 numberOfBatches;
-    /* 0x2A */ u8 pad2A[4];
+    /* 0x2A */ u8 pad2A[2];
+               s16 modelID;
     /* 0x2E */ u8 unk2E;
     /* 0x2F */ char pad2F[1];
     /* 0x30 */ s16 references;

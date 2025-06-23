@@ -770,8 +770,8 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
             // Try object models
             objModel = (ObjectModel *) slot->data;
             for (i = 0; i < gModelCacheCount; i++) {
-                if ((ObjectModel *) gModelCache[(i << 1) + 1] == objModel) {
-                    texID = gModelCache[i << 1];
+                if ((ObjectModel *) gModelCache[ASSETCACHE_PTR(i)] == objModel) {
+                    texID = gModelCache[ASSETCACHE_ID(i)];
                 }
             }
             if (texID != -200) {
@@ -782,8 +782,8 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
             // Okay, lets try for a sprite?
             sprite = (Sprite *) slot->data;
             for (i = 0; i < gSpriteCacheCount; i++) {
-                if ((Sprite *) gSpriteCache[(i << 1) + 1] == sprite) {
-                    texID = gSpriteCache[i << 1];
+                if ((Sprite *) gSpriteCache[ASSETCACHE_PTR(i)] == sprite) {
+                    texID = gSpriteCache[ASSETCACHE_ID(i)];
                 }
             }
             if (texID != -200) {
@@ -797,8 +797,8 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
             texID = -200;
             // First see if it's a texture
             for (i = 0; i < gNumberOfLoadedTextures; i++) {
-                if ((TextureHeader *) gTextureCache[(i << 1) + 1] == texHeader) {
-                    texID = gTextureCache[i << 1];
+                if ((TextureHeader *) gTextureCache[ASSETCACHE_PTR(i)] == texHeader) {
+                    texID = gTextureCache[ASSETCACHE_ID(i)];
                 }
             }
             if (texID != -200) {
@@ -811,8 +811,8 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
             // Okay, lets try for a sprite?
             sprite = (Sprite *) slot->data;
             for (i = 0; i < gSpriteCacheCount; i++) {
-                if ((Sprite *) gSpriteCache[(i << 1) + 1] == sprite) {
-                    texID = gSpriteCache[i << 1];
+                if ((Sprite *)  gSpriteCache[ASSETCACHE_PTR(i)] == sprite) {
+                    texID = gSpriteCache[ASSETCACHE_ID(i)];
                 }
             }
             if (texID != -200) {

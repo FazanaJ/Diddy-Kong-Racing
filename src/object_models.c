@@ -153,6 +153,9 @@ ModelInstance *object_model_init(s32 modelID, s32 flags) {
 #endif
     u32 compressedData;
     s32 modelSize;
+    s32 start;
+    s32 end;
+    s32 animStart;
 
     if (obj_model_blacklist(modelID)) {
         return NULL;
@@ -193,8 +196,12 @@ ModelInstance *object_model_init(s32 modelID, s32 flags) {
     }
 
     assettable_seek_s32(modelID, &temp_s0, &sp48, ASSET_OBJECT_MODELS_TABLE);
+    assettable_seek_s16(modelID, &start, &end, ASSET_ANIMATION_IDS);
     modelSize = get_asset_uncompressed_size(ASSET_OBJECT_MODELS, temp_s0) + sizeof(ObjectModel);
+    animStart = modelSize;
+    modelSize += (end - start) * sizeof(ObjectModel_44);
     objMdl = (ObjectModel *) mempool_alloc(modelSize, PP_RAM_OBJMDL);
+    modelSize -= (end - start) * sizeof(ObjectModel_44);
     if (objMdl == NULL) {
 #if VERSION >= VERSION_79
         if (var_a2) {
@@ -222,8 +229,17 @@ ModelInstance *object_model_init(s32 modelID, s32 flags) {
     objMdl->unk32 = 0;
     objMdl->texOffsetUpdateRate = 0;
     objMdl->unk40 = 0;
-    objMdl->numberOfAnimations = 0;
-    objMdl->animations = NULL;
+    objMdl->modelID = modelID;
+    if (end == start) {
+        objMdl->numberOfAnimations = 0;
+    } else {
+        if (D_8011D640 != 0) {
+            if (start + D_8011D640 < end) {
+                end = start + D_8011D640;
+            }
+        }
+        objMdl->numberOfAnimations = end - start;
+    }
     sp3F = 0;
     set_texture_colour_tag(PP_RAM_OBJTEX);
     for (i = 0; i < objMdl->numberOfTextures; i++) {
@@ -240,7 +256,7 @@ ModelInstance *object_model_init(s32 modelID, s32 flags) {
                 goto block_30;
             }
         }
-        if (func_80060EA8(objMdl) == 0 && func_80061A00(objMdl, modelID) == 0) {
+        if (func_80060EA8(objMdl) == 0 && func_80061A00(objMdl, modelID, animStart) == 0) {
             instance = model_init_type(objMdl, flags);
             if (instance != NULL) {
                 gModelCache[ASSETCACHE_ID(cacheIndex)] = modelID;
@@ -926,61 +942,45 @@ void func_800619F4(s32 arg0) {
     D_8011D640 = arg0;
 }
 
-// Returns 0 if successful, or 1 if an error occured.
-s32 func_80061A00(ObjectModel *model, s32 animTableIndex) {
-    s32 j;
-    s32 end;
-    ObjectModel_44 *allocAnimData;
+s32 model_load_anim_id(ObjectModel *model, s32 animID, s32 modelID) {
     s32 start;
-    s32 size;
     s32 assetOffset;
     s32 assetSize;
-    s32 i;
-    s32 i2;
+    s32 size;
     u32 animAddress;
     s32 *temp;
+    s32 end;
 
-    assettable_seek_s16(animTableIndex, &start, &end, ASSET_ANIMATION_IDS);
-    if (start == end) {
-        model->numberOfAnimations = 0;
+    assettable_seek_s16(modelID, &start, &end, ASSET_ANIMATION_IDS);
+    start += animID;
+
+    assettable_seek_s32(start, &assetOffset, (s32 *) &animAddress, ASSET_OBJECT_ANIMATIONS_TABLE);
+    assetSize = animAddress;
+    size = get_asset_uncompressed_size(ASSET_OBJECT_ANIMATIONS, assetOffset) + 0x80;
+    model->animations[animID].animData = (u8 *) mempool_alloc(size, PP_RAM_ANIMATIONS);
+    animAddress = (u32) (model->animations[animID].animData + size) - assetSize;
+    load_asset_to_address(ASSET_OBJECT_ANIMATIONS, animAddress, assetOffset, assetSize);
+    gzip_inflate((u8 *) animAddress, (u8 *) model->animations[animID].anim);
+    temp = model->animations[animID].anim;
+    model->animations[animID].animLength = *temp;
+    model->animations[animID].anim++;
+    return 0;
+}
+
+// Returns 0 if successful, or 1 if an error occured.
+s32 func_80061A00(ObjectModel *model, s32 animTableIndex, s32 animStart) {
+    s32 i;
+
+    if (model->numberOfAnimations == 0) {
+        model->animations = NULL;
         return 0;
     }
-    if (D_8011D640 != 0) {
-        if (start + D_8011D640 < end) {
-            end = start + D_8011D640;
-        }
+
+    model->animations = (ObjectModel_44 *) ((u8 *) model + animStart);
+    
+    for (i = 0; i < model->numberOfAnimations; i++) {
+        model->animations[i].animData = NULL;
     }
-    model->numberOfAnimations = end - start;
-    allocAnimData = (ObjectModel_44 *) mempool_alloc(model->numberOfAnimations * 8, PP_RAM_ANIMATIONS);
-    model->animations = allocAnimData;
-    if (allocAnimData == NULL) {
-        return 1;
-    }
-    i = 0;
-    i2 = 0;
-    do {
-        assettable_seek_s32(start, &assetOffset, (s32 *) &animAddress, ASSET_OBJECT_ANIMATIONS_TABLE);
-        assetSize = animAddress;
-        size = get_asset_uncompressed_size(ASSET_OBJECT_ANIMATIONS, assetOffset) + 0x80;
-        model->animations[i].animData = (u8 *) mempool_alloc(size, PP_RAM_ANIMATIONS);
-        if (model->animations[i].animData == NULL) {
-            for (j = 0; j < i2; j++) {
-                mempool_free(model->animations[j].animData);
-            }
-            mempool_free(model->animations);
-            model->animations = NULL;
-            return 1;
-        }
-        animAddress = (u32) (model->animations[i].animData + size) - assetSize;
-        load_asset_to_address(ASSET_OBJECT_ANIMATIONS, animAddress, assetOffset, assetSize);
-        gzip_inflate((u8 *) animAddress, (u8 *) model->animations[i].anim);
-        temp = model->animations[i].anim;
-        model->animations[i].animLength = *temp;
-        model->animations[i].anim++;
-        i++;
-        start++;
-        i2++;
-    } while (start < end);
 
     return 0;
 }

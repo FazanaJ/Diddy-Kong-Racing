@@ -3212,6 +3212,41 @@ void render_3d_billboard(Object *obj) {
     }
 }
 
+void obj_seek_anim(Object *obj, ModelInstance *inst) {
+    s32 i;
+    s32 modelID = inst->objModel->modelID;
+    s32 addr;
+
+    /*if (modelID != ASSET_OBJECTMODEL_TRICKYTOPS &&
+        modelID != ASSET_OBJECTMODEL_WALRUS &&
+        modelID != ASSET_OBJECTMODEL_OCTOPUS &&
+        modelID != ASSET_OBJECTMODEL_WIZPIG &&
+        modelID != ASSET_OBJECTMODEL_WIZPIGROCKET &&
+        modelID != ASSET_OBJECTMODEL_PARKWARDEN &&
+        modelID != ASSET_OBJECTMODEL_STOPWATCHMAN) {
+        if (inst->animationID != obj->segment.object.animationID) {
+            //u32 first = osGetCount();
+            if (inst->objModel->animations[inst->animationID].animData != NULL) {
+                mempool_free(inst->objModel->animations[inst->animationID].anim - 1);
+                for (i = 0; i < inst->objModel->numberOfAnimations; i++) {
+                    inst->objModel->animations[i].anim = NULL;
+                }
+            }
+            if (obj->segment.object.animationID != -1) {
+                model_load_anim_id(inst->objModel, obj->segment.object.animationID, modelID);
+            }
+            //debug_printf("%s Anim Change: %d %d in %dus\n", obj->segment.header->internalName, inst->animationID, obj->segment.object.animationID, (s32) (OS_CYCLES_TO_USEC(osGetCount() - first)));
+        }
+    } else {*/
+        if (inst->objModel->animations[obj->segment.object.animationID].animData == NULL) {
+            model_load_anim_id(inst->objModel, obj->segment.object.animationID, modelID);
+        }
+    //}
+
+    //inst->objModel->animations[obj->segment.object.animationID].staleTimer = 2;
+    obj_animate(obj);
+}
+
 /**
  * Renders a 3D object, with support for vehicle part entities as part of the process.
  * Loads materials, and sets environment and/or primitive colours based on the material type.
@@ -3261,7 +3296,7 @@ void render_3d_model(Object *obj) {
         if (modInst->animUpdateTimer <= 0) {
             obj->curVertData = modInst->vertices[modInst->animationTaskNum];
             if (modInst->modelType == MODELTYPE_ANIMATED) {
-                obj_animate(obj);
+                obj_seek_anim(obj, modInst);
             }
             if (modInst->modelType != MODELTYPE_BASIC && objModel->unk40 != NULL) {
                 flags = TRUE;

@@ -15543,7 +15543,7 @@ void animate_model(s32 updateRate) {
     fakeObjectForModel.segment.object.animationID = animationID;
     fakeObjectForModel.segment.animFrame = animationFrame;
     
-    animResult = obj_animate(&fakeObjectForModel);
+    obj_seek_anim(&fakeObjectForModel, fakeObjectForModel.modelInstances[0]);
     
     animationFrame += updateRate;
 }

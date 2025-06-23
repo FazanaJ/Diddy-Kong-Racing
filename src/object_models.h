@@ -29,11 +29,12 @@ void allocate_object_model_pools(void);
 void func_800619F4(s32 arg0);
 void func_80061C0C(Object* obj);
 void free_3d_model(ModelInstance *modInst);
-s32 func_80061A00(ObjectModel *model, s32 animTableIndex);
+s32 func_80061A00(ObjectModel *model, s32 animTableIndex, s32 animStart);
 s32 check_nearby_vertices(Vertex *vertices, s32 arg1, s32 arg2, s32 arg3, s32 arg4);
 ModelInstance *model_init_type(ObjectModel *model, s32 flags);
 ModelInstance *object_model_init(s32 modelID, s32 flags);
 s32 func_80060C58(Vertex *vertices, s32 i1, s32 i2, s32 i3, s32 i4);
+s32 model_load_anim_id(ObjectModel *model, s32 animID, s32 modelID);
 
 void free_model_data(ObjectModel *mdl); // Non Matching
 void func_80060910(ObjectModel *);

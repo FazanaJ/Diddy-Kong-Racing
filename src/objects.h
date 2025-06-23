@@ -545,6 +545,7 @@ void obj_shade_fast(ObjectModel *model, Object * obj, f32 intensity);
  * Animation function for objects. Does per-vertex transformation.
 */
 s32 obj_animate(Object *obj);
+void obj_seek_anim(Object *obj, ModelInstance *inst);
 
 //Non Matching
 void calc_dynamic_lighting_for_object_1(Object *, ObjectModel *, s16, Object *, f32, f32);
