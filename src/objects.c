@@ -385,6 +385,7 @@ void racerfx_alloc(s32 numberOfVertices, s32 numberOfTriangles) {
             // This is for shields, not boosts.
             gShieldSineTime[i] = rand_range(0, 255);
         }
+        set_texture_colour_tag(PP_RAM_OBJTEX);
         for (i = 0; i < 10; i++) { // temp until I figure out why SDV crashes without 10
             objEntry.common.objectID = ASSET_OBJECT_ID_BOOST;
             objEntry.common.size = sizeof(LevelObjectEntry_unk8000B020);
@@ -405,6 +406,7 @@ void racerfx_alloc(s32 numberOfVertices, s32 numberOfTriangles) {
             }
             D_8011B068[i] = TRUE;
         }
+        set_texture_colour_tag(COLOUR_TAG_MAGENTA);
     }
 }
 
@@ -1937,6 +1939,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
             i++;
         }
     } else if (objType == OBJECT_MODEL_TYPE_MISC) {
+        set_texture_colour_tag(PP_RAM_OBJTEX);
         while (i < assetCount) {
             curObj->textures[i] = load_texture(curObj->segment.header->modelIds[i]);
             /*if (curObj->textures[i] == NULL) {
@@ -1944,6 +1947,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
             }*/
             i++;
         }
+        set_texture_colour_tag(COLOUR_TAG_MAGENTA);
     } else {
         while (i < assetCount) {
             curObj->sprites[i] = tex_load_sprite(curObj->segment.header->modelIds[i], 10);

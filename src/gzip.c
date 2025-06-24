@@ -6,7 +6,6 @@
 /************ .data ************/
 
 huft *gHuftTable = NULL; // gzip_huft_alloc
-s32 *gPackedHeader = NULL;
 u8 *gzip_inflate_input = NULL;
 u8 *gzip_inflate_output = NULL;
 
@@ -25,7 +24,6 @@ s32 gHuftTablePos; // gzip_hufts
  */
 void gzip_init(void) {
     gHuftTable = (huft *) mempool_alloc_safe(0x2800, PP_RAM_STACK);
-    gPackedHeader = (s32 *) mempool_alloc_safe(0x10, PP_RAM_ASSETTABLE);
 }
 
 /**
@@ -47,8 +45,9 @@ s32 byteswap32(u8 *arg0) {
  * Official name: rzipUncompressSizeROM
  */
 s32 get_asset_uncompressed_size(s32 assetIndex, s32 assetOffset) {
-    load_asset_to_address(assetIndex, (u32) gPackedHeader, assetOffset, 8);
-    return byteswap32((u8 *) gPackedHeader);
+    u32 header[4];
+    load_asset_to_address(assetIndex, (u32) &header, assetOffset, 8);
+    return byteswap32((u8 *) &header);
 }
 
 /**

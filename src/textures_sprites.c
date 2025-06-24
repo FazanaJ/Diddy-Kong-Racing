@@ -253,6 +253,7 @@ Gfx dBasicRenderModes[][2] = {
 /************ .bss ************/
 
 s32 *gTextureCache;
+s16 *gTextureCacheIDs;
 
 u8 *gCiPalettes;
 s32 gNumberOfLoadedTextures;
@@ -262,6 +263,7 @@ s32 gCiPalettesSize;
 s32 gFirstTexIsLoaded;
 
 s32 *gSpriteCache;
+s16 *gSpriteCacheIDs;
 
 s32 gSpriteTableSize;
 s32 gSpriteCacheCount;
@@ -287,7 +289,8 @@ void tex_init_textures(void) {
     s32 i;
     s32 *table;
 
-    gTextureCache = mempool_alloc_safe(8 *MAX_NUM_TEXTURES, PP_RAM_ASSET_CACHE);
+    gTextureCache = mempool_alloc_safe(6 *MAX_NUM_TEXTURES, PP_RAM_ASSET_CACHE);
+    gTextureCacheIDs = (s16 *) ((u8 *) gTextureCache + (MAX_NUM_TEXTURES * 4));
     gCiPalettes = mempool_alloc_safe(MAX_TEX_PALETTE_SIZE, PP_RAM_ASSET_CACHE);
     gNumberOfLoadedTextures = 0;
     gCiPalettesSize = 0;
@@ -302,7 +305,8 @@ void tex_init_textures(void) {
     gTextureTableSize[TEX_TABLE_3D] = --i;
     mempool_free(table);
 
-    gSpriteCache = mempool_alloc_safe(8 * MAX_NUM_SPRITES, PP_RAM_ASSET_CACHE);
+    gSpriteCache = mempool_alloc_safe(6 * MAX_NUM_SPRITES, PP_RAM_ASSET_CACHE);
+    gSpriteCacheIDs = (s16 *) ((u8 *) gSpriteCache + (MAX_NUM_SPRITES * sizeof(uintptr_t)));
     gSpriteCacheCount = 0;
     table = (s32 *) load_asset_section_from_rom(ASSET_SPRITES_TABLE);
     gSpriteTableSize = 0;
@@ -373,8 +377,8 @@ TextureHeader *load_texture(s32 id) {
 
     // Check if texture is already loaded; if so, increment the reference count and return it.
     for (i = 0; i < gNumberOfLoadedTextures; i++) {
-        if (id == gTextureCache[ASSETCACHE_ID(i)]) {
-            tex = (TextureHeader *) gTextureCache[ASSETCACHE_PTR(i)];
+        if ((s16) id == gTextureCacheIDs[i]) {
+            tex = (TextureHeader *) gTextureCache[i];
             tex->numberOfInstances++;
             return tex;
         }
@@ -415,7 +419,7 @@ TextureHeader *load_texture(s32 id) {
     // Find an available slot in the texture cache and store the newly loaded texture
     slotIndex = -1;
     for (i = 0; i < gNumberOfLoadedTextures; i++) {
-        if (gTextureCache[ASSETCACHE_ID(i)] == -1) {
+        if (gTextureCacheIDs[i] == -1) {
             slotIndex = i;
         }
     }
@@ -423,8 +427,8 @@ TextureHeader *load_texture(s32 id) {
         slotIndex = gNumberOfLoadedTextures;
         gNumberOfLoadedTextures++;
     }
-    gTextureCache[ASSETCACHE_ID(slotIndex)] = id;
-    gTextureCache[ASSETCACHE_PTR(slotIndex)] = (s32) tex;
+    gTextureCacheIDs[slotIndex] = id;
+    gTextureCache[slotIndex] = (s32) tex;
 
     // Load palettes if needed. If the texture has multiple frames, the palette is shared, so we only load it once.
     paletteOffset = -1;
@@ -478,11 +482,11 @@ void tex_free(TextureHeader *tex) {
     if (tex != NULL) {
         if ((--tex->numberOfInstances) <= 0) {
             for (i = 0; i < gNumberOfLoadedTextures; i++) {
-                if ((s32) tex == gTextureCache[ASSETCACHE_PTR(i)]) {
+                if ((s32) tex == gTextureCache[i]) {
                     mempool_free(tex);
 
-                    gTextureCache[ASSETCACHE_ID(i)] = -1;
-                    gTextureCache[ASSETCACHE_PTR(i)] = -1;
+                    gTextureCacheIDs[i] = -1;
+                    gTextureCache[i] = -1;
                     return;
                 }
             }
@@ -807,8 +811,8 @@ Sprite *tex_load_sprite(s32 spriteID, s32 arg1) {
     }
 
     for (i = 0, cacheFull = 0; i < gSpriteCacheCount; i++) {
-        if (spriteID == gSpriteCache[ASSETCACHE_ID(i)]) {
-            refSprite = (Sprite *) gSpriteCache[ASSETCACHE_PTR(i)];
+        if (spriteID == gSpriteCacheIDs[i]) {
+            refSprite = (Sprite *) gSpriteCache[i];
             refSprite->numberOfInstances++;
             return refSprite;
         }
@@ -818,7 +822,7 @@ Sprite *tex_load_sprite(s32 spriteID, s32 arg1) {
     for (i = 0; i < gSpriteCacheCount; i++) {
         // @fake
         if (sprite) {}
-        if (gSpriteCache[ASSETCACHE_ID(i)] == -1) {
+        if (gSpriteCacheIDs[i] == -1) {
             cacheNum = i;
         }
     }
@@ -841,7 +845,7 @@ Sprite *tex_load_sprite(s32 spriteID, s32 arg1) {
     allocSize += numTextures * 4;
     allocSize += (s32) align16((u8 *) 0x10);
     allocSize += (s32) align16((u8 *) (spriteAsset->numberOfFrames * 4));
-    sprite = (Sprite *) mempool_alloc(allocSize, COLOUR_TAG_MAGENTA);
+    sprite = (Sprite *) mempool_alloc(allocSize, PP_RAM_SPRITES);
     if (sprite == NULL) {
         if (cacheFull) {
             gSpriteCacheCount--;
@@ -896,8 +900,8 @@ Sprite *tex_load_sprite(s32 spriteID, s32 arg1) {
         return NULL;
     }
 
-    gSpriteCache[ASSETCACHE_ID(cacheNum)] = spriteID;
-    gSpriteCache[ASSETCACHE_PTR(cacheNum)] = (s32) sprite;
+    gSpriteCacheIDs[cacheNum] = spriteID;
+    gSpriteCache[cacheNum] = (s32) sprite;
     sprite->numberOfInstances = 1;
     return sprite;
 }
@@ -911,10 +915,10 @@ UNUSED s32 sprite_cache_index(s32 cacheID) {
         return NULL;
     }
 
-    if (gSpriteCache[ASSETCACHE_PTR(cacheID)] == -1) {
+    if (gSpriteCache[cacheID] == -1) {
         return NULL;
     }
-    return gSpriteCache[ASSETCACHE_PTR(cacheID)];
+    return gSpriteCache[cacheID];
 }
 
 s32 tex_asset_size(s32 id) {
@@ -1084,13 +1088,13 @@ void sprite_free(Sprite *sprite) {
         sprite->numberOfInstances--;
         if (sprite->numberOfInstances <= 0) {
             for (i = 0; i < gSpriteCacheCount; i++) {
-                if (sprite == (Sprite *) gSpriteCache[ASSETCACHE_PTR(i)]) {
+                if (sprite == (Sprite *) gSpriteCache[i]) {
                     for (frame = 0; frame < sprite->numberOfTextures; frame++) {
                         tex_free(sprite->textures[frame]);
                     }
                     mempool_free(sprite);
-                    gSpriteCache[ASSETCACHE_ID(i)] = -1;
-                    gSpriteCache[ASSETCACHE_PTR(i)] = -1;
+                    gSpriteCacheIDs[i] = -1;
+                    gSpriteCache[i] = -1;
                     break;
                 }
             }

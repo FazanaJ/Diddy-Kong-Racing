@@ -27,6 +27,7 @@ s32 gTrackRenderFuncLength = 1980;
 /************ .bss ************/
 
 s32 *gModelCache; // A table of two entries. The first half is the model ID, while the second half is the model data.
+s16 *gModelCacheIDs;
 s32 *D_8011D628;
 s32 gModelCacheCount;
 s32 gNumModelIDs;
@@ -63,8 +64,8 @@ void obj_model_cycle(s32 updateRate) {
     }
     
     for (i = 0; i < gModelCacheCount; i++) {
-        if (modelID == gModelCache[ASSETCACHE_ID(i)]) {
-            objMdl = (ObjectModel *) gModelCache[ASSETCACHE_PTR(i)];
+        if (modelID == gModelCacheIDs[i]) {
+            objMdl = (ObjectModel *) gModelCache[i];
             if (modelID != -1) {
                 gObjModelStaleTimer[modelID] -= updateRate;
                 if (gObjModelStaleTimer[modelID] <= 0) {
@@ -85,7 +86,8 @@ void allocate_object_model_pools(void) {
     s32 checksum;
     s32 *assetTable;
 
-    gModelCache = mempool_alloc_safe(MODEL_LOADED_MAX * ((sizeof(uintptr_t)) * 2), PP_RAM_ASSET_CACHE);
+    gModelCache = mempool_alloc_safe(MODEL_LOADED_MAX * 6, PP_RAM_ASSET_CACHE);
+    gModelCacheIDs = (s16 *) ((u8 *) gModelCache + (MODEL_LOADED_MAX * 4));
 #ifdef STREAM_MODELS
     gObjModelStaleTimer = mempool_alloc(MODEL_LOADED_MAX * (sizeof(s8)), PP_RAM_ASSET_CACHE);
 #endif
@@ -167,8 +169,8 @@ ModelInstance *object_model_init(s32 modelID, s32 flags) {
 
     // Check if the model already exists in the cache.
     for (i = 0; i < gModelCacheCount; i++) {
-        if (modelID == gModelCache[ASSETCACHE_ID(i)]) {
-            objMdl = (ObjectModel *) gModelCache[ASSETCACHE_PTR(i)];
+        if (modelID == gModelCacheIDs[i]) {
+            objMdl = (ObjectModel *) gModelCache[i];
             instance = model_init_type(objMdl, flags);
             if (instance != NULL) {
                 objMdl->references++;
@@ -259,8 +261,8 @@ ModelInstance *object_model_init(s32 modelID, s32 flags) {
         if (func_80060EA8(objMdl) == 0 && func_80061A00(objMdl, modelID, animStart) == 0) {
             instance = model_init_type(objMdl, flags);
             if (instance != NULL) {
-                gModelCache[ASSETCACHE_ID(cacheIndex)] = modelID;
-                gModelCache[ASSETCACHE_PTR(cacheIndex)] = (s32) objMdl;
+                gModelCacheIDs[cacheIndex] = modelID;
+                gModelCache[cacheIndex] = (s32) objMdl;
                 if (gModelCacheCount < MODEL_LOADED_MAX) {
                     instance->animUpdateTimer = 0;
                     return instance;
@@ -382,7 +384,7 @@ void free_3d_model(ModelInstance *modInst) {
 
     modelIndex = -1;
     for (i = 0; i < gModelCacheCount; i++) {
-        if (model == (ObjectModel *) gModelCache[ASSETCACHE_PTR(i)]) {
+        if (model == (ObjectModel *) gModelCache[i]) {
             modelIndex = i;
         }
     }
@@ -391,8 +393,8 @@ void free_3d_model(ModelInstance *modInst) {
         free_model_data(model);
         D_8011D628[D_8011D634] = modelIndex;
         D_8011D634++;
-        gModelCache[ASSETCACHE_ID(modelIndex)] = -1;
-        gModelCache[ASSETCACHE_PTR(modelIndex)] = -1;
+        gModelCacheIDs[modelIndex] = -1;
+        gModelCache[modelIndex] = -1;
         mempool_free(modInst);
     }
 }

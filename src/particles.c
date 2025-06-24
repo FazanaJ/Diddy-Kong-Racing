@@ -560,7 +560,7 @@ void emitter_init_with_pos(ParticleEmitter *emitter, s32 behaviourID, s32 partic
             emitter->maxPointCount = 255;
         }
         emitter->refPoints = (PointParticle **) mempool_alloc_safe(emitter->maxPointCount * sizeof(PointParticle *),
-                                                                   COLOUR_TAG_SEMITRANS_GREY);
+                                                                   PP_RAM_PARTICLES);
         emitter->pointSourceRotation.y_rotation = behaviour->sourceRotation.y_rotation;
         emitter->pointSourceRotation.x_rotation = behaviour->sourceRotation.x_rotation;
         emitter->pointEmissionDirection.y_rotation = behaviour->emissionDirection.y_rotation;

@@ -476,10 +476,13 @@ void debug_render_misc(DebugData *d, Gfx **dList, s32 updateRate) {
 }
 
 extern s32 *gTextureCache;
+extern s16 *gTextureCacheIDs;
 extern s32 gNumberOfLoadedTextures;
 extern s32 *gSpriteCache;
+extern s16 *gSpriteCacheIDs;
 extern s32 gSpriteCacheCount;
 extern s32 *gModelCache;
+extern s16 *gModelCacheIDs;
 extern s32 gModelCacheCount;
 extern u8 *tex2d_ROM_START[];
 extern u8 *tex2d_ROM_END[];
@@ -526,7 +529,7 @@ char *assettable_name(s32 assetType, s32 assetID) {
 
 void debug_render_assets(DebugData *d, Gfx **dList, s32 updateRate) {
     char textBytes[32];
-    s32 *table;
+    s16 *ids;
     s32 count;
     s32 i;
     s32 y;
@@ -542,25 +545,25 @@ void debug_render_assets(DebugData *d, Gfx **dList, s32 updateRate) {
 
     switch (d->pageViewMode) {
         case 0:
-            table = gTextureCache;
+            ids = gTextureCacheIDs;
             count = gNumberOfLoadedTextures;
             name = ASSET_TEXTURES_2D;
             tableName = "Tex 2D";
             break;
         case 1:
-            table = gTextureCache;
+            ids = gTextureCacheIDs;
             count = gNumberOfLoadedTextures;
             name = ASSET_TEXTURES_3D;
             tableName = "Tex 3D";
             break;
         case 2:
-            table = gSpriteCache;
+            ids = gSpriteCacheIDs;
             count = gSpriteCacheCount;
             name = ASSET_SPRITES;
             tableName = "Sprites";
             break;
         case 3:
-            table = gModelCache;
+            ids = gModelCacheIDs;
             count = gModelCacheCount;
             name = ASSET_OBJECT_MODELS;
             tableName = "Models";
@@ -570,7 +573,7 @@ void debug_render_assets(DebugData *d, Gfx **dList, s32 updateRate) {
     draw_text(dList, SCREEN_WIDTH - 136 + 4, 5, tableName, ALIGN_TOP_LEFT);
     y = 0;
     for (i = 0; i < count; i++) {
-        assetID = table[ASSETCACHE_ID(i)];
+        assetID = ids[i];
         if (assetID != -1) {
             if (d->pageViewMode == 0) {
                 if ((assetID & 0x8000) == 0) {
@@ -587,7 +590,7 @@ void debug_render_assets(DebugData *d, Gfx **dList, s32 updateRate) {
     d->pageScrollMax = 0;
     gDPSetScissor((*dList)++, G_SC_NON_INTERLACE, SCREEN_WIDTH - 136, 30, SCREEN_WIDTH, SCREEN_HEIGHT);
     for (i = 0; i < count; i++) {
-        assetID = table[ASSETCACHE_ID(i)];
+        assetID = ids[i];
         if (assetID == -1 || (d->pageViewMode == 0 && assetID & 0x8000)) {
             continue;
         }
@@ -771,8 +774,8 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
             // Try object models
             objModel = (ObjectModel *) slot->data;
             for (i = 0; i < gModelCacheCount; i++) {
-                if ((ObjectModel *) gModelCache[ASSETCACHE_PTR(i)] == objModel) {
-                    texID = gModelCache[ASSETCACHE_ID(i)];
+                if ((ObjectModel *) gModelCache[i] == objModel) {
+                    texID = gModelCacheIDs[i];
                 }
             }
             if (texID != -200) {
@@ -784,12 +787,13 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
         case PP_RAM_MAGENTA:
         case PP_RAM_LIME:
         case PP_RAM_SPRITE_TEX:
+        case PP_RAM_SPRITES:
             texHeader = (TextureHeader *) slot->data;
             texID = -200;
             // First see if it's a texture
             for (i = 0; i < gNumberOfLoadedTextures; i++) {
-                if ((TextureHeader *) gTextureCache[ASSETCACHE_PTR(i)] == texHeader) {
-                    texID = gTextureCache[ASSETCACHE_ID(i)];
+                if ((TextureHeader *) gTextureCache[i] == texHeader) {
+                    texID = gTextureCacheIDs[i];
                 }
             }
             if (texID != -200) {
@@ -802,8 +806,8 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
             // Okay, lets try for a sprite?
             sprite = (Sprite *) slot->data;
             for (i = 0; i < gSpriteCacheCount; i++) {
-                if ((s32) gSpriteCache[ASSETCACHE_PTR(i)] == (s32) sprite) {
-                    texID = gSpriteCache[ASSETCACHE_ID(i)];
+                if ((s32) gSpriteCache[i] == (s32) sprite) {
+                    texID = gSpriteCacheIDs[i];
                 }
             }
             if (texID != -200) {

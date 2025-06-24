@@ -44,7 +44,6 @@ SECTIONS
         build/asm/data/ucode_f3ddkr_dram.s.o(.text);
         build/asm/data/ucode_f3ddkr_fifo.s.o(.text);
         build/asm/data/ucode_f3ddkr_xbus.s.o(.text);
-        build/asm/data/ucode_unknown_2.s.o(.text);
         /* Data */
         main_TEXT_END = .;
         main_TEXT_SIZE = ABSOLUTE(main_TEXT_END - main_TEXT_START);
@@ -52,10 +51,8 @@ SECTIONS
         build/src*.o(.data*);
         build/libultra/src*.o(.data);
         build/asm/data/data_audio.s.o(.data);
-        build/asm/data/data_f3ddkr_dram.s.o(.data);
         build/asm/data/data_f3ddkr_fifo.s.o(.data);
         build/asm/data/data_f3ddkr_xbus.s.o(.data);
-        build/asm/data/data_unknown_2.s.o(.data);
         /* Rodata */
         main_DATA_END = .;
         main_DATA_SIZE = ABSOLUTE(main_DATA_END - main_DATA_START);

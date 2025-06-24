@@ -221,6 +221,7 @@ typedef enum DebugRam {
     PP_RAM_TRIGTABLE,
     PP_RAM_SPRITE_TEX,
     PP_RAM_ALFX,
+    PP_RAM_VOID,
 
     PP_RAM_TOTAL,
 } DebugRam;
@@ -290,7 +291,8 @@ extern u8 *main_BSS_START[];
     "SFX Params", \
     "Trig Tables", \
     "Sprite Tex", \
-    "AudLib FX"
+    "AudLib FX", \
+    "Void"
 
 #define NUM_PERF_ITERATIONS 60
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS

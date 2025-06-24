@@ -371,7 +371,7 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     gShadowHeapFlip = 1;
     shadow_update(SHADOW_ACTORS, SHADOW_ACTORS, LOGIC_NULL);
     gShadowHeapFlip = 0;
-    if (gCurrentLevelHeader2->useVoid) {
+    if (gCurrentLevelHeader2->useVoid && get_game_mode() == GAMEMODE_INGAME) {
         gVoidColourR = gCurrentLevelHeader2->voidColour.red;
         gVoidColourG = gCurrentLevelHeader2->voidColour.green;
         gVoidColourB = gCurrentLevelHeader2->voidColour.blue;
