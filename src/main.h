@@ -282,14 +282,14 @@ extern u8 *main_BSS_START[];
     "Unknown\t", \
     "Obj Lists", \
     "Obj Headers", \
-    "Model Instances", \
+    "Model Inst", \
     "Debug\t", \
     "Aud Lines", \
     "Particles", \
     "Misc Assets", \
     "SFX Params", \
     "Trig Tables", \
-    "Sprite Textures", \
+    "Sprite Tex", \
     "AudLib FX"
 
 #define NUM_PERF_ITERATIONS 60

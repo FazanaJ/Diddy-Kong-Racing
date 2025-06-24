@@ -269,7 +269,6 @@ u8 *D_8011AE98[2];
 s32 D_8011AEA0[2];
 s32 D_8011AEA8[2];
 s32 *D_8011AEB0[2];
-s16 *gAssetsLvlObjTranslationTable;
 s32 gAssetsLvlObjTranslationTableLength;
 s32 D_8011AEC0;
 Object **gParticlePtrList;
@@ -723,6 +722,8 @@ Object *racerfx_get_boost(s32 boostID) {
  */
 void allocate_object_pools(void) {
     s32 i;
+    s32 *tempTable;
+    s16 *tempTable2;
 
     gObjectMemoryPool = (Object *) mempool_new_sub(OBJECT_POOL_SIZE, OBJECT_SLOT_COUNT);
     gParticlePtrList = mempool_alloc_safe(sizeof(uintptr_t) * 200, PP_RAM_OBJLISTS);
@@ -736,11 +737,12 @@ void allocate_object_pools(void) {
     gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, PP_RAM_OBJLISTS);
     D_8011ADCC = mempool_alloc_safe(8, PP_RAM_OBJLISTS);
     D_8011AFF4 = mempool_alloc_safe(sizeof(unk800179D0) * 16, PP_RAM_OBJLISTS);
-    gAssetsLvlObjTranslationTable = (s16 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE);
+    tempTable2 = (s16 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE);
     gAssetsLvlObjTranslationTableLength = (get_size_of_asset_section(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE) >> 1) - 1;
-    while (gAssetsLvlObjTranslationTable[gAssetsLvlObjTranslationTableLength] == 0) {
+    while (tempTable2[gAssetsLvlObjTranslationTableLength] == 0) {
         gAssetsLvlObjTranslationTableLength--;
     }
+    mempool_free(tempTable2);
     gSpawnObjectHeap = mempool_alloc_safe(OBJECT_BLUEPRINT_SIZE, PP_RAM_OBJLISTS);
     gAssetsObjectHeadersTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_HEADERS_TABLE);
     gAssetsObjectHeadersTableLength = 0;
@@ -757,17 +759,19 @@ void allocate_object_pools(void) {
 
     assettable_tag(PP_RAM_MISCASSET);
     gAssetsMiscSection = (s32 *) load_asset_section_from_rom(ASSET_MISC);
-    gAssetsMiscTable = (s32 *) load_asset_section_from_rom(ASSET_MISC_TABLE);
+    tempTable = (s32 *) load_asset_section_from_rom(ASSET_MISC_TABLE);
+    //gAssetsMiscTable = (s32 *) load_asset_section_from_rom(ASSET_MISC_TABLE);
     gAssetsMiscTableLength = 0;
-    while (-1 != gAssetsMiscTable[gAssetsMiscTableLength]) {
+    while (-1 != tempTable[gAssetsMiscTableLength]) {
         gAssetsMiscTableLength++;
     }
     assettable_tag(COLOUR_TAG_GREY);
 
     decrypt_magic_codes(
-        &gAssetsMiscSection[gAssetsMiscTable[ASSET_MISC_MAGIC_CODES]],
-        (gAssetsMiscTable[ASSET_MISC_TITLE_SCREEN_DEMO_IDS] - gAssetsMiscTable[ASSET_MISC_MAGIC_CODES]) *
+        &gAssetsMiscSection[tempTable[ASSET_MISC_MAGIC_CODES]],
+        (tempTable[ASSET_MISC_TITLE_SCREEN_DEMO_IDS] - tempTable[ASSET_MISC_MAGIC_CODES]) *
             sizeof(s32 *));
+    mempool_free(tempTable);
     gObjPtrList = mempool_alloc_safe(sizeof(uintptr_t) * OBJECT_SLOT_COUNT, PP_RAM_OBJLISTS);
     gFirstTimeFinish = 0;
     gTimeTrialEnabled = 0;
@@ -1777,6 +1781,12 @@ void add_particle_to_entity_list(Object *obj) {
     gParticleCount++;
 }
 
+s16 obj_seek_transtable(s32 objType) {
+    s16 ret[4];
+    load_asset_to_address(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE, (u32) &ret, objType * (sizeof(s16)), sizeof(s16) * 2);
+    return ret[0];
+}
+
 Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
     s32 objType;
     Settings *settings;
@@ -1798,7 +1808,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
     if (spawnFlags & OBJECT_SPAWN_UNK02) {
         headerType = objType;
     } else {
-        headerType = gAssetsLvlObjTranslationTable[objType];
+        headerType = obj_seek_transtable(objType);
     }
     if (headerType >= gAssetsObjectHeadersTableLength) {
         headerType = 0;
@@ -8064,6 +8074,12 @@ void calc_env_mapping_for_object(ObjectModel *model, s16 zRot, s16 xRot, s16 yRo
     }
 }
 
+s32 miscasset_seek(s32 index) {
+    s32 ret[2];
+    load_asset_to_address(ASSET_MISC_TABLE, (u32) &ret, index * (sizeof(s32)), sizeof(s32) * 2);
+    return ret[0];
+}
+
 /**
  * Returns a pointer to the asset in the misc. section. If index is out of range, then this
  * function just returns the pointer to gAssetsMiscSection.
@@ -8073,7 +8089,7 @@ s32 *get_misc_asset(s32 index) {
     if (index < 0 || index >= gAssetsMiscTableLength) {
         return gAssetsMiscSection;
     }
-    return (s32 *) &gAssetsMiscSection[gAssetsMiscTable[index]];
+    return (s32 *) &gAssetsMiscSection[miscasset_seek(index)];
 }
 
 s32 func_8001E2EC(s32 arg0) {
