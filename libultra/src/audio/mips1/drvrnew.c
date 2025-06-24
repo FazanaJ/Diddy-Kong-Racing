@@ -23,6 +23,7 @@
 #include <stdio.h>
 #include "initfx.h"
 #include "src/memory.h"
+#include "src/main.h"
 
 // TODO: this comes from a header
 #ident "$Revision: 1.49 $"
@@ -140,8 +141,10 @@ void alFxNew(ALFx *r, ALSynConfig *c, s16 bus, UNUSED ALHeap *hp)
     r->section_count = param[j++];
     r->length 	     = param[j++];
 
-    r->delay = mempool_alloc_safe(sizeof(ALDelay) * r->section_count, COLOUR_TAG_CYAN);
-    r->base = mempool_alloc_safe(sizeof(s16) * r->length, COLOUR_TAG_CYAN);
+    r->delay = alHeapAlloc(hp, 1, sizeof(ALDelay) * r->section_count);
+    //r->delay = mempool_alloc_safe(sizeof(ALDelay) * r->section_count, PP_RAM_ALFX);
+    r->base = alHeapAlloc(hp, 1, sizeof(s16) * r->length);
+    //r->base = mempool_alloc_safe(sizeof(s16) * r->length, PP_RAM_ALFX);
     r->input = r->base;
 
     for ( k=0; k < r->length; k++)
@@ -177,8 +180,10 @@ void alFxNew(ALFx *r, ALSynConfig *c, s16 bus, UNUSED ALHeap *hp)
 	    d->rsgain 	 = (((f32) param[j++])/CONVERT) * LENGTH;
 	    d->rsval	 = 1.0;
 	    d->rsdelta	 = 0.0;
-        d->rs 	 = mempool_alloc_safe(sizeof(ALResampler), COLOUR_TAG_CYAN);
-        d->rs->state = mempool_alloc_safe(sizeof(RESAMPLE_STATE), COLOUR_TAG_CYAN);
+        d->rs = alHeapAlloc(hp, 1, sizeof(ALResampler));
+        //d->rs 	 = mempool_alloc_safe(sizeof(ALResampler), PP_RAM_ALFX);
+        d->rs->state = alHeapAlloc(hp, 1, sizeof(RESAMPLE_STATE));
+        //d->rs->state = mempool_alloc_safe(sizeof(RESAMPLE_STATE), PP_RAM_ALFX);
 	    d->rs->delta = 0.0;
 	    d->rs->first = 1;
 	} else {
@@ -188,8 +193,10 @@ void alFxNew(ALFx *r, ALSynConfig *c, s16 bus, UNUSED ALHeap *hp)
 	}
 
 	if (param[j]) {
-        d->lp = mempool_alloc_safe(sizeof(ALLowPass), COLOUR_TAG_CYAN);
-        d->lp->fstate = mempool_alloc_safe(sizeof(POLEF_STATE), COLOUR_TAG_CYAN);
+        d->lp = alHeapAlloc(hp, 1, sizeof(ALLowPass));
+        //d->lp = mempool_alloc_safe(sizeof(ALLowPass), PP_RAM_ALFX);
+        d->lp->fstate = alHeapAlloc(hp, 1, sizeof(POLEF_STATE));
+        //d->lp->fstate = mempool_alloc_safe(sizeof(POLEF_STATE), PP_RAM_ALFX);
 	    d->lp->fc = param[j++];
 	    _init_lpfilter(d->lp);
 	} else {

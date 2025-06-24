@@ -756,6 +756,7 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
     ObjectModel_44 *objAnim;
 
     str = " ";
+    texID = -200;
 
     switch (tag) {
         case PP_RAM_OBJHEADERS:
@@ -778,21 +779,11 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
                 return assettable_name(ASSET_OBJECT_MODELS, texID);
             }
             return str;
-        case PP_RAM_LIME:
-            // Okay, lets try for a sprite?
-            sprite = (Sprite *) slot->data;
-            for (i = 0; i < gSpriteCacheCount; i++) {
-                if ((Sprite *) gSpriteCache[ASSETCACHE_PTR(i)] == sprite) {
-                    texID = gSpriteCache[ASSETCACHE_ID(i)];
-                }
-            }
-            if (texID != -200) {
-                return assettable_name(ASSET_SPRITES, texID);
-            }
-            return str;
         case PP_RAM_OBJTEX:
         case PP_RAM_LEVELTEX:
         case PP_RAM_MAGENTA:
+        case PP_RAM_LIME:
+        case PP_RAM_SPRITE_TEX:
             texHeader = (TextureHeader *) slot->data;
             texID = -200;
             // First see if it's a texture
@@ -811,7 +802,7 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
             // Okay, lets try for a sprite?
             sprite = (Sprite *) slot->data;
             for (i = 0; i < gSpriteCacheCount; i++) {
-                if ((Sprite *)  gSpriteCache[ASSETCACHE_PTR(i)] == sprite) {
+                if ((s32) gSpriteCache[ASSETCACHE_PTR(i)] == (s32) sprite) {
                     texID = gSpriteCache[ASSETCACHE_ID(i)];
                 }
             }

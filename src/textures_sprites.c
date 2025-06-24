@@ -858,17 +858,17 @@ Sprite *tex_load_sprite(s32 spriteID, s32 arg1) {
     sprite->textures = (TextureHeader **) ((s32) gSpriteVertices + numTextures * sizeof(Vertex) * 4);
 
     allocFailed = FALSE;
+    gTexColourTag = PP_RAM_SPRITE_TEX;
     for (i = 0; i < numTextures; i++) {
-        gTexColourTag = COLOUR_TAG_LIME;
         tex = load_texture(spriteAsset->baseTextureId + i);
         sprite->textures[i] = tex;
         if (sprite->textures[i] == NULL) {
             allocFailed = TRUE;
         }
 
-        gTexColourTag = COLOUR_TAG_MAGENTA;
         gFirstTexIsLoaded = TRUE;
     }
+    gTexColourTag = COLOUR_TAG_MAGENTA;
 
     gFirstTexIsLoaded = FALSE;
     if (allocFailed) {

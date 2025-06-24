@@ -219,6 +219,8 @@ typedef enum DebugRam {
     PP_RAM_MISCASSET,
     PP_RAM_SFXPROPTABLE,
     PP_RAM_TRIGTABLE,
+    PP_RAM_SPRITE_TEX,
+    PP_RAM_ALFX,
 
     PP_RAM_TOTAL,
 } DebugRam;
@@ -286,7 +288,9 @@ extern u8 *main_BSS_START[];
     "Particles", \
     "Misc Assets", \
     "SFX Params", \
-    "Trig Tables"
+    "Trig Tables", \
+    "Sprite Textures", \
+    "AudLib FX"
 
 #define NUM_PERF_ITERATIONS 60
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS
