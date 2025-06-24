@@ -5,6 +5,8 @@
 #include "PR/gbi.h"
 #include "structs.h"
 
+#define STREAM_ANIMATIONS
+
 #define MODELALLOC_NEW 0x4000000 // Flag that signals the model creator to allocate new data.
 //#define STREAM_MODELS
 

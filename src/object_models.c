@@ -946,7 +946,7 @@ s32 model_load_anim_id(ObjectModel *model, s32 animID, s32 modelID) {
     s32 *temp;
     s32 end;
 
-    if (model->animations[animID].animData != NULL) {
+    if (model->animations[animID].animLength != 0) {
         return 1;
     }
 
@@ -978,7 +978,10 @@ s32 func_80061A00(ObjectModel *model, s32 animTableIndex, s32 animStart) {
     model->animations = (ObjectModel_44 *) ((u8 *) model + animStart);
     
     for (i = 0; i < model->numberOfAnimations; i++) {
-        model->animations[i].animData = NULL;
+        model->animations[i].animLength = 0;
+#ifndef STREAM_ANIMATIONS
+        model_load_anim_id(model, i, animTableIndex);
+#endif
     }
 
     return 0;

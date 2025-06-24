@@ -219,7 +219,6 @@ typedef enum DebugRam {
     PP_RAM_MISCASSET,
     PP_RAM_SFXPROPTABLE,
     PP_RAM_TRIGTABLE,
-    PP_RAM_ANIMSLOT,
 
     PP_RAM_TOTAL,
 } DebugRam;
@@ -245,7 +244,7 @@ extern u8 *main_BSS_START[];
     "Code\t", \
     "Framebuffers", \
     "Task Buffer", \
-    "Anim Data", \
+    "Animations", \
     "Weather\t", \
     "Lvl Textures", \
     "Lvl Models", \
@@ -287,8 +286,7 @@ extern u8 *main_BSS_START[];
     "Particles", \
     "Misc Assets", \
     "SFX Params", \
-    "Trig Tables", \
-    "Anim IDs\t"
+    "Trig Tables"
 
 #define NUM_PERF_ITERATIONS 60
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS

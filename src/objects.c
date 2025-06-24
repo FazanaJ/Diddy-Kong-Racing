@@ -3214,34 +3214,21 @@ void render_3d_billboard(Object *obj) {
 
 void obj_seek_anim(Object *obj, ModelInstance *inst) {
     s32 i;
-    s32 modelID = inst->objModel->modelID;
-    s32 addr;
 
-    /*if (modelID != ASSET_OBJECTMODEL_TRICKYTOPS &&
-        modelID != ASSET_OBJECTMODEL_WALRUS &&
-        modelID != ASSET_OBJECTMODEL_OCTOPUS &&
-        modelID != ASSET_OBJECTMODEL_WIZPIG &&
-        modelID != ASSET_OBJECTMODEL_WIZPIGROCKET &&
-        modelID != ASSET_OBJECTMODEL_PARKWARDEN &&
-        modelID != ASSET_OBJECTMODEL_STOPWATCHMAN) {
-        if (inst->animationID != obj->segment.object.animationID) {
-            //u32 first = osGetCount();
-            if (inst->objModel->animations[inst->animationID].animData != NULL) {
-                mempool_free(inst->objModel->animations[inst->animationID].anim - 1);
-                for (i = 0; i < inst->objModel->numberOfAnimations; i++) {
-                    inst->objModel->animations[i].anim = NULL;
-                }
+#ifdef STREAM_ANIMATIONS
+    if (inst->animationID != obj->segment.object.animationID) {
+        if (inst->objModel->animations[inst->animationID].animLength != 0) {
+            mempool_free(inst->objModel->animations[inst->animationID].anim - 1);
+            for (i = 0; i < inst->objModel->numberOfAnimations; i++) {
+                inst->objModel->animations[i].animLength = 0;
             }
-            if (obj->segment.object.animationID != -1) {
-                model_load_anim_id(inst->objModel, obj->segment.object.animationID, modelID);
-            }
-            //debug_printf("%s Anim Change: %d %d in %dus\n", obj->segment.header->internalName, inst->animationID, obj->segment.object.animationID, (s32) (OS_CYCLES_TO_USEC(osGetCount() - first)));
         }
-    } else {*/
-        model_load_anim_id(inst->objModel, obj->segment.object.animationID, modelID);
-    //}
+        if (obj->segment.object.animationID != -1) {
+            model_load_anim_id(inst->objModel, obj->segment.object.animationID, inst->objModel->modelID);
+        }
+    }
+#endif
 
-    //inst->objModel->animations[obj->segment.object.animationID].staleTimer = 2;
     obj_animate(obj);
 }
 
