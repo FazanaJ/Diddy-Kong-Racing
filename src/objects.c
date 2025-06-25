@@ -242,8 +242,10 @@ s8 D_8011AE01;          // A boolean? I've seen it either as 0 or 1
 s8 gIsNonCarRacers;
 s8 gIsSilverCoinRace;
 Object *D_8011AE08[16];
-ObjectHeader *(*gLoadedObjectHeaders)[ASSET_OBJECTS_COUNT];
-u8 (*gObjectHeaderReferences)[ASSET_OBJECTS_COUNT];
+//ObjectHeader *(*gLoadedObjectHeaders)[ASSET_OBJECTS_COUNT];
+//u8 (*gObjectHeaderReferences)[ASSET_OBJECTS_COUNT];
+s32 *gObjectHeaderCache;
+s16 *gObjectHeaderCacheIDs;
 TextureHeader *D_8011AE50;
 TextureHeader *D_8011AE54;
 Object **gObjPtrList; // Not sure about the number of elements
@@ -316,6 +318,7 @@ u8 D_8011B048[NUMBER_OF_CHARACTERS];
 u8 D_8011B058[NUMBER_OF_CHARACTERS];
 u8 D_8011B068[NUMBER_OF_CHARACTERS];
 RacerFXData gRacerFXData[NUMBER_OF_CHARACTERS];
+s32 gObjectHeaderCacheCount;
 
 extern s16 gGhostMapID;
 
@@ -752,12 +755,19 @@ void allocate_object_pools(void) {
         gAssetsObjectHeadersTableLength++;
     }
     gAssetsObjectHeadersTableLength--;
-    gLoadedObjectHeaders = mempool_alloc_safe(gAssetsObjectHeadersTableLength * 4, PP_RAM_ASSETTABLE);
-    gObjectHeaderReferences = mempool_alloc_safe(gAssetsObjectHeadersTableLength, PP_RAM_ASSETTABLE);
+    gObjectHeaderCache = mempool_alloc_safe(6 *100, PP_RAM_ASSET_CACHE);
+    gObjectHeaderCacheIDs = (s16 *) ((u8 *) gObjectHeaderCache + (100 * 4));
+    //gLoadedObjectHeaders = mempool_alloc_safe(gAssetsObjectHeadersTableLength * 4, PP_RAM_ASSETTABLE);
+    //gObjectHeaderReferences = mempool_alloc_safe(gAssetsObjectHeadersTableLength, PP_RAM_ASSETTABLE);
 
-    for (i = 0; i < gAssetsObjectHeadersTableLength; i++) {
-        (*gObjectHeaderReferences)[i] = 0;
+    for (i = 0; i < 100; i++) {
+        gObjectHeaderCache[i] = -1;
+        gObjectHeaderCacheIDs[i] = -1;
     }
+
+    /*for (i = 0; i < gAssetsObjectHeadersTableLength; i++) {
+        (*gObjectHeaderReferences)[i] = 0;
+    }*/
 
     assettable_tag(PP_RAM_MISCASSET);
     gAssetsMiscSection = (s32 *) load_asset_section_from_rom(ASSET_MISC);
@@ -897,6 +907,11 @@ void free_all_objects(void) {
     mempool_free((void *) D_8011AEB0[1]);
 }
 
+//gObjectHeaderCache = mempool_alloc_safe(6 *100, PP_RAM_ASSET_CACHE);
+    //gObjectHeaderCacheIDs = (s16 *) ((u8 *) gObjectHeaderCache + (100 * 4));
+    //gLoadedObjectHeaders = mempool_alloc_safe(gAssetsObjectHeadersTableLength * 4, PP_RAM_ASSETTABLE);
+    //gObjectHeaderReferences = mempool_alloc_safe(gAssetsObjectHeadersTableLength, PP_RAM_ASSETTABLE);
+
 /**
  * Set the object's header.
  * Search if the intended header is already loaded and use that.
@@ -906,11 +921,22 @@ ObjectHeader *load_object_header(s32 index) {
     s32 assetOffset;
     s32 size;
     ObjectHeader *address;
+    s32 i;
+    s32 slotIndex;
 
-    if ((*gObjectHeaderReferences)[index] != 0) {
+    /*if ((*gObjectHeaderReferences)[index] != 0) {
         (*gObjectHeaderReferences)[index]++;
         return (*gLoadedObjectHeaders)[index];
+    }*/
+
+    for (i = 0; i < gObjectHeaderCacheCount; i++) {
+        if (gObjectHeaderCacheIDs[i] == index) {
+            address = (ObjectHeader *) gObjectHeaderCache[i];
+            address->numLightSources++;
+            return address;
+        }
     }
+    
     assetOffset = gAssetsObjectHeadersTable[index];
     size = gAssetsObjectHeadersTable[index + 1] - assetOffset;
     address = mempool_alloc_pool_tag((MemoryPoolSlot *) gObjectMemoryPool, size, PP_RAM_OBJHEADERS);
@@ -922,8 +948,22 @@ ObjectHeader *load_object_header(s32 index) {
         address->vehiclePartIds = (s32 *) ((uintptr_t) address + (uintptr_t) address->vehiclePartIds);
         address->vehiclePartIndices = (s8 *) ((uintptr_t) address + (uintptr_t) address->vehiclePartIndices);
         address->modelIds = (s32 *) ((uintptr_t) address + (uintptr_t) address->modelIds);
-        (*gLoadedObjectHeaders)[index] = address;
-        (*gObjectHeaderReferences)[index] = 1;
+
+        address->numLightSources = 1;
+        slotIndex = -1;
+        for (i = 0; i < gObjectHeaderCacheCount; i++) {
+            if (gObjectHeaderCacheIDs[i] == -1) {
+                slotIndex = i;
+            }
+        }
+        if (slotIndex == -1) {
+            slotIndex = gObjectHeaderCacheCount;
+            gObjectHeaderCacheCount++;
+        }
+        gObjectHeaderCacheIDs[slotIndex] = index;
+        gObjectHeaderCache[slotIndex] = (s32) address;
+        //(*gLoadedObjectHeaders)[index] = address;
+        //(*gObjectHeaderReferences)[index] = 1;
     } else {
         return NULL;
     }
@@ -935,12 +975,28 @@ ObjectHeader *load_object_header(s32 index) {
  * If the reference number is zero, free the header.
  */
 void try_free_object_header(s32 index) {
-    if ((*gObjectHeaderReferences)[index] != 0) {
+    s32 i;
+    ObjectHeader *address;
+
+
+    for (i = 0; i < gObjectHeaderCacheCount; i++) {
+        if (gObjectHeaderCacheIDs[i] == index) {
+            address = (ObjectHeader *) gObjectHeaderCache[i];
+            address->numLightSources--;
+
+            if (address->numLightSources <= 0) {
+                mempool_free(address);
+                gObjectHeaderCache[i] = -1;
+                gObjectHeaderCacheIDs[i] = -1;
+            }
+        }
+    }
+    /*if ((*gObjectHeaderReferences)[index] != 0) {
         (*gObjectHeaderReferences)[index]--;
         if ((*gObjectHeaderReferences)[index] == 0) {
             mempool_free((void *) (*gLoadedObjectHeaders)[index]);
         }
-    }
+    }*/
 }
 
 /**
@@ -2005,11 +2061,12 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
     if (curObj->segment.header->particleCount > 0) {
         address += obj_init_emitter(curObj, (ParticleEmitter *) address);
     }
-
+#ifdef USE_DYNLIGHTS
     if (curObj->segment.header->numLightSources > 0) {
         curObj->lightData = (ObjectLight **) address;
         address += curObj->segment.header->numLightSources * 4;
     }
+#endif
 
     sizeOfobj = (s32) address - (s32) curObj;
     prevObj = curObj;
