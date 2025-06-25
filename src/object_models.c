@@ -19,8 +19,8 @@
 
 /************ .data ************/
 
-s32 gTractionTableChecksum = TractionTableChecksum;
-s32 gTrackRenderFuncLength = 1980;
+s32 gRenderSceneChecksum = TractionTableChecksum;
+s32 gRenderSceneFuncLength = 1980;
 
 /*******************************/
 
@@ -32,7 +32,7 @@ s32 *D_8011D628;
 s32 gModelCacheCount;
 s32 gNumModelIDs;
 s32 D_8011D634;
-s32 D_8011D640;
+s32 gModelAnimOffsetID;
 s32 D_8011D644;
 
 /******************************/
@@ -102,15 +102,15 @@ void allocate_object_model_pools(void) {
     mempool_free(assetTable);
     gNumModelIDs--;
     D_8011D644 = (s32) mempool_alloc_safe(0xC00, PP_RAM_ASSET_CACHE);
-    D_8011D640 = 0;
+    gModelAnimOffsetID = 0;
 
 #ifdef ANTI_TAMPER
     // Antipiracy measure
     checksum = 0;
-    for (i = 0; i < gTrackRenderFuncLength; i++) {
+    for (i = 0; i < gRenderSceneFuncLength; i++) {
         checksum += *(u8 *) (((s32) &render_scene) + i);
     }
-    if (checksum != gTractionTableChecksum) {
+    if (checksum != gRenderSceneChecksum) {
         drm_vehicle_traction();
     }
 #endif
@@ -171,7 +171,7 @@ ModelInstance *object_model_init(s32 modelID, s32 flags) {
     for (i = 0; i < gModelCacheCount; i++) {
         if (modelID == gModelCacheIDs[i]) {
             objMdl = (ObjectModel *) gModelCache[i];
-            instance = model_init_type(objMdl, flags);
+            instance = model_instance_init(objMdl, flags);
             if (instance != NULL) {
                 objMdl->references++;
             }
@@ -230,14 +230,14 @@ ModelInstance *object_model_init(s32 modelID, s32 flags) {
     objMdl->unk10 = 0;
     objMdl->unk32 = 0;
     objMdl->texOffsetUpdateRate = 0;
-    objMdl->unk40 = 0;
+    objMdl->normals = NULL;
     objMdl->modelID = modelID;
     if (end == start) {
         objMdl->numberOfAnimations = 0;
     } else {
-        if (D_8011D640 != 0) {
-            if (start + D_8011D640 < end) {
-                end = start + D_8011D640;
+        if (gModelAnimOffsetID != 0) {
+            if (start + gModelAnimOffsetID < end) {
+                end = start + gModelAnimOffsetID;
             }
         }
         objMdl->numberOfAnimations = end - start;
@@ -258,8 +258,8 @@ ModelInstance *object_model_init(s32 modelID, s32 flags) {
                 goto block_30;
             }
         }
-        if (func_80060EA8(objMdl) == 0 && func_80061A00(objMdl, modelID, animStart) == 0) {
-            instance = model_init_type(objMdl, flags);
+        if (model_calc_normals(objMdl) == 0 && model_anim_init(objMdl, modelID, animStart) == 0) {
+            instance = model_instance_init(objMdl, flags);
             if (instance != NULL) {
                 gModelCacheIDs[cacheIndex] = modelID;
                 gModelCache[cacheIndex] = (s32) objMdl;
@@ -284,7 +284,13 @@ block_30:
     return NULL;
 }
 
-ModelInstance *model_init_type(ObjectModel *model, s32 flags) {
+/**
+ * Initialises the model instance.
+ * Objects that do nothing special get a standard instance assigned,
+ * otherwise, ones that utilise shading or animation will have their own copies of the vertex data.
+ * Returns null if it failed.
+ */
+ModelInstance *model_instance_init(ObjectModel *model, s32 flags) {
     s32 temp;
     ModelInstance *result;
     Vertex *var_v1;
@@ -304,7 +310,7 @@ ModelInstance *model_init_type(ObjectModel *model, s32 flags) {
             (Vertex *) ((u8 *) result + (model->numberOfVertices * sizeof(Vertex)) + sizeof(ModelInstance));
         result->vertices[2] = (Vertex *) ((u8 *) result + temp);
         result->modelType = MODELTYPE_ANIMATED;
-    } else if (model->unk40 != NULL && (flags & OBJECT_BEHAVIOUR_SHADED)) {
+    } else if (model->normals != NULL && (flags & OBJECT_BEHAVIOUR_SHADED)) {
         temp = (model->numberOfVertices * sizeof(Vertex)) + sizeof(ModelInstance);
         result = (ModelInstance *) mempool_alloc(temp, PP_RAM_MODELINSTANCE);
         if (result == NULL) {
@@ -426,9 +432,9 @@ void free_model_data(ObjectModel *mdl) {
     if (mdl->unk10 != NULL) {
         mempool_free(mdl->unk10);
     }
-    // ???
-    if (mdl->unk40 != NULL) {
-        mempool_free(mdl->unk40);
+
+    if (mdl->normals != NULL) {
+        mempool_free(mdl->normals);
     }
     // free the animations
     if (mdl->animations != NULL) {
@@ -742,13 +748,13 @@ s32 func_80060C58(Vertex *vertices, s32 i1, s32 i2, s32 i3, s32 i4) {
 }
 
 // Returns 0 if successful, or 1 if an error occured.
-s32 func_80060EA8(ObjectModel *model) {
+s32 model_calc_normals(ObjectModel *model) {
     Vertex *vertices;
     Triangle *triangles;
-    Vec3f *spAC;
+    Vec3f *floatNorms;
     s16 i;
     TriangleBatchInfo *batches;
-    Vec3s *spA0;
+    Vec3s *normals;
     s16 s6;
     s16 l;
     s16 q;
@@ -763,7 +769,7 @@ s32 func_80060EA8(ObjectModel *model) {
     s16 vx, vy, vz;
 
     batches = model->batches;
-    model->unk40 = NULL;
+    model->normals = NULL;
 
     k = 0;
     for (i = 0; i < model->numberOfBatches; i++) {
@@ -776,17 +782,18 @@ s32 func_80060EA8(ObjectModel *model) {
         vertices = model->vertices;
         triangles = model->triangles;
 
-        spAC = (Vec3f *) mempool_alloc(model->numberOfTriangles * sizeof(Vec3f), COLOUR_TAG_ORANGE);
-        if (spAC == NULL) {
+        floatNorms = (Vec3f *) mempool_alloc(model->numberOfTriangles * sizeof(Vec3f), COLOUR_TAG_ORANGE);
+        if (floatNorms == NULL) {
             return 1;
         }
 
-        spA0 = (Vec3s *) mempool_alloc(k * sizeof(Vec3s), COLOUR_TAG_ORANGE);
-        if (spA0 == NULL) {
-            mempool_free(spAC);
+        normals = (Vec3s *) mempool_alloc(k * sizeof(Vec3s), COLOUR_TAG_ORANGE);
+        if (normals == NULL) {
+            mempool_free(floatNorms);
             return 1;
         }
 
+        // Calculate vertex normals and store them as floating point.
         for (i = 0; i < model->numberOfBatches; i++) {
             vertOffset = batches[i].verticesOffset;
             for (j = batches[i].facesOffset; j < batches[i + 1].facesOffset; j++) {
@@ -800,22 +807,23 @@ s32 func_80060EA8(ObjectModel *model) {
                     sp58[k] = vertices[a2].z;
                 }
 
-                spAC[j].x = (sp58[0] - sp58[2]) * (sp64[0] - sp64[1]) - (sp64[0] - sp64[2]) * (sp58[0] - sp58[1]);
-                spAC[j].y = (sp58[0] - sp58[1]) * (sp70[0] - sp70[2]) - (sp70[0] - sp70[1]) * (sp58[0] - sp58[2]);
-                spAC[j].z = (sp70[0] - sp70[1]) * (sp64[0] - sp64[2]) - (sp70[0] - sp70[2]) * (sp64[0] - sp64[1]);
-                length = sqrtf(spAC[j].x * spAC[j].x + spAC[j].y * spAC[j].y + spAC[j].z * spAC[j].z);
+                floatNorms[j].x = (sp58[0] - sp58[2]) * (sp64[0] - sp64[1]) - (sp64[0] - sp64[2]) * (sp58[0] - sp58[1]);
+                floatNorms[j].y = (sp58[0] - sp58[1]) * (sp70[0] - sp70[2]) - (sp70[0] - sp70[1]) * (sp58[0] - sp58[2]);
+                floatNorms[j].z = (sp70[0] - sp70[1]) * (sp64[0] - sp64[2]) - (sp70[0] - sp70[2]) * (sp64[0] - sp64[1]);
+                length = sqrtf(floatNorms[j].x * floatNorms[j].x + floatNorms[j].y * floatNorms[j].y +
+                               floatNorms[j].z * floatNorms[j].z);
                 if (length != 0.0f) {
-                    spAC[j].x /= length;
-                    spAC[j].y /= length;
-                    spAC[j].z /= length;
+                    floatNorms[j].x /= length;
+                    floatNorms[j].y /= length;
+                    floatNorms[j].z /= length;
                 }
             }
         }
 
         v0 = (s16 *) mempool_alloc(model->numberOfVertices * sizeof(s16), COLOUR_TAG_ORANGE);
         if (v0 == NULL) {
-            mempool_free(spAC);
-            mempool_free(spA0);
+            mempool_free(floatNorms);
+            mempool_free(normals);
             return 1;
         }
 
@@ -877,8 +885,8 @@ s32 func_80060EA8(ObjectModel *model) {
 
         v06 = (Vec3f *) mempool_alloc(s6 * sizeof(Vec3f), COLOUR_TAG_ORANGE);
         if (v06 == NULL) {
-            mempool_free(spAC);
-            mempool_free(spA0);
+            mempool_free(floatNorms);
+            mempool_free(normals);
             mempool_free(v0);
             return 1;
         }
@@ -898,9 +906,9 @@ s32 func_80060EA8(ObjectModel *model) {
                         a2 = v0[a2];
 
                         if (a2 >= 0) {
-                            v06[a2].x += spAC[j].x;
-                            v06[a2].y += spAC[j].y;
-                            v06[a2].z += spAC[j].z;
+                            v06[a2].x += floatNorms[j].x;
+                            v06[a2].y += floatNorms[j].y;
+                            v06[a2].z += floatNorms[j].z;
                         }
                     }
                 }
@@ -920,23 +928,27 @@ s32 func_80060EA8(ObjectModel *model) {
         for (k = 0; k < model->numberOfVertices; k++) {
             a2 = v0[k];
             if (a2 >= 0) {
-                spA0[a0].x = v06[a2].x;
-                spA0[a0].y = v06[a2].y;
-                spA0[a0].z = v06[a2].z;
+                normals[a0].x = v06[a2].x;
+                normals[a0].y = v06[a2].y;
+                normals[a0].z = v06[a2].z;
                 a0++;
             }
         }
 
-        model->unk40 = spA0;
+        model->normals = normals;
         mempool_free(v0);
         mempool_free(v06);
-        mempool_free(spAC);
+        mempool_free(floatNorms);
     }
     return 0;
 }
 
-void func_800619F4(s32 arg0) {
-    D_8011D640 = arg0;
+/**
+ * Sets the animation end offset for new models when loading.
+ * This lets you choose to load more animations than the model normally would.
+ */
+void model_anim_offset(s32 offset) {
+    gModelAnimOffsetID = offset;
 }
 
 s32 model_load_anim_id(ObjectModel *model, s32 animID, s32 modelID) {
@@ -968,8 +980,13 @@ s32 model_load_anim_id(ObjectModel *model, s32 animID, s32 modelID) {
     return 0;
 }
 
-// Returns 0 if successful, or 1 if an error occured.
-s32 func_80061A00(ObjectModel *model, s32 animTableIndex, s32 animStart) {
+/**
+ * Checks the animation table for the model ID for animation entries.
+ * Zero entries just set the anim count to zero and return early.
+ * Otherwise, allocate space for animation data for each animation and loads each into each data slot.
+ * Returns nonzero if something went wrong.
+ */
+s32 model_anim_init(ObjectModel *model, s32 modelID, s32 animStart) {
     s32 i;
 
     if (model->numberOfAnimations == 0) {
