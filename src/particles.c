@@ -135,6 +135,7 @@ s16 gHovercraftParticleOpacities[8];
 void init_particle_assets(void) {
     s32 i;
 
+    assettable_tag(PP_RAM_MISCASSET);
     gParticlesAssetTable = (ParticleDescriptor **) load_asset_section_from_rom(ASSET_PARTICLES_TABLE);
     gParticlesAssetTableCount = -1;
     while (((s32) gParticlesAssetTable[gParticlesAssetTableCount + 1]) != -1) {
@@ -161,6 +162,7 @@ void init_particle_assets(void) {
                 (ColorLoopEntry *) get_misc_asset((s32) gParticleBehavioursAssetTable[i]->colourLoop);
         }
     }
+    assettable_tag(COLOUR_TAG_GREY);
 }
 
 /**

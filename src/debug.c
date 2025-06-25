@@ -747,6 +747,7 @@ char *sPuppyprintMemColours[] = {
 
 char *debug_asset_lookup(MemoryPoolSlot *slot) {
     s32 i;
+    s32 k;
     s32 texID;
     s32 tag = slot->colourTag;
     char *str;
@@ -782,12 +783,29 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
                 return assettable_name(ASSET_OBJECT_MODELS, texID);
             }
             return str;
+        case PP_RAM_ANIMATIONS:
+            // Try object models
+            objAnim = (ObjectModel_44 *) slot->data;
+            for (i = 0; i < gModelCacheCount; i++) {
+                objModel = (ObjectModel *) gModelCache[i];
+                for (k = 0; k < objModel->numberOfAnimations; k++) {
+                    if ((s32) objAnim->animData == (s32) objModel->animations[k].animData) {
+                        texID = gModelCacheIDs[i];
+                    }
+                }
+            }
+            if (texID != -200) {
+                return assettable_name(ASSET_OBJECT_MODELS, texID);
+            }
+            return str;
         case PP_RAM_OBJTEX:
         case PP_RAM_LEVELTEX:
         case PP_RAM_MAGENTA:
         case PP_RAM_LIME:
         case PP_RAM_SPRITE_TEX:
         case PP_RAM_SPRITES:
+        case PP_RAM_FONTS:
+        case PP_RAM_SHADOWS:
             texHeader = (TextureHeader *) slot->data;
             texID = -200;
             // First see if it's a texture

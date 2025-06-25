@@ -279,6 +279,7 @@ extern s32 gObjectListStart;
 void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, u32 entranceId, u32 collectables,
                 u32 arg6) {
     s32 i;
+    s32 allocSize;
     u32 first = osGetCount();
 
     gCurrentLevelHeader2 = get_current_level_header();
@@ -354,7 +355,23 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     cam_set_layout(gScenePlayerViewports);
 
     numberOfPlayers = gScenePlayerViewports;
+    allocSize = ((sizeof(ShadowHeapProperties) * 75) + (sizeof(Triangle) * 150) + (sizeof(Vertex) * 400)) * 2;
+    allocSize += (sizeof(ShadowHeapProperties) * 200) + (sizeof(Triangle) * 400) + (sizeof(Vertex) * 1000);
+
     // Dynamic Shadows
+    gShadowHeapData[0] = (ShadowHeapProperties *) mempool_alloc(allocSize + 128, PP_RAM_SHADOWS);
+    gShadowHeapTris[0] = (Triangle *) align16((u8 *) ((u8 *) gShadowHeapData[0] + (sizeof(ShadowHeapProperties) * 75)));
+    gShadowHeapVerts[0] = (Vertex *) align16((u8 *) ((u8 *) gShadowHeapTris[0] + (sizeof(Triangle) * 150)));
+
+    gShadowHeapData[1] = (ShadowHeapProperties *) align16((u8 *) ((u8 *) gShadowHeapVerts[0] + (sizeof(Vertex) * 400)));
+    gShadowHeapTris[1] = (Triangle *) align16((u8 *) ((u8 *) gShadowHeapData[1] + (sizeof(ShadowHeapProperties) * 75)));
+    gShadowHeapVerts[1] = (Vertex *) align16((u8 *) ((u8 *) gShadowHeapTris[1] + (sizeof(Triangle) * 150)));
+    // Static Shadows
+    gShadowHeapData[2] = (ShadowHeapProperties *) align16((u8 *) ((u8 *) gShadowHeapVerts[1] + (sizeof(Vertex) * 400)));
+    gShadowHeapTris[2] = (Triangle *) align16((u8 *) ((u8 *) gShadowHeapData[2] + (sizeof(ShadowHeapProperties) * 200)));
+    gShadowHeapVerts[2] = (Vertex *) align16((u8 *) ((u8 *) gShadowHeapTris[2] + (sizeof(Triangle) * 400)));
+
+    /*// Dynamic Shadows
     for (i = 0; i < 2; i++) {
         gShadowHeapData[i] = (ShadowHeapProperties *) mempool_alloc_safe(sizeof(ShadowHeapProperties) * 75, PP_RAM_SHADOWS);
         gShadowHeapTris[i] = (Triangle *) mempool_alloc_safe(sizeof(Triangle) * 150, PP_RAM_SHADOWS);
@@ -363,7 +380,7 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     // Static Shadows
     gShadowHeapData[2] = (ShadowHeapProperties *) mempool_alloc_safe(sizeof(ShadowHeapProperties) * 200, PP_RAM_SHADOWS);
     gShadowHeapTris[2] = (Triangle *) mempool_alloc_safe(sizeof(Triangle) * 400, PP_RAM_SHADOWS);
-    gShadowHeapVerts[2] = (Vertex *) mempool_alloc_safe(sizeof(Vertex) * 1000, PP_RAM_SHADOWS);
+    gShadowHeapVerts[2] = (Vertex *) mempool_alloc_safe(sizeof(Vertex) * 1000, PP_RAM_SHADOWS);*/
 
     gShadowHeapFlip = 0;
     shadow_update(SHADOW_SCENERY, SHADOW_SCENERY, LOGIC_NULL);
@@ -2972,8 +2989,8 @@ void generate_track(s32 modelId) {
     s32 maxTextures;
 
     set_texture_colour_tag(PP_RAM_LEVELTEX);
-    D_8011D370 = mempool_alloc_safe(0x7D0, PP_RAM_LEVELMDL);
-    D_8011D374 = mempool_alloc_safe(0x1F4, PP_RAM_LEVELMDL);
+    D_8011D370 = mempool_alloc_safe(2000, PP_RAM_COLLISION);
+    D_8011D374 = mempool_alloc_safe(500, PP_RAM_COLLISION);
     gLevelModelTable = (s32 *) load_asset_section_from_rom(ASSET_LEVEL_MODELS_TABLE);
     // Allocate this last, so it ends up being the latest thing allocated, and then first thing freed.
     gTrackModelHeap = (LevelModel *) mempool_alloc_largest(PP_RAM_LEVELMDL);
@@ -3124,11 +3141,12 @@ void free_track(void) {
     if (gCurrentLevelModel->minimapSpriteIndex) {
         sprite_free((Sprite *) gCurrentLevelModel->minimapSpriteIndex);
     }
-    for (i = 0; i < ARRAY_COUNT(gShadowHeapData); i++) {
+    mempool_free(gShadowHeapData[0]);
+    /*for (i = 0; i < ARRAY_COUNT(gShadowHeapData); i++) {
         mempool_free(gShadowHeapData[i]);
         mempool_free(gShadowHeapTris[i]);
         mempool_free(gShadowHeapVerts[i]);
-    }
+    }*/
     void_free();
     if (gSkydomeSegment != NULL) {
         free_object(gSkydomeSegment);
