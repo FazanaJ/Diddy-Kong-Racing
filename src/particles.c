@@ -135,7 +135,7 @@ s16 gHovercraftParticleOpacities[8];
 void init_particle_assets(void) {
     s32 i;
 
-    assettable_tag(PP_RAM_MISCASSET);
+    assettable_tag(PP_RAM_ASSETTABLE);
     gParticlesAssetTable = (ParticleDescriptor **) load_asset_section_from_rom(ASSET_PARTICLES_TABLE);
     gParticlesAssetTableCount = -1;
     while (((s32) gParticlesAssetTable[gParticlesAssetTableCount + 1]) != -1) {
@@ -186,19 +186,19 @@ void init_particle_buffers(s32 maxTriangleParticles, s32 maxRectangleParticles, 
     gParticleOverrideColor->word = 0;
 
     if (maxTriangleParticles < 0) {
-        maxTriangleParticles = 0x10;
+        maxTriangleParticles = 16;
     }
     if (maxRectangleParticles < 0) {
-        maxRectangleParticles = 0x10;
+        maxRectangleParticles = 16;
     }
     if (maxSpriteParticles < 0) {
-        maxSpriteParticles = 0xD0;
+        maxSpriteParticles = 208;
     }
     if (maxLineParticles < 0) {
-        maxLineParticles = 0xA0;
+        maxLineParticles = 160;
     }
     if (maxPointParticles < 0) {
-        maxPointParticles = 0x40;
+        maxPointParticles = 64;
     }
     gMaxTriangleParticles = maxTriangleParticles;
     gTriangleParticleBufferFull = FALSE;
