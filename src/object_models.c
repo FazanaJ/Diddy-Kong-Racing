@@ -163,6 +163,8 @@ ModelInstance *object_model_init(s32 modelID, s32 flags) {
         return NULL;
     }
 
+    mempool_free_timer(0);
+
     if (modelID >= gNumModelIDs) {
         modelID = 0;
     }
@@ -175,6 +177,7 @@ ModelInstance *object_model_init(s32 modelID, s32 flags) {
             if (instance != NULL) {
                 objMdl->references++;
             }
+            mempool_free_timer(2);
             return instance;
         }
     }
@@ -265,6 +268,7 @@ ModelInstance *object_model_init(s32 modelID, s32 flags) {
                 gModelCache[cacheIndex] = (s32) objMdl;
                 if (gModelCacheCount < MODEL_LOADED_MAX) {
                     instance->animUpdateTimer = 0;
+                    mempool_free_timer(2);
                     return instance;
                 } else {
                 }
@@ -281,6 +285,7 @@ block_30:
     }
 #endif
     free_model_data(objMdl);
+    mempool_free_timer(2);
     return NULL;
 }
 
@@ -782,14 +787,14 @@ s32 model_calc_normals(ObjectModel *model) {
         vertices = model->vertices;
         triangles = model->triangles;
 
-        floatNorms = (Vec3f *) mempool_alloc(model->numberOfTriangles * sizeof(Vec3f), PP_RAM_TEMP);
-        if (floatNorms == NULL) {
+        normals = (Vec3s *) mempool_alloc(k * sizeof(Vec3s), PP_RAM_NORMALS);
+        if (normals == NULL) {
             return 1;
         }
 
-        normals = (Vec3s *) mempool_alloc(k * sizeof(Vec3s), PP_RAM_NORMALS);
-        if (normals == NULL) {
-            mempool_free(floatNorms);
+        floatNorms = (Vec3f *) mempool_alloc(model->numberOfTriangles * sizeof(Vec3f), PP_RAM_TEMP);
+        if (floatNorms == NULL) {
+            mempool_free(normals);
             return 1;
         }
 

@@ -34,8 +34,6 @@ Vertex *gSnowVerts = NULL;
 s32 gSnowVertCount = 0;
 Triangle *gSnowTriangles = NULL;
 Vertex *gSnowVertexData[4][2] = { NULL };
-s32 *gWeatherAssetTable = NULL;   // List of Ids
-s32 gWeatherAssetTableLength = 0; // Set, but never read.
 
 Gfx dLensFlare[] = {
     gsDPPipeSync(),
@@ -155,6 +153,7 @@ Object *gLensFlareSwitches[WEATHER_OVERRIDE_COUNT];
  */
 void weather_init(void) {
     s32 i;
+    s32 *assetTable;
 
     gSnowGfx.pos = NULL;
     gSnowGfx.size = 0;
@@ -178,13 +177,6 @@ void weather_init(void) {
     gLensFlare = NULL;
     gLensFlareOff = TRUE;
     gLensFlareOverrideObjs = 0;
-    if (gWeatherAssetTable == NULL) {
-        gWeatherAssetTable = (s32 *) load_asset_section_from_rom(ASSET_WEATHER_PARTICLES);
-        gWeatherAssetTableLength = 0;
-        while ((s32) gWeatherAssetTable[gWeatherAssetTableLength] != -1) {
-            gWeatherAssetTableLength++;
-        }
-    }
     gSnowVertexFlip = 0;
 }
 
@@ -389,6 +381,7 @@ void snow_init(void) {
     s32 step;
     s32 offset;
     s32 i;
+    s32 *assetTable;
 
     step = 0x10000 / gSnowGfx.size;
     offset = 0;
@@ -401,7 +394,9 @@ void snow_init(void) {
     }
 
     set_texture_colour_tag(PP_RAM_WEATHER);
-    gSnowGfx.texture = load_texture(*gWeatherAssetTable);
+    assetTable = (s32 *) load_asset_section_from_rom(ASSET_WEATHER_PARTICLES);
+    gSnowGfx.texture = load_texture(assetTable[0]);
+    mempool_free(assetTable);
     set_texture_colour_tag(COLOUR_TAG_MAGENTA);
 }
 
@@ -852,6 +847,8 @@ void lensflare_override(Camera *cameraSegment) {
  * Load the overlay and splash textures then set the initial opacity and lightning frequency.
  */
 void rain_init(s32 intensity, s32 opacity) {
+    s32 *assetTable;
+
     gLightningFrequency = intensity;
     gLightningFrequencyStep = 0;
     gLightningFrequencyTarget = gLightningFrequency;
@@ -864,10 +861,12 @@ void rain_init(s32 intensity, s32 opacity) {
     gRainSplashDelay = 0;
     gRainVertexFlip = 0;
     set_texture_colour_tag(PP_RAM_WEATHER);
-    gRainGfx[0].tex = load_texture(gWeatherAssetTable[1]);
-    gRainGfx[1].tex = load_texture(gWeatherAssetTable[1]);
+    assetTable = (s32 *) load_asset_section_from_rom(ASSET_WEATHER_PARTICLES);
+    gRainGfx[0].tex = load_texture(assetTable[1]);
+    gRainGfx[1].tex = load_texture(assetTable[1]);
     set_texture_colour_tag(COLOUR_TAG_MAGENTA);
-    gRainSplashGfx = (Sprite *) tex_load_sprite(gWeatherAssetTable[3], 0);
+    gRainSplashGfx = (Sprite *) tex_load_sprite(assetTable[3], 0);
+    mempool_free(assetTable);
     gWeatherType = WEATHER_RAIN;
 }
 

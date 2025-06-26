@@ -214,7 +214,6 @@ s32 D_8011AD54;
 s32 *gSpawnObjectHeap;
 s32 D_8011AD5C;
 s32 D_8011AD60;
-s32 *gAssetsObjectHeadersTable;
 s32 gAssetsObjectHeadersTableLength;
 s32 *gAssetsMiscSection;
 s32 *gAssetsMiscTable;
@@ -749,12 +748,13 @@ void allocate_object_pools(void) {
     }
     mempool_free(tempTable2);
     gSpawnObjectHeap = mempool_alloc_safe(OBJECT_BLUEPRINT_SIZE, PP_RAM_OBJLISTS);
-    gAssetsObjectHeadersTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_HEADERS_TABLE);
+    tempTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_HEADERS_TABLE);
     gAssetsObjectHeadersTableLength = 0;
-    while (-1 != gAssetsObjectHeadersTable[gAssetsObjectHeadersTableLength]) {
+    while (-1 != tempTable[gAssetsObjectHeadersTableLength]) {
         gAssetsObjectHeadersTableLength++;
     }
     gAssetsObjectHeadersTableLength--;
+    mempool_free(tempTable);
     gObjectHeaderCache = mempool_alloc_safe(6 *100, PP_RAM_ASSET_CACHE);
     gObjectHeaderCacheIDs = (s16 *) ((u8 *) gObjectHeaderCache + (100 * 4));
     //gLoadedObjectHeaders = mempool_alloc_safe(gAssetsObjectHeadersTableLength * 4, PP_RAM_ASSETTABLE);
@@ -918,11 +918,11 @@ void free_all_objects(void) {
  * Otherwise, allocate space and load it into ROM and set it to that.
  */
 ObjectHeader *load_object_header(s32 index) {
-    s32 assetOffset;
     s32 size;
     ObjectHeader *address;
     s32 i;
     s32 slotIndex;
+    s32 offset[2];
 
     /*if ((*gObjectHeaderReferences)[index] != 0) {
         (*gObjectHeaderReferences)[index]++;
@@ -936,12 +936,15 @@ ObjectHeader *load_object_header(s32 index) {
             return address;
         }
     }
+
+    //gAssetsObjectHeadersTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_HEADERS_TABLE);
+
+    load_asset_to_address(ASSET_OBJECT_HEADERS_TABLE, (u32) &offset, index * (sizeof(s32)), sizeof(s32) * 2);
     
-    assetOffset = gAssetsObjectHeadersTable[index];
-    size = gAssetsObjectHeadersTable[index + 1] - assetOffset;
+    size = offset[1] - offset[0];
     address = mempool_alloc_pool_tag((MemoryPoolSlot *) gObjectMemoryPool, size, PP_RAM_OBJHEADERS);
     if (address != NULL) {
-        load_asset_to_address(ASSET_OBJECTS, (u32) address, assetOffset, size);
+        load_asset_to_address(ASSET_OBJECTS, (u32) address, offset[0], size);
         address->unk24 = (ObjectHeader24 *) ((uintptr_t) address + (uintptr_t) address->unk24);
         address->objectParticles =
             (ObjHeaderParticleEntry *) ((uintptr_t) address + (uintptr_t) address->objectParticles);
