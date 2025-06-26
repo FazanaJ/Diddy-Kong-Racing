@@ -144,13 +144,6 @@ Gfx dDebugFontSettings[] = {
 
 /*******************************/
 
-/************ .rodata ************/
-
-const char gLowerCase[] = "0123456789abcdefghijklmnopqrstuvwxyz";
-const char gUpperCase[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-/*********************************/
-
 /************ .bss ************/
 
 TextureHeader *gTexture[3];
@@ -172,20 +165,24 @@ char *gDebugPrintBufferEnd;
 
 /******************************/
 
+const char _itoa_lower_digits[] = "0123456789abcdefghijklmnopqrstuvwxyz";
+const char _itoa_upper_digits[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+
 /**
  * Standard C Library function that converts integers to strings.
+ * Exact match to glibc 1.09 version.
  */
-char *_itoa(u64 n, char *outBuffer, u32 radix, s32 useUpperCase) {
-    char *alphabet;
-    char *buffer;
+char *_itoa(unsigned long long int n, char *buflim, unsigned int base, int upper_case) {
+    /* Base-36 digits for numbers. */
+    const char *alphabet = upper_case ? _itoa_upper_digits : _itoa_lower_digits;
+    register char *bp = buflim;
 
-    alphabet = (useUpperCase) ? (char *) gUpperCase : (char *) gLowerCase;
-
-    for (buffer = outBuffer; n > 0; n /= radix) {
-        *(--buffer) = alphabet[n % radix];
+    while (n > 0) {
+        *(--bp) = alphabet[n % base];
+        n /= base;
     }
 
-    return buffer;
+    return bp;
 }
 
 /**
@@ -203,6 +200,7 @@ static char *proutSprintf(char *dst, const char *src, size_t count) {
 }
 
 /**
+ * Exact match to glibc 1.09 version.
  * Official name: sprintf
  */
 int sprintf(char *s, const char *format, ...) {
