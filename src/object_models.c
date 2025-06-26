@@ -782,12 +782,12 @@ s32 model_calc_normals(ObjectModel *model) {
         vertices = model->vertices;
         triangles = model->triangles;
 
-        floatNorms = (Vec3f *) mempool_alloc(model->numberOfTriangles * sizeof(Vec3f), COLOUR_TAG_ORANGE);
+        floatNorms = (Vec3f *) mempool_alloc(model->numberOfTriangles * sizeof(Vec3f), PP_RAM_TEMP);
         if (floatNorms == NULL) {
             return 1;
         }
 
-        normals = (Vec3s *) mempool_alloc(k * sizeof(Vec3s), COLOUR_TAG_ORANGE);
+        normals = (Vec3s *) mempool_alloc(k * sizeof(Vec3s), PP_RAM_NORMALS);
         if (normals == NULL) {
             mempool_free(floatNorms);
             return 1;
@@ -820,7 +820,7 @@ s32 model_calc_normals(ObjectModel *model) {
             }
         }
 
-        v0 = (s16 *) mempool_alloc(model->numberOfVertices * sizeof(s16), COLOUR_TAG_ORANGE);
+        v0 = (s16 *) mempool_alloc(model->numberOfVertices * sizeof(s16), PP_RAM_TEMP);
         if (v0 == NULL) {
             mempool_free(floatNorms);
             mempool_free(normals);
@@ -883,7 +883,7 @@ s32 model_calc_normals(ObjectModel *model) {
             }
         }
 
-        v06 = (Vec3f *) mempool_alloc(s6 * sizeof(Vec3f), COLOUR_TAG_ORANGE);
+        v06 = (Vec3f *) mempool_alloc(s6 * sizeof(Vec3f), PP_RAM_TEMP);
         if (v06 == NULL) {
             mempool_free(floatNorms);
             mempool_free(normals);

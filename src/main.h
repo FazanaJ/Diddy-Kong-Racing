@@ -223,6 +223,7 @@ typedef enum DebugRam {
     PP_RAM_ALFX,
     PP_RAM_VOID,
     PP_RAM_COLLISION,
+    PP_RAM_NORMALS,
 
     PP_RAM_TOTAL,
 } DebugRam;
@@ -293,8 +294,9 @@ extern u8 *main_BSS_START[];
     "Trig Tables", \
     "Sprite Tex", \
     "AudLib FX", \
-    "Void", \
-    "Collision"
+    "Void\t", \
+    "Collision", \
+    "Normals\t"
 
 #define NUM_PERF_ITERATIONS 60
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS
@@ -366,6 +368,7 @@ extern char *sPuppyprintMemColours[];
 extern f32 gFPS;
 
 void debug_init();
+s32 memsize_get(void);
 void debug_log(s32 logLevel, char *str, ...);
 void debug_render(Gfx **dList, s32 updateRate);
 void debug_update(s32 updateRate);

@@ -373,7 +373,7 @@ void racerfx_alloc(s32 numberOfVertices, s32 numberOfTriangles) {
 
     if (gNumRacers > 0) {
         gBoostTris[0] = (Triangle *) mempool_alloc_safe(
-            ((numberOfTriangles * sizeof(Triangle)) + (numberOfVertices * sizeof(Vertex))) * 2, COLOUR_TAG_BLUE);
+            ((numberOfTriangles * sizeof(Triangle)) + (numberOfVertices * sizeof(Vertex))) * 2, PP_RAM_MISCMDL);
         gBoostTris[1] = (Triangle *) ((u32) gBoostTris[0] + numberOfTriangles * sizeof(Triangle));
         gBoostVerts[0] = (Vertex *) ((u32) gBoostTris[1] + numberOfTriangles * sizeof(Triangle));
         gBoostVerts[1] = (Vertex *) ((u32) gBoostVerts[0] + numberOfVertices * sizeof(Vertex));

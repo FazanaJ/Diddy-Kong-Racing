@@ -2125,7 +2125,7 @@ void func_8007FFEC(s32 numberOfPanels) {
     triangleCount = sizeof(Triangle) * (10 * numberOfPanels);
 
     gWoodPanelTriangles[0] =
-        (Triangle *) mempool_alloc_safe(((vertexSize + triangleCount) * 2) + menuGeometrySize, COLOUR_TAG_WHITE);
+        (Triangle *) mempool_alloc_safe(((vertexSize + triangleCount) * 2) + menuGeometrySize, PP_RAM_HUD);
     gWoodPanelTriangles[1] = (Triangle *) ((u32) gWoodPanelTriangles[0] + triangleCount);
 
     gMenuGeometry = (unk80080BC8 *) ((u32) gWoodPanelTriangles[1] + triangleCount);

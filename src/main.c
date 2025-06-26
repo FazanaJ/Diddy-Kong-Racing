@@ -271,6 +271,16 @@ void config_init(void) {
     osTvType = OS_TV_NTSC;
 }
 
+s32 memsize_get(void) {
+    u32 memSize = osGetMemSize();
+
+    if (gUseExpansionMemory == FALSE) {
+        memSize = 0x400000;
+    }
+
+    return memSize;
+}
+
 /**
  *  Calls osGetMemSize and sets if the expansion pak exists, and whether or not it can be used.
 */

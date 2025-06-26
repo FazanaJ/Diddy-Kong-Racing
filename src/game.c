@@ -635,7 +635,9 @@ void set_ai_level(s8 *aiLevelTable) {
  * Frees the AI behaviour table from memory.
  */
 void free_ai_behaviour_table(void) {
-    mempool_free(gAIBehaviourTable);
+    if (gAIBehaviourTable) {
+        mempool_free(gAIBehaviourTable);
+    }
 }
 
 /**

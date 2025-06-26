@@ -280,6 +280,8 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
                 u32 arg6) {
     s32 i;
     s32 allocSize;
+    s32 numRacers;
+    Object **racers;
     u32 first = osGetCount();
 
     gCurrentLevelHeader2 = get_current_level_header();
@@ -395,11 +397,29 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
         void_init(numberOfPlayers + 1);
     }
 
+    racers = get_racer_objects(&numRacers);
+
+    if (numRacers == 0) {
+        free_ai_behaviour_table();
+    } else {
+        s32 isAI = FALSE;
+        for (i = 0; i < numRacers; i++) {
+            if (racers[i]->unk64->racer.playerIndex == PLAYER_COMPUTER) {
+                isAI = TRUE;
+                break;
+            }
+        }
+        if (isAI == FALSE) {
+            free_ai_behaviour_table();
+        }
+    }
+
 #ifdef OPEN_ALL_DOORS
     for (i = 0; i < gObjectCount; i++) {
         Object *obj = get_object(i);
         if (obj->objectID == ASSET_OBJECT_ID_PIGHEADCOLOURS) {
             free_object(obj);
+            break;
         }
     }
 #endif
@@ -621,8 +641,8 @@ void void_init(s32 viewportCount) {
     vtxLimit = (gVoidPrimLimit + 5) * 4 * sizeof(Vertex);
     triLimit = (gVoidPrimLimit + 5) * 2 * sizeof(Triangle);
 
-    gVoidMesh = mempool_alloc_safe(viewportCount * sizeof(VoidMesh), COLOUR_TAG_CYAN);
-    gVoidData = mempool_alloc_safe(sp30 + sp2C + (vtxLimit + triLimit) * 2 * viewportCount, COLOUR_TAG_CYAN);
+    gVoidMesh = mempool_alloc_safe(viewportCount * sizeof(VoidMesh), PP_RAM_VOID);
+    gVoidData = mempool_alloc_safe(sp30 + sp2C + (vtxLimit + triLimit) * 2 * viewportCount, PP_RAM_VOID);
 
     ptr = gVoidData;
 

@@ -745,6 +745,33 @@ char *sPuppyprintMemColours[] = {
     MEMSTRINGS
 };
 
+typedef struct DebugAddrNames {
+    u32 addr;
+    char *name;
+} DebugAddrNames;
+
+extern LevelGlobalData *gGlobalLevelTable;
+extern s32 gLevelNames;
+extern s32 gTempLevelNames;
+extern s32 gCurrentLevelHeader;
+extern s32 gAIBehaviourTable;
+extern s32 gParticlesAssetTable;
+extern s32 gParticlesAssets;
+extern s32 gParticleBehavioursAssetTable;
+extern s32 gParticleBehavioursAssets;
+
+DebugAddrNames gDebugAddrNames[] = {
+    &gGlobalLevelTable, "Level Table",
+    &gLevelNames, "Level Names",
+    &gTempLevelNames, "Level Name IDs",
+    &gCurrentLevelHeader, "Level Header",
+    &gAIBehaviourTable, "AI Behaviour",
+    &gParticlesAssetTable, "Particle Asset table",
+    &gParticlesAssets, "Particle Assets",
+    &gParticleBehavioursAssetTable, "Particle Behaviour table",
+    &gParticleBehavioursAssets, "Particle Behaviours"
+};
+
 char *debug_asset_lookup(MemoryPoolSlot *slot) {
     s32 i;
     s32 k;
@@ -763,6 +790,31 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
     texID = -200;
 
     switch (tag) {
+        case PP_RAM_ASSETTABLE:
+        case PP_RAM_GREY:
+            for (i = 0; i < ARRAY_COUNT(gDebugAddrNames); i++) {
+                if ((s32) slot->data == (s32) gGlobalLevelTable) {
+                    return "gGlobalLevelTable";
+                } else if ((s32) slot->data == (s32) gLevelNames) {
+                    return "gLevelNames";
+                } else if ((s32) slot->data == (s32) gTempLevelNames) {
+                    return "gTempLevelNames";
+                } else if ((s32) slot->data == (s32) gCurrentLevelHeader) {
+                    return "gCurrentLevelHeader";
+                } else if ((s32) slot->data == (s32) gAIBehaviourTable) {
+                    return "gAIBehaviourTable";
+                } else if ((s32) slot->data == (s32) gParticlesAssetTable) {
+                    return "gParticlesAssetTable";
+                } else if ((s32) slot->data == (s32) gParticlesAssets) {
+                    return "gParticlesAssets";
+                } else if ((s32) slot->data == (s32) gParticleBehavioursAssetTable) {
+                    return "gParticleBehavioursAssetTable";
+                } else if ((s32) slot->data == (s32) gParticleBehavioursAssets) {
+                    return "gParticleBehavioursAssets";
+                }
+            }
+            return str;
+
         case PP_RAM_OBJHEADERS:
             objHeader = (ObjectHeader *) slot->data;
             return objHeader->internalName;
@@ -783,7 +835,7 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
                 return assettable_name(ASSET_OBJECT_MODELS, texID);
             }
             return str;
-        case PP_RAM_ANIMATIONS:
+        /*case PP_RAM_ANIMATIONS:
             // Try object models
             objAnim = (ObjectModel_44 *) slot->data;
             for (i = 0; i < gModelCacheCount; i++) {
@@ -797,7 +849,7 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
             if (texID != -200) {
                 return assettable_name(ASSET_OBJECT_MODELS, texID);
             }
-            return str;
+            return str;*/
         case PP_RAM_OBJTEX:
         case PP_RAM_LEVELTEX:
         case PP_RAM_MAGENTA:
@@ -841,7 +893,7 @@ void debug_ram_dump(void) {
     int i;
     s32 colourTag;
     MemoryPoolSlot *slot;
-    u32 ramTotal = osGetMemSize();
+    u32 ramTotal = memsize_get();
 
     for (i = 0; i <= gNumberOfMemoryPools; i++) {
         debug_printf("------------- Pool: %d\t Size: %X (%2.3fKiB)\t %2.2f%%\t Slots: %d/%d -------------\n", i, 
