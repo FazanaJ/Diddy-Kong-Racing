@@ -43,15 +43,15 @@ u8 sAutoplayActiveTrack;
 
 s32 autoplay_drive(f32 x, f32 y, f32 z, f32 distCheck) {
     Object *obj = get_racer_object(0);
-    Object_Racer *racer = (Object_Racer *) obj->unk64;
+    Object_Racer *racer = (Object_Racer *) obj->racer;
     f32 dist;
     s16 angleDiff;
-    s16 base = obj->segment.trans.rotation.y_rotation - 0x4000;
+    s16 base = obj->trans.rotation.y_rotation - 0x4000;
     static u8 sATap = 0;
     s16 absDiff;
     static u8 sDrift = FALSE;
 
-    angleDiff = base + atan2s(obj->segment.trans.z_position - z, obj->segment.trans.x_position - x);
+    angleDiff = base + atan2s(obj->trans.z_position - z, obj->trans.x_position - x);
 
     absDiff = ABS(angleDiff);
 
@@ -83,9 +83,9 @@ s32 autoplay_drive(f32 x, f32 y, f32 z, f32 distCheck) {
     }
 
     if (racer->vehicleID == VEHICLE_PLANE) {
-        f32 mag = MIN(ABSF((y - obj->segment.trans.y_position) / 4.0f), 70);
+        f32 mag = MIN(ABSF((y - obj->trans.y_position) / 4.0f), 70);
         //render_printf("B: %2.2f\n", mag);
-        if (y > obj->segment.trans.y_position) {
+        if (y > obj->trans.y_position) {
             gControllerCurrData[sPlayerID[0]].stick_y = -mag;
         } else {
             gControllerCurrData[sPlayerID[0]].stick_y = mag;
@@ -93,9 +93,9 @@ s32 autoplay_drive(f32 x, f32 y, f32 z, f32 distCheck) {
     }
 
 
-    dist = (((obj->segment.trans.x_position - x) * (obj->segment.trans.x_position - x)) + 
-            ((obj->segment.trans.y_position - y) * (obj->segment.trans.y_position - y)) + 
-            ((obj->segment.trans.z_position - z) * (obj->segment.trans.z_position - z)));
+    dist = (((obj->trans.x_position - x) * (obj->trans.x_position - x)) + 
+            ((obj->trans.y_position - y) * (obj->trans.y_position - y)) + 
+            ((obj->trans.z_position - z) * (obj->trans.z_position - z)));
 
     if (racer->vehicleID == VEHICLE_PLANE) {
         if (dist > 3000.0f * 3000.0f) {
@@ -125,9 +125,9 @@ Object *autoplay_find_balloon(s32 balloonID) {
     if (gObjectCount > 0) {
         do {
             tempObj = gObjPtrList[i];
-            if (!(tempObj->segment.trans.flags & OBJ_FLAGS_PARTICLE) && tempObj->behaviorId == BHV_GOLDEN_BALLOON) {
-                Object_NPC *balloon = (Object_NPC *) tempObj->unk64;
-                if (tempObj->segment.level_entry->goldenBalloon.balloonID == balloonID) {
+            if (!(tempObj->trans.flags & OBJ_FLAGS_PARTICLE) && tempObj->behaviorId == BHV_GOLDEN_BALLOON) {
+                Object_NPC *balloon = (Object_NPC *) tempObj->npc;
+                if (tempObj->level_entry->goldenBalloon.balloonID == balloonID) {
                     return tempObj;
                 }
             }
@@ -151,9 +151,9 @@ Object *autoplay_find_balloon2(f32 x, f32 z) {
     if (gObjectCount > 0) {
         do {
             tempObj = gObjPtrList[i];
-            if (!(tempObj->segment.trans.flags & OBJ_FLAGS_PARTICLE) && tempObj->behaviorId == BHV_GOLDEN_BALLOON) {
-                diffX = tempObj->segment.trans.x_position - x;
-                diffZ = tempObj->segment.trans.z_position - z;
+            if (!(tempObj->trans.flags & OBJ_FLAGS_PARTICLE) && tempObj->behaviorId == BHV_GOLDEN_BALLOON) {
+                diffX = tempObj->trans.x_position - x;
+                diffZ = tempObj->trans.z_position - z;
                 distance = sqrtf((diffX * diffX) + (diffZ * diffZ));
                 if (bestDist > distance) {
                     bestDist = distance;
@@ -251,10 +251,10 @@ void autoplay_single_player(void) {
         
         obj = get_racer_object(0);
         if (obj) {
-            racer = (Object_Racer *) obj->unk64;
-            //render_printf("\n\n\n\nX: %2.2f\n", obj->segment.trans.x_position);
-            //render_printf("Y: %2.2f\n", obj->segment.trans.y_position);
-            //render_printf("Z: %2.2f\n", obj->segment.trans.z_position);
+            racer = (Object_Racer *) obj->racer;
+            //render_printf("\n\n\n\nX: %2.2f\n", obj->trans.x_position);
+            //render_printf("Y: %2.2f\n", obj->trans.y_position);
+            //render_printf("Z: %2.2f\n", obj->trans.z_position);
         } else {
             return;
         }
@@ -310,9 +310,9 @@ void autoplay_single_player(void) {
                                 if (obj == NULL) {
                                     break;
                                 }
-                                racer = (Object_Racer *) obj->unk64;
+                                racer = (Object_Racer *) obj->racer;
         
-                                //balloon = autoplay_find_balloon2(obj->segment.trans.x_position, obj->segment.trans.z_position);
+                                //balloon = autoplay_find_balloon2(obj->trans.x_position, obj->trans.z_position);
         
                                 //if (balloon) {
                                     //render_printf("%d\n", balloon->segment.level_entry->goldenBalloon.balloonID);
@@ -331,10 +331,10 @@ void autoplay_single_player(void) {
                                     case 1:
                                         balloon = autoplay_find_balloon(14);
                                         if (balloon) {
-                                            //render_printf("Balloon X: %2.2f\n", balloon->segment.trans.x_position);
-                                            //render_printf("Balloon Y: %2.2f\n", balloon->segment.trans.y_position);
-                                            //render_printf("Balloon Z: %2.2f\n", balloon->segment.trans.z_position);
-                                            autoplay_drive(balloon->segment.trans.x_position, balloon->segment.trans.y_position + 75.0f, balloon->segment.trans.z_position, 1.0f);
+                                            //render_printf("Balloon X: %2.2f\n", balloon->trans.x_position);
+                                            //render_printf("Balloon Y: %2.2f\n", balloon->trans.y_position);
+                                            //render_printf("Balloon Z: %2.2f\n", balloon->trans.z_position);
+                                            autoplay_drive(balloon->trans.x_position, balloon->trans.y_position + 75.0f, balloon->trans.z_position, 1.0f);
                                         }
                                         break;
                                 }
@@ -359,7 +359,7 @@ void autoplay_single_player(void) {
                                     case 4:
                                         balloon = autoplay_find_balloon(2);
                                         if (balloon) {
-                                            autoplay_drive(balloon->segment.trans.x_position, balloon->segment.trans.y_position + 75.0f, balloon->segment.trans.z_position, 1.0f);
+                                            autoplay_drive(balloon->trans.x_position, balloon->trans.y_position + 75.0f, balloon->trans.z_position, 1.0f);
                                         }
                                         break;
                                 }
@@ -374,7 +374,7 @@ void autoplay_single_player(void) {
                                     case 5:
                                         balloon = autoplay_find_balloon(6);
                                         if (balloon) {
-                                            autoplay_drive(balloon->segment.trans.x_position, balloon->segment.trans.y_position + 75.0f, balloon->segment.trans.z_position, 1.0f);
+                                            autoplay_drive(balloon->trans.x_position, balloon->trans.y_position + 75.0f, balloon->trans.z_position, 1.0f);
                                         }
                                         break;
                                 }
@@ -409,7 +409,7 @@ void autoplay_single_player(void) {
                                     case 10:
                                         balloon = autoplay_find_balloon(10);
                                         if (balloon) {
-                                            autoplay_drive(balloon->segment.trans.x_position, balloon->segment.trans.y_position + 75.0f, balloon->segment.trans.z_position, 1.0f);
+                                            autoplay_drive(balloon->trans.x_position, balloon->trans.y_position + 75.0f, balloon->trans.z_position, 1.0f);
                                         }
                                         break;
                                 }
@@ -747,7 +747,7 @@ void autoplay_single_player(void) {
                 if (get_current_level_race_type() != RACETYPE_HUBWORLD) {
                     if (get_race_start_timer() == 0) {
                         obj = get_racer_object(0);
-                        racer = (Object_Racer *) obj->unk64;
+                        racer = (Object_Racer *) obj->racer;
                         if (racer->racePosition > 1) {
                             racer->boostTimer = 1;
                             racer->boostType = BOOST_SMALL;
@@ -980,7 +980,7 @@ void autoplay_multiplayer(s32 playerCount) {
             if (get_map_race_type(get_current_map_id()) & RACETYPE_CHALLENGE_BATTLE) {
                 for (i = 0; i < 4; i++) {
                     obj = get_racer_object(i);
-                    racer = (Object_Racer *) obj->unk64;
+                    racer = (Object_Racer *) obj->racer;
                     if (racer->bananas > 1 && get_current_map_id() != ASSET_LEVEL_SMOKEYCASTLE) {
                         racer->bananas = 1;
                     }
@@ -988,7 +988,7 @@ void autoplay_multiplayer(s32 playerCount) {
                     if (racer->lap_times[0] > (60 * 60) * 2) {
                         for (i = 0; i < 4; i++) {
                             obj = get_racer_object(i);
-                            racer = (Object_Racer *) obj->unk64;
+                            racer = (Object_Racer *) obj->racer;
                             if (get_current_map_id() != ASSET_LEVEL_SMOKEYCASTLE) {
                                 racer->bananas = 0;
                             } else {
@@ -1000,7 +1000,7 @@ void autoplay_multiplayer(s32 playerCount) {
             }
             for (i = 0; i < playerCount; i++) {
                 obj = get_racer_object(i);
-                racer = (Object_Racer *) obj->unk64;
+                racer = (Object_Racer *) obj->racer;
                 gAutoDrive = TRUE;
                 if (i == 0) {
                     if (racer->raceFinished) {

@@ -1081,7 +1081,7 @@ void crash_mem_info_text(MemoryPoolSlot *slot, s32 x, s32 y, u16 col, s32 useExt
             break;
         case PP_RAM_OBJECTS:
             obj = (Object *) slot->data;
-            crash_text(x + 40, y, col, "%s", obj->segment.header->internalName);
+            crash_text(x + 40, y, col, "%s", obj->header->internalName);
             break;
         case PP_RAM_ANIMATIONS:
             crash_text(x + 40, y, col, "Unknown");

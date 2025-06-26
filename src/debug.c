@@ -417,7 +417,7 @@ void debug_render_misc(DebugData *d, Gfx **dList, s32 updateRate) {
         if (obj == NULL) {
             showRacer = FALSE;
         } else {
-            racer = (Object_Racer *) obj->unk64;
+            racer = (Object_Racer *) obj->racer;
         }
     } else {
         showRacer = FALSE;
@@ -459,17 +459,17 @@ void debug_render_misc(DebugData *d, Gfx **dList, s32 updateRate) {
     }
 
     if (showRacer) {
-        sprintf(textBytes, "X: %2.2f", obj->segment.trans.x_position);
+        sprintf(textBytes, "X: %2.2f", obj->trans.x_position);
         draw_text(dList, 10, 10, textBytes, ALIGN_TOP_LEFT);
-        sprintf(textBytes, "Y: %2.2f", obj->segment.trans.y_position);
+        sprintf(textBytes, "Y: %2.2f", obj->trans.y_position);
         draw_text(dList, 10 + 60, 10, textBytes, ALIGN_TOP_LEFT);
-        sprintf(textBytes, "Z: %2.2f", obj->segment.trans.z_position);
+        sprintf(textBytes, "Z: %2.2f", obj->trans.z_position);
         draw_text(dList, 10 + 120, 10, textBytes, ALIGN_TOP_LEFT);
-        sprintf(textBytes, "Y: 0x%04X", (u16) obj->segment.trans.rotation.s[0]);
+        sprintf(textBytes, "Y: 0x%04X", (u16) obj->trans.rotation.s[0]);
         draw_text(dList, 10, 20, textBytes, ALIGN_TOP_LEFT);
-        sprintf(textBytes, "P: 0x%04X", (u16) obj->segment.trans.rotation.s[1]);
+        sprintf(textBytes, "P: 0x%04X", (u16) obj->trans.rotation.s[1]);
         draw_text(dList, 10 + 60, 20, textBytes, ALIGN_TOP_LEFT);
-        sprintf(textBytes, "R: 0x%04X", (u16) obj->segment.trans.rotation.s[2]);
+        sprintf(textBytes, "R: 0x%04X", (u16) obj->trans.rotation.s[2]);
         draw_text(dList, 10 + 120, 20, textBytes, ALIGN_TOP_LEFT);
     }
 
@@ -815,7 +815,7 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
             return objHeader->internalName;
         case PP_RAM_OBJECTS:
             obj = (Object *) slot->data;
-            return obj->segment.header->internalName;
+            return obj->header->internalName;
         default:
             return str;
         case PP_RAM_OBJMDL:

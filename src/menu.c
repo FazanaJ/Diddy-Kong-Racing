@@ -10147,12 +10147,12 @@ void multiplayer_refresh_objects(void) {
     num = 2 + gConfig.multiObjects;
     for (i = sp160; i < objCount; i++) {
         Object *obj = get_object(i);
-        if (obj && obj->segment.header) {
-            if (obj->segment.header->flags & OBJ_FLAGS_DESPAWN_MULTIPLAYER) {
+        if (obj && obj->header) {
+            if (obj->header->flags & OBJ_FLAGS_DESPAWN_MULTIPLAYER) {
                 if (get_number_of_active_players() > num) {
-                    obj->segment.trans.flags |= OBJ_FLAGS_INVISIBLE;
+                    obj->trans.flags |= OBJ_FLAGS_INVISIBLE;
                 } else {
-                    obj->segment.trans.flags &= ~OBJ_FLAGS_INVISIBLE;
+                    obj->trans.flags &= ~OBJ_FLAGS_INVISIBLE;
                 }
             }
         }
@@ -13919,16 +13919,16 @@ void menu_element_render(s32 elementID) {
                 if (0) {} // Fakematch
                 object = (Object *) gMenuAssets[gMenuImages[elementID].trans.spriteID];
                 asset = (MenuAsset *) &gMenuImages[elementID];
-                object->segment.trans.rotation.y_rotation = asset->trans.rotation.y_rotation;
-                object->segment.trans.rotation.x_rotation = asset->trans.rotation.x_rotation;
-                object->segment.trans.rotation.z_rotation = asset->trans.rotation.z_rotation;
-                object->segment.trans.x_position = asset->trans.x_position;
-                object->segment.trans.y_position = asset->trans.y_position;
-                object->segment.trans.z_position = asset->trans.z_position;
-                object->segment.trans.scale = asset->trans.scale;
-                object->segment.animFrame = asset->unk1D;
-                object->segment.object.modelIndex = asset->spriteOffset;
-                object->segment.object.opacity = sMenuGuiOpacity;
+                object->trans.rotation.y_rotation = asset->trans.rotation.y_rotation;
+                object->trans.rotation.x_rotation = asset->trans.rotation.x_rotation;
+                object->trans.rotation.z_rotation = asset->trans.rotation.z_rotation;
+                object->trans.x_position = asset->trans.x_position;
+                object->trans.y_position = asset->trans.y_position;
+                object->trans.z_position = asset->trans.z_position;
+                object->trans.scale = asset->trans.scale;
+                object->animFrame = asset->unk1D;
+                object->modelIndex = asset->spriteOffset;
+                object->opacity = sMenuGuiOpacity;
                 render_object(&sMenuCurrDisplayList, &sMenuCurrHudMat, &sMenuCurrHudVerts, object);
             } else {
                 if ((*gAssetsMenuElementIds)[gMenuImages[elementID].trans.spriteID] & ASSET_MASK_SPRITE) {
@@ -15087,15 +15087,15 @@ s32 menu_video_options_loop(s32 updateRate) {
             for (i = 0; i < numRacers; i++) {
                 Object *obj = get_racer_object(i);
                 if (i < racerStart) {
-                    Object_Racer *racer = (Object_Racer *) get_racer_object(i)->unk64;
+                    Object_Racer *racer = (Object_Racer *) get_racer_object(i)->racer;
                     //racer->raceFinished = TRUE;
                     racer->lap = 0;
-                    obj->segment.trans.flags &= ~OBJ_FLAGS_INVISIBLE;
+                    obj->trans.flags &= ~OBJ_FLAGS_INVISIBLE;
                 } else {
-                    obj->segment.trans.flags |= OBJ_FLAGS_INVISIBLE;
-                    obj->segment.trans.x_position = 10000.0f;
-                    obj->segment.trans.y_position = 10000.0f;
-                    obj->segment.trans.z_position = 10000.0f;
+                    obj->trans.flags |= OBJ_FLAGS_INVISIBLE;
+                    obj->trans.x_position = 10000.0f;
+                    obj->trans.y_position = 10000.0f;
+                    obj->trans.z_position = 10000.0f;
                 }
             }
         }
@@ -15429,7 +15429,7 @@ s8 gDebugModelMiscCounter;
 s8 gDebugModelWheelFrame;
 s8 gDebugModelPropellorFrame;
 Sprite *testSprite[8];
-ObjectSegment fakeSpriteSegment;
+ObjectTransform fakeSpritetrans;
 Mtx spriteMatrix; // Unsure of needed length.
 Vertex spriteVertex; // Unsure of needed length.
 
@@ -15442,7 +15442,7 @@ void init_fake_sprite() {
     testSprite[5] = tex_load_sprite(ASSET_SPRITE_VEHICLE_PARTS_PROPELLER1, 0);
     testSprite[6] = tex_load_sprite(ASSET_SPRITE_VEHICLE_PARTS_FAN0, 0);
     testSprite[7] = tex_load_sprite(ASSET_SPRITE_VEHICLE_PARTS_FAN1, 0);
-    fakeSpriteSegment.trans.scale = 2.66f;
+    fakeSpritetrans.scale = 2.66f;
     gDebugModelWheelFrame = 0;
     gDebugModelPropellorFrame = 0;
 }
@@ -15461,16 +15461,16 @@ void render_test_sprite(f32 x, f32 y, f32 z, s32 spriteID) {
 
     if (spriteID > 3) {
         frame = spriteID + gDebugModelPropellorFrame;
-        fakeSpriteSegment.trans.rotation.y_rotation = -0x4000;
+        fakeSpritetrans.rotation.y_rotation = -0x4000;
     } else {
         frame = spriteID + gDebugModelWheelFrame;
-        fakeSpriteSegment.trans.rotation.y_rotation = 0;
+        fakeSpritetrans.rotation.y_rotation = 0;
     }
 
-    fakeSpriteSegment.trans.x_position = x;
-    fakeSpriteSegment.trans.y_position = y;
-    fakeSpriteSegment.trans.z_position = z;
-    render_sprite_billboard(&sMenuCurrDisplayList, &sMenuCurrHudMat, &sMenuCurrHudVerts, (Object*)&fakeSpriteSegment, testSprite[frame], RENDER_Z_COMPARE | RENDER_FOG_ACTIVE | RENDER_Z_UPDATE | RENDER_VEHICLE_PART);
+    fakeSpritetrans.x_position = x;
+    fakeSpritetrans.y_position = y;
+    fakeSpritetrans.z_position = z;
+    render_sprite_billboard(&sMenuCurrDisplayList, &sMenuCurrHudMat, &sMenuCurrHudVerts, (Object*)&fakeObjectForModel, testSprite[frame], RENDER_Z_COMPARE | RENDER_FOG_ACTIVE | RENDER_Z_UPDATE | RENDER_VEHICLE_PART);
 }
 
 void menu_debug_root_init(void) {
@@ -15555,8 +15555,8 @@ void animate_model(s32 updateRate) {
         animationFrame = animationFrameCount - 1;
     }
     
-    fakeObjectForModel.segment.object.animationID = animationID;
-    fakeObjectForModel.segment.animFrame = animationFrame;
+    fakeObjectForModel.animationID = animationID;
+    fakeObjectForModel.animFrame = animationFrame;
     
     obj_seek_anim(&fakeObjectForModel, fakeObjectForModel.modelInstances[0]);
     
@@ -15616,9 +15616,9 @@ void debugmodel_shade(ObjectModel *model, Object *object, s32 arg2, f32 intensit
 
     if (environmentMappingEnabled) {
         // Calculates environment mapping for the object
-        calc_env_mapping_for_object(model, object->segment.trans.rotation.z_rotation,
-                                    object->segment.trans.rotation.x_rotation,
-                                    object->segment.trans.rotation.y_rotation);
+        calc_env_mapping_for_object(model, object->trans.rotation.z_rotation,
+                                    object->trans.rotation.x_rotation,
+                                    object->trans.rotation.y_rotation);
     }
 }
 
@@ -15656,9 +15656,9 @@ void render_model(s32 updateRate) {
     }
 
     fakeObjectForModel.curVertData = currentVertices;
-    fakeObjectForModel.segment.trans.rotation.y_rotation = viewModelTransform.rotation.y_rotation;
-    fakeObjectForModel.segment.trans.rotation.x_rotation = viewModelTransform.rotation.x_rotation;
-    fakeObjectForModel.segment.trans.rotation.z_rotation = sDebugModelViewPitch;
+    fakeObjectForModel.trans.rotation.y_rotation = viewModelTransform.rotation.y_rotation;
+    fakeObjectForModel.trans.rotation.x_rotation = viewModelTransform.rotation.x_rotation;
+    fakeObjectForModel.trans.rotation.z_rotation = sDebugModelViewPitch;
     gDebugModelMiscCounter += updateRate;
 
     if (gDebugModelMiscCounter > 90) {
@@ -15948,13 +15948,13 @@ void set_object_model(s32 modelId) {
     //viewModelTransform.z_position = -10.0f;
     
     fakeObjectForModel.modelInstances = &viewModel;
-    fakeObjectForModel.segment.object.modelIndex = 0;
+    fakeObjectForModel.modelIndex = 0;
 
     tempHeader = load_object_header(ASSET_OBJECT_MOUSESELECT);
-    fakeObjectForModel.segment.header = tempHeader;
+    fakeObjectForModel.header = tempHeader;
     init_object_shading(&fakeObjectForModel, &gDebugModelShading);
     try_free_object_header(ASSET_OBJECT_MOUSESELECT);
-    fakeObjectForModel.segment.header = &fakeObjectHeaderForModel;
+    fakeObjectForModel.header = &fakeObjectHeaderForModel;
     set_animation(0);
 }
 
@@ -15980,8 +15980,8 @@ void debugmenu_model_viewer(s32 updateRate, s32 input) {
 
     if (gPauseOptionScroll == 0) {
         fakeObjectHeaderForModel.numberOfModelIds = 1;
-        fakeObjectForModel.segment.object.modelIndex = 0;
-        fakeObjectForModel.segment.header = &fakeObjectHeaderForModel;
+        fakeObjectForModel.modelIndex = 0;
+        fakeObjectForModel.header = &fakeObjectHeaderForModel;
         init_fake_sprite();
         sDebugModelViewPitch = -0x1000;
         
@@ -16199,11 +16199,11 @@ void debugmenu_sprite_viewer(s32 updateRate, s32 input) {
         gMenuOption = 1;
     }
     
-    fakeSpriteSegment.trans.x_position = 200.0f;
-    fakeSpriteSegment.trans.y_position = -175.0f - offsetY;
-    fakeSpriteSegment.trans.z_position = 30.0f;
-    fakeSpriteSegment.trans.scale = 1.0f;
-    fakeSpriteSegment.animFrame = ((f32) (animationFrame + 1) / (f32) gDebugModelTris) * 0xFF;
+    fakeSpritetrans.x_position = 200.0f;
+    fakeSpritetrans.y_position = -175.0f - offsetY;
+    fakeSpritetrans.z_position = 30.0f;
+    fakeSpritetrans.scale = 1.0f;
+    fakeObjectForModel.animFrame = ((f32) (animationFrame + 1) / (f32) gDebugModelTris) * 0xFF;
 
     gDPSetPrimColor(sMenuCurrDisplayList++, 0, 0, 255, 255, 255, 255);
     gDPSetEnvColor(sMenuCurrDisplayList++, 255, 255, 255, 0);
@@ -16217,7 +16217,7 @@ void debugmenu_sprite_viewer(s32 updateRate, s32 input) {
     tempForm.y_position = -175.0f - offsetY;
     tempForm.z_position = 30.0f;
 
-    render_sprite_billboard(&sMenuCurrDisplayList, &sMenuCurrHudMat, &sMenuCurrHudVerts, (Object*)&fakeSpriteSegment, testSprite[0], 0);
+    render_sprite_billboard(&sMenuCurrDisplayList, &sMenuCurrHudMat, &sMenuCurrHudVerts, (Object*)&fakeObjectForModel, testSprite[0], 0);
 
     
     // Draw text 
