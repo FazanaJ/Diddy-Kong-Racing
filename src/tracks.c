@@ -172,6 +172,7 @@ s16 gVoidPrimLimit;
 u8 gSortMats;
 s16 gSortBufCount[SORT_ENTRIES];
 SortBuffer *gSortBuffer[SORT_ENTRIES];
+Object *gAnimDome;
 
 
 /******************************/
@@ -279,6 +280,7 @@ extern s32 gObjectListStart;
 void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, u32 entranceId, u32 collectables,
                 u32 arg6) {
     s32 i;
+    s32 k;
     s32 allocSize;
     s32 numRacers;
     Object **racers;
@@ -411,6 +413,19 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
         }
         if (isAI == FALSE) {
             free_ai_behaviour_table();
+        }
+    }
+
+    gAnimDome = NULL;
+    for (i = 0; i < gObjectCount; i++) {
+        Object *obj = get_object(i);
+        if (obj->objectID == ASSET_OBJECT_ID_ANIMDOME) {
+            gAnimDome = obj;
+            obj->segmentID = 800;
+            for (k = 0; k < obj->modelInstances[0]->objModel->numberOfBatches; k++) {
+                obj->modelInstances[0]->objModel->batches[k].flags &= ~(RENDER_Z_UPDATE | RENDER_Z_COMPARE);
+            }
+            break;
         }
     }
 
@@ -1815,20 +1830,30 @@ void draw_gradient_background(void) {
  */
 void render_skydome(void) {
     Camera *cam;
-    if (gSkydomeSegment == NULL) {
+    Object *obj;
+
+    if (gAnimDome) {
+        obj = gAnimDome;
+    } else {
+        obj = gSkydomeSegment;
+    }
+
+    if (obj == NULL) {
         return;
     }
 
-    cam = cam_get_active_camera();
-    if (gCurrentLevelHeader2->skyDome == 0) {
-        gSkydomeSegment->trans.x_position = cam->trans.x_position;
-        gSkydomeSegment->trans.y_position = cam->trans.y_position;
-        gSkydomeSegment->trans.z_position = cam->trans.z_position;
+    if (obj == gSkydomeSegment) {
+        cam = cam_get_active_camera();
+        if (gCurrentLevelHeader2->skyDome == 0) {
+            obj->trans.x_position = cam->trans.x_position;
+            obj->trans.y_position = cam->trans.y_position;
+            obj->trans.z_position = cam->trans.z_position;
+        }
     }
 
     mtx_world_origin(&gTrackDL, &gTrackMtxPtr);
     if (gSceneRenderSkyDome) {
-        render_object(&gTrackDL, &gTrackMtxPtr, &gTrackVtxPtr, gSkydomeSegment);
+        render_object(&gTrackDL, &gTrackMtxPtr, &gTrackVtxPtr, obj);
     }
 }
 
