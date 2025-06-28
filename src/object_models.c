@@ -116,8 +116,10 @@ void allocate_object_model_pools(void) {
 #endif
 }
 
+extern u8 gPauseSubmenu;
+
 s32 obj_model_blacklist(s32 modelID) {
-    if (get_game_mode() == GAMEMODE_MENU && gCurrentMenuId == MENU_DEBUG_ROOT) {
+    if (get_game_mode() == GAMEMODE_MENU && gCurrentMenuId == MENU_DEBUG_ROOT && gPauseSubmenu == 1) {
         return FALSE;
     }
     switch (modelID) {
@@ -1004,7 +1006,7 @@ s32 model_anim_init(ObjectModel *model, s32 modelID, s32 animStart) {
     for (i = 0; i < model->numberOfAnimations; i++) {
         model->animations[i].animLength = 0;
 #ifndef STREAM_ANIMATIONS
-        model_load_anim_id(model, i, animTableIndex);
+        model_load_anim_id(model, i, modelID);
 #endif
     }
 

@@ -1832,29 +1832,27 @@ void render_skydome(void) {
     Camera *cam;
     Object *obj;
 
-    if (gAnimDome) {
-        obj = gAnimDome;
-    } else {
-        obj = gSkydomeSegment;
-    }
 
-    if (obj == NULL) {
+    if (gSceneRenderSkyDome == FALSE) {
         return;
     }
 
-    if (obj == gSkydomeSegment) {
+    mtx_world_origin(&gTrackDL, &gTrackMtxPtr);
+    if (gSkydomeSegment) {
         cam = cam_get_active_camera();
         if (gCurrentLevelHeader2->skyDome == 0) {
-            obj->trans.x_position = cam->trans.x_position;
-            obj->trans.y_position = cam->trans.y_position;
-            obj->trans.z_position = cam->trans.z_position;
+            gSkydomeSegment->trans.x_position = cam->trans.x_position;
+            gSkydomeSegment->trans.y_position = cam->trans.y_position;
+            gSkydomeSegment->trans.z_position = cam->trans.z_position;
         }
+        render_object(&gTrackDL, &gTrackMtxPtr, &gTrackVtxPtr, gSkydomeSegment);
     }
 
-    mtx_world_origin(&gTrackDL, &gTrackMtxPtr);
-    if (gSceneRenderSkyDome) {
-        render_object(&gTrackDL, &gTrackMtxPtr, &gTrackVtxPtr, obj);
+    if (gAnimDome) {
+        render_object(&gTrackDL, &gTrackMtxPtr, &gTrackVtxPtr, gAnimDome);
     }
+
+
 }
 
 /**

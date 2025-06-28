@@ -15489,6 +15489,7 @@ char *gDebugMenuSubStrings[] = {
     "DEBUG MENU",
     "MODEL VIEWER",
     "SPRITE VIEWER",
+    "LEVEL VIEWER",
     "BACK",
 };
 
@@ -16254,6 +16255,348 @@ void debugmenu_sprite_viewer(s32 updateRate, s32 input) {
     draw_text(&sMenuCurrDisplayList, 56, 126, textBytes, ALIGN_TOP_CENTER);
 }
 
+extern s32 gActiveCameraID;
+extern Camera gCameras[8];
+
+char** levelNames = NULL;
+s32 longestLevelNameWidth = 0;
+
+s32 loadTracksStartIndex = 0;
+s32 loadTrackSelectedIndex = 0;
+
+s32 trackSelectDelay = 0;
+s32 switchDelay = 0;
+s32 inLoadTrackMenu = FALSE;
+s32 numberOfLevels = 0;
+s32 currentLevelIndex = 2;
+f32 inputDelay = 0.0f;
+
+void cam_move(f32 x, f32 y, f32 z);
+void cam_move_dir(f32 x, f32 y, f32 z);
+void cam_rotate(s32 angleX, s32 angleY, s32 angleZ);
+
+void menu_level_preview_load_level(s32 levelToLoad) {
+    Settings *settings;
+    s32 prevFlags;
+
+    currentLevelIndex = levelToLoad;
+    settings = get_settings();
+    prevFlags = settings->courseFlagsPtr[levelToLoad];
+    settings->courseFlagsPtr[levelToLoad] |= 0x7;
+    
+    load_level_for_menu(currentLevelIndex, 0, 2);
+    camera_reset(0,0,0,0,0,0);
+    inLoadTrackMenu = FALSE;
+    set_current_dialogue_box_coords(1, 0, 0, 0, 0);
+    dialogue_clear(1);
+    gMenuStopUpdating = TRUE;
+    
+    settings->courseFlagsPtr[levelToLoad] = prevFlags;
+}
+
+void menu_level_preview_load_level_names() {
+    char *assetLevelNames;
+    char *curLevelName;
+    char *curLevelNameEnd;
+    u32 *assetLevelNamesTable;
+    s32 i;
+    s32 levelNameLength;
+    s32 levelNameWidth;
+    
+    if(levelNames != NULL) {
+        return;
+    }
+    
+    assetLevelNames = load_asset_section_from_rom(ASSET_LEVEL_NAMES);
+    assetLevelNamesTable = load_asset_section_from_rom(ASSET_LEVEL_NAMES_TABLE);
+    
+    numberOfLevels = 0;
+    while(assetLevelNamesTable[numberOfLevels] != 0xFFFFFFFF) {
+        numberOfLevels++;
+    }
+    numberOfLevels--;
+    
+    levelNames = mempool_alloc_safe(sizeof(char*) * numberOfLevels, 0);
+    
+    for(i = 0; i < numberOfLevels; i++) {
+        curLevelName = &assetLevelNames[assetLevelNamesTable[i]];
+        curLevelNameEnd = curLevelName;
+        while(*curLevelNameEnd != '\0') curLevelNameEnd++;
+        levelNameLength = ((s32)curLevelNameEnd - (s32)curLevelName) + 1; // +1 for null terminator
+        levelNameWidth = get_text_width(curLevelName, 0, ASSET_FONTS_FUNFONT);
+        if(levelNameWidth > longestLevelNameWidth) {
+            longestLevelNameWidth = levelNameWidth;
+        }
+        levelNames[i] = mempool_alloc_safe(levelNameLength, 0);
+        memcpy(levelNames[i], curLevelName, levelNameLength);
+    }
+    
+}
+
+// Call this when switching to another menu!
+void menu_level_preview_cleanup(void) {
+    s32 i;
+    
+    if(levelNames == NULL) {
+        return;
+    }
+    
+    for(i = 0; i < numberOfLevels; i++) {
+        mempool_free(levelNames[i]);
+    }
+    mempool_free(levelNames);
+    levelNames = NULL;
+}
+
+void menu_level_preview_init(void) {
+    menu_level_preview_load_level_names();
+    menu_level_preview_load_level(0);
+    gCameras[gActiveCameraID].trans.x_position = -1374.0f;
+    gCameras[gActiveCameraID].trans.y_position = 625.0f;
+    gCameras[gActiveCameraID].trans.z_position = -873.0f;
+    gCameras[gActiveCameraID].trans.rotation.y_rotation = 0xE2B4;
+    gCameras[gActiveCameraID].trans.rotation.x_rotation = 0x0DAC;
+    gCameras[gActiveCameraID].trans.rotation.z_rotation = 0x0000;
+}
+
+void toggle_load_track_submenu() {
+    inLoadTrackMenu = !inLoadTrackMenu;
+    switchDelay = 20;
+    
+    if(inLoadTrackMenu) {
+        open_dialogue_box(1);
+        set_current_dialogue_background_colour(1, 0, 0, 0, 128);
+        set_dialogue_font(1, ASSET_FONTS_FUNFONT);
+        set_current_dialogue_box_coords(1, 160 - (longestLevelNameWidth / 2) - 24, 8, 160 + (longestLevelNameWidth / 2), 240 - 8);
+    } else {
+        set_current_dialogue_box_coords(1, 0, 0, 0, 0);
+        dialogue_clear(1);
+    }
+}
+
+void cam_move(f32 x, f32 y, f32 z) {
+    gCameras[gActiveCameraID].trans.x_position += x;
+    gCameras[gActiveCameraID].trans.y_position += y;
+    gCameras[gActiveCameraID].trans.z_position += z;
+    gCameras[gActiveCameraID].cameraSegmentID = get_level_segment_index_from_position(
+        gCameras[gActiveCameraID].trans.x_position, gCameras[gActiveCameraID].trans.y_position,
+        gCameras[gActiveCameraID].trans.z_position);
+}
+
+/**
+ * Move the camera with velocities accounting for face direction.
+ * Also recalculates which block it's in.
+ */
+void cam_move_dir(f32 x, UNUSED f32 y, f32 z) {
+    gCameras[gActiveCameraID].trans.x_position -= x * coss_f(gCameras[gActiveCameraID].trans.rotation.y_rotation);
+    gCameras[gActiveCameraID].trans.z_position -= x * sins_f(gCameras[gActiveCameraID].trans.rotation.y_rotation);
+    gCameras[gActiveCameraID].trans.x_position -= z * sins_f(gCameras[gActiveCameraID].trans.rotation.y_rotation);
+    gCameras[gActiveCameraID].trans.z_position += z * coss_f(gCameras[gActiveCameraID].trans.rotation.y_rotation);
+    gCameras[gActiveCameraID].cameraSegmentID = get_level_segment_index_from_position(
+        gCameras[gActiveCameraID].trans.x_position, gCameras[gActiveCameraID].trans.y_position,
+        gCameras[gActiveCameraID].trans.z_position);
+}
+
+/**
+ * Rotate the camera with the given angles.
+ */
+void cam_rotate(s32 angleX, s32 angleY, s32 angleZ) {
+    gCameras[gActiveCameraID].trans.rotation.y_rotation += angleX;
+    gCameras[gActiveCameraID].trans.rotation.x_rotation += angleY;
+    gCameras[gActiveCameraID].trans.rotation.z_rotation += angleZ;
+}
+
+void menu_level_preview_handle_input(s32 updateRate) {
+    u32 buttonsDown;
+    s32 contX, contY;
+    f32 moveForward, moveVertical, moveSideways;
+    f32 speed;
+    s32 yawRotate, pitchRotate;
+    
+    if(switchDelay > 0) {
+        switchDelay -= updateRate;
+        return;
+    }
+    
+    buttonsDown = input_held(0);
+    contX = gControllersXAxis[0];
+    contY = gControllersYAxis[0];
+    
+    if(buttonsDown & Z_TRIG) {
+        toggle_load_track_submenu();
+        return;
+    }
+    
+    moveForward = 0.0f;
+    moveVertical = 0.0f;
+    moveSideways = 0.0f;
+    speed = 25.0f;
+    
+    yawRotate = 0;
+    pitchRotate = 0;
+    
+    if(buttonsDown & R_TRIG) {
+        speed *= 2;
+    }
+    
+    if(contY < 0) {
+        moveForward = -speed * updateRate;
+    } else if(contY > 0) {
+        moveForward = speed * updateRate;
+    }
+    
+    if(contX < 0) {
+        moveSideways = -speed * updateRate;
+    } else if(contX > 0) {
+        moveSideways = speed * updateRate;
+    }
+    
+    if(buttonsDown & A_BUTTON) {
+        moveVertical = speed * updateRate;
+    } else if(buttonsDown & B_BUTTON) {
+        moveVertical = -speed * updateRate;
+    }
+    
+    cam_move_dir(moveSideways, 0, moveForward);
+    
+    // cam_move_dir doesn't do anything with the y component, so gotta use cam_move.
+    if(moveVertical != 0.0f) {
+        cam_move(0, moveVertical, 0);
+    }
+    
+    if(buttonsDown & R_CBUTTONS) {
+        yawRotate = speed * updateRate * 10;
+    } else if(buttonsDown & L_CBUTTONS) {
+        yawRotate = -speed * updateRate * 10;
+    }
+    if(buttonsDown & U_CBUTTONS) {
+        pitchRotate = -speed * updateRate * 10;
+    } else if(buttonsDown & D_CBUTTONS) {
+        pitchRotate = speed * updateRate * 10;
+    }
+    
+    if(yawRotate != 0 || pitchRotate != 0) {
+        cam_rotate(yawRotate, pitchRotate, 0);
+    }
+}
+
+void menu_level_preview_handle_track_select(s32 updateRate, s32 inputPressed) {
+    u32 buttonsDown;
+    s32 contX, contY;
+    
+    if(switchDelay > 0) {
+        switchDelay -= updateRate;
+        return;
+    }
+    
+    if(trackSelectDelay > 0) {
+        trackSelectDelay -= updateRate;
+        return;
+    }
+    
+    buttonsDown = input_held(0);
+    contX = gControllersXAxis[0];
+    contY = gControllersYAxis[0];
+
+    
+    
+    if(buttonsDown & B_BUTTON) {
+        toggle_load_track_submenu();
+        return;
+    }
+    
+    if(buttonsDown & A_BUTTON) {
+        menu_level_preview_load_level(loadTrackSelectedIndex);
+        return;
+    }
+    
+    if(contY < 0) {
+        loadTrackSelectedIndex++;
+        if(loadTrackSelectedIndex > numberOfLevels - 1) {
+            loadTrackSelectedIndex = 0;
+        }
+        trackSelectDelay = 4;
+    } else if(contY > 0) {
+        loadTrackSelectedIndex--;
+        if(loadTrackSelectedIndex < 0) {
+            loadTrackSelectedIndex = numberOfLevels - 1;
+        }
+        trackSelectDelay = 4;
+    }
+}
+
+const s32 OFFSET_AMOUNT = 13;
+
+void debugmenu_level_viewer(s32 updateRate, s32 inputPressed) {
+    char debugText[256];
+    s32 i;
+
+    if (gPauseOptionScroll == 0) {
+        menu_level_preview_init();
+        gPauseOptionScroll = 1;
+    }
+
+    if (inputPressed & START_BUTTON) {
+        gPauseSubmenu = 0;
+        load_level_for_menu(ASSET_LEVEL_OPTIONSBACKGROUND, -1, 0);
+        gMenuStopUpdating = FALSE;
+        gPauseOptionScroll = 0;
+        gMenuOption = 1;
+        return;
+    }
+    
+    if(inLoadTrackMenu) {
+        s32 end;
+        
+        menu_level_preview_handle_track_select(updateRate, inputPressed);
+        
+        dialogue_clear(1);
+        set_current_text_colour(1, 0, 255, 0, 128, 255);
+        render_dialogue_text(1, POS_CENTRED, 6, "Select Level", 1, HORZ_ALIGN_CENTER);
+        
+        if(loadTrackSelectedIndex >= (loadTracksStartIndex + OFFSET_AMOUNT - 1)) {
+            loadTracksStartIndex = (loadTrackSelectedIndex - OFFSET_AMOUNT + 2);
+        } else if(loadTrackSelectedIndex < loadTracksStartIndex) {
+            loadTracksStartIndex = loadTrackSelectedIndex;
+        }
+        
+        end = loadTracksStartIndex + OFFSET_AMOUNT;
+        
+        for(i = 0; i < OFFSET_AMOUNT; i++) {
+            if((loadTracksStartIndex + i) > numberOfLevels) {
+                break;
+            }
+            
+            if(i == (loadTrackSelectedIndex - loadTracksStartIndex)) {
+                set_current_text_colour(1, 255, 255, 255, 128, 255);
+            } else {
+                set_current_text_colour(1, 255, 255, 255, 0, 255);
+            }
+            
+            render_dialogue_text(1, POS_CENTRED, 24 + (i * 16), levelNames[loadTracksStartIndex + i], 1, HORZ_ALIGN_CENTER);
+        }
+        
+        return;
+    }
+    
+    menu_level_preview_handle_input(updateRate);
+    
+    /*sprintf(debugText, "\n %s\n POS: %d,%d,%d\n ANG: %x %x %x",
+        levelNames[currentLevelIndex],
+        (s32)gCameras[gActiveCameraID].trans.x_position,
+        (s32)gCameras[gActiveCameraID].trans.y_position,
+        (s32)gCameras[gActiveCameraID].trans.z_position,
+        gCameras[gActiveCameraID].trans.rotation.y_rotation,
+        gCameras[gActiveCameraID].trans.rotation.x_rotation,
+        gCameras[gActiveCameraID].trans.rotation.z_rotation
+    );
+    
+    set_text_font(ASSET_FONTS_FUNFONT);
+    set_text_colour(255, 255, 255, 0, 255);
+    
+    draw_text(&sMenuCurrDisplayList, 8, 0, debugText, ALIGN_MIDDLE_LEFT);*/
+}
+
 s32 menu_debug_root_loop(s32 updateRate) {
     s32 inputPressed;
     s32 i;
@@ -16278,14 +16621,16 @@ s32 menu_debug_root_loop(s32 updateRate) {
         case 2:
             debugmenu_sprite_viewer(updateRate, inputPressed);
             break;
+        case 3:
+            debugmenu_level_viewer(updateRate, inputPressed);
     }
 
     set_text_font(ASSET_FONTS_BIGFONT);
     set_text_background_colour(0, 0, 0, 0);
     set_text_colour(0, 0, 0, 255, 128);
-    draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF + 1, 35, gDebugMenuSubStrings[gPauseSubmenu], ALIGN_MIDDLE_CENTER);
+    //draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF + 1, 35, gDebugMenuSubStrings[gPauseSubmenu], ALIGN_MIDDLE_CENTER);
     set_text_colour(255, 255, 255, 0, 255);
-    draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF, 32, gDebugMenuSubStrings[gPauseSubmenu], ALIGN_MIDDLE_CENTER);
+    //draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF, 32, gDebugMenuSubStrings[gPauseSubmenu], ALIGN_MIDDLE_CENTER);
 
     return MENU_RESULT_CONTINUE;
 }
