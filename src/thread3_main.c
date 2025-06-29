@@ -970,6 +970,13 @@ void unload_level_menu(void) {
     if (!gIsLoading) {
         gIsLoading = TRUE;
         mempool_free_timer(0);
+        // @recomp Wait for the current graphics task.
+        if (gSkipGfxTask == FALSE && bgload_active() == FALSE) {
+            if (gDrawFrameTimer != 1) {
+                gfxtask_wait();
+            }
+            gSkipGfxTask = TRUE;
+        }
         clear_audio_and_track();
         if (gCurrentMenuId != MENU_VIDEO_OPTIONS) {
             transition_begin(&D_800DD3F4);
