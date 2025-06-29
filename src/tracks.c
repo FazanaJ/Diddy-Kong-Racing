@@ -479,6 +479,10 @@ void render_scene(Gfx **dList, Mtx **mtx, Vertex **vtx, Triangle **tris, s32 upd
     s32 posY;
     s32 j;
 
+    if (gCurrentLevelModel == NULL) {
+        return;
+    }
+
     gTrackDL = *dList;
     gTrackMtxPtr = *mtx;
     gTrackVtxPtr = *vtx;
@@ -3155,6 +3159,10 @@ LevelModel *get_current_level_model(void) {
  */
 void free_track(void) {
     s32 i;
+
+    if (gCurrentLevelModel == NULL) {
+        return;
+    }
 
     racerfx_free();
     if (gWaveBlockCount != 0) {

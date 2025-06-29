@@ -15490,6 +15490,7 @@ char *gDebugMenuSubStrings[] = {
     "MODEL VIEWER",
     "SPRITE VIEWER",
     "LEVEL VIEWER",
+    "UNLOAD EVERYTHING",
     "BACK",
 };
 
@@ -16599,6 +16600,24 @@ void debugmenu_level_viewer(s32 updateRate, s32 inputPressed) {
     draw_text(&sMenuCurrDisplayList, 8, 0, debugText, ALIGN_MIDDLE_LEFT);*/
 }
 
+void debugmenu_minimal(s32 updateRate, s32 inputPressed) {
+    if (gPauseOptionScroll == 0) {
+        unload_level_menu();
+        gPauseOptionScroll = 1;
+    }
+
+    if (inputPressed & START_BUTTON) {
+        gPauseSubmenu = 0;
+        load_level_for_menu(ASSET_LEVEL_OPTIONSBACKGROUND, -1, 0);
+        music_play(SEQUENCE_MAIN_MENU);
+        gPauseOptionScroll = 0;
+        gMenuOption = 1;
+        return;
+    }
+
+    debug_fillrect(&sMenuCurrDisplayList, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, COLOUR_RGBA32(32, 32, 32, 255));
+}
+
 s32 menu_debug_root_loop(s32 updateRate) {
     s32 inputPressed;
     s32 i;
@@ -16626,14 +16645,19 @@ s32 menu_debug_root_loop(s32 updateRate) {
         case 3:
             debugmenu_level_viewer(updateRate, inputPressed);
             break;
+        case 4:
+            debugmenu_minimal(updateRate, inputPressed);
+            break;
     }
 
-    set_text_font(ASSET_FONTS_BIGFONT);
-    set_text_background_colour(0, 0, 0, 0);
-    set_text_colour(0, 0, 0, 255, 128);
-    draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF + 1, 35, gDebugMenuSubStrings[gPauseSubmenu], ALIGN_MIDDLE_CENTER);
-    set_text_colour(255, 255, 255, 0, 255);
-    draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF, 32, gDebugMenuSubStrings[gPauseSubmenu], ALIGN_MIDDLE_CENTER);
+    if (gPauseSubmenu != 4) {
+        set_text_font(ASSET_FONTS_BIGFONT);
+        set_text_background_colour(0, 0, 0, 0);
+        set_text_colour(0, 0, 0, 255, 128);
+        draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF + 1, 35, gDebugMenuSubStrings[gPauseSubmenu], ALIGN_MIDDLE_CENTER);
+        set_text_colour(255, 255, 255, 0, 255);
+        draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF, 32, gDebugMenuSubStrings[gPauseSubmenu], ALIGN_MIDDLE_CENTER);
+    }
 
     return MENU_RESULT_CONTINUE;
 }
