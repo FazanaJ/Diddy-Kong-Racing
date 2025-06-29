@@ -3295,9 +3295,7 @@ void obj_seek_anim(Object *obj, ModelInstance *inst) {
     if (inst->animationID != obj->animationID) {
         if (inst->objModel->animations[inst->animationID].animLength != 0) {
             mempool_free(inst->objModel->animations[inst->animationID].anim - 1);
-            for (i = 0; i < inst->objModel->numberOfAnimations; i++) {
-                inst->objModel->animations[i].animLength = 0;
-            }
+            inst->objModel->animations[inst->animationID].animLength = 0;
         }
         if (obj->animationID != -1) {
             model_load_anim_id(inst->objModel, obj->animationID, inst->objModel->modelID);

@@ -1792,6 +1792,9 @@ void crash_thread(UNUSED void *var) {
     osRecvMesg(&gCrashQueue, &msg, OS_MESG_BLOCK);
     osSetThreadPri(NULL, OS_PRIORITY_APPMAX);
     osStopThread(&gMainSched.thread);
+    if (gThread30) {
+        osStopThread(gThread30);
+    }
     osCreateMesgQueue(&gCrashQueue2, gCrashQueueBuf2, ARRAY_COUNT(gCrashQueueBuf2));
     gCrashThreadStack2 = (u64 *) mempool_alloc(STACK_CRASH2, PP_RAM_STACK);
     if (gCrashThreadStack2 == NULL) {

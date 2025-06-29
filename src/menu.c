@@ -13980,9 +13980,9 @@ void render_track_selection_viewport_border(ObjectModel *objMdl) {
     s32 i;
 
     flags = RENDER_FOG_ACTIVE | RENDER_ANTI_ALIASING;
-    if (sMenuGuiOpacity != 255) {
+    /*if (sMenuGuiOpacity != 255) {
         flags = RENDER_FOG_ACTIVE | RENDER_SEMI_TRANSPARENT | RENDER_ANTI_ALIASING;
-    }
+    }*/
     for (i = 0; i < objMdl->numberOfBatches; i++) {
         if (!(objMdl->batches[i].flags & RENDER_Z_UPDATE)) {
             vertOffset = objMdl->batches[i].verticesOffset;
@@ -15550,18 +15550,21 @@ void animate_model(s32 updateRate) {
         return;
     }
     
+    
+    fakeObjectForModel.animationID = animationID;
+    fakeObjectForModel.animFrame = animationFrame;
+    
+    obj_seek_anim(&fakeObjectForModel, fakeObjectForModel.modelInstances[0]);
+
+    animationFrame += updateRate;
+    animationFrameCount = (fakeObjectForModel.modelInstances[0]->objModel->animations[animationID].animLength - 1) * 16;
+
     if(animationFrame >= animationFrameCount) {
         animationFrame = 0;
     } else if(animationFrame < 0) {
         animationFrame = animationFrameCount - 1;
     }
     
-    fakeObjectForModel.animationID = animationID;
-    fakeObjectForModel.animFrame = animationFrame;
-    
-    obj_seek_anim(&fakeObjectForModel, fakeObjectForModel.modelInstances[0]);
-    
-    animationFrame += updateRate;
 }
 
 void set_animation(int animIndex) {
@@ -15589,7 +15592,6 @@ void set_animation(int animIndex) {
         animationID = numberOfAnimations - 1;
     }
     
-    animationFrameCount = (model->animations[animationID].animLength - 1) * 16;
 }
 
 s32 prevID = -1;
@@ -16623,14 +16625,15 @@ s32 menu_debug_root_loop(s32 updateRate) {
             break;
         case 3:
             debugmenu_level_viewer(updateRate, inputPressed);
+            break;
     }
 
     set_text_font(ASSET_FONTS_BIGFONT);
     set_text_background_colour(0, 0, 0, 0);
     set_text_colour(0, 0, 0, 255, 128);
-    //draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF + 1, 35, gDebugMenuSubStrings[gPauseSubmenu], ALIGN_MIDDLE_CENTER);
+    draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF + 1, 35, gDebugMenuSubStrings[gPauseSubmenu], ALIGN_MIDDLE_CENTER);
     set_text_colour(255, 255, 255, 0, 255);
-    //draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF, 32, gDebugMenuSubStrings[gPauseSubmenu], ALIGN_MIDDLE_CENTER);
+    draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF, 32, gDebugMenuSubStrings[gPauseSubmenu], ALIGN_MIDDLE_CENTER);
 
     return MENU_RESULT_CONTINUE;
 }

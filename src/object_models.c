@@ -165,8 +165,6 @@ ModelInstance *object_model_init(s32 modelID, s32 flags) {
         return NULL;
     }
 
-    mempool_free_timer(0);
-
     if (modelID >= gNumModelIDs) {
         modelID = 0;
     }
@@ -179,7 +177,6 @@ ModelInstance *object_model_init(s32 modelID, s32 flags) {
             if (instance != NULL) {
                 objMdl->references++;
             }
-            mempool_free_timer(2);
             return instance;
         }
     }
@@ -270,7 +267,6 @@ ModelInstance *object_model_init(s32 modelID, s32 flags) {
                 gModelCache[cacheIndex] = (s32) objMdl;
                 if (gModelCacheCount < MODEL_LOADED_MAX) {
                     instance->animUpdateTimer = 0;
-                    mempool_free_timer(2);
                     return instance;
                 } else {
                 }
@@ -287,7 +283,6 @@ block_30:
     }
 #endif
     free_model_data(objMdl);
-    mempool_free_timer(2);
     return NULL;
 }
 
