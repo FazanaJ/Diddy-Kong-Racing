@@ -291,7 +291,7 @@ void tex_init_textures(void) {
 
     gTextureCache = mempool_alloc_safe(6 *MAX_NUM_TEXTURES, PP_RAM_ASSET_CACHE);
     gTextureCacheIDs = (s16 *) ((u8 *) gTextureCache + (MAX_NUM_TEXTURES * 4));
-    gCiPalettes = mempool_alloc_safe(MAX_TEX_PALETTE_SIZE, PP_RAM_ASSET_CACHE);
+    //gCiPalettes = mempool_alloc_safe(MAX_TEX_PALETTE_SIZE, PP_RAM_ASSET_CACHE);
     gNumberOfLoadedTextures = 0;
     gCiPalettesSize = 0;
 

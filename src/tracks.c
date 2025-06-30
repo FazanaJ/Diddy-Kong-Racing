@@ -3080,8 +3080,8 @@ void generate_track(s32 modelId) {
         debug_printf("Track tex limit reached: %d. Setting to %d\n", gCurrentLevelModel->numberOfTextures, 128);
         maxTextures = 128;
     }
-    gTrackTexIDs = mempool_alloc(maxTextures * sizeof(u16), PP_RAM_ASSET_CACHE);
-    gTrackTexStaleTimer = mempool_alloc(maxTextures * sizeof(s8), PP_RAM_ASSET_CACHE);
+    gTrackTexIDs = mempool_alloc(maxTextures * (sizeof(u16) + sizeof(s8)), PP_RAM_ASSET_CACHE);
+    gTrackTexStaleTimer = (u8 *) ((u8 *) gTrackTexIDs + (maxTextures * sizeof(u16)));
     for (k = 0; k < maxTextures; k++) {
         gTrackTexIDs[k] = ((u16) gCurrentLevelModel->textures[k].texture) | ASSET_MASK_TEX3D;
         gCurrentLevelModel->textures[k].texture = NULL;

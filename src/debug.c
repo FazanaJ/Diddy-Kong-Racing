@@ -405,6 +405,11 @@ void debug_render_memory(DebugData *d, Gfx **dList, s32 updateRate) {
     gDPSetScissor((*dList)++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
+extern s32 gObjectHeaderCacheCount;
+extern s32 gModelCacheCount;
+extern s32 gSpriteCacheCount;
+extern s32 gNumberOfLoadedTextures;
+
 void debug_render_misc(DebugData *d, Gfx **dList, s32 updateRate) {
     char textBytes[32];
     Object *obj;
@@ -445,6 +450,14 @@ void debug_render_misc(DebugData *d, Gfx **dList, s32 updateRate) {
         draw_text(dList, SCREEN_WIDTH - 96 + 4, 24, textBytes, ALIGN_TOP_LEFT);
         sprintf(textBytes, "Tex Loads: %d", d->misc.texLoads);
         draw_text(dList, SCREEN_WIDTH - 96 + 4, 34, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "Tex Cache: %d", gNumberOfLoadedTextures);
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 44, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "Spr Cache: %d", gSpriteCacheCount);
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 54, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "Mdl Cache: %d", gModelCacheCount);
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 64, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "Obj Cache: %d", gObjectHeaderCacheCount);
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 74, textBytes, ALIGN_TOP_LEFT);
 
         
         draw_text(dList, SCREEN_WIDTH - 96 + 4, 150, "Loading", ALIGN_TOP_LEFT);
@@ -762,6 +775,11 @@ extern s32 gParticleBehavioursAssets;
 extern s32 gFonts;
 extern s32 gAssetHudElementIds;
 extern s32 gAssetsMenuElementIds;
+extern s32 *gModelCache;
+extern s32 *D_8011D628;
+extern s32 *D_8011D644;
+extern s32 *gObjectHeaderCache;
+extern s32 *gTrackTexIDs;
 
 char *debug_asset_lookup(MemoryPoolSlot *slot) {
     s32 i;
@@ -783,6 +801,7 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
     switch (tag) {
         case PP_RAM_ASSETTABLE:
         case PP_RAM_GREY:
+        case PP_RAM_ASSET_CACHE:
             if ((s32) slot->data == (s32) gGlobalLevelTable) {
                 return "gGlobalLevelTable";
             } else if ((s32) slot->data == (s32) gLevelNames) {
@@ -807,6 +826,20 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
                 return "gAssetHudElementIds";
             } else if ((s32) slot->data == (s32) gAssetsMenuElementIds) {
                 return "gAssetsMenuElementIds";
+            } else if ((s32) slot->data == (s32) gModelCache) {
+                return "gModelCache";
+            } else if ((s32) slot->data == (s32) D_8011D628) {
+                return "D_8011D628";
+            } else if ((s32) slot->data == (s32) D_8011D644) {
+                return "D_8011D644";
+            } else if ((s32) slot->data == (s32) gObjectHeaderCache) {
+                return "gObjectHeaderCache";
+            } else if ((s32) slot->data == (s32) gSpriteCache) {
+                return "gSpriteCache";
+            } else if ((s32) slot->data == (s32) gTextureCache) {
+                return "gTextureCache";
+            } else if ((s32) slot->data == (s32) gTrackTexIDs) {
+                return "gTrackTexIDs";
             }
             return str;
 
@@ -888,6 +921,10 @@ void debug_ram_dump(void) {
     int i;
     s32 colourTag;
     MemoryPoolSlot *slot;
+    s32 tag;
+    char *memtag[] = {
+        "B", "KB", "MB"
+    };
     u32 ramTotal = memsize_get();
 
     for (i = 0; i <= gNumberOfMemoryPools; i++) {
@@ -903,11 +940,11 @@ void debug_ram_dump(void) {
             colourTag = debug_tag_index(slot->colourTag);
 
             if (flags == SLOT_FREE) {
-                debug_printf("Pool: %d Idx: %d   \t Free Slot\t\t\t\t\t Size: 0x%X\t (%2.3fKiB) \t %2.2f%%\t Addr: %X\n", i, slot->index, slot->size, (double) slot->size / 1024.0, 
+                debug_printf("Pool: %d Idx: %d   \t Free Slot\t\t\t\t\t Size: 0x%X\t (%2.3f%s) \t %2.2f%%\t Addr: %X\n", i, slot->index, slot->size, (double) memsize_float(slot->size, &tag),  memtag[tag],
                 (double) ((f32) slot->size / (f32) ramTotal) * 100.0, slot->data);
             } else {
-                debug_printf("Pool: %d Idx: %d   \t %s\t Tag: %s \t\t Size: 0x%X\t (%2.3fKiB) \t %2.2f%% \t Addr: %X\t Name: %s\n", i, slot->index, sMemDumpStrings[flags], 
-                sPuppyprintMemColours[colourTag], slot->size, (double) slot->size / 1024.0, (double) ((f32) slot->size / (f32) ramTotal) * 100.0, slot->data, debug_asset_lookup(slot));
+                debug_printf("Pool: %d Idx: %d   \t %s\t Tag: %s \t\t Size: 0x%X\t (%2.3f%s) \t %2.2f%% \t Addr: %X\t Name: %s\n", i, slot->index, sMemDumpStrings[flags], 
+                sPuppyprintMemColours[colourTag], slot->size, (double) memsize_float(slot->size, &tag), memtag[tag], (double) ((f32) slot->size / (f32) ramTotal) * 100.0, slot->data, debug_asset_lookup(slot));
             }
 
             skip:
