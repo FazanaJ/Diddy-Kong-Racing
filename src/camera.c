@@ -4,7 +4,6 @@
 #include "game.h"
 #include "tracks.h"
 #include "video.h"
-#include "libultra/src/libc/rmonPrintf.h"
 #include "math_util.h"
 #include "weather.h"
 #include "PRinternal/piint.h"

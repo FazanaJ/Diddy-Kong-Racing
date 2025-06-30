@@ -498,13 +498,6 @@ void obj_loop_torch_mist(Object *obj, s32 updateRate) {
 }
 
 /**
- * Effect box init behaviour.
- * Does nothing.
- */
-void obj_init_effectbox(UNUSED Object *obj, UNUSED LevelObjectEntry_EffectBox *entry) {
-}
-
-/**
  * Effect box loop behaviour.
  * Searches for any racers that are inside the region.
  * Applies an effect to their weight and velocity.
@@ -791,13 +784,6 @@ void obj_loop_collectegg(Object *obj, s32 updateRate) {
             obj->animFrame = 128;
             break;
     }
-}
-
-/**
- * Egg Spawner init behaviour.
- * Does nothing.
- */
-void obj_init_eggcreator(UNUSED Object *obj, UNUSED LevelObjectEntry_EggCreator *entry) {
 }
 
 /**
@@ -1842,16 +1828,6 @@ void obj_loop_dooropener(Object *obj, s32 updateRate) {
     obj_door_open(openDoors);
 }
 
-void obj_init_overridepos(UNUSED Object *obj, UNUSED LevelObjectEntry_OverridePos *entry) {
-}
-
-/**
- * Wizpig ship initilisation.
- * Does nothing.
- */
-void obj_init_wizpigship(UNUSED Object *obj, UNUSED LevelObjectEntry_WizpigShip *entry) {
-}
-
 /**
  * Wizpig ship loop behaviour.
  * Periodically shoots laserbeams in front of it.
@@ -2187,9 +2163,6 @@ void obj_loop_infopoint(Object *obj, UNUSED s32 updateRate) {
     }
 }
 
-void obj_init_smoke(UNUSED Object *obj, UNUSED LevelObjectEntry_Smoke *entry) {
-}
-
 void obj_loop_smoke(Object *obj, s32 updateRate) {
     f32 updateRateF = updateRate;
     obj->trans.x_position += obj->x_velocity * updateRateF;
@@ -2202,18 +2175,12 @@ void obj_loop_smoke(Object *obj, s32 updateRate) {
     }
 }
 
-void obj_init_unknown25(UNUSED Object *obj, UNUSED LevelObjectEntry_Unknown25 *entry) {
-}
-
 void obj_loop_unknown25(Object *obj, s32 updateRate) {
     obj->animFrame += updateRate * 8;
     if (obj->animFrame > 255) {
         free_object(obj);
         obj->animFrame = 255;
     }
-}
-
-void obj_init_wardensmoke(UNUSED Object *obj, UNUSED LevelObjectEntry_WardenSmoke *entry) {
 }
 
 void obj_loop_wardensmoke(Object *obj, s32 updateRate) {
@@ -2404,13 +2371,6 @@ void obj_init_cameracontrol(Object *obj, LevelObjectEntry_CameraControl *entry) 
 }
 
 /**
- * Spectate Cameras loop func.
- * Does nothing since all the behaviour is handled globally.
- */
-void obj_loop_cameracontrol(UNUSED Object *obj, UNUSED s32 updateRate) {
-}
-
-/**
  * Racer Spawnpoint init func.
  * Sets the spawn ID as well as racer index.
  */
@@ -2418,13 +2378,6 @@ void obj_init_setuppoint(Object *obj, LevelObjectEntry_SetupPoint *entry) {
     obj->properties.setupPoint.racerIndex = entry->racerIndex;
     obj->properties.setupPoint.entranceID = entry->entranceID;
     obj->trans.rotation.y_rotation = U8_ANGLE_TO_U16(entry->angleY);
-}
-
-/**
- * Racer Spawnpoint loop func.
- * Does nothing by itself; the game will use these as an anchor for spawning racer objects.
- */
-void obj_loop_setuppoint(UNUSED Object *obj, UNUSED s32 updateRate) {
 }
 
 /**
@@ -3106,9 +3059,6 @@ void play_taj_voice_clip(u16 soundID, s32 interrupt) {
     }
 }
 
-void obj_loop_gbparkwarden(UNUSED Object *obj, UNUSED s32 updateRate) {
-}
-
 /**
  * Return the Y pos of an NPC when they're in dialogue.
  */
@@ -3130,13 +3080,6 @@ void obj_init_checkpoint(Object *obj, LevelObjectEntry_Checkpoint *entry, UNUSED
     obj->trans.scale = scale;
     obj->trans.rotation.y_rotation = U8_ANGLE_TO_U16(entry->angleY);
     path_enable();
-}
-
-/**
- * Checkpoint initialisation function.
- * Does nothing, since the racers themselves iterate checkpoints and use their data.
- */
-void obj_loop_checkpoint(UNUSED Object *obj, UNUSED s32 updateRate) {
 }
 
 /**
@@ -3308,9 +3251,6 @@ void obj_init_goldenballoon(Object *obj, LevelObjectEntry_GoldenBalloon *entry) 
     } else {
         func_8000CBF0(obj, entry->balloonID);
     }
-    if (entry->balloonID == -1) {
-        rmonPrintf("Illegal door no!!!\n"); // Did the devs just copy-paste the door init function?
-    }
     obj->interactObj->flags = INTERACT_FLAGS_TANGIBLE;
     obj->interactObj->unk11 = 4;
     obj->interactObj->hitboxRadius = 20;
@@ -3444,9 +3384,6 @@ void obj_init_door(Object *obj, LevelObjectEntry_Door *entry) {
     door->balloonCountUnused = entry->balloonCount;
     door->balloonCount = entry->balloonCount;
     door->radius = entry->distanceToOpen;
-    if (door->doorID == -1) {
-        rmonPrintf("Illegal door no!!!\n");
-    }
     obj->modelIndex = entry->modelIndex;
     obj->trans.rotation.y_rotation = U8_ANGLE_TO_U16(entry->closedRotation);
     door->homeY = obj->trans.y_position;
@@ -3816,9 +3753,6 @@ void obj_init_trigger(Object *obj, LevelObjectEntry_Trigger *entry) {
     } else {
         func_8000CBF0(obj, entry->index);
     }
-    if (entry->index == -1) {
-        rmonPrintf("Illegal door no!!!\n");
-    }
     radius = (s32) entry->scale & 0xFF;
     if (radius < 5.0f) {
         radius = 5.0f;
@@ -4049,12 +3983,6 @@ void obj_loop_rampswitch(Object *obj, UNUSED s32 updateRate) {
     obj->interactObj->distance = 255;
 }
 
-void obj_init_seamonster(UNUSED Object *obj, UNUSED LevelObjectEntry_SeaMonster *entry) {
-}
-
-void obj_loop_seamonster(UNUSED Object *obj, UNUSED s32 updateRate) {
-}
-
 /* Official name: fogInit(?) */
 void obj_init_fogchanger(Object *obj, LevelObjectEntry_FogChanger *entry) {
     f32 dist;
@@ -4096,13 +4024,6 @@ void obj_init_ainode(Object *obj, LevelObjectEntry_AiNode *entry) {
     }
     ainode_tail_set(entry->nodeID);
     ainode_enable();
-}
-
-/**
- * AI node loop func.
- * Does nothing. All the relevant behaviour is handled globally.
- */
-void obj_loop_ainode(UNUSED Object *obj, UNUSED s32 updateRate) {
 }
 
 /**
@@ -4178,12 +4099,6 @@ void obj_loop_treasuresucker(Object *obj, s32 updateRate) {
 }
 
 /**
- * Smokey's Castle Treasure Visual init func.
- */
-void obj_init_flycoin(UNUSED Object *obj, UNUSED LevelObjectEntry_FlyCoin *entry) {
-}
-
-/**
  * Smokey's Castle Treasure Visual loop func.
  * When spawned, moves with the velocity given, which makes it aim towards the treasure box.
  * Deletes itself once the timer hits zero. Will also trigger the win condition once necessary.
@@ -4209,14 +4124,6 @@ void obj_loop_flycoin(Object *obj, s32 updateRate) {
         }
     }
     obj->animFrame += updateRate * 8;
-}
-
-/**
- * Smokey's Castle Banana Spawner init func.
- * Seemingly does nothing.
- */
-void obj_init_bananacreator(Object *obj, UNUSED LevelObjectEntry_BananaCreator *entry) {
-    obj->animFrame = 100;
 }
 
 /**
@@ -4700,20 +4607,6 @@ void obj_loop_weaponballoon(Object *weaponBalloonObj, s32 updateRate) {
             }
         }
     }
-}
-
-/**
- * Balloon Burst Effect init behaviour.
- * Does nothing.
- */
-void obj_init_wballoonpop(UNUSED Object *obj, UNUSED LevelObjectEntry_WBalloonPop *entry) {
-}
-
-/**
- * Balloon Burst Effect loop behaviour.
- * Does nothing.
- */
-void obj_loop_wballoonpop(UNUSED Object *obj, UNUSED s32 updateRate) {
 }
 
 /**

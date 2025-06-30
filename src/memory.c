@@ -151,10 +151,15 @@ MemoryPoolSlot *mempool_alloc_largest(u32 colourTag) {
  * Can only go lower, not higher.
 */
 void mempool_realloc(void *addr, s32 size, s32 colourTag) {
-    mempool_free_timer(0);
+    s32 prevTimer = gFreeQueueTimer;
+    if (prevTimer != 0) {
+        mempool_free_timer(0);
+    }
     mempool_free(addr);
     addr = mempool_alloc_fixed(size, (u8 *) addr, colourTag, FALSE);
-    mempool_free_timer(2);
+    if (prevTimer != 0) {
+        mempool_free_timer(prevTimer);
+    }
 }
 
 u32 biggestSize = 0;

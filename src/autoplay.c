@@ -992,7 +992,7 @@ void autoplay_multiplayer(s32 playerCount) {
                             if (get_current_map_id() != ASSET_LEVEL_SMOKEYCASTLE) {
                                 racer->bananas = 0;
                             } else {
-                                racer->bananas = 10;
+                                racer->raceFinished = TRUE;
                             }
                         }
                     }

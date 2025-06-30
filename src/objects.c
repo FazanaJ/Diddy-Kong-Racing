@@ -10004,11 +10004,9 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             func = obj_loop_animator;
             break;
         case BHV_SMOKE:
-            obj_init_smoke(obj, (LevelObjectEntry_Smoke *) entry);
             func = obj_loop_smoke;
             break;
         case BHV_UNK_19:
-            obj_init_unknown25(obj, (LevelObjectEntry_Unknown25 *) entry);
             func = obj_loop_unknown25;
             break;
         case BHV_BOMB_EXPLOSION:
@@ -10031,11 +10029,9 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             break;
         case BHV_CAMERA_CONTROL:
             obj_init_cameracontrol(obj, (LevelObjectEntry_CameraControl *) entry);
-            func = obj_loop_cameracontrol;
             break;
         case BHV_SETUP_POINT:
             obj_init_setuppoint(obj, (LevelObjectEntry_SetupPoint *) entry);
-            func = obj_loop_setuppoint;
             break;
         case BHV_DINO_WHALE:
             obj_init_dino_whale(obj, (LevelObjectEntry_Dino_Whale *) entry);
@@ -10043,7 +10039,6 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             break;
         case BHV_CHECKPOINT:
             obj_init_checkpoint(obj, (LevelObjectEntry_Checkpoint *) entry, param);
-            func = obj_loop_checkpoint;
             break;
         case BHV_MODECHANGE:
             obj_init_modechange(obj, (LevelObjectEntry_ModeChange *) entry);
@@ -10067,15 +10062,10 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             break;
         case BHV_AINODE:
             obj_init_ainode(obj, (LevelObjectEntry_AiNode *) entry);
-            func = obj_loop_ainode;
             break;
         case BHV_WEAPON_BALLOON:
             obj_init_weaponballoon(obj, (LevelObjectEntry_WeaponBalloon *) entry);
             func = obj_loop_weaponballoon;
-            break;
-        case BHV_BALLOON_POP:
-            obj_init_wballoonpop(obj, (LevelObjectEntry_WBalloonPop *) entry);
-            func = obj_loop_wballoonpop;
             break;
         case BHV_WEAPON:
         case BHV_WEAPON_2:
@@ -10127,10 +10117,6 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             obj_init_rampswitch(obj, (LevelObjectEntry_RampSwitch *) entry);
             func = obj_loop_rampswitch;
             break;
-        case BHV_SEA_MONSTER:
-            obj_init_seamonster(obj, (LevelObjectEntry_SeaMonster *) entry);
-            func = obj_loop_seamonster;
-            break;
         case BHV_LENS_FLARE:
             obj_init_lensflare(obj, (LevelObjectEntry_LensFlare *) entry);
             break;
@@ -10142,7 +10128,6 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             func = obj_loop_collectegg;
             break;
         case BHV_EGG_CREATOR:
-            obj_init_eggcreator(obj, (LevelObjectEntry_EggCreator *) entry);
             func = obj_loop_eggcreator;
             break;
         case BHV_CHARACTER_FLAG:
@@ -10185,7 +10170,6 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             func = obj_loop_worldkey;
             break;
         case BHV_BANANA_SPAWNER:
-            obj_init_bananacreator(obj, (LevelObjectEntry_BananaCreator *) entry);
             func = obj_loop_bananacreator;
             break;
         case BHV_TREASURE_SUCKER:
@@ -10233,7 +10217,6 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             obj_init_midichset(obj, (LevelObjectEntry_Midichset *) entry);
             break;
         case BHV_EFFECT_BOX:
-            obj_init_effectbox(obj, (LevelObjectEntry_EffectBox *) entry);
             func = obj_loop_effectbox;
             break;
         case BHV_TROPHY_CABINET:
@@ -10245,7 +10228,6 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             func = obj_loop_bubbler;
             break;
         case BHV_FLY_COIN:
-            obj_init_flycoin(obj, (LevelObjectEntry_FlyCoin *) entry);
             func = obj_loop_flycoin;
             break;
         case BHV_GOLDEN_BALLOON:
@@ -10264,11 +10246,7 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             obj_init_groundzipper(obj, (LevelObjectEntry_GroundZipper *) entry);
             func = obj_loop_groundzipper;
             break;
-        case BHV_OVERRIDE_POS:
-            obj_init_overridepos(obj, (LevelObjectEntry_OverridePos *) entry);
-            break;
         case BHV_WIZPIG_SHIP:
-            obj_init_wizpigship(obj, (LevelObjectEntry_WizpigShip *) entry);
             func = obj_loop_wizpigship;
             break;
         case BHV_BOOST:
@@ -10280,7 +10258,6 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             func = obj_loop_silvercoin;
             break;
         case BHV_WARDEN_SMOKE:
-            obj_init_wardensmoke(obj, (LevelObjectEntry_WardenSmoke *) entry);
             func = obj_loop_wardensmoke;
             break;
         case BHV_UNK_5E:
@@ -10338,9 +10315,6 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             break;
         case BHV_WIZPIG_GHOSTS:
             func = obj_loop_wizghosts;
-            break;
-        case BHV_PARK_WARDEN_2:
-            func = obj_loop_gbparkwarden;
             break;
         case BHV_ANIMATED_OBJECT:
         case BHV_ANIMATED_OBJECT_2:

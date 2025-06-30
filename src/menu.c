@@ -7144,8 +7144,8 @@ void charselect_move(s32 playerID, s8 *direction, s32 bounds, u16 menuPickSoundI
  */
 void charselect_free(void) {
     menu_assetgroup_free(gCharSelectObjectIndices);
-    mempool_free_timer(0);
-    mempool_free_timer(2);
+    //mempool_free_timer(0);
+    //mempool_free_timer(2);
     gEnteredCharSelectFrom = 0;
 }
 
