@@ -180,11 +180,6 @@ u32 gMagnetColours[3] = {
 FadeTransition gRaceEndFade = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_NONE, FADE_COLOR_BLACK, 40, FADE_STAY);
 FadeTransition gRaceEndTransition = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_BLACK, 40, 0);
 
-/*******************************/
-
-UNUSED const char sDuplicateCheckpointString[] = "";
-/************ .bss ************/
-
 s16 D_8011AC20[128];
 s8 D_8011AD20;
 s8 D_8011AD21;
@@ -299,7 +294,6 @@ s32 gInitAINodes;
 s32 D_8011AF14;
 f32 gElevationHeights[5];
 s32 D_8011AF2C;
-ShadeProperties *gWorldShading; // Effectively unused.
 s32 D_8011AF34;
 s32 D_8011AF38[10];
 Object_MidiFade *D_8011AF60[2];
@@ -3557,7 +3551,6 @@ void func_80012C3C(Gfx **dList) {
 
 void func_80012C98(Gfx **dList) {
     if (D_8011ADA4 < 9) {
-        gSPNoOp((*dList)++); // Placeholder instruction?
         D_8011AD78[D_8011ADA4] = *dList;
     }
 }
@@ -5479,10 +5472,6 @@ void func_80017E98(void) {
     } while (!altId);
     D_8011AED4 = gNumberOfCheckpoints;
     gNumberOfCheckpoints -= var_t2;
-    if (duplicateCheckpoint) {
-        set_render_printf_position(20, 220);
-        render_printf(sDuplicateCheckpointString /* "Error: Multiple checkpoint no: %d !!\n"; */, checkpointNum);
-    }
     for (i = gNumberOfCheckpoints; i < D_8011AED4; i++) {
         temp_v1 = gTrackCheckpoints[i].unk2C - 255;
         for (var_a0 = 0, breakOut = FALSE; var_a0 < gNumberOfCheckpoints && !breakOut; var_a0++) {
@@ -9478,9 +9467,6 @@ f32 lerp_and_get_derivative(f32 *data, u32 index, f32 t, f32 *derivative) {
     lerp = data[index + 1] + (vector * t);
     *derivative = vector;
     return lerp;
-}
-
-UNUSED void func_800228DC(UNUSED s32 arg0, UNUSED s32 arg1, UNUSED s32 arg2) {
 }
 
 /**
