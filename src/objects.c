@@ -726,12 +726,12 @@ void allocate_object_pools(void) {
     gParticlePtrList = mempool_alloc_safe(sizeof(uintptr_t) * 200, PP_RAM_OBJLISTS);
     D_8011AE6C = mempool_alloc_safe(sizeof(uintptr_t) * 20, PP_RAM_OBJLISTS);
     D_8011AE74 = mempool_alloc_safe(sizeof(uintptr_t) * 128, PP_RAM_OBJLISTS);
-    gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, PP_RAM_OBJLISTS);
-    gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * CAMCONTROL_COUNT, PP_RAM_OBJLISTS);
-    gRacers = mempool_alloc_safe(sizeof(uintptr_t) * 10, PP_RAM_OBJLISTS);
-    gRacersByPort = mempool_alloc_safe(sizeof(uintptr_t) * 10, PP_RAM_OBJLISTS);
-    gRacersByPosition = mempool_alloc_safe(sizeof(uintptr_t) * 10, PP_RAM_OBJLISTS);
-    gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, PP_RAM_OBJLISTS);
+    //gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, PP_RAM_OBJLISTS);
+    //gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * CAMCONTROL_COUNT, PP_RAM_OBJLISTS);
+    gRacers = mempool_alloc_safe(sizeof(uintptr_t) * (10 * 3), PP_RAM_OBJLISTS);
+    gRacersByPort = (Object **) ((u8 *) gRacers + (sizeof(uintptr_t) * 10));
+    gRacersByPosition = (Object **) ((u8 *) gRacersByPort + (sizeof(uintptr_t) * 10));
+    //gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, PP_RAM_OBJLISTS);
     D_8011ADCC = mempool_alloc_safe(8, PP_RAM_OBJLISTS);
     D_8011AFF4 = mempool_alloc_safe(sizeof(unk800179D0) * 16, PP_RAM_OBJLISTS);
     tempTable2 = (s16 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE);
@@ -842,7 +842,7 @@ void clear_object_pointers(void) {
     D_8011AD22[1] = 0;
 
     for (i = 0; i < AINODE_COUNT; i++) {
-        (*gAINodes)[i] = NULL;
+        //(*gAINodes)[i] = NULL;
     }
     for (i = 0; i < 8; i++) {
         (*D_8011ADCC)[i] = 0;
@@ -1016,6 +1016,9 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
     UNUSED s32 pad;
     u8 *compressedAsset;
     s32 temp_t3;
+    s32 checkpoints;
+    s32 ainodes;
+    s32 camControllers;
 
     settings = get_settings();
     assetOffset = settings->bosses | 0x820; // 0x820 = Wizpig 2 and some unknown 0x800 boss bit
@@ -1058,6 +1061,42 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
         D_8011AE98[arg1] = (u8 *) (D_8011AEB0[arg1] + 4);
         D_8011AEA0[arg1] = *mem;
         D_8011AEC0 = arg1;
+        checkpoints = 0;
+        ainodes = 0;
+        camControllers = 0;
+        if (gTrackCheckpoints) {
+            mempool_free(gTrackCheckpoints);
+        }
+        if (gAINodes) {
+            mempool_free(gAINodes);
+        }
+        if (gCameraObjList) {
+            mempool_free(gCameraObjList);
+        }
+        for (var_s0 = 0; var_s0 < D_8011AEA0[arg1]; var_s0 += temp_t3) {
+            LevelObjectEntryCommon *entry = D_8011AE98;
+
+            if (entry->objectID == ASSET_OBJECT_ID_CHECKPOINT) {
+                checkpoints++;
+            } else if (entry->objectID == ASSET_OBJECT_ID_AINODE) {
+                ainodes++;
+            }else if (entry->objectID == ASSET_OBJECT_ID_CAMERA_CONTROL) {
+                camControllers++;
+            }
+
+            D_8011AE98[arg1] = &D_8011AE98[arg1][temp_t3 = D_8011AE98[arg1][1] & 0x3F];
+        }
+        debug_printf("Checkpoints: %d, AINodes: %d, CamObjs: %d\n", checkpoints, ainodes, camControllers);
+        if (checkpoints > 0) {
+            gTrackCheckpoints = mempool_alloc(sizeof(uintptr_t) * checkpoints, PP_RAM_OBJLISTS);
+        }
+        if (ainodes > 0) {
+            gTrackCheckpoints = mempool_alloc(sizeof(uintptr_t) * ainodes, PP_RAM_OBJLISTS);
+        }
+        if (camControllers > 0) {
+            gTrackCheckpoints = mempool_alloc(sizeof(uintptr_t) * camControllers, PP_RAM_OBJLISTS);
+        }
+        D_8011AE98[arg1] = (u8 *) (D_8011AEB0[arg1] + 4);
         for (var_s0 = 0; var_s0 < D_8011AEA0[arg1]; var_s0 += temp_t3) {
             spawn_object((LevelObjectEntryCommon *) D_8011AE98[arg1], OBJECT_SPAWN_UNK01);
             D_8011AE98[arg1] = &D_8011AE98[arg1][temp_t3 = D_8011AE98[arg1][1] & 0x3F];
