@@ -10275,6 +10275,7 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             obj_init_boost(obj, (LevelObjectEntry_Boost2 *) entry);
             break;
         case BHV_SILVER_COIN:
+        case BHV_SILVER_COIN_2:
             obj_init_silvercoin(obj, (LevelObjectEntry_SilverCoin *) entry);
             func = obj_loop_silvercoin;
             break;
@@ -10310,10 +10311,6 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             obj_init_frog(obj, (LevelObjectEntry_Frog *) entry);
             func = obj_loop_frog;
             break;
-        case BHV_SILVER_COIN_2:
-            obj_init_silvercoin_adv2(obj, (LevelObjectEntry_SilverCoinAdv2 *) entry);
-            func = obj_loop_silvercoin;
-            break;
         case BHV_LEVEL_NAME:
             obj_init_levelname(obj, (LevelObjectEntry_LevelName *) entry);
             func = obj_loop_levelname;
@@ -10330,11 +10327,20 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
         case BHV_VEHICLE_ANIMATION:
             func = obj_loop_vehicleanim;
             break;
+        case BHV_CAR_ANIMATION:
+            func = obj_loop_animcar;
+            break;
         case BHV_CHARACTER_SELECT:
             func = obj_loop_char_select;
             break;
         case BHV_CAMERA_ANIMATION:
             func = obj_loop_animcamera;
+            break;
+        case BHV_WIZPIG_GHOSTS:
+            func = obj_loop_wizghosts;
+            break;
+        case BHV_PARK_WARDEN_2:
+            func = obj_loop_gbparkwarden;
             break;
         case BHV_ANIMATED_OBJECT:
         case BHV_ANIMATED_OBJECT_2:

@@ -4407,47 +4407,30 @@ void obj_loop_banana(Object *obj, s32 updateRate) {
  * Race silver coin init behaviour.
  * Checks if in the correct modes, then sets the flag to active, otherwise inactive.
  * If the flag is inactive, destroy the object.
- * Rareware duplicated this function just to check for adventure 2...
- */
-void obj_init_silvercoin_adv2(Object *obj, UNUSED LevelObjectEntry_SilverCoinAdv2 *entry) {
-    obj->interactObj->flags = INTERACT_FLAGS_TANGIBLE;
-    obj->interactObj->unk11 = 0;
-    obj->interactObj->hitboxRadius = 30;
-    obj->properties.silverCoin.action = SILVER_COIN_INACTIVE;
-    obj->properties.silverCoin.timer = 16;
-    if (!is_in_tracks_mode()) {
-        if (check_if_silver_coin_race() && is_in_adventure_two()) {
-            obj->properties.silverCoin.action = SILVER_COIN_ACTIVE;
-        } else {
-            obj->properties.silverCoin.action = SILVER_COIN_INACTIVE;
-        }
-    }
-    if (obj->properties.silverCoin.action == SILVER_COIN_INACTIVE) {
-        obj->trans.flags |= OBJ_FLAGS_INVIS_PLAYER1 | OBJ_FLAGS_INVIS_PLAYER2;
-        free_object(obj);
-    }
-}
-
-/**
- * Race silver coin init behaviour.
- * Checks if in the correct modes, then sets the flag to active, otherwise inactive.
- * If the flag is inactive, destroy the object.
  */
 void obj_init_silvercoin(Object *obj, UNUSED LevelObjectEntry_SilverCoin *entry) {
     obj->interactObj->flags = INTERACT_FLAGS_TANGIBLE;
     obj->interactObj->unk11 = 0;
     obj->interactObj->hitboxRadius = 30;
     obj->properties.silverCoin.action = SILVER_COIN_INACTIVE;
-    obj->properties.silverCoin.timer = 0;
+    obj->properties.silverCoin.timer = 16;
+
     if (!is_in_tracks_mode()) {
-        if (check_if_silver_coin_race() && !is_in_adventure_two()) {
-            obj->properties.silverCoin.action = SILVER_COIN_ACTIVE;
-        } else {
-            obj->properties.silverCoin.action = SILVER_COIN_INACTIVE;
+        if (check_if_silver_coin_race()) {
+            if (obj->behaviorId == BHV_SILVER_COIN_2) {
+                if (is_in_adventure_two()) {
+                    obj->properties.silverCoin.action = SILVER_COIN_ACTIVE;
+                }
+            } else {
+                if (is_in_adventure_two() == FALSE) {
+                    obj->properties.silverCoin.action = SILVER_COIN_ACTIVE;
+                }
+            }
         }
     }
+
     if (obj->properties.silverCoin.action == SILVER_COIN_INACTIVE) {
-        obj->trans.flags |= OBJ_FLAGS_INVIS_PLAYER2 | OBJ_FLAGS_INVIS_PLAYER1;
+        obj->trans.flags |= OBJ_FLAGS_INVIS_PLAYER1 | OBJ_FLAGS_INVIS_PLAYER2;
         free_object(obj);
     }
 }
