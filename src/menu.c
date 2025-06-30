@@ -3099,6 +3099,17 @@ s32 menu_logo_screen_loop(s32 updateRate) {
     s32 opacity;
     s32 yOffset;
     s32 yOffsetShadow;
+    s32 i;
+    s32 input;
+
+    
+    for (i = 0; i < MAXCONTROLLERS; i++) {
+        input |= input_pressed(i);
+    }
+
+    if (input & A_BUTTON) {
+        sBootScreenTimer = 0.0f;
+    }
 
     yOffset = 0;
     if (sBootScreenTimer < 2.17f && gMenuDelay == 0) {
