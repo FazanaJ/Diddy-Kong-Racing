@@ -748,12 +748,12 @@ void allocate_object_pools(void) {
     }
     gAssetsObjectHeadersTableLength--;
     mempool_free(tempTable);
-    gObjectHeaderCache = mempool_alloc_safe(6 *100, PP_RAM_ASSET_CACHE);
-    gObjectHeaderCacheIDs = (s16 *) ((u8 *) gObjectHeaderCache + (100 * 4));
+    gObjectHeaderCache = mempool_alloc_safe(6 *75, PP_RAM_ASSET_CACHE);
+    gObjectHeaderCacheIDs = (s16 *) ((u8 *) gObjectHeaderCache + (75 * 4));
     //gLoadedObjectHeaders = mempool_alloc_safe(gAssetsObjectHeadersTableLength * 4, PP_RAM_ASSETTABLE);
     //gObjectHeaderReferences = mempool_alloc_safe(gAssetsObjectHeadersTableLength, PP_RAM_ASSETTABLE);
 
-    for (i = 0; i < 100; i++) {
+    for (i = 0; i < 75; i++) {
         gObjectHeaderCache[i] = -1;
         gObjectHeaderCacheIDs[i] = -1;
     }

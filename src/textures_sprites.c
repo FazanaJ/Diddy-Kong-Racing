@@ -7,8 +7,8 @@
 #include "game_ui.h"
 #include "main.h"
 
-#define MAX_NUM_TEXTURES 700
-#define MAX_NUM_SPRITES 100
+#define MAX_NUM_TEXTURES 500
+#define MAX_NUM_SPRITES 75
 #define TEX_PALLETE_COUNT 20
 #define MAX_SPRITE_ASSET_SIZE 512
 #define MAX_TEX_PALETTE_SIZE 640
