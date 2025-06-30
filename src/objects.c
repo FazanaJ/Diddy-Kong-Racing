@@ -1855,6 +1855,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
     Object *prevObj;
     s32 assetCount;
     s8 failed;
+    s32 addI = 0;
 
     settings = get_settings();
     objType = entry->objectID | ((entry->size & 0x80) << 1);
@@ -1913,6 +1914,21 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
     switch (curObj->header->behaviorId) {
         case BHV_PARK_WARDEN:
             model_anim_offset(7);
+            break;
+        case BHV_RACER:
+            switch (cam_get_viewport_layout()) {
+                default:
+                    addI = 0;
+                    break;
+                case VIEWPORT_LAYOUT_3_PLAYERS:
+                case VIEWPORT_LAYOUT_4_PLAYERS:
+                    addI = 1;
+                    break;
+            }
+            // Don't load the high detail model for non player racers.
+            if ((spawnFlags & OBJECT_SPAWN_UNK10) == FALSE) {
+                i = 1 + addI;
+            }
             break;
         case BHV_ANIMATED_OBJECT_4:
             i = get_character_id_from_slot(PLAYER_ONE);
