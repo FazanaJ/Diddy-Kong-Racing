@@ -65,10 +65,12 @@ VehicleSoundData *racer_sound_init(s32 characterId, s32 vehicleId) {
     // There are 30 total assets (10 characters × 3 vehicle types: car, plane, hovercraft).
     // There is no type check for vehicleId, so passing an unsupported type (e.g. VEHICLE_LOOPDELOOP)
     // will cause out-of-bounds access and undefined behavior.
+    assettable_tag(PP_RAM_ASSETTABLE);
     table = (s32 *) load_asset_section_from_rom(ASSET_AUDIO_TABLE);
     assetOffset = table[ASSET_AUDIO_7] + (vehicleId * 10 + characterId) * sizeof(VehicleSoundAsset);
     asset = (VehicleSoundAsset *) mempool_alloc_safe(sizeof(VehicleSoundAsset), COLOUR_TAG_CYAN);
     load_asset_to_address(ASSET_AUDIO, (u32) asset, assetOffset, sizeof(VehicleSoundAsset));
+    assettable_tag(PP_RAM_GREY);
 
     soundData = (VehicleSoundData *) mempool_alloc_safe(sizeof(VehicleSoundData), COLOUR_TAG_CYAN);
 

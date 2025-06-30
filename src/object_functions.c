@@ -1388,7 +1388,7 @@ void play_tt_voice_clip(u16 soundID, s32 interrupt) {
     }
 }
 
-void obj_init_fish(Object *fishObj, LevelObjectEntry_Fish *fishEntry, s32 param) {
+void obj_init_fish(Object *fishObj, LevelObjectEntry_Fish *fishEntry) {
     Object_Fish *fish;
     s32 pad0[2];
     f32 xPos;
@@ -1408,15 +1408,10 @@ void obj_init_fish(Object *fishObj, LevelObjectEntry_Fish *fishEntry, s32 param)
     fish->unk108 = fishEntry->common.x;
     fish->unk10C = fishEntry->common.y;
     fish->unk110 = fishEntry->common.z;
-    if (param == 0) {
-        fish->unkFE = rand_range(0, 0x10000);
-        fish->unk102 = rand_range(0, 0x10000);
-        fish->unk106 = rand_range(0, 0x10000);
-        fish->unkFD = 0;
-    } else {
-        fish->unkFE = 0x4000;
-        fishObj->trans.rotation.y_rotation = fish->unk104;
-    }
+    fish->unkFE = rand_range(0, 0x10000);
+    fish->unk102 = rand_range(0, 0x10000);
+    fish->unk106 = rand_range(0, 0x10000);
+    fish->unkFD = 0;
 
     xPos = sins_f(fish->unkFE * 2) * fish->unk114;
     zPos = coss_f(fish->unkFE) * fish->unk114;
@@ -1433,33 +1428,31 @@ void obj_init_fish(Object *fishObj, LevelObjectEntry_Fish *fishEntry, s32 param)
 
     ignore_bounds_check();
     move_object(fishObj, xPos, 0.0f, zPos);
-    if (param == 0) {
-        for (i = 0; i < 8; i++) {
-            fish->triangles[i].flags = D_800DC9D0[i].flags;
-            fish->triangles[i].vi0 = D_800DC9D0[i].vi0;
-            fish->triangles[i].vi1 = D_800DC9D0[i].vi1;
-            fish->triangles[i].vi2 = D_800DC9D0[i].vi2;
-        }
-        uMask = 0;
-        for (i = 0; i < 6; i++) {
-            fish->vertices[uMask].x = D_800DC9A8[uMask].x;
-            fish->vertices[uMask].y = D_800DC9A8[uMask].y;
-            fish->vertices[uMask].z = D_800DC9A8[uMask].z;
-            fish->vertices[uMask].r = 255;
-            fish->vertices[uMask].g = 255;
-            fish->vertices[uMask].b = 255;
-            fish->vertices[uMask].a = 255;
-            fish->vertices[uMask + 6].x = D_800DC9A8[uMask].x;
-            fish->vertices[uMask + 6].y = D_800DC9A8[uMask].y;
-            fish->vertices[uMask + 6].z = D_800DC9A8[uMask].z;
-            fish->vertices[uMask + 6].r = 255;
-            fish->vertices[uMask + 6].g = 255;
-            fish->vertices[uMask + 6].b = 255;
-            fish->vertices[uMask + 6].a = 255;
-            uMask++;
-        }
-        fish->unkFC = 1;
+    for (i = 0; i < 8; i++) {
+        fish->triangles[i].flags = D_800DC9D0[i].flags;
+        fish->triangles[i].vi0 = D_800DC9D0[i].vi0;
+        fish->triangles[i].vi1 = D_800DC9D0[i].vi1;
+        fish->triangles[i].vi2 = D_800DC9D0[i].vi2;
     }
+    uMask = 0;
+    for (i = 0; i < 6; i++) {
+        fish->vertices[uMask].x = D_800DC9A8[uMask].x;
+        fish->vertices[uMask].y = D_800DC9A8[uMask].y;
+        fish->vertices[uMask].z = D_800DC9A8[uMask].z;
+        fish->vertices[uMask].r = 255;
+        fish->vertices[uMask].g = 255;
+        fish->vertices[uMask].b = 255;
+        fish->vertices[uMask].a = 255;
+        fish->vertices[uMask + 6].x = D_800DC9A8[uMask].x;
+        fish->vertices[uMask + 6].y = D_800DC9A8[uMask].y;
+        fish->vertices[uMask + 6].z = D_800DC9A8[uMask].z;
+        fish->vertices[uMask + 6].r = 255;
+        fish->vertices[uMask + 6].g = 255;
+        fish->vertices[uMask + 6].b = 255;
+        fish->vertices[uMask + 6].a = 255;
+        uMask++;
+    }
+    fish->unkFC = 1;
     fishObj->trans.scale = fishEntry->unkC * 0.01f;
     if (fishEntry->unkB < fishObj->header->numberOfModelIds) {
         fish->texture = fishObj->textures[fishEntry->unkB];
@@ -1625,7 +1618,7 @@ void obj_loop_posarrow(Object *obj, UNUSED s32 updateRate) {
 }
 
 /* Offical name: animInit */
-void obj_init_animator(Object *obj, LevelObjectEntry_Animator *entry, s32 param) {
+void obj_init_animator(Object *obj, LevelObjectEntry_Animator *entry) {
     Object_Animator *animator;
     LevelModel *levelModel;
     s16 segmentBatchCount;
@@ -1637,11 +1630,8 @@ void obj_init_animator(Object *obj, LevelObjectEntry_Animator *entry, s32 param)
     animator->speedFactorY = entry->speedfactorY;
     animator->segmentId =
         get_level_segment_index_from_position(obj->trans.x_position, obj->trans.y_position, obj->trans.z_position);
-    // Always true.
-    if (param == 0) {
-        animator->xSpeed = 0;
-        animator->ySpeed = 0;
-    }
+    animator->xSpeed = 0;
+    animator->ySpeed = 0;
     if (animator->segmentId != -1) {
         if (animator->batchId < 0) {
             animator->batchId = 0;
@@ -1747,7 +1737,7 @@ void obj_loop_animator(Object *obj, s32 updateRate) {
     }
 }
 
-void obj_init_animation(Object *obj, LevelObjectEntry_Animation *entry, s32 arg2) {
+void obj_init_animation(Object *obj, LevelObjectEntry_Animation *entry) {
     Object *animTarget;
     s8 tempOrderIndex;
     f32 scalef;
@@ -1791,10 +1781,7 @@ void obj_init_animation(Object *obj, LevelObjectEntry_Animation *entry, s32 arg2
     }
     path_enable();
     obj->properties.animation.behaviourID = entry->actorIndex;
-    obj->properties.animation.action = arg2;
-    if (arg2 != 0 && (input_pressed(PLAYER_ONE) & R_CBUTTONS)) {
-        obj->properties.animation.action = 2;
-    }
+    obj->properties.animation.action = 0;
     if (((cutscene_id() == entry->channel) || (entry->channel == 20)) && (obj->animTarget == NULL) &&
         (entry->order == 0) && (entry->objectIdToSpawn != -1)) {
         func_8001F23C(obj, entry);
@@ -3071,7 +3058,7 @@ f32 get_npc_pos_y(void) {
  * Sets direction and scale based off spawn info.
  * Uses bit shifting to convert a u8 angle to an s16 angle.
  */
-void obj_init_checkpoint(Object *obj, LevelObjectEntry_Checkpoint *entry, UNUSED s32 arg2) {
+void obj_init_checkpoint(Object *obj, LevelObjectEntry_Checkpoint *entry) {
     f32 scale = (s32) (entry->scale & 0xFF);
     if (scale < 5.0f) {
         scale = 5.0f;
@@ -5258,7 +5245,7 @@ void obj_init_audioreverb(Object *obj, LevelObjectEntry_AudioReverb *entry) {
 }
 
 /* Official name: texscrollInit */
-void obj_init_texscroll(Object *obj, LevelObjectEntry_TexScroll *entry, s32 arg2) {
+void obj_init_texscroll(Object *obj, LevelObjectEntry_TexScroll *entry) {
     Object_TexScroll *texscroll;
     LevelModel *levelModel;
     s16 numberOfTexturesInLevel;
@@ -5275,10 +5262,8 @@ void obj_init_texscroll(Object *obj, LevelObjectEntry_TexScroll *entry, s32 arg2
     }
     texscroll->unk4 = entry->unkA;
     texscroll->unk6 = entry->unkB;
-    if (arg2 == 0) {
-        texscroll->unk8 = 0;
-        texscroll->unkA = 0;
-    }
+    texscroll->unk8 = 0;
+    texscroll->unkA = 0;
 }
 
 void obj_loop_texscroll(Object *obj, s32 updateRate) {
@@ -5379,7 +5364,7 @@ void obj_loop_texscroll(Object *obj, s32 updateRate) {
 
 #ifdef USE_DYNLIGHTS
 /* Official name: rgbalightInit */
-void obj_init_rgbalight(Object *obj, LevelObjectEntry_RgbaLight *entry, UNUSED s32 arg2) {
+void obj_init_rgbalight(Object *obj, LevelObjectEntry_RgbaLight *entry) {
     obj->light = func_80031CAC(obj, entry);
 }
 #endif
@@ -5388,7 +5373,7 @@ void obj_init_rgbalight(Object *obj, LevelObjectEntry_RgbaLight *entry, UNUSED s
  * Floating buoy init behaviour.
  * Sets hitbox data from spawn info.
  */
-void obj_init_buoy_pirateship(Object *obj, UNUSED LevelObjectEntry_Buoy_PirateShip *entry, UNUSED s32 arg2) {
+void obj_init_buoy_pirateship(Object *obj, UNUSED LevelObjectEntry_Buoy_PirateShip *entry) {
     obj->log = obj_wave_init(obj->segmentID, obj->trans.x_position, obj->trans.z_position);
     obj->interactObj->flags = INTERACT_FLAGS_SOLID;
     obj->interactObj->unk11 = 0;
@@ -5412,7 +5397,7 @@ void obj_loop_buoy_pirateship(Object *obj, s32 updateRate) {
  * Spinning log init behaviour.
  * Sets scale, angle and hitbox data based off the spawn info.
  */
-void obj_init_log(Object *obj, LevelObjectEntry_Log *entry, UNUSED s32 arg2) {
+void obj_init_log(Object *obj, LevelObjectEntry_Log *entry) {
     f32 radius;
     obj->log = obj_wave_init(obj->segmentID, obj->trans.x_position, obj->trans.z_position);
     obj->interactObj->flags = INTERACT_FLAGS_SOLID;
@@ -5566,7 +5551,7 @@ void obj_init_lensflare(Object *obj, UNUSED LevelObjectEntry_LensFlare *entry) {
  * Calls a function adding the object to the lens flare system,
  * so the rendering portion knows to disable lens flares when inside.
  */
-void obj_init_lensflareswitch(Object *obj, LevelObjectEntry_LensFlareSwitch *entry, UNUSED s32 arg2) {
+void obj_init_lensflareswitch(Object *obj, LevelObjectEntry_LensFlareSwitch *entry) {
     lensflare_override_add(obj);
     obj->trans.scale = entry->radius;
     obj->trans.scale /= 40.0f;
@@ -5576,51 +5561,49 @@ void obj_init_lensflareswitch(Object *obj, LevelObjectEntry_LensFlareSwitch *ent
  * Wave Generator init func.
  * Calls a function to add a wave generator point for the waves system.
  */
-void obj_init_wavegenerator(Object *obj, UNUSED LevelObjectEntry_WaveGenerator *entry, UNUSED s32 arg2) {
+void obj_init_wavegenerator(Object *obj, UNUSED LevelObjectEntry_WaveGenerator *entry) {
     wavegen_add(obj);
 }
 
-void obj_init_butterfly(Object *butterflyObj, LevelObjectEntry_Butterfly *butterflyEntry, s32 param) {
+void obj_init_butterfly(Object *butterflyObj, LevelObjectEntry_Butterfly *butterflyEntry) {
     Object_Butterfly *butterfly;
     s32 uMask;
     s32 vMask;
     s32 i;
 
     butterfly = butterflyObj->butterfly;
-    if (param == 0) {
-        butterflyObj->y_velocity = 0.0f;
-        butterfly->unkFE = 0;
-        butterfly->unk100 = 0;
-        butterfly->unk104 = 0;
-        butterfly->unkFD = 0;
-        butterfly->unk106 = 0x180;
-        butterfly->unk108 = 0.0f;
-        for (i = 0; i < 8; i++) {
-            butterfly->triangles[i].flags = D_800DCAA8[i].flags;
-            butterfly->triangles[i].vi0 = D_800DCAA8[i].vi0;
-            butterfly->triangles[i].vi1 = D_800DCAA8[i].vi1;
-            butterfly->triangles[i].vi2 = D_800DCAA8[i].vi2;
-        }
-        uMask = 0;
-        for (i = 0; i < 6; i++) {
-            butterfly->vertices[uMask].x = D_800DCB28[uMask].x;
-            butterfly->vertices[uMask].y = D_800DCB28[uMask].y;
-            butterfly->vertices[uMask].z = D_800DCB28[uMask].z;
-            butterfly->vertices[uMask].r = 255;
-            butterfly->vertices[uMask].g = 255;
-            butterfly->vertices[uMask].b = 255;
-            butterfly->vertices[uMask].a = 255;
-            butterfly->vertices[uMask + 6].x = D_800DCB28[uMask].x;
-            butterfly->vertices[uMask + 6].y = D_800DCB28[uMask].y;
-            butterfly->vertices[uMask + 6].z = D_800DCB28[uMask].z;
-            butterfly->vertices[uMask + 6].r = 255;
-            butterfly->vertices[uMask + 6].g = 255;
-            butterfly->vertices[uMask + 6].b = 255;
-            butterfly->vertices[uMask + 6].a = 255;
-            uMask++;
-        }
-        butterfly->unkFC = 1;
+    butterflyObj->y_velocity = 0.0f;
+    butterfly->unkFE = 0;
+    butterfly->unk100 = 0;
+    butterfly->unk104 = 0;
+    butterfly->unkFD = 0;
+    butterfly->unk106 = 0x180;
+    butterfly->unk108 = 0.0f;
+    for (i = 0; i < 8; i++) {
+        butterfly->triangles[i].flags = D_800DCAA8[i].flags;
+        butterfly->triangles[i].vi0 = D_800DCAA8[i].vi0;
+        butterfly->triangles[i].vi1 = D_800DCAA8[i].vi1;
+        butterfly->triangles[i].vi2 = D_800DCAA8[i].vi2;
     }
+    uMask = 0;
+    for (i = 0; i < 6; i++) {
+        butterfly->vertices[uMask].x = D_800DCB28[uMask].x;
+        butterfly->vertices[uMask].y = D_800DCB28[uMask].y;
+        butterfly->vertices[uMask].z = D_800DCB28[uMask].z;
+        butterfly->vertices[uMask].r = 255;
+        butterfly->vertices[uMask].g = 255;
+        butterfly->vertices[uMask].b = 255;
+        butterfly->vertices[uMask].a = 255;
+        butterfly->vertices[uMask + 6].x = D_800DCB28[uMask].x;
+        butterfly->vertices[uMask + 6].y = D_800DCB28[uMask].y;
+        butterfly->vertices[uMask + 6].z = D_800DCB28[uMask].z;
+        butterfly->vertices[uMask + 6].r = 255;
+        butterfly->vertices[uMask + 6].g = 255;
+        butterfly->vertices[uMask + 6].b = 255;
+        butterfly->vertices[uMask + 6].a = 255;
+        uMask++;
+    }
+    butterfly->unkFC = 1;
     butterflyObj->trans.scale = butterflyEntry->unkB * 0.01f;
     if (butterflyEntry->unkA < butterflyObj->header->numberOfModelIds) {
         butterfly->texture = butterflyObj->textures[butterflyEntry->unkA];
@@ -6123,19 +6106,6 @@ void obj_init_boost(Object *obj, LevelObjectEntry_Boost2 *entry) {
     Object_Boost *asset20 = (Object_Boost *) get_misc_asset(ASSET_MISC_20);
     obj->boost = &asset20[entry->unk8[0]];
     obj->level_entry = NULL;
-}
-
-void obj_init_unknown94(UNUSED Object *obj, UNUSED LevelObjectEntry_Unknown94 *entry, UNUSED s32 arg2) {
-}
-
-void obj_loop_unknown94(UNUSED Object *obj, s32 UNUSED updateRate) {
-}
-
-/**
- * Particle Emitter init func.
- * Does nothing.
- */
-void obj_init_rangetrigger(UNUSED Object *obj, UNUSED LevelObjectEntry_RangeTrigger *entry) {
 }
 
 /**

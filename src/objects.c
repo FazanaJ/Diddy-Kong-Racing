@@ -9996,11 +9996,11 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             func = obj_loop_scenery;
             break;
         case BHV_FISH:
-            obj_init_fish(obj, (LevelObjectEntry_Fish *) entry, param);
+            obj_init_fish(obj, (LevelObjectEntry_Fish *) entry);
             func = obj_loop_fish;
             break;
         case BHV_ANIMATOR:
-            obj_init_animator(obj, (LevelObjectEntry_Animator *) entry, param);
+            obj_init_animator(obj, (LevelObjectEntry_Animator *) entry);
             func = obj_loop_animator;
             break;
         case BHV_SMOKE:
@@ -10038,7 +10038,7 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             func = obj_loop_dino_whale;
             break;
         case BHV_CHECKPOINT:
-            obj_init_checkpoint(obj, (LevelObjectEntry_Checkpoint *) entry, param);
+            obj_init_checkpoint(obj, (LevelObjectEntry_Checkpoint *) entry);
             break;
         case BHV_MODECHANGE:
             obj_init_modechange(obj, (LevelObjectEntry_ModeChange *) entry);
@@ -10081,7 +10081,7 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             func = obj_loop_torch_mist;
             break;
         case BHV_TEXTURE_SCROLL:
-            obj_init_texscroll(obj, (LevelObjectEntry_TexScroll *) entry, param);
+            obj_init_texscroll(obj, (LevelObjectEntry_TexScroll *) entry);
             func = obj_loop_texscroll;
             break;
         case BHV_STOPWATCH_MAN:
@@ -10094,15 +10094,15 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             break;
 #ifdef USE_DYNLIGHTS
         case BHV_LIGHT_RGBA:
-            obj_init_rgbalight(obj, (LevelObjectEntry_RgbaLight *) entry, param);
+            obj_init_rgbalight(obj, (LevelObjectEntry_RgbaLight *) entry);
             break;
 #endif
         case BHV_BUOY_PIRATE_SHIP:
-            obj_init_buoy_pirateship(obj, (LevelObjectEntry_Buoy_PirateShip *) entry, param);
+            obj_init_buoy_pirateship(obj, (LevelObjectEntry_Buoy_PirateShip *) entry);
             func = obj_loop_buoy_pirateship;
             break;
         case BHV_LOG:
-            obj_init_log(obj, (LevelObjectEntry_Log *) entry, param);
+            obj_init_log(obj, (LevelObjectEntry_Log *) entry);
             func = obj_loop_log;
             break;
         case BHV_WEATHER:
@@ -10121,7 +10121,7 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             obj_init_lensflare(obj, (LevelObjectEntry_LensFlare *) entry);
             break;
         case BHV_LENS_FLARE_SWITCH:
-            obj_init_lensflareswitch(obj, (LevelObjectEntry_LensFlareSwitch *) entry, param);
+            obj_init_lensflareswitch(obj, (LevelObjectEntry_LensFlareSwitch *) entry);
             break;
         case BHV_COLLECT_EGG:
             obj_init_collectegg(obj, (LevelObjectEntry_CollectEgg *) entry);
@@ -10135,7 +10135,7 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             func = obj_loop_characterflag;
             break;
         case BHV_ANIMATION:
-            obj_init_animation(obj, (LevelObjectEntry_Animation *) entry, param);
+            obj_init_animation(obj, (LevelObjectEntry_Animation *) entry);
             break;
         case BHV_INFO_POINT:
             obj_init_infopoint(obj, (LevelObjectEntry_InfoPoint *) entry);
@@ -10155,10 +10155,10 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             func = obj_loop_timetrialghost;
             break;
         case BHV_WAVE_GENERATOR:
-            obj_init_wavegenerator(obj, (LevelObjectEntry_WaveGenerator *) entry, param);
+            obj_init_wavegenerator(obj, (LevelObjectEntry_WaveGenerator *) entry);
             break;
         case BHV_BUTTERFLY:
-            obj_init_butterfly(obj, (LevelObjectEntry_Butterfly *) entry, param);
+            obj_init_butterfly(obj, (LevelObjectEntry_Butterfly *) entry);
             func = obj_loop_butterfly;
             break;
         case BHV_PARK_WARDEN:
@@ -10260,10 +10260,6 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
         case BHV_WARDEN_SMOKE:
             func = obj_loop_wardensmoke;
             break;
-        case BHV_UNK_5E:
-            obj_init_unknown94(obj, (LevelObjectEntry_Unknown94 *) entry, param);
-            func = obj_loop_unknown94;
-            break;
         case BHV_TELEPORT:
             obj_init_teleport(obj, (LevelObjectEntry_Teleport *) entry);
             func = obj_loop_teleport;
@@ -10276,7 +10272,6 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             obj_init_lighthouse_rocketsignpost(obj, (LevelObjectEntry_Lighthouse_RocketSignpost *) entry);
             break;
         case BHV_RANGE_TRIGGER:
-            obj_init_rangetrigger(obj, (LevelObjectEntry_RangeTrigger *) entry);
             func = obj_loop_rangetrigger;
             break;
         case BHV_FIREBALL_OCTOWEAPON:
