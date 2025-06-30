@@ -686,6 +686,48 @@ void crash_page_fpregs(OSThread *t) {
     }
 }
 
+char *gObjUpdateStrings[] = {
+    "Init",
+    "Update",
+    "Render"
+};
+
+extern s32 gObjectCount;
+extern Object **gObjPtrList;
+extern s32 gObjectListStart;
+
+void crash_page_extra(OSThread *t) {
+    s32 i;
+    s32 k;
+    u32 colour;
+    s32 y;
+    OSThread *stackT;
+    s32 stackMin;
+    s32 stackMax;
+    Object *obj;
+    char *objName;
+
+    for (i = 0; i < 3; i++) {
+
+        if (gObjectStackTrace[i] == 0xFFFF) {
+            continue;
+        }
+
+        objName = "Unknown";
+
+        for (k = gObjectListStart; k < gObjectCount; k++) {
+            obj = gObjPtrList[k];
+            if (obj->objectID == gObjectStackTrace[i]) {
+                objName = obj->header->internalName;
+                break;
+            }
+        }
+
+        crash_text(CRASH_BORDER_X + 12, 54, GPACK_RGBA5551(255, 255, 255, 1), "Object %s", gObjUpdateStrings[i]);
+        crash_text(CRASH_BORDER_X + 12, 63, GPACK_RGBA5551(255, 255, 255, 1), "%d: %s", obj->objectID ,obj->header->internalName);
+    }
+}
+
 u8 gStackThreadIDs[] = {
     2, 3, 4, 5, 30, 69
 };
@@ -1634,6 +1676,9 @@ void crash_render(OSThread *t) {
             break;
         case CRASH_PAGE_FPREGS:
             crash_page_fpregs(t);
+            break;
+        case CRASH_PAGE_EXTRA:
+            crash_page_extra(t);
             break;
         case CRASH_PAGE_STACKS:
             crash_page_stacks(t);
