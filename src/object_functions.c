@@ -5978,7 +5978,7 @@ void obj_init_midifade(Object *obj, LevelObjectEntry_MidiFade *entry) {
         midiFade->unk2F[i] = entry->unkA[i];
     }
 
-    modInst = obj->modelInstances[0];
+    /*modInst = obj->modelInstances[0];
     objModel = modInst->objModel;
     vertex = &objModel->vertices[1];
     maxX = vertex->x;
@@ -6025,13 +6025,13 @@ void obj_init_midifade(Object *obj, LevelObjectEntry_MidiFade *entry) {
         tempF2 = maxZ;
         maxZ = minZ;
         minZ = tempF2;
-    }
-    midiFade->unk18 = (obj->trans.scale * minX) + obj->trans.x_position;
-    midiFade->unk1C = (obj->trans.scale * minY) + obj->trans.y_position;
-    midiFade->unk20 = (obj->trans.scale * minZ) + obj->trans.z_position;
-    midiFade->unk24 = (obj->trans.scale * maxX) + obj->trans.x_position;
-    midiFade->unk28 = (obj->trans.scale * maxY) + obj->trans.y_position;
-    midiFade->unk2C = (obj->trans.scale * maxZ) + obj->trans.z_position;
+    }*/
+    midiFade->unk18 = (obj->trans.scale * -127.0f) + obj->trans.x_position;
+    midiFade->unk1C = (obj->trans.scale * -127.0f) + obj->trans.y_position;
+    midiFade->unk20 = (obj->trans.scale * -127.0f) + obj->trans.z_position;
+    midiFade->unk24 = (obj->trans.scale * 127.0f) + obj->trans.x_position;
+    midiFade->unk28 = (obj->trans.scale * 127.0f) + obj->trans.y_position;
+    midiFade->unk2C = (obj->trans.scale * 127.0f) + obj->trans.z_position;
     midiFade->unk1 = 0;
 }
 

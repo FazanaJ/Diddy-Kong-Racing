@@ -125,6 +125,7 @@ s32 obj_model_blacklist(s32 modelID) {
     switch (modelID) {
         default:
             return FALSE;
+        case ASSET_OBJECTMODEL_MIDIFADE:
         case ASSET_OBJECTMODEL_DINOSAUR3:
         case ASSET_OBJECTMODEL_EXIT:
         case ASSET_OBJECTMODEL_EFFECTBOX:
