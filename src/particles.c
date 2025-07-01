@@ -22,16 +22,11 @@ s32 gNumPointParticles = 0;
 s32 gPointParticleBufferFull = FALSE;
 PointParticle *gPointParticleBuffer = NULL;
 
-UNUSED s32 D_800E2CDC = 0; // Only ever and checked for being less than 512.
 Vertex *gParticleVertexBuffer = NULL;
 Triangle *gParticleTriangleBuffer = NULL;
 s32 gParticlesAssetTableCount = 0;
-s32 *gParticlesAssets = NULL;
 
-ParticleDescriptor **gParticlesAssetTable = NULL;
 s32 gParticleBehavioursAssetTableCount = 0;
-s32 *gParticleBehavioursAssets = NULL;
-ParticleBehaviour **gParticleBehavioursAssetTable = NULL;
 ColourRGBA gParticleOverrideColor[2] = { { { { 0 } } }, { { { 0 } } } };
 
 Triangle gLineParticleTriangles[5] = {
@@ -123,7 +118,11 @@ s32 gCurrentHovercraftParticleOpacity = 256;
 /************ .bss ************/
 
 s32 gParticleUpdateRate;
-UNUSED s32 D_80127C84;
+s32 *gParticleCache;
+s16 *gParticleCacheIDs;
+s8 *gParticleCacheRefs;
+s32 gNumParticleBhvs;
+ParticleDescriptor gTempDescriptor;
 s16 gHovercraftParticleOpacities[8];
 // printf.c
 // thread0_epc
@@ -134,35 +133,113 @@ s16 gHovercraftParticleOpacities[8];
  */
 void init_particle_assets(void) {
     s32 i;
+    s32 *tempTable;
 
     assettable_tag(PP_RAM_ASSETTABLE);
-    gParticlesAssetTable = (ParticleDescriptor **) load_asset_section_from_rom(ASSET_PARTICLES_TABLE);
+    tempTable = (ParticleDescriptor **) load_asset_section_from_rom(ASSET_PARTICLES_TABLE);
     gParticlesAssetTableCount = -1;
-    while (((s32) gParticlesAssetTable[gParticlesAssetTableCount + 1]) != -1) {
+    while (((s32) tempTable[gParticlesAssetTableCount + 1]) != -1) {
         gParticlesAssetTableCount++;
     }
+    mempool_free(tempTable);
 
-    gParticlesAssets = (s32 *) load_asset_section_from_rom(ASSET_PARTICLES);
-    for (i = 0; i < gParticlesAssetTableCount; i++) {
-        gParticlesAssetTable[i] = (ParticleDescriptor *) (((u8 *) gParticlesAssets) + ((s32) gParticlesAssetTable[i]));
-    }
-
-    gParticleBehavioursAssetTable = (ParticleBehaviour **) load_asset_section_from_rom(ASSET_PARTICLE_BEHAVIORS_TABLE);
+    tempTable = (ParticleBehaviour **) load_asset_section_from_rom(ASSET_PARTICLE_BEHAVIORS_TABLE);
     gParticleBehavioursAssetTableCount = -1;
-    while (((s32) gParticleBehavioursAssetTable[gParticleBehavioursAssetTableCount + 1]) != -1) {
+    while (((s32) tempTable[gParticleBehavioursAssetTableCount + 1]) != -1) {
         gParticleBehavioursAssetTableCount++;
     }
+    mempool_free(tempTable);
 
-    gParticleBehavioursAssets = (s32 *) load_asset_section_from_rom(ASSET_PARTICLE_BEHAVIORS);
-    for (i = 0; i < gParticleBehavioursAssetTableCount; i++) {
-        gParticleBehavioursAssetTable[i] =
-            (ParticleBehaviour *) (((u8 *) gParticleBehavioursAssets) + ((s32) gParticleBehavioursAssetTable[i]));
-        if (((u32) gParticleBehavioursAssetTable[i]->colourLoop) != 0xFFFFFFFF) {
-            gParticleBehavioursAssetTable[i]->colourLoop =
-                (ColorLoopEntry *) get_misc_asset((s32) gParticleBehavioursAssetTable[i]->colourLoop);
+    gParticleCache = mempool_alloc(35 * (sizeof(uintptr_t) + sizeof(s16) + sizeof(s8)), PP_RAM_ASSET_CACHE);
+    gParticleCacheIDs = (s16 *) ((u8 *) gParticleCache + (35 * sizeof(uintptr_t)));
+    gParticleCacheRefs = (s16 *) ((u8 *) gParticleCacheIDs + (35 * sizeof(s16)));
+
+    for (i = 0; i < 35; i++) {
+        gParticleCache[i] = -1;
+        gParticleCacheIDs[i] = -1;
+        gParticleCacheRefs[i] = 0;
+    }
+    gNumParticleBhvs = 0;
+    assettable_tag(COLOUR_TAG_GREY);
+}
+
+ParticleDescriptor *particle_desciptor_seek(s32 id) {
+    s32 ret[2];
+    load_asset_to_address(ASSET_PARTICLES_TABLE, (u32) &ret, id * (sizeof(s32)), sizeof(s32) * 2);
+    load_asset_to_address(ASSET_PARTICLES, (u32) &gTempDescriptor, ret[0], sizeof(ParticleDescriptor));
+    return &gTempDescriptor;
+}
+
+ParticleBehaviour *particle_behaviour_seek(s32 id) {
+    u32 assetTableEntry[2];
+    s32 i;
+    s32 slotIndex;
+    ParticleBehaviour *address;
+    
+    for (i = 0; i < gNumParticleBhvs; i++) {
+        if (gParticleCacheIDs[i] == id) {
+            gParticleCacheRefs[i]++;
+            return (ParticleBehaviour *) gParticleCache[i];
         }
     }
-    assettable_tag(COLOUR_TAG_GREY);
+
+    load_asset_to_address(ASSET_PARTICLE_BEHAVIORS_TABLE, &assetTableEntry, id * sizeof(s32), sizeof(s32) * 2);
+
+    address = mempool_alloc(sizeof(ParticleBehaviour), PP_RAM_PARTICLES);
+
+    load_asset_to_address(ASSET_PARTICLE_BEHAVIORS, (u32) address, assetTableEntry[0], sizeof(ParticleBehaviour));
+
+    if ((u32) address->colourLoop != 0xFFFFFFFF) {
+        address->colourLoop = (ColorLoopEntry *) get_misc_asset((s32) address->colourLoop);
+    }
+
+    slotIndex = -1;
+    for (i = 0; i < gNumParticleBhvs; i++) {
+        if (gParticleCacheIDs[i] == -1) {
+            slotIndex = i;
+            break;
+        }
+    }
+    if (slotIndex == -1) {
+        slotIndex = gNumParticleBhvs;
+        gNumParticleBhvs++;
+    }
+    gParticleCache[slotIndex] = (s32) address;
+    gParticleCacheIDs[slotIndex] = id;
+    gParticleCacheRefs[slotIndex] = 1;
+
+    return address;
+}
+
+void particle_update_cache(ParticleBehaviour *particleID) {
+    s32 i;
+
+    for (i = 0; i < gNumParticleBhvs; i++) {
+        if ((s32) gParticleCache[i] == (s32) particleID) {
+            if (gParticleCacheRefs[i] > 1) {
+                gParticleCacheRefs[i]--;
+            } else {
+                mempool_free(gParticleCache[i]);
+                gParticleCache[i] = -1;
+                gParticleCacheIDs[i] = -1;
+                gParticleCacheRefs[i] = 0;
+            }
+        }
+    }
+}
+
+void particle_clear(void) {
+    s32 i;
+
+    for (i = 0; i < gNumParticleBhvs; i++) {
+
+        if (gParticleCache[i] != -1) {
+            mempool_free(gParticleCache[i]);
+            gParticleCache[i] = -1;
+            gParticleCacheIDs[i] = -1;
+            gParticleCacheRefs[i] = 0;
+        }
+    }
 }
 
 /**
@@ -216,7 +293,6 @@ void init_particle_buffers(s32 maxTriangleParticles, s32 maxRectangleParticles, 
     allocSize += (maxTriangleParticles + 2 * maxRectangleParticles) * sizeof(Triangle);
     //gParticleVertexBuffer = mempool_alloc_safe((3 * maxTriangleParticles + 4 * maxRectangleParticles + 6 * maxLineParticles + 16 * maxPointParticles) * sizeof(Vertex), PP_RAM_PARTICLES);
     //gParticleTriangleBuffer = mempool_alloc_safe((maxTriangleParticles + 2 * maxRectangleParticles) * sizeof(Triangle), PP_RAM_PARTICLES);
-    D_800E2CDC = 0;
 
     //free_particle_buffers();
     if (gMaxTriangleParticles > 0) {
@@ -511,7 +587,7 @@ void emitter_change_settings(ParticleEmitter *emitter, s32 behaviourID, s32 part
     if (behaviourID >= gParticleBehavioursAssetTableCount) {
         behaviourID = 0;
     }
-    behaviour = gParticleBehavioursAssetTable[behaviourID];
+    behaviour = particle_behaviour_seek(behaviourID);
     if (emitter->descriptorID != particleID || behaviour != emitter->behaviour) {
         emitter_cleanup(emitter);
         emitter_init_with_pos(emitter, behaviourID, particleID, posX, posY, posZ);
@@ -525,7 +601,7 @@ void emitter_init(ParticleEmitter *emitter, s32 behaviourID, s32 particleID) {
     ParticleBehaviour *behaviour;
 
     if (behaviourID < gParticleBehavioursAssetTableCount) {
-        behaviour = gParticleBehavioursAssetTable[behaviourID];
+        behaviour = particle_behaviour_seek(behaviourID);
         emitter_init_with_pos(emitter, behaviourID, particleID, behaviour->emitterPos.x, behaviour->emitterPos.y,
                               behaviour->emitterPos.z);
     }
@@ -538,7 +614,7 @@ void emitter_init(ParticleEmitter *emitter, s32 behaviourID, s32 particleID) {
 void emitter_init_with_pos(ParticleEmitter *emitter, s32 behaviourID, s32 particleID, s16 posX, s16 posY, s16 posZ) {
     ParticleBehaviour *behaviour;
 
-    behaviour = gParticleBehavioursAssetTable[behaviourID];
+    behaviour = particle_behaviour_seek(behaviourID);
     emitter->descriptorID = particleID;
     emitter->behaviour = behaviour;
     emitter->position.x = posX;
@@ -556,8 +632,8 @@ void emitter_init_with_pos(ParticleEmitter *emitter, s32 behaviourID, s32 partic
         emitter->pointCount = 0;
         emitter->flags = PARTICLE_POINT;
         // Maximum number of points equals the particle's lifetime
-        if (gParticlesAssetTable[particleID]->lifeTime <= 255) {
-            emitter->maxPointCount = gParticlesAssetTable[particleID]->lifeTime;
+        if (particle_desciptor_seek(particleID)->lifeTime <= 255) {
+            emitter->maxPointCount = particle_desciptor_seek(particleID)->lifeTime;
         } else {
             emitter->maxPointCount = 255;
         }
@@ -621,7 +697,7 @@ void obj_enable_emitter(Object *obj, s32 emitterIndex) {
         emitter->lineRefPoint.y = obj->trans.y_position;
         emitter->lineRefPoint.z = obj->trans.z_position;
     } else if (emitter->flags & PARTICLE_POINT) {
-        emitter->point_opacity = gParticlesAssetTable[emitter->descriptorID]->colour.a << 8;
+        emitter->point_opacity = particle_desciptor_seek(emitter->descriptorID)->colour.a << 8;
 
         if (emitter->pointCount > 0) { // Useless if statement, since the loop already does this.
             for (i = 0; i < emitter->pointCount; i++) {
@@ -705,7 +781,7 @@ void update_vehicle_particles(Object *racerObj, s32 updateRate) {
                         }
                         opacity -= 24;
                         if (opacity > 0) {
-                            descriptor = gParticlesAssetTable[racerObj->particleEmitter[i].descriptorID];
+                            descriptor = particle_desciptor_seek(racerObj->particleEmitter[i].descriptorID);
                             alphaPtr = &D_800E2EC4[i].a;
                             var_t1 = 4;
                             if (opacity > 32) {
@@ -1086,7 +1162,7 @@ PointParticle *create_point_particle(Object *obj, ParticleEmitter *emitter) {
     ParticleModel *model;
     ParticleBehaviour *behaviour;
 
-    descriptor = gParticlesAssetTable[emitter->descriptorID];
+    descriptor = particle_desciptor_seek(emitter->descriptorID);
     if (descriptor->kind != PARTICLE_KIND_POINT) {
         return NULL;
     }
@@ -1217,7 +1293,7 @@ Particle *create_line_particle(Object *obj, ParticleEmitter *emitter) {
     ParticleBehaviour *behaviour;
     ColorLoopEntry *colourLoop;
 
-    descriptor = gParticlesAssetTable[emitter->descriptorID];
+    descriptor = particle_desciptor_seek(emitter->descriptorID);
     if (descriptor->kind != PARTICLE_KIND_LINE) {
         return NULL;
     }
@@ -1347,7 +1423,7 @@ Particle *create_general_particle(Object *obj, ParticleEmitter *emitter) {
     f32 scale;
     s8 noTexture;
 
-    descriptor = gParticlesAssetTable[emitter->descriptorID];
+    descriptor = particle_desciptor_seek(emitter->descriptorID);
     if (descriptor->kind == PARTICLE_KIND_LINE || descriptor->kind == PARTICLE_KIND_POINT) {
         return NULL;
     }
@@ -1765,6 +1841,8 @@ void particle_deallocate(Particle *particle) {
 void emitter_cleanup(ParticleEmitter *emitter) {
     PointParticle *pointParticle;
     s32 i;
+
+    particle_update_cache(emitter->behaviour);
 
     if (emitter->flags & PARTICLE_POINT) {
         if (emitter->refPoints != NULL) {

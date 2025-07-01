@@ -279,6 +279,9 @@ typedef struct PointParticle {
     /* 0x77 */ s8 meshRegenerated;
 } PointParticle;
 
+void particle_update_cache(ParticleBehaviour *particleID);
+void particle_clear(void);
+
 void reset_particles(void);
 void reset_particles_with_assets(void);
 void particle_free_dummy(void);

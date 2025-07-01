@@ -768,10 +768,6 @@ extern s32 gLevelNames;
 extern s32 gTempLevelNames;
 extern s32 gCurrentLevelHeader;
 extern s32 gAIBehaviourTable;
-extern s32 gParticlesAssetTable;
-extern s32 gParticlesAssets;
-extern s32 gParticleBehavioursAssetTable;
-extern s32 gParticleBehavioursAssets;
 extern s32 gFonts;
 extern s32 gAssetHudElementIds;
 extern s32 gAssetsMenuElementIds;
@@ -812,14 +808,6 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
                 return "gCurrentLevelHeader";
             } else if ((s32) slot->data == (s32) gAIBehaviourTable) {
                 return "gAIBehaviourTable";
-            } else if ((s32) slot->data == (s32) gParticlesAssetTable) {
-                return "gParticlesAssetTable";
-            } else if ((s32) slot->data == (s32) gParticlesAssets) {
-                return "gParticlesAssets";
-            } else if ((s32) slot->data == (s32) gParticleBehavioursAssetTable) {
-                return "gParticleBehavioursAssetTable";
-            } else if ((s32) slot->data == (s32) gParticleBehavioursAssets) {
-                return "gParticleBehavioursAssets";
             } else if ((s32) slot->data == (s32) (gFonts - sizeof(FontData))) {
                 return "gFonts";
             } else if ((s32) slot->data == (s32) gAssetHudElementIds) {

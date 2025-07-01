@@ -300,7 +300,7 @@ extern u8 *main_BSS_START[];
     "Collision", \
     "Normals\t", \
     "Temp ObjList", \
-    "Obj Maps"
+    "Obj Maps\t"
 
 #define NUM_PERF_ITERATIONS 60
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS

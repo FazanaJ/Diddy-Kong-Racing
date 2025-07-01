@@ -261,12 +261,7 @@ s32 D_8011AE88;
 Gfx *gObjectCurrDisplayList;
 Mtx *gObjectCurrMatrix;
 Vertex *gObjectCurrVertexList;
-u8 *D_8011AE98[2];
-s32 D_8011AEA0[2];
-s32 D_8011AEA8[2];
 s32 *D_8011AEB0[2];
-s32 gAssetsLvlObjTranslationTableLength;
-s32 D_8011AEC0;
 Object **gParticlePtrList;
 s32 gFreeListCount;
 CheckpointNode *gTrackCheckpoints; // Array of structs, unknown number of members
@@ -734,12 +729,6 @@ void allocate_object_pools(void) {
     gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, PP_RAM_OBJLISTS);
     D_8011ADCC = mempool_alloc_safe(8, PP_RAM_OBJLISTS);
     D_8011AFF4 = mempool_alloc_safe(sizeof(unk800179D0) * 16, PP_RAM_OBJLISTS);
-    tempTable2 = (s16 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE);
-    gAssetsLvlObjTranslationTableLength = (get_size_of_asset_section(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE) >> 1) - 1;
-    while (tempTable2[gAssetsLvlObjTranslationTableLength] == 0) {
-        gAssetsLvlObjTranslationTableLength--;
-    }
-    mempool_free(tempTable2);
     gSpawnObjectHeap = mempool_alloc_safe(OBJECT_BLUEPRINT_SIZE, PP_RAM_OBJLISTS);
     tempTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_HEADERS_TABLE);
     gAssetsObjectHeadersTableLength = 0;
@@ -748,7 +737,7 @@ void allocate_object_pools(void) {
     }
     gAssetsObjectHeadersTableLength--;
     mempool_free(tempTable);
-    gObjectHeaderCache = mempool_alloc_safe(6 *75, PP_RAM_ASSET_CACHE);
+    gObjectHeaderCache = mempool_alloc_safe(6 * 75, PP_RAM_ASSET_CACHE);
     gObjectHeaderCacheIDs = (s16 *) ((u8 *) gObjectHeaderCache + (75 * 4));
     //gLoadedObjectHeaders = mempool_alloc_safe(gAssetsObjectHeadersTableLength * 4, PP_RAM_ASSETTABLE);
     //gObjectHeaderReferences = mempool_alloc_safe(gAssetsObjectHeadersTableLength, PP_RAM_ASSETTABLE);
@@ -845,6 +834,8 @@ void clear_object_pointers(void) {
 
     gAINodeAllocCount = AINODE_COUNT;
 
+    bzero(gAINodes, gAINodeAllocCount * sizeof(uintptr_t));
+
     /*if (gTrackCheckpoints) {
         mempool_free(gTrackCheckpoints);
         gTrackCheckpoints = NULL;
@@ -906,6 +897,7 @@ void free_all_objects(void) {
         swap_lead_player();
     }
     gParticlePtrList_flush();
+    particle_clear();
     len = gObjectCount;
     for (i = 0; i < len; i++) {
         func_800101AC(gObjPtrList[i], 1);
@@ -972,6 +964,7 @@ ObjectHeader *load_object_header(s32 index) {
         for (i = 0; i < gObjectHeaderCacheCount; i++) {
             if (gObjectHeaderCacheIDs[i] == -1) {
                 slotIndex = i;
+                break;
             }
         }
         if (slotIndex == -1) {
@@ -1044,6 +1037,7 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     s32 ainodes;
     s32 camControllers;
     s32 mapID[2];
+    u8 *objPos;
 
     return;
 
@@ -1059,9 +1053,6 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     i--;
     for (j = 0; j < 2; j++) {
         D_8011AEB0[iter] = mem;
-        D_8011AE98[iter] = (u8 *) (D_8011AEB0[iter] + 4);
-        D_8011AEA0[iter] = 0;
-        D_8011AEA8[iter] = mapID[j];
         if (mapID[j] >= i) {
             mapID[j] = 0;
         }
@@ -1073,10 +1064,9 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
             compressedAsset = ((compressedAsset + get_asset_uncompressed_size(ASSET_LEVEL_OBJECT_MAPS, assetOffset)) - (assetSize)) + 0x20;
             load_asset_to_address(ASSET_LEVEL_OBJECT_MAPS, (u32) compressedAsset, assetOffset, assetSize);
             gzip_inflate(compressedAsset, (u8 *) mem);
-            D_8011AE98[iter] = (u8 *) (D_8011AEB0[iter] + 4);
-            D_8011AEA0[iter] = *mem;
-            for (var_s0 = 0; var_s0 < D_8011AEA0[iter]; var_s0 += temp_t3) {
-                LevelObjectEntryCommon *entry = D_8011AE98[iter];
+            objPos = (u8 *) (D_8011AEB0[iter] + 4);
+            for (var_s0 = 0; var_s0 < *mem; var_s0 += temp_t3) {
+                LevelObjectEntryCommon *entry = objPos;
 
                 if (entry->objectID == ASSET_OBJECT_ID_CHECKPOINT) {
                     checkpoints++;
@@ -1085,7 +1075,7 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
                 }else if (entry->objectID == ASSET_OBJECT_ID_CAMERA_CONTROL) {
                     camControllers++;
                 }
-                D_8011AE98[iter] = &D_8011AE98[iter][temp_t3 = D_8011AE98[iter][1] & 0x3F];
+                objPos = &objPos[temp_t3 = objPos[1] & 0x3F];
             }
             
         }
@@ -1121,6 +1111,7 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
     UNUSED s32 pad;
     u8 *compressedAsset;
     s32 temp_t3;
+    u8 *objPos;
 
     if (arg1 != 0) {
         settings = get_settings();
@@ -1144,9 +1135,6 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
     objMapTable = (u32 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_MAPS_TABLE);
     mem = mempool_alloc_largest(PP_RAM_OBJMAPS);
     D_8011AEB0[arg1] = mem;
-    D_8011AE98[arg1] = (u8 *) (D_8011AEB0[arg1] + 4);
-    D_8011AEA0[arg1] = 0;
-    D_8011AEA8[arg1] = arg0;
     for (i = 0; objMapTable[i] != 0xFFFFFFFF; i++) {}
     i--;
     if (arg0 >= i) {
@@ -1163,23 +1151,20 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
         load_asset_to_address(ASSET_LEVEL_OBJECT_MAPS, (u32) compressedAsset, assetOffset, assetSize);
         gzip_inflate(compressedAsset, (u8 *) mem);
         mempool_free(objMapTable);
-        D_8011AEA0[arg1] = *mem;
-        //debug_printf("%X\n", (s32) D_8011AEA0[arg1]);
-        if (D_8011AEA0[arg1] == 0) {
+        //debug_printf("%X\n", (s32) *mem);
+        if (*mem == 0) {
             mempool_free(mem);
         } else {
             mempool_realloc(mem, *mem, PP_RAM_OBJMAPS);
-            D_8011AE98[arg1] = (u8 *) (D_8011AEB0[arg1] + 4);
-            for (var_s0 = 0; var_s0 < D_8011AEA0[arg1]; var_s0 += temp_t3) {
-                spawn_object((LevelObjectEntryCommon *) D_8011AE98[arg1], OBJECT_SPAWN_UNK01);
-                D_8011AE98[arg1] = &D_8011AE98[arg1][temp_t3 = D_8011AE98[arg1][1] & 0x3F];
+            objPos = (u8 *) (D_8011AEB0[arg1] + 4);
+            for (var_s0 = 0; var_s0 < *mem; var_s0 += temp_t3) {
+                spawn_object((LevelObjectEntryCommon *) objPos, OBJECT_SPAWN_UNK01);
+                objPos = &objPos[temp_t3 = objPos[1] & 0x3F];
             }
-            D_8011AE98[arg1] = (u8 *) (D_8011AEB0[arg1] + 4);
         }
-        D_8011AEC0 = arg1;
-        D_8011AE70 = 0;
         
         if (arg1 != 0) {
+            D_8011AE70 = 0;
             gNumFinishedRacers = 1;
             if (gPathUpdateOff == FALSE) {
                 gParticlePtrList_flush();
@@ -1873,55 +1858,6 @@ u8 is_time_trial_enabled(void) {
  */
 u8 is_in_time_trial(void) {
     return gIsTimeTrial;
-}
-
-void func_8000E79C(u8 *arg0, u8 *arg1) {
-    s32 arg0Value;
-    s32 arg0Value2;
-    s32 arg1Value;
-    u8 *var_a3;
-    u8 *var_t0;
-    u8 *temp_t2;
-    u8 *var_a2;
-    s32 i;
-    s32 j;
-    s32 k;
-
-    arg0Value = arg0[1] & 0x3F;
-    arg0Value2 = arg0Value;
-    arg1Value = arg1[1] & 0x3F;
-    i = D_8011AEC0;
-    var_a3 = (u8 *) D_8011AEB0[i] + D_8011AEA0[i];
-    var_a3 += 16;
-
-    if (arg1Value < arg0Value2) {
-        var_a2 = arg0 + arg1Value;
-        var_t0 = arg0 + arg0Value2;
-        k = (u32) var_a3;
-        while (((u32) var_t0) < (u32) k) {
-            *var_a2 = *var_t0;
-            var_a2++;
-            var_t0++;
-        }
-    } else if (arg0Value2 < arg1Value) {
-        var_a2 = var_a3 + arg1Value;
-        var_a2 -= arg0Value2;
-        var_t0 = var_a3;
-        k = (u32) (arg0 + arg1Value);
-        while ((u32) k < ((u32) var_a2)) {
-            var_a2--;
-            var_t0--;
-            *var_a2 = *var_t0;
-        }
-    }
-
-    j = 0;
-    do {
-        arg0[j] = arg1[j];
-        j++;
-    } while (j < arg1Value);
-
-    D_8011AEA0[i] += arg1Value - arg0Value;
 }
 
 /**

@@ -288,6 +288,7 @@ void obj_magnet_spawn(void);
 void obj_boost_spawn(s32 charID);
 void obj_shield_spawn(void);
 void track_preallocate_objlists(s32 objMap, s32 collectables);
+void alloc_racer_ptrs(void);
 
 Object *racerfx_get_boost(s32 boostID);
 void allocate_object_pools(void);
