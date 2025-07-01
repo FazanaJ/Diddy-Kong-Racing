@@ -237,17 +237,17 @@ void fb_alloc(s32 index) {
   
 #if EXPANSION_PAK_SUPPORT || defined(FIFO_4MB)
     if (gGfxSPTaskOutputBuffer == NULL) {
-        gGfxSPTaskOutputBuffer = mempool_alloc_fixed(OUTPUT_BUFFER_SIZE, (u8 *) (0x80200000 + fbSize), PP_RAM_TASKBUFFER, TRUE);
+        gGfxSPTaskOutputBuffer = mempool_alloc_fixed(POOL_MAIN, OUTPUT_BUFFER_SIZE, (u8 *) (0x80200000 + fbSize), PP_RAM_TASKBUFFER, TRUE);
         gGfxSPTaskOutputBuffer = (u64 *) (((s32) gGfxSPTaskOutputBuffer + 0xF) & ~0xF);
     }
 #endif
 
-    gVideoFramebuffers[index] = mempool_alloc_fixed(fbSize, addr, PP_RAM_FRAMEBUFFERS, TRUE);
+    gVideoFramebuffers[index] = mempool_alloc_fixed(POOL_MAIN, fbSize, addr, PP_RAM_FRAMEBUFFERS, TRUE);
     bzero(gVideoFramebuffers[index], fbSize);
     fbAddr = gVideoFramebuffers[index];
     fbAddr[100] = 0xBEEF;
     if (gVideoDepthBuffer == NULL) {
-        gVideoDepthBuffer = mempool_alloc_fixed(fbSize, (u8 *) (0x80200000 - (fbSize)), PP_RAM_FRAMEBUFFERS, TRUE);
+        gVideoDepthBuffer = mempool_alloc_fixed(POOL_MAIN, fbSize, (u8 *) (0x80200000 - (fbSize)), PP_RAM_FRAMEBUFFERS, TRUE);
         fbAddr = gVideoDepthBuffer;
         fbAddr[100] = 0xBEEF;
     }

@@ -206,7 +206,6 @@ s8 gRaceEndStage;
 s8 gNumRacersSaved;
 s8 D_8011AD53;
 s32 D_8011AD54;
-s32 *gSpawnObjectHeap;
 s32 D_8011AD5C;
 s32 D_8011AD60;
 s32 gAssetsObjectHeadersTableLength;
@@ -733,7 +732,6 @@ void allocate_object_pools(void) {
     gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, PP_RAM_OBJLISTS);
     D_8011ADCC = mempool_alloc_safe(8, PP_RAM_OBJLISTS);
     D_8011AFF4 = mempool_alloc_safe(sizeof(unk800179D0) * 16, PP_RAM_OBJLISTS);
-    gSpawnObjectHeap = mempool_alloc_safe(OBJECT_BLUEPRINT_SIZE, PP_RAM_OBJLISTS);
     tempTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_HEADERS_TABLE);
     gAssetsObjectHeadersTableLength = 0;
     while (-1 != tempTable[gAssetsObjectHeadersTableLength]) {
@@ -1983,11 +1981,20 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
         headerType = 0;
     }
 
-    for (i = 0; i < OBJECT_BLUEPRINT_SIZE / 4; i++) {
-        gSpawnObjectHeap[i] = NULL;
-    }
+    curObj = mempool_alloc_pool_tag(gObjectMemoryPool, 0x800, PP_RAM_OBJECTS);
 
-    curObj = (Object *) gSpawnObjectHeap;
+    curObj->trans.rotation.x_rotation = 0;
+    curObj->trans.rotation.y_rotation = 0;
+    curObj->trans.rotation.z_rotation = 0;
+    curObj->x_velocity = 0.0f;
+    curObj->y_velocity = 0.0f;
+    curObj->z_velocity = 0.0f;
+    curObj->distanceToCamera = 0.0f;
+    curObj->modelInstances = NULL;
+    curObj->modelIndex = 0;
+    curObj->properties.common.unk0 = 0;
+    curObj->properties.common.unk4 = 0;
+
     curObj->trans.flags = OBJ_FLAGS_UNK_0002;
     curObj->header = load_object_header(headerType);
     if (curObj->header == NULL) {
@@ -2104,6 +2111,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
         }
     }
 
+    bzero(curObj->modelInstances, sizeof(ModelInstance) * assetCount);
     //failed = FALSE;
     if (objType == OBJECT_MODEL_TYPE_3D_MODEL) {
         while (i < assetCount) {
@@ -2151,6 +2159,8 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
 
     if (behaviourFlags & OBJECT_BEHAVIOUR_SHADED) {
         address += init_object_shading(curObj, (ShadeProperties *) address);
+    } else {
+        curObj->shading = NULL;
     }
     if (behaviourFlags & OBJECT_BEHAVIOUR_SHADOW) {
         sizeOfobj = init_object_shadow(curObj, (ShadowData *) address);
@@ -2160,6 +2170,8 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
             try_free_object_header(headerType);
             return NULL;
         }
+    } else {
+        curObj->shadow = NULL;
     }
     if (behaviourFlags & OBJECT_BEHAVIOUR_WATER_EFFECT) {
         sizeOfobj = init_object_water_effect(curObj, (WaterEffect *) address);
@@ -2172,30 +2184,43 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
             try_free_object_header(headerType);
             return NULL;
         }
+    } else {
+        curObj->waterEffect = NULL;
     }
     if (behaviourFlags & OBJECT_BEHAVIOUR_INTERACTIVE) {
         address += init_object_interaction_data(curObj, (ObjectInteraction *) address);
+    } else {
+        curObj->interactObj = NULL;
     }
     if (behaviourFlags & OBJECT_BEHAVIOUR_UNK20) {
         address += func_8000FD34(curObj, (Object_5C *) address);
+    } else {
+        curObj->unk5C = NULL;
     }
     if (curObj->header->attachPointCount > 0 && curObj->header->attachPointCount < 10) {
         curObj->attachPoints = (AttachPoint *) address;
         address += sizeof(AttachPoint);
+    } else {
+        curObj->attachPoints = NULL;
     }
     if (curObj->header->particleCount > 0) {
         address += obj_init_emitter(curObj, (ParticleEmitter *) address);
+    } else {
+        curObj->particleEmitter = NULL;
     }
 #ifdef USE_DYNLIGHTS
     if (curObj->header->numLightSources > 0) {
         curObj->lightData = (ObjectLight **) address;
         address += curObj->header->numLightSources * 4;
+    } else {
+        curObj->lightData = NULL;
     }
 #endif
 
     sizeOfobj = (s32) address - (s32) curObj;
     prevObj = curObj;
-    curObj = mempool_alloc_pool((MemoryPoolSlot *) gObjectMemoryPool, sizeOfobj);
+    mempool_realloc_pool(gObjectMemoryPool, curObj, sizeOfobj, PP_RAM_OBJECTS);
+    //curObj = mempool_alloc_pool((MemoryPoolSlot *) gObjectMemoryPool, sizeOfobj);
     if (curObj == NULL) {
         if (D_8011AE50 != NULL) {
             tex_free((TextureHeader *) (s32) D_8011AE50);
@@ -2213,54 +2238,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
         sizeOfobj = _ALIGN16(sizeOfobj);
     }
 
-    wcopy(gSpawnObjectHeap, curObj, sizeOfobj);
-    /*sizeOfobj >>= 2;
-    while (i < sizeOfobj) {
-        ((u32 *) curObj)[i] = gSpawnObjectHeap[i];
-        i++;
-    }*/
-
-    if (curObj->waterEffect != NULL) {
-        curObj->waterEffect =
-            (WaterEffect *) (((uintptr_t) curObj + (uintptr_t) curObj->waterEffect) - (uintptr_t) gSpawnObjectHeap);
-    }
-    if (curObj->shadow != NULL) {
-        curObj->shadow =
-            (ShadowData *) (((uintptr_t) curObj + (uintptr_t) curObj->shadow) - (uintptr_t) gSpawnObjectHeap);
-    }
-    if (curObj->shading != NULL) {
-        curObj->shading =
-            (ShadeProperties *) (((uintptr_t) curObj + (uintptr_t) curObj->shading) - (uintptr_t) gSpawnObjectHeap);
-    }
-    if (curObj->anyBehaviorData != NULL) {
-        curObj->anyBehaviorData =
-            (void *) (((uintptr_t) curObj + (uintptr_t) curObj->anyBehaviorData) - (uintptr_t) gSpawnObjectHeap);
-    }
-    if (curObj->interactObj != NULL) {
-        curObj->interactObj = (ObjectInteraction *) (((uintptr_t) curObj + (uintptr_t) curObj->interactObj) -
-                                                     (uintptr_t) gSpawnObjectHeap);
-    }
-    if (curObj->unk5C != NULL) {
-        curObj->unk5C = (Object_5C *) (((uintptr_t) curObj + (uintptr_t) curObj->unk5C) - (uintptr_t) gSpawnObjectHeap);
-    }
-    if (curObj->attachPoints != NULL) {
-        curObj->attachPoints =
-            (AttachPoint *) (((uintptr_t) curObj + (uintptr_t) curObj->attachPoints) - (uintptr_t) gSpawnObjectHeap);
-    }
-    if (curObj->header->particleCount > 0) {
-        curObj->particleEmitter = (ParticleEmitter *) (((uintptr_t) curObj + (uintptr_t) curObj->particleEmitter) -
-                                                       (uintptr_t) gSpawnObjectHeap);
-    }
-#ifdef USE_DYNLIGHTS
-    if (curObj->header->numLightSources > 0) {
-        curObj->lightData =
-            (ObjectLight **) (((uintptr_t) curObj + (uintptr_t) curObj->lightData) - (uintptr_t) gSpawnObjectHeap);
-    }
-#endif
-    curObj->modelInstances = (ModelInstance **) &curObj[1];
-
     if (spawnFlags & OBJECT_SPAWN_UNK01) {
-        if (curObj && curObj) {} // Fakematch
         gObjPtrList[gObjectCount++] = curObj;
     }
     run_object_init_func(curObj, entry, 0);
@@ -2290,7 +2268,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
     }
 #endif
     model_anim_offset(0);
-    update_object_stack_trace(OBJECT_SPAWN, -1);
+    update_object_stack_trace(OBJECT_SPAWN, -1);    
     return curObj;
 }
 
@@ -2345,6 +2323,7 @@ s32 init_object_shading(Object *obj, ShadeProperties *shadeData) {
     if (obj->header->modelType == OBJECT_MODEL_TYPE_3D_MODEL) {
         for (i = 0; obj->modelInstances[i] == NULL; i++) {}
         if (obj->modelInstances[i] != NULL && obj->modelInstances[i]->objModel->normals != NULL) {
+            bzero(obj->shading, sizeof(ShadeProperties));
             set_shading_properties(obj->shading, obj->header->shadeAmbient, obj->header->shadeDiffuse, 0,
                                    obj->header->shadeAngleY, obj->header->shadeAngleZ);
             if (obj->header->unk3D != 0) {
@@ -2440,6 +2419,9 @@ s32 init_object_shadow(Object *obj, ShadowData *shadow) {
     set_texture_colour_tag(COLOUR_TAG_MAGENTA);
     shadow->scale = objHeader->shadowScale;
     shadow->meshStart = -1;
+    shadow->meshEnd = 0;
+    shadow->unkC = 0;
+    shadow->unkE = 0;
     D_8011AE50 = shadow->texture;
     if (obj->header->shadowGroup && shadow->texture == NULL) {
         return 0;
@@ -2457,6 +2439,9 @@ s32 init_object_water_effect(Object *obj, WaterEffect *waterEffect) {
     waterEffect->textureFrame = 0;
     waterEffect->animationSpeed = obj->header->unk0 >> 8;
     waterEffect->texture = NULL;
+    waterEffect->meshEnd = 0;
+    waterEffect->unk10 = 0;
+    waterEffect->unk12 = 0;
     set_texture_colour_tag(PP_RAM_SHADOWS);
     if (obj->header->waterEffectGroup) {
         waterEffect->texture = load_texture(obj->header->unk38);
@@ -2476,6 +2461,8 @@ s32 init_object_water_effect(Object *obj, WaterEffect *waterEffect) {
  */
 s32 init_object_interaction_data(Object *obj, ObjectInteraction *interactObj) {
     obj->interactObj = interactObj;
+    interactObj->obj = NULL;
+    bzero(obj->interactObj, sizeof(ObjectInteraction));
     interactObj->distance = 0xFF;
     return sizeof(ObjectInteraction);
 }
@@ -2483,6 +2470,7 @@ s32 init_object_interaction_data(Object *obj, ObjectInteraction *interactObj) {
 // Inits some matrix stuff for objects. It seems to be precomputing something, but not sure what.
 s32 func_8000FD34(Object *obj, Object_5C *matrices) {
     obj->unk5C = matrices;
+    //bzero(obj->unk5C, sizeof(Object_5C));
     func_80016BC4(obj);
     return sizeof(Object_5C);
 }
@@ -10085,6 +10073,10 @@ s32 get_object_property_size(Object *obj, void *obj64) {
         default:
             obj->anyBehaviorData = NULL;
             break;
+    }
+
+    if (obj->anyBehaviorData) {
+        bzero(obj->anyBehaviorData, ret);
     }
 
     return (ret & ~3) + 4;

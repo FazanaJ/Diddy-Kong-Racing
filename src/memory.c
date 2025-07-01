@@ -156,7 +156,33 @@ void mempool_realloc(void *addr, s32 size, s32 colourTag) {
         mempool_free_timer(0);
     }
     mempool_free(addr);
-    addr = mempool_alloc_fixed(size, (u8 *) addr, colourTag, FALSE);
+    addr = mempool_alloc_fixed(POOL_MAIN, size, (u8 *) addr, colourTag, FALSE);
+    if (prevTimer != 0) {
+        mempool_free_timer(prevTimer);
+    }
+}
+
+/**
+ * Resize the memory block while preserving the contents.
+ * Can only go lower, not higher.
+*/
+void mempool_realloc_pool(MemoryPoolSlot *slot, void *addr, s32 size, s32 colourTag) {
+    s32 prevTimer = gFreeQueueTimer;
+    s32 poolID;
+    s32 i;
+
+    for (i = gNumberOfMemoryPools; i != 0; i--) {
+        if (slot == gMemoryPools[i].slots) {
+            poolID = i;
+            break;
+        }
+    }
+
+    if (prevTimer != 0) {
+        mempool_free_timer(0);
+    }
+    mempool_free(addr);
+    addr = mempool_alloc_fixed(poolID, size, (u8 *) addr, colourTag, FALSE);
     if (prevTimer != 0) {
         mempool_free_timer(prevTimer);
     }
@@ -272,7 +298,7 @@ void *mempool_alloc_pool_tag(MemoryPoolSlot *slots, s32 size, s32 colourTag) {
  * Rearranges the memory slots to place one at that address if possible.
  * Official Name: mmAllocAtAddr
  */
-void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag, s32 markFixed) {
+void *mempool_alloc_fixed(s32 poolID, s32 size, u8 *address, u32 colorTag, s32 markFixed) {
     s32 i;
     MemoryPoolSlot *curSlot;
     MemoryPoolSlot *slots;
@@ -280,21 +306,21 @@ void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag, s32 markFixed) {
 
     crash_assert(size == 0, "Alloc size 0");
     intFlags = interrupts_disable();
-    if ((gMemoryPools[POOL_MAIN].curNumSlots + 1) == gMemoryPools[POOL_MAIN].maxNumSlots) {
+    if ((gMemoryPools[poolID].curNumSlots + 1) == gMemoryPools[poolID].maxNumSlots) {
         interrupts_enable(intFlags);
         crash_nomemory(0, COLOUR_TAG_NONE);
     } else {
         if (size & ALIGNCHECK) {
             size = _ALIGN8(size);
         }
-        slots = gMemoryPools[POOL_MAIN].slots;
+        slots = gMemoryPools[poolID].slots;
         for (i = 0; i != MEMSLOT_NONE; i = curSlot->nextIndex) {
             curSlot = &slots[i];
             if (curSlot->flags == SLOT_FREE) {
                 if ((u32) address >= (u32) curSlot->data &&
                     (u32) address + size <= (u32) curSlot->data + curSlot->size) {
                     if (address == (u8 *) curSlot->data) {
-                        mempool_slot_assign(POOL_MAIN, i, size, 1, 0, colorTag);
+                        mempool_slot_assign(poolID, i, size, 1, 0, colorTag);
                         interrupts_enable(intFlags);
                         debug_ram(size, colorTag);
                         if (markFixed) {
@@ -304,8 +330,8 @@ void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag, s32 markFixed) {
                         }
                         return curSlot->data;
                     } else {
-                        i = mempool_slot_assign(POOL_MAIN, i, (u32) address - (u32) curSlot->data, 0, 1, colorTag);
-                        mempool_slot_assign(POOL_MAIN, i, size, 1, 0, colorTag);
+                        i = mempool_slot_assign(poolID, i, (u32) address - (u32) curSlot->data, 0, 1, colorTag);
+                        mempool_slot_assign(poolID, i, size, 1, 0, colorTag);
                         interrupts_enable(intFlags);
                         debug_ram(size, colorTag);
                         if (markFixed) {

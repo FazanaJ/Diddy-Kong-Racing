@@ -121,8 +121,9 @@ s32 mempool_slot_assign(MemoryPools poolIndex, s32 slotIndex, s32 size, s32 slot
 s32 get_memory_colour_tag_count(u32 colourTag);
 void mempool_free_addr(u8 *address);
 MemoryPoolSlot *mempool_slot_find(MemoryPools poolIndex, s32 size, u32 colourTag, s32 findLargest);
-void *mempool_alloc_fixed(s32 size, u8 *address, u32 colorTag, s32 markFixed);
+void *mempool_alloc_fixed(s32 poolID, s32 size, u8 *address, u32 colorTag, s32 markFixed);
 MemoryPoolSlot *mempool_alloc_largest(u32 colourTag);
+void mempool_realloc_pool(MemoryPoolSlot *slot, void *addr, s32 size, s32 colourTag);
 void *mempool_alloc_pool_tag(MemoryPoolSlot *slots, s32 size, s32 colourTag);
 void mempool_realloc(void *addr, s32 size, s32 colourTag);
 
