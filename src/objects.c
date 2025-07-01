@@ -1129,6 +1129,8 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
             gIsSilverCoinRace = 0;
         }
     }
+    D_8011AE70 = 0;
+    gNumFinishedRacers = 1;
 
     D_8011AD3E = 0;
     //mem = mempool_alloc_safe(0x3000, PP_RAM_OBJMAPS);
@@ -1155,7 +1157,8 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
         if (*mem == 0) {
             mempool_free(mem);
         } else {
-            mempool_realloc(mem, *mem, PP_RAM_OBJMAPS);
+            // The extra 0x10 prevents some weird bug.
+            mempool_realloc(mem, (*mem) + 0x10, PP_RAM_OBJMAPS);
             objPos = (u8 *) (D_8011AEB0[arg1] + 4);
             for (var_s0 = 0; var_s0 < *mem; var_s0 += temp_t3) {
                 spawn_object((LevelObjectEntryCommon *) objPos, OBJECT_SPAWN_UNK01);
@@ -1163,17 +1166,13 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
             }
         }
         
-        if (arg1 != 0) {
-            D_8011AE70 = 0;
-            gNumFinishedRacers = 1;
-            if (gPathUpdateOff == FALSE) {
-                gParticlePtrList_flush();
-                func_80017E98();
-                spectate_update();
-                func_8001E93C();
-            }
-            gPathUpdateOff = TRUE;
+        if (gPathUpdateOff == FALSE) {
+            gParticlePtrList_flush();
+            func_80017E98();
+            spectate_update();
+            func_8001E93C();
         }
+        gPathUpdateOff = TRUE;
     }
 }
 
