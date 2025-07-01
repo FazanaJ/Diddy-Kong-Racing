@@ -726,12 +726,12 @@ void allocate_object_pools(void) {
     gParticlePtrList = mempool_alloc_safe(sizeof(uintptr_t) * 200, PP_RAM_OBJLISTS);
     D_8011AE6C = mempool_alloc_safe(sizeof(uintptr_t) * 20, PP_RAM_OBJLISTS);
     D_8011AE74 = mempool_alloc_safe(sizeof(uintptr_t) * 128, PP_RAM_OBJLISTS);
-    //gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, PP_RAM_OBJLISTS);
-    //gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * CAMCONTROL_COUNT, PP_RAM_OBJLISTS);
+    gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, PP_RAM_OBJLISTS);
+    gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * CAMCONTROL_COUNT, PP_RAM_OBJLISTS);
     gRacers = mempool_alloc_safe(sizeof(uintptr_t) * (10 * 3), PP_RAM_OBJLISTS);
     gRacersByPort = (Object **) ((u8 *) gRacers + (sizeof(uintptr_t) * 10));
     gRacersByPosition = (Object **) ((u8 *) gRacersByPort + (sizeof(uintptr_t) * 10));
-    //gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, PP_RAM_OBJLISTS);
+    gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, PP_RAM_OBJLISTS);
     D_8011ADCC = mempool_alloc_safe(8, PP_RAM_OBJLISTS);
     D_8011AFF4 = mempool_alloc_safe(sizeof(unk800179D0) * 16, PP_RAM_OBJLISTS);
     tempTable2 = (s16 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE);
@@ -821,6 +821,8 @@ void decrypt_magic_codes(s32 *data, s32 length) {
     }
 }
 
+u16 gAINodeAllocCount;
+
 /**
  * Set all object counters and headers to zero, effectively telling the game there are no objects currently in the
  * scene.
@@ -841,9 +843,25 @@ void clear_object_pointers(void) {
     D_8011AD22[0] = 0;
     D_8011AD22[1] = 0;
 
-    for (i = 0; i < AINODE_COUNT; i++) {
-        //(*gAINodes)[i] = NULL;
+    gAINodeAllocCount = AINODE_COUNT;
+
+    /*if (gTrackCheckpoints) {
+        mempool_free(gTrackCheckpoints);
+        gTrackCheckpoints = NULL;
     }
+    if (gAINodes) {
+        mempool_free(gAINodes);
+        gAINodeAllocCount = 0;
+        gAINodes = NULL;
+    }
+    if (gCameraObjList) {
+        mempool_free(gCameraObjList);
+        gCameraObjList = NULL;
+    }*/
+    if (D_8011AE74) {
+        //mempool_free(D_8011AE74);
+    }
+
     for (i = 0; i < 8; i++) {
         (*D_8011ADCC)[i] = 0;
     }
@@ -896,8 +914,12 @@ void free_all_objects(void) {
     gObjectCount = 0;
     gObjectListStart = 0;
     clear_object_pointers();
-    mempool_free((void *) D_8011AEB0[0]);
-    mempool_free((void *) D_8011AEB0[1]);
+    if (D_8011AEB0[0]) {
+        mempool_free((void *) D_8011AEB0[0]);
+    }
+    if (D_8011AEB0[1]) {
+        mempool_free((void *) D_8011AEB0[1]);
+    }
 }
 
 //gObjectHeaderCache = mempool_alloc_safe(6 *100, PP_RAM_ASSET_CACHE);
@@ -1005,6 +1027,89 @@ s32 normalise_time(s32 timer) {
     return timer;
 }
 
+//u8 *gObjListAlloc;
+
+void track_preallocate_objlists(s32 objMap, s32 collectables) {
+    s32 assetSize;
+    s32 i;
+    s32 *mem;
+    s32 var_s0;
+    u32 assetOffset;
+    u32 *objMapTable;
+    u8 *compressedAsset;
+    s32 temp_t3;
+    s32 iter;
+    s32 j;
+    s32 checkpoints;
+    s32 ainodes;
+    s32 camControllers;
+    s32 mapID[2];
+
+    return;
+
+    checkpoints = 0;
+    ainodes = 0;
+    camControllers = 0;
+    mapID[0] = objMap;
+    mapID[1] = collectables;
+
+    objMapTable = (u32 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_MAPS_TABLE);
+    mem = mempool_alloc_largest(PP_RAM_TEMP);
+    for (i = 0; objMapTable[i] != 0xFFFFFFFF; i++) {}
+    i--;
+    for (j = 0; j < 2; j++) {
+        D_8011AEB0[iter] = mem;
+        D_8011AE98[iter] = (u8 *) (D_8011AEB0[iter] + 4);
+        D_8011AEA0[iter] = 0;
+        D_8011AEA8[iter] = mapID[j];
+        if (mapID[j] >= i) {
+            mapID[j] = 0;
+        }
+        assetOffset = objMapTable[mapID[j]];
+        assetSize = objMapTable[mapID[j] + 1] - assetOffset;
+
+        if (assetSize != 0) {
+            compressedAsset = (u8 *) mem;
+            compressedAsset = ((compressedAsset + get_asset_uncompressed_size(ASSET_LEVEL_OBJECT_MAPS, assetOffset)) - (assetSize)) + 0x20;
+            load_asset_to_address(ASSET_LEVEL_OBJECT_MAPS, (u32) compressedAsset, assetOffset, assetSize);
+            gzip_inflate(compressedAsset, (u8 *) mem);
+            D_8011AE98[iter] = (u8 *) (D_8011AEB0[iter] + 4);
+            D_8011AEA0[iter] = *mem;
+            for (var_s0 = 0; var_s0 < D_8011AEA0[iter]; var_s0 += temp_t3) {
+                LevelObjectEntryCommon *entry = D_8011AE98[iter];
+
+                if (entry->objectID == ASSET_OBJECT_ID_CHECKPOINT) {
+                    checkpoints++;
+                } else if (entry->objectID == ASSET_OBJECT_ID_AINODE) {
+                    ainodes++;
+                }else if (entry->objectID == ASSET_OBJECT_ID_CAMERA_CONTROL) {
+                    camControllers++;
+                }
+                D_8011AE98[iter] = &D_8011AE98[iter][temp_t3 = D_8011AE98[iter][1] & 0x3F];
+            }
+            
+        }
+    }
+    mempool_free(objMapTable);
+    mempool_free(mem);
+
+    debug_printf("Checkpoints: %d, AINodes: %d, CamObjs: %d\n", checkpoints, ainodes, camControllers);
+
+    if (checkpoints > 0) {
+        gTrackCheckpoints = mempool_alloc(sizeof(uintptr_t) * checkpoints, PP_RAM_TEMPOBJLIST);
+        bzero(gTrackCheckpoints, sizeof(uintptr_t) * checkpoints);
+    }
+    /*if (ainodes > 0) {
+        gAINodes = mempool_alloc(sizeof(uintptr_t) * ainodes, PP_RAM_TEMPOBJLIST);
+        bzero(gAINodes, sizeof(uintptr_t) * ainodes);
+        gAINodeAllocCount = ainodes;
+    }
+    if (camControllers > 0) {
+        gCameraObjList = mempool_alloc(sizeof(uintptr_t) * camControllers, PP_RAM_TEMPOBJLIST);
+        bzero(gCameraObjList, sizeof(uintptr_t) * camControllers);
+    }*/
+}
+
 void func_8000C8F8(s32 arg0, s32 arg1) {
     s32 assetSize;
     Settings *settings;
@@ -1016,32 +1121,32 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
     UNUSED s32 pad;
     u8 *compressedAsset;
     s32 temp_t3;
-    s32 checkpoints;
-    s32 ainodes;
-    s32 camControllers;
 
-    settings = get_settings();
-    assetOffset = settings->bosses | 0x820; // 0x820 = Wizpig 2 and some unknown 0x800 boss bit
-    gIsSilverCoinRace =
-        ((settings->courseFlagsPtr[settings->courseId] & 4) == 0) && (((1 << settings->worldId) & assetOffset) != 0);
+    if (arg1 != 0) {
+        settings = get_settings();
+        assetOffset = settings->bosses | 0x820; // 0x820 = Wizpig 2 and some unknown 0x800 boss bit
+        gIsSilverCoinRace =
+            ((settings->courseFlagsPtr[settings->courseId] & 4) == 0) && (((1 << settings->worldId) & assetOffset) != 0);
 
-    if (!(settings->courseFlagsPtr[settings->courseId] & 2)) {
-        gIsSilverCoinRace = 0;
-    }
-    if (is_in_tracks_mode()) {
-        gIsSilverCoinRace = 0;
-    }
-    if (get_current_level_race_type()) {
-        gIsSilverCoinRace = 0;
+        if (!(settings->courseFlagsPtr[settings->courseId] & 2)) {
+            gIsSilverCoinRace = 0;
+        }
+        if (is_in_tracks_mode()) {
+            gIsSilverCoinRace = 0;
+        }
+        if (get_current_level_race_type()) {
+            gIsSilverCoinRace = 0;
+        }
     }
 
     D_8011AD3E = 0;
-    mem = mempool_alloc_safe(0x3000, PP_RAM_OBJLISTS);
+    //mem = mempool_alloc_safe(0x3000, PP_RAM_OBJMAPS);
+    objMapTable = (u32 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_MAPS_TABLE);
+    mem = mempool_alloc_largest(PP_RAM_OBJMAPS);
     D_8011AEB0[arg1] = mem;
     D_8011AE98[arg1] = (u8 *) (D_8011AEB0[arg1] + 4);
     D_8011AEA0[arg1] = 0;
     D_8011AEA8[arg1] = arg0;
-    objMapTable = (u32 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_MAPS_TABLE);
     for (i = 0; objMapTable[i] != 0xFFFFFFFF; i++) {}
     i--;
     if (arg0 >= i) {
@@ -1058,59 +1163,32 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
         load_asset_to_address(ASSET_LEVEL_OBJECT_MAPS, (u32) compressedAsset, assetOffset, assetSize);
         gzip_inflate(compressedAsset, (u8 *) mem);
         mempool_free(objMapTable);
-        D_8011AE98[arg1] = (u8 *) (D_8011AEB0[arg1] + 4);
         D_8011AEA0[arg1] = *mem;
-        D_8011AEC0 = arg1;
-        checkpoints = 0;
-        ainodes = 0;
-        camControllers = 0;
-        if (gTrackCheckpoints) {
-            mempool_free(gTrackCheckpoints);
-        }
-        if (gAINodes) {
-            mempool_free(gAINodes);
-        }
-        if (gCameraObjList) {
-            mempool_free(gCameraObjList);
-        }
-        for (var_s0 = 0; var_s0 < D_8011AEA0[arg1]; var_s0 += temp_t3) {
-            LevelObjectEntryCommon *entry = D_8011AE98;
-
-            if (entry->objectID == ASSET_OBJECT_ID_CHECKPOINT) {
-                checkpoints++;
-            } else if (entry->objectID == ASSET_OBJECT_ID_AINODE) {
-                ainodes++;
-            }else if (entry->objectID == ASSET_OBJECT_ID_CAMERA_CONTROL) {
-                camControllers++;
+        //debug_printf("%X\n", (s32) D_8011AEA0[arg1]);
+        if (D_8011AEA0[arg1] == 0) {
+            mempool_free(mem);
+        } else {
+            mempool_realloc(mem, *mem, PP_RAM_OBJMAPS);
+            D_8011AE98[arg1] = (u8 *) (D_8011AEB0[arg1] + 4);
+            for (var_s0 = 0; var_s0 < D_8011AEA0[arg1]; var_s0 += temp_t3) {
+                spawn_object((LevelObjectEntryCommon *) D_8011AE98[arg1], OBJECT_SPAWN_UNK01);
+                D_8011AE98[arg1] = &D_8011AE98[arg1][temp_t3 = D_8011AE98[arg1][1] & 0x3F];
             }
-
-            D_8011AE98[arg1] = &D_8011AE98[arg1][temp_t3 = D_8011AE98[arg1][1] & 0x3F];
+            D_8011AE98[arg1] = (u8 *) (D_8011AEB0[arg1] + 4);
         }
-        debug_printf("Checkpoints: %d, AINodes: %d, CamObjs: %d\n", checkpoints, ainodes, camControllers);
-        if (checkpoints > 0) {
-            gTrackCheckpoints = mempool_alloc(sizeof(uintptr_t) * checkpoints, PP_RAM_OBJLISTS);
-        }
-        if (ainodes > 0) {
-            gTrackCheckpoints = mempool_alloc(sizeof(uintptr_t) * ainodes, PP_RAM_OBJLISTS);
-        }
-        if (camControllers > 0) {
-            gTrackCheckpoints = mempool_alloc(sizeof(uintptr_t) * camControllers, PP_RAM_OBJLISTS);
-        }
-        D_8011AE98[arg1] = (u8 *) (D_8011AEB0[arg1] + 4);
-        for (var_s0 = 0; var_s0 < D_8011AEA0[arg1]; var_s0 += temp_t3) {
-            spawn_object((LevelObjectEntryCommon *) D_8011AE98[arg1], OBJECT_SPAWN_UNK01);
-            D_8011AE98[arg1] = &D_8011AE98[arg1][temp_t3 = D_8011AE98[arg1][1] & 0x3F];
-        }
-        D_8011AE98[arg1] = (u8 *) (D_8011AEB0[arg1] + 4);
+        D_8011AEC0 = arg1;
         D_8011AE70 = 0;
-        gNumFinishedRacers = 1;
-        if (gPathUpdateOff == FALSE) {
-            gParticlePtrList_flush();
-            func_80017E98();
-            spectate_update();
-            func_8001E93C();
+        
+        if (arg1 != 0) {
+            gNumFinishedRacers = 1;
+            if (gPathUpdateOff == FALSE) {
+                gParticlePtrList_flush();
+                func_80017E98();
+                spectate_update();
+                func_8001E93C();
+            }
+            gPathUpdateOff = TRUE;
         }
-        gPathUpdateOff = TRUE;
     }
 }
 
@@ -7152,6 +7230,10 @@ void spectate_update(void) {
     s32 continueLoop;
     s32 i;
 
+    if (gCameraObjList == NULL) {
+        return;
+    }
+
     gCameraObjCount = 0;
     for (i = 0; i < gObjectCount; i++) {
         objPtr = gObjPtrList[i];
@@ -7269,10 +7351,12 @@ void ainode_update(void) {
     if (gInitAINodes == FALSE) {
         return;
     }
-    gInitAINodes = FALSE;
-    for (i = 0; i < AINODE_COUNT; i++) {
-        (*gAINodes)[i] = NULL;
+
+    if (gAINodes == NULL) {
+        return;
     }
+
+    gInitAINodes = FALSE;
     nodeCount = 0;
     // Store each existing node ID in the temporary vars.
     for (i = 0; i < gObjectCount; i++) {
@@ -7292,7 +7376,7 @@ void ainode_update(void) {
         return;
     }
     // Find and set each neighbouring node and distance for each existing node.
-    for (i = 0; i < AINODE_COUNT; i++) {
+    for (i = 0; i < gAINodeAllocCount; i++) {
         obj = (*gAINodes)[i];
         if (obj != NULL) {
             aiNodeObj64 = obj->ai_node;
@@ -7373,7 +7457,7 @@ s16 obj_elevation(f32 yPos) {
  */
 s32 ainode_register(Object *obj) {
     s32 i;
-    for (i = 0; i < AINODE_COUNT; i++) {
+    for (i = 0; i < gAINodeAllocCount; i++) {
         if ((*gAINodes)[i] == NULL) {
             (*gAINodes)[i] = obj;
             return i;
@@ -7405,7 +7489,7 @@ s32 ainode_find_nearest(f32 diffX, f32 diffY, f32 diffZ, s32 useElevation) {
     }
     dist = 50000.0;
     result = 0xFF;
-    for (numSteps = 0; numSteps != AINODE_COUNT; numSteps++) {
+    for (numSteps = 0; numSteps != gAINodeAllocCount; numSteps++) {
         obj = (*gAINodes)[numSteps];
         if (obj) {
             levelObj = &((obj->level_entry)->aiNode);
@@ -7566,7 +7650,7 @@ s32 ainode_find_next(s32 nodeId, s32 nextNodeId, s32 direction) {
     s32 i;
     s32 someCount;
 
-    if (nodeId < -1 || nodeId >= AINODE_COUNT) {
+    if (nodeId < -1 || nodeId >= gAINodeAllocCount) {
         return NODE_NONE;
     }
     aiNodeObj = (*gAINodes)[nodeId];
@@ -7620,7 +7704,7 @@ s16 func_8001CD28(s32 arg0, s32 arg1, s32 arg2, s32 arg3) {
     do {
         sp154[i] = 0;
         i++;
-    } while (i < AINODE_COUNT);
+    } while (i < gAINodeAllocCount);
 
     aiNodeObj = (*gAINodes)[arg0];
     aiNode = aiNodeObj->ai_node;
@@ -7741,7 +7825,7 @@ void ainode_tail_set(s32 nodeID) {
  * Return the AI node assigned to the given ID.
  */
 Object *ainode_get(s32 nodeID) {
-    if (nodeID >= 0 && nodeID < AINODE_COUNT) {
+    if (nodeID >= 0 && nodeID < gAINodeAllocCount) {
         return gAINodes[0][nodeID];
     }
     return NULL;

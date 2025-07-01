@@ -224,6 +224,8 @@ typedef enum DebugRam {
     PP_RAM_VOID,
     PP_RAM_COLLISION,
     PP_RAM_NORMALS,
+    PP_RAM_TEMPOBJLIST,
+    PP_RAM_OBJMAPS,
 
     PP_RAM_TOTAL,
 } DebugRam;
@@ -296,7 +298,9 @@ extern u8 *main_BSS_START[];
     "AudLib FX", \
     "Void\t", \
     "Collision", \
-    "Normals\t"
+    "Normals\t", \
+    "Temp ObjList", \
+    "Obj Maps"
 
 #define NUM_PERF_ITERATIONS 60
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS

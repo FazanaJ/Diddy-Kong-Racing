@@ -329,6 +329,7 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     D_8011B110 = 0;
     D_8011B114 = 0x10000;
     path_enable();
+    track_preallocate_objlists(arg6, collectables);
     func_8000C8F8(arg6, 0);
     func_8000C8F8(collectables, 1);
     gScenePlayerViewports = numberOfPlayers;
