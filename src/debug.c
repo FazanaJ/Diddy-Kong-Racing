@@ -776,6 +776,8 @@ extern s32 *D_8011D628;
 extern s32 *D_8011D644;
 extern s32 *gObjectHeaderCache;
 extern s32 *gTrackTexIDs;
+extern s32 *gMiscAssetCache;
+extern s32 *gParticleCache;
 
 char *debug_asset_lookup(MemoryPoolSlot *slot) {
     s32 i;
@@ -828,6 +830,10 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
                 return "gTextureCache";
             } else if ((s32) slot->data == (s32) gTrackTexIDs) {
                 return "gTrackTexIDs";
+            } else if ((s32) slot->data == (s32) gMiscAssetCache) {
+                return "gMiscAssetCache";
+            } else if ((s32) slot->data == (s32) gParticleCache) {
+                return "gParticleCache";
             }
             return str;
 

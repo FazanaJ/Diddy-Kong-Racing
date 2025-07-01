@@ -382,6 +382,7 @@ void main_game_loop(void) {
     textbox_cycle(sLogicUpdateRate);
     track_tex_cycle(sLogicUpdateRate);
     obj_model_cycle(sLogicUpdateRate);
+    miscasset_cycle(sLogicUpdateRate);
     mempool_free_queue_clear();
     if (!gIsPaused) {
         disable_cutscene_camera();

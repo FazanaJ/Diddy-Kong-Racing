@@ -240,6 +240,10 @@ Object *D_8011AE08[16];
 //u8 (*gObjectHeaderReferences)[ASSET_OBJECTS_COUNT];
 s32 *gObjectHeaderCache;
 s16 *gObjectHeaderCacheIDs;
+s32 *gMiscAssetCache;
+s8 *gMiscAssetCacheIDs;
+s8 *gMiscAssetStaleTimers;
+s32 gMiscAssetCount;
 TextureHeader *D_8011AE50;
 TextureHeader *D_8011AE54;
 Object **gObjPtrList; // Not sure about the number of elements
@@ -737,8 +741,9 @@ void allocate_object_pools(void) {
     }
     gAssetsObjectHeadersTableLength--;
     mempool_free(tempTable);
-    gObjectHeaderCache = mempool_alloc_safe(6 * 75, PP_RAM_ASSET_CACHE);
-    gObjectHeaderCacheIDs = (s16 *) ((u8 *) gObjectHeaderCache + (75 * 4));
+    gObjectHeaderCache = mempool_alloc_safe((sizeof(uintptr_t) + sizeof(s16)) * 75, PP_RAM_ASSET_CACHE);
+    gObjectHeaderCacheIDs = (s16 *) ((u8 *) gObjectHeaderCache + (75 * sizeof(uintptr_t)));
+    gObjectHeaderCacheCount = 0;
     //gLoadedObjectHeaders = mempool_alloc_safe(gAssetsObjectHeadersTableLength * 4, PP_RAM_ASSETTABLE);
     //gObjectHeaderReferences = mempool_alloc_safe(gAssetsObjectHeadersTableLength, PP_RAM_ASSETTABLE);
 
@@ -747,24 +752,23 @@ void allocate_object_pools(void) {
         gObjectHeaderCacheIDs[i] = -1;
     }
 
-    /*for (i = 0; i < gAssetsObjectHeadersTableLength; i++) {
-        (*gObjectHeaderReferences)[i] = 0;
-    }*/
+    
+    gMiscAssetCache = mempool_alloc_safe(25 * (sizeof(uintptr_t) + sizeof(s8) + sizeof(s8)), PP_RAM_ASSET_CACHE);
+    gMiscAssetCacheIDs = (s16 *) ((u8 *) gMiscAssetCache + (25 * sizeof(uintptr_t)));
+    gMiscAssetStaleTimers = (s16 *) ((u8 *) gMiscAssetCacheIDs + (25 * sizeof(s8)));
+    gMiscAssetCount = 0;
 
-    assettable_tag(PP_RAM_MISCASSET);
-    gAssetsMiscSection = (s32 *) load_asset_section_from_rom(ASSET_MISC);
+    for (i = 0; i < 25; i++) {
+        gMiscAssetCache[i] = -1;
+        gMiscAssetCacheIDs[i] = -1;
+        gMiscAssetStaleTimers[i] = -1;
+    }
+
     tempTable = (s32 *) load_asset_section_from_rom(ASSET_MISC_TABLE);
-    //gAssetsMiscTable = (s32 *) load_asset_section_from_rom(ASSET_MISC_TABLE);
     gAssetsMiscTableLength = 0;
     while (-1 != tempTable[gAssetsMiscTableLength]) {
         gAssetsMiscTableLength++;
     }
-    assettable_tag(COLOUR_TAG_GREY);
-
-    decrypt_magic_codes(
-        &gAssetsMiscSection[tempTable[ASSET_MISC_MAGIC_CODES]],
-        (tempTable[ASSET_MISC_TITLE_SCREEN_DEMO_IDS] - tempTable[ASSET_MISC_MAGIC_CODES]) *
-            sizeof(s32 *));
     mempool_free(tempTable);
     gObjPtrList = mempool_alloc_safe(sizeof(uintptr_t) * OBJECT_SLOT_COUNT, PP_RAM_OBJLISTS);
     gFirstTimeFinish = 0;
@@ -772,6 +776,64 @@ void allocate_object_pools(void) {
     gIsTimeTrial = FALSE;
     gObjectUpdateRateF = 2.0f;
     clear_object_pointers();
+}
+
+s32 miscasset_cycle(s32 updateRate) {
+    s32 i;
+    for (i = 0; i < gMiscAssetCount; i++) {
+        if (gMiscAssetStaleTimers[i] > 0) {
+            gMiscAssetStaleTimers[i] -= updateRate;
+            if (gMiscAssetStaleTimers[i] <= 0) {
+                mempool_free(gMiscAssetCache[i]);
+                gMiscAssetCache[i] = -1;
+                gMiscAssetCacheIDs[i] = -1;
+            }
+        }
+    }
+}
+
+void *miscasset_seek_new(s32 index) {
+    u32 assetTableEntry[2];
+    s32 i;
+    s32 slotIndex;
+    s32 size;
+    ParticleBehaviour *address;
+    
+    for (i = 0; i < gMiscAssetCount; i++) {
+        if (gMiscAssetCacheIDs[i] == index) {
+            gMiscAssetStaleTimers[i] = 10;
+            return (ParticleBehaviour *) gMiscAssetCache[i];
+        }
+    }
+
+    load_asset_to_address(ASSET_MISC_TABLE, &assetTableEntry, index * sizeof(s32), sizeof(s32) * 2);
+
+    size = (assetTableEntry[1] - assetTableEntry[0]) * 4;
+
+    address = mempool_alloc(size, PP_RAM_MISCASSET);
+
+    load_asset_to_address(ASSET_MISC, (u32) address, assetTableEntry[0] * 4, size);
+
+    if (index == ASSET_MISC_MAGIC_CODES) {
+        decrypt_magic_codes(address, size);
+    }
+
+    slotIndex = -1;
+    for (i = 0; i < gMiscAssetCount; i++) {
+        if (gMiscAssetCacheIDs[i] == -1) {
+            slotIndex = i;
+            break;
+        }
+    }
+    if (slotIndex == -1) {
+        slotIndex = gMiscAssetCount;
+        gMiscAssetCount++;
+    }
+    gMiscAssetCache[slotIndex] = (s32) address;
+    gMiscAssetCacheIDs[slotIndex] = index;
+    gMiscAssetStaleTimers[slotIndex] = 10;
+
+    return address;
 }
 
 // Decrypts cheats
@@ -8052,22 +8114,13 @@ void calc_env_mapping_for_object(ObjectModel *model, s16 zRot, s16 xRot, s16 yRo
     }
 }
 
-s32 miscasset_seek(s32 index) {
-    s32 ret[2];
-    load_asset_to_address(ASSET_MISC_TABLE, (u32) &ret, index * (sizeof(s32)), sizeof(s32) * 2);
-    return ret[0];
-}
-
 /**
  * Returns a pointer to the asset in the misc. section. If index is out of range, then this
  * function just returns the pointer to gAssetsMiscSection.
  * Official name: objGetTable
  */
 s32 *get_misc_asset(s32 index) {
-    if (index < 0 || index >= gAssetsMiscTableLength) {
-        return gAssetsMiscSection;
-    }
-    return (s32 *) &gAssetsMiscSection[miscasset_seek(index)];
+    return miscasset_seek_new(index);
 }
 
 s32 func_8001E2EC(s32 arg0) {
