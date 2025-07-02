@@ -113,6 +113,7 @@ void audio_init(OSSched *sc) {
     gSeqTableAddr = addrPtr[ASSET_AUDIO_4];
     load_asset_to_address(ASSET_AUDIO, (u32) gSequenceTable, addrPtr[ASSET_AUDIO_4], seqfSize);
     alSeqFileNew(gSequenceTable, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_4]));
+    mempool_free(addrPtr);
 
     synth_config.maxVVoices = 40;
     synth_config.maxPVoices = 40;
@@ -138,7 +139,6 @@ void audio_init(OSSched *sc) {
     audioStartThread();
 #endif
     sound_volume_change(VOLUME_NORMAL);
-    mempool_free(addrPtr);
     sndp_set_active_sound_limit(10);
     gBlockMusicChange = FALSE;
     gMusicPlaying = FALSE;
@@ -158,8 +158,13 @@ void audio_init(OSSched *sc) {
 SoundData gAudTableTemp;
 
 SoundData *sfxtable_seek(s32 offset, s32 id) {
-    s32 ret[2];
-    load_asset_to_address(ASSET_AUDIO, (u32) &gAudTableTemp, offset + (id * sizeof(SoundData)), sizeof(SoundData));
+    s32 mult;
+    if (offset == gSFXTableAddr) {
+        mult = sizeof(SoundData);
+    } else {
+        mult = sizeof(MusicData);
+    }
+    load_asset_to_address(ASSET_AUDIO, (u32) &gAudTableTemp, offset + (id * mult), mult);
     return &gAudTableTemp;
 }
 

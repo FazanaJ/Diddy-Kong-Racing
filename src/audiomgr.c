@@ -147,6 +147,7 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
         c[1].maxVVoices = 0;
         alInit(&__am.g, c);
         mempool_free(asset8);
+        mempool_free(assetAudioTable);
     } else {
         alInit(&__am.g, c);
     }
