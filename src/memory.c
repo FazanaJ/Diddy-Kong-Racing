@@ -62,7 +62,7 @@ void mempool_init_main(void) {
         ramEnd = RAM_END;
     }
     mempool_init(&gMainMemoryPool, ramEnd - (s32) (&gMainMemoryPool), MAIN_POOL_SLOT_COUNT);
-    mempool_free_timer(0);
+    mempool_free_timer(2);
     gFreeQueueCount = 0;
 }
 
