@@ -193,6 +193,8 @@ s32 get_size_of_asset_section(u32 assetIndex) {
 
 #define MAX_TRANSFER_SIZE 0x5000
 
+u32 gDMATime;
+
 /**
  * Copies data from the game cartridge to a ram address.
  * Official name: romCopy
@@ -217,6 +219,7 @@ void dmacopy_internal(u32 romOffset, u32 ramAddress, s32 numBytes) {
     if (gDebug && gDebug->loading.active) {
         gDebug->loading.dma += (f32) (osGetCount() - first) / 46875000.0f;
     }
+    gDMATime += (s32) OS_CYCLES_TO_USEC(osGetCount() - first);
 }
 
 void assettable_seek_s32(s32 modelID, s32 *offset, s32 *size, s32 assetIndex) {

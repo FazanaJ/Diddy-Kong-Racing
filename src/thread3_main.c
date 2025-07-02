@@ -238,6 +238,7 @@ s32 sTotalTime = 0;
 void calculate_and_update_fps(void);
 
 extern u8 gSortMats;
+extern u32 gDMATime;
 
 /**
  * The main gameplay loop.
@@ -302,6 +303,10 @@ void main_game_loop(void) {
     }
 
     osSetTime(0);
+    if (gDMATime > 0) {
+        debug_printf("DMA: %d\n", gDMATime);
+    }
+    gDMATime = 0;
 
     //static u8 balls = 0;
 
@@ -357,7 +362,6 @@ void main_game_loop(void) {
 
     debug_thread(THREAD3_END, 0);
     debug_render(&gCurrDisplayList, sLogicUpdateRate);
-    //set_render_printf_background_colour(0, 0, 0, 255);
     //render_printf("Gfx: %d/%d\n", ((u32) gCurrDisplayList - (u32) gDisplayLists[gSPTaskNum]) / sizeof(Gwords), NUM_GFX_COMMANDS);
     //render_printf("Mtx: %d/%d\n", ((u32) gGameCurrMatrix - (u32) gMatrixHeap[gSPTaskNum]) / sizeof(Mtx), NUM_MTX_COMMANDS);
     //render_printf("Vtx: %d/%d\n", ((u32) gGameCurrVertexList - (u32) gVertexHeap[gSPTaskNum]) / sizeof(Vertex), NUM_VTX_COMMANDS);

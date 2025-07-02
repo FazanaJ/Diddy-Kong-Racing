@@ -25,7 +25,6 @@ u16 gNumAudioPoints = 0;
 
 /************ .bss ************/
 
-SoundData *gSpatialSoundTable;
 AudioPoint **gAudioPoints;
 AudioPoint *gAudioPointsPool; // 0x24 struct size - 0x5A0 total size - should be 40 elements
 u8 gLastFreePointIndex;
@@ -43,7 +42,6 @@ s32 D_8011AC1C;
 void audspat_init(void) {
     s32 i;
 
-    sound_table_properties(&gSpatialSoundTable, NULL, NULL);
     gAudioPointsPool = mempool_alloc_safe(sizeof(AudioPoint) * MAX_AUDIO_POINTS, PP_RAM_AUD_EMITTERS);
     gFreeAudioPoints = mempool_alloc_safe(sizeof(uintptr_t) * MAX_AUDIO_POINTS, PP_RAM_AUD_EMITTERS);
     gAudioPoints = mempool_alloc_safe(sizeof(uintptr_t) * MAX_AUDIO_POINTS, PP_RAM_AUD_EMITTERS);
@@ -513,9 +511,10 @@ s32 audspat_distance_to_segment(f32 inX, f32 inY, f32 inZ, f32 coords[6], f32 *o
  * Official Name: amSndPlayXYZ
  */
 void audspat_play_sound_at_position(u16 soundId, f32 x, f32 y, f32 z, u8 flags, AudioPoint **handlePtr) {
-    audspat_point_create(gSpatialSoundTable[soundId].soundBite, x, y, z, flags, gSpatialSoundTable[soundId].minVolume,
-                         gSpatialSoundTable[soundId].volume, gSpatialSoundTable[soundId].range, FALSE,
-                         gSpatialSoundTable[soundId].pitch, gSpatialSoundTable[soundId].priority, handlePtr);
+    SoundData *table = sfxtable_seek(gSFXTableAddr, soundId);
+    audspat_point_create(table->soundBite, x, y, z, flags, table->minVolume,
+                         table->volume, table->range, FALSE,
+                         table->pitch, table->priority, handlePtr);
 }
 
 /**

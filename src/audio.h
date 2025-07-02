@@ -44,6 +44,10 @@ typedef struct DelayedSound {
 } DelayedSound;
 
 extern s8 gReverbOverride;
+extern u32 gSFXTableAddr;
+extern u32 gSeqTableAddr;
+
+SoundData *sfxtable_seek(s32 offset, s32 id);
 
 void  alCSPNew(ALCSPlayer *seqp, ALSeqpConfig *config); //lib/src/al/csplayer.c
 void  alCSPSetBank(ALCSPlayer *seqp, ALBank *b); //lib/src/unknown_0C8660.c
