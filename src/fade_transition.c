@@ -38,6 +38,7 @@ Gfx dTransitionFadeSettings[] = {
     gsDPSetTextureConvert(G_TC_FILT),
     gsDPSetAlphaCompare(G_AC_NONE),
     gsDPSetRenderMode(G_RM_CLD_SURF, G_RM_CLD_SURF2),
+    gsDPSetCombineMode(G_CC_PRIMITIVE, G_CC_PRIMITIVE),
     gsSPEndDisplayList(),
 };
 
@@ -439,7 +440,6 @@ void transition_render_fullscreen(Gfx **dList, UNUSED Mtx **mtx, UNUSED Vertex *
     s32 screenSize = fb_size();
     gSPDisplayList((*dList)++, dTransitionFadeSettings);
     gDPSetPrimColor((*dList)++, 0, 0, gCurFadeRed, gCurFadeGreen, gCurFadeBlue, gCurFadeAlpha);
-    gDPSetCombineMode((*dList)++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
     gDPFillRectangle((*dList)++, 0, 0, screenSize & 0x3FF, (screenSize >> 16) & 0x3FF);
     rendermode_reset(dList);
 }
@@ -870,7 +870,6 @@ void transition_render_blank(Gfx **dList, UNUSED Mtx **mtx, UNUSED Vertex **vtx)
     s32 screenSize = fb_size();
     gSPDisplayList((*dList)++, dTransitionFadeSettings);
     gDPSetPrimColor((*dList)++, 0, 0, (gLastFadeRed >> 16), (gLastFadeGreen >> 16), (gLastFadeBlue >> 16), 255);
-    gDPSetCombineMode((*dList)++, G_CC_PRIMITIVE, G_CC_PRIMITIVE);
     gDPFillRectangle((*dList)++, 0, 0, GET_VIDEO_WIDTH(screenSize), GET_VIDEO_HEIGHT(screenSize) & 0x3FF);
     rendermode_reset(dList);
 }

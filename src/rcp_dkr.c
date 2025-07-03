@@ -15,8 +15,6 @@
 
 /************ .data ************/
 
-s16 gGfxTaskMesgNums[16] = { 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
-
 u8 sBGPrimColourR = 0;
 u8 sBGPrimColourG = 0;
 u8 sBGPrimColourB = 0;

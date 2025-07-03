@@ -1106,6 +1106,7 @@ void obj_loop_characterflag(Object *obj, UNUSED s32 updateRate) {
             flagModel->triangles[1].uv0.texCoords = temp_t4;
             flagModel->triangles[1].uv1.texCoords = (temp_t4 | temp_t5);
             flagModel->triangles[1].uv2.texCoords = temp_t5;
+            obj->lightData = NULL;
         }
     }
 }
