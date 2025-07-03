@@ -220,7 +220,6 @@ void init_game(void) {
     gSaveDataFlags = input_update(gSaveDataFlags, 0);
     sBootDelayTimer = 0;
     gGameMode = GAMEMODE_INTRO;
-    osTvType = OS_TV_NTSC;
     segSize = memsize_float(((u32) main_BSS_START) - 0x80000000, &tag);
     debug_printf("Main Segment Size: %2.3f%s (%2.2f%%)\n", segSize, ramStr[tag], (segSize / 1024.0f) * 100.0f);
 

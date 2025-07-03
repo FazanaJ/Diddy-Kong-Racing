@@ -1019,9 +1019,8 @@ ObjectHeader *load_object_header(s32 index) {
     address = mempool_alloc_pool_tag((MemoryPoolSlot *) gObjectMemoryPool, size, PP_RAM_OBJHEADERS);
     if (address != NULL) {
         load_asset_to_address(ASSET_OBJECTS, (u32) address, offset[0], size);
-
         if (get_game_mode() == GAMEMODE_INGAME) {
-            if ((address->flags & OBJECT_HEADER_NO_TIME_TRIAL && gIsTimeTrial) ||
+            if ((address->flags & OBJECT_HEADER_NO_TIME_TRIAL && (gTimeTrialEnabled && get_map_race_type(get_current_map_id()) != RACETYPE_HUBWORLD)) ||
                 (address->flags & OBJECT_HEADER_NO_MULTIPLATER && get_active_player_count() >= 2)) {
                 mempool_free(address);
                 return NULL;
@@ -3241,6 +3240,9 @@ s32 move_object(Object *obj, f32 xPos, f32 yPos, f32 zPos) {
     obj->trans.x_position = newXPos;
     obj->trans.y_position = newYPos;
     obj->trans.z_position = newZPos;
+    if (obj->collisionData) {
+        obj->collisionData->update = TRUE;
+    }
     box = block_boundbox(obj->segmentID);
 
     // For some reason the XYZ positions are converted into integers for the next section
@@ -4964,6 +4966,7 @@ void func_80016BC4(Object *obj) {
     s32 i;
 
     obj->collisionData->mtxFlip = 0;
+    obj->collisionData->update = 3;
     obj_collision_transform(obj);
     //obj_collision_transform(obj); // Not sure why they do this a second time.
     for (i = 0; i < obj->header->numberOfModelIds; i++) {
@@ -5067,13 +5070,17 @@ s32 obj_dist_racer(f32 x, f32 y, f32 z, f32 radius, s32 is2dCheck, Object **sort
  */
 void obj_collision_transform(Object *obj) {
     ObjectTransform trans;
-    s32 i;
     f32 inverseScale;
     MtxF *curMtx;
     MtxF inverseMtx;
     ObjectCollision *colData;
+    u32 first = osGetCount();
 
     colData = obj->collisionData;
+    if (colData->update == FALSE && colData->collidedObj == NULL) {
+        return;
+    }
+
     colData->mtxFlip = (colData->mtxFlip + 1) & 1;
 #ifdef AVOID_UB
     curMtx = &colData->matrices[colData->mtxFlip];
@@ -5089,13 +5096,8 @@ void obj_collision_transform(Object *obj) {
     trans.y_position = -obj->trans.y_position;
     trans.z_position = -obj->trans.z_position;
     mtxf_from_inverse_transform(curMtx, &trans);
-    inverseScale = 1.0 / obj->trans.scale;
-    i = 0;
-    // Zero out the matrix.
-    while (i < 16) {
-        ((f32 *) inverseMtx)[i] = 0.0f;
-        i++;
-    }
+    inverseScale = 1.0f / obj->trans.scale;
+    bzero(&inverseMtx, sizeof(MtxF));
     inverseMtx[0][0] = inverseScale;
     inverseMtx[1][1] = inverseScale;
     inverseMtx[2][2] = inverseScale;
@@ -5104,7 +5106,7 @@ void obj_collision_transform(Object *obj) {
     trans.rotation.y_rotation = obj->trans.rotation.y_rotation;
     trans.rotation.x_rotation = obj->trans.rotation.x_rotation;
     trans.rotation.z_rotation = obj->trans.rotation.z_rotation;
-    trans.scale = 1.0 / inverseScale;
+    trans.scale = 1.0f / inverseScale;
     trans.x_position = obj->trans.x_position;
     trans.y_position = obj->trans.y_position;
     trans.z_position = obj->trans.z_position;
@@ -5114,6 +5116,7 @@ void obj_collision_transform(Object *obj) {
     mtxf_from_transform((MtxF *) colData->_matrices[(colData->mtxFlip + 2) << 1], &trans);
 #endif
     colData->collidedObj = NULL;
+    colData->update--;
 }
 
 // https://decomp.me/scratch/Lxwa8
@@ -7563,10 +7566,6 @@ f32 func_8001C6C4(Object_NPC *npc, Object *npcParentObj, f32 updateRateF, f32 sp
     s32 var_s0;
     s32 someBool;
 
-    if (osTvType == OS_TV_TYPE_PAL) {
-        updateRateF *= 1.2;
-    }
-
     for (i = 0; i < 5; i++) {
         if (npc->nodeData[i] == 0xFF) {
             return 0.0f;
@@ -8658,9 +8657,6 @@ s32 func_8001F460(Object *arg0, s32 arg1, Object *arg2) {
     sp114 = arg1;
 
     obj64 = arg0->animatedObject;
-    if (osTvType == 0) {
-        sp114 *= 1.2;
-    }
     if (obj64->startDelay < 0) {
         var_t0 = 0;
         if (obj64->unk34 & 1) {

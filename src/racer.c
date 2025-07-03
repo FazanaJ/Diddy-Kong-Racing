@@ -8544,9 +8544,6 @@ s32 timetrial_ghost_read(Object *obj) {
     }
 
     catmullX = (f32) obj->properties.common.unk0 / 30.0f;
-    if (osTvType == OS_TV_TYPE_PAL && ghostDataIndex == 2) {
-        catmullX = ((f32) obj->properties.common.unk0 * 1.2) / 30.0f;
-    }
     commonUnk0s32 = catmullX; // Truncate the float to an integer?
 
     ghostNodeCount = gGhostNodeCount[ghostDataIndex];

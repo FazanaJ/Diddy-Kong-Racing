@@ -3425,6 +3425,9 @@ void obj_loop_door(Object *doorObj, s32 updateRate) {
     playSound = 0xFFFFFFFF;
 #endif
     door = doorObj->door;
+    if (door->openDir != DOOR_CLOSED) {
+        doorObj->collisionData->update = TRUE;
+    }
     if (door->doorID >= 0) {
         doorIDFlag = 0x10000 << door->doorID;
         racerObjInter = doorObj->interactObj;
@@ -3655,6 +3658,11 @@ void obj_loop_ttdoor(Object *obj, s32 updateRate) {
     s32 openDoor;
 
     ttDoor = obj->door;
+
+    if (ttDoor->openDir != DOOR_CLOSED) {
+        obj->collisionData->update = TRUE;
+    }
+
     settings = get_settings();
     if (ttDoor->doorType == 0) {
         obj->modelIndex = D_800DCA94[settings->ttAmulet];
@@ -3864,6 +3872,10 @@ void obj_loop_bridge_whaleramp(Object *obj, s32 updateRate) {
     whaleRamp = obj->bridge_whale_ramp;
     entry = &obj->level_entry->bridge_whaleRamp;
     updateRateF = updateRate;
+
+    if (obj->properties.bridgeWhaleRamp.unk0 != 0) {
+        obj->collisionData->update = 1;
+    }
 
     if (entry->unkB != 3) {
         if (obj->properties.bridgeWhaleRamp.unk0 != 0) {
@@ -5429,6 +5441,11 @@ void obj_loop_log(Object *obj, s32 updateRate) {
     f32 diffX;
 
     log = obj->log;
+
+    if (obj->properties.log.angleVel != 0) {
+        obj->collisionData->update = TRUE;
+    }
+
     if (log != NULL) {
         obj->trans.y_position = obj_wave_height(log, updateRate);
     } else {
