@@ -210,7 +210,7 @@ TextureHeader *font_seek(FontData *font, s32 texID) {
     if (font->texturePointers[texID] == NULL) {
         set_texture_colour_tag(PP_RAM_FONTS);
         font->texturePointers[texID] = load_texture(font->textureID[texID]);
-        set_texture_colour_tag(COLOUR_TAG_MAGENTA);
+        set_texture_colour_tag(PP_RAM_MISCTEX);
     }
 
     return font->texturePointers[texID];
@@ -241,7 +241,7 @@ void load_font(s32 fontID) {
             }
         }
     }
-    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
+    set_texture_colour_tag(PP_RAM_MISCTEX);
 }
 
 /**
@@ -1223,9 +1223,9 @@ void func_800C6464_C7064(void) {
     JpCharHeader *jpFontData;
     FontData_JP *jpFontHeader;
 
-    D_8012C2C4_EE604 = mempool_alloc_safe(0x6C00, COLOUR_TAG_RED);
-    D_8012C2C8_EE608 = mempool_alloc_safe(0x400, COLOUR_TAG_RED);
-    D_8012C2CC_EE60C = mempool_alloc_safe(0x9000, COLOUR_TAG_RED);
+    D_8012C2C4_EE604 = mempool_alloc_safe(0x6C00, PP_RAM_FONTS);
+    D_8012C2C8_EE608 = mempool_alloc_safe(0x400, PP_RAM_FONTS);
+    D_8012C2CC_EE60C = mempool_alloc_safe(0x9000, PP_RAM_FONTS);
     for (i = 0, charIndex = 0; i < 128; i++) {
         D_8012C2C8_EE608[i].unk0 = 0;
         D_8012C2C8_EE608[i].dList = &D_8012C2C4_EE604[charIndex];
@@ -1239,12 +1239,12 @@ void func_800C6464_C7064(void) {
     D_8012C2A4_EE5E4 = (FontData_JP *) load_asset_section_from_rom(ASSET_JAPANESE_FONTS_TABLE);
 
     // Init the 4 pointers in D_8012C2A8_EE5E8 (table for spacing of each character in every font)
-    D_8012C2A8_EE5E8[0] = mempool_alloc_safe(NUMBER_OF_JP_FONTS * JP_FONT_ARRAY_SIZE, COLOUR_TAG_RED);
+    D_8012C2A8_EE5E8[0] = mempool_alloc_safe(NUMBER_OF_JP_FONTS * JP_FONT_ARRAY_SIZE, PP_RAM_FONTS);
     for (i = 1; i < 4; i++) {
         D_8012C2A8_EE5E8[i] = &D_8012C2A8_EE5E8[0]->spacing[i * JP_FONT_ARRAY_SIZE];
     }
 
-    jpFontData = mempool_alloc_safe(0x40, COLOUR_TAG_RED);
+    jpFontData = mempool_alloc_safe(0x40, PP_RAM_FONTS);
     for (i = 0; i < 4; i++) {
         jpFontHeader = &D_8012C2A4_EE5E4[i];
         for (charIndex = 0; charIndex < JP_FONT_ARRAY_SIZE; charIndex++) {
@@ -1263,9 +1263,9 @@ void func_800C663C_C723C(void) {
     s32 var_v0;
 
     func_800C67F4_C73F4();
-    D_8012C2D0_EE610 = mempool_alloc_safe(0x6C00, COLOUR_TAG_RED);
-    D_8012C2D4_EE614 = mempool_alloc_safe(0x400, COLOUR_TAG_RED);
-    D_8012C2D8_EE618 = mempool_alloc_safe(0x9000, COLOUR_TAG_RED);
+    D_8012C2D0_EE610 = mempool_alloc_safe(0x6C00, PP_RAM_FONTS);
+    D_8012C2D4_EE614 = mempool_alloc_safe(0x400, PP_RAM_FONTS);
+    D_8012C2D8_EE618 = mempool_alloc_safe(0x9000, PP_RAM_FONTS);
     if (D_8012C2D0_EE610 == NULL || D_8012C2D4_EE614 == NULL || D_8012C2D8_EE618 == NULL) {
         func_800C67F4_C73F4();
         return;

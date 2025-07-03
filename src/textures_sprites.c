@@ -17,7 +17,7 @@
 
 /************ .data ************/
 
-u32 gTexColourTag = COLOUR_TAG_MAGENTA;
+u32 gTexColourTag = PP_RAM_MISCTEX;
 s32 gSpriteOpaque = TRUE;
 
 // See "include/f3ddkr.h" for the defines
@@ -878,7 +878,7 @@ Sprite *tex_load_sprite(s32 spriteID, s32 arg1) {
 
         gFirstTexIsLoaded = TRUE;
     }
-    gTexColourTag = COLOUR_TAG_MAGENTA;
+    gTexColourTag = PP_RAM_MISCTEX;
 
     gFirstTexIsLoaded = FALSE;
     if (allocFailed) {
@@ -987,7 +987,7 @@ s32 load_sprite_info(s32 spriteIndex, s32 *anchorXOut, s32 *anchorYOut, s32 *num
     load_asset_to_address(ASSET_SPRITES, (u32) spriteAsset, start, size);
     set_texture_colour_tag(PP_RAM_SPRITES);
     tex = load_texture(spriteAsset->frameTexOffsets[0] + spriteAsset->baseTextureId);
-    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
+    set_texture_colour_tag(PP_RAM_MISCTEX);
     if (tex != NULL) {
         *formatOut = TEX_FORMAT(tex->format);
         tex_free(tex);

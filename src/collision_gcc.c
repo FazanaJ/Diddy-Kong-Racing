@@ -107,7 +107,8 @@ void generate_collision_candidates(s32 numPoints, Vec3f *origins, Vec3f *targets
 
             grid_mask[counter] =
                 compute_grid_overlap_mask(&gCurrentLevelModel->segmentsBoundingBoxes[i], minX, minZ, maxX, maxZ);
-            segments[counter++] = &gCurrentLevelModel->segments[i];
+            segments[counter] = &gCurrentLevelModel->segments[i];
+            counter++;
             if (counter == 10) {
                 break;
             }
@@ -120,7 +121,7 @@ void generate_collision_candidates(s32 numPoints, Vec3f *origins, Vec3f *targets
         LevelModelSegment *seg = segments[i];
 
         // Insert the segment pointer encoded with MSB = 0 to differentiate from collision facets
-        gCollisionCandidates[j] = (s32) seg & ~0x80000000;
+        gCollisionCandidates[j] = (s32) K0_TO_PHYS(seg);
         j++;
 
         for (batchIndex = 0; batchIndex < seg->numberOfBatches; batchIndex++) {
@@ -284,6 +285,7 @@ s32 resolve_collisions(Vec3f *origin, Vec3f *target, f32 *radius, s8 *surface, s
     s32 insideTriangle;
     u8 bitMask;
     s8 collisionMask;
+    f32 radCheck;
 
     bitMask = 1;
     collisionMask = 0;
@@ -303,7 +305,7 @@ s32 resolve_collisions(Vec3f *origin, Vec3f *target, f32 *radius, s8 *surface, s
 
             for (i = 0; i < gNumCollisionCandidates; i++) {
                 if (gCollisionCandidates[i] >= 0) {
-                    collisionPlanes = ((LevelModelSegment *) (gCollisionCandidates[i] | 0x80000000))->collisionPlanes;
+                    collisionPlanes = ((LevelModelSegment *) (PHYS_TO_K0(gCollisionCandidates[i])))->collisionPlanes;
                 } else {
                     facet = (CollisionFacetPlanes *) gCollisionCandidates[i];
                     A = collisionPlanes[facet->basePlaneIndex * 4 + 0];
@@ -418,6 +420,7 @@ s32 resolve_collisions(Vec3f *origin, Vec3f *target, f32 *radius, s8 *surface, s
         }
         bitMask <<= 1;
 
+        radCheck = -(*radius + 3.0f);
         // Step 2: ensure object is fully pushed out from underneath
         numCollidedSurfaces = 0;
         do {
@@ -425,7 +428,7 @@ s32 resolve_collisions(Vec3f *origin, Vec3f *target, f32 *radius, s8 *surface, s
 
             for (i = 0; i < gNumCollisionCandidates; i++) {
                 if (gCollisionCandidates[i] >= 0) {
-                    collisionPlanes = ((LevelModelSegment *) (gCollisionCandidates[i] | 0x80000000))->collisionPlanes;
+                    collisionPlanes = ((LevelModelSegment *) (PHYS_TO_K0(gCollisionCandidates[i])))->collisionPlanes;
                 } else {
                     facet = (CollisionFacetPlanes *) gCollisionCandidates[i];
                     A = collisionPlanes[facet->basePlaneIndex * 4 + 0];
@@ -434,7 +437,7 @@ s32 resolve_collisions(Vec3f *origin, Vec3f *target, f32 *radius, s8 *surface, s
                     D = collisionPlanes[facet->basePlaneIndex * 4 + 3];
 
                     targetDist = (target->x * A + target->y * B + target->z * C + D) - *radius;
-                    if (targetDist < -0.1 && targetDist > -(*radius + 3.0f)) {
+                    if (targetDist < -0.1f && targetDist > radCheck) {
                         insideTriangle = TRUE;
                         for (j = 0; j < 3 && insideTriangle; j++) {
                             s32 flipSide = FALSE;

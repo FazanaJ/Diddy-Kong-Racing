@@ -135,7 +135,6 @@ void init_particle_assets(void) {
     s32 i;
     s32 *tempTable;
 
-    assettable_tag(PP_RAM_ASSETTABLE);
     tempTable = (ParticleDescriptor **) load_asset_section_from_rom(ASSET_PARTICLES_TABLE);
     gParticlesAssetTableCount = -1;
     while (((s32) tempTable[gParticlesAssetTableCount + 1]) != -1) {
@@ -160,7 +159,6 @@ void init_particle_assets(void) {
         gParticleCacheRefs[i] = 0;
     }
     gNumParticleBhvs = 0;
-    assettable_tag(COLOUR_TAG_GREY);
 }
 
 ParticleDescriptor *particle_desciptor_seek(s32 id) {
@@ -395,7 +393,7 @@ void init_particle_buffers(s32 maxTriangleParticles, s32 maxRectangleParticles, 
             gParticleDummyCount++;
         }
 
-        gParticleDummys = mempool_alloc_safe(gParticleDummyCount * 4, COLOUR_TAG_BLUE);
+        gParticleDummys = mempool_alloc_safe(gParticleDummyCount * 4, PP_RAM_PARTICLES);
         for (i = 0; i < gParticleDummyCount; i++) {
             gParticleDummys[i] = (Sprite *) tex_load_sprite(asset2F[i] & 0x3FFF, 1);
         }

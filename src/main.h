@@ -159,20 +159,6 @@ typedef enum DebugThreads {
 } DebugThreads;
 
 typedef enum DebugRam {
-    PP_RAM_RED,
-    PP_RAM_GREEN,
-    PP_RAM_BLUE,
-    PP_RAM_YELLOW,
-    PP_RAM_MAGENTA,
-    PP_RAM_CYAN,
-    PP_RAM_WHITE,
-    PP_RAM_GREY,
-    PP_RAM_GREY_XLU,
-    PP_RAM_ORANGE,
-    PP_RAM_BLACK,
-    PP_RAM_LIGHT_ORANGE,
-    PP_RAM_LIME,
-
     PP_RAM_CODE,
     PP_RAM_FRAMEBUFFERS,
     PP_RAM_TASKBUFFER,
@@ -226,6 +212,7 @@ typedef enum DebugRam {
     PP_RAM_NORMALS,
     PP_RAM_TEMPOBJLIST,
     PP_RAM_OBJMAPS,
+    PP_RAM_OBJCOL,
 
     PP_RAM_TOTAL,
 } DebugRam;
@@ -234,20 +221,6 @@ typedef enum DebugRam {
 extern u8 *main_BSS_START[];
 
 #define MEMSTRINGS \
-    "Red\t", \
-    "Green\t", \
-    "Blue\t", \
-    "Yellow\t", \
-    "Magenta\t", \
-    "Cyan\t", \
-    "White\t", \
-    "Grey\t", \
-    "GreyXLU\t", \
-    "Orange\t", \
-    "Black\t", \
-    "L. Orange", \
-    "Lime\t", \
-            \
     "Code\t", \
     "Framebuffers", \
     "Task Buffer", \
@@ -300,7 +273,8 @@ extern u8 *main_BSS_START[];
     "Collision", \
     "Normals\t", \
     "Temp ObjList", \
-    "Obj Maps\t"
+    "Obj Maps\t", \
+    "ObjMdl ColData"
 
 #define NUM_PERF_ITERATIONS 60
 #define PERF_AGGREGATE NUM_PERF_ITERATIONS

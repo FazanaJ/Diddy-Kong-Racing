@@ -3010,7 +3010,7 @@ TextureHeader *track_tex_seek(s32 texID) {
     if (gCurrentLevelModel->textures[texID].texture == NULL) {
         set_texture_colour_tag(PP_RAM_LEVELTEX);
         gCurrentLevelModel->textures[texID].texture = load_texture(gTrackTexIDs[texID]);
-        set_texture_colour_tag(COLOUR_TAG_MAGENTA);
+        set_texture_colour_tag(PP_RAM_MISCTEX);
     }
 
     gTrackTexStaleTimer[texID] = 10;
@@ -3047,8 +3047,8 @@ void generate_track(s32 modelId) {
     s32 maxTextures;
 
     set_texture_colour_tag(PP_RAM_LEVELTEX);
-    gCollisionCandidates = mempool_alloc_safe(MAX_COLLISION_CANDIDATES * 4, COLOUR_TAG_YELLOW);
-    gCollisionSurfaces = mempool_alloc_safe(MAX_COLLISION_CANDIDATES, COLOUR_TAG_YELLOW);
+    gCollisionCandidates = mempool_alloc_safe(MAX_COLLISION_CANDIDATES * 4, PP_RAM_COLLISION);
+    gCollisionSurfaces = mempool_alloc_safe(MAX_COLLISION_CANDIDATES, PP_RAM_COLLISION);
     gNumCollisionCandidates = 0;
     gLevelModelTable = (s32 *) load_asset_section_from_rom(ASSET_LEVEL_MODELS_TABLE);
     // Allocate this last, so it ends up being the latest thing allocated, and then first thing freed.
@@ -3138,7 +3138,7 @@ void generate_track(s32 modelId) {
             }
         }
     }
-    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
+    set_texture_colour_tag(PP_RAM_MISCTEX);
 }
 
 void func_8002C71C(LevelModelSegment *segment) {

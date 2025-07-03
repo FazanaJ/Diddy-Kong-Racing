@@ -253,7 +253,7 @@ ModelInstance *object_model_init(s32 modelID, s32 flags) {
             sp3F = 1;
         }
     }
-    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
+    set_texture_colour_tag(PP_RAM_MISCTEX);
     if (!sp3F) {
         for (i = 0; i < objMdl->numberOfBatches; i++) {
             if (objMdl->batches[i].textureIndex != 0xFF &&
@@ -496,13 +496,12 @@ void model_init_collision(ObjectModel *model) {
         s4 += nextFacesOffset - facesOffset;
     }
 
-    model->collisionFacets = (CollisionFacetPlanes *) mempool_alloc(s4 * sizeof(CollisionFacetPlanes), COLOUR_TAG_RED);
-
+    model->collisionFacets = (CollisionFacetPlanes *) mempool_alloc((s4 * sizeof(CollisionFacetPlanes)) + s4 * (sizeof(f32) * 16), PP_RAM_OBJCOL);
     if (model->collisionFacets == NULL) {
         return;
     }
+    model->collisionPlanes = (f32 *) (((u8 *) model->collisionFacets) + s4 * sizeof(CollisionFacetPlanes));
 
-    model->collisionPlanes = (f32 *) mempool_alloc(s4 * (sizeof(f32) * 16), COLOUR_TAG_RED);
     if (model->collisionPlanes == NULL) {
         mempool_free(model->collisionFacets);
         model->collisionFacets = NULL;

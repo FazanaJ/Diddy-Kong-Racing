@@ -397,7 +397,7 @@ void snow_init(void) {
     assetTable = (s32 *) load_asset_section_from_rom(ASSET_WEATHER_PARTICLES);
     gSnowGfx.texture = load_texture(assetTable[0]);
     mempool_free(assetTable);
-    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
+    set_texture_colour_tag(PP_RAM_MISCTEX);
 }
 
 /**
@@ -864,7 +864,7 @@ void rain_init(s32 intensity, s32 opacity) {
     assetTable = (s32 *) load_asset_section_from_rom(ASSET_WEATHER_PARTICLES);
     gRainGfx[0].tex = load_texture(assetTable[1]);
     gRainGfx[1].tex = load_texture(assetTable[1]);
-    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
+    set_texture_colour_tag(PP_RAM_MISCTEX);
     gRainSplashGfx = (Sprite *) tex_load_sprite(assetTable[3], 0);
     mempool_free(assetTable);
     gWeatherType = WEATHER_RAIN;

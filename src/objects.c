@@ -80,7 +80,7 @@ s8 D_800DC748 = FALSE;
 Vertex *gBoostVerts[2] = { 0, 0 };
 Triangle *gBoostTris[2] = { 0, 0 };
 Object *gShieldEffectObject = NULL;
-s32 gBoostObjOverrideID = 9;
+s32 gBoostObjOverrideID;
 Object *gMagnetEffectObject = NULL;
 
 f32 D_800DC768[16] = { 0.0f, 1.0f,  0.70711f,  0.70711f,  1.0f,  0.0f, 0.70711f,  -0.70711f,
@@ -377,7 +377,7 @@ void racerfx_alloc(s32 numberOfVertices, s32 numberOfTriangles) {
         gBoostVertFlip = 0;
         boostObj = (Object_Boost *) get_misc_asset(ASSET_MISC_20);
         // Makes 10 boost objects, but only 8 racers can actually exist at once.
-        for (i = 0; i < NUMBER_OF_CHARACTERS; i++) {
+        for (i = 0; i < gNumRacers + 1; i++) {
             // This is for shields, not boosts.
             gShieldSineTime[i] = rand_range(0, 255);
         }
@@ -402,7 +402,7 @@ void racerfx_alloc(s32 numberOfVertices, s32 numberOfTriangles) {
             }
             D_8011B068[i] = TRUE;
         }
-        set_texture_colour_tag(COLOUR_TAG_MAGENTA);
+        set_texture_colour_tag(PP_RAM_MISCTEX);
     }
 }
 
@@ -612,7 +612,7 @@ void racerfx_update(s32 updateRate) {
     gNumOfBoostVerts = 0;
     gNumOfBoostTris = 0;
     asset20 = (Object_Boost *) get_misc_asset(ASSET_MISC_20);
-    gBoostObjOverrideID = 9;
+    gBoostObjOverrideID = gNumRacers + 1;
     for (i = 0; i < NUMBER_OF_CHARACTERS; i++) {
         if (D_8011B068[i] && gBoostEffectObjects[i] != NULL) {
             gBoostEffectObjects[i]->properties.common.unk0 = 0;
@@ -724,7 +724,7 @@ void allocate_object_pools(void) {
 
     gObjectMemoryPool = (Object *) mempool_new_sub(OBJECT_POOL_SIZE, OBJECT_SLOT_COUNT);
     gParticlePtrList = mempool_alloc_safe(sizeof(uintptr_t) * 200, PP_RAM_OBJLISTS);
-    gCollisionObjects = mempool_alloc_safe(sizeof(uintptr_t) * OBJECT_COLLISION_COUNT, COLOUR_TAG_BLUE);
+    gCollisionObjects = mempool_alloc_safe(sizeof(uintptr_t) * OBJECT_COLLISION_COUNT, PP_RAM_OBJLISTS);
     D_8011AE74 = mempool_alloc_safe(sizeof(uintptr_t) * 128, PP_RAM_OBJLISTS);
     gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, PP_RAM_OBJLISTS);
     gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * CAMCONTROL_COUNT, PP_RAM_OBJLISTS);
@@ -1463,7 +1463,7 @@ void track_setup_racers(Vehicle vehicle, u32 entranceID, s32 playerCount) {
             }
         }
     }
-    racerEntry = mempool_alloc_safe(sizeof(LevelObjectEntry_Racer), COLOUR_TAG_YELLOW);
+    racerEntry = mempool_alloc_safe(sizeof(LevelObjectEntry_Racer), PP_RAM_TEMP);
     racerEntry->angleY = 0;
     racerEntry->angleX = 0;
     racerEntry->angleZ = 0;
@@ -2158,7 +2158,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
             }*/
             i++;
         }
-        set_texture_colour_tag(COLOUR_TAG_MAGENTA);
+        set_texture_colour_tag(PP_RAM_MISCTEX);
     } else {
         while (i < assetCount) {
             curObj->sprites[i] = tex_load_sprite(curObj->header->modelIds[i], 10);
@@ -2441,7 +2441,7 @@ s32 init_object_shadow(Object *obj, ShadowData *shadow) {
         shadow->texture = load_texture(objHeader->unk34);
         objHeader = obj->header;
     }
-    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
+    set_texture_colour_tag(PP_RAM_MISCTEX);
     shadow->scale = objHeader->shadowScale;
     shadow->meshStart = -1;
     shadow->meshEnd = 0;
@@ -2471,7 +2471,7 @@ s32 init_object_water_effect(Object *obj, WaterEffect *waterEffect) {
     if (obj->header->waterEffectGroup) {
         waterEffect->texture = load_texture(obj->header->unk38);
     }
-    set_texture_colour_tag(COLOUR_TAG_MAGENTA);
+    set_texture_colour_tag(PP_RAM_MISCTEX);
     waterEffect->meshStart = -1;
     D_8011AE54 = waterEffect->texture;
     if (obj->header->waterEffectGroup && waterEffect->texture == NULL) {

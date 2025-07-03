@@ -140,39 +140,10 @@ void debug_rsp(s32 context) {
 }
 
 s32 debug_tag_index(s32 colourTag) {
-    switch (colourTag) {
-        case COLOUR_TAG_RED:
-            return PP_RAM_RED;
-        case COLOUR_TAG_GREEN:
-            return PP_RAM_GREEN;
-        case COLOUR_TAG_BLUE:
-            return PP_RAM_BLUE;
-        case COLOUR_TAG_YELLOW:
-            return PP_RAM_YELLOW;
-        case COLOUR_TAG_MAGENTA:
-            return PP_RAM_MAGENTA;
-        case COLOUR_TAG_CYAN:
-            return PP_RAM_CYAN;
-        case COLOUR_TAG_WHITE:
-            return PP_RAM_WHITE;
-        case COLOUR_TAG_GREY:
-            return PP_RAM_GREY;
-        case COLOUR_TAG_SEMITRANS_GREY:
-            return PP_RAM_GREY_XLU;
-        case COLOUR_TAG_ORANGE:
-            return PP_RAM_ORANGE;
-        case COLOUR_TAG_BLACK:
-            return PP_RAM_BLACK;
-        case COLOUR_TAG_LIGHT_ORANGE:
-            return PP_RAM_LIGHT_ORANGE;
-        case COLOUR_TAG_LIME:
-            return PP_RAM_LIME;
-        default:
-            if (colourTag >= PP_RAM_TOTAL) {
-                return PP_RAM_UNKNOWN;
-            } else {
-                return colourTag % PP_RAM_TOTAL;
-            }
+    if (colourTag >= PP_RAM_TOTAL) {
+        return PP_RAM_UNKNOWN;
+    } else {
+        return colourTag % PP_RAM_TOTAL;
     }
 }
 
@@ -798,7 +769,6 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
 
     switch (tag) {
         case PP_RAM_ASSETTABLE:
-        case PP_RAM_GREY:
         case PP_RAM_ASSET_CACHE:
             if ((s32) slot->data == (s32) gGlobalLevelTable) {
                 return "gGlobalLevelTable";
@@ -874,8 +844,6 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
             return str;*/
         case PP_RAM_OBJTEX:
         case PP_RAM_LEVELTEX:
-        case PP_RAM_MAGENTA:
-        case PP_RAM_LIME:
         case PP_RAM_SPRITE_TEX:
         case PP_RAM_SPRITES:
         case PP_RAM_FONTS:
