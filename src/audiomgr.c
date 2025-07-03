@@ -180,7 +180,7 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
 #endif
 
     for (i = 0; i < NUM_ACMD_LISTS; i++) {
-        __am.ACMDList[i] = (Acmd *) alHeapAlloc(c->heap, 1, 0xA000); // sizeof(Acmd) * DMA_BUFFER_LENGTH * 5?
+        __am.ACMDList[i] = (Acmd *) alHeapAlloc(c->heap, 1, 0x4200); // sizeof(Acmd) * DMA_BUFFER_LENGTH * 5?
     }
 
     asset = (uintptr_t *) alHeapAlloc(c->heap, 1, (maxFrameSize * 12));
