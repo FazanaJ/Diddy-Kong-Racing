@@ -2012,12 +2012,14 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
     curObj->distanceToCamera = 0.0f;
     curObj->modelInstances = NULL;
     curObj->modelIndex = 0;
+    curObj->animFrame = 0;
     curObj->properties.common.unk0 = 0;
     curObj->properties.common.unk4 = 0;
 
     curObj->trans.flags = OBJ_FLAGS_UNK_0002;
     curObj->header = load_object_header(headerType);
     if (curObj->header == NULL) {
+        mempool_free(curObj);
         return NULL;
     }
     if (curObj->header->flags & HEADER_FLAGS_UNK_0080) {
@@ -2025,6 +2027,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
     }
     if (curObj->header->behaviorId == BHV_ROCKET_SIGNPOST && (settings->cutsceneFlags & CUTSCENE_LIGHTHOUSE_ROCKET)) {
         update_object_stack_trace(OBJECT_SPAWN, -1);
+        mempool_free(curObj);
         return NULL;
     }
 
@@ -2188,6 +2191,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
         if (sizeOfobj == 0) {
             objFreeAssets(curObj, assetCount, objType);
             try_free_object_header(headerType);
+            mempool_free(curObj);
             return NULL;
         }
     } else {
@@ -2202,6 +2206,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
             }
             objFreeAssets(curObj, assetCount, objType);
             try_free_object_header(headerType);
+            mempool_free(curObj);
             return NULL;
         }
     } else {
@@ -2250,6 +2255,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
         }
         objFreeAssets(prevObj, assetCount, objType);
         try_free_object_header(headerType);
+        mempool_free(curObj);
         return NULL;
     }
 
