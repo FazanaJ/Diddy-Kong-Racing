@@ -752,7 +752,7 @@ void audspat_calculate_echo(SoundHandle soundHandle, f32 x, f32 y, f32 z) {
             coords = reverbLine->coords;
             // Check if the point is below the ceiling (indicating it is inside a tunnel).
             // This check should ideally be performed only once per call.
-            numOfYVals = func_8002BAB0(levelSegmentIndex, x, z, yVals);
+            numOfYVals = collision_get_y(levelSegmentIndex, x, z, yVals);
             for (j = 0; j < reverbLine->numSegments; j++) {
                 distToSegment = audspat_distance_to_segment(x, y, z, coords, &outX, &outY, &outZ);
                 // There seems to be a logic mistake here: the maximum reverb effect may not necessarily come from the

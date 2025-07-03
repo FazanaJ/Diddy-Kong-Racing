@@ -41,6 +41,6 @@ s32 model_load_anim_id(ObjectModel *model, s32 animID, s32 modelID);
 void free_model_data(ObjectModel *mdl); // Non Matching
 void func_80060910(ObjectModel *);
 s32 func_80060AC8(ObjectModel *mdl, s32 arg1, s32 arg2, s32 arg3, s32 *outBatchIndex, s32 *outVertexIndex);
-s32 model_calc_normals(ObjectModel *);
+s32 model_init_normals(ObjectModel *);
 
 #endif
