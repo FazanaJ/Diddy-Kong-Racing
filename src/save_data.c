@@ -886,7 +886,7 @@ s32 read_save_file(s32 saveFileNum, Settings *settings) {
         return settings->newGame;
     }
     startingAddress = SAVE_START + (sizeof(SaveFile) * saveFileNum);
-    saveData = mempool_alloc_safe(sizeof(SaveFile), PP_RAM_SAVES);
+    saveData = mempool_alloc_safe(sizeof(SaveFile), PP_RAM_TEMP);
     save_readwrite(saveData, startingAddress, sizeof(SaveFile), OS_READ);
     populate_settings_from_save_data(settings, (u8 *) saveData);
     mempool_free(saveData);
@@ -925,7 +925,7 @@ void erase_save_file(s32 saveFileNum, Settings *settings, s32 writeBuf) {
     
     if (writeBuf) {
         startingAddress = SAVE_START + (sizeof(SaveFile) * saveFileNum);
-        alloc = mempool_alloc_safe(sizeof(SaveFile), PP_RAM_SAVES);
+        alloc = mempool_alloc_safe(sizeof(SaveFile), PP_RAM_TEMP);
         saveData = (u8 *) alloc;
 
         // clang-format off
@@ -957,7 +957,7 @@ s32 write_save_data(s32 saveFileNum, Settings *settings) {
 
     startingAddress = SAVE_START + (sizeof(SaveFile) * saveFileNum);
 
-    alloc = mempool_alloc_safe(sizeof(SaveFile), PP_RAM_SAVES);
+    alloc = mempool_alloc_safe(sizeof(SaveFile), PP_RAM_TEMP);
     func_800732E8(settings, (u8 *) alloc);
     save_readwrite(alloc, startingAddress, sizeof(SaveFile), OS_WRITE);
 
@@ -980,7 +980,7 @@ s32 read_eeprom_data(Settings *settings, u8 flags) {
         return -1;
     }
 
-    alloc = mempool_alloc_safe(COURSE_TIMES_START + sizeof(CourseRecords), PP_RAM_SAVES);
+    alloc = mempool_alloc_safe(COURSE_TIMES_START + sizeof(CourseRecords), PP_RAM_TEMP);
 
     if (flags & SAVE_DATA_FLAG_READ_FLAP_TIMES) {
         save_readwrite(alloc, FASTEST_LAPS_START, sizeof(CourseRecords), OS_READ);
@@ -1011,7 +1011,7 @@ s32 write_eeprom_data(Settings *settings, u8 flags) {
         return -1;
     }
 
-    alloc = mempool_alloc_safe(COURSE_TIMES_START + sizeof(CourseRecords), PP_RAM_SAVES);
+    alloc = mempool_alloc_safe(COURSE_TIMES_START + sizeof(CourseRecords), PP_RAM_TEMP);
 
     func_800738A4(settings, (u8 *) alloc);
 
