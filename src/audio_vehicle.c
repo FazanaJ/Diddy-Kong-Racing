@@ -12,6 +12,7 @@
 #include "math_util.h"
 #include "printf.h"
 #include "main.h"
+#include "asset_loading.h"
 
 /************ .data ************/
 

@@ -7,6 +7,9 @@
 #include "main.h"
 #include "autoplay.h"
 #include "save_data.h"
+#include "menu.h"
+#include "thread3_main.h"
+#include "save_layout.h"
 
 s32 sNoControllerPluggedIn =
     FALSE; // Looks to be a boolean for whether a controller is plugged in. FALSE if plugged in, and TRUE if not.

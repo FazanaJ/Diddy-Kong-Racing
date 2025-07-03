@@ -8,6 +8,7 @@
 #include "common.h"
 #include "stacks.h"
 #include "main.h"
+#include "rcp_dkr.h"
 
 /****  type define's for structures unique to audiomgr ****/
 typedef union {

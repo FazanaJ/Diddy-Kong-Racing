@@ -9,6 +9,8 @@
 #include "usb/usb.h"
 #include "thread0_epc.h"
 #include "autoplay.h"
+#include "memory.h"
+#include "thread3_main.h"
 
 /************ .bss ************/
 

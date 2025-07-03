@@ -4,6 +4,8 @@
 #include "macros.h"
 #include "ultra64.h"
 #include "main.h"
+#include "gzip.h"
+#include "memory.h"
 
 /************ .bss ************/
 

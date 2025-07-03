@@ -4,6 +4,8 @@
 #include "macros.h"
 #include "textures_sprites.h"
 #include "main.h"
+#include "PR/os_convert.h"
+#include "PR/R4300.h"
 
 /*******************************/
 

@@ -5,6 +5,10 @@
 #include "thread3_main.h"
 #include "printf.h"
 #include "thread30_bgload.h"
+#include "ultra64.h"
+#include "game.h"
+#include "menu.h"
+#include "textures_sprites.h"
 
 extern s32 gCurrentMenuId;
 extern s8 gDoneTalkingToNPC[];

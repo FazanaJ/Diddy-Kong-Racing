@@ -2,8 +2,7 @@
 #define _MAIN_H_
 
 #include "types.h"
-#include "macros.h"
-#include <ultra64.h>
+#include "PR/gbi.h"
 
 #define REGIONMODE_PAL50 0
 #define REGIONMODE_NTSC 1

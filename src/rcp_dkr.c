@@ -8,6 +8,10 @@
 #include "racer.h"
 #include "thread3_main.h"
 #include "main.h"
+#include "textures_sprites.h"
+#include "memory.h"
+#include "menu.h"
+#include "game.h"
 
 /************ .data ************/
 

@@ -9,8 +9,10 @@
 #include "math_util.h"
 #include "PRinternal/viint.h"
 #include "main.h"
-
+#include "menu.h"
+#include "racer.h"
 #include "printf.h"
+#include "camera.h"
 
 /************ .data ************/
 

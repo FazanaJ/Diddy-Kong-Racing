@@ -7,6 +7,8 @@
 #include "game.h"
 #include "string.h"
 #include "PR/os_internal_reg.h"
+#include "PR/gu.h"
+#include "main.h"
 
 extern u8 gIntDisFlag;
 extern s32 gCurrentRNGSeed; // Official Name: rngSeed

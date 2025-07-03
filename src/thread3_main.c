@@ -47,6 +47,8 @@
 #include "stacks.h"
 #include "usb/usb.h"
 #include "autoplay.h"
+#include "save_layout.h"
+#include "game.h"
 
 /************ .data ************/
 

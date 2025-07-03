@@ -6,6 +6,8 @@
 #include "tracks.h"
 #include "game_ui.h"
 #include "main.h"
+#include <ultra64.h>
+#include "menu.h"
 
 #define MAX_NUM_TEXTURES 500
 #define MAX_NUM_SPRITES 75

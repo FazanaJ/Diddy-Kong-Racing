@@ -3,6 +3,7 @@
 #include "thread0_epc.h"
 #include "math_util.h"
 #include "main.h"
+#include "config.h"
 
 /************ .bss ************/
 

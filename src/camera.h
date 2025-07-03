@@ -2,12 +2,8 @@
 #define _CAMERA_H_
 
 #include "types.h"
-#include "macros.h"
 #include "structs.h"
 #include "f3ddkr.h"
-#include "menu.h"
-#include <ultra64.h>
-#include "libc/math.h"
 
 #define SCREEN_HEIGHT_PAL (SCREEN_HEIGHT + 44)
 #define SCREEN_WIDTH_HALF (SCREEN_WIDTH / 2)

@@ -7,6 +7,11 @@
 #include "joypad.h"
 #include "PRinternal/viint.h"
 #include "main.h"
+#include "asset_loading.h"
+#include "thread3_main.h"
+#include "memory.h"
+#include "camera.h"
+#include "video.h"
 
 /************ .data ************/
 

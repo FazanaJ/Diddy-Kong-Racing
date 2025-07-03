@@ -11,6 +11,7 @@
 #include "math_util.h"
 #include "main.h"
 #include "printf.h"
+#include "menu.h"
 
 #define MAX_AUDIO_POINTS 40
 #define MAX_AUDIO_LINES 7

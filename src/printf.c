@@ -8,6 +8,7 @@
 #include "rcp_dkr.h"
 #include "main.h"
 #include "libultra/src/libc/xprintf.h"
+#include "video.h"
 
 /************ .data ************/
 

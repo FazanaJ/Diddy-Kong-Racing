@@ -10,6 +10,8 @@
 #include "math_util.h"
 #include "PRinternal/viint.h"
 #include "main.h"
+#include "camera.h"
+#include "video.h"
 
 /************ .data ************/
 

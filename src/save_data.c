@@ -14,6 +14,11 @@
 #include "PR/os_motor.h"
 #include "save_layout.h"
 #include "main.h"
+#include "libc/string.h"
+#include "save_layout.h"
+#include "menu.h"
+#include "save_layout.h"
+#include "menu.h"
 
 #undef VERSION
 #define VERSION VERSION_80

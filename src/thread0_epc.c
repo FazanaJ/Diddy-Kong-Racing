@@ -19,6 +19,7 @@
 #include "stdarg.h"
 #include "audiomgr.h"
 #include "autoplay.h"
+#include "asset_loading.h"
 
 #define MAP_PARSE
 

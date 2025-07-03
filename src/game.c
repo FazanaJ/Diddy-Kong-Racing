@@ -24,6 +24,7 @@
 #include "joypad.h"
 #include "common.h"
 #include "main.h"
+#include "thread3_main.h"
 
 /************ .data ************/
 

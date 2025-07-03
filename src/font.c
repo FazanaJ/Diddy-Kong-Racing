@@ -4,6 +4,9 @@
 #include "camera.h"
 #include "common.h"
 #include "main.h"
+#include "video.h"
+#include "asset_loading.h"
+#include "memory.h"
 
 /************ .data ************/
 

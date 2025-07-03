@@ -11,6 +11,9 @@
 #include "main.h"
 #include "thread3_main.h"
 #include "thread30_bgload.h"
+#include "gzip.h"
+#include "libc/math.h"
+#include "menu.h"
 
 #undef VERSION
 #define VERSION VERSION_80

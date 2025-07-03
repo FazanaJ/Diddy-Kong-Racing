@@ -24,6 +24,7 @@
 #include "initfx.h"
 #include "src/memory.h"
 #include "src/main.h"
+#include "macros.h"
 
 // TODO: this comes from a header
 #ident "$Revision: 1.49 $"

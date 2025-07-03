@@ -12,6 +12,11 @@
 #include "PRinternal/viint.h"
 #include "common.h"
 #include "main.h"
+#include "video.h"
+#include "asset_loading.h"
+#include "audio.h"
+#include "fade_transition.h"
+#include "menu.h"
 
 #define WEATHER_OVERRIDE_COUNT 16
 

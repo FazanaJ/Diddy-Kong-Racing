@@ -4,6 +4,8 @@
 #include "game.h"
 #include "stacks.h"
 #include "main.h"
+#include "thread3_main.h"
+#include "memory.h"
 
 /************ .data ************/
 

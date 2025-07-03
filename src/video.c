@@ -3,6 +3,8 @@
 #include "main.h"
 #include "rcp_dkr.h"
 #include "camera.h"
+#include "types.h"
+#include "memory.h"
 
 /************ .data ************/
 

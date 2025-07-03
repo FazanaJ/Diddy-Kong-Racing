@@ -9,6 +9,8 @@
 #include "game.h"
 #include "objects.h"
 #include "tracks.h"
+#include "thread3_main.h"
+#include "asset_loading.h"
 
 DebugData *gDebug;
 
