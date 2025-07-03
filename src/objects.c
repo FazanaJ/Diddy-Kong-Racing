@@ -727,9 +727,6 @@ void allocate_object_pools(void) {
     D_8011AE74 = mempool_alloc_safe(sizeof(uintptr_t) * 128, PP_RAM_OBJLISTS);
     gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, PP_RAM_OBJLISTS);
     gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * CAMCONTROL_COUNT, PP_RAM_OBJLISTS);
-    gRacers = mempool_alloc_safe(sizeof(uintptr_t) * (10 * 3), PP_RAM_OBJLISTS);
-    gRacersByPort = (Object **) ((u8 *) gRacers + (sizeof(uintptr_t) * 10));
-    gRacersByPosition = (Object **) ((u8 *) gRacersByPort + (sizeof(uintptr_t) * 10));
     gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, PP_RAM_OBJLISTS);
     D_8011ADCC = mempool_alloc_safe(8, PP_RAM_OBJLISTS);
     D_8011AFF4 = mempool_alloc_safe(sizeof(unk800179D0) * 16, PP_RAM_OBJLISTS);
@@ -921,6 +918,10 @@ void clear_object_pointers(void) {
         D_8011AFF4[i].unk0 = 0;
     }
 
+    if (gRacers) {
+        mempool_free(gRacers);
+    }
+
     gAINodeTail[0] = 0xFF;
     gAINodeTail[1] = 0xFF;
     gObjectCount = 0;
@@ -1013,6 +1014,15 @@ ObjectHeader *load_object_header(s32 index) {
     address = mempool_alloc_pool_tag((MemoryPoolSlot *) gObjectMemoryPool, size, PP_RAM_OBJHEADERS);
     if (address != NULL) {
         load_asset_to_address(ASSET_OBJECTS, (u32) address, offset[0], size);
+
+        if (get_game_mode() == GAMEMODE_INGAME) {
+            if ((address->flags & OBJECT_HEADER_NO_TIME_TRIAL && gIsTimeTrial) ||
+                (address->flags & OBJECT_HEADER_NO_MULTIPLATER && get_active_player_count() >= 2)) {
+                mempool_free(address);
+                return NULL;
+            }
+        }
+
         address->unk24 = (ObjectHeader24 *) ((uintptr_t) address + (uintptr_t) address->unk24);
         address->objectParticles =
             (ObjHeaderParticleEntry *) ((uintptr_t) address + (uintptr_t) address->objectParticles);
@@ -1456,6 +1466,10 @@ void track_setup_racers(Vehicle vehicle, u32 entranceID, s32 playerCount) {
     }
     D_8011AD24[1] = levelHeader->bossRaceID;
     sp127 = -1;
+    
+    gRacers = mempool_alloc_safe(sizeof(uintptr_t) * (gNumRacers * 3), PP_RAM_OBJLISTS);
+    gRacersByPort = (Object **) ((u8 *) gRacers + (sizeof(uintptr_t) * gNumRacers));
+    gRacersByPosition = (Object **) ((u8 *) gRacersByPort + (sizeof(uintptr_t) * gNumRacers));
     for (i = 0; i < gNumRacers; i++) {
         if (raceType != RACETYPE_HUBWORLD && !(raceType & RACETYPE_CHALLENGE) && D_8011AD3C == 0) {
             j = 0;
@@ -1594,18 +1608,6 @@ void track_setup_racers(Vehicle vehicle, u32 entranceID, s32 playerCount) {
     }
     if (D_8011AD3C != 0) {
         D_8011AD20 = FALSE;
-    }
-    // Remove unwanted objects depending on race type.
-    if (get_game_mode() == GAMEMODE_INGAME) {
-        for (j = 0; j < gObjectCount; j++) {
-            racerObj = gObjPtrList[j];
-            i = racerObj->header->flags;
-            if (i & OBJECT_HEADER_NO_TIME_TRIAL && gIsTimeTrial) {
-                free_object(racerObj);
-            } else if (i & OBJECT_HEADER_NO_MULTIPLATER && numPlayers >= 2) {
-                free_object(racerObj);
-            }
-        }
     }
     gGhostObjStaff = NULL;
     timetrial_free_staff_ghost();
@@ -1750,10 +1752,7 @@ void track_setup_racers(Vehicle vehicle, u32 entranceID, s32 playerCount) {
         gEventCountdown = 0;
         start_level_music(1.0f);
     }
-    //!@bug: Free timer is already 0 when loading levels.
-    mempool_free_timer(0);
     mempool_free(racerEntry);
-    mempool_free_timer(2);
 }
 
 /**

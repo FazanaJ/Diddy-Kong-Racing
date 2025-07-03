@@ -68,6 +68,9 @@ u32 gSFXTableAddr;
 u32 gSeqSoundTableAddr;
 u32 gSeqTableAddr;
 
+u32 gSeqSoundTableSize;
+u32 gSeqSoundTableAddr;
+
 /******************************/
 
 /**
@@ -84,6 +87,7 @@ void audio_init(OSSched *sc) {
     ALSeqFile seqSize;
     s32 heapSize;
     void *heapAddr;
+    MusicData *lol;
 
     seqLength = 0;
     gAudioHeapStack = (u8 *) mempool_alloc(AUDIO_HEAP_SIZE, PP_RAM_AUDIOHEAP);
@@ -102,6 +106,8 @@ void audio_init(OSSched *sc) {
     gSoundCount = (addrPtr[ASSET_AUDIO_7] - addrPtr[ASSET_AUDIO_6]) / sizeof(SoundData);
     gSeqSoundTableAddr = addrPtr[ASSET_AUDIO_5];
     gSeqSoundCount = (addrPtr[ASSET_AUDIO_6] - addrPtr[ASSET_AUDIO_5]) / sizeof(MusicData);
+    gSeqSoundTableSize = addrPtr[ASSET_AUDIO_6] - addrPtr[ASSET_AUDIO_5];
+    gSeqSoundTableAddr = addrPtr[ASSET_AUDIO_5];
 
     gSequenceBank = (ALBankFile *) mempool_alloc_safe(addrPtr[ASSET_AUDIO_0], PP_RAM_SOUNDBANK);
     load_asset_to_address(ASSET_AUDIO, (u32) gSequenceBank, 0, addrPtr[ASSET_AUDIO_0]);
@@ -113,6 +119,9 @@ void audio_init(OSSched *sc) {
     gSeqTableAddr = addrPtr[ASSET_AUDIO_4];
     load_asset_to_address(ASSET_AUDIO, (u32) gSequenceTable, addrPtr[ASSET_AUDIO_4], seqfSize);
     alSeqFileNew(gSequenceTable, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_4]));
+    for (i = 0; i < gSequenceTable->seqCount; i++) {
+        gSequenceTable->seqArray[i].offset -= (u32) get_rom_offset_of_asset(ASSET_AUDIO, 0);
+    }
     mempool_free(addrPtr);
 
     synth_config.maxVVoices = 40;
@@ -159,11 +168,7 @@ SoundData gAudTableTemp;
 
 SoundData *sfxtable_seek(s32 offset, s32 id) {
     s32 mult;
-    if (offset == gSFXTableAddr) {
-        mult = sizeof(SoundData);
-    } else {
-        mult = sizeof(MusicData);
-    }
+    mult = sizeof(SoundData);
     load_asset_to_address(ASSET_AUDIO, (u32) &gAudTableTemp, offset + (id * mult), mult);
     return &gAudTableTemp;
 }
@@ -864,10 +869,14 @@ void music_sequence_init(ALCSPlayer *seqp, s32 sequence, u8 *seqID, ALCSeq *seq)
     s32 i;
     s32 seqLen;
     void *s;
+    MusicData *full;
     MusicData *table;
 
-    seqLen = gSequenceTable->seqArray[*seqID].len;
     if ((alCSPGetState(seqp) == AL_STOPPED) && (*seqID != 0)) {
+        full = (MusicData *) mempool_alloc_safe(gSeqSoundTableSize, PP_RAM_TEMP);
+        load_asset_to_address(ASSET_AUDIO, (u32) full, gSeqSoundTableAddr, gSeqSoundTableSize);
+        table = &full[*seqID];
+        seqLen = gSequenceTable->seqArray[*seqID].len;
         if (sequence == 0) {
             if (gMusicSequenceData != NULL) {
                 mempool_free(gMusicSequenceData);
@@ -881,11 +890,10 @@ void music_sequence_init(ALCSPlayer *seqp, s32 sequence, u8 *seqID, ALCSeq *seq)
             gJingleSequenceData = mempool_alloc_safe(seqLen, PP_RAM_SEQUENCES);
             s = gJingleSequenceData;
         }
-        load_asset_to_address(ASSET_AUDIO, (u32) s,
-                              gSequenceTable->seqArray[*seqID].offset - get_rom_offset_of_asset(ASSET_AUDIO, 0), seqLen); alCSeqNew(seq, s);
+        load_asset_to_address(ASSET_AUDIO, (u32) s, gSequenceTable->seqArray[*seqID].offset, seqLen); 
+        alCSeqNew(seq, s);
         alCSPSetSeq(seqp, seq);
         alCSPPlay(seqp);
-        table = sfxtable_seek(gSeqSoundTableAddr, *seqID);
         if (seqp == gMusicPlayer) {
             music_volume_set(table->volume);
             if (table->tempo != 0) {
@@ -913,6 +921,7 @@ void music_sequence_init(ALCSPlayer *seqp, s32 sequence, u8 *seqID, ALCSeq *seq)
             gCurrentJingleID = *seqID;
         }
         *seqID = SEQUENCE_NONE;
+        mempool_free(full);
     }
 }
 
