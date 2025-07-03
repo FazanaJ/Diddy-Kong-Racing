@@ -1984,6 +1984,13 @@ void obj_loop_char_select(Object *charSelectObj, s32 updateRate) {
     u8 *var_a2;
 
     var_s0 = 0;
+
+    if (charSelectObj->properties.common.unk0 < 4) {
+        charSelectObj->properties.common.unk0++;
+        if (charSelectObj->properties.common.unk0 == 4) {
+            charSelectObj->shading->blockUpdate = TRUE;
+        }
+    }
     func_8001F460(charSelectObj, updateRate, NULL);
     charSelect = charSelectObj->animatedObject;
     charSelectObj->particleEmittersEnabled = OBJ_EMIT_NONE;

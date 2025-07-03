@@ -3511,12 +3511,14 @@ void render_3d_model(Object *obj) {
                     flags = FALSE;
                 }
                 obj->curVertData = modInst->vertices[modInst->animationTaskNum];
-                if (obj->behaviorId == BHV_UNK_3F) { // 63 = stopwatchicon, stopwatchhand
-                    obj_shade_fancy(objModel, obj, 0, gCurrentLightIntensity);
-                } else if (flags) {
-                    obj_shade_fancy(objModel, obj, -1, gCurrentLightIntensity);
-                } else {
-                    obj_shade_fast(objModel, obj, gCurrentLightIntensity);
+                if (obj->shading && obj->shading->blockUpdate == FALSE) {
+                    if (obj->behaviorId == BHV_UNK_3F) { // 63 = stopwatchicon, stopwatchhand
+                        obj_shade_fancy(objModel, obj, 0, gCurrentLightIntensity);
+                    } else if (flags) {
+                        obj_shade_fancy(objModel, obj, -1, gCurrentLightIntensity);
+                    } else {
+                        obj_shade_fast(objModel, obj, gCurrentLightIntensity);
+                    }
                 }
             }
             // Set the animation ticker for non player racers to 2, making them animate at half the framerate.

@@ -915,6 +915,7 @@ typedef struct ShadeProperties {
     /* 0x26 */ s16 unk26;
     /* 0x28 */ f32 ambient;
     /* 0x2C */ f32 diffuse;
+    u8 blockUpdate;
 } ShadeProperties;
 
 typedef f32 FakeHalfMatrix[2][4];
