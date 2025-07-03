@@ -304,7 +304,7 @@ void main_game_loop(void) {
 
     osSetTime(0);
     if (gDMATime > 0) {
-        debug_printf("DMA: %d\n", gDMATime);
+        //debug_printf("DMA: %d\n", gDMATime);
     }
     gDMATime = 0;
 

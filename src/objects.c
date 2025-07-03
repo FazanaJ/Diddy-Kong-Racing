@@ -766,7 +766,7 @@ void allocate_object_pools(void) {
         gAssetsMiscTableLength++;
     }
     mempool_free(tempTable);
-    gObjPtrList = mempool_alloc_safe(sizeof(uintptr_t) * OBJECT_SLOT_COUNT, PP_RAM_OBJLISTS);
+    //gObjPtrList = mempool_alloc_safe(sizeof(uintptr_t) * OBJECT_SLOT_COUNT, PP_RAM_OBJLISTS);
     gFirstTimeFinish = 0;
     gTimeTrialEnabled = 0;
     gIsTimeTrial = FALSE;
@@ -920,6 +920,10 @@ void clear_object_pointers(void) {
 
     if (gRacers) {
         mempool_free(gRacers);
+    }
+
+    if (gObjPtrList) {
+        mempool_free(gObjPtrList);
     }
 
     gAINodeTail[0] = 0xFF;
@@ -1109,8 +1113,8 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     s32 camControllers;
     s32 mapID[2];
     u8 *objPos;
-
-    return;
+    s32 objPtrSize;
+    s32 allocPos;
 
     checkpoints = 0;
     ainodes = 0;
@@ -1118,6 +1122,7 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     mapID[0] = objMap;
     mapID[1] = collectables;
 
+    objPtrSize = 0;
     objMapTable = (u32 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_MAPS_TABLE);
     mem = mempool_alloc_largest(PP_RAM_TEMP);
     for (i = 0; objMapTable[i] != 0xFFFFFFFF; i++) {}
@@ -1147,6 +1152,7 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
                     camControllers++;
                 }
                 objPos = &objPos[temp_t3 = objPos[1] & 0x3F];
+                objPtrSize++;
             }
             
         }
@@ -1154,12 +1160,14 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     mempool_free(objMapTable);
     mempool_free(mem);
 
-    debug_printf("Checkpoints: %d, AINodes: %d, CamObjs: %d\n", checkpoints, ainodes, camControllers);
+    gObjPtrList = mempool_alloc((objPtrSize + 125) * sizeof(uintptr_t), PP_RAM_OBJLISTS);
 
-    if (checkpoints > 0) {
+    debug_printf("Objects %d, Checkpoints: %d, AINodes: %d, CamObjs: %d\n", objPtrSize + 125, checkpoints, ainodes, camControllers);
+
+    /*if (checkpoints > 0) {
         gTrackCheckpoints = mempool_alloc(sizeof(uintptr_t) * checkpoints, PP_RAM_TEMPOBJLIST);
         bzero(gTrackCheckpoints, sizeof(uintptr_t) * checkpoints);
-    }
+    }*/
     /*if (ainodes > 0) {
         gAINodes = mempool_alloc(sizeof(uintptr_t) * ainodes, PP_RAM_TEMPOBJLIST);
         bzero(gAINodes, sizeof(uintptr_t) * ainodes);
