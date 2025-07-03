@@ -418,9 +418,6 @@ void free_3d_model(ModelInstance *modInst) {
 void free_model_data(ObjectModel *mdl) {
     s16 numTextures;
 
-    if (mdl == NULL) {
-    }
-
     numTextures = mdl->numberOfTextures;
     if (numTextures > 0) {
         s32 texturesFreed = 0;
