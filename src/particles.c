@@ -256,14 +256,13 @@ void particle_clear(void) {
  */
 void init_particle_buffers(s32 maxTriangleParticles, s32 maxRectangleParticles, s32 maxSpriteParticles,
                            s32 maxLineParticles, s32 maxPointParticles, s32 unused_arg) {
-    unsigned int new_var2;
-    Vertex *sp54;
-    Triangle *sp50;
+    s32 allocSize;
     s32 i;
     s16 *asset2F;
     ParticleModel *modelPtr;
-    s32 zero = 0;
-    s32 allocSize;
+    Vertex *sp54;
+    Triangle *sp50;
+    s32 pad;
 
     gParticleOverrideColor->word = 0;
 
@@ -344,8 +343,9 @@ void init_particle_buffers(s32 maxTriangleParticles, s32 maxRectangleParticles, 
         gPointParticleBuffer = (Particle *) ((u8 *) gLineParticleBuffer + (maxLineParticles * (sizeof(Particle) + sizeof(ParticleModel))));
     }
 
-    sp54 = &gParticleVertexBuffer[zero];
-    sp50 = &gParticleTriangleBuffer[zero];
+    // *0 is "fake", the asm does << 3 and << 4 on zero
+    sp54 = &gParticleVertexBuffer[maxTriangleParticles * 0];
+    sp50 = &gParticleTriangleBuffer[maxTriangleParticles * 0];
 
     modelPtr = (ParticleModel *) &gTriangleParticleBuffer[gMaxTriangleParticles];
     for (i = 0; i < gMaxTriangleParticles; i++) {
