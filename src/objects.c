@@ -735,9 +735,9 @@ void allocate_object_pools(void) {
     gParticlePtrList = mempool_alloc_safe(sizeof(uintptr_t) * 200, PP_RAM_OBJLISTS);
     gCollisionObjects = mempool_alloc_safe(sizeof(uintptr_t) * OBJECT_COLLISION_COUNT, PP_RAM_OBJLISTS);
     D_8011AE74 = mempool_alloc_safe(sizeof(uintptr_t) * 128, PP_RAM_OBJLISTS);
-    gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, PP_RAM_OBJLISTS);
-    gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * CAMCONTROL_COUNT, PP_RAM_OBJLISTS);
-    gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, PP_RAM_OBJLISTS);
+    //gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, PP_RAM_OBJLISTS);
+    //gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * CAMCONTROL_COUNT, PP_RAM_OBJLISTS);
+    //gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, PP_RAM_OBJLISTS);
     D_8011ADCC = mempool_alloc_safe(8, PP_RAM_OBJLISTS);
     D_8011AFF4 = mempool_alloc_safe(sizeof(unk800179D0) * 16, PP_RAM_OBJLISTS);
     tempTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_HEADERS_TABLE);
@@ -903,23 +903,20 @@ void clear_object_pointers(void) {
     D_8011AD22[0] = 0;
     D_8011AD22[1] = 0;
 
-    gAINodeAllocCount = AINODE_COUNT;
+    gAINodeAllocCount = 0;
 
-    bzero(gAINodes, gAINodeAllocCount * sizeof(uintptr_t));
-
-    /*if (gTrackCheckpoints) {
+    if (gTrackCheckpoints) {
         mempool_free(gTrackCheckpoints);
         gTrackCheckpoints = NULL;
     }
     if (gAINodes) {
         mempool_free(gAINodes);
-        gAINodeAllocCount = 0;
         gAINodes = NULL;
     }
     if (gCameraObjList) {
         mempool_free(gCameraObjList);
         gCameraObjList = NULL;
-    }*/
+    }
     if (D_8011AE74) {
         //mempool_free(D_8011AE74);
     }
@@ -1172,15 +1169,15 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     mempool_free(objMapTable);
     mempool_free(mem);
 
-    gObjPtrList = mempool_alloc((objPtrSize + 125) * sizeof(uintptr_t), PP_RAM_OBJLISTS);
+    gObjPtrList = mempool_alloc((objPtrSize + 125) * sizeof(uintptr_t), PP_RAM_TEMPOBJLIST);
 
     debug_printf("Objects %d, Checkpoints: %d, AINodes: %d, CamObjs: %d\n", objPtrSize + 125, checkpoints, ainodes, camControllers);
 
-    /*if (checkpoints > 0) {
-        gTrackCheckpoints = mempool_alloc(sizeof(uintptr_t) * checkpoints, PP_RAM_TEMPOBJLIST);
-        bzero(gTrackCheckpoints, sizeof(uintptr_t) * checkpoints);
-    }*/
-    /*if (ainodes > 0) {
+    if (checkpoints == 0) {
+        checkpoints = 1; // Racers actively rely on a checkpoint existing, so they can have one. As a treat.
+    }
+    gTrackCheckpoints = mempool_alloc(sizeof(CheckpointNode) * checkpoints, PP_RAM_TEMPOBJLIST);
+    if (ainodes > 0) {
         gAINodes = mempool_alloc(sizeof(uintptr_t) * ainodes, PP_RAM_TEMPOBJLIST);
         bzero(gAINodes, sizeof(uintptr_t) * ainodes);
         gAINodeAllocCount = ainodes;
@@ -1188,7 +1185,7 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     if (camControllers > 0) {
         gCameraObjList = mempool_alloc(sizeof(uintptr_t) * camControllers, PP_RAM_TEMPOBJLIST);
         bzero(gCameraObjList, sizeof(uintptr_t) * camControllers);
-    }*/
+    }
 }
 
 void func_8000C8F8(s32 arg0, s32 arg1) {
@@ -7217,7 +7214,7 @@ void ainode_update(void) {
         return;
     }
 
-    if (gAINodes == NULL) {
+    if (gAINodeAllocCount == 0) {
         return;
     }
 
