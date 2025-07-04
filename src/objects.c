@@ -386,7 +386,7 @@ void racerfx_alloc(s32 numberOfVertices, s32 numberOfTriangles) {
         gBoostVertFlip = 0;
         boostObj = (Object_Boost *) get_misc_asset(ASSET_MISC_20);
         // Makes 10 boost objects, but only 8 racers can actually exist at once.
-        for (i = 0; i < gNumRacers + 1; i++) {
+        for (i = 0; i < NUM_CHARACTERS; i++) {
             // This is for shields, not boosts.
             gShieldSineTime[i] = rand_range(0, 255);
         }
@@ -787,6 +787,9 @@ void allocate_object_pools(void) {
 s32 miscasset_cycle(s32 updateRate) {
     s32 i;
     for (i = 0; i < gMiscAssetCount; i++) {
+        if (gNumRacers > 0 && gMiscAssetCacheIDs[i] == ASSET_MISC_20) {
+            gMiscAssetStaleTimers[i] = 10;
+        }
         if (gMiscAssetStaleTimers[i] > 0) {
             gMiscAssetStaleTimers[i] -= updateRate;
             if (gMiscAssetStaleTimers[i] <= 0) {

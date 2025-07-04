@@ -837,7 +837,7 @@ u8 music_sequence_count(void) {
     return gSequenceTable->seqCount;
 }
 
-u8 gSoundBank_GetSoundDecayTime(u16 soundID) {
+u8 sound_is_looped(u16 soundID) {
     if (soundID <= 0 || gSoundBank->bankArray[0]->instArray[0]->soundCount < soundID) {
         return 0;
     }
