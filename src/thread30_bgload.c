@@ -1,11 +1,10 @@
 #include "thread30_bgload.h"
-#include "macros.h"
-#include <ultra64.h>
 #include "game.h"
+#include "macros.h"
 #include "stacks.h"
 #include "main.h"
 #include "thread3_main.h"
-#include "memory.h"
+#include <ultra64.h>
 
 /************ .data ************/
 

@@ -1,13 +1,11 @@
 #include "printf.h"
-#include "types.h"
-#include "macros.h"
 #include "f3ddkr.h"
-#include "stdarg.h"
 #include "libc/string.h"
-#include "textures_sprites.h"
+#include "macros.h"
 #include "rcp_dkr.h"
-#include "main.h"
-#include "libultra/src/libc/xprintf.h"
+#include "stdarg.h"
+#include "textures_sprites.h"
+#include "types.h"
 #include "video.h"
 
 /************ .data ************/

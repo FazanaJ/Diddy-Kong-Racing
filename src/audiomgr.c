@@ -1,14 +1,13 @@
 #include "audiomgr.h"
-#include "memory.h"
-#include "video.h"
-#include "math_util.h"
 #include "asset_loading.h"
+#include "common.h"
+#include "math_util.h"
+#include "memory.h"
 #include "objects.h"
 #include "PR/abi.h"
-#include "common.h"
-#include "stacks.h"
-#include "main.h"
 #include "rcp_dkr.h"
+#include "stacks.h"
+#include "video.h"
 
 /****  type define's for structures unique to audiomgr ****/
 typedef union {
@@ -181,7 +180,7 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
 #endif
 
     for (i = 0; i < NUM_ACMD_LISTS; i++) {
-        __am.ACMDList[i] = (Acmd *) alHeapAlloc(c->heap, 1, 0x4200); // sizeof(Acmd) * DMA_BUFFER_LENGTH * 5?
+        __am.ACMDList[i] = (Acmd *) alHeapAlloc(c->heap, 1, AUDBUF_SIZE);
     }
 
     asset = (uintptr_t *) alHeapAlloc(c->heap, 1, (maxFrameSize * 12));

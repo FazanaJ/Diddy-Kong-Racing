@@ -1,11 +1,10 @@
 #include "textures_sprites.h"
-#include "gzip.h"
 #include "asset_loading.h"
-#include "memory.h"
-#include "math_util.h"
-#include "tracks.h"
 #include "game_ui.h"
-#include "main.h"
+#include "gzip.h"
+#include "math_util.h"
+#include "memory.h"
+#include "tracks.h"
 #include <ultra64.h>
 #include "menu.h"
 

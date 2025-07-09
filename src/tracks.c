@@ -1,34 +1,30 @@
 #include "tracks.h"
 
-#include "types.h"
-#include "macros.h"
-#include "structs.h"
-#include "f3ddkr.h"
-#include "PR/gu.h"
-#include "textures_sprites.h"
-#include "objects.h"
-#include "game.h"
-#include "memory.h"
-#include "racer.h"
-#include "camera.h"
-#include "waves.h"
-#include "game_ui.h"
-#include "weather.h"
-#include "particles.h"
-#include "math_util.h"
-#include "collision.h"
-#include "PRinternal/viint.h"
-#include "common.h"
-#include "main.h"
-#include "thread30_bgload.h"
-#include "thread0_epc.h"
-#include "gzip.h"
 #include "asset_loading.h"
-#include "video.h"
-#include "thread3_main.h"
+#include "camera.h"
+#include "collision.h"
+#include "common.h"
+#include "f3ddkr.h"
 #include "fade_transition.h"
+#include "game.h"
+#include "game_ui.h"
+#include "gzip.h"
+#include "macros.h"
+#include "math_util.h"
+#include "memory.h"
 #include "menu.h"
-#include "printf.h"
+#include "objects.h"
+#include "particles.h"
+#include "PR/gu.h"
+#include "PRinternal/viint.h"
+#include "racer.h"
+#include "structs.h"
+#include "textures_sprites.h"
+#include "thread3_main.h"
+#include "types.h"
+#include "video.h"
+#include "waves.h"
+#include "weather.h"
 
 // Maximum size for a level model is 522.5 KiB
 #define LEVEL_MODEL_MAX_SIZE 0x82A00
@@ -101,8 +97,8 @@ s32 gTTCamPlayerID;
 s32 gTTCamID;
 s32 gTTCamSmoothTimer;
 s32 D_8011B10C;
-s32 D_8011B110;
-u32 D_8011B114;
+s32 gTrackTexAnimOffset;
+u32 gTrackTexAnimFlags;
 s32 D_8011B118;
 s32 D_8011B11C;
 unk8011B120 D_8011B120[32]; // Struct sizeof(0x10) / sizeof(16)
@@ -291,7 +287,7 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     Object **racers;
     u32 first = osGetCount();
 
-    gCurrentLevelHeader2 = get_current_level_header();
+    gCurrentLevelHeader2 = level_header();
     D_8011B0F8 = FALSE;
     gTTCamPlayerID = 0;
     gTTCamID = 0;
@@ -332,11 +328,11 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
 
     cam_set_layout(numberOfPlayers);
     skydome_spawn(skybox);
-    D_8011B110 = 0;
-    D_8011B114 = 0x10000;
+    gTrackTexAnimOffset = 0;
+    gTrackTexAnimFlags = RENDER_TEX_ANIM;
     path_enable();
-    func_8000C8F8(arg6, 0);
-    func_8000C8F8(collectables, 1);
+    track_spawn_objects(arg6, 0);
+    track_spawn_objects(collectables, 1);
     gScenePlayerViewports = numberOfPlayers;
     track_setup_racers(vehicle, entranceId, numberOfPlayers);
     racerfx_alloc(72, 64);
@@ -523,7 +519,7 @@ void render_scene(Gfx **dList, Mtx **mtx, Vertex **vtx, Triangle **tris, s32 upd
         i = (gCurrentLevelHeader2->unkA4->height << 9) - 1;
         gCurrentLevelHeader2->unkAA =
             (gCurrentLevelHeader2->unkAA + (gCurrentLevelHeader2->unkA3 * tempUpdateRate)) & i;
-        tex_animate_texture(gCurrentLevelHeader2->unkA4, &D_8011B114, &D_8011B110, tempUpdateRate);
+        tex_animate_texture(gCurrentLevelHeader2->unkA4, &gTrackTexAnimFlags, &gTrackTexAnimOffset, tempUpdateRate);
     }
     flip = FALSE;
     if (get_filtered_cheats() & CHEAT_MIRRORED_TRACKS) {
@@ -592,9 +588,8 @@ void render_scene(Gfx **dList, Mtx **mtx, Vertex **vtx, Triangle **tris, s32 upd
                           updateRate);
     }
     // Show TT Cam toggle for the fourth viewport when playing 3 player.
-    if (numViewports == 3 && get_current_level_race_type() != RACETYPE_CHALLENGE_EGGS &&
-        get_current_level_race_type() != RACETYPE_CHALLENGE_BATTLE &&
-        get_current_level_race_type() != RACETYPE_CHALLENGE_BANANAS) {
+    if (numViewports == 3 && level_type() != RACETYPE_CHALLENGE_EGGS && level_type() != RACETYPE_CHALLENGE_BATTLE &&
+        level_type() != RACETYPE_CHALLENGE_BANANAS) {
         if (hud_setting() == 0) {
             aa_manage(AA_OFF);
             if (flip) {
@@ -1273,7 +1268,7 @@ s32 func_80027568(void) {
     f32 playerDist;
     f32 camDist;
     f32 scalingFactor;
-    u32 curViewport;
+    s32 curViewport;
     s32 flipSide;
     s32 numRacers; // spC4
     s32 i;
@@ -1311,7 +1306,8 @@ s32 func_80027568(void) {
     if (racerObj == NULL) {
         return FALSE;
     }
-    generate_collision_candidates(1, &racerObj->trans.x_position, &gSceneActiveCamera->trans.x_position, -1);
+    generate_collision_candidates(1, (Vec3f *) &racerObj->trans.x_position,
+                                  (Vec3f *) &gSceneActiveCamera->trans.x_position, -1);
     ret = FALSE;
     for (var_t4 = 0; var_t4 < gNumCollisionCandidates && ret == FALSE; var_t4++) {
         if (gCollisionCandidates[var_t4] > 0) {
@@ -1658,9 +1654,9 @@ void trackbg_render_flashy(void) {
     var_t2 = *gCurrentLevelHeader2->unk74;
     var_a2 = -1;
 
-    if ((u32) var_t2 != -1) {
+    if ((u32) var_t2 != -1U) {
         levelHeader = gCurrentLevelHeader2->unk74[1];
-        if ((u32) levelHeader == -1) {
+        if ((u32) levelHeader == -1U) {
             levelHeader = var_t2;
         }
     } else {
@@ -1675,7 +1671,7 @@ void trackbg_render_flashy(void) {
     }
 
     gfx_init_basic_xlu(&gTrackDL, 1, var_a2, var_a3);
-    texHeader = set_animated_texture_header(texHeader, D_8011B110 << 8);
+    texHeader = set_animated_texture_header(texHeader, gTrackTexAnimOffset << 8);
     gDkrDmaDisplayList(gTrackDL++, OS_K0_TO_PHYSICAL(texHeader->cmd), texHeader->numberOfCommands);
     gSPVertexDKR(gTrackDL++, OS_K0_TO_PHYSICAL(gTrackVtxPtr), 9, 0);
     gSPPolygon(gTrackDL++, OS_K0_TO_PHYSICAL(gTrackTriPtr), 8, 1);
@@ -1896,7 +1892,7 @@ void initialise_player_viewport_vars(s32 updateRate) {
                              gSceneActiveCamera->trans.z_position, get_current_viewport(), updateRate);
         }
     }
-    get_current_level_header()->unk3 = 1;
+    level_header()->unk3 = 1;
     render_level_geometry_and_objects();
 }
 

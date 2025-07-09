@@ -2,48 +2,47 @@
 #include "objects.h"
 #include "memory.h"
 
-#include "types.h"
-#include "macros.h"
-#include "structs.h"
-#include "level_object_entries.h"
 #include "asset_enums.h"
 #include "asset_loading.h"
-#include "thread0_epc.h"
-#include "save_data.h"
-#include "menu.h"
-#include "game.h"
-#include "racer.h"
-#include "particles.h"
-#include "tracks.h"
-#include "math_util.h"
+#include "audio_spatial.h"
+#include "audio_vehicle.h"
+#include "audiosfx.h"
 #include "camera.h"
-#include "waves.h"
+#include "fade_transition.h"
+#include "game.h"
+#include "game_text.h"
+#include "game_ui.h"
+#include "gzip.h"
+#include "joypad.h"
+#include "level_object_entries.h"
+#include "lights.h"
+#include "macros.h"
+#include "math_util.h"
+#include "menu.h"
 #include "object_functions.h"
 #include "object_models.h"
-#include "lights.h"
-#include "game_ui.h"
-#include "audio_spatial.h"
-#include "joypad.h"
-#include "game_text.h"
-#include "audiosfx.h"
-#include "audio_vehicle.h"
-#include "vehicle_misc.h"
-#include "PRinternal/viint.h"
-#include "main.h"
-#include "printf.h"
-#include "weather.h"
-#include "PRinternal/piint.h"
-#include "autoplay.h"
-#include "gzip.h"
-#include "video.h"
-#include "thread3_main.h"
-#include "textures_sprites.h"
-#include "fade_transition.h"
-#include "PR/os_system.h"
+#include "particles.h"
 #include "PR/os_cont.h"
 #include "PR/os_convert.h"
+#include "PR/os_system.h"
 #include "PR/rcp.h"
+#include "PRinternal/piint.h"
+#include "PRinternal/viint.h"
+#include "printf.h"
+#include "racer.h"
+#include "save_data.h"
+#include "structs.h"
+#include "textures_sprites.h"
+#include "thread0_epc.h"
+#include "thread3_main.h"
+#include "tracks.h"
+#include "types.h"
+#include "vehicle_misc.h"
+#include "video.h"
+#include "waves.h"
+#include "weather.h"
 
+#define OBJECT_MAP_SIZE 0x3000
 #define MAX_CHECKPOINTS 60
 #define OBJECT_POOL_SIZE 0x15800
 #define OBJECT_BLUEPRINT_SIZE 0x800
@@ -275,7 +274,7 @@ s32 D_8011AE88;
 Gfx *gObjectCurrDisplayList;
 Mtx *gObjectCurrMatrix;
 Vertex *gObjectCurrVertexList;
-s32 *D_8011AEB0[2];
+s32 *gObjectMap[2];
 Object **gParticlePtrList;
 s32 gFreeListCount;
 CheckpointNode *gTrackCheckpoints; // Array of structs, unknown number of members
@@ -976,17 +975,17 @@ void free_all_objects(void) {
     particle_clear();
     len = gObjectCount;
     for (i = 0; i < len; i++) {
-        func_800101AC(gObjPtrList[i], 1);
+        obj_destroy(gObjPtrList[i], 1);
     }
     gFreeListCount = 0;
     gObjectCount = 0;
     gObjectListStart = 0;
     clear_object_pointers();
-    if (D_8011AEB0[0]) {
-        mempool_free((void *) D_8011AEB0[0]);
+    if (gObjectMap[0]) {
+        mempool_free((void *) gObjectMap[0]);
     }
-    if (D_8011AEB0[1]) {
-        mempool_free((void *) D_8011AEB0[1]);
+    if (gObjectMap[1]) {
+        mempool_free((void *) gObjectMap[1]);
     }
 }
 
@@ -1188,7 +1187,11 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     }
 }
 
-void func_8000C8F8(s32 arg0, s32 arg1) {
+/**
+ * Load the object map into RAM, then start spawning objects into the world.
+ * Also decides whether this race type should be for silver coins or not.
+ */
+void track_spawn_objects(s32 mapID, s32 index) {
     s32 assetSize;
     Settings *settings;
     s32 i;
@@ -1201,13 +1204,13 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
     s32 temp_t3;
     u8 *objPos;
 
-    if (arg1 != 0) {
+    if (index != 0) {
         settings = get_settings();
         assetOffset = settings->bosses | 0x820; // 0x820 = Wizpig 2 and some unknown 0x800 boss bit
         gIsSilverCoinRace =
-            ((settings->courseFlagsPtr[settings->courseId] & 4) == 0) && (((1 << settings->worldId) & assetOffset) != 0);
+            ((settings->courseFlagsPtr[settings->courseId] & RACE_CLEARED_SILVER_COINS) == 0) && (((1 << settings->worldId) & assetOffset) != 0);
 
-        if (!(settings->courseFlagsPtr[settings->courseId] & 2)) {
+        if (!(settings->courseFlagsPtr[settings->courseId] & RACE_CLEARED)) {
             gIsSilverCoinRace = 0;
         }
         if (is_in_tracks_mode()) {
@@ -1221,17 +1224,17 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
     gNumFinishedRacers = 1;
 
     D_8011AD3E = 0;
-    //mem = mempool_alloc_safe(0x3000, PP_RAM_OBJMAPS);
+    //mem = mempool_alloc_safe(OBJECT_MAP_SIZE, PP_RAM_OBJMAPS);
     objMapTable = (u32 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_MAPS_TABLE);
     mem = mempool_alloc_largest(PP_RAM_OBJMAPS);
-    D_8011AEB0[arg1] = mem;
+    gObjectMap[index] = mem;
     for (i = 0; objMapTable[i] != 0xFFFFFFFF; i++) {}
     i--;
-    if (arg0 >= i) {
-        arg0 = 0;
+    if (mapID >= i) {
+        mapID = 0;
     }
-    assetOffset = objMapTable[arg0];
-    assetSize = objMapTable[arg0 + 1] - assetOffset;
+    assetOffset = objMapTable[mapID];
+    assetSize = objMapTable[mapID + 1] - assetOffset;
 
     if (assetSize != 0) {
         compressedAsset = (u8 *) mem;
@@ -1247,7 +1250,7 @@ void func_8000C8F8(s32 arg0, s32 arg1) {
         } else {
             // The extra 0x10 prevents some weird bug.
             mempool_realloc(mem, (*mem) + 0x10, PP_RAM_OBJMAPS);
-            objPos = (u8 *) (D_8011AEB0[arg1] + 4);
+            objPos = (u8 *) (gObjectMap[index] + 4);
             for (var_s0 = 0; var_s0 < *mem; var_s0 += temp_t3) {
                 spawn_object((LevelObjectEntryCommon *) objPos, OBJECT_SPAWN_UNK01);
                 objPos = &objPos[temp_t3 = objPos[1] & 0x3F];
@@ -1339,7 +1342,7 @@ void track_setup_racers(Vehicle vehicle, u32 entranceID, s32 playerCount) {
     gNumRacers = 0;
     D_8011AF00 = 0;
     set_taj_status(TAJ_WANDER);
-    levelHeader = get_current_level_header();
+    levelHeader = level_header();
     raceType = levelHeader->race_type;
     if (raceType == RACETYPE_CUTSCENE_1 || raceType == RACETYPE_CUTSCENE_2) {
         return;
@@ -1396,7 +1399,7 @@ void track_setup_racers(Vehicle vehicle, u32 entranceID, s32 playerCount) {
     numPlayers = playerCount + 1;
     gNumRacers = 8;
     D_800DC740 = 0;
-    if (is_two_player_adventure_race()) {
+    if (race_is_adventure_2P()) {
         numPlayers = 2;
         D_800DC740 = 1;
         set_scene_viewport_num(VIEWPORT_LAYOUT_2_PLAYERS);
@@ -1411,7 +1414,7 @@ void track_setup_racers(Vehicle vehicle, u32 entranceID, s32 playerCount) {
     }
     if (raceType == RACETYPE_HUBWORLD || numPlayers >= 3) {
         gNumRacers = numPlayers;
-        if (get_level_property_stack_pos() == 0 && D_800DC708 != 0) {
+        if (level_properties_get() == 0 && D_800DC708 != 0) {
             spawnAngle[0] += D_800DC708;
             D_800DC708 = 0;
         }
@@ -1512,7 +1515,7 @@ void track_setup_racers(Vehicle vehicle, u32 entranceID, s32 playerCount) {
             } else if (D_8011AD3C == 2) {
                 vehicle = levelHeader->vehicle;
             } else {
-                if (racerEntry->playerIndex == 4 || is_two_player_adventure_race()) {
+                if (racerEntry->playerIndex == 4 || race_is_adventure_2P()) {
                     vehicle = get_player_selected_vehicle(PLAYER_ONE);
                 } else if (numPlayers >= 2) {
                     vehicle = get_player_selected_vehicle(racerEntry->playerIndex);
@@ -1655,7 +1658,7 @@ void track_setup_racers(Vehicle vehicle, u32 entranceID, s32 playerCount) {
             curRacer->transparency = 96;
         }
         // Spawn staff ghost
-        if (timetrial_init_staff_ghost(get_current_map_id())) {
+        if (timetrial_init_staff_ghost(level_id())) {
             objectID = gRacerObjectTable[(gMapDefaultVehicle * NUM_CHARACTERS) + 8];
 
             racerEntry->common.size = ((objectID & 0x100) >> 1) | 0x10;
@@ -1717,7 +1720,7 @@ void track_setup_racers(Vehicle vehicle, u32 entranceID, s32 playerCount) {
         gEventCountdown = 0;
     }
     if (raceType == RACETYPE_DEFAULT && (playerCount + 1) == 1 && is_in_adventure_two() == FALSE) {
-        if (is_two_player_adventure_race() == FALSE) {
+        if (race_is_adventure_2P() == FALSE) {
             for (j = 0; j < 3; j++) {
                 racerEntry->common.objectID = ASSET_OBJECT_ID_POSARROW;
                 racerEntry->common.size = sizeof(LevelObjectEntryCommon);
@@ -1767,7 +1770,7 @@ void track_setup_racers(Vehicle vehicle, u32 entranceID, s32 playerCount) {
     if (racetype_demo()) {
         rumble_init(FALSE);
         gEventCountdown = 0;
-        start_level_music(1.0f);
+        level_music_start(1.0f);
     }
     mempool_free(racerEntry);
 }
@@ -1953,6 +1956,7 @@ u8 is_in_time_trial(void) {
  */
 Object *get_object(s32 index) {
     if (index < 0 || index >= gObjectCount) {
+        stubbed_printf("ObjList (Part) Overflow %d!!!\n");
         return 0;
     }
     return gObjPtrList[index];
@@ -1981,6 +1985,7 @@ s16 obj_seek_transtable(s32 objType) {
     return ret[0];
 }
 
+// Official Name: ObjSetupObject
 Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
     s32 objType;
     Settings *settings;
@@ -2180,6 +2185,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
     /*if (failed) {
         objFreeAssets(curObj, assetCount, objType);
         try_free_object_header(headerType);
+        stubbed_printf("ObjSetupObject(2) Memory fail!!\n");
         return NULL;
     }*/
 
@@ -2618,12 +2624,12 @@ void gParticlePtrList_flush(void) {
                 gObjPtrList[j] = gObjPtrList[j + 1];
             }
         }
-        func_800101AC(searchObj, 0);
+        obj_destroy(searchObj, 0);
     }
     gFreeListCount = 0;
 }
 
-void func_800101AC(Object *obj, s32 arg1) {
+void obj_destroy(Object *obj, s32 arg1) {
     Object *tempObj;
     Object_Weapon *weapon;
     Object_Racer *racer;
@@ -2952,7 +2958,7 @@ void obj_update(s32 updateRate) {
     for (i = 0; i < gNumRacers; i++) {
         update_player_racer((*gRacers)[i], updateRate);
     }
-    if (get_current_level_race_type() == RACETYPE_DEFAULT) {
+    if (level_type() == RACETYPE_DEFAULT) {
         for (i = 0; i < gNumRacers; i++) {
             racer = gRacersByPosition[i]->racer;
             if (racer->playerIndex != -1) {
@@ -5128,7 +5134,7 @@ void obj_collision_transform(Object *obj) {
     trans.y_position = obj->trans.y_position;
     trans.z_position = obj->trans.z_position;
 #ifdef AVOID_UB
-    mtxf_from_transform(colData->matrices[(colData->mtxFlip + 2)], &trans);
+    mtxf_from_transform((MtxF *) colData->matrices[(colData->mtxFlip + 2)], &trans);
 #else
     mtxf_from_transform((MtxF *) colData->_matrices[(colData->mtxFlip + 2) << 1], &trans);
 #endif
@@ -5136,9 +5142,9 @@ void obj_collision_transform(Object *obj) {
     colData->update--;
 }
 
-// https://decomp.me/scratch/RBmJV
+// https://decomp.me/scratch/S3kHf
 #ifdef NON_MATCHING
-s32 func_80017248(Object *obj, s32 arg1, s32 *arg2, f32 *arg3, f32 *arg4, f32 *arg5, s8 *surface) {
+s32 collision_objectmodel(Object *obj, s32 arg1, s32 *arg2, Vec3f *arg3, f32 *arg4, f32 *arg5, s8 *surface) {
     ModelInstance *modInst;
     s32 sp170;
     s32 sp16C;
@@ -5220,7 +5226,7 @@ s32 func_80017248(Object *obj, s32 arg1, s32 *arg2, f32 *arg3, f32 *arg4, f32 *a
         spDC = (MtxF *) &collision->_matrices[((sp158->collisionData->mtxFlip + 1) & 1) << 1];
 #endif
 
-        sp14C = func_8001790C((u32 *) obj, (u32 *) sp158);
+        sp14C = func_8001790C(obj, sp158);
         if (sp14C != NULL) {
             for (i = 0, j = 0; j < arg1; j++, i += 3) {
                 sp13C[j] = sp14C->unk0C[i + 0];
@@ -5229,8 +5235,8 @@ s32 func_80017248(Object *obj, s32 arg1, s32 *arg2, f32 *arg3, f32 *arg4, f32 *a
                 mtxf_transform_point(spDC, arg4[i], arg4[i + 1], arg4[i + 2], &sp100[j], &spF0[j], &spE0[j]);
             }
         } else {
-            for (i = 0, j = 0; j < arg1; j++, i += 3) {
-                mtxf_transform_point(spDC, arg3[i], arg3[i + 1], arg3[i + 2], &sp13C[j], &sp12C[j], &sp11C[j]);
+            for (i = 0, j = 0; j < arg1; j++, i++) {
+                mtxf_transform_point(spDC, arg3[i].x, arg3[i].y, arg3[i].z, &sp13C[j], &sp12C[j], &sp11C[j]);
             }
         }
 
@@ -5293,11 +5299,12 @@ s32 func_80017248(Object *obj, s32 arg1, s32 *arg2, f32 *arg3, f32 *arg4, f32 *a
     }
     return sp168;
 }
+
 #else
-#pragma GLOBAL_ASM("asm/nonmatchings/objects/func_80017248.s")
+#pragma GLOBAL_ASM("asm/nonmatchings/objects/collision_objectmodel.s")
 #endif
 
-unk800179D0 *func_8001790C(u32 *arg0, u32 *arg1) {
+unk800179D0 *func_8001790C(Object *arg0, Object *arg1) {
     unk800179D0 *entry;
     s16 i;
 
@@ -5311,15 +5318,15 @@ unk800179D0 *func_8001790C(u32 *arg0, u32 *arg1) {
     return NULL;
 }
 
-unk800179D0 *func_80017978(s32 arg0, s32 arg1) {
+unk800179D0 *func_80017978(Object *obj1, Object *obj2) {
     unk800179D0 *entry;
     s16 i;
 
     for (i = 0; i < 16; i++) {
         entry = &D_8011AFF4[i];
         if (entry->unk0 == 0) {
-            entry->unk04 = (u32 *) arg0;
-            entry->unk08 = (u32 *) arg1;
+            entry->unk04 = obj1;
+            entry->unk08 = obj2;
             entry->unk0 = 2;
             return entry;
         }
@@ -5391,7 +5398,7 @@ s32 func_80017A18(ObjectModel *arg0, s32 arg1, s32 *arg2, f32 *arg3, f32 *arg4, 
             z2 = arg5[i];
 
             for (j = 0; j < arg0->collisionFacetCount; j++) {
-                node = &arg0->collisionFacets[j];
+                node = (CollisionNode *) &arg0->collisionFacets[j];
                 triIndex = node->colPlaneIndex;
 
                 A = planes[4 * triIndex + 0];
@@ -5868,6 +5875,7 @@ void func_80018CE0(Object *racerObj, f32 xPos, f32 yPos, f32 zPos, s32 updateRat
                                     }
                                     break;
                                 default:
+                                    stubbed_printf("ERROR Channel %d\n", i);
                                     break;
                             }
                         }
@@ -6078,7 +6086,7 @@ void race_check_finish(s32 updateRate) {
     s8 flags[3];
     s32 camera;
 
-    currentLevelHeader = get_current_level_header();
+    currentLevelHeader = level_header();
     settings = get_settings();
     numHumanRacersFinished = 0;
     numHumanRacers = 0;
@@ -6221,9 +6229,9 @@ void race_check_finish(s32 updateRate) {
                         }
                         postrace_start(0, 30);
                     } else {
-                        push_level_property_stack(SPECIAL_MAP_ID_NO_LEVEL, 0, VEHICLE_CAR, CUTSCENE_ID_NONE);
-                        push_level_property_stack(ASSET_LEVEL_TTAMULETSEQUENCE, 0, VEHICLE_NO_OVERRIDE,
-                                                  settings->ttAmulet - 1);
+                        level_properties_push(SPECIAL_MAP_ID_NO_LEVEL, 0, VEHICLE_CAR, CUTSCENE_ID_NONE);
+                        level_properties_push(ASSET_LEVEL_TTAMULETSEQUENCE, 0, VEHICLE_NO_OVERRIDE,
+                                              settings->ttAmulet - 1);
                         race_finish_adventure(TRUE);
                     }
                     gRaceFinishTriggered = TRUE;
@@ -6671,7 +6679,7 @@ void race_finish_time_trial(void) {
     Settings *settings;
     LevelHeader *levelHeader;
 
-    levelHeader = get_current_level_header();
+    levelHeader = level_header();
     settings = get_settings();
     settings->timeTrialRacer = 0;
     settings->unk115[1] = 0;
@@ -6730,18 +6738,17 @@ void race_finish_time_trial(void) {
         }
         if (((!vehicleID) && (!vehicleID)) && (!vehicleID)) {} // Fakematch
         if (settings->timeTrialRacer == 0) {
-            if (bestCourseTime < 10800 &&
-                (vehicleID != gTimeTrialVehicle || timetrial_map_id() != get_current_map_id() ||
-                 bestCourseTime < gTimeTrialTime)) {
+            if (bestCourseTime < 10800 && (vehicleID != gTimeTrialVehicle || timetrial_map_id() != level_id() ||
+                                           bestCourseTime < gTimeTrialTime)) {
                 gTimeTrialTime = bestCourseTime;
                 gTimeTrialVehicle = gPrevTimeTrialVehicle;
                 gTimeTrialCharacter = settings->racers[0].character;
-                timetrial_swap_player_ghost(get_current_map_id());
+                timetrial_swap_player_ghost(level_id());
                 gHasGhostToSave = TRUE;
             }
             if (bestCourseTime < gTTGhostTimeToBeat) {
                 if (gTimeTrialStaffGhost) {
-                    tt_ghost_beaten(get_current_map_id(), &bestRacer->playerIndex);
+                    tt_ghost_beaten(level_id(), &bestRacer->playerIndex);
                 } else {
                     hud_time_trial_message(&bestRacer->playerIndex);
                 }
@@ -6756,7 +6763,7 @@ void race_finish_time_trial(void) {
  * Returns true if the player ghost data is valid for playback.
  */
 s32 timetrial_valid_player_ghost(void) {
-    if (timetrial_map_id() != get_current_map_id()) {
+    if (timetrial_map_id() != level_id()) {
         return FALSE;
     } else {
         if (gTimeTrialVehicle != gPrevTimeTrialVehicle) {
@@ -6786,7 +6793,7 @@ s32 timetrial_load_staff_ghost(s32 mapId) {
     s32 ret;
     TTGhostTable *nextGhostTable;
 
-    gMapDefaultVehicle = get_map_default_vehicle(mapId);
+    gMapDefaultVehicle = leveltable_vehicle_default(mapId);
     ghostTable = (TTGhostTable *) load_asset_section_from_rom(ASSET_TTGHOSTS_TABLE);
 
     nextGhostTable = ghostTable;
@@ -6868,7 +6875,7 @@ u8 timetrial_init_staff_ghost(s32 trackId) {
     gBeatStaffGhost = FALSE;
     gTimeTrialStaffGhost = FALSE;
     settings = get_settings();
-    if (get_map_default_vehicle(trackId) == (Vehicle) gPrevTimeTrialVehicle) {
+    if (leveltable_vehicle_default(trackId) == (Vehicle) gPrevTimeTrialVehicle) {
         mainTrackIds = (s8 *) get_misc_asset(ASSET_MISC_MAIN_TRACKS_IDS);
         staffTime = (u16 *) get_misc_asset(ASSET_MISC_GHOST_UNLOCK_TIMES);
         for (i = 0; mainTrackIds[i] != -1 && trackId != mainTrackIds[i]; i++) {}
@@ -6912,9 +6919,8 @@ s32 timetrial_init_player_ghost(s32 playerID) {
     s32 ghostMapID;
 
     ghostMapID = timetrial_map_id();
-    if (get_current_map_id() != ghostMapID || gTimeTrialVehicle != gPrevTimeTrialVehicle) {
-        cpakStatus =
-            timetrial_load_player_ghost(playerID, get_current_map_id(), gPrevTimeTrialVehicle, &characterID, &time);
+    if (level_id() != ghostMapID || gTimeTrialVehicle != gPrevTimeTrialVehicle) {
+        cpakStatus = timetrial_load_player_ghost(playerID, level_id(), gPrevTimeTrialVehicle, &characterID, &time);
         if (cpakStatus == CONTROLLER_PAK_GOOD) {
             gTimeTrialVehicle = gPrevTimeTrialVehicle;
             gTimeTrialCharacter = characterID;
@@ -6922,7 +6928,7 @@ s32 timetrial_init_player_ghost(s32 playerID) {
         }
         return cpakStatus;
     }
-    return timetrial_load_player_ghost(playerID, get_current_map_id(), gPrevTimeTrialVehicle, NULL, NULL);
+    return timetrial_load_player_ghost(playerID, level_id(), gPrevTimeTrialVehicle, NULL, NULL);
 }
 
 /**
@@ -8391,7 +8397,7 @@ void func_8001F23C(Object *obj, LevelObjectEntry_Animation *animEntry) {
             camera = newObj->animatedObject;
             camera->unk44 = D_8011AD3E;
             viewportCount = cam_get_viewport_layout();
-            if (is_two_player_adventure_race()) {
+            if (race_is_adventure_2P()) {
                 viewportCount = VIEWPORT_LAYOUT_2_PLAYERS;
             }
             for (i = 0; i < viewportCount;) {
@@ -9489,7 +9495,7 @@ void mode_init_taj_race(void) {
 
     gTajRaceInit -= 1;
     if (gTajRaceInit == 0) {
-        levelHeader = get_current_level_header();
+        levelHeader = level_header();
         gChallengePrevMusic = levelHeader->music;
         gChallengePrevInstruments = levelHeader->instruments;
         levelHeader->music = SEQUENCE_TAJS_RACES;
@@ -9598,7 +9604,7 @@ void mode_end_taj_race(s32 reason) {
     Object *obj;
     LevelHeader *levelHeader;
 
-    levelHeader = get_current_level_header();
+    levelHeader = level_header();
     levelHeader->race_type = RACETYPE_HUBWORLD;
     levelHeader->music = gChallengePrevMusic;
     levelHeader->instruments = gChallengePrevInstruments;
@@ -9659,7 +9665,7 @@ void mode_end_taj_race(s32 reason) {
     }
     music_change_on();
     hud_audio_init();
-    start_level_music(1.0f);
+    level_music_start(1.0f);
     gIsTajChallenge = FALSE;
 }
 
@@ -9785,7 +9791,7 @@ Object *find_furthest_telepoint(f32 x, f32 z) {
 s32 func_80023568(void) {
     if (D_8011AD3C != 0) {
         return D_8011AD24[1] + 1;
-    } else if (get_current_level_race_type() == RACETYPE_BOSS) {
+    } else if (level_type() == RACETYPE_BOSS) {
         return D_8011AD24[1] + 1;
     }
     return 0;
@@ -10699,3 +10705,6 @@ void func_800245B4(s16 arg0) {
         D_800DC700 = 0;
     }
 }
+
+UNUSED const char sReadOutErrorString[] = "RO error %d!!\n";
+UNUSED const char sPureAnguishString[] = "ARGHHHHHHHHH\n";

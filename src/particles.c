@@ -1,15 +1,12 @@
 #include "particles.h"
-#include "objects.h"
-#include "math_util.h"
-#include "tracks.h"
-#include "textures_sprites.h"
 #include "asset_loading.h"
-#include <ultra64.h>
 #include "camera.h"
 #include "libc/math.h"
-#include "PR/os_system.h"
-#include "PR/os_convert.h"
-#include "main.h"
+#include "math_util.h"
+#include "objects.h"
+#include "textures_sprites.h"
+#include "tracks.h"
+#include <ultra64.h>
 
 /************ .data ************/
 
@@ -76,7 +73,7 @@ s32 gMaxRectangleParticles = 0;
 s32 gMaxSpriteParticles = 0;
 s32 gMaxLineParticles = 0;
 s32 gMaxPointParticles = 0;
-Sprite **gParticleDummys = NULL; // Sprites loaded from asset 47; appears to be unused
+Sprite **gParticleDummys = NULL; // Placeholder sprite refs to keep them loaded in memory.
 s32 gParticleDummyCount = 0;     // Number of sprites in gParticleDummys
 
 Vec2s gParticleCoordListTri[3] = {
@@ -252,7 +249,7 @@ void particle_clear(void) {
  *
  * Allocate buffers for particle objects.
  * Generate particle shapes.
- * Load sprites from asset 47.
+ * Load sprites from the dummy sprite ID list.
  */
 void init_particle_buffers(s32 maxTriangleParticles, s32 maxRectangleParticles, s32 maxSpriteParticles,
                            s32 maxLineParticles, s32 maxPointParticles, s32 unused_arg) {
@@ -394,7 +391,7 @@ void init_particle_buffers(s32 maxTriangleParticles, s32 maxRectangleParticles, 
     }
 
     /*if (gParticleDummys == NULL) {
-        asset2F = (s16 *) load_asset_section_from_rom(ASSET_BINARY_47);
+        asset2F = (s16 *) load_asset_section_from_rom(ASSET_DUMMY_PARTICLE_IDS);
         gParticleDummyCount = 0;
         while (asset2F[gParticleDummyCount] != -1) {
             gParticleDummyCount++;

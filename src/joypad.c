@@ -8,12 +8,12 @@
 #include "autoplay.h"
 #include "save_data.h"
 #include "menu.h"
-#include "thread3_main.h"
 #include "save_layout.h"
+#include "thread3_main.h"
 
 s32 sNoControllerPluggedIn =
     FALSE; // Looks to be a boolean for whether a controller is plugged in. FALSE if plugged in, and TRUE if not.
-u16 gButtonMask = 0xFFFF; // Used when anti-cheat/anti-tamper has failed in init_level_globals()
+u16 gButtonMask = 0xFFFF; // Used when anti-cheat/anti-tamper has failed in level_global_init()
 
 OSMesgQueue sSIMesgQueue;
 OSMesg sSIMesgBuf;
@@ -253,7 +253,7 @@ s8 input_clamp_stick_mag(s8 stickMag) {
 }
 
 /**
- * Used when anti-cheat/anti-tamper has failed in init_level_globals()
+ * Used when anti-cheat/anti-tamper has failed in level_global_init()
  * Official Name: joySetSecurity
  */
 void drm_disable_input(void) {
