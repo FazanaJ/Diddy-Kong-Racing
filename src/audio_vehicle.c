@@ -12,6 +12,7 @@
 #include "printf.h"
 #include "racer.h"
 #include "types.h"
+#include "main.h"
 
 /************ .data ************/
 

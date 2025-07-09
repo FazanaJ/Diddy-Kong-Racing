@@ -24,6 +24,8 @@
 #include "types.h"
 #include "video.h"
 #include "weather.h"
+#include "main.h"
+#include "usb/usb.h"
 
 /************ .data ************/
 
@@ -220,8 +222,6 @@ void levelinit_framecap(s32 levelID) {
     }
     sched_framecap(cap);
 }
-
-#include "usb/usb.h"
 
 /**
  * Loads and sets up the level header, then loads and sets of the level geometry.

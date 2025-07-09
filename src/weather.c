@@ -15,6 +15,7 @@
 #include "tracks.h"
 #include "types.h"
 #include "video.h"
+#include "main.h"
 
 #define WEATHER_OVERRIDE_COUNT 16
 

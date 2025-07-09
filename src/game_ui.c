@@ -23,6 +23,7 @@
 #include "thread3_main.h"
 #include "tracks.h"
 #include "types.h"
+#include "main.h"
 
 /************ .data ************/
 
@@ -336,7 +337,7 @@ void hud_init(UNUSED s32 viewportCount) {
         gAssetHudElementStaleCounter[i] = 0;
         gAssetHudElements->entry[i] = NULL;
     }
-    if (get_current_level_race_type() != RACETYPE_HUBWORLD && is_time_trial_enabled() == FALSE) {
+    if (level_type() != RACETYPE_HUBWORLD && is_time_trial_enabled() == FALSE) {
         gAssetHudElements->entry[HUD_ELEMENT_UNK_01] =
             tex_load_sprite(gAssetHudElementIds[HUD_ELEMENT_UNK_01] & 0x3FFF, 1); // ID: 86 - 0x56
         gAssetHudElements->entry[HUD_ELEMENT_UNK_17] =
@@ -3287,7 +3288,7 @@ void hud_render_general(Gfx **dList, Mtx **mtx, Vertex **vtx, s32 updateRate) {
 
     hud_audio_update(updateRate);
 
-    if (get_current_level_race_type() != RACETYPE_HUBWORLD && is_time_trial_enabled() == FALSE) {
+    if (level_type() != RACETYPE_HUBWORLD && is_time_trial_enabled() == FALSE) {
         gAssetHudElementStaleCounter[HUD_ELEMENT_UNK_01] = 0;
         gAssetHudElementStaleCounter[HUD_ELEMENT_UNK_17] = 0;
         gAssetHudElementStaleCounter[HUD_ELEMENT_UNK_08] = 0;

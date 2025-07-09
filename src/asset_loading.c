@@ -5,6 +5,7 @@
 #include "macros.h"
 #include "memory.h"
 #include "ultra64.h"
+#include "main.h"
 
 /************ .bss ************/
 

@@ -3,12 +3,11 @@
 
 #include "PR/os_vi.h"
 #include "sched.h"
+#include "config.h"
 
 #define REFRESH_50HZ 50
 #define REFRESH_60HZ 60
 
-#define SCREEN_WIDTH 320
-#define SCREEN_HEIGHT 240
 #define HIGH_RES_SCREEN_WIDTH 640
 #define HIGH_RES_SCREEN_HEIGHT 480
 

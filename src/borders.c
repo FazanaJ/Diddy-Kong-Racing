@@ -8,6 +8,8 @@
 #include "structs.h"
 #include "types.h"
 #include "video.h"
+#include "main.h"
+#include "tracks.h"
 
 /**
  * Renders the black borders that separate each viewport during multiplayer.

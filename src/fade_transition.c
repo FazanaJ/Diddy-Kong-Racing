@@ -10,6 +10,7 @@
 #include "textures_sprites.h"
 #include "types.h"
 #include "video.h"
+#include "main.h"
 
 /************ .data ************/
 

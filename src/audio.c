@@ -9,6 +9,7 @@
 #include "libultra/src/audio/seqchannel.h"
 #include "sched.h"
 #include "types.h"
+#include "main.h"
 
 /************ .data ************/
 

@@ -240,7 +240,7 @@ void autoplay_single_player(void) {
                 break;
         }
     } else if (get_game_mode() == GAMEMODE_INGAME) {
-        s32 map = get_current_map_id();
+        s32 map = level_id();
         s32 b;
         if (map != sPrevMapID) {
             sCheckpointID = 0;
@@ -748,7 +748,7 @@ void autoplay_single_player(void) {
                 }
                 break;
             default:
-                if (get_current_level_race_type() != RACETYPE_HUBWORLD) {
+                if (level_type() != RACETYPE_HUBWORLD) {
                     if (get_race_start_timer() == 0) {
                         obj = get_racer_object(0);
                         racer = (Object_Racer *) obj->racer;
@@ -784,7 +784,7 @@ void autoplay_single_player(void) {
                             gControllerCurrData[sPlayerID[0]].button |= Z_TRIG;
                             gControllerButtonsPressed[sPlayerID[0]] |= Z_TRIG;
                         }
-                        if (get_current_level_race_type() == RACETYPE_BOSS && map != ASSET_LEVEL_TRICKYTOPS1 && map != ASSET_LEVEL_TRICKYTOPS2 && map != ASSET_LEVEL_SMOKEY1 && map != ASSET_LEVEL_SMOKEY2) {
+                        if (level_type() == RACETYPE_BOSS && map != ASSET_LEVEL_TRICKYTOPS1 && map != ASSET_LEVEL_TRICKYTOPS2 && map != ASSET_LEVEL_SMOKEY1 && map != ASSET_LEVEL_SMOKEY2) {
                             racer->boostTimer = 1;
                             racer->boostType = BOOST_SMALL;
                         }
@@ -981,11 +981,11 @@ void autoplay_multiplayer(s32 playerCount) {
                 }
 
             }
-            if (get_map_race_type(get_current_map_id()) & RACETYPE_CHALLENGE_BATTLE) {
+            if (level_type() & RACETYPE_CHALLENGE_BATTLE) {
                 for (i = 0; i < 4; i++) {
                     obj = get_racer_object(i);
                     racer = (Object_Racer *) obj->racer;
-                    if (racer->bananas > 1 && get_current_map_id() != ASSET_LEVEL_SMOKEYCASTLE) {
+                    if (racer->bananas > 1 && level_id() != ASSET_LEVEL_SMOKEYCASTLE) {
                         racer->bananas = 1;
                     }
                     racer->lap_times[0] += sLogicUpdateRate;
@@ -993,7 +993,7 @@ void autoplay_multiplayer(s32 playerCount) {
                         for (i = 0; i < 4; i++) {
                             obj = get_racer_object(i);
                             racer = (Object_Racer *) obj->racer;
-                            if (get_current_map_id() != ASSET_LEVEL_SMOKEYCASTLE) {
+                            if (level_id() != ASSET_LEVEL_SMOKEYCASTLE) {
                                 racer->bananas = 0;
                             } else {
                                 racer->raceFinished = TRUE;

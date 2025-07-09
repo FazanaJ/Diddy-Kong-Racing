@@ -2,6 +2,8 @@
 #include "asset_loading.h"
 #include "memory.h"
 #include "PR/os_libc.h"
+#include "main.h"
+#include "PR/os_reg.h"
 
 /************ .data ************/
 

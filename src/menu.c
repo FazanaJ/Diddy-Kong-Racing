@@ -34,6 +34,7 @@
 #include "tracks.h"
 #include "types.h"
 #include "video.h"
+#include "main.h"
 
 /**
  * @file Contains all the code used for every menu in the game.
@@ -15968,12 +15969,12 @@ void set_object_model(s32 modelId) {
     gDebugModelSizeTex = 0;
     gDebugModelSizeAnim = 0;
     assettable_seek_s32(modelId, &offset, &size, ASSET_OBJECT_MODELS_TABLE);
-    gDebugModelSizeMdl = get_asset_uncompressed_size(ASSET_OBJECT_MODELS, offset) + sizeof(ObjectModel);
+    gDebugModelSizeMdl = asset_size_uncompressed(ASSET_OBJECT_MODELS, offset) + sizeof(ObjectModel);
     assettable_seek_s16(modelId, &start, &end, ASSET_ANIMATION_IDS);
     if (start != end) {
         do {
             assettable_seek_s32(modelId, &offset, &size, ASSET_OBJECT_ANIMATIONS_TABLE);
-            gDebugModelSizeAnim += get_asset_uncompressed_size(ASSET_OBJECT_ANIMATIONS, offset) + 0x80;
+            gDebugModelSizeAnim += asset_size_uncompressed(ASSET_OBJECT_ANIMATIONS, offset) + 0x80;
             start++;
         } while (start < end);
     }

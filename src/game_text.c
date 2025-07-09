@@ -10,6 +10,7 @@
 #include "PRinternal/viint.h"
 #include "racer.h"
 #include "thread3_main.h"
+#include "main.h"
 
 /************ .data ************/
 

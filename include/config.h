@@ -27,6 +27,9 @@
 #define NUM_MTX_COMMANDS 400
 #define NUM_TRI_COMMANDS 12
 
+#define SCREEN_WIDTH 320
+#define SCREEN_HEIGHT 240
+
 #ifndef NON_MATCHING
 #define NON_MATCHING 1
 #endif

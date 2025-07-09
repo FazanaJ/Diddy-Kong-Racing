@@ -6,6 +6,7 @@
 #include "menu.h"
 #include "textures_sprites.h"
 #include "video.h"
+#include "main.h"
 
 /************ .data ************/
 

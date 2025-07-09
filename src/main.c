@@ -4,6 +4,9 @@
 #include "stacks.h"
 #include "thread0_epc.h"
 #include "thread3_main.h"
+#include "PR/os_internal.h"
+#include "PRinternal/piint.h"
+#include "joypad.h"
 
 /************ .bss ************/
 

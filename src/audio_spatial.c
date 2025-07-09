@@ -10,6 +10,7 @@
 #include "textures_sprites.h"
 #include "tracks.h"
 #include "types.h"
+#include "main.h"
 
 #define MAX_AUDIO_POINTS 40
 #define MAX_AUDIO_LINES 7
