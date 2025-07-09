@@ -10,6 +10,13 @@
 #include "save_data.h"
 #include "stacks.h"
 #include "types.h"
+#include "main.h"
+#include "autoplay.h"
+#include "video.h"
+#include "PRinternal/osint.h"
+#include "memory.h"
+#include "asset_loading.h"
+#include "audiomgr.h"
 
 #define MAP_PARSE
 

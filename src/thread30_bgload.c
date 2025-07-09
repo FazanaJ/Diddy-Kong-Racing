@@ -5,6 +5,7 @@
 #include "main.h"
 #include "thread3_main.h"
 #include <ultra64.h>
+#include "memory.h"
 
 /************ .data ************/
 

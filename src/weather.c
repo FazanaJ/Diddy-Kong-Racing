@@ -16,6 +16,7 @@
 #include "types.h"
 #include "video.h"
 #include "main.h"
+#include "menu.h"
 
 #define WEATHER_OVERRIDE_COUNT 16
 
@@ -398,7 +399,7 @@ void snow_init(void) {
     }
 
     set_texture_colour_tag(PP_RAM_WEATHER);
-    assetTable = (s32 *) load_asset_section_from_rom(ASSET_WEATHER_PARTICLES);
+    assetTable = (s32 *) asset_table_load(ASSET_WEATHER_PARTICLES);
     gSnowGfx.texture = load_texture(assetTable[0]);
     mempool_free(assetTable);
     set_texture_colour_tag(PP_RAM_MISCTEX);
@@ -865,7 +866,7 @@ void rain_init(s32 intensity, s32 opacity) {
     gRainSplashDelay = 0;
     gRainVertexFlip = 0;
     set_texture_colour_tag(PP_RAM_WEATHER);
-    assetTable = (s32 *) load_asset_section_from_rom(ASSET_WEATHER_PARTICLES);
+    assetTable = (s32 *) asset_table_load(ASSET_WEATHER_PARTICLES);
     gRainGfx[0].tex = load_texture(assetTable[1]);
     gRainGfx[1].tex = load_texture(assetTable[1]);
     set_texture_colour_tag(PP_RAM_MISCTEX);

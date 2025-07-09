@@ -8,6 +8,9 @@
 #include "textures_sprites.h"
 #include "types.h"
 #include "video.h"
+#include "main.h"
+#include "menu.h"
+#include "game.h"
 
 /************ .data ************/
 
@@ -238,7 +241,7 @@ s32 gfxtask_wait(void) {
  * Ideally, you want the level to not.
 */
 s32 bgdraw_init(void) {
-    s32 map = get_current_map_id();
+    s32 map = level_id();
 
     if (gCurrentMenuId == MENU_CREDITS || gCurrentMenuId == MENU_LOGOS) {
         gInvertBG = TRUE;

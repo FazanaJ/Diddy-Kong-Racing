@@ -46,6 +46,8 @@
 #include <PR/gu.h>
 #include <PR/os_cont.h>
 #include <PR/os_time.h>
+#include "autoplay.h"
+#include "usb/usb.h"
 
 /************ .data ************/
 
@@ -184,7 +186,7 @@ void init_game(void) {
     }
 #endif
     video_init(VIDEO_MODE_LOWRES_LPN, &gMainSched);
-    init_PI_mesg_queue();
+    pi_init();
     if (gDebug) {
         init_usb_thread();
     }
@@ -277,18 +279,18 @@ void main_game_loop(void) {
         if (gAutoplayTest != AUTOPLAY_OFF && gPlatform & CONSOLE) {
             if (get_game_mode() == GAMEMODE_MENU && gCurrentMenuId == MENU_TRACK_SELECT) {
                 sched_framecap(0);
-            } else if (get_current_map_id() == ASSET_LEVEL_CENTRALAREAHUB) {
+            } else if (level_id() == ASSET_LEVEL_CENTRALAREAHUB) {
                 sLogicUpdateRate = 2;
-            } else if (get_current_map_id() == ASSET_LEVEL_SNOWFLAKEMOUNTAINHUB) {
+            } else if (level_id() == ASSET_LEVEL_SNOWFLAKEMOUNTAINHUB) {
                 sLogicUpdateRate = 3;
-            } else if (get_current_map_id() == ASSET_LEVEL_FIREMOUNTAIN) {
+            } else if (level_id() == ASSET_LEVEL_FIREMOUNTAIN) {
                 sLogicUpdateRate = 3;
             } else {
                 sLogicUpdateRate = 5;
             }
-            if (get_current_map_id() == ASSET_LEVEL_PARTYSEQUENCE ||
-                get_current_map_id() == ASSET_LEVEL_LASTBIT ||
-                get_current_map_id() == ASSET_LEVEL_LASTBITB) {
+            if (level_id() == ASSET_LEVEL_PARTYSEQUENCE ||
+                level_id() == ASSET_LEVEL_LASTBIT ||
+                level_id() == ASSET_LEVEL_LASTBITB) {
                 sched_framecap(1);
             } else {
                 sched_framecap(0);
@@ -463,7 +465,7 @@ void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     gShowBG = bgdraw_init();
     if (gDebug) {
         gDebug->loading.total = (f32) (osGetCount() - first)  / 46875000.0f;
-        debug_printf("Level [%s] loaded in %2.3fs.\n", get_level_name(levelId), gDebug->loading.total);
+        debug_printf("Level [%s] loaded in %2.3fs.\n", level_name(levelId), gDebug->loading.total);
         gDebug->loading.active = FALSE;
     }
 }
@@ -960,7 +962,7 @@ void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     gShowBG = bgdraw_init();
     if (gDebug) {
         gDebug->loading.total = (f32) (osGetCount() - first)  / 46875000.0f;
-        debug_printf("Level [%s] (Menu) loaded in %2.3fs.\n", get_level_name(levelId), gDebug->loading.total);
+        debug_printf("Level [%s] (Menu) loaded in %2.3fs.\n", level_name(levelId), gDebug->loading.total);
         gDebug->loading.active = FALSE;
     }
 }

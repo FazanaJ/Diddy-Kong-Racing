@@ -96,11 +96,11 @@ void audio_init(OSSched *sc) {
     }
     alHeapInit(&gALHeap, gAudioHeapStack, AUDIO_HEAP_SIZE);
 
-    addrPtr = (s32 *) load_asset_section_from_rom(ASSET_AUDIO_TABLE);
+    addrPtr = (s32 *) asset_table_load(ASSET_AUDIO_TABLE);
     gSoundBank = (ALBankFile *) mempool_alloc_safe(addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1], PP_RAM_SOUNDBANK);
-    load_asset_to_address(ASSET_AUDIO, (u32) gSoundBank, addrPtr[ASSET_AUDIO_1],
+    asset_load(ASSET_AUDIO, (u32) gSoundBank, addrPtr[ASSET_AUDIO_1],
                           addrPtr[ASSET_AUDIO_2] - addrPtr[ASSET_AUDIO_1]);
-    alBnkfNew(gSoundBank, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_2]));
+    alBnkfNew(gSoundBank, asset_rom_offset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_2]));
 
     gSFXTableAddr = addrPtr[ASSET_AUDIO_6];
     gSoundCount = (addrPtr[ASSET_AUDIO_7] - addrPtr[ASSET_AUDIO_6]) / sizeof(SoundData);
@@ -110,17 +110,17 @@ void audio_init(OSSched *sc) {
     gSeqSoundTableAddr = addrPtr[ASSET_AUDIO_5];
 
     gSequenceBank = (ALBankFile *) mempool_alloc_safe(addrPtr[ASSET_AUDIO_0], PP_RAM_SOUNDBANK);
-    load_asset_to_address(ASSET_AUDIO, (u32) gSequenceBank, 0, addrPtr[ASSET_AUDIO_0]);
-    alBnkfNew(gSequenceBank, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_0]));
-    load_asset_to_address(ASSET_AUDIO, (u32) &seqSize, addrPtr[ASSET_AUDIO_4], 4);
+    asset_load(ASSET_AUDIO, (u32) gSequenceBank, 0, addrPtr[ASSET_AUDIO_0]);
+    alBnkfNew(gSequenceBank, asset_rom_offset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_0]));
+    asset_load(ASSET_AUDIO, (u32) &seqSize, addrPtr[ASSET_AUDIO_4], 4);
 
     seqfSize = (seqSize.seqCount) * 8 + 4;
     gSequenceTable = mempool_alloc_safe(seqfSize, PP_RAM_AUD_TABLE);
     gSeqTableAddr = addrPtr[ASSET_AUDIO_4];
-    load_asset_to_address(ASSET_AUDIO, (u32) gSequenceTable, addrPtr[ASSET_AUDIO_4], seqfSize);
-    alSeqFileNew(gSequenceTable, get_rom_offset_of_asset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_4]));
+    asset_load(ASSET_AUDIO, (u32) gSequenceTable, addrPtr[ASSET_AUDIO_4], seqfSize);
+    alSeqFileNew(gSequenceTable, asset_rom_offset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_4]));
     for (i = 0; i < gSequenceTable->seqCount; i++) {
-        gSequenceTable->seqArray[i].offset -= (u32) get_rom_offset_of_asset(ASSET_AUDIO, 0);
+        gSequenceTable->seqArray[i].offset -= (u32) asset_rom_offset(ASSET_AUDIO, 0);
     }
     mempool_free(addrPtr);
 
@@ -169,7 +169,7 @@ SoundData gAudTableTemp;
 SoundData *sfxtable_seek(s32 offset, s32 id) {
     s32 mult;
     mult = sizeof(SoundData);
-    load_asset_to_address(ASSET_AUDIO, (u32) &gAudTableTemp, offset + (id * mult), mult);
+    asset_load(ASSET_AUDIO, (u32) &gAudTableTemp, offset + (id * mult), mult);
     return &gAudTableTemp;
 }
 
@@ -896,7 +896,7 @@ void music_sequence_init(ALCSPlayer *seqp, s32 sequence, u8 *seqID, ALCSeq *seq)
 
     if ((alCSPGetState(seqp) == AL_STOPPED) && (*seqID != 0)) {
         full = (MusicData *) mempool_alloc_safe(gSeqSoundTableSize, PP_RAM_TEMP);
-        load_asset_to_address(ASSET_AUDIO, (u32) full, gSeqSoundTableAddr, gSeqSoundTableSize);
+        asset_load(ASSET_AUDIO, (u32) full, gSeqSoundTableAddr, gSeqSoundTableSize);
         table = &full[*seqID];
         seqLen = gSequenceTable->seqArray[*seqID].len;
         if (sequence == 0) {
@@ -912,7 +912,7 @@ void music_sequence_init(ALCSPlayer *seqp, s32 sequence, u8 *seqID, ALCSeq *seq)
             gJingleSequenceData = mempool_alloc_safe(seqLen, PP_RAM_SEQUENCES);
             s = gJingleSequenceData;
         }
-        load_asset_to_address(ASSET_AUDIO, (u32) s, gSequenceTable->seqArray[*seqID].offset, seqLen); 
+        asset_load(ASSET_AUDIO, (u32) s, gSequenceTable->seqArray[*seqID].offset, seqLen); 
         alCSeqNew(seq, s);
         alCSPSetSeq(seqp, seq);
         alCSPPlay(seqp);

@@ -33,6 +33,7 @@
 #include "tracks.h"
 #include "types.h"
 #include "vehicle_misc.h"
+#include "main.h"
 
 #define MAX_NUMBER_OF_GHOST_NODES 360
 
@@ -8449,7 +8450,7 @@ s32 timetrial_load_player_ghost(s32 controllerID, s32 mapId, s16 arg2, s16 *char
 s32 load_tt_ghost(s32 ghostOffset, s32 size, s16 *outTime) {
     GhostHeader *ghost = mempool_alloc_safe(size, PP_RAM_GHOSTS);
     if (ghost != NULL) {
-        load_asset_to_address(ASSET_TTGHOSTS, (u32) ghost, ghostOffset, size);
+        asset_load(ASSET_TTGHOSTS, (u32) ghost, ghostOffset, size);
         if (gGhostData[GHOST_STAFF] != NULL) {
             mempool_free(gGhostData[GHOST_STAFF]);
         }

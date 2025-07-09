@@ -46,9 +46,9 @@ s32 byteswap32(u8 *arg0) {
  * Returns the uncompressed size of a gzip compressed asset.
  * Official name: rzipUncompressSizeROM
  */
-s32 get_asset_uncompressed_size(s32 assetIndex, s32 assetOffset) {
+s32 gzip_size_uncompressed(s32 assetIndex, s32 assetOffset) {
     u32 header[4];
-    load_asset_to_address(assetIndex, (u32) &header, assetOffset, 8);
+    asset_load(assetIndex, (u32) &header, assetOffset, 8);
     return byteswap32((u8 *) &header);
 }
 

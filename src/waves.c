@@ -11,6 +11,8 @@
 #include "tracks.h"
 #include "types.h"
 #include <ultra64.h>
+#include "main.h"
+#include "menu.h"
 
 /************ .data ************/
 

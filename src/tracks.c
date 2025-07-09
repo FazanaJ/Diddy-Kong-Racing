@@ -25,6 +25,10 @@
 #include "video.h"
 #include "waves.h"
 #include "weather.h"
+#include "main.h"
+#include "thread0_epc.h"
+#include "thread30_bgload.h"
+#include "printf.h"
 
 // Maximum size for a level model is 522.5 KiB
 #define LEVEL_MODEL_MAX_SIZE 0x82A00
@@ -404,7 +408,7 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     racers = get_racer_objects(&numRacers);
 
     if (numRacers == 0) {
-        free_ai_behaviour_table();
+        aitable_free();
     } else {
         s32 isAI = FALSE;
         for (i = 0; i < numRacers; i++) {
@@ -414,7 +418,7 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
             }
         }
         if (isAI == FALSE) {
-            free_ai_behaviour_table();
+            aitable_free();
         }
     }
 
@@ -1516,7 +1520,7 @@ void skydome_spawn(s32 objectID) {
     // Antipiracy measure
     drm_checksum_balloon();
 #endif
-    if (objectID == -1 || get_current_map_id() == ASSET_LEVEL_TROPHYRACE) {
+    if (objectID == -1 || level_id() == ASSET_LEVEL_TROPHYRACE) {
         gSkydomeSegment = NULL;
         return;
     }
@@ -3052,7 +3056,7 @@ void generate_track(s32 modelId) {
     gCollisionCandidates = mempool_alloc_safe(MAX_COLLISION_CANDIDATES * 4, PP_RAM_COLLISION);
     gCollisionSurfaces = mempool_alloc_safe(MAX_COLLISION_CANDIDATES, PP_RAM_COLLISION);
     gNumCollisionCandidates = 0;
-    gLevelModelTable = (s32 *) load_asset_section_from_rom(ASSET_LEVEL_MODELS_TABLE);
+    gLevelModelTable = (s32 *) asset_table_load(ASSET_LEVEL_MODELS_TABLE);
     // Allocate this last, so it ends up being the latest thing allocated, and then first thing freed.
     gTrackModelHeap = (LevelModel *) mempool_alloc_largest(PP_RAM_LEVELMDL);
     gCurrentLevelModel = gTrackModelHeap;
@@ -3071,7 +3075,7 @@ void generate_track(s32 modelId) {
     temp += (LEVEL_MODEL_MAX_SIZE - temp_s4);
     temp -= ((s32) temp % 16); // Align to 16-byte boundary.
 
-    load_asset_to_address(ASSET_LEVEL_MODELS, temp, mdl, temp_s4);
+    asset_load(ASSET_LEVEL_MODELS, temp, mdl, temp_s4);
     gzip_inflate((u8 *) temp, (u8 *) gCurrentLevelModel);
     mempool_free(gLevelModelTable); // Done with the level models table, so free it.
 

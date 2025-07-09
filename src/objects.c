@@ -41,6 +41,7 @@
 #include "video.h"
 #include "waves.h"
 #include "weather.h"
+#include "autoplay.h"
 
 #define OBJECT_MAP_SIZE 0x3000
 #define MAX_CHECKPOINTS 60
@@ -739,7 +740,7 @@ void allocate_object_pools(void) {
     //gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, PP_RAM_OBJLISTS);
     D_8011ADCC = mempool_alloc_safe(8, PP_RAM_OBJLISTS);
     D_8011AFF4 = mempool_alloc_safe(sizeof(unk800179D0) * 16, PP_RAM_OBJLISTS);
-    tempTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_HEADERS_TABLE);
+    tempTable = (s32 *) asset_table_load(ASSET_OBJECT_HEADERS_TABLE);
     gAssetsObjectHeadersTableLength = 0;
     while (-1 != tempTable[gAssetsObjectHeadersTableLength]) {
         gAssetsObjectHeadersTableLength++;
@@ -769,7 +770,7 @@ void allocate_object_pools(void) {
         gMiscAssetStaleTimers[i] = -1;
     }
 
-    tempTable = (s32 *) load_asset_section_from_rom(ASSET_MISC_TABLE);
+    tempTable = (s32 *) asset_table_load(ASSET_MISC_TABLE);
     gAssetsMiscTableLength = 0;
     while (-1 != tempTable[gAssetsMiscTableLength]) {
         gAssetsMiscTableLength++;
@@ -814,13 +815,13 @@ void *miscasset_seek_new(s32 index) {
         }
     }
 
-    load_asset_to_address(ASSET_MISC_TABLE, &assetTableEntry, index * sizeof(s32), sizeof(s32) * 2);
+    asset_load(ASSET_MISC_TABLE, &assetTableEntry, index * sizeof(s32), sizeof(s32) * 2);
 
     size = (assetTableEntry[1] - assetTableEntry[0]) * 4;
 
     address = mempool_alloc(size, PP_RAM_MISCASSET);
 
-    load_asset_to_address(ASSET_MISC, (u32) address, assetTableEntry[0] * 4, size);
+    asset_load(ASSET_MISC, (u32) address, assetTableEntry[0] * 4, size);
 
     if (index == ASSET_MISC_MAGIC_CODES) {
         decrypt_magic_codes(address, size);
@@ -1019,16 +1020,16 @@ ObjectHeader *load_object_header(s32 index) {
         }
     }
 
-    //gAssetsObjectHeadersTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_HEADERS_TABLE);
+    //gAssetsObjectHeadersTable = (s32 *) asset_table_load(ASSET_OBJECT_HEADERS_TABLE);
 
-    load_asset_to_address(ASSET_OBJECT_HEADERS_TABLE, (u32) &offset, index * (sizeof(s32)), sizeof(s32) * 2);
+    asset_load(ASSET_OBJECT_HEADERS_TABLE, (u32) &offset, index * (sizeof(s32)), sizeof(s32) * 2);
     
     size = offset[1] - offset[0];
     address = mempool_alloc_pool_tag((MemoryPoolSlot *) gObjectMemoryPool, size, PP_RAM_OBJHEADERS);
     if (address != NULL) {
-        load_asset_to_address(ASSET_OBJECTS, (u32) address, offset[0], size);
+        asset_load(ASSET_OBJECTS, (u32) address, offset[0], size);
         if (get_game_mode() == GAMEMODE_INGAME) {
-            if ((address->flags & OBJECT_HEADER_NO_TIME_TRIAL && (gTimeTrialEnabled && get_map_race_type(get_current_map_id()) != RACETYPE_HUBWORLD)) ||
+            if ((address->flags & OBJECT_HEADER_NO_TIME_TRIAL && (gTimeTrialEnabled && level_type() != RACETYPE_HUBWORLD)) ||
                 (address->flags & OBJECT_HEADER_NO_MULTIPLATER && get_active_player_count() >= 2)) {
                 mempool_free(address);
                 return NULL;
@@ -1114,7 +1115,6 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     u32 *objMapTable;
     u8 *compressedAsset;
     s32 temp_t3;
-    s32 iter;
     s32 j;
     s32 checkpoints;
     s32 ainodes;
@@ -1123,6 +1123,7 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     u8 *objPos;
     s32 objPtrSize;
     s32 allocPos;
+    s32 *map;
 
     checkpoints = 0;
     ainodes = 0;
@@ -1131,12 +1132,12 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     mapID[1] = collectables;
 
     objPtrSize = 0;
-    objMapTable = (u32 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_MAPS_TABLE);
+    objMapTable = (u32 *) asset_table_load(ASSET_LEVEL_OBJECT_MAPS_TABLE);
     mem = mempool_alloc_largest(PP_RAM_TEMP);
     for (i = 0; objMapTable[i] != 0xFFFFFFFF; i++) {}
     i--;
     for (j = 0; j < 2; j++) {
-        D_8011AEB0[iter] = mem;
+        map = mem;
         if (mapID[j] >= i) {
             mapID[j] = 0;
         }
@@ -1145,10 +1146,10 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
 
         if (assetSize != 0) {
             compressedAsset = (u8 *) mem;
-            compressedAsset = ((compressedAsset + get_asset_uncompressed_size(ASSET_LEVEL_OBJECT_MAPS, assetOffset)) - (assetSize)) + 0x20;
-            load_asset_to_address(ASSET_LEVEL_OBJECT_MAPS, (u32) compressedAsset, assetOffset, assetSize);
+            compressedAsset = ((compressedAsset + gzip_size_uncompressed(ASSET_LEVEL_OBJECT_MAPS, assetOffset)) - (assetSize)) + 0x20;
+            asset_load(ASSET_LEVEL_OBJECT_MAPS, (u32) compressedAsset, assetOffset, assetSize);
             gzip_inflate(compressedAsset, (u8 *) mem);
-            objPos = (u8 *) (D_8011AEB0[iter] + 4);
+            objPos = (u8 *) (map + 4);
             for (var_s0 = 0; var_s0 < *mem; var_s0 += temp_t3) {
                 LevelObjectEntryCommon *entry = objPos;
 
@@ -1216,7 +1217,7 @@ void track_spawn_objects(s32 mapID, s32 index) {
         if (is_in_tracks_mode()) {
             gIsSilverCoinRace = 0;
         }
-        if (get_current_level_race_type()) {
+        if (level_type()) {
             gIsSilverCoinRace = 0;
         }
     }
@@ -1225,7 +1226,7 @@ void track_spawn_objects(s32 mapID, s32 index) {
 
     D_8011AD3E = 0;
     //mem = mempool_alloc_safe(OBJECT_MAP_SIZE, PP_RAM_OBJMAPS);
-    objMapTable = (u32 *) load_asset_section_from_rom(ASSET_LEVEL_OBJECT_MAPS_TABLE);
+    objMapTable = (u32 *) asset_table_load(ASSET_LEVEL_OBJECT_MAPS_TABLE);
     mem = mempool_alloc_largest(PP_RAM_OBJMAPS);
     gObjectMap[index] = mem;
     for (i = 0; objMapTable[i] != 0xFFFFFFFF; i++) {}
@@ -1239,9 +1240,9 @@ void track_spawn_objects(s32 mapID, s32 index) {
     if (assetSize != 0) {
         compressedAsset = (u8 *) mem;
         compressedAsset =
-            ((compressedAsset + get_asset_uncompressed_size(ASSET_LEVEL_OBJECT_MAPS, assetOffset)) - (assetSize)) +
+            ((compressedAsset + gzip_size_uncompressed(ASSET_LEVEL_OBJECT_MAPS, assetOffset)) - (assetSize)) +
             0x20;
-        load_asset_to_address(ASSET_LEVEL_OBJECT_MAPS, (u32) compressedAsset, assetOffset, assetSize);
+        asset_load(ASSET_LEVEL_OBJECT_MAPS, (u32) compressedAsset, assetOffset, assetSize);
         gzip_inflate(compressedAsset, (u8 *) mem);
         mempool_free(objMapTable);
         //debug_printf("%X\n", (s32) *mem);
@@ -1981,7 +1982,7 @@ void add_particle_to_entity_list(Object *obj) {
 
 s16 obj_seek_transtable(s32 objType) {
     s16 ret[4];
-    load_asset_to_address(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE, (u32) &ret, objType * (sizeof(s16)), sizeof(s16) * 2);
+    asset_load(ASSET_LEVEL_OBJECT_TRANSLATION_TABLE, (u32) &ret, objType * (sizeof(s16)), sizeof(s16) * 2);
     return ret[0];
 }
 
@@ -6622,7 +6623,7 @@ void race_transition_adventure(s32 updateRate) {
     if (gRaceEndStage == 4) {
         set_anti_aliasing(TRUE);
         disable_racer_input();
-        if (!(get_current_level_race_type() & RACETYPE_CHALLENGE_BATTLE)) {
+        if (!(level_type() & RACETYPE_CHALLENGE_BATTLE)) {
             cutsceneTimerLimit = 540;
             gBalloonCutsceneTimer += updateRate;
             if (gBalloonCutsceneTimer < cutsceneTimerLimit) {
@@ -6794,7 +6795,7 @@ s32 timetrial_load_staff_ghost(s32 mapId) {
     TTGhostTable *nextGhostTable;
 
     gMapDefaultVehicle = leveltable_vehicle_default(mapId);
-    ghostTable = (TTGhostTable *) load_asset_section_from_rom(ASSET_TTGHOSTS_TABLE);
+    ghostTable = (TTGhostTable *) asset_table_load(ASSET_TTGHOSTS_TABLE);
 
     nextGhostTable = ghostTable;
     do {

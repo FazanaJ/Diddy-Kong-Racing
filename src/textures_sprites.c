@@ -7,6 +7,7 @@
 #include "tracks.h"
 #include <ultra64.h>
 #include "menu.h"
+#include "main.h"
 
 #define MAX_NUM_TEXTURES 500
 #define MAX_NUM_SPRITES 75
@@ -296,12 +297,12 @@ void tex_init_textures(void) {
     gNumberOfLoadedTextures = 0;
     gCiPalettesSize = 0;
 
-    table = (s32 *) load_asset_section_from_rom(ASSET_TEXTURES_2D_TABLE);
+    table = (s32 *) asset_table_load(ASSET_TEXTURES_2D_TABLE);
     for (i = 0; table[i] != -1; i++) {}
     gTextureTableSize[TEX_TABLE_2D] = --i;
     mempool_free(table);
 
-    table = (s32 *) load_asset_section_from_rom(ASSET_TEXTURES_3D_TABLE);
+    table = (s32 *) asset_table_load(ASSET_TEXTURES_3D_TABLE);
     for (i = 0; table[i] != -1; i++) {}
     gTextureTableSize[TEX_TABLE_3D] = --i;
     mempool_free(table);
@@ -309,7 +310,7 @@ void tex_init_textures(void) {
     gSpriteCache = mempool_alloc_safe(6 * MAX_NUM_SPRITES, PP_RAM_ASSET_CACHE);
     gSpriteCacheIDs = (s16 *) ((u8 *) gSpriteCache + (MAX_NUM_SPRITES * sizeof(uintptr_t)));
     gSpriteCacheCount = 0;
-    table = (s32 *) load_asset_section_from_rom(ASSET_SPRITES_TABLE);
+    table = (s32 *) asset_table_load(ASSET_SPRITES_TABLE);
     gSpriteTableSize = 0;
     while (table[gSpriteTableSize] != -1) {
         gSpriteTableSize++;
@@ -391,7 +392,7 @@ TextureHeader *load_texture(s32 id) {
         tableID = ASSET_TEXTURES_3D_TABLE;
     }
     assettable_seek_s32(assetIndex, &assetOffset, &assetSize, tableID);
-    load_asset_to_address(assetSection, (u32) header, assetOffset, sizeof(TempTexHeader));
+    asset_load(assetSection, (u32) header, assetOffset, sizeof(TempTexHeader));
     
     // Allocate memory for the texture and its display lists.
     // If compressed, decompress it.
@@ -401,7 +402,7 @@ TextureHeader *load_texture(s32 id) {
         if (tex == NULL) {
             return NULL;
         }
-        load_asset_to_address(assetSection, (u32) tex, assetOffset, assetSize);
+        asset_load(assetSection, (u32) tex, assetOffset, assetSize);
     } else {
         uncompressedSize = byteswap32((u8 *) &header->uncompressedSize) + sizeof(TextureHeader);
         tex = (TextureHeader *) mempool_alloc(numberOfTextures * TEXTURE_GFX_SIZE + uncompressedSize, gTexColourTag);
@@ -413,7 +414,7 @@ TextureHeader *load_texture(s32 id) {
         // so it can be decompressed into the entire block
         compressedStart = (((s32) tex + uncompressedSize) - assetSize);
         compressedStart = (s32) compressedStart - (s32) compressedStart % 16;
-        load_asset_to_address(assetSection, compressedStart, assetOffset, assetSize);
+        asset_load(assetSection, compressedStart, assetOffset, assetSize);
         gzip_inflate((u8 *) (compressedStart + sizeof(TextureHeader)), (u8 *) tex);
         assetSize = uncompressedSize - sizeof(TextureHeader);
     }
@@ -436,7 +437,7 @@ TextureHeader *load_texture(s32 id) {
     paletteOffset = -1;
     if (TEX_FORMAT(tex->format) == TEX_FORMAT_CI4) {
         if (!gFirstTexIsLoaded) {
-            load_asset_to_address(ASSET_EMPTY_14, (u32) &gCiPalettes[gCiPalettesSize], tex->ciPaletteOffset, 32);
+            asset_load(ASSET_EMPTY_14, (u32) &gCiPalettes[gCiPalettesSize], tex->ciPaletteOffset, 32);
             tex->ciPaletteOffset = gCiPalettesSize;
             gCiPalettesSize += 32; // (32 bytes / 2 bytes per color) = 16 colors.
         }
@@ -446,7 +447,7 @@ TextureHeader *load_texture(s32 id) {
         if (!gFirstTexIsLoaded) {
             // Normally, TEX_FORMAT_CI8 requires 256 colors (512 bytes),
             // but maybe only 64 colors (128 bytes) are actually used in this game
-            load_asset_to_address(ASSET_EMPTY_14, (u32) &gCiPalettes[gCiPalettesSize], tex->ciPaletteOffset, 128);
+            asset_load(ASSET_EMPTY_14, (u32) &gCiPalettes[gCiPalettesSize], tex->ciPaletteOffset, 128);
             tex->ciPaletteOffset = gCiPalettesSize;
             gCiPalettesSize += 128; // (128 bytes / 2 bytes per color) = 64 colors.
         }
@@ -842,7 +843,7 @@ Sprite *tex_load_sprite(s32 spriteID, s32 arg1) {
 
     spriteAsset = (SpriteAsset *) &spriteBuf;
     assettable_seek_s32(spriteID, &offset, &size, ASSET_SPRITES_TABLE);
-    load_asset_to_address(ASSET_SPRITES, (u32) spriteAsset, offset, size);
+    asset_load(ASSET_SPRITES, (u32) spriteAsset, offset, size);
 
     numTextures = spriteAsset->frameTexOffsets[spriteAsset->numberOfFrames];
     allocSize = numTextures * 4 * sizeof(Vertex);
@@ -957,7 +958,7 @@ s32 tex_asset_size(s32 id) {
     }
     assettable_seek_s32(id, &textureRomOffset, &size, tableID);
     if (header->header.isCompressed) {
-        load_asset_to_address(textureTable, (u32) header, textureRomOffset, sizeof(TempTexHeader));
+        asset_load(textureTable, (u32) header, textureRomOffset, sizeof(TempTexHeader));
         size = byteswap32((u8 *) (&header->uncompressedSize));
     }
     numOfTextures = header->header.numOfTextures;
@@ -985,7 +986,7 @@ s32 load_sprite_info(s32 spriteIndex, s32 *anchorXOut, s32 *anchorYOut, s32 *num
     spriteAsset = (SpriteAsset *) &spriteBuf;
     assettable_seek_s32(spriteIndex, &start, &size, ASSET_SPRITES_TABLE);
     new_var = size;
-    load_asset_to_address(ASSET_SPRITES, (u32) spriteAsset, start, size);
+    asset_load(ASSET_SPRITES, (u32) spriteAsset, start, size);
     set_texture_colour_tag(PP_RAM_SPRITES);
     tex = load_texture(spriteAsset->frameTexOffsets[0] + spriteAsset->baseTextureId);
     set_texture_colour_tag(PP_RAM_MISCTEX);
@@ -1032,7 +1033,7 @@ void func_8007CA68(s32 arg0, s32 arg1, s32 *arg2, s32 *arg3, s32 *arg4) {
     // clang-format off
     spriteAsset = (SpriteAsset *) &spriteBuf;
     assettable_seek_s32(arg0, &offset, &size, ASSET_SPRITES_TABLE);
-    load_asset_to_address(12, (u32) spriteAsset, offset, size);
+    asset_load(12, (u32) spriteAsset, offset, size);
     // clang-format on
 
     if (spriteAsset->numberOfFrames < arg1) {

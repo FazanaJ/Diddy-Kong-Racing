@@ -16,6 +16,9 @@
 #include "structs.h"
 #include "thread3_main.h"
 
+#undef VERSION
+#define VERSION VERSION_80
+
 /************ .data ************/
 
 s8 *gPakFileList = 0;

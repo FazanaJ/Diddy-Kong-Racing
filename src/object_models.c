@@ -10,6 +10,9 @@
 #include "racer.h"
 #include "textures_sprites.h"
 #include "tracks.h"
+#include "thread3_main.h"
+#include "main.h"
+#include "menu.h"
 
 #undef VERSION
 #define VERSION VERSION_80
@@ -93,7 +96,7 @@ void allocate_object_model_pools(void) {
     D_8011D628 = mempool_alloc_safe(100 * sizeof(uintptr_t), PP_RAM_ASSET_CACHE);
     gModelCacheCount = 0;
     D_8011D634 = 0;
-    assetTable = (s32 *) load_asset_section_from_rom(ASSET_OBJECT_MODELS_TABLE);
+    assetTable = (s32 *) asset_table_load(ASSET_OBJECT_MODELS_TABLE);
     gNumModelIDs = 0;
     while (assetTable[gNumModelIDs] != -1) {
         gNumModelIDs++;
@@ -201,7 +204,7 @@ ModelInstance *object_model_init(s32 modelID, s32 flags) {
 
     assettable_seek_s32(modelID, &temp_s0, &sp48, ASSET_OBJECT_MODELS_TABLE);
     assettable_seek_s16(modelID, &start, &end, ASSET_ANIMATION_IDS);
-    modelSize = get_asset_uncompressed_size(ASSET_OBJECT_MODELS, temp_s0) + sizeof(ObjectModel);
+    modelSize = gzip_size_uncompressed(ASSET_OBJECT_MODELS, temp_s0) + sizeof(ObjectModel);
     animStart = modelSize;
     modelSize += (end - start) * sizeof(ObjectModel_44);
     objMdl = (ObjectModel *) mempool_alloc(modelSize, PP_RAM_OBJMDL);
@@ -218,7 +221,7 @@ ModelInstance *object_model_init(s32 modelID, s32 flags) {
         return NULL;
     }
     compressedData = (u32) ((u8 *) objMdl + modelSize) - sp48;
-    load_asset_to_address(ASSET_OBJECT_MODELS, compressedData, temp_s0, sp48);
+    asset_load(ASSET_OBJECT_MODELS, compressedData, temp_s0, sp48);
     gzip_inflate((u8 *) compressedData, (u8 *) objMdl);
     objMdl->textures = (TextureInfo *) ((s32) objMdl->textures + (u8 *) objMdl);
     objMdl->vertices = (Vertex *) ((s32) objMdl->vertices + (u8 *) objMdl);
@@ -975,10 +978,10 @@ s32 model_load_anim_id(ObjectModel *model, s32 animID, s32 modelID) {
 
     assettable_seek_s32(start, &assetOffset, (s32 *) &animAddress, ASSET_OBJECT_ANIMATIONS_TABLE);
     assetSize = animAddress;
-    size = get_asset_uncompressed_size(ASSET_OBJECT_ANIMATIONS, assetOffset) + 0x80;
+    size = gzip_size_uncompressed(ASSET_OBJECT_ANIMATIONS, assetOffset) + 0x80;
     model->animations[animID].animData = (u8 *) mempool_alloc(size, PP_RAM_ANIMATIONS);
     animAddress = (u32) (model->animations[animID].animData + size) - assetSize;
-    load_asset_to_address(ASSET_OBJECT_ANIMATIONS, animAddress, assetOffset, assetSize);
+    asset_load(ASSET_OBJECT_ANIMATIONS, animAddress, assetOffset, assetSize);
     gzip_inflate((u8 *) animAddress, (u8 *) model->animations[animID].anim);
     temp = model->animations[animID].anim;
     model->animations[animID].animLength = *temp;

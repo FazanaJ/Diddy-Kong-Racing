@@ -7,6 +7,7 @@
 #include "textures_sprites.h"
 #include "tracks.h"
 #include <ultra64.h>
+#include "main.h"
 
 /************ .data ************/
 
@@ -139,14 +140,14 @@ void init_particle_assets(void) {
     s32 i;
     s32 *tempTable;
 
-    tempTable = (ParticleDescriptor **) load_asset_section_from_rom(ASSET_PARTICLES_TABLE);
+    tempTable = (ParticleDescriptor **) asset_table_load(ASSET_PARTICLES_TABLE);
     gParticlesAssetTableCount = -1;
     while (((s32) tempTable[gParticlesAssetTableCount + 1]) != -1) {
         gParticlesAssetTableCount++;
     }
     mempool_free(tempTable);
 
-    tempTable = (ParticleBehaviour **) load_asset_section_from_rom(ASSET_PARTICLE_BEHAVIORS_TABLE);
+    tempTable = (ParticleBehaviour **) asset_table_load(ASSET_PARTICLE_BEHAVIORS_TABLE);
     gParticleBehavioursAssetTableCount = -1;
     while (((s32) tempTable[gParticleBehavioursAssetTableCount + 1]) != -1) {
         gParticleBehavioursAssetTableCount++;
@@ -167,8 +168,8 @@ void init_particle_assets(void) {
 
 ParticleDescriptor *particle_desciptor_seek(s32 id) {
     s32 ret[2];
-    load_asset_to_address(ASSET_PARTICLES_TABLE, (u32) &ret, id * (sizeof(s32)), sizeof(s32) * 2);
-    load_asset_to_address(ASSET_PARTICLES, (u32) &gTempDescriptor, ret[0], sizeof(ParticleDescriptor));
+    asset_load(ASSET_PARTICLES_TABLE, (u32) &ret, id * (sizeof(s32)), sizeof(s32) * 2);
+    asset_load(ASSET_PARTICLES, (u32) &gTempDescriptor, ret[0], sizeof(ParticleDescriptor));
     return &gTempDescriptor;
 }
 
@@ -185,11 +186,11 @@ ParticleBehaviour *particle_behaviour_seek(s32 id) {
         }
     }
 
-    load_asset_to_address(ASSET_PARTICLE_BEHAVIORS_TABLE, &assetTableEntry, id * sizeof(s32), sizeof(s32) * 2);
+    asset_load(ASSET_PARTICLE_BEHAVIORS_TABLE, &assetTableEntry, id * sizeof(s32), sizeof(s32) * 2);
 
     address = mempool_alloc(sizeof(ParticleBehaviour), PP_RAM_PARTICLES);
 
-    load_asset_to_address(ASSET_PARTICLE_BEHAVIORS, (u32) address, assetTableEntry[0], sizeof(ParticleBehaviour));
+    asset_load(ASSET_PARTICLE_BEHAVIORS, (u32) address, assetTableEntry[0], sizeof(ParticleBehaviour));
 
     if ((u32) address->colourLoop != 0xFFFFFFFF) {
         address->colourLoop = (ColorLoopEntry *) get_misc_asset((s32) address->colourLoop);
@@ -391,7 +392,7 @@ void init_particle_buffers(s32 maxTriangleParticles, s32 maxRectangleParticles, 
     }
 
     /*if (gParticleDummys == NULL) {
-        asset2F = (s16 *) load_asset_section_from_rom(ASSET_DUMMY_PARTICLE_IDS);
+        asset2F = (s16 *) asset_table_load(ASSET_DUMMY_PARTICLE_IDS);
         gParticleDummyCount = 0;
         while (asset2F[gParticleDummyCount] != -1) {
             gParticleDummyCount++;

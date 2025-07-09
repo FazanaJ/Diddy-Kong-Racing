@@ -35,6 +35,8 @@
 #include "types.h"
 #include "video.h"
 #include "main.h"
+#include "thread0_epc.h"
+#include "gzip.h"
 
 /**
  * @file Contains all the code used for every menu in the game.
@@ -1916,7 +1918,7 @@ void load_menu_text(s32 language) {
     char **fake;
 
     if (gMenuTextLangTable == NULL) {
-        gMenuTextLangTable = (s32 *) load_asset_section_from_rom(ASSET_MENU_TEXT_TABLE);
+        gMenuTextLangTable = (s32 *) asset_table_load(ASSET_MENU_TEXT_TABLE);
     }
 
     switch (language) {
@@ -1943,7 +1945,7 @@ void load_menu_text(s32 language) {
         return;
     }
 
-    load_asset_to_address(ASSET_MENU_TEXT, (u32) temp, langIndex, size);
+    asset_load(ASSET_MENU_TEXT, (u32) temp, langIndex, size);
 
     // TODO: Find a way to clean up the ugly hacks.
     // Fill up the lookup table with proper RAM addresses
@@ -13879,7 +13881,7 @@ void menu_asset_load(s32 assetID) {
     LevelObjectEntryCommon entry;
 
     if (*gAssetsMenuElementIds == NULL) {
-        *gAssetsMenuElementIds = (s16 *) load_asset_section_from_rom(ASSET_MENU_ELEMENT_IDS);
+        *gAssetsMenuElementIds = (s16 *) asset_table_load(ASSET_MENU_ELEMENT_IDS);
         for (gMenuElementIdCount = 0; (*gAssetsMenuElementIds)[gMenuElementIdCount] != -1; gMenuElementIdCount++) {}
         gMenuObjectsCount = 0;
         for (i = 0; i < gMenuElementIdCount; i++) {
@@ -15969,12 +15971,12 @@ void set_object_model(s32 modelId) {
     gDebugModelSizeTex = 0;
     gDebugModelSizeAnim = 0;
     assettable_seek_s32(modelId, &offset, &size, ASSET_OBJECT_MODELS_TABLE);
-    gDebugModelSizeMdl = asset_size_uncompressed(ASSET_OBJECT_MODELS, offset) + sizeof(ObjectModel);
+    gDebugModelSizeMdl = gzip_size_uncompressed(ASSET_OBJECT_MODELS, offset) + sizeof(ObjectModel);
     assettable_seek_s16(modelId, &start, &end, ASSET_ANIMATION_IDS);
     if (start != end) {
         do {
             assettable_seek_s32(modelId, &offset, &size, ASSET_OBJECT_ANIMATIONS_TABLE);
-            gDebugModelSizeAnim += asset_size_uncompressed(ASSET_OBJECT_ANIMATIONS, offset) + 0x80;
+            gDebugModelSizeAnim += gzip_size_uncompressed(ASSET_OBJECT_ANIMATIONS, offset) + 0x80;
             start++;
         } while (start < end);
     }
@@ -16354,8 +16356,8 @@ void menu_level_preview_load_level_names() {
         return;
     }
     
-    assetLevelNames = load_asset_section_from_rom(ASSET_LEVEL_NAMES);
-    assetLevelNamesTable = load_asset_section_from_rom(ASSET_LEVEL_NAMES_TABLE);
+    assetLevelNames = asset_table_load(ASSET_LEVEL_NAMES);
+    assetLevelNamesTable = asset_table_load(ASSET_LEVEL_NAMES_TABLE);
     
     numberOfLevels = 0;
     while(assetLevelNamesTable[numberOfLevels] != 0xFFFFFFFF) {
