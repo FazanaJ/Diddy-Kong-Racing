@@ -158,7 +158,7 @@ Object *autoplay_find_balloon2(f32 x, f32 z) {
             if (!(tempObj->trans.flags & OBJ_FLAGS_PARTICLE) && tempObj->behaviorId == BHV_GOLDEN_BALLOON) {
                 diffX = tempObj->trans.x_position - x;
                 diffZ = tempObj->trans.z_position - z;
-                distance = sqrtf((diffX * diffX) + (diffZ * diffZ));
+                distance = ((diffX * diffX) + (diffZ * diffZ));
                 if (bestDist > distance) {
                     bestDist = distance;
                     bestObj = tempObj;

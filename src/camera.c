@@ -252,7 +252,7 @@ f32 get_distance_to_active_camera(f32 xPos, f32 yPos, f32 zPos) {
     dz = zPos - gCameras[index].trans.z_position;
     dx = xPos - gCameras[index].trans.x_position;
     dy = yPos - gCameras[index].trans.y_position;
-    return sqrtf((dz * dz) + ((dx * dx) + (dy * dy)));
+    return ((dz * dz) + ((dx * dx) + (dy * dy)));
 }
 
 /**

@@ -679,7 +679,4 @@ f32 light_direction_calc(ObjectLight *light) {
     }
     return distance;
 }
-#else
-void func_80032BAC(ObjectLight *light) {
-}
 #endif

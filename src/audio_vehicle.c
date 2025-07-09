@@ -702,12 +702,7 @@ void racer_sound_doppler_effect(Object *observerObj, Camera *camera, Object *sou
             // Then compute the observer's speed.
             switch (observerRacer->vehicleID) {
                 case VEHICLE_CAR:
-                    // Absolute value of forward velocity
-                    if (observerRacer->velocity >= 0.0f) {
-                        obsSpeed = observerRacer->velocity;
-                    } else {
-                        obsSpeed = -observerRacer->velocity;
-                    }
+                    obsSpeed = ABSF(obsSpeed);
                     break;
                 case VEHICLE_HOVERCRAFT:
                     // 2D ground speed

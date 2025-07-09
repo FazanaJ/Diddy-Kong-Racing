@@ -1615,7 +1615,7 @@ void hud_main_time_trial(s32 arg0, Object *playerRacerObj, s32 updateRate) {
                 posX = ttSWBodyObject->trans.x_position - playerRacerObj->trans.x_position;
                 posY = ttSWBodyObject->trans.y_position - playerRacerObj->trans.y_position;
                 posZ = ttSWBodyObject->trans.z_position - playerRacerObj->trans.z_position;
-                if ((sqrtf((posX * posX) + (posY * posY) + (posZ * posZ)) < 600.0f) && (gHUDVoiceSoundMask == 0) &&
+                if ((((posX * posX) + (posY * posY) + (posZ * posZ)) < 600.0f * 600.0f) && (gHUDVoiceSoundMask == 0) &&
                     (D_80126D50 == 0)) {
                     soundID = SOUND_VOICE_TT_GO_FOR_IT + rand_range(0, 2);
                     while (soundID == gHudTTSoundID) {
@@ -1796,12 +1796,13 @@ void hud_speedometre(Object *obj, s32 updateRate) {
             racer = obj->racer;
             if (racer->raceFinished == FALSE) {
                 if (racer->vehicleID != VEHICLE_CAR && racer->vehicleID != VEHICLE_HOVERCRAFT) {
-                    vel = sqrtf((obj->x_velocity * obj->x_velocity) +
+                    vel = ((obj->x_velocity * obj->x_velocity) +
                                 (obj->y_velocity * obj->y_velocity) +
                                 (obj->z_velocity * obj->z_velocity));
                 } else {
-                    vel = sqrtf((obj->x_velocity * obj->x_velocity) + (obj->z_velocity * obj->z_velocity));
+                    vel = ((obj->x_velocity * obj->x_velocity) + (obj->z_velocity * obj->z_velocity));
                 }
+                vel = sqrtf(vel);
 
                 height = SCREEN_HEIGHT - 20;
                 x = SCREEN_WIDTH - 64 + gHudOffsetX + gHudBounceX;

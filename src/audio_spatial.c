@@ -178,7 +178,7 @@ void audspat_update_all(Object **objList, s32 numObjects, s32 updateRate) {
     f32 minDistance;
     f32 *coords;
     f32 pitch2;
-    s32 unused;
+    s32 range;
     f32 pitch3;
 
     jingleVolume = 0;
@@ -198,13 +198,14 @@ void audspat_update_all(Object **objList, s32 numObjects, s32 updateRate) {
         audioPoint = gAudioPoints[i];
         volume = 0;
 
+        range = (audioPoint->range * audioPoint->range);
         if (audioPoint->flags & AUDIO_POINT_FLAG_SINGLE_PLAYER) {
             if (numCameras == 1) {
                 dx = audioPoint->pos.x - cameras[0].trans.x_position;
                 dy = audioPoint->pos.y - cameras[0].trans.y_position;
                 dz = audioPoint->pos.z - cameras[0].trans.z_position;
-                distance = sqrtf(dx * dx + dy * dy + dz * dz);
-                if (distance < audioPoint->range && !audioPoint->inRange) {
+                distance = (dx * dx + dy * dy + dz * dz);
+                if (distance < range && !audioPoint->inRange) {
                     if (audioPoint->soundHandle == NULL &&
                         (!audioPoint->triggeredOnce || !(audioPoint->flags & AUDIO_POINT_FLAG_ONE_TIME_TRIGGER))) {
                         sound_play_direct(audioPoint->soundBite, &audioPoint->soundHandle);
@@ -227,7 +228,7 @@ void audspat_update_all(Object **objList, s32 numObjects, s32 updateRate) {
                     }
 
                     audioPoint->inRange = TRUE;
-                } else if (distance > audioPoint->range && audioPoint->inRange) {
+                } else if (distance > range && audioPoint->inRange) {
                     audioPoint->inRange = FALSE;
                 }
             }
@@ -237,8 +238,9 @@ void audspat_update_all(Object **objList, s32 numObjects, s32 updateRate) {
                 dx = audioPoint->pos.x - cameras[j].trans.x_position;
                 dy = audioPoint->pos.y - cameras[j].trans.y_position;
                 dz = audioPoint->pos.z - cameras[j].trans.z_position;
-                distance = sqrtf(dx * dx + dy * dy + dz * dz);
-                if (distance < audioPoint->range) {
+                distance = (dx * dx + dy * dy + dz * dz);
+                if (distance < range) {
+                    distance = sqrtf(distance);
                     if (!audioPoint->fastFalloff) {
                         adjustedVolume = (1.0f - (f32) distance / (f32) audioPoint->range) * audioPoint->volume;
                     } else {
@@ -262,7 +264,7 @@ void audspat_update_all(Object **objList, s32 numObjects, s32 updateRate) {
                     dx = audioPoint->pos.x - cameras[j].trans.x_position;
                     dy = audioPoint->pos.y - cameras[j].trans.y_position;
                     dz = audioPoint->pos.z - cameras[j].trans.z_position;
-                    distance = sqrtf(dx * dx + dy * dy + dz * dz);
+                    distance = (dx * dx + dy * dy + dz * dz);
                     if (distance < minDistance) {
                         pan = audspat_calculate_spatial_pan(dx, dz, cameras[j].trans.rotation.y_rotation);
                         minDistance = distance;
@@ -486,7 +488,7 @@ s32 audspat_distance_to_segment(f32 inX, f32 inY, f32 inZ, f32 coords[6], f32 *o
         dx = x1 - inX;
         dy = y1 - inY;
         dz = z1 - inZ;
-        distance = sqrtf(dx * dx + dy * dy + dz * dz);
+        distance = (dx * dx + dy * dy + dz * dz);
     } else if (projection > 1.0f) {
         // Second vertex is the closest
         *outX = x2;
@@ -495,15 +497,15 @@ s32 audspat_distance_to_segment(f32 inX, f32 inY, f32 inZ, f32 coords[6], f32 *o
         dx = x2 - inX;
         dy = y2 - inY;
         dz = z2 - inZ;
-        distance = sqrtf(dx * dx + dy * dy + dz * dz);
+        distance = (dx * dx + dy * dy + dz * dz);
     } else {
         // Closest point is between the two vertices
         // Calculate the point on the line
         *outX = projection * dx + x1, *outY = projection * dy + y1, *outZ = projection * dz + z1;
-        distance = sqrtf((*outX - inX) * (*outX - inX) + (*outY - inY) * (*outY - inY) + (*outZ - inZ) * (*outZ - inZ));
+        distance = ((*outX - inX) * (*outX - inX) + (*outY - inY) * (*outY - inY) + (*outZ - inZ) * (*outZ - inZ));
     }
 
-    return distance;
+    return sqrtf(distance);
 }
 
 /**

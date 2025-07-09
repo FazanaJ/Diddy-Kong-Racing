@@ -232,7 +232,7 @@ void obj_loop_fireball_octoweapon(Object *obj, s32 updateRate) {
             diff = -10.0f;
         }
         obj->z_velocity += (diff - obj->z_velocity) * 0.125 * updateRateF;
-        if (sqrtf((obj->x_velocity * obj->x_velocity) + (obj->z_velocity * obj->z_velocity)) > 0.5) {
+        if (((obj->x_velocity * obj->x_velocity) + (obj->z_velocity * obj->z_velocity)) > 0.5f * 0.5f) {
             obj->trans.rotation.y_rotation = arctan2_f(obj->x_velocity, obj->z_velocity);
             obj->trans.rotation.x_rotation -= updateRate * 0x200;
         }
@@ -356,8 +356,9 @@ void obj_loop_lasergun(Object *obj, s32 updateRate) {
                     diffX = obj->trans.x_position - racerObj->trans.x_position;
                     diffY = obj->trans.y_position - racerObj->trans.y_position;
                     diffZ = obj->trans.z_position - racerObj->trans.z_position;
-                    distance = sqrtf((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ));
-                    if (distance > 10.0f) {
+                    distance = ((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ));
+                    if (distance > 10.0f * 10.0f) {
+                        distance = sqrtf(distance);
                         diffX /= distance;
                         diffY /= distance;
                         diffZ /= distance;
@@ -608,7 +609,7 @@ void obj_loop_trophycab(Object *obj, s32 updateRate) {
     if (tempObj != NULL) {
         diffX = obj->trans.x_position - tempObj->trans.x_position;
         diffZ = obj->trans.z_position - tempObj->trans.z_position;
-        dist = sqrtf((diffX * diffX) + (diffZ * diffZ)); // unused
+        //dist = sqrtf((diffX * diffX) + (diffZ * diffZ)); // unused
         bossFlags = settings->bosses;
         bossFlags |= 0x800;
         worldBalloons = (settings->balloonsPtr[settings->worldId] >= 8);
@@ -917,7 +918,7 @@ void obj_loop_airzippers_waterzippers(Object *obj, UNUSED s32 updateRate) {
                 diffX = curRacerObj->trans.x_position - obj->trans.x_position;
                 diffY = curRacerObj->trans.y_position - obj->trans.y_position;
                 diffZ = curRacerObj->trans.z_position - obj->trans.z_position;
-                if ((s32) sqrtf((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ)) < 100) {
+                if (((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ)) < 100.0f * 100.0f) {
                     racer->zipperDirCorrection = TRUE;
                     racer->zipperObj = obj;
                 }
@@ -991,7 +992,7 @@ void obj_loop_groundzipper(Object *obj, UNUSED s32 updateRate) {
                 diffX = racerObj->trans.x_position - obj->trans.x_position;
                 diffY = racerObj->trans.y_position - obj->trans.y_position;
                 diffZ = racerObj->trans.z_position - obj->trans.z_position;
-                if ((s32) sqrtf((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ)) < obj->properties.zipper.radius) {
+                if (((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ)) < obj->properties.zipper.radius * obj->properties.zipper.radius) {
                     if (racer->playerIndex != PLAYER_COMPUTER) {
                         sound_play_spatial(SOUND_ZIP_PAD_BOOST, racerObj->trans.x_position, racerObj->trans.y_position,
                                            racerObj->trans.z_position, NULL);
@@ -1201,7 +1202,7 @@ void obj_loop_stopwatchman(Object *obj, s32 updateRate) {
         racer = racerObj->racer;
         diffX = ((racerObj->trans.x_position - (racer->ox1 * 50.0f)) - (racer->ox3 * 5.0f)) - obj->trans.x_position;
         diffZ = ((racerObj->trans.z_position - (racer->oz1 * 50.0f)) - (racer->oz3 * 5.0f)) - obj->trans.z_position;
-        distance = sqrtf((diffX * diffX) + (diffZ * diffZ));
+        distance = ((diffX * diffX) + (diffZ * diffZ));
         angleDiff = arctan2_f(racerObj->trans.x_position - obj->trans.x_position,
                               racerObj->trans.z_position - obj->trans.z_position) -
                     (racerObj->trans.rotation.y_rotation & 0xFFFF);
@@ -1217,7 +1218,7 @@ void obj_loop_stopwatchman(Object *obj, s32 updateRate) {
         }
     }
     index = input_pressed(PLAYER_ONE);
-    if (obj->properties.tt.action == TT_MODE_ROAM && distance < 300.0 && obj->properties.tt.timer == 0) {
+    if (obj->properties.tt.action == TT_MODE_ROAM && distance < 300.0f * 300.0f && obj->properties.tt.timer == 0) {
         if (angleDiff > -0x2000 && angleDiff < 0x2000) {
             if ((obj->interactObj->flags & INTERACT_FLAGS_PUSHING && racerObj == obj->interactObj->obj) ||
                 index & Z_TRIG) {
@@ -1250,10 +1251,11 @@ void obj_loop_stopwatchman(Object *obj, s32 updateRate) {
         case TT_MODE_APPROACH_PLAYER:
             obj->animationID = 0;
             tt->nodeCurrent = 255;
-            if (distance < 100.0) {
+            if (distance < 100.0f * 100.0f) {
                 racer_set_dialogue_camera();
             }
-            if (distance > 10.0) {
+            if (distance > 10.0f * 10.0f) {
+                distance = sqrtf(distance);
                 angleDiff =
                     (arctan2_f(diffX / distance, diffZ / distance) - (obj->trans.rotation.y_rotation & 0xFFFF)) +
                     0x8000;
@@ -2346,7 +2348,7 @@ void obj_loop_exit(Object *obj, UNUSED s32 updateRate) {
                 diffX = racerObj->trans.x_position - obj->trans.x_position;
                 diffY = racerObj->trans.y_position - obj->trans.y_position;
                 diffZ = racerObj->trans.z_position - obj->trans.z_position;
-                if ((sqrtf((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ)) < dist)) {
+                if (((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ) < dist * dist)) {
                     rotDiff = (exit->directionX * racerObj->trans.x_position) +
                               (exit->directionZ * racerObj->trans.z_position) + exit->rotationDiff;
                     if (rotDiff < 0.0f) {
@@ -2493,11 +2495,11 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
         racer = racerObj->racer;
         xPosDiff = (racerObj->trans.x_position - (racer->ox1 * 50.0f)) - obj->trans.x_position;
         zPosDiff = (racerObj->trans.z_position - (racer->oz1 * 50.0f)) - obj->trans.z_position;
-        distance = sqrtf((xPosDiff * xPosDiff) + (zPosDiff * zPosDiff));
+        distance = ((xPosDiff * xPosDiff) + (zPosDiff * zPosDiff));
     }
     buttonsPressed = input_pressed(PLAYER_ONE);
     var_a2 = FALSE;
-    if ((obj->properties.taj.action == NULL) && (distance < 300.0) &&
+    if ((obj->properties.taj.action == NULL) && (distance < 300.0f * 300.0f) &&
         (((obj->interactObj->flags & INTERACT_FLAGS_PUSHING) && (racerObj == obj->interactObj->obj)) ||
          (buttonsPressed & Z_TRIG))) {
         if (buttonsPressed & Z_TRIG) {
@@ -2588,10 +2590,11 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
         case TAJ_MODE_APPROACH_PLAYER:
             obj->animationID = 0;
             taj->nodeCurrent = 0xFF;
-            if (distance < 100.0) {
+            if (distance < 100.0f * 100.0f) {
                 racer_set_dialogue_camera();
             }
-            if (distance > 10.0) {
+            if (distance > 10.0f * 10.0f) {
+                distance = sqrtf(distance);
                 arctan =
                     (arctan2_f(xPosDiff / distance, zPosDiff / distance) - (obj->trans.rotation.y_rotation & 0xFFFF)) +
                     0x8000;
@@ -2634,7 +2637,7 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
                 arctan = 16;
             }
             obj->trans.rotation.y_rotation += arctan >> 3;
-            if (arctan < 0x400 && arctan > -0x400 && distance < 2.0) {
+            if (arctan < 0x400 && arctan > -0x400 && distance < 2.0f * 2.0f) {
                 obj->properties.taj.action = TAJ_MODE_GREET_PLAYER;
                 taj->animFrameF = 0;
                 play_taj_voice_clip(gTajSoundID, TRUE);
@@ -2913,7 +2916,8 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
                     taj->nodeBack1 = taj->nodeCurrent;
                 }
             } else {
-                if ((distance < 55.0f) && (taj->unk1C == 0) && (racerObj != NULL)) {
+                if ((distance < 55.0f * 55.0f) && (taj->unk1C == 0) && (racerObj != NULL)) {
+                    distance = sqrtf(distance);
                     taj->unk1C = 240;
                     taj->unk1E = (s16) (arctan2_f(xPosDiff / distance, zPosDiff / distance) + 0x4000);
                 }
@@ -2944,8 +2948,9 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
                 xPosDiff = racerObjs[PLAYER_ONE]->trans.x_position - obj->trans.x_position;
                 distance = racerObjs[PLAYER_ONE]->trans.y_position - obj->trans.y_position;
                 zPosDiff = racerObjs[PLAYER_ONE]->trans.z_position - obj->trans.z_position;
-                var_f2 = sqrtf((xPosDiff * xPosDiff) + (distance * distance) + (zPosDiff * zPosDiff));
-                if (var_f2 < 1000.0f) {
+                var_f2 = ((xPosDiff * xPosDiff) + (distance * distance) + (zPosDiff * zPosDiff));
+                if (var_f2 < 1000.0f * 1000.0f) {
+                    var_f2 = sqrtf(var_f2);
                     var_f2 = 1000.0f - var_f2;
                     sp3C = (127.0f * var_f2) / 1000.0f;
                     temp_v0_22 = cam_get_cameras();
@@ -3136,8 +3141,8 @@ void obj_loop_modechange(Object *obj, UNUSED s32 updateRate) {
                 diffX = racerObj->trans.x_position - obj->trans.x_position;
                 diffY = racerObj->trans.y_position - obj->trans.y_position;
                 diffZ = racerObj->trans.z_position - obj->trans.z_position;
-                dist = sqrtf((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ));
-                if (dist < radiusF) {
+                dist = ((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ));
+                if (dist < radiusF * radiusF) {
                     dist = ((trigger->directionX * racerObj->trans.x_position) +
                             (trigger->directionZ * racerObj->trans.z_position) + trigger->rotationDiff);
                     if (dist < 0.0f) {
@@ -3217,7 +3222,7 @@ void obj_loop_bonus(Object *obj, UNUSED s32 updateRate) {
             if (diffY < halfDist && -halfDist < diffY) {
                 diffX = racerObj->trans.x_position - obj->trans.x_position;
                 diffZ = racerObj->trans.z_position - obj->trans.z_position;
-                if (sqrtf((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ)) < dist) {
+                if (((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ)) < dist * dist) {
                     f32 temp = (obj64->directionX * racerObj->trans.x_position) +
                                (obj64->directionZ * racerObj->trans.z_position) + obj64->rotationDiff;
                     if (temp < 0.0f) {
@@ -3817,8 +3822,8 @@ void obj_loop_trigger(Object *obj, UNUSED s32 updateRate) {
                         diffX = racerObj->trans.x_position - obj->trans.x_position;
                         diffY = racerObj->trans.y_position - obj->trans.y_position;
                         diffZ = racerObj->trans.z_position - obj->trans.z_position;
-                        distance = sqrtf((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ));
-                        if (distance < radiusF) {
+                        distance = ((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ));
+                        if (distance < radiusF * radiusF) {
                             distance = (trigger->directionX * racerObj->trans.x_position) +
                                        (trigger->directionZ * racerObj->trans.z_position) + trigger->rotationDiff;
                             if (distance < 0.0f) {
@@ -4827,7 +4832,7 @@ void rocket_prevent_overshoot(Object *obj, UNUSED s32 updateRate, Object_Weapon 
         diffX = interactedObj->trans.x_position - obj->trans.x_position;
         diffY = interactedObj->trans.y_position - obj->trans.y_position;
         diffZ = interactedObj->trans.z_position - obj->trans.z_position;
-        dist = sqrtf((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ));
+        dist = ((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ));
         if (dist > 0.0f) {
             rocket->forwardVel = -25.0f;
             angle = (arctan2_f(diffX, diffZ) - 0x8000) & 0xFFFF;
@@ -4837,7 +4842,7 @@ void rocket_prevent_overshoot(Object *obj, UNUSED s32 updateRate, Object_Weapon 
                 obj->interactObj->obj = interactedObj;
                 obj->interactObj->distance = 1;
             }
-            obj->trans.rotation.x_rotation = arctan2_f(diffY, dist);
+            obj->trans.rotation.x_rotation = arctan2_f(diffY, sqrtf(dist));
             obj->trans.rotation.y_rotation = angle;
         }
     }
@@ -4877,8 +4882,8 @@ void homing_rocket_prevent_overshoot(Object *obj, s32 updateRate, Object_Weapon 
             rocket->target = NULL;
             return;
         }
-        dist = sqrtf(dist + distY);
-        if (dist > 300.0f && rocket->checkpoint != -1 && rocket->hitObj == NULL) {
+        dist = (dist + distY);
+        if (dist > 300.0f * 300.0f && rocket->checkpoint != -1 && rocket->hitObj == NULL) {
             sp58 = func_8001955C(obj, rocket->checkpoint, racer->unk1C8, rocket->unk14, rocket->unk16,
                                  rocket->checkpointDist, &diffX, &diffY, &diffZ);
             sineY = arctan2_f(diffY, 500.0f) & 0xFFFF;
@@ -4901,7 +4906,7 @@ void homing_rocket_prevent_overshoot(Object *obj, s32 updateRate, Object_Weapon 
                 obj->interactObj->obj = targetObj;
                 obj->interactObj->distance = 1;
             }
-            obj->trans.rotation.x_rotation = arctan2_f(diffY, dist) & 0xFFFFu;
+            obj->trans.rotation.x_rotation = arctan2_f(diffY, sqrtf(dist)) & 0xFFFFu;
 
             obj->trans.rotation.y_rotation = angle;
         }
@@ -4939,6 +4944,7 @@ void play_rocket_trailing_sound(Object *obj, struct Object_Weapon *weapon, u16 s
     f32 diffX;
     f32 diffZ;
     f32 diffY;
+    f32 radius;
     s32 shouldPlaySound;
     s32 i;
 
@@ -4950,8 +4956,9 @@ void play_rocket_trailing_sound(Object *obj, struct Object_Weapon *weapon, u16 s
             diffX = racer->trans.x_position - obj->trans.x_position;
             diffY = racer->trans.y_position - obj->trans.y_position;
             diffZ = racer->trans.z_position - obj->trans.z_position;
-            distance = sqrtf((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ));
-            if (distance <= sound_distance(soundID)) {
+            distance = ((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ));
+            radius = sound_distance(soundID);
+            if (distance <= radius * radius) {
                 shouldPlaySound = TRUE;
             }
         }
@@ -5773,7 +5780,7 @@ void obj_loop_butterfly(Object *butterflyObj, s32 updateRate) {
             }
             if (butterfly->unkFD != 3) {
                 yDiff = butterflyObj->trans.y_position - butterflyEntry->common.y;
-                if (sqrtf((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff)) < 4.0f) {
+                if (((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff)) < 4.0f * 4.0f) {
                     ignore_bounds_check();
                     move_object(butterflyObj, -xDiff, -yDiff, -zDiff);
                     butterflyObj->y_velocity = 0.0f;

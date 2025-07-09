@@ -539,8 +539,9 @@ void model_init_collision(ObjectModel *model) {
             ny = z1 * (x2 - x3) + z2 * (x3 - x1) + z3 * (x1 - x2);
             nz = x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2);
 
-            mag = sqrtf(nx * nx + ny * ny + nz * nz);
+            mag = (nx * nx + ny * ny + nz * nz);
             if (mag > 0.0) {
+                mag = sqrtf(mag);
                 nx /= mag;
                 ny /= mag;
                 nz /= mag;
@@ -612,8 +613,9 @@ void model_init_collision(ObjectModel *model) {
                 y5 = z1 * (x2 - x3) + z2 * (x3 - x1) + z3 * (x1 - x2);
                 z5 = x1 * (y2 - y3) + x2 * (y3 - y1) + x3 * (y1 - y2);
 
-                mag = sqrtf(x5 * x5 + y5 * y5 + z5 * z5);
+                mag = (x5 * x5 + y5 * y5 + z5 * z5);
                 if (mag > 0.0) {
+                    mag = sqrtf(mag);
                     x5 /= mag;
                     y5 /= mag;
                     z5 /= mag;
@@ -819,9 +821,10 @@ s32 model_init_normals(ObjectModel *model) {
                 floatNorms[j].x = (sp58[0] - sp58[2]) * (sp64[0] - sp64[1]) - (sp64[0] - sp64[2]) * (sp58[0] - sp58[1]);
                 floatNorms[j].y = (sp58[0] - sp58[1]) * (sp70[0] - sp70[2]) - (sp70[0] - sp70[1]) * (sp58[0] - sp58[2]);
                 floatNorms[j].z = (sp70[0] - sp70[1]) * (sp64[0] - sp64[2]) - (sp70[0] - sp70[2]) * (sp64[0] - sp64[1]);
-                length = sqrtf(floatNorms[j].x * floatNorms[j].x + floatNorms[j].y * floatNorms[j].y +
+                length = (floatNorms[j].x * floatNorms[j].x + floatNorms[j].y * floatNorms[j].y +
                                floatNorms[j].z * floatNorms[j].z);
                 if (length != 0.0f) {
+                    length = sqrtf(length);
                     floatNorms[j].x /= length;
                     floatNorms[j].y /= length;
                     floatNorms[j].z /= length;
@@ -925,8 +928,9 @@ s32 model_init_normals(ObjectModel *model) {
         }
 
         for (k = 0; k < s6; k++) {
-            length = sqrtf(v06[k].x * v06[k].x + v06[k].y * v06[k].y + v06[k].z * v06[k].z);
+            length = (v06[k].x * v06[k].x + v06[k].y * v06[k].y + v06[k].z * v06[k].z);
             if (length != 0.0f) {
+                length = sqrtf(length);
                 v06[k].x /= length * (1.0f / 0x2000);
                 v06[k].y /= length * (1.0f / 0x2000);
                 v06[k].z /= length * (1.0f / 0x2000);

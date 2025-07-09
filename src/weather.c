@@ -840,7 +840,7 @@ void lensflare_override(Camera *cameraSegment) {
             yDiff = cameraSegment->trans.y_position - gLensFlareSwitches[i]->trans.y_position;
             zDiff = cameraSegment->trans.z_position - gLensFlareSwitches[i]->trans.z_position;
             lensFlare = &gLensFlareSwitches[i]->level_entry->lensFlareSwitch;
-            if (sqrtf((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff)) < lensFlare->radius) {
+            if (((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff)) < lensFlare->radius * lensFlare->radius) {
                 gLensFlareOff = TRUE;
             }
         }

@@ -2507,10 +2507,13 @@ s32 check_if_in_draw_range(Object *obj) {
     f32 z;
     f32 x;
     s32 viewDistance;
+    f32 viewSq;
+    f32 fadeSq;
     s32 alpha;
     s32 i;
     Object_AnimatedObject *animatedObj;
     f32 accum;
+    f32 fadeDelta;
     s32 temp2;
     f32 dist;
     Object_Racer *racer;
@@ -2520,24 +2523,27 @@ s32 check_if_in_draw_range(Object *obj) {
         viewDistance = obj->header->drawDistance;
         if (obj->header->drawDistance) {
             if (gScenePlayerViewports == 3) {
-                viewDistance *= 0.5;
+                viewDistance /= 2;
             }
 
+            viewSq = viewDistance * viewDistance;
             dist = get_distance_to_active_camera(obj->trans.x_position, obj->trans.y_position, obj->trans.z_position);
 
-            if (viewDistance < dist) {
+            if (viewSq < dist) {
                 return FALSE;
             }
 
-            fadeDist = viewDistance * 0.8;
-            if (fadeDist < dist) {
-                temp2 = viewDistance - fadeDist;
-                if (temp2 > 0) {
-                    fadeDist = dist - fadeDist;
-                    alpha = ((f32) (1.0 - ((fadeDist) / temp2)) * 255.0);
+            fadeDist = viewDistance * 0.8f;
+            fadeSq = fadeDist * fadeDist;
+
+            if (fadeSq < dist) {
+                temp2 = viewSq - fadeSq;
+                if (temp2 > 0.0f) {
+                    fadeDelta = dist - fadeSq;
+                    alpha = (1.0f - (fadeDelta / temp2)) * 255.0f;
                 }
-                if (alpha == 0) {
-                    alpha = 1;
+                if (alpha <= 0.0f) {
+                    alpha = 1.0f;
                 }
             }
         }
@@ -3589,7 +3595,7 @@ void watereffect_render(Object *obj, WaterEffect *effect) {
             i = effect->meshStart;
             if (obj->header->waterEffectGroup == SHADOW_SCENERY) {
                 gWaterEffectIndex += 2;
-                if (get_distance_to_active_camera(obj->trans.x_position, obj->trans.y_position, obj->trans.z_position) > 768.0f) {
+                if (get_distance_to_active_camera(obj->trans.x_position, obj->trans.y_position, obj->trans.z_position) > 768.0f * 768.0f) {
                     return;
                 }
             } else {
@@ -3702,7 +3708,8 @@ void shadow_update(s32 group, s32 waterGroup, s32 updateRate) {
                 }
             } else { // Single Player
                 radius = objHeader->shadowFadeMin;
-                if (dist < radius) {
+                if (dist < radius * radius) {
+                    dist = sqrtf(dist);
                     if (objHeader->shadowFadeMax < dist) {
                         gShadowOpacity = (radius - dist) / (radius - objHeader->shadowFadeMax);
                     }

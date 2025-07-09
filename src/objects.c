@@ -2670,11 +2670,13 @@ void obj_destroy(Object *obj, s32 arg1) {
             mempool_free(tempObj);
         }
     }
+#ifdef USE_DYNLIGHTS
     if (obj->lightData != NULL) {
         for (i = 0; i < obj->header->numLightSources; i++) {
             func_80032BAC(obj->lightData[i]);
         }
     }
+#endif
     switch (obj->behaviorId) {
         case BHV_RACER:
         case BHV_ANIMATED_OBJECT_3:
@@ -2728,11 +2730,13 @@ void obj_destroy(Object *obj, s32 arg1) {
 
             i = BHV_RACER;
             break;
+#ifdef USE_DYNLIGHTS
         case BHV_LIGHT_RGBA:
             func_80032BAC(obj->light);
 
             i = BHV_RACER;
             break;
+#endif
         case BHV_ANIMATION:
             if (obj->animTarget != NULL && arg1 == 0) {
                 free_object(obj->animTarget);
@@ -4065,8 +4069,9 @@ void render_bubble_trap(ObjectTransform *trans, Sprite *gfxData, Object *obj, s3
     x = cameraSegment->trans.x_position - obj->trans.x_position;
     y = cameraSegment->trans.y_position - obj->trans.y_position;
     z = cameraSegment->trans.z_position - obj->trans.z_position;
-    dist = sqrtf((x * x) + (y * y) + (z * z));
+    dist = ((x * x) + (y * y) + (z * z));
     if (dist > 0.0) {
+        dist = sqrtf(dist);
         dist = obj->numActiveEmitters / dist;
         x *= dist;
         y *= dist;
@@ -5011,6 +5016,8 @@ Object *obj_butterfly_node(f32 x, f32 y, f32 z, f32 maxDistCheck, s32 dontCheckY
     s32 i;
     Object *curObj;
 
+    maxDistCheck *= maxDistCheck;
+
     for (i = 0; i < gObjectCount; i++) {
         curObj = gObjPtrList[i];
         if (!(curObj->trans.flags & OBJ_FLAGS_PARTICLE) && curObj->behaviorId == BHV_ANIMATED_OBJECT_3) {
@@ -5018,9 +5025,9 @@ Object *obj_butterfly_node(f32 x, f32 y, f32 z, f32 maxDistCheck, s32 dontCheckY
             diffZ = curObj->trans.z_position - z;
             if (!dontCheckYAxis) {
                 diffY = curObj->trans.y_position - y;
-                distance = sqrtf((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ));
+                distance = ((diffX * diffX) + (diffY * diffY) + (diffZ * diffZ));
             } else {
-                distance = sqrtf((diffX * diffX) + (diffZ * diffZ));
+                distance = ((diffX * diffX) + (diffZ * diffZ));
             }
             if (distance < maxDistCheck) {
                 return curObj;
@@ -5057,12 +5064,12 @@ s32 obj_dist_racer(f32 x, f32 y, f32 z, f32 radius, s32 is2dCheck, Object **sort
                 if (is2dCheck) {
                     xDiff = racerObj->trans.x_position - x;
                     zDiff = racerObj->trans.z_position - z;
-                    yDiff = sqrtf((xDiff * xDiff) + (zDiff * zDiff));
+                    yDiff = ((xDiff * xDiff) + (zDiff * zDiff));
                 } else {
                     xDiff = racerObj->trans.x_position - x;
                     yDiff = racerObj->trans.y_position - y;
                     zDiff = racerObj->trans.z_position - z;
-                    yDiff = sqrtf((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff));
+                    yDiff = ((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff));
                 }
                 if (yDiff < radius) {
                     distances[result] = yDiff;
@@ -5685,7 +5692,7 @@ s32 func_800185E4(s32 checkpointIndex, Object *obj, f32 objX, f32 objY, f32 objZ
         sp6C = sp44->x - obj->trans.x_position;
         sp68 = sp44->y - obj->trans.y_position;
         sp64 = sp44->z - obj->trans.z_position;
-        if (sqrtf(sp6C * sp6C + sp68 * sp68 + sp64 * sp64) < sp44->unk2C) {
+        if ((sp6C * sp6C + sp68 * sp68 + sp64 * sp64) < sp44->unk2C * sp44->unk2C) {
             sp4C = sp44;
             sp70 = TRUE;
         }
@@ -5694,8 +5701,9 @@ s32 func_800185E4(s32 checkpointIndex, Object *obj, f32 objX, f32 objY, f32 objZ
     sp6C = sp4C->x - sp48->x;
     sp68 = sp4C->y - sp48->y;
     sp64 = sp4C->z - sp48->z;
-    length = sqrtf(sp6C * sp6C + sp68 * sp68 + sp64 * sp64);
+    length = (sp6C * sp6C + sp68 * sp68 + sp64 * sp64);
     if (length > 0.0) {
+        length = sqrtf(length);
         sp6C *= 1.0f / length;
         sp68 *= 1.0f / length;
         sp64 *= 1.0f / length;
@@ -6042,8 +6050,9 @@ s32 func_8001955C(Object *obj, s32 checkpoint, u8 arg2, s32 arg3, s32 arg4, f32 
     xSpline = cubic_spline_interpolation(xData, 0, temp2, &dx);
     ySpline = cubic_spline_interpolation(yData, 0, temp2, &dy);
     zSpline = cubic_spline_interpolation(zData, 0, temp2, &dz);
-    temp2 = sqrtf((dx * dx) + (dy * dy) + (dz * dz));
+    temp2 = ((dx * dx) + (dy * dy) + (dz * dz));
     if (temp2 != 0.0f) {
+        temp2 = sqrtf(temp2);
         temp2 = 500.0 / temp2;
         dx *= temp2;
         dy *= temp2;
@@ -7373,7 +7382,7 @@ s32 ainode_find_nearest(f32 diffX, f32 diffY, f32 diffZ, s32 useElevation) {
                 x = obj->trans.x_position - diffX;
                 y = obj->trans.y_position - diffY;
                 z = obj->trans.z_position - diffZ;
-                len = sqrtf((x * x) + (y * y) + (z * z));
+                len = ((x * x) + (y * y) + (z * z));
                 if (len < dist) {
                     dist = len;
                     result = numSteps;
@@ -7441,8 +7450,9 @@ f32 func_8001C6C4(Object_NPC *npc, Object *npcParentObj, f32 updateRateF, f32 sp
         zDiff -= zDiff2;
         if (var_s0 == 0) {
             someBool = FALSE;
-            dist = sqrtf((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff)) / updateRateF;
+            dist = ((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff)) / updateRateF;
             if (dist != 0.0f) {
+                dist = sqrtf(dist);
                 npc->unk8 *= (speedF / dist);
             }
         }
@@ -7460,8 +7470,9 @@ f32 func_8001C6C4(Object_NPC *npc, Object *npcParentObj, f32 updateRateF, f32 sp
     yDiff2 = yDiff;
     zDiff2 = zDiff;
 
-    dist = sqrtf((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff));
+    dist = ((xDiff * xDiff) + (yDiff * yDiff) + (zDiff * zDiff));
     if (dist != 0.0f) {
+        dist = sqrtf(dist);
         dist = 255.0 / dist;
         xDiff *= dist;
         yDiff *= dist;
@@ -7726,9 +7737,10 @@ void set_shading_properties(ShadeProperties *arg0, f32 ambient, f32 diffuse, s16
  * Official name: setObjectViewNormal
  */
 void update_envmap_position(f32 x, f32 y, f32 z) {
-    f32 vecLength = sqrtf((x * x) + (y * y) + (z * z));
+    f32 vecLength = ((x * x) + (y * y) + (z * z));
     f32 normalizedLength;
     if (vecLength != 0.0f) {
+        vecLength = sqrtf(vecLength);
         normalizedLength = -8192.0f / vecLength;
         x *= normalizedLength;
         y *= normalizedLength;
@@ -8841,8 +8853,9 @@ s32 func_8001F460(Object *arg0, s32 arg1, Object *arg2) {
         sp11C -= arg0->trans.z_position;
         if (var_s0 != 1) {
             var_s2 = 0;
-            var_f2 = sqrtf((sp124 * sp124) + (sp120 * sp120) + (sp11C * sp11C)) / sp114;
+            var_f2 = ((sp124 * sp124) + (sp120 * sp120) + (sp11C * sp11C)) / sp114;
             if (var_f2 != 0) {
+                var_f2 = sqrtf(var_f2);
                 obj64->unk4 *= obj64->unk8 / var_f2;
             }
         }
@@ -8876,8 +8889,9 @@ s32 func_8001F460(Object *arg0, s32 arg1, Object *arg2) {
                 lerp_and_get_derivative(sp140, var_s2, var_f20, &sp120);
                 lerp_and_get_derivative(sp12C, var_s2, var_f20, &sp11C);
             }
-            var_f2 = sqrtf((sp124 * sp124) + (sp120 * sp120) + (sp11C * sp11C));
+            var_f2 = ((sp124 * sp124) + (sp120 * sp120) + (sp11C * sp11C));
             if (var_f2 != 0) {
+                var_f2 = sqrtf(var_f2);
                 var_f2 = 100.0 / var_f2;
                 sp124 *= var_f2;
                 sp120 *= var_f2;
@@ -9000,10 +9014,10 @@ s32 func_8001F460(Object *arg0, s32 arg1, Object *arg2) {
                 sp124 = trans->x_position - arg0->trans.x_position;
                 sp120 = trans->y_position - arg0->trans.y_position;
                 sp11C = trans->z_position - arg0->trans.z_position;
-                var_f0 = sqrtf((sp124 * sp124) + (sp120 * sp120) + (sp11C * sp11C));
+                var_f0 = ((sp124 * sp124) + (sp120 * sp120) + (sp11C * sp11C));
                 if (var_f0 > 0) {
                     arg0->trans.rotation.y_rotation = arctan2_f(sp124, sp11C) - 0x8000;
-                    arg0->trans.rotation.x_rotation = arctan2_f(sp120, var_f0);
+                    arg0->trans.rotation.x_rotation = arctan2_f(sp120, sqrtf(var_f0));
                 }
             }
         }
@@ -9777,7 +9791,7 @@ Object *find_furthest_telepoint(f32 x, f32 z) {
                 diffX = tempObj->trans.x_position - x;
                 diffZ = tempObj->trans.z_position - z;
                 tempObj = gObjPtrList[i]; // fakematch
-                distance = sqrtf((diffX * diffX) + (diffZ * diffZ));
+                distance = ((diffX * diffX) + (diffZ * diffZ));
                 if (bestDist < distance) {
                     bestDist = distance;
                     bestObj = tempObj;
