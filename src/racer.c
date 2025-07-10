@@ -116,12 +116,6 @@ FadeTransition gDoorFadeTransition = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_
 
 /*******************************/
 
-/************ .rodata ************/
-
-const char gRacerDebugCoords[] = "%.1f,%.1f,%.1f\n";
-
-/*********************************/
-
 /************ .bss ************/
 
 f32 gCurrentCourseHeight;
@@ -4211,12 +4205,6 @@ void update_player_racer(Object *obj, s32 updateRate) {
     if (tempRacer->playerIndex == PLAYER_COMPUTER) {
         update_AI_racer(obj, tempRacer, updateRate, updateRateF);
     } else {
-        // Print player 1's coordinates to the screen if the debug cheat is enabled.
-        if (gRaceStartTimer == 0 && tempRacer->playerIndex == PLAYER_ONE) {
-            if (get_filtered_cheats() & CHEAT_PRINT_COORDS) {
-                render_printf(gRacerDebugCoords, obj->trans.x_position, obj->trans.y_position, obj->trans.z_position);
-            }
-        }
         set_render_printf_background_colour(0, 0, 0, 128);
         if (is_taj_challenge()) {
             gDialogueCameraAngle = 0;

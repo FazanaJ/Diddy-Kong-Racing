@@ -7,6 +7,7 @@
 #include "PR/os_internal.h"
 #include "PRinternal/piint.h"
 #include "joypad.h"
+#include "video.h"
 
 /************ .bss ************/
 
@@ -339,6 +340,7 @@ void crash_init(void);
  * stopping this thread, as it's no longer needed.
  */
 void thread1_main(UNUSED void *unused) {
+    video_alloc();
     crash_init();
     config_init();
     osCreateThread(&gThread3, 3, &thread3_main, 0, gThread3Stack + STACKSIZE(STACK_GAME), 10);

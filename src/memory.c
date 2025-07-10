@@ -445,10 +445,6 @@ void mempool_free_queue(void *dataAddress) {
     gFreeQueueAddr[gFreeQueueCount] = dataAddress;
     gFreeQueueTicks[gFreeQueueCount] = gFreeQueueTimer;
     gFreeQueueCount++;
-
-    if (gFreeQueueCount >= FREE_QUEUE_SIZE) {
-        stubbed_printf("\n*** mm Error *** ---> stbf stack too deep!\n");
-    }
 }
 
 /**

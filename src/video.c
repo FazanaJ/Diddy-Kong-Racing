@@ -21,7 +21,6 @@ s32 gVideoFbWidths[3];
 s32 gVideoFbHeights[3];
 u16 *gVideoFramebuffers[3];
 s32 gVideoCurrFbIndex;
-s32 gVideoModeIndex;
 s32 sBlackScreenTimer;
 u16 *gVideoCurrFramebuffer; // Official Name: currentScreen
 u16 *gVideoLastFramebuffer; // Official Name: otherScreen
@@ -45,17 +44,16 @@ void video_init(s32 videoModeIndex, OSSched *sc) {
     s32 i;
 
     video_delta_reset();
-    fb_mode_set(videoModeIndex);
-    for (i = 0; i < 3; i++) {
+    /*for (i = 0; i < 3; i++) {
         gVideoFramebuffers[i] = NULL;
         fb_alloc(i);
-    }
-    if (gUseExpansionMemory == FALSE && gExpansionPak) {
+    }*/
+    /*if (gUseExpansionMemory == FALSE && gExpansionPak) {
         gVideoFramebuffers[0] = (u16 *) 0x80400000;
         gVideoFramebuffers[1] = (u16 *) 0x80500000;
         gVideoFramebuffers[2] = (u16 *) 0x80600000;
         gVideoDepthBuffer = (u16 *) 0x80700000;
-    }
+    }*/
     gVideoCurrFbIndex = 1;
     fb_swap();
     //fb_init_vi();
@@ -65,11 +63,13 @@ void video_init(s32 videoModeIndex, OSSched *sc) {
     D_801262E4 = 3;
 }
 
-/**
- * Set the current video mode to the id specified.
- */
-void fb_mode_set(s32 videoModeIndex) {
-    gVideoModeIndex = videoModeIndex;
+void video_alloc(void) {
+    s32 i;
+
+    for (i = 0; i < 3; i++) {
+        gVideoFramebuffers[i] = NULL;
+        fb_alloc(i);
+    }
 }
 
 /**
@@ -93,9 +93,11 @@ void vi_change(int width, int height) {
     static u8 prevBits = 0;
     OSViMode *mode = &gGlobalVI;
     if (osTvType == OS_TV_TYPE_PAL) {
-        gGlobalVI = osViModePalLan1;
+        wcopy(&osViModePalLan1, &gGlobalVI, sizeof(OSViMode));
+        //gGlobalVI = osViModePalLan1;
     } else {
-        gGlobalVI = osViModeNtscLan1;
+        wcopy(&osViModeNtscLan1, &gGlobalVI, sizeof(OSViMode));
+        //gGlobalVI = osViModeNtscLan1;
     }
 
     if (gConfig.screenBits == SCREENBITS_16b) {
@@ -223,23 +225,19 @@ void fb_alloc(s32 index) {
     }
     switch (index) {
         case 0:
-            addr = (u8 *) 0x80200000;
+            addr = (u8 *) (0x80100000 - (fbSize));
         break;
         case 1:
-            addr = (u8 *) (0x80400000 - (fbSize));
+            addr = (u8 *) 0x80100000;
         break;
         case 2:
-            if (gUseExpansionMemory) {
-                addr = (u8 *) 0x80400000;
-            } else {
-                addr = (u8 *) (0x80300000 - (fbSize));
-            }
+            addr = (u8 *) (0x80300000 - (fbSize));
         break;
     }
   
 #if EXPANSION_PAK_SUPPORT || defined(FIFO_4MB)
     if (gGfxSPTaskOutputBuffer == NULL) {
-        gGfxSPTaskOutputBuffer = mempool_alloc_fixed(POOL_MAIN, OUTPUT_BUFFER_SIZE, (u8 *) (0x80200000 + fbSize), PP_RAM_TASKBUFFER, TRUE);
+        gGfxSPTaskOutputBuffer = mempool_alloc_fixed(POOL_MAIN, OUTPUT_BUFFER_SIZE, (u8 *) (0x80100000 + fbSize), PP_RAM_TASKBUFFER, TRUE);
         gGfxSPTaskOutputBuffer = (u64 *) (((s32) gGfxSPTaskOutputBuffer + 0xF) & ~0xF);
     }
 #endif
@@ -249,7 +247,7 @@ void fb_alloc(s32 index) {
     fbAddr = gVideoFramebuffers[index];
     fbAddr[100] = 0xBEEF;
     if (gVideoDepthBuffer == NULL) {
-        gVideoDepthBuffer = mempool_alloc_fixed(POOL_MAIN, fbSize, (u8 *) (0x80200000 - (fbSize)), PP_RAM_FRAMEBUFFERS, TRUE);
+        gVideoDepthBuffer = mempool_alloc_fixed(POOL_MAIN, fbSize, (u8 *) 0x80300000, PP_RAM_FRAMEBUFFERS, TRUE);
         fbAddr = gVideoDepthBuffer;
         fbAddr[100] = 0xBEEF;
     }

@@ -40,12 +40,6 @@
 #include "seqp.h"
 #include "seq.h"
 
-#if defined(__sgi)
-#define stubbed_printf
-#else
-#define stubbed_printf(...)
-#endif
-
 // TODO: this comes from a header
 #ident "$Revision: 1.17 $"
 
@@ -62,7 +56,6 @@ ALVoiceState *__mapVoice(ALSeqPlayer *seqp, u8 key, u8 vel, u8 channel)
     ALVoiceState  *vs = seqp->vFreeList;
 
     if(seqp->voiceLimit < seqp->mappedVoices) {
-        stubbed_printf("Exceeded voice limit of %d (%d)\n", seqp->voiceLimit, seqp->mappedVoices);
         return NULL;
     }
 

@@ -1171,7 +1171,7 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
 
     gObjPtrList = mempool_alloc((objPtrSize + 125) * sizeof(uintptr_t), PP_RAM_TEMPOBJLIST);
 
-    debug_printf("Objects %d, Checkpoints: %d, AINodes: %d, CamObjs: %d\n", objPtrSize + 125, checkpoints, ainodes, camControllers);
+    //debug_printf("Objects %d, Checkpoints: %d, AINodes: %d, CamObjs: %d\n", objPtrSize + 125, checkpoints, ainodes, camControllers);
 
     if (checkpoints == 0) {
         checkpoints = 1; // Racers actively rely on a checkpoint existing, so they can have one. As a treat.
@@ -1957,7 +1957,6 @@ u8 is_in_time_trial(void) {
  */
 Object *get_object(s32 index) {
     if (index < 0 || index >= gObjectCount) {
-        stubbed_printf("ObjList (Part) Overflow %d!!!\n");
         return 0;
     }
     return gObjPtrList[index];
@@ -2186,7 +2185,6 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
     /*if (failed) {
         objFreeAssets(curObj, assetCount, objType);
         try_free_object_header(headerType);
-        stubbed_printf("ObjSetupObject(2) Memory fail!!\n");
         return NULL;
     }*/
 
@@ -5884,7 +5882,6 @@ void func_80018CE0(Object *racerObj, f32 xPos, f32 yPos, f32 zPos, s32 updateRat
                                     }
                                     break;
                                 default:
-                                    stubbed_printf("ERROR Channel %d\n", i);
                                     break;
                             }
                         }
@@ -10721,5 +10718,3 @@ void func_800245B4(s16 arg0) {
     }
 }
 
-UNUSED const char sReadOutErrorString[] = "RO error %d!!\n";
-UNUSED const char sPureAnguishString[] = "ARGHHHHHHHHH\n";

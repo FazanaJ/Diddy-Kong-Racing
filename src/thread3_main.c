@@ -163,7 +163,6 @@ void init_game(void) {
     char *ramStr[] = {"B", "KB", "MB"};
     f32 segSize;
 
-    gzip_init();
 #ifdef ANTI_TAMPER
     sAntiPiracyTriggered = TRUE;
     if (drm_validate_imem()) {
@@ -185,7 +184,8 @@ void init_game(void) {
         gDmemInvalid = TRUE;
     }
 #endif
-    video_init(VIDEO_MODE_LOWRES_LPN, &gMainSched);
+    video_init(VIDEO_MODE_LOWRES_LPN, NULL);
+    gzip_init();
     pi_init();
     if (gDebug) {
         init_usb_thread();
@@ -929,7 +929,6 @@ void set_level_default_vehicle(Vehicle vehicleID) {
  * Sets the vehicle option that the next level loaded for a menu may use.
  */
 void set_vehicle_id_for_menu(Vehicle vehicleId) {
-    stubbed_printf("Swapping\n");
     gMenuVehicleID = vehicleId;
 }
 

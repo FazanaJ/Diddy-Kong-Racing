@@ -747,7 +747,6 @@ void sound_play(u16 soundID, SoundHandle *handlePtr) {
         if (handlePtr != NULL) {
             *handlePtr = NULL;
         }
-        stubbed_printf("amSndPlay: Illegal sound effects table index\n");
         return;
     }
 
@@ -798,7 +797,6 @@ void sound_play_spatial(u16 soundID, f32 x, f32 y, f32 z, SoundHandle *handlePtr
  */
 void sound_play_direct(u16 soundID, SoundHandle *handlePtr) {
     if (soundID <= 0 || sound_count() < soundID) {
-        stubbed_printf("amSndPlayDirect: Somebody tried to play illegal sound %d\n", soundID);
         if (handlePtr) {
             *handlePtr = NULL;
         }
@@ -879,8 +877,6 @@ void music_sequence_start(u8 seqID, ALCSPlayer *seqPlayer) {
         } else {
             gJingleNextSeqID = seqID;
         }
-    } else {
-        stubbed_printf("Invalid midi sequence index\n");
     }
 }
 

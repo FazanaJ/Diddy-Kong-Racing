@@ -566,7 +566,6 @@ void audspat_point_create(u16 soundBite, f32 x, f32 y, f32 z, u8 flags, u8 minVo
         func_800245B4(soundBite | 0xE000);
     }
     if (gNumAudioPoints == MAX_AUDIO_POINTS) {
-        stubbed_printf("OUT OF AUDIO POINTS\n");
         if (handlePtr != NULL) {
             *handlePtr = NULL;
         }
@@ -674,7 +673,6 @@ s32 audspat_line_validate(u8 lineID) {
     coords = line->coords;
 
     if (line->numSegments <= 0) {
-        stubbed_printf("Audio line definition error (less than 2 vertices on line %d)\n", line->numSegments);
         return FALSE;
     }
 
@@ -707,14 +705,12 @@ s32 audspat_reverb_validate(u8 reverbLineID) {
     coords = line->coords;
 
     if (line->numSegments <= 0) {
-        stubbed_printf("Reverb line definition error (less than 2 vertices on line %d)\n", line->numSegments);
         return FALSE;
     }
 
     for (i = 0; i < line->numSegments; i++) {
         //!@bug: should be *(coords + 0), *(coords + 1), *(coords + 2)
         if (*coords == -100000.0 || *coords + 1 == -100000.0 || *coords + 2 == -100000.0) {
-            stubbed_printf("Reverb line definition error (line=%d, vertex=%d)\n", i, 1); // Ditto
             ret = FALSE;
         }
         coords += 3;

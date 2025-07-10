@@ -374,7 +374,6 @@ TextureHeader *load_texture(s32 id) {
 
     // If the index is out of bounds, fall back to texture 0. Returning NULL would be better.
     if (assetIndex >= gTextureTableSize[tableType] || assetIndex < 0) {
-        stubbed_printf("Error: Texture no %x out of range on load. !!\n", assetIndex);
         id = 0;
     }
 
@@ -469,7 +468,6 @@ TextureHeader *load_texture(s32 id) {
         texTemp = (TextureHeader *) ((s32) texTemp + texTemp->textureSize);
     }
     if (gCiPalettesSize >= MAX_TEX_PALETTE_SIZE) {
-        stubbed_printf("TEX Error: Palette memory overflow!!\n");
         return NULL;
     }
     return tex;
@@ -494,10 +492,7 @@ void tex_free(TextureHeader *tex) {
                     return;
                 }
             }
-            stubbed_printf("texFreeTexture: NULL tex!!\n");
         }
-    } else {
-        stubbed_printf("TEX Error: Tryed to deallocate non-existent texture!!\n");
     }
 }
 
@@ -836,7 +831,6 @@ Sprite *tex_load_sprite(s32 spriteID, s32 arg1) {
 
     if (cacheNum == -1) {
         cacheFull = TRUE;
-        stubbed_printf("SRPBUF overflow!!\n");
         cacheNum = gSpriteCacheCount;
         gSpriteCacheCount++;
     }
@@ -905,7 +899,6 @@ Sprite *tex_load_sprite(s32 spriteID, s32 arg1) {
     }
 
     if (gSpriteCacheCount >= MAX_NUM_SPRITES) {
-        stubbed_printf("Error: Sprite table overflow!!\n");
         return NULL;
     }
 
@@ -1107,10 +1100,7 @@ void sprite_free(Sprite *sprite) {
                     break;
                 }
             }
-            stubbed_printf("texFreeSprite: NULL sprite!!\n");
         }
-    } else {
-        stubbed_printf("TEXSPR Error: Tryed to deallocate non-existent sprite!!\n");
     }
 }
 

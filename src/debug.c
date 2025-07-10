@@ -896,7 +896,10 @@ void debug_ram_dump(void) {
         gMemoryPools[i].size, (double) gMemoryPools[i].size / 1024.0, 
         (double) ((f32) gMemoryPools[i].size / (f32) ramTotal) * 100.0, gMemoryPools[i].curNumSlots, gMemoryPools[i].maxNumSlots);
         slot = &gMemoryPools[i].slots[0];
-        
+        if (i == 0) {
+            debug_printf("\t\t\t\t\t Tag: Code\t\t\t Size: 0x%X\t (%2.3f%s) \t %2.2f%%\n", (u32) K0_TO_PHYS(&gMainMemoryPool), (double) memsize_float((u32) K0_TO_PHYS(&gMainMemoryPool), &tag), 
+                        memtag[tag], (double) ((f32) (u32) K0_TO_PHYS(&gMainMemoryPool) / (f32) ramTotal) * 100.0);
+        }
         do {
             flags = slot->flags;
             nextIndex = slot->nextIndex;

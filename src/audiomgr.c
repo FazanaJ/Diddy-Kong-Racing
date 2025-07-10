@@ -367,7 +367,6 @@ static void __amHandleDoneMsg(UNUSED AudioInfo *info) {
 
     samplesLeft = osAiGetLength() >> 2;
     if (samplesLeft == 0 && !firstTime) {
-        stubbed_printf("audio: ai out of samples\n");
         firstTime = 0;
     }
 }
@@ -427,7 +426,6 @@ static s32 __amDMA(s32 addr, s32 len, UNUSED void *state) {
      * pointer, it's better than nothing
      */
     if (!dmaPtr) {
-        stubbed_printf("OH DEAR - No audio DMA buffers left\n");
         return (int) osVirtualToPhysical(lastDmaPtr->ptr) + delta;
     }
 
@@ -505,7 +503,6 @@ static void __clearAudioDMA(void) {
      */
     for (i = 0; i < nextDMA; i++) {
         if (osRecvMesg(&audDMAMessageQ, (OSMesg *) &iomsg, OS_MESG_NOBLOCK) == -1) {
-            stubbed_printf("Dma not done\n");
         }
         // if (logging)
         //     osLogEvent(log, 17, 2, iomsg->devAddr, iomsg->size);

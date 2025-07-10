@@ -333,7 +333,6 @@ s32 cam_set_layout(s32 layoutID) {
             break;
     }
     if (gActiveCameraID >= gNumCameras) {
-        stubbed_printf("Camera Error: Illegal mode!\n");
         gActiveCameraID = 0;
     }
     return gNumCameras;
@@ -348,7 +347,6 @@ void set_active_camera(s32 num) {
     if (num >= 0 && num < 4) {
         gActiveCameraID = num;
     } else {
-        stubbed_printf("Camera Error: Illegal player no!\n");
         gActiveCameraID = 0;
     }
 }
@@ -1005,7 +1003,6 @@ s32 render_sprite_billboard(Gfx **dList, Mtx **mtx, Vertex **vtx, Object *obj, S
         tiltAngle = (tiltAngle * tanX) >> 8;
         frameID = (tanY >> 7) & 0xFF;
         if (frameID > 127) {
-            stubbed_printf("CamDo2DSprite FrameNo Overflow !!!\n");
             frameID = 255 - frameID;
             tiltAngle += 0x8000;
             result = FALSE;
@@ -1350,10 +1347,6 @@ s32 mtx_cam_push(Gfx **dList, Mtx **mtx, ObjectTransform *trans, f32 scaleY, f32
     gCameraRelPosStackY[gCameraMatrixPos] = camRelY;
     gCameraRelPosStackZ[gCameraMatrixPos] = camRelZ;
 
-    if (gCameraMatrixPos > CAMERA_MODEL_STACK_SIZE) {
-        stubbed_printf("camPushModelMtx: bsp stack overflow!!\n");
-    }
-
 #ifdef AVOID_UB
     // Likely void in original code, but returns 0 to match waves_render.
     return 0;
@@ -1414,14 +1407,6 @@ void mtx_pop(Gfx **dList) {
 
     gCameraMatrixPos--;
     gModelMatrixStackPos--;
-
-    if (gModelMatrixStackPos < 0) {
-        stubbed_printf("camPopModelMtx: model stack negative overflow!!\n");
-    }
-
-    if ((temp = gCameraMatrixPos < 0)) { // temp required to match
-        stubbed_printf("camPopModelMtx: bsp stack negative overflow!!\n");
-    }
 
     if (gModelMatrixStackPos > 0) {
         gSPMatrixDKR((*dList)++, OS_K0_TO_PHYSICAL(gModelMatrix[gModelMatrixStackPos]), G_MTX_DKR_INDEX_1);
