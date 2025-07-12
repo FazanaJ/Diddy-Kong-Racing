@@ -1263,8 +1263,6 @@ s32 void_generate_primitive(f32 *arg0, f32 *arg1, f32 arg2, f32 arg3) {
     return NULL;
 }
 
-// https://decomp.me/scratch/7GUjD
-#ifdef NON_MATCHING
 s32 func_80027568(void) {
     LevelModelSegment *segment; // spE4
     s32 ret;
@@ -1287,8 +1285,7 @@ s32 func_80027568(void) {
     f32 A, B, C, D;
     Object **racerObjects; // sp80
     Object *racerObj;      // sp7C
-    s32 index;
-    u16 index2;
+    f32 *planes;
 
     racerObjects = get_racer_objects(&numRacers);
     if (numRacers == 0) {
@@ -1310,20 +1307,21 @@ s32 func_80027568(void) {
     if (racerObj == NULL) {
         return FALSE;
     }
-    generate_collision_candidates(1, (Vec3f *) &racerObj->trans.x_position,
-                                  (Vec3f *) &gSceneActiveCamera->trans.x_position, -1);
+    generate_collision_candidates(1, &racerObj->trans.position, &gSceneActiveCamera->trans.position, -1);
     ret = FALSE;
     for (var_t4 = 0; var_t4 < gNumCollisionCandidates && ret == FALSE; var_t4++) {
-        if (gCollisionCandidates[var_t4] > 0) {
+        flipSide = gCollisionCandidates[var_t4];
+        if (flipSide > 0) {
             // this is segment Entry
-            segment = (LevelModelSegment *) (gCollisionCandidates[var_t4] | 0x80000000);
+            segment = (LevelModelSegment *) PHYS_TO_K0(flipSide);
         } else {
-            colNode = (CollisionNode *) gCollisionCandidates[var_t4];
-            index = colNode->colPlaneIndex << 2;
-            A = segment->collisionPlanes[index + 0];
-            B = segment->collisionPlanes[index + 1];
-            C = segment->collisionPlanes[index + 2];
-            D = segment->collisionPlanes[index + 3];
+            colNode = (CollisionNode *) flipSide;
+            curViewport = colNode->colPlaneIndex << 2;
+            planes = &segment->collisionPlanes[curViewport];
+            A = planes[0];
+            B = planes[1];
+            C = planes[2];
+            D = planes[3];
 
             camDist = A * gSceneActiveCamera->trans.x_position + B * gSceneActiveCamera->trans.y_position +
                       C * gSceneActiveCamera->trans.z_position + D - 14.0;
@@ -1352,11 +1350,12 @@ s32 func_80027568(void) {
                             curViewport &= 0x7FFF;
                             flipSide = TRUE;
                         }
-                        curViewport = 4 * curViewport;
-                        A1 = segment->collisionPlanes[curViewport + 0];
-                        B1 = segment->collisionPlanes[curViewport + 1];
-                        C1 = segment->collisionPlanes[curViewport + 2];
-                        D1 = segment->collisionPlanes[curViewport + 3];
+                        curViewport = curViewport << 2;
+                        planes = &segment->collisionPlanes[curViewport];
+                        A1 = planes[0];
+                        B1 = planes[1];
+                        C1 = planes[2];
+                        D1 = planes[3];
                         var_f18 = A1 * var_f20 + B1 * var_f22 + C1 * var_f24 + D1;
                         if (flipSide) {
                             var_f18 = -var_f18;
@@ -1371,9 +1370,6 @@ s32 func_80027568(void) {
     }
     return ret;
 }
-#else
-#pragma GLOBAL_ASM("asm/nonmatchings/tracks/func_80027568.s")
-#endif
 
 /**
  * Sets up the camera placement for the 4th viewport when using T.T Cam in 3 player.
@@ -2416,21 +2412,21 @@ void func_8002A31C(void) {
         ox1 = x;
         oy1 = y;
         oz1 = z;
-        mtxf_transform_point(cameraMatrix, x, y, z, &ox1, &oy1, &oz1);
+        mtxf_transform_point(*cameraMatrix, x, y, z, &ox1, &oy1, &oz1);
         x = D_800DC8AC[i][1].x;
         y = D_800DC8AC[i][1].y;
         z = D_800DC8AC[i][1].z;
         ox2 = x;
         oy2 = y;
         oz2 = z;
-        mtxf_transform_point(cameraMatrix, x, y, z, &ox2, &oy2, &oz2);
+        mtxf_transform_point(*cameraMatrix, x, y, z, &ox2, &oy2, &oz2);
         x = D_800DC8AC[i][2].x;
         y = D_800DC8AC[i][2].y;
         z = D_800DC8AC[i][2].z;
         ox3 = x;
         oy3 = y;
         oz3 = z;
-        mtxf_transform_point(cameraMatrix, x, y, z, &ox3, &oy3, &oz3);
+        mtxf_transform_point(*cameraMatrix, x, y, z, &ox3, &oy3, &oz3);
         x = ((oz2 - oz3) * oy1) + (oy2 * (oz3 - oz1)) + (oy3 * (oz1 - oz2));
         y = ((ox2 - ox3) * oz1) + (oz2 * (ox3 - ox1)) + (oz3 * (ox1 - ox2));
         z = ((oy2 - oy3) * ox1) + (ox2 * (oy3 - oy1)) + (ox3 * (oy1 - oy2));
@@ -4785,7 +4781,7 @@ void compute_scene_camera_transform_matrix(void) {
     trans.scale = 1.0f;
 
     mtxf_from_transform(&mtx, &trans);
-    mtxf_transform_point(&mtx, x, y, z, &x, &y, &z);
+    mtxf_transform_point(mtx, x, y, z, &x, &y, &z);
 
     // Store x/y/z as integers
     gScenePerspectivePos.x = x;
