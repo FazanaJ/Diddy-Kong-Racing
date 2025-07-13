@@ -70,6 +70,7 @@ void level_global_init(void) {
     s32 checksumCount;
     u8 *header;
     s32 j;
+    mempool_free_timer(2);
     header = mempool_alloc_safe(sizeof(LevelHeader), PP_RAM_ASSETTABLE);
     gTempAssetTable = (s32 *) asset_table_load(ASSET_LEVEL_HEADERS_TABLE);
     i = 0;
@@ -115,6 +116,7 @@ void level_global_init(void) {
         drm_disable_input();
     }
 #endif
+    mempool_free_timer(0);
 }
 
 /**

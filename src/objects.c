@@ -734,7 +734,7 @@ void allocate_object_pools(void) {
     gObjectMemoryPool = (Object *) mempool_new_sub(OBJECT_POOL_SIZE, OBJECT_SLOT_COUNT);
     gParticlePtrList = mempool_alloc_safe(sizeof(uintptr_t) * 200, PP_RAM_OBJLISTS);
     gCollisionObjects = mempool_alloc_safe(sizeof(uintptr_t) * OBJECT_COLLISION_COUNT, PP_RAM_OBJLISTS);
-    D_8011AE74 = mempool_alloc_safe(sizeof(uintptr_t) * 128, PP_RAM_OBJLISTS);
+    //D_8011AE74 = mempool_alloc_safe(sizeof(uintptr_t) * 128, PP_RAM_OBJLISTS);
     //gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, PP_RAM_OBJLISTS);
     //gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * CAMCONTROL_COUNT, PP_RAM_OBJLISTS);
     //gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, PP_RAM_OBJLISTS);
@@ -907,10 +907,7 @@ void clear_object_pointers(void) {
     gTrackCheckpoints = NULL;
     gAINodes = NULL;
     gCameraObjList = NULL;
-
-    if (D_8011AE74) {
-        //mempool_free(D_8011AE74);
-    }
+    D_8011AE74 = NULL;
 
     for (i = 0; i < 8; i++) {
         D_8011ADCC[i] = 0;
@@ -1116,10 +1113,12 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     s32 allocPos;
     s32 *map;
     s32 allocSize;
+    s32 animObjs;
 
     checkpoints = 0;
     ainodes = 0;
     camControllers = 0;
+    animObjs = 0;
     mapID[0] = objMap;
     mapID[1] = collectables;
 
@@ -1149,8 +1148,10 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
                     checkpoints++;
                 } else if (entry->objectID == ASSET_OBJECT_ID_AINODE) {
                     ainodes++;
-                }else if (entry->objectID == ASSET_OBJECT_ID_CAMERA_CONTROL) {
+                } else if (entry->objectID == ASSET_OBJECT_ID_CAMERA_CONTROL) {
                     camControllers++;
+                } else if (entry->objectID == ASSET_OBJECT_ID_ANIMATION) {
+                    animObjs++;
                 }
                 objPos = &objPos[temp_t3 = objPos[1] & 0x3F];
                 objPtrSize++;
@@ -1168,6 +1169,7 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     allocSize += checkpoints * sizeof(CheckpointNode);
     allocSize += ainodes * sizeof(uintptr_t);
     allocSize += camControllers * sizeof(uintptr_t);
+    allocSize += animObjs * sizeof(uintptr_t);
 
     gObjPtrList = mempool_alloc(allocSize, PP_RAM_TEMPOBJLIST);
 
@@ -1176,6 +1178,7 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     gTrackCheckpoints = (CheckpointNode *) ((u8 *) gObjPtrList + ((objPtrSize + 125) * sizeof(uintptr_t)));
     gAINodes = (Object *) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + 0));
     gCameraObjList = (Object *) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + (ainodes * sizeof(uintptr_t))));
+    D_8011AE74 = (Object *) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + (ainodes * sizeof(uintptr_t)) + camControllers * sizeof(uintptr_t)));
 
     if (ainodes > 0) {
         bzero(gAINodes, sizeof(uintptr_t) * ainodes);
