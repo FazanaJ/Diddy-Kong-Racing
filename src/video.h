@@ -101,7 +101,7 @@ typedef struct VideoModeResolution {
 
 extern VideoModeResolution gVideoModeResolutions[8];
 
-void video_init(s32 videoModeIndex, OSSched *sc);
+void video_init(void);
 void fb_mode_set(s32 videoModeIndex);
 s32 fb_size(void);
 void fb_init_vi(void);

@@ -40,7 +40,7 @@ u8 gBitDepth = G_IM_SIZ_16b;
  * Framebuffers are allocated at runtime.
  * Official Name: viInit
  */
-void video_init(s32 videoModeIndex, OSSched *sc) {
+void video_init(void) {
     s32 i;
 
     video_delta_reset();

@@ -184,7 +184,7 @@ void init_game(void) {
         gDmemInvalid = TRUE;
     }
 #endif
-    video_init(VIDEO_MODE_LOWRES_LPN, NULL);
+    video_init();
     gzip_init();
     pi_init();
     if (gDebug) {
@@ -214,6 +214,7 @@ void init_game(void) {
     osCreateMesgQueue(&gGameMesgQueue, gGameMesgBuf, 3);
     osScAddClient(&gMainSched, (OSScClient*) gNMISched, &gGameMesgQueue, OS_SC_ID_VIDEO);
     sortbuffer_init();
+    mempool_free_timer(2);
     gNMIMesgBuf = 0;
     gGameCurrentEntrance = 0;
     gGameCurrentCutscene = 0;

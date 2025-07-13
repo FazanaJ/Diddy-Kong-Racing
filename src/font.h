@@ -135,6 +135,8 @@ typedef struct DialogueBoxBackground {
     s16 textOffsetX; // Functionally Unused
     s16 textOffsetY; // Functionally Unused
     DialogueBox *textBox;
+    s16 staleTimer;
+    // pad 0x02
 } DialogueBoxBackground;
 
 typedef struct Asset46 {

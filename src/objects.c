@@ -236,7 +236,7 @@ s32 gNumFinishedRacers;
 s8 gFirstTimeFinish;
 s8 D_8011ADC5;
 u32 gBalloonCutsceneTimer;
-s8 (*D_8011ADCC)[8];
+s8 D_8011ADCC[8];
 f32 gObjectOffsetY;
 s8 D_8011ADD4;
 s8 gOverrideDoors;
@@ -738,7 +738,7 @@ void allocate_object_pools(void) {
     //gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, PP_RAM_OBJLISTS);
     //gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * CAMCONTROL_COUNT, PP_RAM_OBJLISTS);
     //gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, PP_RAM_OBJLISTS);
-    D_8011ADCC = mempool_alloc_safe(8, PP_RAM_OBJLISTS);
+    //D_8011ADCC = mempool_alloc_safe(8, PP_RAM_OBJLISTS);
     D_8011AFF4 = mempool_alloc_safe(sizeof(unk800179D0) * 16, PP_RAM_OBJLISTS);
     tempTable = (s32 *) asset_table_load(ASSET_OBJECT_HEADERS_TABLE);
     gAssetsObjectHeadersTableLength = 0;
@@ -904,25 +904,16 @@ void clear_object_pointers(void) {
     D_8011AD22[1] = 0;
 
     gAINodeAllocCount = 0;
+    gTrackCheckpoints = NULL;
+    gAINodes = NULL;
+    gCameraObjList = NULL;
 
-    if (gTrackCheckpoints) {
-        mempool_free(gTrackCheckpoints);
-        gTrackCheckpoints = NULL;
-    }
-    if (gAINodes) {
-        mempool_free(gAINodes);
-        gAINodes = NULL;
-    }
-    if (gCameraObjList) {
-        mempool_free(gCameraObjList);
-        gCameraObjList = NULL;
-    }
     if (D_8011AE74) {
         //mempool_free(D_8011AE74);
     }
 
     for (i = 0; i < 8; i++) {
-        (*D_8011ADCC)[i] = 0;
+        D_8011ADCC[i] = 0;
     }
     for (i = 0; i < 16; i++) {
         D_8011AFF4[i].unk0 = 0;
@@ -1124,6 +1115,7 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     s32 objPtrSize;
     s32 allocPos;
     s32 *map;
+    s32 allocSize;
 
     checkpoints = 0;
     ainodes = 0;
@@ -1168,22 +1160,28 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     }
     mempool_free(objMapTable);
     mempool_free(mem);
-
-    gObjPtrList = mempool_alloc((objPtrSize + 125) * sizeof(uintptr_t), PP_RAM_TEMPOBJLIST);
-
-    //debug_printf("Objects %d, Checkpoints: %d, AINodes: %d, CamObjs: %d\n", objPtrSize + 125, checkpoints, ainodes, camControllers);
-
     if (checkpoints == 0) {
         checkpoints = 1; // Racers actively rely on a checkpoint existing, so they can have one. As a treat.
     }
-    gTrackCheckpoints = mempool_alloc(sizeof(CheckpointNode) * checkpoints, PP_RAM_TEMPOBJLIST);
+
+    allocSize = (objPtrSize + 125) * sizeof(uintptr_t);
+    allocSize += checkpoints * sizeof(CheckpointNode);
+    allocSize += ainodes * sizeof(uintptr_t);
+    allocSize += camControllers * sizeof(uintptr_t);
+
+    gObjPtrList = mempool_alloc(allocSize, PP_RAM_TEMPOBJLIST);
+
+    //debug_printf("Objects %d, Checkpoints: %d, AINodes: %d, CamObjs: %d\n", objPtrSize + 125, checkpoints, ainodes, camControllers);
+
+    gTrackCheckpoints = (CheckpointNode *) ((u8 *) gObjPtrList + ((objPtrSize + 125) * sizeof(uintptr_t)));
+    gAINodes = (Object *) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + 0));
+    gCameraObjList = (Object *) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + (ainodes * sizeof(uintptr_t))));
+
     if (ainodes > 0) {
-        gAINodes = mempool_alloc(sizeof(uintptr_t) * ainodes, PP_RAM_TEMPOBJLIST);
         bzero(gAINodes, sizeof(uintptr_t) * ainodes);
         gAINodeAllocCount = ainodes;
     }
     if (camControllers > 0) {
-        gCameraObjList = mempool_alloc(sizeof(uintptr_t) * camControllers, PP_RAM_TEMPOBJLIST);
         bzero(gCameraObjList, sizeof(uintptr_t) * camControllers);
     }
 }
@@ -8002,17 +8000,17 @@ s32 *get_misc_asset(s32 index) {
 
 s32 func_8001E2EC(s32 arg0) {
     if (arg0 >= 0 && arg0 < 8) {
-        if (D_8011ADCC[0][arg0] > 0) {
-            D_8011ADCC[0][arg0]--;
+        if (D_8011ADCC[arg0] > 0) {
+            D_8011ADCC[arg0]--;
         }
-        return D_8011ADCC[0][arg0];
+        return D_8011ADCC[arg0];
     }
     return 0;
 }
 
 void func_8001E344(s32 arg0) {
     if (arg0 >= 0 && arg0 < 8) {
-        D_8011ADCC[0][arg0] = 8;
+        D_8011ADCC[arg0] = 8;
     }
 }
 

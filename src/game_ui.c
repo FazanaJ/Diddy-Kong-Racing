@@ -3619,9 +3619,6 @@ void hud_render_general(Gfx **dList, Mtx **mtx, Vertex **vtx, s32 updateRate) {
                                 gHudMinimapColours[someRacer->characterId].blue, opacity);
             }
             if (!(level_type() & RACETYPE_CHALLENGE) || (!someRacer->raceFinished)) {
-                if (osTvType == OS_TV_TYPE_PAL) {
-                    gCurrentHud->entry[HUD_MINIMAP_MARKER].pos.x -= 4.0f;
-                }
                 if (level_type() == RACETYPE_CHALLENGE_BATTLE) {
                     switch (someRacer->elevation) {
                         case ELEVATION_LOW:
