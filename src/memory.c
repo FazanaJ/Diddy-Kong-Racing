@@ -31,7 +31,7 @@ s32 gFreeQueueTimer; // Official Name: mmDelay
  * Official Name: mmInit
  */
 void mempool_init_main(void) {
-    s32 ramEnd;
+    u32 ramEnd;
     s32 i;
 
     gNumberOfMemoryPools = -1;
@@ -187,8 +187,6 @@ void mempool_realloc_pool(MemoryPoolSlot *slot, void *addr, s32 size, s32 colour
         mempool_free_timer(prevTimer);
     }
 }
-
-u32 biggestSize = 0;
 
 /**
  * Search the existing empty slots and try to find one that can meet the size requirement.
