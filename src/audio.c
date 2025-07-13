@@ -66,10 +66,8 @@ SoundHandle gSpatialSoundMask;
 SoundHandle gRacerSoundMask;
 u32 gSFXTableAddr;
 u32 gSeqSoundTableAddr;
-u32 gSeqTableAddr;
 
 u32 gSeqSoundTableSize;
-u32 gSeqSoundTableAddr;
 
 /******************************/
 
@@ -104,7 +102,6 @@ void audio_init(OSSched *sc) {
 
     gSFXTableAddr = addrPtr[ASSET_AUDIO_6];
     gSoundCount = (addrPtr[ASSET_AUDIO_7] - addrPtr[ASSET_AUDIO_6]) / sizeof(SoundData);
-    gSeqSoundTableAddr = addrPtr[ASSET_AUDIO_5];
     gSeqSoundCount = (addrPtr[ASSET_AUDIO_6] - addrPtr[ASSET_AUDIO_5]) / sizeof(MusicData);
     gSeqSoundTableSize = addrPtr[ASSET_AUDIO_6] - addrPtr[ASSET_AUDIO_5];
     gSeqSoundTableAddr = addrPtr[ASSET_AUDIO_5];
@@ -116,7 +113,7 @@ void audio_init(OSSched *sc) {
 
     seqfSize = (seqSize.seqCount) * 8 + 4;
     gSequenceTable = mempool_alloc_safe(seqfSize, PP_RAM_AUD_TABLE);
-    gSeqTableAddr = addrPtr[ASSET_AUDIO_4];
+    //gSeqTableAddr = addrPtr[ASSET_AUDIO_4];
     asset_load(ASSET_AUDIO, (u32) gSequenceTable, addrPtr[ASSET_AUDIO_4], seqfSize);
     alSeqFileNew(gSequenceTable, asset_rom_offset(ASSET_AUDIO, addrPtr[ASSET_AUDIO_4]));
     for (i = 0; i < gSequenceTable->seqCount; i++) {
