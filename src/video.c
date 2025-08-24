@@ -88,6 +88,8 @@ void vi_change(int width, int height) {
     s32 addX = 0;
     s32 mul;
     f32 tempWidth;
+    s32 posX;
+    s32 posY;
     static u16 prevWidth = 0;
     static u16 prevHeight = 0;
     static u8 prevBits = 0;
@@ -119,14 +121,16 @@ void vi_change(int width, int height) {
             addX = 16;
         //}
         // Y Scale
+        posX = gConfig.screenPosX * 2;
+        posY = gConfig.screenPosY * 2;
         mode->fldRegs[0].yScale = (((height + 16 - (addPAL * 2)) * 1024) / 240);
         mode->fldRegs[1].yScale = (((height + 16 - (addPAL * 2)) * 1024) / 240);
 
-        mode->comRegs.hStart = (428 - 304 + 0) << 16 | (428 + 304 + 0);
+        mode->comRegs.hStart = (428 - 304 + posX) << 16 | (428 + 304 + posX);
         mode->fldRegs[0].vStart =
-            (277 - height + 0) << 16 | (271 + height + 0);
+            (277 - height + posY) << 16 | (271 + height + posY);
         mode->fldRegs[1].vStart =
-            (277 - height + 0) << 16 | (271 + height + 0);
+            (277 - height + posY) << 16 | (271 + height + posY);
     } else if (height == 240) {
         mode->fldRegs[0].yScale = ((height * 1024) / 240);
         mode->fldRegs[1].yScale = ((height * 1024) / 240);

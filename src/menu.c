@@ -10175,6 +10175,8 @@ ConfigOptionEntry gOptionMenu[] = {
     { "Screen", &gConfig.screenWidth, OPT_NONE, 5, 0, 2, video_refresh },
     { "Anti Aliasing", &gConfig.antiAliasing, OPT_NONE, 2, -1, 1, video_refresh },
     { "Dedither", &gConfig.dedither, OPT_NONE, 0, 0, 1, vi_dither },
+    { "Offset", &gConfig.screenPosX, OPT_240 | OPT_NUMBER, 0, -8, 8, video_refresh },
+    { "Offset", &gConfig.screenPosY, OPT_240 | OPT_NUMBER, 0, -8, 8, video_refresh },
     //{ "Terrain Quality", &gConfig.terrainQuality, OPT_NONE, 3, 0, 1, NULL },
     { "Screen", &gConfig.screenBits, OPT_EX_PAK, 15, 0, 1, video_refresh },
 };
@@ -13853,11 +13855,11 @@ void menu_asset_free(s32 assetID) {
             mempool_free(gMenuImages);
             gMenuImages = NULL;
         }
-        if (*gAssetsMenuElementIds != NULL) {
+        /*if (*gAssetsMenuElementIds != NULL) {
             mempool_free(*gAssetsMenuElementIds);
             *gAssetsMenuElementIds = NULL;
             gMenuElementIdCount = 0;
-        }
+        }*/
     }
 }
 
