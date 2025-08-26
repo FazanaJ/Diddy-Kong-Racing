@@ -53,7 +53,7 @@ extern "C" {
  *
  */
 
-#define	OS_CLOCK_RATE		62500000LL
+#define	OS_CLOCK_RATE		62500000
 #define	OS_CPU_COUNTER		(OS_CLOCK_RATE*3/4)
 
 
@@ -65,17 +65,17 @@ extern "C" {
  *
  */
 
-#define OS_NSEC_TO_CYCLES(n)	(((u64)(n)*(OS_CPU_COUNTER/15625000LL))/(1000000000LL/15625000LL))
-#define OS_USEC_TO_CYCLES(n)	(((u64)(n)*(OS_CPU_COUNTER/15625LL))/(1000000LL/15625LL))
-#define OS_CYCLES_TO_NSEC(c)	(((u64)(c)*(1000000000LL/15625000LL))/(OS_CPU_COUNTER/15625000LL))
-#define OS_CYCLES_TO_USEC(c)	(((u64)(c)*(1000000LL/15625LL))/(OS_CPU_COUNTER/15625LL))
+#define OS_NSEC_TO_CYCLES(n)	(((n)*(OS_CPU_COUNTER/15625000))/(1000000000/15625000))
+#define OS_USEC_TO_CYCLES(n)	(((n)*(OS_CPU_COUNTER/15625))/(1000000/15625))
+#define OS_CYCLES_TO_NSEC(c)	(((c)*(1000000000/15625000))/(OS_CPU_COUNTER/15625000))
+#define OS_CYCLES_TO_USEC(c)	(((c)*(1000000/15625))/(OS_CPU_COUNTER/15625))
 
 /* OS_K?_TO_PHYSICAL macro bug fix for CodeWarrior */
 #ifndef __MWERKS__
-#define	OS_K0_TO_PHYSICAL(x)	(u32)(((char *)(x)-0x80000000))
+#define	OS_K0_TO_PHYSICAL(x)	(x)
 #define	OS_K1_TO_PHYSICAL(x)	(u32)(((char *)(x)-0xa0000000))
 #else
-#define	OS_K0_TO_PHYSICAL(x)	((char *)(x)-0x80000000)
+#define	OS_K0_TO_PHYSICAL(x)	(x)
 #define	OS_K1_TO_PHYSICAL(x)	((char *)(x)-0xa0000000)
 #endif
 

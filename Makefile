@@ -323,6 +323,8 @@ $(GCC_SAFE_FILES): CFLAGS := -DNDEBUG -DAVOID_UB -DNON_MATCHING $(INCLUDE_CFLAGS
 	-fno-common \
 	-mno-long-calls \
 	-ffast-math \
+	-Wall \
+	-Wextra \
 	-funsafe-math-optimizations \
 	-fno-merge-constants \
 	-fno-strict-aliasing \

@@ -1252,8 +1252,6 @@ char *sCorruptDataMenuText[6] = { 0, 0, 0, 0, 0, 0 };
 // If you wish to use / the Controller Pak / insert it now!
 char *sInsertControllerPakMenuText[3] = { 0, 0, 0 };
 
-s16 D_800E0A10[2] = { 0x0000, 0x0000 };
-
 // If you wish to use / the Rumble Pak / insert it now!
 char *sInsertRumblePakMenuText[4] = { 0, 0, 0, 0 };
 
@@ -4144,6 +4142,8 @@ void savemenu_render_element(SaveFileData *file, s32 x, s32 y) {
     s32 offsetY;
 
     spriteID = 11;
+    secondDigit = 0;
+    firstDigit = 0;
     switch (file->saveFileType) {
         case SAVE_FILE_TYPE_CART_SAVE:
             drawTexture = gDrawTexN64Icon;
@@ -10719,7 +10719,7 @@ void postrace_load(void) {
             gPostRace.unk0_s32++;
             return;
         }
-        temp_a0 = D_800E0A10[gPostRace.unk0_s32];
+        temp_a0 = gRaceResultsObjectIndices[gPostRace.unk0_s32 - 10];
         if (temp_a0 == -1) {
             menu_imagegroup_load(gRaceResultsImageIndices);
             menu_racer_portraits();
@@ -14975,8 +14975,6 @@ s32 sExpansionErrorLang;
 
 void menu_expansionerror_init(void) {
     Settings *settings;
-    load_font(FONT_LARGE);
-    load_font(FONT_COLOURFUL);
     music_play(SEQUENCE_NO_TROPHY_FOR_YOU);
     settings = get_settings();
     osContSetMask(CONT_P1 | CONT_P2 | CONT_P3 | CONT_P4);
@@ -15001,34 +14999,35 @@ s32 menu_expansionerror_loop(s32 updateRate) {
     s32 highlight;
     s32 i;
     s32 lang = sExpansionErrorLang;
+    Gfx **gfx = &sMenuCurrDisplayList;
 
     set_text_font(ASSET_FONTS_BIGFONT);
     set_text_background_colour(0, 0, 0, 0);
     set_text_colour(0, 0, 0, 0, 127);
-    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, 10 + 1, sMenuExpansionErrorStrings[0][lang], ALIGN_TOP_CENTER);
+    draw_text(gfx, (SCREEN_WIDTH / 2) + 1, 10 + 1, sMenuExpansionErrorStrings[0][lang], ALIGN_TOP_CENTER);
     set_text_colour(255, 255, 255, 0, 255);
-    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2), 10, sMenuExpansionErrorStrings[0][lang], ALIGN_TOP_CENTER);
+    draw_text(gfx, (SCREEN_WIDTH / 2), 10, sMenuExpansionErrorStrings[0][lang], ALIGN_TOP_CENTER);
     
     set_text_font(ASSET_FONTS_FUNFONT);
     set_text_colour(0, 0, 0, 0, 127);
-    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, 48 + 1, sMenuExpansionErrorStrings[1][lang], ALIGN_TOP_CENTER);
-    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, 64 + 1, sMenuExpansionErrorStrings[2][lang], ALIGN_TOP_CENTER);
-    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, 88 + 1, sMenuExpansionErrorStrings[3][lang], ALIGN_TOP_CENTER);
-    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, 104 + 1, sMenuExpansionErrorStrings[4][lang], ALIGN_TOP_CENTER);
-    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, 120 + 1, sMenuExpansionErrorStrings[5][lang], ALIGN_TOP_CENTER);
-    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, 144 + 1, sMenuExpansionErrorStrings[6][lang], ALIGN_TOP_CENTER);
-    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, 160 + 1, sMenuExpansionErrorStrings[7][lang], ALIGN_TOP_CENTER);
+    draw_text(gfx, (SCREEN_WIDTH / 2) + 1, 48 + 1, sMenuExpansionErrorStrings[1][lang], ALIGN_TOP_CENTER);
+    draw_text(gfx, (SCREEN_WIDTH / 2) + 1, 64 + 1, sMenuExpansionErrorStrings[2][lang], ALIGN_TOP_CENTER);
+    draw_text(gfx, (SCREEN_WIDTH / 2) + 1, 88 + 1, sMenuExpansionErrorStrings[3][lang], ALIGN_TOP_CENTER);
+    draw_text(gfx, (SCREEN_WIDTH / 2) + 1, 104 + 1, sMenuExpansionErrorStrings[4][lang], ALIGN_TOP_CENTER);
+    draw_text(gfx, (SCREEN_WIDTH / 2) + 1, 120 + 1, sMenuExpansionErrorStrings[5][lang], ALIGN_TOP_CENTER);
+    draw_text(gfx, (SCREEN_WIDTH / 2) + 1, 144 + 1, sMenuExpansionErrorStrings[6][lang], ALIGN_TOP_CENTER);
+    draw_text(gfx, (SCREEN_WIDTH / 2) + 1, 160 + 1, sMenuExpansionErrorStrings[7][lang], ALIGN_TOP_CENTER);
 
-    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2) + 1, 190 + 1, sMenuExpansionErrorStrings[8][lang], ALIGN_TOP_CENTER);
+    draw_text(gfx, (SCREEN_WIDTH / 2) + 1, 190 + 1, sMenuExpansionErrorStrings[8][lang], ALIGN_TOP_CENTER);
 
     set_text_colour(255, 255, 255, 0, 255);
-    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2), 48, sMenuExpansionErrorStrings[1][lang], ALIGN_TOP_CENTER);
-    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2), 64, sMenuExpansionErrorStrings[2][lang], ALIGN_TOP_CENTER);
-    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2), 88, sMenuExpansionErrorStrings[3][lang], ALIGN_TOP_CENTER);
-    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2), 104, sMenuExpansionErrorStrings[4][lang], ALIGN_TOP_CENTER);
-    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2), 120, sMenuExpansionErrorStrings[5][lang], ALIGN_TOP_CENTER);
-    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2), 144, sMenuExpansionErrorStrings[6][lang], ALIGN_TOP_CENTER);
-    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2), 160, sMenuExpansionErrorStrings[7][lang], ALIGN_TOP_CENTER);
+    draw_text(gfx, (SCREEN_WIDTH / 2), 48, sMenuExpansionErrorStrings[1][lang], ALIGN_TOP_CENTER);
+    draw_text(gfx, (SCREEN_WIDTH / 2), 64, sMenuExpansionErrorStrings[2][lang], ALIGN_TOP_CENTER);
+    draw_text(gfx, (SCREEN_WIDTH / 2), 88, sMenuExpansionErrorStrings[3][lang], ALIGN_TOP_CENTER);
+    draw_text(gfx, (SCREEN_WIDTH / 2), 104, sMenuExpansionErrorStrings[4][lang], ALIGN_TOP_CENTER);
+    draw_text(gfx, (SCREEN_WIDTH / 2), 120, sMenuExpansionErrorStrings[5][lang], ALIGN_TOP_CENTER);
+    draw_text(gfx, (SCREEN_WIDTH / 2), 144, sMenuExpansionErrorStrings[6][lang], ALIGN_TOP_CENTER);
+    draw_text(gfx, (SCREEN_WIDTH / 2), 160, sMenuExpansionErrorStrings[7][lang], ALIGN_TOP_CENTER);
 
     gOptionBlinkTimer = (gOptionBlinkTimer + updateRate) & 0x3F;
     highlight = gOptionBlinkTimer * 8;
@@ -15037,7 +15036,7 @@ s32 menu_expansionerror_loop(s32 updateRate) {
     }
 
     set_text_colour(255, 255, 255, highlight, 255);
-    draw_text(&sMenuCurrDisplayList, (SCREEN_WIDTH / 2), 190, sMenuExpansionErrorStrings[8][lang], ALIGN_TOP_CENTER);
+    draw_text(gfx, (SCREEN_WIDTH / 2), 190, sMenuExpansionErrorStrings[8][lang], ALIGN_TOP_CENTER);
 
     for (i = 0; i < 4; i++) {
         if (gControllersXAxisDirection[i] > 0) {
@@ -15063,6 +15062,8 @@ s32 menu_expansionerror_loop(s32 updateRate) {
             sound_play(SOUND_VOICE_BANJO_NEGATIVE6, NULL);
         }
     }
+
+    sMenuCurrDisplayList = *gfx;
     
     return MENU_RESULT_CONTINUE;
 }
