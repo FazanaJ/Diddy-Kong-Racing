@@ -262,6 +262,8 @@ extern OSViMode osViModeFpalHaf1;
 extern OSViMode osViModeFpalHpn2;
 extern OSViMode osViModeFpalHpf2;
 
+extern OSViMode osViModePal60Lan1;
+
 
 /**************************************************************************
  *

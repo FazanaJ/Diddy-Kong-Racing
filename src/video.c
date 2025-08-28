@@ -102,10 +102,10 @@ void vi_change(int width, int height) {
         base = &osViModePalLan1;
         osViClock = VI_PAL_CLOCK;
     } else if (gConfig.screenRegion == REGIONMODE_MPAL) {
-        base = &osViModeNtscLan1;
+        base = &osViModeMpalLan1;
         osViClock = VI_MPAL_CLOCK;
     } else if (gConfig.screenRegion == REGIONMODE_PAL60) {
-        base = &osViModeNtscLan1;
+        base = &osViModePal60Lan1;
         osViClock = VI_PAL_CLOCK;
     } else {
         base = &osViModeNtscLan1;
