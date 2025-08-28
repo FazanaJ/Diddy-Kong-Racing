@@ -69,7 +69,6 @@ void assettable_seek(s32 assetID, u32 *table0, s32 *table1) {
  * Official Name: piRomLoad
  */
 u32 *asset_table_load(u32 assetIndex) {
-    u32 *index;
     u32 *out;
     s32 size;
     u32 start;
@@ -104,7 +103,6 @@ u32 *asset_table_load(u32 assetIndex) {
  * Official name: piRomLoadSection
  */
 s32 asset_load(u32 assetIndex, u32 address, s32 assetOffset, s32 size) {
-    u32 *index;
     u32 start;
     s32 pad;
 
@@ -135,7 +133,6 @@ s32 asset_load(u32 assetIndex, u32 address, s32 assetOffset, s32 size) {
  * Official name: piRomGetSectionPtr
  */
 u8 *asset_rom_offset(u32 assetIndex, u32 assetOffset) {
-    u32 *index;
     u32 start;
     s32 pad;
 
@@ -164,7 +161,6 @@ u8 *asset_rom_offset(u32 assetIndex, u32 assetOffset) {
  * Official name: piRomGetFileSize
  */
 s32 asset_table_size(u32 assetIndex) {
-    u32 *index;
     u32 pad;
     s32 size;
 

@@ -669,6 +669,7 @@ ALSoundState *sndp_play_with_priority(ALBank *bank, s16 sndIndx, u8 priority, AL
     lastSoundState = NULL;
     retriggeredSoundID = 0;
     totalDuration = 0;
+    duration = 0;
 
     if (sndIndx == SOUND_NONE) {
         return NULL;
@@ -709,7 +710,7 @@ ALSoundState *sndp_play_with_priority(ALBank *bank, s16 sndIndx, u8 priority, AL
                 //!@bug: Duration handling is definitely incorrect here.
                 // A delay of totalDuration + 1 should be used, as done above,
                 // otherwise sounds will start at the wrong time.
-                alEvtqPostEvent(&gSoundPlayerPtr->evtq, (ALEvent *) &playEvent, duration + 1);
+                alEvtqPostEvent(&gSoundPlayerPtr->evtq, (ALEvent *) &playEvent, totalDuration + 1);
             }
 
             lastSoundState = soundState;

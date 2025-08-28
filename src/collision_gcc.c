@@ -292,6 +292,7 @@ s32 resolve_collisions(Vec3f *origin, Vec3f *target, f32 *radius, s8 *surface, s
     bitMask = 1;
     collisionMask = 0;
     gHitWall = FALSE;
+    collisionPlanes = NULL;
 
     if (gNumCollisionCandidates == 0) {
         return 0;

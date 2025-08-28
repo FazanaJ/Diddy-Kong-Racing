@@ -42,6 +42,7 @@ void divider_draw(Gfx **dList) {
             if (hud_setting() || (levelHeader->race_type & RACETYPE_CHALLENGE)) {
                 gDPFillRectangle((*dList)++, width >> 1, height >> 1, width, height);
             }
+            // fallthrough
             // There is no break statement here. This is intentional.
         case VIEWPORT_LAYOUT_4_PLAYERS:
             x = (width >> 1) - xOffset;

@@ -26,7 +26,7 @@ void debug_init(void) {
 
 typedef char *outfun(char *dst, const char *src, size_t count);
 
-void debug_log(s32 logLevel, char *str, ...) {
+void debug_log(UNUSED s32 logLevel, UNUSED char *str, ...) {
 }
 
 void debug_dump_hex(u8 *var, s32 size, s32 lineWidth) {
@@ -74,7 +74,7 @@ void debug_fillrect(Gfx **gfx, s32 x1, s32 y1, s32 x2, s32 y2, u32 colour) {
 #define RDP_TO_USEC(x) ((x * 10) / 625)
 
 void debug_timer_update(DebugData *d, s32 field, u32 time) {
-    s32 i;
+    //s32 i;
     s32 it;
     
     if (d == NULL) {
@@ -178,14 +178,13 @@ typedef struct ProfilerGraph {
     ProfilerGraphEntry entry[4];
 } ProfilerGraph;
 
-void debug_graph(DebugData *d, Gfx **dList, s32 x, u32 *timer0, u32 *timer1, u32 *timer2, u32 *timer3, s32 divType, u32 colour0, u32 colour1, u32 colour2, u32 colour3, s32 nameIdx) {
+void debug_graph(DebugData *d, Gfx **dList, s32 x, u32 *timer0, u32 *timer1, u32 *timer2, u32 *timer3, UNUSED s32 divType, u32 colour0, u32 colour1, u32 colour2, u32 colour3, s32 nameIdx) {
     s32 i;
     f32 divisor = 1.0f;
     s32 iterCount;
     s32 k;
     s32 origin;
     s32 origin2;
-    u32 *ref;
     u32 prevColour;
     u32 *idx[4];
     u32 colours[4];
@@ -273,7 +272,7 @@ void debug_graph(DebugData *d, Gfx **dList, s32 x, u32 *timer0, u32 *timer1, u32
     draw_text(dList, origin, SCREEN_HEIGHT - 69, (char *) sMinimalText[nameIdx], ALIGN_TOP_CENTER);
 }
 
-void debug_render_minimal(DebugData *d, Gfx **dList, s32 updateRate) {
+void debug_render_minimal(DebugData *d, Gfx **dList, UNUSED s32 updateRate) {
     char textBytes[32];
     s32 i;
     s32 y;
@@ -331,7 +330,7 @@ void debug_render_minimal(DebugData *d, Gfx **dList, s32 updateRate) {
 
 extern const char *sMemLabels[];
 
-void debug_render_memory(DebugData *d, Gfx **dList, s32 updateRate) {
+void debug_render_memory(DebugData *d, Gfx **dList, UNUSED s32 updateRate) {
     char textBytes[32];
     u32 totalMem;
     s32 memTag;
@@ -383,10 +382,10 @@ extern s32 gModelCacheCount;
 extern s32 gSpriteCacheCount;
 extern s32 gNumberOfLoadedTextures;
 
-void debug_render_misc(DebugData *d, Gfx **dList, s32 updateRate) {
+void debug_render_misc(DebugData *d, Gfx **dList, UNUSED s32 updateRate) {
     char textBytes[32];
     Object *obj;
-    Object_Racer *racer;
+    UNUSED Object_Racer *racer;
     s32 showRacer;
 
     if (get_game_mode() == GAMEMODE_INGAME) {
@@ -398,6 +397,7 @@ void debug_render_misc(DebugData *d, Gfx **dList, s32 updateRate) {
             racer = (Object_Racer *) obj->racer;
         }
     } else {
+        obj = NULL;
         showRacer = FALSE;
     }
 
@@ -485,8 +485,8 @@ char sDebugAssetName[32];
 
 char *assettable_name(s32 assetType, s32 assetID) {
     u32 searchAddr;
-    char *typeStr;
-    s32 dmaCount;
+
+    searchAddr = 0;
 
     switch (assetType) {
         case ASSET_TEXTURES_2D:
@@ -513,7 +513,7 @@ char *assettable_name(s32 assetType, s32 assetID) {
     return sDebugAssetName;
 }
 
-void debug_render_assets(DebugData *d, Gfx **dList, s32 updateRate) {
+void debug_render_assets(DebugData *d, Gfx **dList, UNUSED s32 updateRate) {
     char textBytes[32];
     s16 *ids;
     s32 count;
@@ -522,6 +522,11 @@ void debug_render_assets(DebugData *d, Gfx **dList, s32 updateRate) {
     s32 assetID;
     s32 name;
     char *tableName;
+
+    ids = NULL;
+    count = 0;
+    name = 0;
+    tableName = NULL;
 
     debug_fillrect(dList, SCREEN_WIDTH - 136, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0x0000009F);
     set_text_font(ASSET_FONTS_SMALLFONT);
@@ -593,11 +598,11 @@ void debug_render_assets(DebugData *d, Gfx **dList, s32 updateRate) {
     gDPSetScissor((*dList)++, G_SC_NON_INTERLACE, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 }
 
-void debug_page_minimal(DebugData *d) {
+void debug_page_minimal(UNUSED DebugData *d) {
     
 }
 
-void debug_page_memory(DebugData *d) {
+void debug_page_memory(UNUSED DebugData *d) {
 }
 
 DebugPage gDebugPages[] = {
@@ -607,7 +612,7 @@ DebugPage gDebugPages[] = {
     {"Assets", PAGE_ASSETS, debug_page_memory, debug_render_assets},
 };
 
-void debug_render_page_menu(Gfx **dList, s32 updateRate) {
+void debug_render_page_menu(Gfx **dList, UNUSED s32 updateRate) {
     DebugData *d = gDebug;
     s32 i;
     s32 y;
@@ -696,9 +701,9 @@ s32 debug_thread_compare(DebugData *d, s32 threadID, u32 lowTime, u32 highTime) 
     return ret;
 }
 
-void debug_newframe(s32 updateRate) {
+void debug_newframe(UNUSED s32 updateRate) {
     s32 i;
-    s32 j;
+    //s32 j;
     s32 it;
     DebugData *d = gDebug;
 
@@ -754,7 +759,6 @@ extern s32 *gParticleCache;
 
 char *debug_asset_lookup(MemoryPoolSlot *slot) {
     s32 i;
-    s32 k;
     s32 texID;
     s32 tag = slot->colourTag;
     char *str;
@@ -763,8 +767,8 @@ char *debug_asset_lookup(MemoryPoolSlot *slot) {
     ObjectHeader *objHeader;
     Object *obj;
     ObjectModel *objModel;
-    ModelInstance *objGfx;
-    ObjectModel_44 *objAnim;
+    //ModelInstance *objGfx;
+    //ObjectModel_44 *objAnim;
 
     str = " ";
     texID = -200;
@@ -914,7 +918,6 @@ void debug_ram_dump(void) {
                 sPuppyprintMemColours[colourTag], slot->size, (double) memsize_float(slot->size, &tag), memtag[tag], (double) ((f32) slot->size / (f32) ramTotal) * 100.0, slot->data, debug_asset_lookup(slot));
             }
 
-            skip:
             if (nextIndex == -1) {
                 continue;
             } else {

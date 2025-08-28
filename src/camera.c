@@ -128,7 +128,6 @@ void cam_persp_init(void) {
 void cam_init(void) {
     s32 i;
     s32 j;
-    u32 stat;
 
     // clang-format off
     for (i = 0; i < 5; i++) { gModelMatrixF[i] = (MtxF*)&D_80120DA0[i << 4]; }
@@ -613,7 +612,7 @@ void viewport_main(Gfx **dlist, Mtx **mats) {
 
     // Cursed usage of the pos vars, but that's to save redoing width and height divide by 2.
     switch (viewports) {
-        case VIEWPORT_LAYOUT_1_PLAYER:
+        default:
             x1 = 0;
             y1 = 0;
             x2 = videoWidth;
@@ -636,7 +635,7 @@ void viewport_main(Gfx **dlist, Mtx **mats) {
             size[0] /= 2;
             size[1] /= 2;
             switch (gActiveCameraID) {
-                case 0:
+                default:
                     x1 = 0;
                     y1 = 0;
                     x2 = pos[0] - 1;
@@ -1119,7 +1118,6 @@ void render_ortho_triangle_image(Gfx **dList, Mtx **mtx, Vertex **vtx, ObjectSeg
     s32 index;
     Vertex *vertex;
     MtxF aspectMtxF;
-    MtxF scaleMtxF;
 
     if (sprite == NULL) {
         return;
@@ -1409,7 +1407,6 @@ void mtx_head_push(Gfx **dList, Mtx **mtx, ModelInstance *modInst, s16 headAngle
  * If the stack pos is less than zero, set the RSP stack pos to 0.
  */
 void mtx_pop(Gfx **dList) {
-    s32 temp;
 
     gCameraMatrixPos--;
     gModelMatrixStackPos--;

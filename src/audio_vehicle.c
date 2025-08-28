@@ -35,7 +35,7 @@ Object_Racer *gSoundRacerObj;
  * Sets the initial pitch and volume values for the engine sound.
  */
 VehicleSoundData *racer_sound_init(s32 characterId, s32 vehicleId) {
-    s32 unused[2];
+    UNUSED s32 unused[2];
     s32 i;
     u8 *ptr;
     VehicleSoundData *soundData;
@@ -85,7 +85,6 @@ VehicleSoundData *racer_sound_init(s32 characterId, s32 vehicleId) {
     soundData->engineIdleMaxVolume = asset->engineIdleMaxVolume;
     soundData->engineIdleMaxPitch = asset->engineIdleMaxPitch;
     soundData->engineIdleMinPitch = asset->engineIdleMinPitch;
-    soundData->unk64_unused = asset->unk3A_unused;
 
     soundData->thrustPitchMax = asset->thrustPitchMax / 10000.0f;
     soundData->thrustPitchVel = asset->thrustPitchVel / 10000.0f;
@@ -93,7 +92,6 @@ VehicleSoundData *racer_sound_init(s32 characterId, s32 vehicleId) {
     soundData->rollAnglePitchScale = asset->rollAnglePitchScale / 10000.0f;
     soundData->pitchAnglePitchScale = asset->pitchAnglePitchScale / 10000.0f;
     soundData->pitchLateralSpeedScale = asset->pitchLateralSpeedScale / 10000.0f;
-    soundData->unkB8_unused = asset->unk3B_unused;
     soundData->thrustPitchSpeedScale = asset->thrustPitchSpeedScale / 10000.0f;
     soundData->spinoutSoundOn = FALSE;
 
@@ -366,10 +364,6 @@ void racer_sound_car(Object *obj, u32 buttonsPressed, u32 buttonsHeld, s32 ticks
 
     // Store current engine intensity for later use (e.g. idle sound calculation)
     gRacerSound->engine_intensity = intensity;
-
-    if (buttonsHeld & A_BUTTON) {
-        gRacerSound->unk98_unused = gRacerSound->baseVolume[0];
-    }
 }
 
 /**
@@ -702,7 +696,7 @@ void racer_sound_doppler_effect(Object *observerObj, Camera *camera, Object *sou
             // Then compute the observer's speed.
             switch (observerRacer->vehicleID) {
                 case VEHICLE_CAR:
-                    obsSpeed = ABSF(obsSpeed);
+                    obsSpeed = ABSF(observerRacer->velocity);
                     break;
                 case VEHICLE_HOVERCRAFT:
                     // 2D ground speed
@@ -776,14 +770,13 @@ void racer_sound_update_all(Object **racerObjs, s32 numRacers, Camera *cameras, 
     f32 idle_intensity;
     s32 j;
     s32 i;
-    s32 unused;
+    UNUSED s32 unused;
     f32 volumeMult;
     u8 volume;
     u8 backgroundVolume;
     s32 curDiff;
     s32 k;
     s32 maxDiff;
-    s32 curIndex;
     f32 pitch;
     VehicleSoundData *soundData;
     s32 bestSlot;

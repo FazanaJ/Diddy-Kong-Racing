@@ -130,7 +130,7 @@ Object *autoplay_find_balloon(s32 balloonID) {
         do {
             tempObj = gObjPtrList[i];
             if (!(tempObj->trans.flags & OBJ_FLAGS_PARTICLE) && tempObj->behaviorId == BHV_GOLDEN_BALLOON) {
-                Object_NPC *balloon = (Object_NPC *) tempObj->npc;
+                //Object_NPC *balloon = (Object_NPC *) tempObj->npc;
                 if (tempObj->level_entry->goldenBalloon.balloonID == balloonID) {
                     return tempObj;
                 }
@@ -578,7 +578,7 @@ void autoplay_single_player(void) {
                         sCheckpointID++;
                     }
                 } else {
-                    s32 flag;
+                    UNUSED s32 flag;
                     if ((settings->bosses & 2) == 0) {
                         flag = RACE_CLEARED;
                     } else {
@@ -613,7 +613,7 @@ void autoplay_single_player(void) {
                         sCheckpointID++;
                     }
                 } else {
-                    s32 flag;
+                    UNUSED s32 flag;
                     if ((settings->bosses & 8) == 0) {
                         flag = RACE_CLEARED;
                     } else {
@@ -648,7 +648,7 @@ void autoplay_single_player(void) {
                         sCheckpointID++;
                     }
                 } else {
-                    s32 flag;
+                    UNUSED s32 flag;
                     if ((settings->bosses & 4) == 0) {
                         flag = RACE_CLEARED;
                     } else {
@@ -683,7 +683,7 @@ void autoplay_single_player(void) {
                         sCheckpointID++;
                     }
                 } else {
-                    s32 flag;
+                    UNUSED s32 flag;
                     if ((settings->bosses & 0x10) == 0) {
                         flag = RACE_CLEARED;
                     } else {
@@ -718,7 +718,7 @@ void autoplay_single_player(void) {
                         sCheckpointID++;
                     }
                 } else {
-                    s32 flag;
+                    UNUSED s32 flag;
                     if ((settings->bosses & 0x20) == 0) {
                         flag = RACE_CLEARED;
                     } else {
@@ -891,8 +891,8 @@ void autoplay_tracks(s32 playerCount) {
             }
             if (gTrackSelectCursorX == trackX && gTrackSelectCursorY == trackY) {
                 if (sAutoplayTrackStage == AUTOPLAY_TRACKS_FINISHED) {
-                    gControllerCurrData[sPlayerID[i]].button |= B_BUTTON;
-                    gControllerButtonsPressed[sPlayerID[i]] |= B_BUTTON;
+                    gControllerCurrData[sPlayerID[0]].button |= B_BUTTON;
+                    gControllerButtonsPressed[sPlayerID[0]] |= B_BUTTON;
                 } else {
                     sAutoplayTrackStage = AUTOPLAY_TRACKS_PLAY;
                 }

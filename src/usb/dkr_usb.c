@@ -103,7 +103,7 @@ void init_usb_thread(void) {
     cartType = usb_getcart();
     RETURN_IF_CART_NOT_VALID();
     isHotReloading = FALSE;
-    debug_buffer = mempool_alloc(BUFFER_SIZE, PP_RAM_DEBUG);
+    debug_buffer = (char *) mempool_alloc(BUFFER_SIZE, PP_RAM_DEBUG);
     bzero(debug_buffer, BUFFER_SIZE);
 
     // Create USB thread.
