@@ -11,6 +11,7 @@
 #include "main.h"
 #include "menu.h"
 #include "game.h"
+#include "thread3_main.h"
 
 /************ .data ************/
 
@@ -103,7 +104,6 @@ OSMesgQueue *osScInterruptQ;
 /*******************************/
 
 extern OSMesgQueue gGameMesgQueue;
-extern OSSched gMainSched;
 extern s32 gNumGfxTasksAtScheduler;
 
 DKR_OSTask gRdpTaskA = {

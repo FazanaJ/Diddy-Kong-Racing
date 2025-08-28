@@ -61,6 +61,7 @@ s8 gPauseLockTimer = 0; // If this is above zero, the player cannot pause the ga
 s8 gFutureFunLandLevelTarget = FALSE;
 s8 gDmemInvalid = FALSE;
 s8 gDrawFrameTimer = 0;
+s8 gSetupVideo;
 FadeTransition D_800DD3F4 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_BLACK, 20, 0);
 s32 sLogicUpdateRate = LOGIC_5FPS;
 f32 sLogicUpdateRateF = LOGIC_5FPS;
@@ -162,6 +163,7 @@ void init_game(void) {
     s32 tag;
     char *ramStr[] = {"B", "KB", "MB"};
     f32 segSize;
+    s32 videoRet;
 
 #ifdef ANTI_TAMPER
     sAntiPiracyTriggered = TRUE;
@@ -191,10 +193,15 @@ void init_game(void) {
         init_usb_thread();
     }
     gfxtask_init(&gMainSched);
+    sControllerStatus = input_init();
+    videoRet = userconfig_read();
+    if (videoRet == 1) {
+        gSetupVideo = TRUE;
+    } else {
+        gSetupVideo = FALSE;
+    }
     audio_init(&gMainSched);
     audspat_init();
-    sControllerStatus = input_init();
-    userconfig_read();
     tex_init_textures();
     allocate_object_model_pools();
     allocate_object_pools();
@@ -1572,24 +1579,14 @@ void set_frame_blackout_timer(void) {
     gDrawFrameTimer = 2;
 }
 
-#ifndef SKIP_INTRO
-#define BOOT_LVL MENU_BOOT
-#else
-#if SKIP_INTRO == SKIP_TITLE
-#define BOOT_LVL MENU_TITLE
-#elif SKIP_INTRO == SKIP_CHARACTER
-#define BOOT_LVL MENU_CHARACTER_SELECT
-#elif SKIP_INTRO == SKIP_MENU
-#define BOOT_LVL MENU_GAME_SELECT
-#endif // SKIP_INTRO
-#endif
-
 /**
  * Give the player 8 frames to enter the CPak menu with start, then load the intro sequence.
  */
 void mode_intro(void) {
     s32 i;
     s32 buttonInputs = 0;
+    s32 menuID;
+    s32 sceneID;
 
     for (i = 0; i < MAXCONTROLLERS; i++) {
         buttonInputs |= input_held(i);
@@ -1597,10 +1594,15 @@ void mode_intro(void) {
     if (buttonInputs & START_BUTTON) {
         gShowControllerPakMenu = TRUE;
     }
+    
+    if (buttonInputs & B_BUTTON) {
+        gSetupVideo = TRUE;
+    }
 #ifndef SKIP_INTRO
     sBootDelayTimer++;
 #else
-    sBootDelayTimer = 8;
+    sBootDelayTimer++;
+    //sBootDelayTimer = 8;
 #endif
 #if EXPANSION_PAK_SUPPORT == 2
     if (gExpansionPak == FALSE) {
@@ -1609,7 +1611,14 @@ void mode_intro(void) {
     }
 #endif
     if (sBootDelayTimer >= 8) {
-        load_menu_with_level_background(BOOT_LVL, ASSET_LEVEL_OPTIONSBACKGROUND, 2);
+        if (gSetupVideo) {
+            menuID = MENU_REGION;
+            sceneID = 0;
+        } else {
+            menuID = BOOT_LVL;
+            sceneID = 2;
+        }
+        load_menu_with_level_background(menuID, ASSET_LEVEL_OPTIONSBACKGROUND, sceneID);
     }
 }
 

@@ -4,6 +4,19 @@
 #include "types.h"
 #include "macros.h"
 #include "structs.h"
+#include "rcp_dkr.h"
+
+#ifndef SKIP_INTRO
+#define BOOT_LVL MENU_BOOT
+#else
+#if SKIP_INTRO == SKIP_TITLE
+#define BOOT_LVL MENU_TITLE
+#elif SKIP_INTRO == SKIP_CHARACTER
+#define BOOT_LVL MENU_CHARACTER_SELECT
+#elif SKIP_INTRO == SKIP_MENU
+#define BOOT_LVL MENU_GAME_SELECT
+#endif // SKIP_INTRO
+#endif
 
 typedef enum GameMode {
     GAMEMODE_INTRO = -1,
@@ -71,6 +84,7 @@ extern s32 gSaveDataFlags;
 #define SAVE_DATA_FLAG_WRITE_SAVE_FILE_NUMBER(flags) ((flags >> 10) & SAVE_DATA_FLAG_INDEX_VALUE)
 
 extern u8 gShowBG;
+extern OSSched gMainSched;
 
 void thread3_main(UNUSED void *unused);
 void init_game(void);

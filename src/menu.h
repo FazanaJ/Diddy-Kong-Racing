@@ -249,6 +249,7 @@ typedef enum MENU_ID {
     MENU_CAUTION,
     MENU_VIDEO_OPTIONS,
     MENU_DEBUG_ROOT,
+    MENU_REGION,
 #if EXPANSION_PAK_SUPPORT == 2
     MENU_EXPANSION_ERROR,
 #endif
@@ -524,6 +525,8 @@ void menu_video_options_init(void);
 s32 menu_video_options_loop(s32 updateRate);
 void menu_debug_root_init(void);
 s32 menu_debug_root_loop(s32 updateRate);
+void menu_region_init(void);
+s32 menu_region_loop(s32 updateRate);
 
 void menu_button_free(void);
 void menu_geometry_end(void);

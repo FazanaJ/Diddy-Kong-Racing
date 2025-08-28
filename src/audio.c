@@ -80,14 +80,10 @@ void audio_init(OSSched *sc) {
     ALSynConfig synth_config;
     s32 *addrPtr;
     u32 seqfSize;
-    u32 seqLength;
     audioMgrConfig audConfig;
     ALSeqFile seqSize;
     s32 heapSize;
-    void *heapAddr;
-    MusicData *lol;
 
-    seqLength = 0;
     gAudioHeapStack = (u8 *) mempool_alloc(AUDIO_HEAP_SIZE, PP_RAM_AUDIOHEAP);
     if ((s32) gAudioHeapStack & 0xF) {
         gAudioHeapStack = align16(gAudioHeapStack);
@@ -156,7 +152,6 @@ void audio_init(OSSched *sc) {
     gMusicAnimationTick = 1.0f; // Prevents a denorm crash on the character select screen.
 #endif
     heapSize = gALHeap.cur - gALHeap.base;
-    heapAddr = gAudioHeapStack;
     gALHeap.len = heapSize;
     mempool_realloc(gAudioHeapStack, heapSize, PP_RAM_AUDIOHEAP);
 }
@@ -905,7 +900,7 @@ void music_sequence_init(ALCSPlayer *seqp, s32 sequence, u8 *seqID, ALCSeq *seq)
             gJingleSequenceData = mempool_alloc_safe(seqLen, PP_RAM_SEQUENCES);
             s = gJingleSequenceData;
         }
-        asset_load(ASSET_AUDIO, (u32) s, gSequenceTable->seqArray[*seqID].offset, seqLen); 
+        asset_load(ASSET_AUDIO, (u32) s, (s32) gSequenceTable->seqArray[*seqID].offset, seqLen); 
         alCSeqNew(seq, s);
         alCSPSetSeq(seqp, seq);
         alCSPPlay(seqp);

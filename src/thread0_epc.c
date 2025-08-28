@@ -17,6 +17,7 @@
 #include "memory.h"
 #include "asset_loading.h"
 #include "audiomgr.h"
+#include "thread3_main.h"
 
 #define MAP_PARSE
 
@@ -574,7 +575,6 @@ s32 crash_check_stack(void) {
 
 extern OSThread gThread1;
 extern OSThread gThread3;
-extern OSSched gMainSched;
 extern OSThread *gThread30;
 extern OSThread gThreadUsb;
 

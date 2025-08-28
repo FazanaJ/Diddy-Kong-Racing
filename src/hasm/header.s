@@ -46,23 +46,23 @@
 .endif
 
 .ifdef VERSION_us_v77
-.ascii "E"             /* Country code */
+.ascii "\0"             /* Country code */
 .equ revision, 0x2
 .endif
 .ifdef VERSION_pal_v77
-.ascii "P"             /* Country code */
+.ascii "\0"             /* Country code */
 .equ revision, 0x2
 .endif
 .ifdef VERSION_jpn_v79
-.ascii "J"             /* Country code */
+.ascii "\0"             /* Country code */
 .equ revision, 0x2
 .endif
 .ifdef VERSION_us_v80
-.ascii "E"             /* Country code */
+.ascii "\0"             /* Country code */
 .equ revision, 0x2
 .endif
 .ifdef VERSION_pal_v80
-.ascii "P"             /* Country code */
+.ascii "\0"             /* Country code */
 .equ revision, 0x2
 .endif
 

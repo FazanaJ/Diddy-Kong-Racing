@@ -112,5 +112,6 @@ void sound_volume_set_relative(u16 soundID, SoundHandle soundHandle, u8 volume);
 void music_sequence_init(ALCSPlayer *seqp, s32 sequence, u8 *seqID, ALCSeq *seq);
 void sound_play(u16 soundID, SoundHandle* handlePtr);
 f32 music_animation_fraction(void);
+void audio_reinit(void);
 
 #endif

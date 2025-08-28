@@ -267,7 +267,7 @@ u32 osGetMemSize(void) {
 void config_init(void) {
     gConfig.frameCap = 1;
     gConfig.terrainQuality = 1;
-    osTvType = OS_TV_NTSC;
+    //osTvType = OS_TV_NTSC;
 }
 
 s32 memsize_get(void) {

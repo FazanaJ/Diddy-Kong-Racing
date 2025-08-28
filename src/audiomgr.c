@@ -9,6 +9,7 @@
 #include "stacks.h"
 #include "video.h"
 #include "main.h"
+#include "audio.h"
 
 /****  type define's for structures unique to audiomgr ****/
 typedef union {
@@ -74,23 +75,23 @@ u32 nextDMA = 0;
 u32 curAcmdList = 0;
 u32 minFrameSize;
 u32 frameSize;
+u32 frameSize50;
+u32 curFrameSize;
 u32 maxFrameSize;
 s32 gAudioCmdLen; // Set but not used
 
+#ifdef ANTI_TAMPER
 /**** Anti Piracy - Sets random audio frequency ****/
 s16 gAntiPiracyCRCStart;
 s8 gAntiPiracyAudioFreq = FALSE;
 s32 gRaceCheckFinishChecksum = Func80019808Checksum;
 s32 gRaceCheckFinishFuncLength = 0xFD0;
+#endif
 
 /** Queues and storage for use with audio DMA's ****/
 OSIoMesg audDMAIOMesgBuf[NUM_DMA_MESSAGES];
 OSMesgQueue audDMAMessageQ;
 OSMesg audDMAMessageBuf[NUM_DMA_MESSAGES];
-
-/**** Not really sure why these are here. They are set, but never used. ****/
-static s16 *gLastAudioPtr = 0;
-static s32 gLastAudioFrameSamples = 0;
 
 /**** private routines ****/
 static void __amMain(UNUSED void *arg);
@@ -106,13 +107,14 @@ static void __clearAudioDMA(void);
 void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
     s32 i;
     f32 fsize;
+    f32 fsize50;
     uintptr_t *asset;
     u32 *assetAudioTable;
     s32 *asset8;
     s32 assetSize;
-    s32 checksum;
-    u8 *crc_region_start;
-    u8 *crc_region;
+    UNUSED s32 checksum;
+    UNUSED u8 *crc_region_start;
+    UNUSED u8 *crc_region;
 
     gAudioSched = audSched;
     gAudioHeap = c->heap;
@@ -124,11 +126,9 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
      * Calculate the frame sample parameters from the
      * video field rate and the output rate
      */
-    if (osTvType == OS_TV_PAL) {
-        fsize = (f32) c->outputRate * 2 / (f32) 50.0f;
-    } else {
-        fsize = (f32) c->outputRate * 2 / (f32) 60.0f;
-    }
+    fsize50 = (f32) c->outputRate * 2 / (f32) 50.0f;
+    fsize = (f32) c->outputRate * 2 / (f32) 60.0f;
+    frameSize50 = (s32) fsize50;
     frameSize = (s32) fsize;
     if (frameSize < fsize) {
         frameSize++;
@@ -136,8 +136,15 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
     if (frameSize & 0xf) {
         frameSize = (frameSize & ~0xf) + 0x10;
     }
-    minFrameSize = frameSize - 16;
-    maxFrameSize = frameSize + EXTRA_SAMPLES + 16;
+    if (frameSize50 < fsize50) {
+        frameSize50++;
+    }
+    if (frameSize50 & 0xf) {
+        frameSize50 = (frameSize50 & ~0xf) + 0x10;
+    }
+    minFrameSize = frameSize50 - 16;
+    maxFrameSize = frameSize50 + EXTRA_SAMPLES + 16;
+    curFrameSize = frameSize50;
 
     if (c->fxType[0] == AL_FX_CUSTOM) {
         assetAudioTable = asset_table_load(ASSET_AUDIO_TABLE);
@@ -191,6 +198,7 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
         __am.ACMDList[i + NUM_ACMD_LISTS] = (Acmd *) alHeapAlloc(c->heap, 1, 120);
         __am.ACMDList[i + NUM_ACMD_LISTS]->words.w0 = (uintptr_t) asset;
         asset += maxFrameSize;
+        //asset += frameSize50 + EXTRA_SAMPLES + 16;
     }
 
     osCreateMesgQueue(&__am.audioReplyMsgQ, __am.audioReplyMsgBuf, MAX_MESGS);
@@ -200,6 +208,19 @@ void amCreateAudioMgr(ALSynConfig *c, OSPri pri, OSSched *audSched) {
     osCreateThread(&__am.thread, 4, __amMain, 0, (void *) (audioStack + STACKSIZE(STACK_AUD)), pri);
     audioStack[STACKSIZE(STACK_AUD) - 1] = 0;
     audioStack[0] = 0;
+    audio_reinit();
+}
+
+void audio_reinit(void) {
+    if (gConfig.screenRegion == REGIONMODE_PAL50) {
+        minFrameSize = frameSize50 - 16;
+        maxFrameSize = frameSize50 + EXTRA_SAMPLES + 16;
+        curFrameSize = frameSize50;
+    } else {
+        minFrameSize = frameSize - 16;
+        maxFrameSize = frameSize + EXTRA_SAMPLES + 16;
+        curFrameSize = frameSize;
+    }
 }
 
 /**
@@ -291,7 +312,6 @@ static u32 __amHandleFrameMsg(AudioInfo *info, AudioInfo *lastInfo) {
     Acmd *cmdp;
     int samplesLeft = 0;
     OSScTask *t;
-    u32 ret;
 
     __clearAudioDMA(); /* call once a frame, before doing alAudioFrame */
 
@@ -301,8 +321,8 @@ static u32 __amHandleFrameMsg(AudioInfo *info, AudioInfo *lastInfo) {
         s16 *outputDataPointer;
         s32 frameSamples;
 
-        gLastAudioPtr = outputDataPointer = lastInfo->data;
-        gLastAudioFrameSamples = frameSamples = lastInfo->frameSamples << 2;
+        outputDataPointer = lastInfo->data;
+        frameSamples = lastInfo->frameSamples << 2;
         osAiSetNextBuffer(outputDataPointer, frameSamples);
 #ifdef ANTI_TAMPER
         // Antipiracy measure
@@ -316,7 +336,7 @@ static u32 __amHandleFrameMsg(AudioInfo *info, AudioInfo *lastInfo) {
     /* this will vary slightly frame to frame, must recalculate every frame */
     samplesLeft = osAiGetLength() >> 2; /* divide by four, to convert bytes */
                                         /* to stereo 16 bit samples */
-    info->frameSamples = (16 + (frameSize - samplesLeft + EXTRA_SAMPLES)) & ~0xf;
+    info->frameSamples = (16 + (curFrameSize - samplesLeft + EXTRA_SAMPLES)) & ~0xf;
     if ((u32) info->frameSamples < minFrameSize) {
         info->frameSamples = minFrameSize;
     }

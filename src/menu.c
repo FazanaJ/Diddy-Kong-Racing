@@ -2542,6 +2542,9 @@ void menu_init(u32 menuId) {
         case MENU_DEBUG_ROOT:
             menu_debug_root_init();
             break;
+        case MENU_REGION:
+            menu_region_init();
+            break;
 #if EXPANSION_PAK_SUPPORT == 2
         case MENU_EXPANSION_ERROR:
             menu_expansionerror_init();
@@ -2628,6 +2631,9 @@ s32 menu_loop(Gfx **currDisplayList, Mtx **currHudMat, Vertex **currHudVerts, Tr
             break;
         case MENU_DEBUG_ROOT:
             ret = menu_debug_root_loop(updateRate);
+            break;
+        case MENU_REGION:
+            ret = menu_region_loop(updateRate);
             break;
 #if EXPANSION_PAK_SUPPORT == 2
         case MENU_EXPANSION_ERROR:
@@ -16705,6 +16711,180 @@ s32 menu_debug_root_loop(s32 updateRate) {
         set_text_colour(255, 255, 255, 0, 255);
         draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH_HALF, 32, gDebugMenuSubStrings[gPauseSubmenu], ALIGN_MIDDLE_CENTER);
     }
+
+    return MENU_RESULT_CONTINUE;
+}
+
+char *sRegionBootStrings[] = {
+    "VIDEO MODE",
+    "VIDEO MODE",
+    "VIDEO MODE",
+
+    "(Hold B on boot to get this screen again)",
+    "(Hold B on boot to get this screen again)",
+    "(Hold B on boot to get this screen again)",
+
+    "Use this if PAL60 does not work right.",
+    "Use this if PAL60 does not work right.",
+    "Use this if PAL60 does not work right.",
+
+    "Use this if your TV doesn't support 60Hz",
+    "Use this if your TV doesn't support 60Hz",
+    "Use this if your TV doesn't support 60Hz",
+    
+    "Use this if possible.",
+    "Use this if possible.",
+    "Use this if possible.",
+
+    "OK",
+    "OK",
+    "OK",
+
+    "CURRENT",
+    "CURRENT",
+    "CURRENT",
+};
+
+char *sRegionValues[] = {
+    "NTSC",
+    "PAL50",
+    "PAL60"
+};
+
+void menu_region_init(void) {
+    gMenuOption = 1;
+    gPauseSubmenu = 0;
+    gMenuDelay = 0;
+}
+
+s32 menu_region_loop(s32 updateRate) {
+    Gfx **gfx = &sMenuCurrDisplayList;
+    s32 lang = 0;
+    s32 i;
+    s32 x;
+    s32 alpha;
+    s32 al;
+    s32 inputPressed;
+    s32 curVideo;
+    char textBytes[32];
+    
+    gOptionBlinkTimer = (gOptionBlinkTimer + updateRate) & 0x3F;
+    alpha = gOptionBlinkTimer * 8;
+    if (alpha > 255) {
+        alpha = 511 - alpha;
+    }
+
+    set_text_font(ASSET_FONTS_BIGFONT);
+    set_text_background_colour(0, 0, 0, 0);
+    set_text_colour(0, 0, 0, 255, 128);
+    draw_text(gfx, SCREEN_WIDTH_HALF + 1, 35, sRegionBootStrings[lang], ALIGN_MIDDLE_CENTER);
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(gfx, SCREEN_WIDTH_HALF, 32, sRegionBootStrings[lang], ALIGN_MIDDLE_CENTER);
+
+    set_text_font(ASSET_FONTS_SMALLFONT);
+    set_text_colour(0, 0, 0, 255, 255);
+    draw_text(gfx, SCREEN_WIDTH_HALF + 1, SCREEN_HEIGHT - 17, sRegionBootStrings[lang + 3], ALIGN_MIDDLE_CENTER);
+    draw_text(gfx, SCREEN_WIDTH_HALF + 1, SCREEN_HEIGHT - 63, sRegionBootStrings[lang + 6 + (gMenuOption * 3)], ALIGN_MIDDLE_CENTER);
+    set_text_colour(255, 255, 255, 0, 255);
+    draw_text(gfx, SCREEN_WIDTH_HALF, SCREEN_HEIGHT - 18, sRegionBootStrings[lang + 3], ALIGN_MIDDLE_CENTER);
+    draw_text(gfx, SCREEN_WIDTH_HALF, SCREEN_HEIGHT - 64, sRegionBootStrings[lang + 6 + (gMenuOption * 3)], ALIGN_MIDDLE_CENTER);
+
+    set_text_font(ASSET_FONTS_FUNFONT);
+    x = SCREEN_WIDTH_HALF - ((48 * (3 - 1)) / 2);
+    for (i = 0; i < 3; i++) {
+        set_text_colour(0, 0, 0, 255, 128);
+        draw_text(gfx, x + 1, SCREEN_HEIGHT_HALF + 2, sRegionValues[i], ALIGN_MIDDLE_CENTER);
+        if (gMenuOption == i && gPauseSubmenu == 0) {
+            al = alpha;
+        } else {
+            al = 0;
+        }
+        set_text_colour(255, 255, 255, al, 255);
+        draw_text(gfx, x, SCREEN_HEIGHT_HALF, sRegionValues[i], ALIGN_MIDDLE_CENTER);
+        x += 48;
+    }
+
+    switch(gConfig.screenRegion) {
+        default:
+            curVideo = 0;
+            break;
+        case REGIONMODE_PAL50:
+            curVideo = 1;
+            break;
+        case REGIONMODE_PAL60:
+            curVideo = 2;
+            break;
+    }
+
+    sprintf(textBytes, "%s: %s", sRegionBootStrings[lang + 18], sRegionValues[curVideo]);
+
+    set_text_colour(0, 0, 0, 255, 128);
+    draw_text(gfx, SCREEN_WIDTH_HALF + 1, SCREEN_HEIGHT_HALF + 32 + 2, sRegionBootStrings[lang + 15], ALIGN_MIDDLE_CENTER);
+    draw_text(gfx, SCREEN_WIDTH_HALF - 112 + 1, SCREEN_HEIGHT_HALF - 48 + 2, textBytes, ALIGN_MIDDLE_LEFT);
+    if (gPauseSubmenu != 0) {
+        al = alpha;
+    } else {
+        al = 0;
+    }
+    set_text_colour(255, 255, 255, al, 255);
+    draw_text(gfx, SCREEN_WIDTH_HALF, SCREEN_HEIGHT_HALF + 32, sRegionBootStrings[lang + 15], ALIGN_MIDDLE_CENTER);
+    set_text_colour(160, 255, 160, 128, 255);
+    draw_text(gfx, SCREEN_WIDTH_HALF - 112, SCREEN_HEIGHT_HALF - 48, textBytes, ALIGN_MIDDLE_LEFT);
+
+    inputPressed = 0;
+    gMenuStickX[PLAYER_MENU] = 0;
+    gMenuStickY[PLAYER_MENU] = 0;
+    for (i = 0; i < 4; i++) {
+        gMenuStickX[PLAYER_MENU] += gControllersXAxisDirection[i];
+        gMenuStickY[PLAYER_MENU] += gControllersYAxisDirection[i];
+        inputPressed |= input_pressed(i);
+    }
+
+    if (gPauseSubmenu == 0) {
+        if (gMenuStickX[PLAYER_MENU] > 0 && gMenuOption < 2) {
+            gMenuOption++;
+        }
+        if (gMenuStickX[PLAYER_MENU] < 0 && gMenuOption > 0) {
+            gMenuOption--;
+        }
+    }
+    if (gMenuStickY[PLAYER_MENU] < 0 && gPauseSubmenu == 0) {
+        gPauseSubmenu = 1;
+    }
+    if (gMenuStickY[PLAYER_MENU] > 0 && gPauseSubmenu != 0) {
+        gPauseSubmenu = 0;
+    }
+
+    if (gMenuDelay == 0 && inputPressed & A_BUTTON) {
+        if (gPauseSubmenu == 0) {
+            switch (gMenuOption) {
+                case 0:
+                    gConfig.screenRegion = REGIONMODE_NTSC;
+                    break;
+                case 1:
+                    gConfig.screenRegion = REGIONMODE_PAL50;
+                    break;
+                case 2:
+                    gConfig.screenRegion = REGIONMODE_PAL60;
+                    break;
+            }
+            vi_change(SCREEN_WIDTH, SCREEN_HEIGHT);
+        } else {
+            gMenuDelay = 1;
+            audio_reinit();
+            userconfig_write();
+            transition_begin(&sMenuTransitionFadeIn);
+        }
+    }
+
+    if (gMenuDelay) {
+        gMenuDelay += updateRate;
+        if (gMenuDelay >= 32) {
+            menu_init(BOOT_LVL);
+        }
+    }
+
+    sMenuCurrDisplayList = *gfx;
 
     return MENU_RESULT_CONTINUE;
 }

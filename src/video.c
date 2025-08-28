@@ -82,6 +82,7 @@ s32 fb_size(void) {
 }
 
 OSViMode gGlobalVI;
+extern s32 osViClock;
 
 void vi_change(int width, int height) {
     s32 addPAL = 0;
@@ -94,13 +95,25 @@ void vi_change(int width, int height) {
     static u16 prevHeight = 0;
     static u8 prevBits = 0;
     OSViMode *mode = &gGlobalVI;
-    if (osTvType == OS_TV_TYPE_PAL) {
-        wcopy(&osViModePalLan1, &gGlobalVI, sizeof(OSViMode));
-        //gGlobalVI = osViModePalLan1;
+    OSViMode *base;
+
+
+    if (gConfig.screenRegion == REGIONMODE_PAL50) {
+        base = &osViModePalLan1;
+        osViClock = VI_PAL_CLOCK;
+    } else if (gConfig.screenRegion == REGIONMODE_MPAL) {
+        base = &osViModeNtscLan1;
+        osViClock = VI_MPAL_CLOCK;
+    } else if (gConfig.screenRegion == REGIONMODE_PAL60) {
+        base = &osViModeNtscLan1;
+        osViClock = VI_PAL_CLOCK;
     } else {
-        wcopy(&osViModeNtscLan1, &gGlobalVI, sizeof(OSViMode));
-        //gGlobalVI = osViModeNtscLan1;
+        base = &osViModeNtscLan1;
+        osViClock = VI_NTSC_CLOCK;
     }
+
+    wcopy(base, &gGlobalVI, sizeof(OSViMode));
+    osAiSetFrequency(22050);
 
     if (gConfig.screenBits == SCREENBITS_16b) {
         gBitDepth = G_IM_SIZ_16b;
