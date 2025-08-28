@@ -16733,6 +16733,10 @@ char *sRegionBootStrings[] = {
     "(Hold B on boot to get this screen again)",
     "(Hold B on boot to get this screen again)",
 
+    "Brazil Brazil Brazil Brazil",
+    "Brazil Brazil Brazil Brazil",
+    "Brazil Brazil Brazil Brazil",
+
     "Use this if PAL60 does not work right.",
     "Use this if PAL60 does not work right.",
     "Use this if PAL60 does not work right.",
@@ -16755,13 +16759,14 @@ char *sRegionBootStrings[] = {
 };
 
 char *sRegionValues[] = {
+    "MPAL",
     "NTSC",
     "PAL50",
     "PAL60"
 };
 
 void menu_region_init(void) {
-    gMenuOption = 1;
+    gMenuOption = 2;
     gPauseSubmenu = 0;
     gMenuDelay = 0;
 }
@@ -16799,8 +16804,8 @@ s32 menu_region_loop(s32 updateRate) {
     draw_text(gfx, SCREEN_WIDTH_HALF, SCREEN_HEIGHT - 64, sRegionBootStrings[lang + 6 + (gMenuOption * 3)], ALIGN_MIDDLE_CENTER);
 
     set_text_font(ASSET_FONTS_FUNFONT);
-    x = SCREEN_WIDTH_HALF - ((48 * (3 - 1)) / 2);
-    for (i = 0; i < 3; i++) {
+    x = SCREEN_WIDTH_HALF - ((56 * (4 - 1)) / 2);
+    for (i = 0; i < 4; i++) {
         set_text_colour(0, 0, 0, 255, 128);
         draw_text(gfx, x + 1, SCREEN_HEIGHT_HALF + 2, sRegionValues[i], ALIGN_MIDDLE_CENTER);
         if (gMenuOption == i && gPauseSubmenu == 0) {
@@ -16810,25 +16815,28 @@ s32 menu_region_loop(s32 updateRate) {
         }
         set_text_colour(255, 255, 255, al, 255);
         draw_text(gfx, x, SCREEN_HEIGHT_HALF, sRegionValues[i], ALIGN_MIDDLE_CENTER);
-        x += 48;
+        x += 56;
     }
 
     switch(gConfig.screenRegion) {
-        default:
+        case REGIONMODE_MPAL:
             curVideo = 0;
             break;
-        case REGIONMODE_PAL50:
+        default:
             curVideo = 1;
             break;
-        case REGIONMODE_PAL60:
+        case REGIONMODE_PAL50:
             curVideo = 2;
+            break;
+        case REGIONMODE_PAL60:
+            curVideo = 3;
             break;
     }
 
-    sprintf(textBytes, "%s: %s", sRegionBootStrings[lang + 18], sRegionValues[curVideo]);
+    sprintf(textBytes, "%s: %s", sRegionBootStrings[lang + 21], sRegionValues[curVideo]);
 
     set_text_colour(0, 0, 0, 255, 128);
-    draw_text(gfx, SCREEN_WIDTH_HALF + 1, SCREEN_HEIGHT_HALF + 32 + 2, sRegionBootStrings[lang + 15], ALIGN_MIDDLE_CENTER);
+    draw_text(gfx, SCREEN_WIDTH_HALF + 1, SCREEN_HEIGHT_HALF + 32 + 2, sRegionBootStrings[lang + 18], ALIGN_MIDDLE_CENTER);
     draw_text(gfx, SCREEN_WIDTH_HALF - 112 + 1, SCREEN_HEIGHT_HALF - 48 + 2, textBytes, ALIGN_MIDDLE_LEFT);
     if (gPauseSubmenu != 0) {
         al = alpha;
@@ -16836,7 +16844,7 @@ s32 menu_region_loop(s32 updateRate) {
         al = 0;
     }
     set_text_colour(255, 255, 255, al, 255);
-    draw_text(gfx, SCREEN_WIDTH_HALF, SCREEN_HEIGHT_HALF + 32, sRegionBootStrings[lang + 15], ALIGN_MIDDLE_CENTER);
+    draw_text(gfx, SCREEN_WIDTH_HALF, SCREEN_HEIGHT_HALF + 32, sRegionBootStrings[lang + 18], ALIGN_MIDDLE_CENTER);
     set_text_colour(160, 255, 160, 128, 255);
     draw_text(gfx, SCREEN_WIDTH_HALF - 112, SCREEN_HEIGHT_HALF - 48, textBytes, ALIGN_MIDDLE_LEFT);
 
@@ -16850,7 +16858,7 @@ s32 menu_region_loop(s32 updateRate) {
     }
 
     if (gPauseSubmenu == 0) {
-        if (gMenuStickX[PLAYER_MENU] > 0 && gMenuOption < 2) {
+        if (gMenuStickX[PLAYER_MENU] > 0 && gMenuOption < 3) {
             gMenuOption++;
         }
         if (gMenuStickX[PLAYER_MENU] < 0 && gMenuOption > 0) {
@@ -16868,12 +16876,15 @@ s32 menu_region_loop(s32 updateRate) {
         if (gPauseSubmenu == 0) {
             switch (gMenuOption) {
                 case 0:
-                    gConfig.screenRegion = REGIONMODE_NTSC;
+                    gConfig.screenRegion = REGIONMODE_MPAL;
                     break;
                 case 1:
-                    gConfig.screenRegion = REGIONMODE_PAL50;
+                    gConfig.screenRegion = REGIONMODE_NTSC;
                     break;
                 case 2:
+                    gConfig.screenRegion = REGIONMODE_PAL50;
+                    break;
+                case 3:
                     gConfig.screenRegion = REGIONMODE_PAL60;
                     break;
             }
