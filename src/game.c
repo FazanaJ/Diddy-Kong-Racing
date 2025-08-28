@@ -369,7 +369,7 @@ void level_load(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicl
     music_voicelimit_set(gCurrentLevelHeader->voiceLimit);
     music_volume_reset();
 #ifdef USE_DYNLIGHTS
-    setup_lights(32);
+    lights_init(32);
 #endif
     var_s0 = VEHICLE_CAR;
     if (vehicleId >= VEHICLE_CAR && vehicleId < NUMBER_OF_PLAYER_VEHICLES) {
@@ -560,7 +560,7 @@ void level_free(void) {
     music_jingle_stop();
     music_channel_reset_all();
 #ifdef USE_DYNLIGHTS
-    free_lights();
+    lights_free();
 #endif
     free_track();
     audspat_reset();

@@ -550,7 +550,7 @@ void render_scene(Gfx **dList, Mtx **mtx, Vertex **vtx, Triangle **tris, s32 upd
     for (j = gSceneCurrentPlayerID = 0; j < numViewports; gSceneCurrentPlayerID++, j = gSceneCurrentPlayerID) {
         if (gCurrentLevelHeader2 && !gCurrentLevelHeader2 && !gCurrentLevelHeader2) {} // Fakematch
         if (j == 0) {
-            if (func_8000E184() && numViewports == 1) {
+            if (is_player_two_in_control() && numViewports == 1) {
                 gSceneCurrentPlayerID = PLAYER_TWO;
             }
         }
@@ -4625,7 +4625,7 @@ void update_fog(s32 viewportCount, s32 updateRate) {
 void apply_fog(s32 playerID) {
     gDPSetFogColor(gTrackDL++, gFogData[playerID].fog.r >> 0x10, gFogData[playerID].fog.g >> 0x10,
                    gFogData[playerID].fog.b >> 0x10, 0xFF);
-    gSPFogPosition(gTrackDL++, gFogData[playerID].fog.near >> 0x10, gFogData[playerID].fog.far >> 0x10);
+    gSPFogPosition(gTrackDL++, (gFogData[playerID].fog.near >> 0x10), (gFogData[playerID].fog.far >> 0x10));
 }
 
 /**

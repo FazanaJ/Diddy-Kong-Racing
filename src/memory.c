@@ -16,12 +16,14 @@
 #define _ALIGN8(a) (((u32) (a) & ~ALIGNCHECK) + MEMALIGN)
 #endif
 
+/************ .bss ************/
+
 MemoryPool gMemoryPools[POOL_COUNT]; // Only two are used.
 s32 gNumberOfMemoryPools;
 void *gFreeQueueAddr[FREE_QUEUE_SIZE];
 u8 gFreeQueueTicks[FREE_QUEUE_SIZE];
 s32 gFreeQueueCount;
-s32 gFreeQueueTimer; // Official Name: mmDelay
+s32 gFreeQueueTimer;
 
 /******************************/
 
@@ -353,6 +355,7 @@ void *mempool_alloc_fixed(s32 poolID, s32 size, u8 *address, u32 colorTag, s32 m
  * If it's set to 0, then it clears the existing queue.
  * Nonzero amounts set any future frees to wait that many ticks
  * before clearing from memory.
+ * Official Name: mmSetDelay
  */
 void mempool_free_timer(s32 state) {
     u32 intFlags = interrupts_disable();

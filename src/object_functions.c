@@ -62,13 +62,13 @@ Triangle D_800DC9D0[8] = {
     { { { 0, 2, 5, 4 } }, { { { 1, 0 } } }, { { { 0, 4 } } }, { { { 0, 0 } } } },
 };
 
-u8 D_800DCA50[8] = { 2, 5, 6, 3, 10, 8, 7, 9 };
-u8 D_800DCA58[9] = { 2, 5, 6, 3, 10, 8, 7, 9, 11 };
-u8 D_800DCA64[9] = { 2, 5, 6, 3, 10, 8, 7, 9, 12 };
-u8 D_800DCA70[10] = { 2, 5, 6, 3, 10, 8, 7, 9, 11, 12 };
-u8 D_800DCA7C[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+u8 gCharacterSelectMainActorIDs[8] = { 2, 5, 6, 3, 10, 8, 7, 9 };
+u8 gCharacterSelectMainActorIDsPlusDrumstick[9] = { 2, 5, 6, 3, 10, 8, 7, 9, 11 };
+u8 gCharacterSelectMainActorIDsPlusTT[9] = { 2, 5, 6, 3, 10, 8, 7, 9, 12 };
+u8 gCharacterSelectAllActorIDs[10] = { 2, 5, 6, 3, 10, 8, 7, 9, 11, 12 };
+u8 gSignHoldingFrames[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
-u8 D_800DCA88[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+u8 gSignHoldingIndices[12] = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
 
 s8 D_800DCA94[8] = { 0x00, 0x00, 0x01, 0x01, 0x02, 0x00, 0x00, 0x00 };
 
@@ -1622,7 +1622,11 @@ void obj_loop_posarrow(Object *obj, UNUSED s32 updateRate) {
     }
 }
 
-/* Offical name: animInit */
+/**
+ * Object animator init function.
+ * Sets up the initial properties of the animator, then calls the loop function once.
+ * Official name: animInit
+ */
 void obj_init_animator(Object *obj, LevelObjectEntry_Animator *entry) {
     Object_Animator *animator;
     LevelModel *levelModel;
@@ -1808,6 +1812,10 @@ void obj_loop_animobject(Object *obj, s32 updateRate) {
     func_8001F460(obj, updateRate, obj);
 }
 
+/**
+ * Door opener loop function.
+ * Updates the global variable that indicates whether doors can be forced open.
+ */
 void obj_loop_dooropener(Object *obj, s32 updateRate) {
     s32 openDoors;
     Object_AnimatedObject *doorOpener;
@@ -1913,6 +1921,11 @@ void obj_loop_vehicleanim(Object *obj, s32 updateRate) {
     }
 }
 
+/**
+ * Hit tester init function.
+ * Sets up interaction properties such as flags and hitbox radius.
+ * Curiously, the hit tester entry parameter is unused.
+ */
 void obj_init_hittester(Object *obj, UNUSED LevelObjectEntry_HitTester *entry) {
     obj->interactObj->flags = INTERACT_FLAGS_SOLID | INTERACT_FLAGS_UNK_0080;
     obj->interactObj->unk11 = 2;
@@ -1953,6 +1966,10 @@ void obj_init_snowball(Object *obj, UNUSED LevelObjectEntry_Snowball *entry) {
     obj->interactObj->pushForce = 0;
 }
 
+/**
+ * Rolling snowball loop behaviour.
+ * Plays sound at the snowball's position, presumably the sound of it rolling.
+ */
 void obj_loop_snowball(Object *obj, s32 updateRate) {
     Object_AnimatedObject *animated = obj->animatedObject;
     if (animated->currentSound == SOUND_NONE) {
@@ -1973,21 +1990,25 @@ void obj_loop_snowball(Object *obj, s32 updateRate) {
     func_8001F460(obj, updateRate, obj);
 }
 
+/**
+ * Character select loop behaviour.
+ * Animates characters dancing, chooses which player sign they're holding up etc.
+ */
 void obj_loop_char_select(Object *charSelectObj, s32 updateRate) {
     s32 i2;
     s32 i;
-    f32 temp_f0;
+    f32 animFrame;
     ObjectModel *objMdl;
     Object_AnimatedObject *charSelect;
     s32 charCount;
-    s32 var_s0;
+    s32 playerIndex;
     s8 *status = NULL;
     ModelInstance *modInst;
-    u8 sp50[4];
-    u8 sp4F;
-    u8 *var_a2;
+    u8 playerSelectIndices[4];
+    u8 numCursors;
+    u8 *actorIDs;
 
-    var_s0 = 0;
+    playerIndex = 0;
 
     if (charSelectObj->properties.common.unk0 < 4) {
         charSelectObj->properties.common.unk0++;
@@ -2004,45 +2025,46 @@ void obj_loop_char_select(Object *charSelectObj, s32 updateRate) {
             objMdl = modInst->objModel;
             if (is_drumstick_unlocked()) {
                 if (is_tt_unlocked()) {
-                    var_a2 = D_800DCA70;
+                    actorIDs = gCharacterSelectAllActorIDs;
                     charCount = 10;
                 } else {
-                    var_a2 = D_800DCA58;
+                    actorIDs = gCharacterSelectMainActorIDsPlusDrumstick;
                     charCount = 9;
                 }
             } else if (is_tt_unlocked()) {
-                var_a2 = D_800DCA64;
+                actorIDs = gCharacterSelectMainActorIDsPlusTT;
                 charCount = 9;
             } else {
-                var_a2 = D_800DCA50;
+                actorIDs = gCharacterSelectMainActorIDs;
                 charCount = 8;
             }
 
-            for (i = 0; i < charCount && !var_s0; i++) {
-                if (charSelect->unk28 == var_a2[i]) {
-                    var_s0 = 1;
+            for (i = 0; i < charCount && !playerIndex; i++) {
+                if (charSelect->actorIndex == actorIDs[i]) {
+                    playerIndex = 1;
                 }
             }
             i--;
-            if (var_s0) {
+            if (playerIndex) {
                 charSelectObj->animationID = 1;
-                for (var_s0 = 0, sp4F = 0; var_s0 < MAXCONTROLLERS; var_s0++) {
-                    if (get_player_character(var_s0) == i) {
-                        sp50[sp4F++] = var_s0;
+                for (playerIndex = 0, numCursors = 0; playerIndex < MAXCONTROLLERS; playerIndex++) {
+                    if (get_player_character(playerIndex) == i) {
+                        playerSelectIndices[numCursors++] = playerIndex;
                     }
                 }
-                D_800DCA7C[i] += updateRate;
-                if (D_800DCA7C[i] >= 16) {
-                    D_800DCA7C[i] &= 0xF;
-                    D_800DCA88[i]++;
+                gSignHoldingFrames[i] += updateRate;
+                if (gSignHoldingFrames[i] >= 16) {
+                    gSignHoldingFrames[i] &= 0xF;
+                    gSignHoldingIndices[i]++;
                 }
-                if (D_800DCA88[i] >= sp4F) {
-                    D_800DCA88[i] = 0;
+                if (gSignHoldingIndices[i] >= numCursors) {
+                    gSignHoldingIndices[i] = 0;
                 }
-                if (sp4F > 0) {
+                if (numCursors > 0) {
                     status = charselect_status();
-                    for (i2 = 0; i2 < sp4F; i2++) {
-                        if (status[sp50[i2]] == 1) {
+                    for (i2 = 0; i2 < numCursors; i2++) {
+                        if (status[playerSelectIndices[i2]] == CHARSELECT_STATUS_CONFIRMED) {
+                            // Emit particle effects for every player confirming their selection of this character.
                             charSelectObj->particleEmittersEnabled = OBJ_EMIT_1;
                             obj_spawn_particle(charSelectObj, LOGIC_30FPS);
                         }
@@ -2052,7 +2074,7 @@ void obj_loop_char_select(Object *charSelectObj, s32 updateRate) {
                         // Unneccessary check for textureIndex to be greater than or equal to zero since it's a u8 and
                         // can't be less.
                         if (objMdl->batches[i2].textureIndex < 4) {
-                            objMdl->batches[i2].textureIndex = sp50[D_800DCA88[i]];
+                            objMdl->batches[i2].textureIndex = playerSelectIndices[gSignHoldingIndices[i]];
                         }
                     }
                     charSelectObj->animationID = 0;
@@ -2061,15 +2083,15 @@ void obj_loop_char_select(Object *charSelectObj, s32 updateRate) {
             if (charSelectObj->animationID >= 0) {
                 if ((charSelectObj->animationID < objMdl->numberOfAnimations)) {
                     i = (objMdl->animations[charSelectObj->animationID].animLength - 1) << 4;
-                    if (charSelect->unk2C == 1) {
-                        temp_f0 = music_animation_fraction();
-                        if (temp_f0 > 0.5) {
-                            temp_f0 -= 0.5;
-                            temp_f0 *= 2.0;
-                            charSelectObj->animFrame = i - (temp_f0 * i);
+                    if (charSelect->loopType == 1) {
+                        animFrame = music_animation_fraction();
+                        if (animFrame > 0.5) {
+                            animFrame -= 0.5;
+                            animFrame *= 2.0;
+                            charSelectObj->animFrame = i - (animFrame * i);
                         } else {
-                            temp_f0 *= 2;
-                            charSelectObj->animFrame = temp_f0 * i;
+                            animFrame *= 2;
+                            charSelectObj->animFrame = animFrame * i;
                         }
                     }
                 }
@@ -2162,6 +2184,11 @@ void obj_loop_infopoint(Object *obj, UNUSED s32 updateRate) {
     }
 }
 
+/**
+ * Smoke loop behaviour.
+ * Updates the position and animation frame of the smoke object.
+ * Frees the smoke object when the animation is finished.
+ */
 void obj_loop_smoke(Object *obj, s32 updateRate) {
     f32 updateRateF = updateRate;
     obj->trans.x_position += obj->x_velocity * updateRateF;
@@ -2194,6 +2221,10 @@ void obj_loop_wardensmoke(Object *obj, s32 updateRate) {
     }
 }
 
+/**
+ * Bomb Explosion init behaviour.
+ * The properties set up here have mostly to do with the explosion animation, like the scale and the timer.
+ */
 void obj_init_bombexplosion(Object *obj, LevelObjectEntry_BombExplosion *entry) {
     LevelObjectEntry_BombExplosion *entry2;
     obj->animFrame = 0;
@@ -2201,29 +2232,35 @@ void obj_init_bombexplosion(Object *obj, LevelObjectEntry_BombExplosion *entry) 
     obj->modelIndex = rand_range(0, obj->header->numberOfModelIds - 1);
     entry2 = entry; // Needed for a match.
     obj->properties.bombExplosion.timer = 0;
-    obj->properties.bombExplosion.unk4 = 0xFF;
-    if (entry->unk8) {
-        obj->properties.bombExplosion.unk4 |= (entry2->unk8 << 8) & 0xFF00;
+    obj->properties.bombExplosion.opacity = 0xFF;
+    if (entry->opacity_hi) {
+        obj->properties.bombExplosion.opacity |= (entry2->opacity_hi << 8) & 0xFF00;
     }
     obj->particleEmittersEnabled = OBJ_EMIT_1;
 }
 
+/**
+ * Bomb Explosion loop behaviour.
+ * Handles the explosion animation, spawning initially and then scaling down and fading out
+ * near the end, and finally killing the explosion object.
+ * Also spawns particle effects, but only if there are two or fewer human players.
+ */
 void obj_loop_bombexplosion(Object *obj, s32 updateRate) {
-    s32 temp_t8;
+    s32 opacity_hi;
 
     obj->properties.bombExplosion.timer += updateRate;
-    temp_t8 = (obj->properties.bombExplosion.unk4 >> 8) & 0xFF;
-    if (obj->properties.bombExplosion.timer > 10 && temp_t8 != 0) {
-        obj->properties.bombExplosion.unk4 ^= (temp_t8 << 8);
+    opacity_hi = (obj->properties.bombExplosion.opacity >> 8) & 0xFF;
+    if (obj->properties.bombExplosion.timer > 10 && opacity_hi != 0) {
+        obj->properties.bombExplosion.opacity ^= (opacity_hi << 8);
         obj_spawn_effect(obj->trans.x_position, obj->trans.y_position, obj->trans.z_position,
-                         ASSET_OBJECT_ID_BOMBEXPLOSION, SOUND_NONE, 1.0f, temp_t8 - 1);
+                         ASSET_OBJECT_ID_BOMBEXPLOSION, SOUND_NONE, 1.0f, opacity_hi - 1);
     }
     if (obj->properties.bombExplosion.timer < 20) {
         obj->trans.scale = ((obj->properties.bombExplosion.timer / 20.0f) * 10.0f) + 0.5f;
-        obj->properties.bombExplosion.unk4 |= 0xFF;
+        obj->properties.bombExplosion.opacity |= 0xFF;
     } else if (obj->properties.bombExplosion.timer < 0x28) {
         obj->trans.scale = (((obj->properties.bombExplosion.timer - 20) / 20.0f) * 5.0f) + 10.5f;
-        obj->properties.bombExplosion.unk4 = 0x1EF - (obj->properties.bombExplosion.timer * 0xC);
+        obj->properties.bombExplosion.opacity = 0x1EF - (obj->properties.bombExplosion.timer * 0xC);
     } else {
         free_object(obj);
     }
@@ -3966,7 +4003,7 @@ void obj_loop_bridge_whaleramp(Object *obj, s32 updateRate) {
             }
             break;
         default:
-            if (func_8001E2EC(entry->unkA) != 0) {
+            if (is_bridge_raised(entry->unkA) != 0) {
                 obj->properties.bridgeWhaleRamp.unk0 = (entry->unkD * 2);
             }
             if (obj->properties.bridgeWhaleRamp.unk0 > 0) {
@@ -3982,6 +4019,10 @@ void obj_loop_bridge_whaleramp(Object *obj, s32 updateRate) {
     obj->interactObj->flags &= ~INTERACT_FLAGS_PUSHING;
 }
 
+/**
+ * Ramp switch init function.
+ * Sets interaction attributes.
+ */
 void obj_init_rampswitch(Object *obj, LevelObjectEntry_RampSwitch *entry) {
     obj->interactObj->flags = INTERACT_FLAGS_TANGIBLE;
     obj->interactObj->unk11 = 0;
@@ -3990,14 +4031,23 @@ void obj_init_rampswitch(Object *obj, LevelObjectEntry_RampSwitch *entry) {
     obj->properties.rampSwitch.unk0 = entry->unk8;
 }
 
+/**
+ * Ramp switch loop function.
+ * When a player goes through this object, the switch will raise the drawbridge.
+ * The distance is set to 255 so that it doesn't interact with the player again.
+ */
 void obj_loop_rampswitch(Object *obj, UNUSED s32 updateRate) {
     if (obj->interactObj->distance < 45) {
-        func_8001E344(obj->properties.rampSwitch.unk0);
+        start_bridge_timer(obj->properties.rampSwitch.unk0);
     }
     obj->interactObj->distance = 255;
 }
 
-/* Official name: fogInit(?) */
+/**
+ * Fog changer init function.
+ * Sets the fog's radius.
+ * Official name: fogInit(?)
+ */
 void obj_init_fogchanger(Object *obj, LevelObjectEntry_FogChanger *entry) {
     f32 dist;
     dist = entry->distance * 8.0f;
@@ -4731,8 +4781,8 @@ void weapon_projectile(Object *obj, s32 updateRate) {
     if (weapon->weaponID == WEAPON_ROCKET_HOMING) {
         numCheckpoints = get_checkpoint_count();
         if (numCheckpoints > 0) {
-            if (func_800185E4(weapon->checkpoint, obj, posX, posY, posZ, &weapon->checkpointDist, (u8 *) &surface) ==
-                FALSE) {
+            if (checkpoint_is_passed(weapon->checkpoint, obj, posX, posY, posZ, &weapon->checkpointDist,
+                                     (u8 *) &surface) == FALSE) {
                 weapon->checkpoint++;
                 if (weapon->checkpoint >= numCheckpoints) {
                     weapon->checkpoint = 0;
@@ -4882,8 +4932,8 @@ void homing_rocket_prevent_overshoot(Object *obj, s32 updateRate, Object_Weapon 
         }
         dist = (dist + distY);
         if (dist > 300.0f * 300.0f && rocket->checkpoint != -1 && rocket->hitObj == NULL) {
-            sp58 = func_8001955C(obj, rocket->checkpoint, racer->unk1C8, rocket->unk14, rocket->unk16,
-                                 rocket->checkpointDist, &diffX, &diffY, &diffZ);
+            sp58 = homing_rocket_get_next_direction(obj, rocket->checkpoint, racer->isOnAlternateRoute, rocket->unk14,
+                                                    rocket->unk16, rocket->checkpointDist, &diffX, &diffY, &diffZ);
             sineY = arctan2_f(diffY, 500.0f) & 0xFFFF;
             shift = 3;
         } else {
@@ -5217,29 +5267,39 @@ void obj_spawn_effect(f32 x, f32 y, f32 z, s32 objectID, s32 soundID, f32 scale,
     }
 }
 
+/**
+ * Audio object init function.
+ * Sets up a sound point for the audio, then frees the audio object.
+ */
 void obj_init_audio(Object *obj, LevelObjectEntry_Audio *entry) {
     Object_Audio *audio;
 
     audio = obj->audio;
     audio->soundId = entry->soundId;
-    audio->unk2 = entry->unkA;
-    audio->unkC = entry->unkF;
-    audio->unk6 = entry->unkE;
-    audio->unk4 = entry->unkC;
-    audio->unk5 = entry->unkD;
-    audio->unkD = entry->unk10;
+    audio->range = entry->range;
+    audio->fastFalloff = entry->fastFalloff;
+    audio->pitch = entry->pitch;
+    audio->volume = entry->volume;
+    audio->minVolume = entry->minVolume;
+    audio->priority = entry->priority;
     audio->soundMask = NULL;
     if (sound_is_looped(audio->soundId)) {
-        audspat_point_create(audio->soundId, entry->common.x, entry->common.y, entry->common.z, 9, audio->unk5,
-                             audio->unk4, audio->unk2, audio->unkC, audio->unk6, audio->unkD, &audio->soundMask);
+        audspat_point_create(audio->soundId, entry->common.x, entry->common.y, entry->common.z, 9, audio->minVolume,
+                             audio->volume, audio->range, audio->fastFalloff, audio->pitch, audio->priority,
+                             &audio->soundMask);
     } else {
-        audspat_point_create(audio->soundId, entry->common.x, entry->common.y, entry->common.z, 10, audio->unk5,
-                             audio->unk4, audio->unk2, audio->unkC, audio->unk6, audio->unkD, &audio->soundMask);
+        audspat_point_create(audio->soundId, entry->common.x, entry->common.y, entry->common.z, 10, audio->minVolume,
+                             audio->volume, audio->range, audio->fastFalloff, audio->pitch, audio->priority,
+                             &audio->soundMask);
     }
     free_object(obj);
 }
 
-/* Official name: audioLineInit */
+/**
+ * Audio Line init function.
+ * Sets up a polyline in the audio spatial system, then frees the audio object.
+ * Official name: audioLineInit
+ */
 void obj_init_audioline(Object *obj, LevelObjectEntry_AudioLine *entry) {
     Object_AudioLine *audLine;
 
@@ -5261,15 +5321,19 @@ void obj_init_audioline(Object *obj, LevelObjectEntry_AudioLine *entry) {
     free_object(obj);
 }
 
+/**
+ * Audio Reverb init function.
+ * Sets up a reverb point in the audio spatial system, then frees the audio object.
+ */
 void obj_init_audioreverb(Object *obj, LevelObjectEntry_AudioReverb *entry) {
-    s32 temp;
+    s32 lineID;
     Object_AudioReverb *reverb = obj->audio_reverb;
-    reverb->unk2 = entry->unk8;
-    temp = entry->lineID;
-    reverb->lineID = temp & 0xFF;
-    reverb->unk5 = entry->unkA;
-    audspat_reverb_add_vertex(entry->common.x, entry->common.y, entry->common.z, reverb->unk2, reverb->lineID,
-                              reverb->unk5);
+    reverb->magnitude = entry->magnitude;
+    lineID = entry->lineID;
+    reverb->lineID = lineID & 0xFF;
+    reverb->vertexIndex = entry->vertexIndex;
+    audspat_reverb_add_vertex(entry->common.x, entry->common.y, entry->common.z, reverb->magnitude, reverb->lineID,
+                              reverb->vertexIndex);
     free_object(obj);
 }
 
@@ -5394,7 +5458,7 @@ void obj_loop_texscroll(Object *obj, s32 updateRate) {
 #ifdef USE_DYNLIGHTS
 /* Official name: rgbalightInit */
 void obj_init_rgbalight(Object *obj, LevelObjectEntry_RgbaLight *entry) {
-    obj->light = func_80031CAC(obj, entry);
+    obj->light = light_add_from_level_object_entry(obj, entry);
 }
 #endif
 
@@ -5514,7 +5578,11 @@ void obj_loop_log(Object *obj, s32 updateRate) {
     obj->collisionData->collidedObj = NULL;
 }
 
-/* Official name: weatherInit */
+/**
+ * Weather init function.
+ * Sets the radius of the weather object.
+ * Official name: weatherInit
+ */
 void obj_init_weather(Object *obj, LevelObjectEntry_Weather *entry) {
     f32 radius = entry->radius;
     radius *= radius;
@@ -6114,7 +6182,11 @@ void obj_init_midichset(Object *obj, LevelObjectEntry_Midichset *entry) {
     temp->unk3 = entry->unkB;
 }
 
-/* Official name: bubblerInit */
+/**
+ * Bubbler init function.
+ * Sets properties of the particle emitter.
+ * Official name: bubblerInit
+ */
 void obj_init_bubbler(Object *obj, LevelObjectEntry_Bubbler *entry) {
     emitter_change_settings(obj->particleEmitter, entry->particleBehaviourID, entry->particlePropertyID, 0, 0, 0);
     obj->properties.bubbler.unk0 = entry->particleDensity;
@@ -6367,6 +6439,10 @@ void obj_loop_frog(Object *obj, s32 updateRate) {
     }
 }
 
+/**
+ * Wizpig rocket loop function.
+ * Updates the boost flames coming out of the rocket.
+ */
 void obj_loop_pigrocketeer(Object *obj, s32 updateRate) {
     Object *boostObj;
     Object_Boost *boost;

@@ -190,6 +190,7 @@ negu       $v0, $v0
 jr         $ra
 nop
 .end coss_s16
+.size sins_s16, . - sins_s16
 
 /* Official Name: mathCos */
 leaf coss_2

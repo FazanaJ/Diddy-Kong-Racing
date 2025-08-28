@@ -300,7 +300,7 @@ s32 D_80127180;
 Settings *gHudSettings;
 u8 gHudSilverCoinRace;
 u8 gAdventurePlayerFinish;
-u8 D_8012718A;
+u8 gAdvRaceStartedByP2;
 u8 gMinimapOpacityTarget;
 s32 gStopwatchErrorX;
 s32 gStopwatchErrorY;
@@ -430,7 +430,7 @@ void hud_init_element(void) {
     gAdventurePlayerFinish = FALSE;
     D_80126D4C = -100;
     D_80126D50 = rand_range(120, 360);
-    D_8012718A = func_8000E158();
+    gAdvRaceStartedByP2 = is_race_started_by_player_two();
     gStopwatchErrorX = 55;
     gStopwatchErrorY = 179;
     gHudTimeTrialGhost = timetrial_ghost_staff() == NULL ? FALSE : TRUE;
@@ -666,7 +666,7 @@ void hud_render_player(Gfx **dList, Mtx **mtx, Vertex **vertexList, Object *obj,
     Object_Racer *racer;
 
     gHudCurrentViewport = get_current_viewport();
-    if (D_8012718A) {
+    if (gAdvRaceStartedByP2) {
         obj = get_racer_object_by_port(1 - gHudCurrentViewport);
     }
     gHudLevelHeader = level_header();
@@ -694,7 +694,7 @@ void hud_render_player(Gfx **dList, Mtx **mtx, Vertex **vertexList, Object *obj,
             }
             if (gShowHUD == FALSE) {
                 racer = obj->racer;
-                if (D_8012718A) {
+                if (gAdvRaceStartedByP2) {
                     gHudController = 1 - racer->playerIndex;
                 } else {
                     gHudController = racer->playerIndex;
@@ -1240,7 +1240,7 @@ void hud_main_battle(s32 countdown, Object *obj, s32 updateRate) {
         racerObjs = get_racer_objects(&numRacers);
         switch (gNumActivePlayers) {
             case 1:
-                func_800A1E48(obj, updateRate);
+                hud_battle_portraits(obj, updateRate);
                 break;
             case 2:
                 racersFinished = 0;
@@ -1262,7 +1262,11 @@ void hud_main_battle(s32 countdown, Object *obj, s32 updateRate) {
     }
 }
 
-void func_800A1E48(Object *racerObj, s32 updateRate) {
+/**
+ * Renders the portraits and health in battle mode. Only called if there are 1 or 2 human players.
+ * Portraits are laid out horizontally in 1-player mode and vertically in 2-player mode.
+ */
+void hud_battle_portraits(Object *racerObj, s32 updateRate) {
     s32 pad0;
     s32 i;
     Object_Racer *racer;
@@ -2575,7 +2579,7 @@ void hud_race_finish_multiplayer(Object_Racer *racer, s32 updateRate) {
 
     raceType = level_type();
     if (is_in_two_player_adventure() && is_postrace_viewport_active() && gAdventurePlayerFinish == FALSE) {
-        if (func_8000E184()) {
+        if (is_player_two_in_control()) {
             gCurrentHud->entry[HUD_CHALLENGE_FINISH_POS_1].pos.y -= 108.0f;
             gCurrentHud->entry[HUD_CHALLENGE_FINISH_POS_2].pos.y -= 108.0f;
             gCurrentHud->entry[HUD_RACE_TIME_NUMBER].pos.y -= 108.0f;
@@ -3362,7 +3366,7 @@ void hud_render_general(Gfx **dList, Mtx **mtx, Vertex **vtx, s32 updateRate) {
             cam_set_sprite_anim_mode(SPRITE_ANIM_FRAME_INDEX);
             sprite_opaque(FALSE);
             mtx_ortho(&gHudDL, &gHudMtx);
-            func_800A1E48(0, updateRate);
+            hud_battle_portraits(0, updateRate);
             cam_set_sprite_anim_mode(SPRITE_ANIM_NORMALIZED);
             rendermode_reset(&gHudDL);
             sprite_opaque(TRUE);

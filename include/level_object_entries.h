@@ -87,12 +87,12 @@ typedef struct LevelObjectEntry_Exit {
 typedef struct LevelObjectEntry_Audio {
     /* 0x00 */ LevelObjectEntryCommon common;
     /* 0x08 */ u16 soundId;
-    /* 0x0A */ u16 unkA;
-    /* 0x0C */ u8 unkC;
-    /* 0x0D */ u8 unkD;
-    /* 0x0E */ u8 unkE;
-    /* 0x0F */ u8 unkF;
-    /* 0x10 */ u8 unk10;
+    /* 0x0A */ u16 range;
+    /* 0x0C */ u8 volume;
+    /* 0x0D */ u8 minVolume;
+    /* 0x0E */ u8 pitch;
+    /* 0x0F */ u8 fastFalloff;
+    /* 0x10 */ u8 priority;
     /* 0x11 */ u8 unk11;
 } LevelObjectEntry_Audio;
 
@@ -131,7 +131,7 @@ typedef struct LevelObjectEntry_Dino_Whale {
 typedef struct LevelObjectEntry_Checkpoint {
     /* 0x00 */ LevelObjectEntryCommon common;
     /* 0x08 */ u8 scale;
-    /* 0x09 */ u8 unk9;
+    /* 0x09 */ u8 index;
     /* 0x0A */ u8 angleY; Hint((Angle, DivideBy:64))
     /* 0x0B */ s8 unkB;
     /* 0x0C */ s8 unkC;
@@ -145,10 +145,10 @@ typedef struct LevelObjectEntry_Checkpoint {
     /* 0x14 */ s8 unk14;
     /* 0x15 */ s8 unk15;
     /* 0x16 */ s8 unk16;
-    /* 0x17 */ u8 unk17;
+    /* 0x17 */ u8 isAltCheckpoint;
     /* 0x18 */ s8 unk18;
     /* 0x19 */ u8 unk19;
-    /* 0x1A */ s8 unk1A;
+    /* 0x1A */ s8 vehicleType;
     /* 0x1B */ u8 unk1B;
 } LevelObjectEntry_Checkpoint;
 
@@ -205,7 +205,7 @@ typedef struct LevelObjectEntry_AudioSeqLine {
 
 typedef struct LevelObjectEntry_BombExplosion {
     /* 0x00 */ LevelObjectEntryCommon common;
-    /* 0x08 */ s8 unk8;
+    /* 0x08 */ s8 opacity_hi;
 } LevelObjectEntry_BombExplosion;
 
 typedef struct LevelObjectEntry_WBalloonPop {
@@ -224,9 +224,9 @@ typedef struct LevelObjectEntry_SkyControl {
 
 typedef struct LevelObjectEntry_AudioReverb {
     /* 0x00 */ LevelObjectEntryCommon common;
-    /* 0x08 */ u8 unk8;
+    /* 0x08 */ u8 magnitude;
     /* 0x09 */ u8 lineID;
-    /* 0x0A */ u8 unkA;
+    /* 0x0A */ u8 vertexIndex;
     /* 0x0A */ u8 unkB;
 } LevelObjectEntry_AudioReverb;
 
@@ -266,11 +266,11 @@ typedef struct LevelObjectEntry_RgbaLight {
     /* 0x00 */ LevelObjectEntryCommon common;
     /* 0x08 */ u8 unk8;
     /* 0x09 */ u8 unk9;
-    /* 0x0A */ u8 unkA;
-    /* 0x0B */ u8 unkB;
-    /* 0x0C */ u8 unkC;
-    /* 0x0D */ u8 unkD;
-    /* 0x0E */ s16 unkE;
+    /* 0x0A */ u8 colourR;
+    /* 0x0B */ u8 colourG;
+    /* 0x0C */ u8 colourB;
+    /* 0x0D */ u8 intensity;
+    /* 0x0E */ s16 radius;
     /* 0x10 */ s16 unk10;
     /* 0x12 */ s16 unk12;
     /* 0x14 */ s16 unk14;

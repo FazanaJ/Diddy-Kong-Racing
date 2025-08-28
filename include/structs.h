@@ -816,7 +816,7 @@ typedef struct ObjectHeader {
     /* 0x3A */ u8 unk3A;
     /* 0x3B */ u8 unk3B;
     /* 0x3C */ u8 unk3C;
-    /* 0x3D */ u8 unk3D;
+    /* 0x3D */ u8 shadeIntensityy;
     /* 0x3E */ s16 shadeAngleY;
     /* 0x40 */ s16 shadeAngleZ;
     /* 0x42 */ s16 unk42;
@@ -1085,9 +1085,9 @@ typedef struct Object_AudioLine {
 
 typedef struct Object_AudioReverb {
     /* 0x0 */ u16 pad0;
-    /* 0x2 */ s16 unk2;
+    /* 0x2 */ s16 magnitude;
     /* 0x4 */ u8 lineID;
-    /* 0x5 */ u8 unk5;
+    /* 0x5 */ u8 vertexIndex;
 } Object_AudioReverb;
 
 typedef struct Object_TexScroll {
@@ -1240,7 +1240,7 @@ typedef struct Object_Racer {
     /* 0x18C */ s16 unk18C;
     /* 0x18E */ s16 shieldTimer;
     /* 0x190 */ s16 courseCheckpoint;
-    /* 0x192 */ s8 checkpoint;
+    /* 0x192 */ s8 nextCheckpoint;
     /* 0x193 */ s8 lap;
     /* 0x194 */ s8 countLap;
     /* 0x195 */ s8 magnetLevel3;
@@ -1268,7 +1268,7 @@ typedef struct Object_Racer {
     /* 0x1C2 */ s16 unk1C2;
     /* 0x1C4 */ s16 unk1C4;
     /* 0x1C6 */ s16 unk1C6;
-    /* 0x1C8 */ u8 unk1C8;
+    /* 0x1C8 */ u8 isOnAlternateRoute;
     /* 0x1C9 */ u8 unk1C9;
     /* 0x1CA */ s8 unk1CA;
     /* 0x1CB */ s8 unk1CB;
@@ -1377,14 +1377,14 @@ typedef struct Object_Trigger {
 
 typedef struct Object_Audio {
     /* 0x00 */ u16 soundId;
-    /* 0x02 */ u16 unk2;
-    /* 0x04 */ u8 unk4;
-    /* 0x05 */ u8 unk5;
-    /* 0x06 */ u8 unk6;
+    /* 0x02 */ u16 range;
+    /* 0x04 */ u8 volume;
+    /* 0x05 */ u8 minVolume;
+    /* 0x06 */ u8 pitch;
     /* 0x07 */ u8 unk7;
     /* 0x08 */ struct AudioPoint *soundMask;
-    /* 0x0C */ u8 unkC;
-    /* 0x0D */ u8 unkD;
+    /* 0x0C */ u8 fastFalloff;
+    /* 0x0D */ u8 priority;
 } Object_Audio;
 
 typedef struct Object_MidiFade {
@@ -1490,9 +1490,9 @@ typedef struct Object_AnimatedObject {
     /* 0x20 */ u32 soundMask;
     /* 0x24 */ s16 currentSound;
     /* 0x26 */ s16 unk26;
-    /* 0x28 */ s16 unk28;
+    /* 0x28 */ s16 actorIndex;
     /* 0x2A */ s16 startDelay;
-    /* 0x2C */ u8 unk2C;
+    /* 0x2C */ u8 loopType;
     /* 0x2D */ u8 unk2D;
     /* 0x2E */ u8 unk2E;
     /* 0x2F */ s8 unk2F;

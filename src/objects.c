@@ -82,10 +82,10 @@ s16 gTimeTrialCharacter = 0;
 u8 gHasGhostToSave = FALSE;
 u8 gTimeTrialStaffGhost = FALSE;
 u8 gBeatStaffGhost = FALSE;
-s8 D_800DC73C = 0;
-s8 D_800DC740 = 0;
+s8 gLeadPlayerIndex = 0;
+s8 gTwoActivePlayersInAdventure = FALSE; // Has basically the same purpose as gTwoPlayerAdvRace
 s8 gSwapLeadPlayer = FALSE;
-s8 D_800DC748 = FALSE;
+s8 gIsP2LeadPlayer = FALSE;
 Vertex *gBoostVerts[2] = { 0, 0 };
 Triangle *gBoostTris[2] = { 0, 0 };
 Object *gShieldEffectObject = NULL;
@@ -236,7 +236,7 @@ s32 gNumFinishedRacers;
 s8 gFirstTimeFinish;
 s8 D_8011ADC5;
 u32 gBalloonCutsceneTimer;
-s8 D_8011ADCC[8];
+s8 (*gDrawbridgeTimers)[8];
 f32 gObjectOffsetY;
 s8 D_8011ADD4;
 s8 gOverrideDoors;
@@ -279,8 +279,8 @@ s32 *gObjectMap[2];
 Object **gParticlePtrList;
 s32 gFreeListCount;
 CheckpointNode *gTrackCheckpoints; // Array of structs, unknown number of members
-s32 gNumberOfCheckpoints;
-s32 D_8011AED4;
+s32 gNumberOfMainCheckpoints;
+s32 gNumberOfTotalCheckpoints;
 s16 gTajChallengeType;
 Object *(*gCameraObjList)[CAMCONTROL_COUNT]; // Camera objects with a maximum of 20
 s32 gCameraObjCount;                         // The number of camera objects in the above list
@@ -738,7 +738,7 @@ void allocate_object_pools(void) {
     //gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, PP_RAM_OBJLISTS);
     //gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * CAMCONTROL_COUNT, PP_RAM_OBJLISTS);
     //gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, PP_RAM_OBJLISTS);
-    //D_8011ADCC = mempool_alloc_safe(8, PP_RAM_OBJLISTS);
+    gDrawbridgeTimers = mempool_alloc_safe(8, PP_RAM_OBJLISTS);
     D_8011AFF4 = mempool_alloc_safe(sizeof(unk800179D0) * 16, PP_RAM_OBJLISTS);
     tempTable = (s32 *) asset_table_load(ASSET_OBJECT_HEADERS_TABLE);
     gAssetsObjectHeadersTableLength = 0;
@@ -895,8 +895,8 @@ void clear_object_pointers(void) {
     D_8011AD60 = 0;
     gFreeListCount = 0;
     gCollisionObjectCount = 0;
-    gNumberOfCheckpoints = 0;
-    D_8011AED4 = 0;
+    gNumberOfMainCheckpoints = 0;
+    gNumberOfTotalCheckpoints = 0;
     gNumRacers = 0;
     D_8011AE78 = 0;
     D_8011AD21 = 0;
@@ -910,7 +910,7 @@ void clear_object_pointers(void) {
     D_8011AE74 = NULL;
 
     for (i = 0; i < 8; i++) {
-        D_8011ADCC[i] = 0;
+        (*gDrawbridgeTimers)[i] = 0;
     }
     for (i = 0; i < 16; i++) {
         D_8011AFF4[i].unk0 = 0;
@@ -951,7 +951,7 @@ void clear_object_pointers(void) {
 void free_all_objects(void) {
     s32 i, len;
     timetrial_free_staff_ghost();
-    D_800DC748 = FALSE;
+    gIsP2LeadPlayer = FALSE;
     if (gRollingDemo) {
         rumble_init(TRUE);
     }
@@ -1261,7 +1261,7 @@ void track_spawn_objects(s32 mapID, s32 index) {
         
         if (gPathUpdateOff == FALSE) {
             gParticlePtrList_flush();
-            func_80017E98();
+            checkpoint_update_all();
             spectate_update();
             func_8001E93C();
         }
@@ -1400,10 +1400,10 @@ void track_setup_racers(Vehicle vehicle, u32 entranceID, s32 playerCount) {
     gPrevTimeTrialVehicle = D_8011ADC5;
     numPlayers = playerCount + 1;
     gNumRacers = 8;
-    D_800DC740 = 0;
+    gTwoActivePlayersInAdventure = FALSE;
     if (race_is_adventure_2P()) {
         numPlayers = 2;
-        D_800DC740 = 1;
+        gTwoActivePlayersInAdventure = TRUE;
         set_scene_viewport_num(VIEWPORT_LAYOUT_2_PLAYERS);
     }
     if (raceType == RACETYPE_HUBWORLD) {
@@ -1722,7 +1722,7 @@ void track_setup_racers(Vehicle vehicle, u32 entranceID, s32 playerCount) {
         gEventCountdown = 0;
     }
     if (raceType == RACETYPE_DEFAULT && (playerCount + 1) == 1 && is_in_adventure_two() == FALSE) {
-        if (race_is_adventure_2P() == FALSE) {
+        if (!race_is_adventure_2P()) {
             for (j = 0; j < 3; j++) {
                 racerEntry->common.objectID = ASSET_OBJECT_ID_POSARROW;
                 racerEntry->common.size = sizeof(LevelObjectEntryCommon);
@@ -1818,26 +1818,39 @@ s8 racetype_demo(void) {
     return gRollingDemo;
 }
 
-s8 func_8000E158(void) {
-    if (D_800DC740 != 0) {
-        return D_800DC73C;
+/**
+ * Returns true if we're in a race started by P2 in adventure mode.
+ */
+s8 is_race_started_by_player_two(void) {
+    if (gTwoActivePlayersInAdventure) {
+        return gLeadPlayerIndex;
     } else {
-        return 0;
+        return FALSE;
     }
 }
 
-s8 func_8000E184(void) {
-    return D_800DC748;
+/**
+ * Returns true if P2 is the lead player in adventure mode.
+ */
+s8 is_player_two_in_control(void) {
+    return gIsP2LeadPlayer;
 }
 
-void func_8000E194(void) {
-    D_800DC73C = 1 - D_800DC73C;
-    D_800DC740 = 0;
+/**
+ * Swaps the lead player index during 2P adventure mode.
+ */
+void toggle_lead_player_index(void) {
+    gLeadPlayerIndex = 1 - gLeadPlayerIndex;
+    gTwoActivePlayersInAdventure = FALSE;
 }
 
-void fontUseFont(void) {
-    D_800DC73C = 0;
-    D_800DC740 = 0;
+/**
+ * Resets the lead player index.
+ * Official name: fontUseFont (why?)
+ */
+void reset_lead_player_index(void) {
+    gLeadPlayerIndex = 0;
+    gTwoActivePlayersInAdventure = FALSE;
 }
 
 /**
@@ -2346,7 +2359,7 @@ void objFreeAssets(Object *obj, s32 count, s32 objType) {
 void light_setup_light_sources(Object *obj) {
     s32 i;
     for (i = 0; i < obj->header->numLightSources; i++) {
-        obj->lightData[i] = add_object_light(obj, &obj->header->unk24[i]);
+        obj->lightData[i] = light_add_from_object_header(obj, &obj->header->unk24[i]);
     }
 }
 #endif
@@ -2366,11 +2379,11 @@ s32 init_object_shading(Object *obj, ShadeProperties *shadeData) {
             bzero(obj->shading, sizeof(ShadeProperties));
             set_shading_properties(obj->shading, obj->header->shadeAmbient, obj->header->shadeDiffuse, 0,
                                    obj->header->shadeAngleY, obj->header->shadeAngleZ);
-            if (obj->header->unk3D != 0) {
+            if (obj->header->shadeIntensityy != 0) {
                 obj->shading->lightR = obj->header->unk3A;
                 obj->shading->lightG = obj->header->unk3B;
                 obj->shading->lightB = obj->header->unk3C;
-                obj->shading->lightIntensity = obj->header->unk3D;
+                obj->shading->lightIntensity = obj->header->shadeIntensityy;
                 obj->shading->lightDirX = -(obj->shading->shadowDirX >> 1);
                 obj->shading->lightDirY = -(obj->shading->shadowDirY >> 1);
                 obj->shading->lightDirZ = -(obj->shading->shadowDirZ >> 1);
@@ -2629,6 +2642,9 @@ void gParticlePtrList_flush(void) {
     gFreeListCount = 0;
 }
 
+/**
+ * Destroys an object and frees its resources.
+ */
 void obj_destroy(Object *obj, s32 arg1) {
     Object *tempObj;
     Object_Weapon *weapon;
@@ -2672,7 +2688,7 @@ void obj_destroy(Object *obj, s32 arg1) {
 #ifdef USE_DYNLIGHTS
     if (obj->lightData != NULL) {
         for (i = 0; i < obj->header->numLightSources; i++) {
-            func_80032BAC(obj->lightData[i]);
+            light_remove(obj->lightData[i]);
         }
     }
 #endif
@@ -2731,7 +2747,7 @@ void obj_destroy(Object *obj, s32 arg1) {
             break;
 #ifdef USE_DYNLIGHTS
         case BHV_LIGHT_RGBA:
-            func_80032BAC(obj->light);
+            light_remove(obj->light);
 
             i = BHV_RACER;
             break;
@@ -2879,6 +2895,9 @@ void obj_destroy(Object *obj, s32 arg1) {
     mempool_free(obj);
 }
 
+/**
+ * Updates all objects in the game.
+ */
 void obj_update(s32 updateRate) {
     s32 i;
     s32 j;
@@ -2995,12 +3014,12 @@ void obj_update(s32 updateRate) {
 
 #ifdef USE_DYNLIGHTS
     // Update lights
-    lightUpdateLights(updateRate);
-    if (get_light_count() > 0) {
+    light_update_all(updateRate);
+    if (light_count() > 0) {
         for (i = gObjectListStart; i < gObjectCount; i++) {
             obj = gObjPtrList[i];
             if (!(obj->trans.flags & OBJ_FLAGS_PARTICLE) && (obj->shading != NULL)) {
-                func_80032C7C(obj);
+                light_update_shading(obj);
             }
         }
     }
@@ -3011,7 +3030,7 @@ void obj_update(s32 updateRate) {
     }
     if (gPathUpdateOff == FALSE) {
         gParticlePtrList_flush();
-        func_80017E98();
+        checkpoint_update_all();
         spectate_update();
         func_8001E93C();
     }
@@ -3374,7 +3393,7 @@ void render_3d_billboard(Object *obj) {
     }
 
     if (obj->behaviorId == BHV_BOMB_EXPLOSION) {
-        obj->opacity = (obj->opacity * (obj->properties.bombExplosion.unk4 & 0xFF)) >> 8;
+        obj->opacity = (obj->opacity * (obj->properties.bombExplosion.opacity & 0xFF)) >> 8;
     }
 
     alpha = obj->opacity;
@@ -4592,26 +4611,24 @@ void process_object_interactions(void) {
     }
 }
 
-// https://decomp.me/scratch/Hg44X
-#ifdef NON_EQUIVALENT
 void func_800159C8(Object *arg0, Object *arg1) {
     f32 sp9C;
     f32 sp98;
-    f32 temp_f10; // sp94
+    f32 f14;
     f32 sp90;
     f32 sp8C;
-    f32 sp88;
+    f32 f18;
     f32 sp84;
     f32 sp80;
     f32 sp7C;
-    f32 sp78;
+    f32 f12;
     f32 sp74;
-    f32 var_f2;    // sp70
-    f32 temp_f0_3; // sp6C
+    f32 f2;
+    f32 f0;
     f32 sp68;
     f32 sp64;
     f32 sp60;
-    s32 var_v0; // sp5C
+    s32 var_v0;
     ObjectInteraction *sp58;
     ObjectInteraction *sp54;
     Object_Racer *sp50;
@@ -4626,7 +4643,8 @@ void func_800159C8(Object *arg0, Object *arg1) {
     sp80 = 1 / gObjectUpdateRateF;
 
     if (sp54->unk11 == 1) {
-        if (-sp64 < sp54->unk16 * 10.0f || sp54->unk17 * 10.0f < -sp64) {
+        sp64 = -sp64;
+        if (sp64 < sp54->unk16 * 10.0f || sp54->unk17 * 10.0f < sp64) {
             return;
         }
         sp64 = 0.0f;
@@ -4637,9 +4655,17 @@ void func_800159C8(Object *arg0, Object *arg1) {
     }
 
     sp9C = sqrtf(sp68 * sp68 + sp64 * sp64 + sp60 * sp60);
-    temp_f10 = (s32) sp9C;
 
-    var_v0 = temp_f10;
+#if VERSION == VERSION_80
+    if (sp9C > 4000.0f) {
+        return;
+    }
+    if (sp9C < -4000.0f) {
+        return;
+    }
+#endif
+
+    var_v0 = (s32) (f32) (s32) sp9C;
     if (sp58->flags & 0x20) {
         var_v0 >>= 3;
     }
@@ -4653,7 +4679,7 @@ void func_800159C8(Object *arg0, Object *arg1) {
         sp58->distance = var_v0;
     }
 
-    var_v0 = temp_f10;
+    var_v0 = (s32) (f32) (s32) sp9C;
     if (sp54->flags & 0x20) {
         var_v0 >>= 3;
     }
@@ -4674,48 +4700,47 @@ void func_800159C8(Object *arg0, Object *arg1) {
     sp98 = sp54->hitboxRadius + sp58->hitboxRadius;
 
     sp7C = arg0->trans.x_position - sp58->x_position;
-    sp78 = arg0->trans.y_position - sp58->y_position;
+    f12 = arg0->trans.y_position - sp58->y_position;
     sp74 = arg0->trans.z_position - sp58->z_position;
 
     if (sp54->unk11 == 1) {
-        sp78 = 0.0f;
+        f12 = 0.0f;
     }
 
-    temp_f10 = sp7C * sp7C + sp78 * sp78 + sp74 * sp74;
-    if (temp_f10 > 1.0) {
-        var_f2 =
-            ((arg1->trans.x_position - sp58->x_position) * sp7C + (arg1->trans.y_position - sp58->y_position) * sp78 +
-             (arg1->trans.z_position - sp58->z_position) * sp74) /
-            temp_f10;
-        if (var_f2 >= 0.0f && var_f2 <= 1.0) {
-            sp8C = sp58->x_position + var_f2 * sp7C;
-            sp88 = sp58->y_position + var_f2 * sp78;
-            sp84 = sp58->z_position + var_f2 * sp74;
+    f2 = sp7C * sp7C + f12 * f12 + sp74 * sp74;
+    if (f2 > 1.0) {
+        f2 = ((arg1->trans.x_position - sp58->x_position) * sp7C + (arg1->trans.y_position - sp58->y_position) * f12 +
+              (arg1->trans.z_position - sp58->z_position) * sp74) /
+             f2;
+        if (f2 >= 0.0f && f2 <= 1.0) {
+            sp8C = sp58->x_position + f2 * sp7C;
+            f18 = sp58->y_position + f2 * f12;
+            sp84 = sp58->z_position + f2 * sp74;
             sp9C = sqrtf((sp8C - arg1->trans.x_position) * (sp8C - arg1->trans.x_position) +
-                         (sp88 - arg1->trans.y_position) * (sp88 - arg1->trans.y_position) +
+                         (f18 - arg1->trans.y_position) * (f18 - arg1->trans.y_position) +
                          (sp84 - arg1->trans.z_position) * (sp84 - arg1->trans.z_position));
         }
     }
 
     if (sp9C < sp98 && sp9C > 0.0f) {
         sp8C = sp54->x_position - sp58->x_position;
-        sp88 = sp54->y_position - sp58->y_position;
+        f18 = sp54->y_position - sp58->y_position;
         sp84 = sp54->z_position - sp58->z_position;
         if (sp54->unk11 == 1) {
-            sp88 = 0.0f;
+            f18 = 0.0f;
         }
 
-        temp_f0_3 = sqrtf(sp8C * sp8C + sp88 * sp88 + sp84 * sp84);
-        if (temp_f0_3 > 0.0f) {
-            sp68 = sp8C / temp_f0_3;
-            sp64 = sp88 / temp_f0_3;
-            sp60 = sp84 / temp_f0_3;
+        f0 = sqrtf(sp8C * sp8C + f18 * f18 + sp84 * sp84);
+        if (f0 > 0.0f) {
+            sp68 = sp8C / f0;
+            sp64 = f18 / f0;
+            sp60 = sp84 / f0;
         } else {
             sp68 /= sp9C;
             sp64 /= sp9C;
             sp60 /= sp9C;
         }
-        sp9C = temp_f0_3 - sp9C;
+        sp9C = f0 - sp9C;
         if (sp9C < 0.0f) {
             sp9C = -sp9C;
         }
@@ -4750,13 +4775,11 @@ void func_800159C8(Object *arg0, Object *arg1) {
                     }
                     if (var_v0) {
                         sp54->flags |= 0x40;
-                        var_f2 =
-                            (arg0->trans.x_position * arg0->z_velocity - arg0->trans.z_position * arg0->x_velocity);
-                        var_f2 =
-                            (arg1->trans.x_position * arg0->z_velocity - arg1->trans.z_position * arg0->x_velocity) -
-                            var_f2;
+                        f2 = (arg0->trans.x_position * arg0->z_velocity - arg0->trans.z_position * arg0->x_velocity);
+                        f2 = (arg1->trans.x_position * arg0->z_velocity - arg1->trans.z_position * arg0->x_velocity) -
+                             f2;
                         sp50->unk1D2 = 7;
-                        if (var_f2 >= 0.0f) {
+                        if (f2 >= 0.0f) {
                             sp50->unk120 = arg0->x_velocity * 0.1;
                             sp50->unk11C = -arg0->z_velocity * 0.1;
                         } else {
@@ -4777,17 +4800,16 @@ void func_800159C8(Object *arg0, Object *arg1) {
                 }
                 if (var_v0) {
                     sp54->flags |= 0x40;
-                    var_f2 = arg0->trans.x_position * arg0->z_velocity - arg0->trans.z_position * arg0->x_velocity;
-                    var_f2 =
-                        arg1->trans.x_position * arg0->z_velocity - arg1->trans.z_position * arg0->x_velocity - var_f2;
-                    if (var_f2 >= 0.0f) {
-                        var_f2 = 2.0f;
+                    f2 = arg0->trans.x_position * arg0->z_velocity - arg0->trans.z_position * arg0->x_velocity;
+                    f2 = arg1->trans.x_position * arg0->z_velocity - arg1->trans.z_position * arg0->x_velocity - f2;
+                    if (f2 >= 0.0f) {
+                        f2 = 2.0f;
                     } else {
-                        var_f2 = -2.0f;
+                        f2 = -2.0f;
                     }
                     sp50->unk1D2 = 7;
-                    sp50->unk11C = sp50->ox3 * var_f2 * sp50->velocity;
-                    sp50->unk120 = sp50->oz3 * var_f2 * sp50->velocity;
+                    sp50->unk11C = sp50->ox3 * f2 * sp50->velocity;
+                    sp50->unk120 = sp50->oz3 * f2 * sp50->velocity;
                 }
             }
             if (var_v0 && sp50->playerIndex != -1) {
@@ -4811,7 +4833,7 @@ void func_800159C8(Object *arg0, Object *arg1) {
         sp68 *= sp80;
         sp60 *= sp80;
         if (arg0->behaviorId == 1 && arg1->behaviorId == 1) {
-            sp90 = 1.0f;
+            sp90 = 1.0;
             sp90 += (f32) (sp58->pushForce - sp54->pushForce) * 0.3;
 
             sp50 = arg0->racer;
@@ -4835,9 +4857,9 @@ void func_800159C8(Object *arg0, Object *arg1) {
 
             if (var_v0) {
                 if (sp58->pushForce != 0) {
-                    temp_f0_3 = 2.0 - sp90;
-                    arg0->x_velocity -= sp68 * temp_f0_3;
-                    arg0->z_velocity -= sp60 * temp_f0_3;
+                    f0 = 2.0 - sp90;
+                    arg0->x_velocity -= sp68 * f0;
+                    arg0->z_velocity -= sp60 * f0;
                     func_80016500(arg0, sp50);
                 }
                 arg1->x_velocity += sp68 * sp90;
@@ -4847,9 +4869,6 @@ void func_800159C8(Object *arg0, Object *arg1) {
         }
     }
 }
-#else
-#pragma GLOBAL_ASM("asm/nonmatchings/objects/func_800159C8.s")
-#endif
 
 void func_80016500(Object *obj, Object_Racer *racer) {
     s32 shakeMagnitude;
@@ -5497,18 +5516,21 @@ void set_taj_challenge_type(s32 vehicleID) {
     gPathUpdateOff = FALSE;
 }
 
-void func_80017E98(void) {
+/**
+ * Updates information pertaining to all checkpoints in the current race.
+ */
+void checkpoint_update_all(void) {
     f32 xDiff;
     f32 zDiff;
     f32 yDiff;
-    s32 temp_v1;
+    s32 tempCheckpointID;
     s32 checkpointNum;
     s32 duplicateCheckpoint;
     s32 breakOut;
     s32 altRouteId;
     s32 i;
-    s32 altId;
-    s32 var_a0;
+    s32 isSorted;
+    s32 checkpointID;
     f32 ox;
     f32 oy;
     f32 oz;
@@ -5517,64 +5539,64 @@ void func_80017E98(void) {
     LevelObjectEntry_Checkpoint *checkpointEntry;
     MtxF mtx;
     ObjectTransform transform;
-    s32 var_t2;
+    s32 alternateCount;
 
-    var_t2 = 0;
-    gNumberOfCheckpoints = 0;
+    alternateCount = 0;
+    gNumberOfMainCheckpoints = 0;
     for (i = 0; i < gObjectCount; i++) {
         obj = gObjPtrList[i];
         if (!(obj->trans.flags & OBJ_FLAGS_PARTICLE) && obj->behaviorId == BHV_CHECKPOINT &&
-            gNumberOfCheckpoints < MAX_CHECKPOINTS) {
+            gNumberOfMainCheckpoints < MAX_CHECKPOINTS) {
             checkpointEntry = &obj->level_entry->checkpoint;
-            if (checkpointEntry->unk1A == gTajChallengeType) {
-                gTrackCheckpoints[gNumberOfCheckpoints].obj = obj;
-                var_a0 = checkpointEntry->unk9;
-                if (checkpointEntry->unk17) {
-                    var_a0 += 255;
-                    var_t2++;
+            if (checkpointEntry->vehicleType == gTajChallengeType) {
+                gTrackCheckpoints[gNumberOfMainCheckpoints].obj = obj;
+                checkpointID = checkpointEntry->index;
+                if (checkpointEntry->isAltCheckpoint) {
+                    checkpointID += 255;
+                    alternateCount++;
                 }
-                gTrackCheckpoints[gNumberOfCheckpoints].unk2C = var_a0;
-                gTrackCheckpoints[gNumberOfCheckpoints].altRouteID = -1;
-                gNumberOfCheckpoints++;
+                gTrackCheckpoints[gNumberOfMainCheckpoints].checkpointID = checkpointID;
+                gTrackCheckpoints[gNumberOfMainCheckpoints].altRouteID = -1;
+                gNumberOfMainCheckpoints++;
             }
         }
     }
 
     duplicateCheckpoint = FALSE;
     do {
-        altId = TRUE;
+        isSorted = TRUE;
 
-        for (i = 0; i < gNumberOfCheckpoints - 1; i++) {
-            if (gTrackCheckpoints[i].unk2C == gTrackCheckpoints[i + 1].unk2C) {
+        for (i = 0; i < gNumberOfMainCheckpoints - 1; i++) {
+            if (gTrackCheckpoints[i].checkpointID == gTrackCheckpoints[i + 1].checkpointID) {
                 duplicateCheckpoint = TRUE;
-                checkpointNum = gTrackCheckpoints[i].unk2C;
+                checkpointNum = gTrackCheckpoints[i].checkpointID;
             }
 
-            if (gTrackCheckpoints[i + 1].unk2C < gTrackCheckpoints[i].unk2C) {
-                temp_v1 = gTrackCheckpoints[i].unk2C;
+            if (gTrackCheckpoints[i + 1].checkpointID < gTrackCheckpoints[i].checkpointID) {
+                tempCheckpointID = gTrackCheckpoints[i].checkpointID;
                 obj = gTrackCheckpoints[i].obj;
-                gTrackCheckpoints[i].unk2C = gTrackCheckpoints[i + 1].unk2C;
+                gTrackCheckpoints[i].checkpointID = gTrackCheckpoints[i + 1].checkpointID;
                 gTrackCheckpoints[i].obj = gTrackCheckpoints[i + 1].obj;
-                gTrackCheckpoints[i + 1].unk2C = temp_v1;
+                gTrackCheckpoints[i + 1].checkpointID = tempCheckpointID;
                 gTrackCheckpoints[i + 1].obj = obj;
-                altId = FALSE;
+                isSorted = FALSE;
             }
         }
-    } while (!altId);
-    D_8011AED4 = gNumberOfCheckpoints;
-    gNumberOfCheckpoints -= var_t2;
-    for (i = gNumberOfCheckpoints; i < D_8011AED4; i++) {
-        temp_v1 = gTrackCheckpoints[i].unk2C - 255;
-        for (var_a0 = 0, breakOut = FALSE; var_a0 < gNumberOfCheckpoints && !breakOut; var_a0++) {
-            if (temp_v1 == gTrackCheckpoints[var_a0].unk2C) {
-                gTrackCheckpoints[var_a0].altRouteID = i;
-                gTrackCheckpoints[i].altRouteID = var_a0;
+    } while (!isSorted);
+    gNumberOfTotalCheckpoints = gNumberOfMainCheckpoints;
+    gNumberOfMainCheckpoints -= alternateCount;
+    for (i = gNumberOfMainCheckpoints; i < gNumberOfTotalCheckpoints; i++) {
+        tempCheckpointID = gTrackCheckpoints[i].checkpointID - 255;
+        for (checkpointID = 0, breakOut = FALSE; checkpointID < gNumberOfMainCheckpoints && !breakOut; checkpointID++) {
+            if (tempCheckpointID == gTrackCheckpoints[checkpointID].checkpointID) {
+                gTrackCheckpoints[checkpointID].altRouteID = i;
+                gTrackCheckpoints[i].altRouteID = checkpointID;
                 breakOut = TRUE;
             }
         }
     }
 
-    for (i = 0; i < D_8011AED4; i++) {
+    for (i = 0; i < gNumberOfTotalCheckpoints; i++) {
         checkpoint = &gTrackCheckpoints[i];
         obj = checkpoint->obj;
         checkpointEntry = &obj->level_entry->checkpoint;
@@ -5596,44 +5618,44 @@ void func_80017E98(void) {
         checkpoint->y = obj->trans.y_position;
         checkpoint->z = obj->trans.z_position;
         checkpoint->scale = obj->trans.scale * 2;
-        checkpoint->unk2C = obj->trans.scale * 128.0f;
-        checkpoint->unk24 = 0.0f;
+        checkpoint->checkpointID = obj->trans.scale * 128.0f;
+        checkpoint->altDistance = 0.0f;
         checkpoint->distance = 0.0f;
-        if (i < gNumberOfCheckpoints) {
-            temp_v1 = i + 1;
-            if (temp_v1 == gNumberOfCheckpoints) {
-                temp_v1 = 0;
+        if (i < gNumberOfMainCheckpoints) {
+            tempCheckpointID = i + 1;
+            if (tempCheckpointID == gNumberOfMainCheckpoints) {
+                tempCheckpointID = 0;
             }
-            xDiff = obj->trans.x_position - gTrackCheckpoints[temp_v1].obj->trans.x_position;
-            yDiff = obj->trans.y_position - gTrackCheckpoints[temp_v1].obj->trans.y_position;
-            zDiff = obj->trans.z_position - gTrackCheckpoints[temp_v1].obj->trans.z_position;
+            xDiff = obj->trans.x_position - gTrackCheckpoints[tempCheckpointID].obj->trans.x_position;
+            yDiff = obj->trans.y_position - gTrackCheckpoints[tempCheckpointID].obj->trans.y_position;
+            zDiff = obj->trans.z_position - gTrackCheckpoints[tempCheckpointID].obj->trans.z_position;
             checkpoint->distance = sqrtf(((xDiff * xDiff) + (yDiff * yDiff)) + (zDiff * zDiff));
-            altRouteId = gTrackCheckpoints[temp_v1].altRouteID;
+            altRouteId = gTrackCheckpoints[tempCheckpointID].altRouteID;
             if (altRouteId != -1) {
                 xDiff = obj->trans.x_position - gTrackCheckpoints[altRouteId].obj->trans.x_position;
                 yDiff = obj->trans.y_position - gTrackCheckpoints[altRouteId].obj->trans.y_position;
                 zDiff = obj->trans.z_position - gTrackCheckpoints[altRouteId].obj->trans.z_position;
-                checkpoint->unk24 = sqrtf(((xDiff * xDiff) + (yDiff * yDiff)) + (zDiff * zDiff));
+                checkpoint->altDistance = sqrtf(((xDiff * xDiff) + (yDiff * yDiff)) + (zDiff * zDiff));
             } else {
-                checkpoint->unk24 = checkpoint->distance;
+                checkpoint->altDistance = checkpoint->distance;
             }
         } else {
-            temp_v1 = gTrackCheckpoints[i].altRouteID + 1;
-            if (temp_v1 == gNumberOfCheckpoints) {
-                temp_v1 = 0;
+            tempCheckpointID = gTrackCheckpoints[i].altRouteID + 1;
+            if (tempCheckpointID == gNumberOfMainCheckpoints) {
+                tempCheckpointID = 0;
             }
-            xDiff = obj->trans.x_position - gTrackCheckpoints[temp_v1].obj->trans.x_position;
-            yDiff = obj->trans.y_position - gTrackCheckpoints[temp_v1].obj->trans.y_position;
-            zDiff = obj->trans.z_position - gTrackCheckpoints[temp_v1].obj->trans.z_position;
+            xDiff = obj->trans.x_position - gTrackCheckpoints[tempCheckpointID].obj->trans.x_position;
+            yDiff = obj->trans.y_position - gTrackCheckpoints[tempCheckpointID].obj->trans.y_position;
+            zDiff = obj->trans.z_position - gTrackCheckpoints[tempCheckpointID].obj->trans.z_position;
             checkpoint->distance = sqrtf(((xDiff * xDiff) + (yDiff * yDiff)) + (zDiff * zDiff));
-            altRouteId = gTrackCheckpoints[temp_v1].altRouteID;
+            altRouteId = gTrackCheckpoints[tempCheckpointID].altRouteID;
             if (altRouteId != -1) {
                 xDiff = obj->trans.x_position - gTrackCheckpoints[altRouteId].obj->trans.x_position;
                 yDiff = obj->trans.y_position - gTrackCheckpoints[altRouteId].obj->trans.y_position;
                 zDiff = obj->trans.z_position - gTrackCheckpoints[altRouteId].obj->trans.z_position;
-                checkpoint->unk24 = sqrtf(((xDiff * xDiff) + (yDiff * yDiff)) + (zDiff * zDiff));
+                checkpoint->altDistance = sqrtf(((xDiff * xDiff) + (yDiff * yDiff)) + (zDiff * zDiff));
             } else {
-                checkpoint->unk24 = checkpoint->distance;
+                checkpoint->altDistance = checkpoint->distance;
             }
         }
         checkpoint->unk2E[0] = checkpointEntry->unkB;
@@ -5652,80 +5674,92 @@ void func_80017E98(void) {
     }
 }
 
-s32 func_800185E4(s32 checkpointIndex, Object *obj, f32 objX, f32 objY, f32 objZ, f32 *arg5, u8 *arg6) {
-    s32 v1;
-    s32 sp70;
-    f32 sp6C, sp68, sp64;
+/**
+ * Checks to see whether a racer or homing missile passed a checkpoint.
+ * Return values:
+ * - 0: Homing missile passed the checkpoint.
+ * - -100: Racer passed the checkpoint.
+ * - Otherwise: No checkpoint has been passed.
+ */
+s32 checkpoint_is_passed(s32 checkpointIndex, Object *obj, f32 objX, f32 objY, f32 objZ, f32 *checkpointDistance,
+                         u8 *isOnAlternateRoute) {
+    s32 retLength;
+    s32 isAltCheckpoint;
+    f32 distX, distY, distZ;
     f32 length;
-    f32 sp5C;
-    f32 sp58;
+    f32 nextLength;
+    f32 toNext;
     Object_Racer *racer;
-    f32 sp50;
-    CheckpointNode *sp4C;
-    CheckpointNode *sp48;
-    CheckpointNode *sp44;
+    f32 fromPrev;
+    CheckpointNode *currentCheckpoint;
+    CheckpointNode *prevCheckpoint;
+    CheckpointNode *altRouteCheckpoint;
 
-    if (gNumberOfCheckpoints == 0) {
+    if (gNumberOfMainCheckpoints == 0) {
         return 1;
     }
 
-    sp4C = &gTrackCheckpoints[checkpointIndex];
+    currentCheckpoint = &gTrackCheckpoints[checkpointIndex];
     if (checkpointIndex != 0) {
-        sp48 = &gTrackCheckpoints[checkpointIndex - 1];
+        prevCheckpoint = &gTrackCheckpoints[checkpointIndex - 1];
     } else {
-        sp48 = &gTrackCheckpoints[gNumberOfCheckpoints - 1];
+        prevCheckpoint = &gTrackCheckpoints[gNumberOfMainCheckpoints - 1];
     }
 
-    if (*arg6) {
-        if (sp4C->altRouteID != -1) {
-            sp4C = &gTrackCheckpoints[sp4C->altRouteID];
+    if (*isOnAlternateRoute) {
+        if (currentCheckpoint->altRouteID != -1) {
+            currentCheckpoint = &gTrackCheckpoints[currentCheckpoint->altRouteID];
         }
-        if (sp48->altRouteID != -1) {
-            sp48 = &gTrackCheckpoints[sp48->altRouteID];
-        }
-    }
-
-    sp70 = FALSE;
-    if (!(*arg6) && sp48->altRouteID == -1 && sp4C->altRouteID != -1) {
-        sp44 = &gTrackCheckpoints[sp4C->altRouteID];
-        sp6C = sp44->x - obj->trans.x_position;
-        sp68 = sp44->y - obj->trans.y_position;
-        sp64 = sp44->z - obj->trans.z_position;
-        if ((sp6C * sp6C + sp68 * sp68 + sp64 * sp64) < sp44->unk2C * sp44->unk2C) {
-            sp4C = sp44;
-            sp70 = TRUE;
+        if (prevCheckpoint->altRouteID != -1) {
+            prevCheckpoint = &gTrackCheckpoints[prevCheckpoint->altRouteID];
         }
     }
 
-    sp6C = sp4C->x - sp48->x;
-    sp68 = sp4C->y - sp48->y;
-    sp64 = sp4C->z - sp48->z;
-    length = (sp6C * sp6C + sp68 * sp68 + sp64 * sp64);
+    isAltCheckpoint = FALSE;
+    if (!(*isOnAlternateRoute) && prevCheckpoint->altRouteID == -1 && currentCheckpoint->altRouteID != -1) {
+        altRouteCheckpoint = &gTrackCheckpoints[currentCheckpoint->altRouteID];
+        distX = altRouteCheckpoint->x - obj->trans.x_position;
+        distY = altRouteCheckpoint->y - obj->trans.y_position;
+        distZ = altRouteCheckpoint->z - obj->trans.z_position;
+        if (distX * distX + distY * distY + distZ * distZ < altRouteCheckpoint->checkpointID * altRouteCheckpoint->checkpointID) {
+            currentCheckpoint = altRouteCheckpoint;
+            isAltCheckpoint = TRUE;
+        }
+    }
+
+    distX = currentCheckpoint->x - prevCheckpoint->x;
+    distY = currentCheckpoint->y - prevCheckpoint->y;
+    distZ = currentCheckpoint->z - prevCheckpoint->z;
+    length = (distX * distX + distY * distY + distZ * distZ);
     if (length > 0.0) {
         length = sqrtf(length);
-        sp6C *= 1.0f / length;
-        sp68 *= 1.0f / length;
-        sp64 *= 1.0f / length;
+        distX *= 1.0f / length;
+        distY *= 1.0f / length;
+        distZ *= 1.0f / length;
     }
 
-    sp58 = sp4C->rotationXFrac * obj->trans.x_position + sp4C->rotationYFrac * obj->trans.y_position +
-           sp4C->rotationZFrac * obj->trans.z_position + sp4C->unkC;
+    toNext = currentCheckpoint->rotationXFrac * obj->trans.x_position +
+             currentCheckpoint->rotationYFrac * obj->trans.y_position +
+             currentCheckpoint->rotationZFrac * obj->trans.z_position + currentCheckpoint->unkC;
 
-    sp5C = sp4C->rotationXFrac * sp6C + sp4C->rotationYFrac * sp68 + sp4C->rotationZFrac * sp64;
-    sp5C = -sp58 / sp5C;
+    nextLength = currentCheckpoint->rotationXFrac * distX + currentCheckpoint->rotationYFrac * distY +
+                 currentCheckpoint->rotationZFrac * distZ;
+    nextLength = -toNext / nextLength;
 
-    sp50 = sp48->rotationXFrac * obj->trans.x_position + sp48->rotationYFrac * obj->trans.y_position +
-           sp48->rotationZFrac * obj->trans.z_position + sp48->unkC;
+    fromPrev = prevCheckpoint->rotationXFrac * obj->trans.x_position +
+               prevCheckpoint->rotationYFrac * obj->trans.y_position +
+               prevCheckpoint->rotationZFrac * obj->trans.z_position + prevCheckpoint->unkC;
 
-    length = sp48->rotationXFrac * sp6C + sp48->rotationYFrac * sp68 + sp48->rotationZFrac * sp64;
-    length = sp50 / length;
+    length = prevCheckpoint->rotationXFrac * distX + prevCheckpoint->rotationYFrac * distY +
+             prevCheckpoint->rotationZFrac * distZ;
+    length = fromPrev / length;
 
-    if (sp5C + length != 0.0) {
-        length = sp5C / (sp5C + length);
+    if (nextLength + length != 0.0) {
+        length = nextLength / (nextLength + length);
     } else {
         length = 0.0f;
     }
-    *arg5 = length;
+    *checkpointDistance = length;
 
     if (obj->behaviorId == BHV_RACER) {
         racer = obj->racer;
@@ -5739,57 +5773,62 @@ s32 func_800185E4(s32 checkpointIndex, Object *obj, f32 objX, f32 objY, f32 objZ
         }
     }
 
-    if (sp5C <= 0) {
-        if (sp70) {
-            *arg6 = TRUE;
-        } else if (sp4C->altRouteID == -1) {
-            *arg6 = FALSE;
+    if (nextLength <= 0) {
+        if (isAltCheckpoint) {
+            *isOnAlternateRoute = TRUE;
+        } else if (currentCheckpoint->altRouteID == -1) {
+            *isOnAlternateRoute = FALSE;
         }
 
-        sp68 = sp4C->rotationXFrac * objX + sp4C->rotationYFrac * objY + sp4C->rotationZFrac * objZ + sp4C->unkC;
-        if (sp68 > 0) {
+        distY = currentCheckpoint->rotationXFrac * objX + currentCheckpoint->rotationYFrac * objY +
+                currentCheckpoint->rotationZFrac * objZ + currentCheckpoint->unkC;
+        if (distY > 0) {
             if (obj->behaviorId == BHV_RACER) {
                 Object_Racer *objRacer = obj->racer;
-                if (sp4C->unk3B != 0) {
-                    objRacer->indicator_type = sp4C->unk3B;
+                if (currentCheckpoint->unk3B != 0) {
+                    objRacer->indicator_type = currentCheckpoint->unk3B;
                     objRacer->indicator_timer = 120;
                 }
             }
 
-            sp48 = sp4C;
+            prevCheckpoint = currentCheckpoint;
             checkpointIndex++;
-            if (checkpointIndex == gNumberOfCheckpoints) {
+            if (checkpointIndex == gNumberOfMainCheckpoints) {
                 checkpointIndex = 0;
             }
 
-            sp4C = &gTrackCheckpoints[checkpointIndex];
+            currentCheckpoint = &gTrackCheckpoints[checkpointIndex];
 
-            sp58 = sp4C->rotationXFrac * obj->trans.x_position + sp4C->rotationYFrac * obj->trans.y_position +
-                   sp4C->rotationZFrac * obj->trans.z_position + sp4C->unkC;
-            sp5C = sp4C->rotationXFrac * sp6C + sp4C->rotationYFrac * sp68 + sp4C->rotationZFrac * sp64;
-            sp5C = -sp58 / sp5C;
+            toNext = currentCheckpoint->rotationXFrac * obj->trans.x_position +
+                     currentCheckpoint->rotationYFrac * obj->trans.y_position +
+                     currentCheckpoint->rotationZFrac * obj->trans.z_position + currentCheckpoint->unkC;
+            nextLength = currentCheckpoint->rotationXFrac * distX + currentCheckpoint->rotationYFrac * distY +
+                         currentCheckpoint->rotationZFrac * distZ;
+            nextLength = -toNext / nextLength;
 
-            sp50 = sp48->rotationXFrac * obj->trans.x_position + sp48->rotationYFrac * obj->trans.y_position +
-                   sp48->rotationZFrac * obj->trans.z_position + sp48->unkC;
-            length = sp48->rotationXFrac * sp6C + sp48->rotationYFrac * sp68 + sp48->rotationZFrac * sp64;
-            length = sp50 / length;
+            fromPrev = prevCheckpoint->rotationXFrac * obj->trans.x_position +
+                       prevCheckpoint->rotationYFrac * obj->trans.y_position +
+                       prevCheckpoint->rotationZFrac * obj->trans.z_position + prevCheckpoint->unkC;
+            length = prevCheckpoint->rotationXFrac * distX + prevCheckpoint->rotationYFrac * distY +
+                     prevCheckpoint->rotationZFrac * distZ;
+            length = fromPrev / length;
 
-            if (sp5C + length != 0.0) {
-                length = sp5C / (sp5C + length);
+            if (nextLength + length != 0.0) {
+                length = nextLength / (nextLength + length);
             } else {
                 length = 0.0;
             }
-            *arg5 = length;
+            *checkpointDistance = length;
         } else {
-            *arg5 = 0.0;
+            *checkpointDistance = 0.0;
         }
         return 0;
     } else {
-        v1 = length * 100.0f;
-        if (v1 == 0) {
-            v1++;
+        retLength = length * 100.0f;
+        if (retLength == 0) {
+            retLength++;
         }
-        return v1;
+        return retLength;
     }
 }
 
@@ -6002,9 +6041,12 @@ void func_80018CE0(Object *racerObj, f32 xPos, f32 yPos, f32 zPos, s32 updateRat
     }
 }
 
-// Rocket Path
-s32 func_8001955C(Object *obj, s32 checkpoint, u8 arg2, s32 arg3, s32 arg4, f32 checkpointDist, f32 *outX, f32 *outY,
-                  f32 *outZ) {
+/**
+ * Calculates the direction a homing rocket takes toward the next checkpoint.
+ * Returns true if a direction was calculated, or false if there are no checkpoints.
+ */
+s32 homing_rocket_get_next_direction(Object *obj, s32 checkpoint, u8 isOnAlternateRoute, s32 arg3, s32 arg4,
+                                     f32 checkpointDist, f32 *outX, f32 *outY, f32 *outZ) {
     s32 numCheckpoints;
     s32 checkpointIndex;
     s32 i;
@@ -6020,7 +6062,7 @@ s32 func_8001955C(Object *obj, s32 checkpoint, u8 arg2, s32 arg3, s32 arg4, f32 
     f32 dz;
     CheckpointNode *checkpointNode;
 
-    numCheckpoints = gNumberOfCheckpoints;
+    numCheckpoints = gNumberOfMainCheckpoints;
     if (numCheckpoints == 0) {
         return FALSE;
     }
@@ -6029,7 +6071,7 @@ s32 func_8001955C(Object *obj, s32 checkpoint, u8 arg2, s32 arg3, s32 arg4, f32 
         checkpointIndex += numCheckpoints;
     }
     for (i = 0; i < 4; i++) {
-        checkpointNode = find_next_checkpoint_node(checkpointIndex, arg2);
+        checkpointNode = find_next_checkpoint_node(checkpointIndex, isOnAlternateRoute);
         xData[i] = checkpointNode->x + (checkpointNode->scale * checkpointNode->rotationZFrac * arg3);
         yData[i] = checkpointNode->y + (checkpointNode->scale * arg4);
         zData[i] = checkpointNode->z + (checkpointNode->scale * -checkpointNode->rotationXFrac * arg3);
@@ -6228,11 +6270,11 @@ void race_check_finish(s32 updateRate) {
                             if (gSwapLeadPlayer) {
                                 gSwapLeadPlayer = FALSE;
                                 swap_lead_player();
-                                if (D_800DC73C != 0) {
-                                    D_800DC748 = TRUE;
+                                if (gLeadPlayerIndex != 0) {
+                                    gIsP2LeadPlayer = TRUE;
                                 }
-                            } else if (D_800DC73C != 0) {
-                                D_800DC748 = TRUE;
+                            } else if (gLeadPlayerIndex != 0) {
+                                gIsP2LeadPlayer = TRUE;
                             }
                         }
                         postrace_start(0, 30);
@@ -6472,11 +6514,11 @@ void race_check_finish(s32 updateRate) {
                     if (gSwapLeadPlayer) {
                         gSwapLeadPlayer = FALSE;
                         swap_lead_player();
-                        if (D_800DC73C) {
-                            D_800DC748 = TRUE;
+                        if (gLeadPlayerIndex) {
+                            gIsP2LeadPlayer = TRUE;
                         }
-                    } else if (D_800DC73C) {
-                        D_800DC748 = TRUE;
+                    } else if (gLeadPlayerIndex) {
+                        gIsP2LeadPlayer = TRUE;
                     }
                 }
                 postrace_start(gFirstTimeFinish, 30);
@@ -6963,7 +7005,13 @@ void set_ghost_none(void) {
     gHasGhostToSave = FALSE;
 }
 
-Object *func_8001B7A8(Object_Racer *racer, s32 position, f32 *distance) {
+/**
+ * Finds the opponent to this racer in a relative position to them and calculates the distance to them.
+ * The position argument is relative to the racer's current position and represents the number of
+ * places ahead (positive) or behind (negative) the opponent is. So, for instance, if position is 1,
+ * find the opponent one place ahead of the racer; if it's -1, find the opponent one place behind.
+ */
+Object *racer_find_nearest_opponent_relative(Object_Racer *racer, s32 position, f32 *distance) {
     UNUSED s32 pad;
     Object *tempRacerObj;
     position = (racer->racerOrder - position) - 1;
@@ -6974,50 +7022,55 @@ Object *func_8001B7A8(Object_Racer *racer, s32 position, f32 *distance) {
     if (tempRacerObj == NULL) {
         return NULL;
     }
-    *distance = func_8001B834(racer, tempRacerObj->racer);
+    *distance = racer_calc_distance_to_opponent(racer, tempRacerObj->racer);
     return tempRacerObj;
 }
 
-f32 func_8001B834(Object_Racer *racer1, Object_Racer *racer2) {
+/**
+ * Calculates the distance between two racers. Traverses through the checkpoints
+ * between the two racers to calculate the total distance.
+ * If the second racer is ahead, the distance is positive, otherwise negative.
+ */
+f32 racer_calc_distance_to_opponent(Object_Racer *racer1, Object_Racer *racer2) {
     Object_Racer *temp_racer;
-    f32 var_f2;
+    f32 totalDistance;
     s32 r1_ccp;
-    UNUSED s32 temp_lo;
-    s32 var_v1;
+    UNUSED s32 pad;
+    s32 reverseOrder;
     s32 checkpointID;
 
-    if (gNumberOfCheckpoints <= 0) {
+    if (gNumberOfMainCheckpoints <= 0) {
         return 0.0f;
     }
-    var_f2 = 0.0f;
-    var_v1 = FALSE;
+    totalDistance = 0.0f;
+    reverseOrder = FALSE;
     if (racer2->courseCheckpoint < racer1->courseCheckpoint) {
         temp_racer = racer1;
         racer1 = racer2;
         racer2 = temp_racer;
-        var_v1 = TRUE;
+        reverseOrder = TRUE;
     }
-    checkpointID = racer1->checkpoint;
+    checkpointID = racer1->nextCheckpoint;
     for (r1_ccp = racer1->courseCheckpoint; r1_ccp < racer2->courseCheckpoint; r1_ccp++) {
-        var_f2 += gTrackCheckpoints[checkpointID++].distance;
-        if (checkpointID == gNumberOfCheckpoints) {
+        totalDistance += gTrackCheckpoints[checkpointID++].distance;
+        if (checkpointID == gNumberOfMainCheckpoints) {
             checkpointID = 0;
         }
     }
-    checkpointID = racer1->checkpoint - 1;
+    checkpointID = racer1->nextCheckpoint - 1;
     if (checkpointID < 0) {
-        checkpointID = gNumberOfCheckpoints - 1;
+        checkpointID = gNumberOfMainCheckpoints - 1;
     }
-    var_f2 += (gTrackCheckpoints[checkpointID].distance * racer1->checkpoint_distance);
-    checkpointID = racer2->checkpoint - 1;
+    totalDistance += (gTrackCheckpoints[checkpointID].distance * racer1->checkpoint_distance);
+    checkpointID = racer2->nextCheckpoint - 1;
     if (checkpointID < 0) {
-        checkpointID = gNumberOfCheckpoints - 1;
+        checkpointID = gNumberOfMainCheckpoints - 1;
     }
-    var_f2 -= (gTrackCheckpoints[checkpointID].distance * racer2->checkpoint_distance);
-    if (var_v1) {
-        var_f2 = -var_f2;
+    totalDistance -= (gTrackCheckpoints[checkpointID].distance * racer2->checkpoint_distance);
+    if (reverseOrder) {
+        totalDistance = -totalDistance;
     }
-    return var_f2;
+    return totalDistance;
 }
 
 /**
@@ -7031,9 +7084,9 @@ CheckpointNode *get_checkpoint_node(s32 checkpointID) {
  * Takes the position along the checkpoint path, and finds the next applicable node.
  * If an alternative path is available, use that node instead.
  */
-CheckpointNode *find_next_checkpoint_node(s32 splinePos, s32 arg1) {
+CheckpointNode *find_next_checkpoint_node(s32 splinePos, s32 isAlternate) {
     CheckpointNode *checkpointNode = &gTrackCheckpoints[splinePos];
-    if (arg1 != 0 && checkpointNode->altRouteID != -1) {
+    if (isAlternate != 0 && checkpointNode->altRouteID != -1) {
         checkpointNode = &gTrackCheckpoints[checkpointNode->altRouteID];
     }
     return checkpointNode;
@@ -7043,7 +7096,7 @@ CheckpointNode *find_next_checkpoint_node(s32 splinePos, s32 arg1) {
  * Returns the number of active checkpoints in the current level.
  */
 s32 get_checkpoint_count(void) {
-    return gNumberOfCheckpoints;
+    return gNumberOfMainCheckpoints;
 }
 
 /**
@@ -7821,7 +7874,7 @@ void calc_dynamic_lighting_for_object_1(Object *object, ObjectModel *model, s16 
     objRot.z_rotation = -object->trans.rotation.z_rotation;
     vec3f_rotate_ypr(&objRot, &direction);
 
-    if (object->header->unk3D != 0 && arg2) {
+    if (object->header->shadeIntensityy != 0 && arg2) {
         mtxf_transform_dir(get_projection_matrix_f32(), &direction, &direction);
     }
 
@@ -8001,19 +8054,25 @@ s32 *get_misc_asset(s32 index) {
     return miscasset_seek_new(index);
 }
 
-s32 func_8001E2EC(s32 arg0) {
-    if (arg0 >= 0 && arg0 < 8) {
-        if (D_8011ADCC[arg0] > 0) {
-            D_8011ADCC[arg0]--;
+/**
+ * If the bridge is raised, decrement its timer and return the remaining time.
+ */
+s32 is_bridge_raised(s32 index) {
+    if (index >= 0 && index < 8) {
+        if (gDrawbridgeTimers[0][index] > 0) {
+            gDrawbridgeTimers[0][index]--;
         }
-        return D_8011ADCC[arg0];
+        return gDrawbridgeTimers[0][index];
     }
     return 0;
 }
 
-void func_8001E344(s32 arg0) {
-    if (arg0 >= 0 && arg0 < 8) {
-        D_8011ADCC[arg0] = 8;
+/**
+ * Starts the bridge timer when a racer hits the bell switch.
+ */
+void start_bridge_timer(s32 index) {
+    if (index >= 0 && index < 8) {
+        gDrawbridgeTimers[0][index] = 8;
     }
 }
 
@@ -8343,14 +8402,14 @@ void obj_init_animobject(Object *animationObj, Object *animatedObj) {
     animatedObj->trans.rotation.x_rotation = animationObj->trans.rotation.x_rotation;
     anim->unk26 = 0;
     anim->unk3D = animEntry->channel;
-    anim->unk28 = animEntry->actorIndex;
+    anim->actorIndex = animEntry->actorIndex;
     anim->unk8 = (f32) animEntry->nodeSpeed * 0.1;
     anim->startDelay = normalise_time(animEntry->animationStartDelay);
     animatedObj->animationID = animEntry->objAnimIndex;
     animatedObj->animFrame = animEntry->unk16;
     anim->z = animEntry->objAnimSpeed;
     anim->y = 0;
-    anim->unk2C = animEntry->objAnimLoopType;
+    anim->loopType = animEntry->objAnimLoopType;
     anim->unk2E = animEntry->rotateType;
     anim->unk3E = animEntry->nextAnim;
     anim->unk3F = animEntry->unk2D;
@@ -8661,7 +8720,7 @@ s32 func_8001F460(Object *arg0, s32 arg1, Object *arg2) {
             temp_a0_3 = arg2->modelInstances[arg2->modelIndex]->objModel;
             if (arg2->animationID >= 0 && arg2->animationID < temp_a0_3->numberOfAnimations) {
                 var_s5 = (temp_a0_3->animations[arg2->animationID].animLength - 1) << 4;
-                switch (obj64->unk2C) {
+                switch (obj64->loopType) {
                     case 0:
                         obj64->y += obj64->z * sp114;
                         if (obj64->y >= var_s5) {
@@ -8713,7 +8772,7 @@ s32 func_8001F460(Object *arg0, s32 arg1, Object *arg2) {
         return func_800214E4(arg0, arg1);
     }
 
-    temp_a1_2 = obj64->unk28;
+    temp_a1_2 = obj64->actorIndex;
     for (var_s4 = 0; var_s4 < D_8011AE78 && temp_a1_2 != D_8011AE74[var_s4]->properties.animation.behaviourID;
          var_s4++) {}
     if (var_s4 >= D_8011AE78) {
@@ -9075,7 +9134,7 @@ void func_8002125C(Object *obj, LevelObjectEntry_Animation *entry, Object_Animat
         }
         obj->animationID = entry->objAnimIndex;
         animObj->z = entry->objAnimSpeed;
-        animObj->unk2C = entry->objAnimLoopType;
+        animObj->loopType = entry->objAnimLoopType;
     }
     if (entry->unk13 >= 0) {
         animObj->unk2F = entry->unk13;
@@ -9143,7 +9202,7 @@ s8 func_800214E4(Object *obj, s32 updateRate) {
     }
     if (animObj->pauseCounter <= 0) {
         obj->trans.flags |= OBJ_FLAGS_INVISIBLE;
-        for (i = 0; (i < D_8011AE78 && animObj->unk28 != D_8011AE74[i]->properties.animation.behaviourID); i++) {
+        for (i = 0; (i < D_8011AE78 && animObj->actorIndex != D_8011AE74[i]->properties.animation.behaviourID); i++) {
             if (FALSE) {} // FAKEMATCH
         }
         obj_init_animobject(D_8011AE74[i], obj);
@@ -9482,7 +9541,7 @@ void init_racer_for_challenge(s32 vehicleID) {
     gTajRaceInit = 3;
     racer = get_racer_object(PLAYER_ONE)->racer;
     racer->courseCheckpoint = 0;
-    racer->checkpoint = 0;
+    racer->nextCheckpoint = 0;
     racer->lap = 0;
     racer->unk1BA = 0;
     set_taj_challenge_type(vehicleID);
@@ -9521,7 +9580,7 @@ void mode_init_taj_race(void) {
         racer->wrongWayCounter = 0;
         racer->startInput = 0;
         racer->courseCheckpoint = 0;
-        racer->checkpoint = 0;
+        racer->nextCheckpoint = 0;
         racer->lap = 0;
         racer->countLap = 0;
         racer->lap_times[0] = 0;
@@ -9630,7 +9689,7 @@ void mode_end_taj_race(s32 reason) {
         if (!racer) {}
         racer->raceFinished = 0;
         racer->lap = 0;
-        racer->checkpoint = 0;
+        racer->nextCheckpoint = 0;
         racer->courseCheckpoint = 0;
     } while (++i < gNumRacers);
 
@@ -9690,7 +9749,7 @@ CheckpointNode *func_800230D0(Object *obj, Object_Racer *racer) {
     Object *ptrList;
     s32 i;
 
-    if (gNumberOfCheckpoints == 0) {
+    if (gNumberOfMainCheckpoints == 0) {
         lastCheckpointNode = NULL;
         for (i = 0; i < gObjectCount; i++) {
             ptrList = gObjPtrList[i];
@@ -9705,7 +9764,7 @@ CheckpointNode *func_800230D0(Object *obj, Object_Racer *racer) {
             }
         }
     } else {
-        lastCheckpointNode = &gTrackCheckpoints[gNumberOfCheckpoints - 1];
+        lastCheckpointNode = &gTrackCheckpoints[gNumberOfMainCheckpoints - 1];
         obj->trans.x_position = lastCheckpointNode->x - (lastCheckpointNode->rotationZFrac * 35.0f);
         obj->trans.y_position = lastCheckpointNode->y;
         obj->trans.z_position = lastCheckpointNode->z + (lastCheckpointNode->rotationXFrac * 35.0f);
@@ -9724,8 +9783,8 @@ CheckpointNode *func_800230D0(Object *obj, Object_Racer *racer) {
     } else {
         racer->steerVisualRotation = ptrList->trans.rotation.y_rotation;
     }
-    racer->checkpoint = 0;
-    racer->courseCheckpoint = racer->lap * gNumberOfCheckpoints;
+    racer->nextCheckpoint = 0;
+    racer->courseCheckpoint = racer->lap * gNumberOfMainCheckpoints;
     obj->trans.rotation.y_rotation = racer->steerVisualRotation;
     racer->unkD8[0] = obj->trans.x_position;
     racer->unkD8[1] = obj->trans.y_position + 15.0f;

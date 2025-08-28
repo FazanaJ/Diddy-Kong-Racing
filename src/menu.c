@@ -6748,7 +6748,7 @@ void menu_character_select_init(void) {
         gCurrCharacterSelectData = (CharacterSelectData(*)[10]) & gCharacterSelectBytesDefault;
     }
     for (i = 0; i < ARRAY_COUNT(gCharselectStatus); i++) {
-        gCharselectStatus[i] = 0;
+        gCharselectStatus[i] = CHARSELECT_STATUS_UNCONFIRMED;
     }
     gNumberOfReadyPlayers = 0;
     gMenuDelay = 0;
@@ -6890,9 +6890,9 @@ void charselect_pick(void) {
     } else {
         // Character Deselected
         for (i = 0; i < ARRAY_COUNT(gActivePlayersArray); i++) {
-            if (gActivePlayersArray[i] && gCharselectStatus[i] != 0) {
+            if (gActivePlayersArray[i] && gCharselectStatus[i] != CHARSELECT_STATUS_UNCONFIRMED) {
                 if (gMenuButtons[i] & B_BUTTON) {
-                    gCharselectStatus[i] = 0;
+                    gCharselectStatus[i] = CHARSELECT_STATUS_UNCONFIRMED;
                     gNumberOfReadyPlayers--;
                     if (gMenuSoundMasks[i] != 0) {
                         sndp_stop(gMenuSoundMasks[i]);
@@ -6919,9 +6919,9 @@ void charselect_input(s8 *activePlayers) {
 
     for (i = 0; i < MAXCONTROLLERS; i++) {
         if (activePlayers[i] != 0) {
-            if (gCharselectStatus[i] != 0) {
+            if (gCharselectStatus[i] != CHARSELECT_STATUS_UNCONFIRMED) {
                 if (gMenuButtons[i] & B_BUTTON) {
-                    gCharselectStatus[i] = 0;
+                    gCharselectStatus[i] = CHARSELECT_STATUS_UNCONFIRMED;
                     gNumberOfReadyPlayers -= 1;
                     if (gMenuSoundMasks[i] != 0) {
                         sndp_stop(gMenuSoundMasks[i]);
@@ -6956,7 +6956,7 @@ void charselect_input(s8 *activePlayers) {
                         transition_begin(&sMenuTransitionFadeIn);
                     }
                 } else if (gMenuButtons[i] & (A_BUTTON | START_BUTTON)) {
-                    gCharselectStatus[i] = 1;
+                    gCharselectStatus[i] = CHARSELECT_STATUS_CONFIRMED;
                     gNumberOfReadyPlayers++;
                     if (gMenuSoundMasks[i] != 0) {
                         sndp_stop(gMenuSoundMasks[i]);
@@ -7051,8 +7051,10 @@ s32 menu_character_select_loop(s32 updateRate) {
     menu_input();
 
     for (i = 0; i < ARRAY_COUNT(gCharselectStatus); i++) {
-        if (gCharselectStatus[i] == 1) {
-            gCharselectStatus[i] = 2;
+        // Automatically advance all "confirmed" character selections to "ready".
+        // This prevents particle effects from spawning repeatedly on selection.
+        if (gCharselectStatus[i] == CHARSELECT_STATUS_CONFIRMED) {
+            gCharselectStatus[i] = CHARSELECT_STATUS_READY;
         }
     }
     gIgnorePlayerInputTime = 0;
@@ -8067,7 +8069,7 @@ s32 menu_file_select_loop(s32 updateRate) {
         }
         gIsInTwoPlayerAdventure = (gNumberOfActivePlayers == 2);
         if (gIsInTwoPlayerAdventure) {
-            fontUseFont();
+            reset_lead_player_index();
         }
         gNumberOfActivePlayers = 1;
         D_800E0FAC = TRUE;
