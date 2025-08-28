@@ -4634,7 +4634,7 @@ void apply_fog(s32 playerID) {
  * @bug: Timer doesn't account for PAL, meaning fog will scroll 20% slower on PAL systems.
  * Official Name: trackChangeFog
  */
-void obj_loop_fogchanger(Object *obj) {
+void obj_loop_fogchanger(Object *obj, UNUSED s32 updateRate) {
     s32 nearTemp;
     s32 fogNear;
     s32 views;

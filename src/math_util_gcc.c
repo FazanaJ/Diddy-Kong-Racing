@@ -21,7 +21,7 @@ void trigtable_generate(void) {
     s32 i;
     const f32 scale = 10491.0f;
 
-    gArcTanTable = mempool_alloc(sizeof(s16) * 1024, PP_RAM_TRIGTABLE);
+    gArcTanTable = (s16 *) mempool_alloc(sizeof(s16) * 1024, PP_RAM_TRIGTABLE);
 
     for (i = 0; i < 1024; ++i) {
         f32 x = (f32)i / 1024.0f; // x in [0, 1)
@@ -34,6 +34,8 @@ void trigtable_generate(void) {
 u32 interrupts_disable(void) {
     if (gIntDisFlag) {
         return __osDisableInt();
+    } else {
+        return 0;
     }
 }
 
@@ -91,7 +93,7 @@ void mtxf_transform_point(float mf[4][4], float x, float y, float z, float *ox, 
 }*/
 
 void mtxf_mul(MtxF *mat1, MtxF *mat2, MtxF *output) {
-    s32 i, j, k;
+    s32 i, j;
 
     for (i = 0; i < 4; i++) {
         for (j = 0; j < 4; j++) {

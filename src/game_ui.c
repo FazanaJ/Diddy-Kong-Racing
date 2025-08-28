@@ -394,7 +394,6 @@ void hud_init_element(void) {
     s32 i;
     s32 j;
     s32 activePlayers;
-    HudElement *hudElement;
     HudPresets4P *preset4P;
     HudPresets2P *preset2P;
     s32 k;
@@ -1267,7 +1266,6 @@ void hud_main_battle(s32 countdown, Object *obj, s32 updateRate) {
  * Portraits are laid out horizontally in 1-player mode and vertically in 2-player mode.
  */
 void hud_battle_portraits(Object *racerObj, s32 updateRate) {
-    s32 pad0;
     s32 i;
     Object_Racer *racer;
     s32 numRacers;
@@ -1441,15 +1439,12 @@ void hud_main_time_trial(s32 arg0, Object *playerRacerObj, s32 updateRate) {
     ModelInstance *modInst;
     LevelObjectEntryCommon ttSWBody;
     LevelObjectEntryCommon ttSWArms;
-    UNUSED s32 pad;
-    UNUSED s32 pad2;
     s32 temp_t6;
     f32 animcationFraction;
     f32 posX;
     f32 posY;
     f32 posZ;
     u16 soundID;
-    s32 error;
 
     curRacer = playerRacerObj->racer;
     stopwatchTimer = 0;
@@ -1701,13 +1696,11 @@ void hud_main_time_trial(s32 arg0, Object *playerRacerObj, s32 updateRate) {
                 SWMessage[1] = "PAK";
                 SWMessage[0] = "DAMAGED";
                 break;
-#if VERSION >= VERSION_79
             default:
                 SWMessage[2] = NULL;
                 SWMessage[1] = NULL;
                 SWMessage[0] = NULL;
                 break;
-#endif
         }
 #endif
 
@@ -1787,7 +1780,6 @@ void hud_speedometre_reset(void) {
 void hud_speedometre(Object *obj, s32 updateRate) {
     f32 vel;
     Object_Racer *racer;
-    s32 opacity;
     s32 height;
     s32 x, y;
     s32 r, g, b, a;
@@ -3263,7 +3255,6 @@ void hud_render_general(Gfx **dList, Mtx **mtx, Vertex **vtx, s32 updateRate) {
     u8 sp113;
     s32 mapOpacity;
     s32 opacity;
-    UNUSED s32 pad0[2];
     s32 temp_s1_2;
     s32 var_a0_5;
     s32 spF4;
@@ -3272,12 +3263,10 @@ void hud_render_general(Gfx **dList, Mtx **mtx, Vertex **vtx, s32 updateRate) {
     s32 temp_s1_3;
     s32 spE4;
     s32 spE0;
-    UNUSED s32 pad1;
     Object *temp_v0_8;
     s32 tempVar2;
     s32 sp144;
     s32 racerCount;
-    UNUSED s32 pad2;
     Camera *someObjSeg;
     Object **racerGroup;
     s32 spBC;
@@ -3289,7 +3278,6 @@ void hud_render_general(Gfx **dList, Mtx **mtx, Vertex **vtx, s32 updateRate) {
     s32 temp_f6;
     s32 temp_s3;
     s32 temp;
-    UNUSED s32 pad3[4];
 
     hud_audio_update(updateRate);
 
@@ -3700,19 +3688,13 @@ void hud_element_render(Gfx **dList, Mtx **mtx, Vertex **vtxList, HudElement *hu
     TextureHeader *textureHeader;
     Camera *camera;
     LevelObjectEntry_Hud objEntry;
-    UNUSED s32 pad1;
     Object *tempObject;
     HudDrawTexture sp88;
-    UNUSED s32 pad2[3];
-    HudDrawTexture sp70;
     s32 alpha;
-    u32 colour;
     s32 spriteID;
     HudDrawTexture sp58;
-    UNUSED s32 pad3;
     HudDrawTexture sp48;
     Sprite *sprite;
-    UNUSED s32 pad4[2];
     s32 spriteElementId;
 
     spriteID = hud->spriteID;

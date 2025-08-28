@@ -2538,7 +2538,7 @@ void func_800BFE98(s32 updateRate) {
  * Wave Power loop func.
  * Waits for racers to pass through, then sets itself as the current baseline for how strong the waves should be.
  */
-void obj_loop_wavepower(Object *obj) {
+void obj_loop_wavepower(Object *obj, UNUSED s32 updateRate) {
     LevelObjectEntry_WavePower *entry;
     s32 numRacers;
     Object *racerObj;

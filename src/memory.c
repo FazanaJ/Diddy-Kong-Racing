@@ -73,9 +73,7 @@ void mempool_init_main(void) {
  * Official name: mmAllocRegion
  */
 MemoryPoolSlot *mempool_new_sub(s32 poolDataSize, s32 numSlots) {
-    s32 size;
     MemoryPoolSlot *slots;
-    UNUSED s32 unused_2;
     u32 intFlags = interrupts_disable();
     MemoryPoolSlot *newPool;
 
@@ -173,12 +171,16 @@ void mempool_realloc_pool(MemoryPoolSlot *slot, void *addr, s32 size, s32 colour
     s32 poolID;
     s32 i;
 
+    poolID = -1;
+
     for (i = gNumberOfMemoryPools; i != 0; i--) {
         if (slot == gMemoryPools[i].slots) {
             poolID = i;
             break;
         }
     }
+
+    crash_assert(poolID == -1, "Realloc poolID bad");
 
     if (prevTimer != 0) {
         mempool_free_timer(0);

@@ -54,10 +54,10 @@ ModelInstance *obj_model_seek(Object *obj, s32 modelID) {
 #endif
 }
 
-void obj_model_cycle(s32 updateRate) {
-    s32 i;
-    s32 modelID;
-    ObjectModel *objMdl;
+void obj_model_cycle(UNUSED s32 updateRate) {
+    UNUSED s32 i;
+    UNUSED s32 modelID;
+    UNUSED ObjectModel *objMdl;
 #ifndef STREAM_MODELS
     return;
 #else
@@ -84,8 +84,8 @@ void obj_model_cycle(s32 updateRate) {
  * Allocate memory for object model ID's and animation tables.
  */
 void allocate_object_model_pools(void) {
-    s32 i;
-    s32 checksum;
+    UNUSED s32 i;
+    UNUSED s32 checksum;
     s32 *assetTable;
 
     gModelCache = mempool_alloc_safe(MODEL_LOADED_MAX * 6, PP_RAM_ASSET_CACHE);
@@ -302,7 +302,6 @@ ModelInstance *model_instance_init(ObjectModel *model, s32 flags) {
     Vertex *vertex;
     Vertex *vertex2;
     Vertex *mdlVertex;
-    u32 first;
 
     if (model == NULL) {
     }
@@ -686,7 +685,6 @@ s32 func_80060AC8(ObjectModel *mdl, s32 arg1, s32 arg2, s32 arg3, s32 *outBatchI
     s32 i;
     s32 endTri;
     s32 count;
-    Triangle *tri;
     s16 vertOffset;
     s16 startTri;
     s32 triIndex;

@@ -334,7 +334,6 @@ typedef struct LevelObjectEntry_unk8000B020 {
 
 void obj_shield_spawn(void) {
     LevelObjectEntry_unk8000B020 objEntry;
-    s32 i;
 
     if (gShieldEffectObject != NULL) {
         return;
@@ -465,7 +464,6 @@ void func_8000B38C(Vertex *vertices, Triangle *triangles, ObjectTransform *trans
     Vec3f sp64;
     s32 *tri;
     f32 *ptr;
-    s32 temp;
 
     v = (s16 *) vertices;
 
@@ -729,7 +727,7 @@ Object *racerfx_get_boost(s32 boostID) {
 void allocate_object_pools(void) {
     s32 i;
     s32 *tempTable;
-    s16 *tempTable2;
+    //s16 *tempTable2;
 
     gObjectMemoryPool = (Object *) mempool_new_sub(OBJECT_POOL_SIZE, OBJECT_SLOT_COUNT);
     gParticlePtrList = mempool_alloc_safe(sizeof(uintptr_t) * 200, PP_RAM_OBJLISTS);
@@ -760,8 +758,8 @@ void allocate_object_pools(void) {
 
     
     gMiscAssetCache = mempool_alloc_safe(25 * (sizeof(uintptr_t) + sizeof(s8) + sizeof(s8)), PP_RAM_ASSET_CACHE);
-    gMiscAssetCacheIDs = (s16 *) ((u8 *) gMiscAssetCache + (25 * sizeof(uintptr_t)));
-    gMiscAssetStaleTimers = (s16 *) ((u8 *) gMiscAssetCacheIDs + (25 * sizeof(s8)));
+    gMiscAssetCacheIDs = (s8 *) ((u8 *) gMiscAssetCache + (25 * sizeof(uintptr_t)));
+    gMiscAssetStaleTimers = (s8 *) ((u8 *) gMiscAssetCacheIDs + (25 * sizeof(s8)));
     gMiscAssetCount = 0;
 
     for (i = 0; i < 25; i++) {
@@ -793,7 +791,7 @@ s32 miscasset_cycle(s32 updateRate) {
         if (gMiscAssetStaleTimers[i] > 0) {
             gMiscAssetStaleTimers[i] -= updateRate;
             if (gMiscAssetStaleTimers[i] <= 0) {
-                mempool_free(gMiscAssetCache[i]);
+                mempool_free((void *) gMiscAssetCache[i]);
                 gMiscAssetCache[i] = -1;
                 gMiscAssetCacheIDs[i] = -1;
             }
@@ -815,16 +813,16 @@ void *miscasset_seek_new(s32 index) {
         }
     }
 
-    asset_load(ASSET_MISC_TABLE, &assetTableEntry, index * sizeof(s32), sizeof(s32) * 2);
+    asset_load(ASSET_MISC_TABLE, (u32) &assetTableEntry, index * sizeof(s32), sizeof(s32) * 2);
 
     size = (assetTableEntry[1] - assetTableEntry[0]) * 4;
 
-    address = mempool_alloc(size, PP_RAM_MISCASSET);
+    address = (ParticleBehaviour *) mempool_alloc(size, PP_RAM_MISCASSET);
 
     asset_load(ASSET_MISC, (u32) address, assetTableEntry[0] * 4, size);
 
     if (index == ASSET_MISC_MAGIC_CODES) {
-        decrypt_magic_codes(address, size);
+        decrypt_magic_codes((s32 *) address, size);
     }
 
     slotIndex = -1;
@@ -1110,7 +1108,6 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     s32 mapID[2];
     u8 *objPos;
     s32 objPtrSize;
-    s32 allocPos;
     s32 *map;
     s32 allocSize;
     s32 animObjs;
@@ -1124,7 +1121,7 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
 
     objPtrSize = 0;
     objMapTable = (u32 *) asset_table_load(ASSET_LEVEL_OBJECT_MAPS_TABLE);
-    mem = mempool_alloc_largest(PP_RAM_TEMP);
+    mem = (s32 *) mempool_alloc_largest(PP_RAM_TEMP);
     for (i = 0; objMapTable[i] != 0xFFFFFFFF; i++) {}
     i--;
     for (j = 0; j < 2; j++) {
@@ -1142,7 +1139,7 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
             gzip_inflate(compressedAsset, (u8 *) mem);
             objPos = (u8 *) (map + 4);
             for (var_s0 = 0; var_s0 < *mem; var_s0 += temp_t3) {
-                LevelObjectEntryCommon *entry = objPos;
+                LevelObjectEntryCommon *entry = (LevelObjectEntryCommon *) objPos;
 
                 if (entry->objectID == ASSET_OBJECT_ID_CHECKPOINT) {
                     checkpoints++;
@@ -1171,14 +1168,14 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     allocSize += camControllers * sizeof(uintptr_t);
     allocSize += animObjs * sizeof(uintptr_t);
 
-    gObjPtrList = mempool_alloc(allocSize, PP_RAM_TEMPOBJLIST);
+    gObjPtrList = (Object **) mempool_alloc(allocSize, PP_RAM_TEMPOBJLIST);
 
     //debug_printf("Objects %d, Checkpoints: %d, AINodes: %d, CamObjs: %d\n", objPtrSize + 125, checkpoints, ainodes, camControllers);
 
     gTrackCheckpoints = (CheckpointNode *) ((u8 *) gObjPtrList + ((objPtrSize + 125) * sizeof(uintptr_t)));
-    gAINodes = (Object *) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + 0));
-    gCameraObjList = (Object *) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + (ainodes * sizeof(uintptr_t))));
-    D_8011AE74 = (Object *) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + (ainodes * sizeof(uintptr_t)) + camControllers * sizeof(uintptr_t)));
+    gAINodes = (Object * (*)[AINODE_COUNT]) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + 0));
+    gCameraObjList = (Object * (*)[CAMCONTROL_COUNT]) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + (ainodes * sizeof(uintptr_t))));
+    D_8011AE74 = (Object **) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + (ainodes * sizeof(uintptr_t)) + camControllers * sizeof(uintptr_t)));
 
     if (ainodes > 0) {
         bzero(gAINodes, sizeof(uintptr_t) * ainodes);
@@ -1228,7 +1225,7 @@ void track_spawn_objects(s32 mapID, s32 index) {
     D_8011AD3E = 0;
     //mem = mempool_alloc_safe(OBJECT_MAP_SIZE, PP_RAM_OBJMAPS);
     objMapTable = (u32 *) asset_table_load(ASSET_LEVEL_OBJECT_MAPS_TABLE);
-    mem = mempool_alloc_largest(PP_RAM_OBJMAPS);
+    mem = (s32 *) mempool_alloc_largest(PP_RAM_OBJMAPS);
     gObjectMap[index] = mem;
     for (i = 0; objMapTable[i] != 0xFFFFFFFF; i++) {}
     i--;
@@ -2004,8 +2001,6 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
     s32 objType;
     Settings *settings;
     s32 i;
-    s32 unused2;
-    s32 unused;
     s32 behaviourFlags;
     s16 headerType;
     u8 *address;
@@ -2013,7 +2008,6 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
     Object *curObj;
     Object *prevObj;
     s32 assetCount;
-    s8 failed;
     s32 addI = 0;
 
     settings = get_settings();
@@ -2028,7 +2022,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
         headerType = 0;
     }
 
-    curObj = mempool_alloc_pool_tag(gObjectMemoryPool, 0x800, PP_RAM_OBJECTS);
+    curObj = mempool_alloc_pool_tag((MemoryPoolSlot *) gObjectMemoryPool, 0x800, PP_RAM_OBJECTS);
 
     curObj->trans.rotation.x_rotation = 0;
     curObj->trans.rotation.y_rotation = 0;
@@ -2271,7 +2265,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
 
     sizeOfobj = (s32) address - (s32) curObj;
     prevObj = curObj;
-    mempool_realloc_pool(gObjectMemoryPool, curObj, sizeOfobj, PP_RAM_OBJECTS);
+    mempool_realloc_pool((MemoryPoolSlot *) gObjectMemoryPool, curObj, sizeOfobj, PP_RAM_OBJECTS);
     //curObj = mempool_alloc_pool((MemoryPoolSlot *) gObjectMemoryPool, sizeOfobj);
     if (curObj == NULL) {
         if (D_8011AE50 != NULL) {
@@ -2539,9 +2533,8 @@ Object *obj_spawn_attachment(s32 objID) {
     ObjectHeader *objHeader;
     s32 objSize;
     s32 i;
-    s32 failedToLoadModel;
+    //s32 failedToLoadModel;
     s8 numModelIds;
-    u8 *objectAsRawBytes;
 
     if (objID >= gAssetsObjectHeadersTableLength) {
         objID = 0;
@@ -2650,7 +2643,6 @@ void obj_destroy(Object *obj, s32 arg1) {
     Object_Weapon *weapon;
     Object_Racer *racer;
     Object_AnimatedObject *snowball;
-    Object_Weapon *fireball;
     Object_Log *log;
     Object_Butterfly *butterfly;
     SoundHandle soundMask;
@@ -3471,7 +3463,6 @@ void render_3d_billboard(Object *obj) {
 }
 
 void obj_seek_anim(Object *obj, ModelInstance *inst) {
-    s32 i;
 
 #ifdef STREAM_ANIMATIONS
     if (inst->animationID != obj->animationID) {
@@ -3504,7 +3495,7 @@ void render_3d_model(Object *obj) {
     s32 hasLighting;
     s32 flags;
     s32 meshBatch;
-    s32 cicFailed;
+    UNUSED s32 cicFailed;
     f32 vtxX;
     f32 vtxY;
     f32 vtxZ;
@@ -3779,7 +3770,6 @@ void render_object(Gfx **dList, Mtx **mtx, Vertex **verts, Object *obj) {
  * Official Name: objDoPlayerTumble
  */
 void object_do_player_tumble(Object *this) {
-    UNUSED s32 unused1;
     Object_Racer *sp_20;
     f32 tmp_f2;
     f32 offsetY;
@@ -3831,9 +3821,7 @@ void set_temp_model_transforms(Object *obj) {
     ModelInstance *modInst;
     u8 *bossAsset;
     f32 var_f0;
-    u8 *var_a1;
     f32 ret2;
-    UNUSED s32 pad;
     Object_Racer *objRacer;
     f32 ret1;
     s32 firstNonEmptyModelIndex;
@@ -4253,7 +4241,6 @@ void func_80014090(Object *obj, s32 arg1) {
     s16 objHeader73;
     ObjectModel *objMdl;
     ModelInstance *modInst;
-    TextureInfo *texInfo;
     Triangle *tri;
     s16 temp;
     s16 temp2;
@@ -4614,7 +4601,6 @@ void process_object_interactions(void) {
 void func_800159C8(Object *arg0, Object *arg1) {
     f32 sp9C;
     f32 sp98;
-    f32 f14;
     f32 sp90;
     f32 sp8C;
     f32 f18;
@@ -5123,7 +5109,6 @@ void obj_collision_transform(Object *obj) {
     MtxF *curMtx;
     MtxF inverseMtx;
     ObjectCollision *colData;
-    u32 first = osGetCount();
 
     colData = obj->collisionData;
     if (colData->update == FALSE && colData->collidedObj == NULL) {
@@ -5134,7 +5119,6 @@ void obj_collision_transform(Object *obj) {
 #ifdef AVOID_UB
     curMtx = &colData->matrices[colData->mtxFlip];
 #else
-
     curMtx = (MtxF *) &colData->_matrices[colData->mtxFlip << 1];
 #endif
     trans.rotation.y_rotation = -obj->trans.rotation.y_rotation;
@@ -5524,8 +5508,6 @@ void checkpoint_update_all(void) {
     f32 zDiff;
     f32 yDiff;
     s32 tempCheckpointID;
-    s32 checkpointNum;
-    s32 duplicateCheckpoint;
     s32 breakOut;
     s32 altRouteId;
     s32 i;
@@ -5562,15 +5544,10 @@ void checkpoint_update_all(void) {
         }
     }
 
-    duplicateCheckpoint = FALSE;
     do {
         isSorted = TRUE;
 
         for (i = 0; i < gNumberOfMainCheckpoints - 1; i++) {
-            if (gTrackCheckpoints[i].checkpointID == gTrackCheckpoints[i + 1].checkpointID) {
-                duplicateCheckpoint = TRUE;
-                checkpointNum = gTrackCheckpoints[i].checkpointID;
-            }
 
             if (gTrackCheckpoints[i + 1].checkpointID < gTrackCheckpoints[i].checkpointID) {
                 tempCheckpointID = gTrackCheckpoints[i].checkpointID;
@@ -5851,15 +5828,9 @@ Object *find_taj_object(void) {
 // Handles MidiFadePoint, MidiFade, and MidiSetChannel objects?
 void func_80018CE0(Object *racerObj, f32 xPos, f32 yPos, f32 zPos, s32 updateRate) {
     f32 temp_f0;
-    s32 pad_spF8;
     s32 spF4;
-    s32 pad_spF0;
     f32 temp_f22;
-    s32 pad_spE8;
-    s32 pad_spE4;
-    s32 pad_spE0;
     f32 temp_f2;
-    s32 pad_spD8;
     f32 tempF2;
     s32 temp_f10;
     s32 temp_t3_2;
@@ -6133,7 +6104,7 @@ void race_check_finish(s32 updateRate) {
     s32 newStartingPosition;
     s8 sp5C[4];
     s8 someBool2;
-    s8 flags[3];
+    UNUSED s8 flags[3];
     s32 camera;
 
     currentLevelHeader = level_header();
@@ -8236,11 +8207,9 @@ void func_8001E89C(void) {
 }
 
 void func_8001E93C(void) {
-    s32 pad[3];
     LevelObjectEntry_OverridePos *overridePos;
     Object *obj;
     s32 numOfObjs;
-    s32 pad2;
     s32 i;
     s32 stopLooping;
     s32 sp28;
@@ -8538,7 +8507,6 @@ s32 func_8001F460(Object *arg0, s32 arg1, Object *arg2) {
     f32 sp124;
     f32 sp120;
     f32 sp11C;
-    Object *otherObj64;
     f32 sp114;
     ObjectModel *temp_a0_3;
     s32 temp_a1_2;
@@ -8550,7 +8518,6 @@ s32 func_8001F460(Object *arg0, s32 arg1, Object *arg2) {
     f32 spB8[5];
     f32 spB4;
     s8 *miscAsset;
-    s32 pad;
     FadeTransition fadeTransition;
 
     if (gCutsceneID < 0) {
@@ -10371,7 +10338,7 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             break;
     }
 
-    obj->lightData = func;
+    obj->lightData = (ObjectLight **) func;
 }
 
 /**

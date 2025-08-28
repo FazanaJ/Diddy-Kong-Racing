@@ -572,14 +572,10 @@ void obj_init_trophycab(Object *obj, LevelObjectEntry_TrophyCab *entry) {
 void obj_loop_trophycab(Object *obj, s32 updateRate) {
     Settings *settings;
     JingleState *jingle_state;
-    UNUSED f32 dist;
     LevelObjectEntryCommon newObject;
     LevelHeader *header;
     Object *tempObj;
-    f32 diffX;
     s32 dialogueID;
-    f32 diffZ;
-    UNUSED s32 pad2;
     s32 worldBalloons;
     s32 bossFlags;
 
@@ -607,9 +603,6 @@ void obj_loop_trophycab(Object *obj, s32 updateRate) {
     obj->shading->ambient = 0.0f;
     tempObj = get_racer_object(PLAYER_ONE);
     if (tempObj != NULL) {
-        diffX = obj->trans.x_position - tempObj->trans.x_position;
-        diffZ = obj->trans.z_position - tempObj->trans.z_position;
-        //dist = sqrtf((diffX * diffX) + (diffZ * diffZ)); // unused
         bossFlags = settings->bosses;
         bossFlags |= 0x800;
         worldBalloons = (settings->balloonsPtr[settings->worldId] >= 8);
@@ -1215,6 +1208,11 @@ void obj_loop_stopwatchman(Object *obj, s32 updateRate) {
             obj->properties.tt.action = TT_MODE_ROAM;
             obj->properties.tt.timer = 1;
         }
+    } else {
+        diffX = 0;
+        diffZ = 0;
+        angleDiff = 0;
+        racer = NULL;
     }
     index = input_pressed(PLAYER_ONE);
     if (obj->properties.tt.action == TT_MODE_ROAM && distance < 300.0f * 300.0f && obj->properties.tt.timer == 0) {
@@ -1395,7 +1393,6 @@ void play_tt_voice_clip(u16 soundID, s32 interrupt) {
 
 void obj_init_fish(Object *fishObj, LevelObjectEntry_Fish *fishEntry) {
     Object_Fish *fish;
-    s32 pad0[2];
     f32 xPos;
     f32 zPos;
     f32 sins104;
@@ -1654,7 +1651,6 @@ void obj_init_animator(Object *obj, LevelObjectEntry_Animator *entry) {
 }
 
 void obj_loop_animator(Object *obj, s32 updateRate) {
-    s32 pad[2];
     Object_Animator *animator;
     LevelModel *levelModel;
     s32 trisStart;
@@ -2532,6 +2528,11 @@ void obj_loop_parkwarden(Object *obj, s32 updateRate) {
         xPosDiff = (racerObj->trans.x_position - (racer->ox1 * 50.0f)) - obj->trans.x_position;
         zPosDiff = (racerObj->trans.z_position - (racer->oz1 * 50.0f)) - obj->trans.z_position;
         distance = ((xPosDiff * xPosDiff) + (zPosDiff * zPosDiff));
+    } else {
+        distance = 0xFFFFFFFF;
+        xPosDiff = 0;
+        zPosDiff = 0;
+        racer = NULL;
     }
     buttonsPressed = input_pressed(PLAYER_ONE);
     var_a2 = FALSE;
@@ -3703,8 +3704,8 @@ void obj_init_ttdoor(Object *obj, LevelObjectEntry_TTDoor *entry) {
 void obj_loop_ttdoor(Object *obj, s32 updateRate) {
     Settings *settings;
     Object_Door *ttDoor;
-    Object *racerObj;
-    Object_Racer *racer;
+    UNUSED Object *racerObj;
+    UNUSED Object_Racer *racer;
     s16 angle;
     s32 openDoor;
 
@@ -5360,25 +5361,15 @@ void obj_init_texscroll(Object *obj, LevelObjectEntry_TexScroll *entry) {
 }
 
 void obj_loop_texscroll(Object *obj, s32 updateRate) {
-    s32 pad[2];
     LevelModel *levelModel;
     LevelModelSegment *curBlock;
     Object_TexScroll *texScroll;
     Triangle *curTriangle;
     TriangleBatchInfo *curBatch;
-    s32 prevUnk8;
-    s32 prevUnkA;
     s32 tri;
     s32 uShift;
     s32 vShift;
-    s32 block;
-    s32 batch;
-    TextureInfo *texture;
     TextureHeader *tex;
-    s32 texIndex;
-    s32 temp;
-    s32 temp2;
-    u8 temp3;
     s32 t0;
     s32 t1;
     s32 i;
@@ -5598,19 +5589,17 @@ void obj_loop_weather(Object *obj, UNUSED s32 updateRate) {
     s32 playerCount;
     s32 numberOfObjects;
     Object_Racer *racer;
-    Object **objects;
     Object *curObj;
     LevelObjectEntry_Weather *entry;
     f32 diffX;
     f32 diffZ;
     s32 cur;
-    s32 last;
     f32 dist;
     s32 i;
     s32 j;
 
     playerCount = (cam_get_viewport_layout() % 4) + 1;
-    objects = get_racer_objects(&numberOfObjects);
+    get_racer_objects(&numberOfObjects);
     dist = obj->properties.distance.radius;
     entry = (LevelObjectEntry_Weather *) obj->level_entry;
     if (numberOfObjects != 0) {
@@ -5739,7 +5728,6 @@ void obj_loop_butterfly(Object *butterflyObj, s32 updateRate) {
     f32 sp7C;
     f32 sp78;
     s16 var_v1;
-    s16 shiftAmount;
     s16 sp72;
     s16 temp;
     s32 xPos;
@@ -6030,26 +6018,12 @@ void obj_loop_butterfly(Object *butterflyObj, s32 updateRate) {
 
 void obj_init_midifade(Object *obj, LevelObjectEntry_MidiFade *entry) {
     Object_MidiFade *midiFade;
-    ModelInstance *modInst;
     ObjectTransform transform;
     f32 ox;
     f32 oy;
     f32 oz;
-    ObjectModel *objModel;
-    UNUSED s32 pad;
     MtxF mtx;
-    f32 sinYRot;
-    f32 tempF3;
-    f32 minX;
-    f32 minZ;
-    f32 minY;
-    f32 maxY;
-    f32 maxX;
-    f32 maxZ;
-    f32 cosYRot;
     f32 scaleF;
-    Vertex *vertex;
-    f32 tempF2;
     s32 i;
 
     obj->trans.rotation.y_rotation = entry->angleY << 8 << 2; // Two shifts needed to skip a register.
@@ -6080,54 +6054,6 @@ void obj_init_midifade(Object *obj, LevelObjectEntry_MidiFade *entry) {
         midiFade->unk2F[i] = entry->unkA[i];
     }
 
-    /*modInst = obj->modelInstances[0];
-    objModel = modInst->objModel;
-    vertex = &objModel->vertices[1];
-    maxX = vertex->x;
-    maxY = vertex->y;
-    maxZ = vertex->z;
-    minX = maxX;
-    minY = maxY;
-    minZ = maxZ;
-    for (i = 1; i < objModel->numberOfVertices; i++) {
-        vertex = &objModel->vertices[i];
-        if (vertex->x < minX) {
-            minX = vertex->x;
-        }
-        if (maxX < vertex->x) {
-            maxX = vertex->x;
-        }
-        if (vertex->y < minY) {
-            minY = vertex->y;
-        }
-        if (maxY < vertex->y) {
-            maxY = vertex->y;
-        }
-        if (vertex->z < minZ) {
-            minZ = vertex->z;
-        }
-        if (maxZ < vertex->z) {
-            maxZ = vertex->z;
-        }
-    }
-    cosYRot = coss_f(obj->trans.rotation.y_rotation);
-    sinYRot = sins_f(obj->trans.rotation.y_rotation);
-    tempF3 = minX;
-    minX = (minX * cosYRot) + (minZ * sinYRot);
-    minZ = (minZ * cosYRot) - (tempF3 * sinYRot);
-    tempF3 = maxX;
-    maxX = (maxX * cosYRot) + (maxZ * sinYRot);
-    maxZ = (maxZ * cosYRot) - (tempF3 * sinYRot);
-    if (maxX < minX) {
-        tempF2 = maxX;
-        maxX = minX;
-        minX = tempF2;
-    }
-    if (maxZ < minZ) {
-        tempF2 = maxZ;
-        maxZ = minZ;
-        minZ = tempF2;
-    }*/
     midiFade->unk18 = (obj->trans.scale * -127.0f) + obj->trans.x_position;
     midiFade->unk1C = (obj->trans.scale * -127.0f) + obj->trans.y_position;
     midiFade->unk20 = (obj->trans.scale * -127.0f) + obj->trans.z_position;
@@ -6280,9 +6206,7 @@ void obj_loop_frog(Object *obj, s32 updateRate) {
     s32 i;
     s32 hopping;
     s32 var_v1;
-    UNUSED s32 pad0[29]; // Wtf is this large gap here?
-    f32 colY[8];
-    UNUSED s32 pad2[4];
+    f32 colY[9];
     f32 cosine;
     f32 diffX;
     f32 diffY;

@@ -39,9 +39,7 @@ OSMesgQueue *si_mesg(void) {
  * Official name: joyInit
  */
 s32 input_init(void) {
-    UNUSED s32 *temp1;
     u8 bitpattern;
-    UNUSED s32 *temp2;
 
     if (sInputInit) {
         return CONTROLLER_EXISTS;

@@ -186,7 +186,7 @@ s32 check_if_in_draw_range(Object *obj);
 void func_8002C954(LevelModelSegment *segment, LevelModelSegmentBoundingBox *bbox, s32 arg2);
 void trackbg_render_gradient(void);
 void shadow_update(s32 group, s32 waterGroup, s32 updateRate);
-void obj_loop_fogchanger(Object *obj);
+void obj_loop_fogchanger(Object *obj, s32 updateRate);
 void initialise_player_viewport_vars(s32 updateRate);
 s32 get_wave_properties(f32 yPos, f32 *waterHeight, Vec3f *rotation);
 void render_level_segment(s32 segmentId, s32 nonOpaque);

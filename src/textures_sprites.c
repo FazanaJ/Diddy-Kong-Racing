@@ -571,12 +571,10 @@ void material_set(Gfx **dList, TextureHeader *texhead, s32 flags, s32 texOffset)
     s32 doPipeSync;
     s32 dlIndex;
     Gfx *cmd;
-    s32 loadTex;
     s32 aaMode;
 
     forceFlags = gForceFlags;
     doPipeSync = TRUE;
-    loadTex = FALSE;
 
     if (texhead != NULL) {
         if (texOffset && (texOffset < texhead->numOfTextures << 8)) {
@@ -587,7 +585,6 @@ void material_set(Gfx **dList, TextureHeader *texhead, s32 flags, s32 texOffset)
         if (texhead != gCurrentTextureHeader) {
             gDkrDmaDisplayList((*dList)++, OS_K0_TO_PHYSICAL(texhead->cmd), texhead->numberOfCommands);
             DEBUG_VAR(gDebug->misc.texLoads, gDebug->misc.texLoads + 1);
-            loadTex = TRUE;
             gCurrentTextureHeader = texhead;
             doPipeSync = FALSE;
         }
@@ -632,7 +629,6 @@ void material_set(Gfx **dList, TextureHeader *texhead, s32 flags, s32 texOffset)
                 goto run;
             }
             cmd = dRenderSettingsSolidColour[flags & (RENDER_FOG_ACTIVE | RENDER_SEMI_TRANSPARENT | RENDER_Z_COMPARE)];
-            loadTex = FALSE;
             goto run;
         }
 
@@ -966,7 +962,6 @@ s32 load_sprite_info(s32 spriteIndex, s32 *anchorXOut, s32 *anchorYOut, s32 *num
     s32 j;
     s32 start;
     s32 size;
-    s32 new_var;
     u8 spriteBuf[0x200];
 
     if ((spriteIndex < 0) || (spriteIndex >= gSpriteTableSize)) {
@@ -978,7 +973,6 @@ s32 load_sprite_info(s32 spriteIndex, s32 *anchorXOut, s32 *anchorYOut, s32 *num
     }
     spriteAsset = (SpriteAsset *) &spriteBuf;
     assettable_seek_s32(spriteIndex, &start, &size, ASSET_SPRITES_TABLE);
-    new_var = size;
     asset_load(ASSET_SPRITES, (u32) spriteAsset, start, size);
     set_texture_colour_tag(PP_RAM_SPRITES);
     tex = load_texture(spriteAsset->frameTexOffsets[0] + spriteAsset->baseTextureId);
@@ -1359,6 +1353,8 @@ void material_init(TextureHeader *tex, Gfx *_dList) {
     } else {
         cmt = G_TX_WRAP;
     }
+
+    fmt = G_IM_FMT_RGBA;
 
     switch (texFormat) {
         case TEX_FORMAT_RGBA32:

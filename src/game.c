@@ -66,10 +66,10 @@ s16 gLevelPropertyStack[5 * 4]; // Stores level info for cutscenes. 5 sets of fo
 void level_global_init(void) {
     s32 i;
     s32 size;
-    UNUSED s32 pad;
-    s32 checksumCount;
+    UNUSED s32 checksumCount;
     u8 *header;
-    s32 j;
+    UNUSED s32 j;
+
     header = mempool_alloc_safe(sizeof(LevelHeader), PP_RAM_ASSETTABLE);
     gTempAssetTable = (s32 *) asset_table_load(ASSET_LEVEL_HEADERS_TABLE);
     i = 0;

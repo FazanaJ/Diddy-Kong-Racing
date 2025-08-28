@@ -840,10 +840,10 @@ char *sSaveResponses[] = {
 };
 
 s32 save_readwrite(u64 *data, u32 offset, u32 size, s32 type) {
-    u32 i;
-    u32 addr;
+    UNUSED u32 i;
+    UNUSED u32 addr;
+    UNUSED s32 (*func)(OSMesgQueue *, s32 address, u8 *buffer);
     s32 result;
-    s32 (*func)(OSMesgQueue *, s32 address, u8 *buffer);
     u32 first;
 
     if (type == OS_WRITE) {
@@ -949,8 +949,6 @@ void erase_save_file(s32 saveFileNum, Settings *settings, s32 writeBuf) {
 s32 write_save_data(s32 saveFileNum, Settings *settings) {
     s32 startingAddress;
     u64 *alloc;
-    s32 address;
-    s32 i;
 
     if (save_detect() == 0) {
         return -1;
@@ -1154,6 +1152,7 @@ s32 userconfig_read(void) {
         //c->terrainQuality = b.terrainQuality;
         return 0;
     }
+    return 0;
 }
 
 s16 calculate_ghost_header_checksum(GhostHeader *ghostHeader) {
@@ -1495,10 +1494,10 @@ s32 func_800753D8(s32 controllerIndex, s32 worldId) {
                 tempData[6].unk2 = tempData[5].unk2;
                 pakStatus = write_controller_pak_file(controllerIndex, fileNumber, "DKRACING-GHOSTS", "", (u8 *) data2,
                                                       fileSize);
+                mempool_free(data2); // Wait, what happens if (data->signature != GHSS)?
             } else {
                 pakStatus = CONTROLLER_PAK_BAD_DATA;
             }
-            mempool_free(data2); // Wait, what happens if (data->signature != GHSS)?
         }
         mempool_free(data);
     } else {

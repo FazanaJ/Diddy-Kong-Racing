@@ -3115,7 +3115,7 @@ s32 menu_logo_screen_loop(s32 updateRate) {
     s32 i;
     s32 input;
 
-    
+    input = 0;
     for (i = 0; i < MAXCONTROLLERS; i++) {
         input |= input_pressed(i);
     }
@@ -10148,15 +10148,19 @@ typedef struct ConfigOptionEntry {
 
 enum ConfigOptionFlags {
     OPT_NONE,
-    OPT_EX_PAK = (1 << 0), // Requires the expansion pak.
+#if EXPANSION_PAK_SUPPORT == 0
+    OPT_EX_PAK = (1 << 4), // Requires the expansion pak.
+#else
+    OPT_EX_PAK = (1 << 0),
+#endif
     OPT_NO_EMU = (1 << 1), // Hidden on emulator.
     OPT_NUMBER = (1 << 2), // Displays the value of the option instead of a string.
     OPT_PAL = (1 << 3),    // Display a different set of values for PAL users.
     OPT_HIDDEN = (1 << 4), // Just hide it unconditionally, for debug purposes.
 #if SCREEN_HEIGHT >= 240
-    OPT_240 = (1 << 4), // Just hide it unconditionally, for debug purposes.
+    OPT_240 = (1 << 4),
 #else
-    OPT_240 = (1 << 5), // Just hide it unconditionally, for debug purposes.
+    OPT_240 = (1 << 5),
 #endif
     OPT_ARES = (1 << 6), // Visible on accurate emulators.
 };
@@ -15125,6 +15129,9 @@ s32 menu_video_options_loop(s32 updateRate) {
     s32 menuCount;
     s32 racerStart;
     ConfigOptionEntry *menu;
+
+    menuCount = 0;
+    menu = NULL;
     gOptionBlinkTimer = (gOptionBlinkTimer + updateRate) & 0x3F;
     alpha = gOptionBlinkTimer * 8;
     if (alpha > 255) {
@@ -16586,7 +16593,7 @@ void menu_level_preview_handle_track_select(s32 updateRate, s32 inputPressed) {
 const s32 OFFSET_AMOUNT = 13;
 
 void debugmenu_level_viewer(s32 updateRate, s32 inputPressed) {
-    char debugText[256];
+    //char debugText[256];
     s32 i;
 
     if (gPauseOptionScroll == 0) {
@@ -16655,7 +16662,7 @@ void debugmenu_level_viewer(s32 updateRate, s32 inputPressed) {
     draw_text(&sMenuCurrDisplayList, 8, 0, debugText, ALIGN_MIDDLE_LEFT);*/
 }
 
-void debugmenu_minimal(s32 updateRate, s32 inputPressed) {
+void debugmenu_minimal(UNUSED s32 updateRate, s32 inputPressed) {
     if (gPauseOptionScroll == 0) {
         unload_level_menu();
         gPauseOptionScroll = 1;

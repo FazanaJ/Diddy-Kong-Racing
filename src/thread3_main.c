@@ -253,9 +253,6 @@ extern u32 gDMATime;
  * Contains all game logic, audio and graphics processing.
  */
 void main_game_loop(void) {
-    s32 debugLoopCounter;
-    s32 framebufferSize;
-    s32 tempLogicUpdateRate, tempLogicUpdateRateMax;
     f32 divisor;
     debug_thread(THREAD3_START, 0);
 
@@ -400,8 +397,7 @@ void main_game_loop(void) {
         disable_cutscene_camera();
     }
     if (gDrawFrameTimer == 2) {
-        framebufferSize = SCREEN_WIDTH * SCREEN_HEIGHT * 2;
-        dcopy(gVideoLastFramebuffer, gVideoCurrFramebuffer, framebufferSize);
+        dcopy(gVideoLastFramebuffer, gVideoCurrFramebuffer, SCREEN_WIDTH * SCREEN_HEIGHT * 2);
         osWritebackDCacheAll();
     }
     debug_thread(THREAD3_END, 0);
@@ -454,7 +450,7 @@ void load_next_ingame_level(s32 numPlayers, s32 trackID, Vehicle vehicle) {
  * Used when ingame.
  */
 void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicleId) {
-    u32 first;
+    u32 first = 0;
     if (gDebug) {
         first = osGetCount();
         bzero(&gDebug->loading, sizeof(DebugLoadVars));
@@ -897,13 +893,7 @@ GameMode get_game_mode(void) {
  * Used for every kind of menu that's not ingame.
  */
 void load_menu_with_level_background(s32 menuId, s32 levelId, s32 cutsceneId) {
-    s32 playerCount;
-
-    if (gCurrentMenuId == MENU_OPTIONS) {
-        playerCount = FOUR_PLAYERS;
-    } else {
-        playerCount = get_active_player_count() - 1;
-    }
+    
     gGameMode = GAMEMODE_MENU;
     gRenderMenu = TRUE;
     sndp_set_group_volume(0, AL_SNDP_GROUP_VOLUME_MAX);
@@ -952,7 +942,7 @@ Vehicle get_level_default_vehicle(void) {
  * Used for menus.
  */
 void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicleId, s32 cutsceneId) {
-    u32 first;
+    u32 first = 0;
     if (gDebug) {
         first = osGetCount();
         bzero(&gDebug->loading, sizeof(DebugLoadVars));
@@ -1461,13 +1451,13 @@ void default_alloc_displaylist_heap(void) {
 
     gDisplayLists[0] = (Gfx *) mempool_alloc_safe(totalSize, PP_RAM_CMDBUF);
     gMatrixHeap[0] = (Mtx *) ((u8 *) gDisplayLists[0] + ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)));
-    gMatrixHeap[0] = align16((u8 *) gMatrixHeap[0]);
+    gMatrixHeap[0] = (Mtx *) align16((u8 *) gMatrixHeap[0]);
     gVertexHeap[0] = (Vertex *) ((u8 *) gMatrixHeap[0] + ((NUM_MTX_COMMANDS - 1) * sizeof(Mtx)));
     gTriangleHeap[0] = (Triangle *) ((u8 *) gVertexHeap[0] + (NUM_VTX_COMMANDS * sizeof(Vertex)));
 
     gDisplayLists[1] = (Gfx *) mempool_alloc_safe(totalSize, PP_RAM_CMDBUF);
     gMatrixHeap[1] = (Mtx *) ((u8 *) gDisplayLists[1] + ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)));
-    gMatrixHeap[1] = align16((u8 *) gMatrixHeap[1]);
+    gMatrixHeap[1] = (Mtx *) align16((u8 *) gMatrixHeap[1]);
     gVertexHeap[1] = (Vertex *) ((u8 *) gMatrixHeap[1] + ((NUM_MTX_COMMANDS - 1) * sizeof(Mtx)));
     gTriangleHeap[1] = (Triangle *) ((u8 *) gVertexHeap[1] + (NUM_VTX_COMMANDS * sizeof(Vertex)));
 }

@@ -168,7 +168,6 @@ void render_subtitles(void) {
  * Close the subtitles if none can be found.
  */
 void find_next_subtitle(void) {
-    u32 new_var3;
     u8 new_var;
     s32 new_var2;
     s32 done;
@@ -300,7 +299,6 @@ void set_delayed_text(s32 textID, f32 delay) {
  */
 void set_current_text(s32 textID) {
     char **entries;
-    UNUSED s32 pad;
     s32 size;
     s32 language;
     s32 temp;
@@ -484,7 +482,6 @@ s32 dialogue_challenge_loop(void) {
 }
 
 s32 func_800C38B4(s32 arg0, TextBox *textbox) {
-    s32 temp;
     char *var_s0;
 
     var_s0 = &D_8012A7A0[arg0];
