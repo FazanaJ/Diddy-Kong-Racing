@@ -235,7 +235,6 @@ void sortbuffer_find(SortBuffer *b, s32 index) {
 void sortbuffer_pop(Gfx **dList, s32 index) {
     s32 i;
     SortBuffer *slot;
-    s32 nextIdx;
     u32 prevPrim = 0;
 
     // Just return if there's nothing.
@@ -289,7 +288,6 @@ void init_track(u32 geometry, u32 skybox, s32 numberOfPlayers, Vehicle vehicle, 
     s32 allocSize;
     s32 numRacers;
     Object **racers;
-    u32 first = osGetCount();
 
     gCurrentLevelHeader2 = level_header();
     D_8011B0F8 = FALSE;
@@ -721,9 +719,7 @@ void void_check(u8 *segmentIds, s32 numberOfSegments, s32 viewportIndex) {
     s16 breakLoop;
     s32 *ptr2;
     LevelModelSegmentBoundingBox *bbox;
-    s16 sum;
     s8 sp7C[24]; // possible UB here, real size is unknown
-    s32 pad;
 
     gVoidTris[0] = gVoidMesh[viewportIndex].tris[0];
     gVoidTris[1] = gVoidMesh[viewportIndex].tris[1];
@@ -948,7 +944,6 @@ void func_80026430(LevelModelSegment *segment, f32 arg1, f32 arg2, f32 arg3) {
     f32 spB8[3];
     f32 spB0[2];
     f32 spA8[2];
-    f32 spA0[2];
 
     if (D_8011D49E >= D_8011D4BA) {
         return;
@@ -986,7 +981,6 @@ void func_80026430(LevelModelSegment *segment, f32 arg1, f32 arg2, f32 arg3) {
                         temp = spC4[index] / (spC4[index] - spC4[nextIndex]);
                         spB0[var_s0] = spE8[index] + ((spE8[nextIndex] - spE8[index]) * temp);
                         spB8[var_s0] = spDC[index] + ((spDC[nextIndex] - spDC[index]) * temp);
-                        spA0[var_s0] = spB8[var_s0];
                         spA8[var_s0] = spD0[index] + ((spD0[nextIndex] - spD0[index]) * temp);
                         var_s0++;
                     }
@@ -1085,7 +1079,6 @@ void func_80026C14(s16 arg0, s16 arg1, s32 arg2) {
 }
 
 void func_80026E54(s16 arg0, s8 *arg1, f32 arg2, f32 arg3) {
-    UNUSED s32 pad[7];
     unk8011D478 *next;
     unk8011D478 *curr;
     s16 temp3;
@@ -1101,7 +1094,6 @@ void func_80026E54(s16 arg0, s8 *arg1, f32 arg2, f32 arg3) {
     s8 temp;
     s8 temp0;
     s8 temp1;
-    UNUSED f32 temp2;
     f32 sp94[10];
     f32 sp6C[10];
     s8 sp60[10];
@@ -1555,9 +1547,7 @@ void trackbg_render_flashy(void) {
     s16 vCoords[9]; // sp114
     f32 xCos;
     f32 xSin; // sp10C
-    f32 pad_sp108;
     Camera *camera;
-    f32 pad_sp100;
     f32 xPositions[9]; // spDC
     f32 zPositions[9]; // spB8
     Vec3f pos;
@@ -1570,13 +1560,10 @@ void trackbg_render_flashy(void) {
     u8 *var_v0_3;
     f32 var_f14;
     s16 vertY;
-    s16 vTempCoord;
-    s16 uTempCoord;
     LevelHeader_70 *levelHeader;
     LevelHeader_70 *var_t2; // sp7C
     LevelHeader_70 *sp78;
     TextureHeader *texHeader; // sp74
-    s32 pad[4];
 
     verts = gTrackVtxPtr;
     tris = gTrackTriPtr;
@@ -1828,7 +1815,6 @@ void trackbg_render_gradient(void) {
  */
 void skydome_render(void) {
     Camera *cam;
-    Object *obj;
 
 
     if (gSceneRenderSkyDome == FALSE) {
@@ -2176,8 +2162,8 @@ void render_level_segment(s32 segmentId, s32 nonOpaque) {
                 }
                 buf = &gSortBuffer[index][gSortBufCount[index]];
                 buf->flags = batchFlags;
-                buf->tri = triangles;
-                buf->vtx = vertices;
+                buf->tri = (Triangle *) triangles;
+                buf->vtx = (Vertex *) vertices;
                 buf->triCount = numberTriangles;
                 buf->vtxCount = numberVertices;
                 buf->material = texture;
@@ -2455,7 +2441,6 @@ s32 block_visible(LevelModelSegmentBoundingBox *bb) {
     s32 i, j;
     s32 isVisible;
     f32 dirX, dirY, dirZ, dirW;
-    f32 x, y, z;
 
     for (j = 0; j < 3; j++) {
         dirX = D_8011D0F8[j].x;
@@ -2907,8 +2892,6 @@ s32 collision_get_y(s32 levelSegmentIndex, f32 xIn, f32 zIn, f32 *yOut) {
     s32 i;
     s32 var_v0;
     s32 stopSorting;
-    TriangleBatchInfo *currentBatch;
-    f32 *temp_v1_4;
     Vec4f tempVec4f;
     u16 temp;
 
@@ -3102,8 +3085,8 @@ void generate_track(s32 modelId) {
         debug_printf("Track tex limit reached: %d. Setting to %d\n", gCurrentLevelModel->numberOfTextures, 128);
         maxTextures = 128;
     }
-    gTrackTexIDs = mempool_alloc(maxTextures * (sizeof(u16) + sizeof(s8)), PP_RAM_ASSET_CACHE);
-    gTrackTexStaleTimer = (u8 *) ((u8 *) gTrackTexIDs + (maxTextures * sizeof(u16)));
+    gTrackTexIDs = (u16 *) mempool_alloc(maxTextures * (sizeof(u16) + sizeof(s8)), PP_RAM_ASSET_CACHE);
+    gTrackTexStaleTimer = (s8 *) ((u8 *) gTrackTexIDs + (maxTextures * sizeof(u16)));
     for (k = 0; k < maxTextures; k++) {
         gTrackTexIDs[k] = ((u16) gCurrentLevelModel->textures[k].texture) | ASSET_MASK_TEX3D;
         gCurrentLevelModel->textures[k].texture = NULL;
@@ -3507,8 +3490,6 @@ void shadow_render(Object *obj, ShadowData *shadow) {
     Vertex *vtx;
     Triangle *tri;
     s32 flags;
-    UNUSED s32 tri2;
-    s32 vtx2;
     s32 vtxCount;
     s32 triCount;
     s32 alpha;
@@ -4144,7 +4125,6 @@ void func_8002F2AC(void) {
     f32 temp_f16;
     unk8011C8B8 *var_v0;
     s32 i, j, k;
-    unk8011B330 *curr;
 
     for (i = 0; i < D_8011B118; i++) {
         var_v0 = D_8011B120[i].unkC;
@@ -4180,7 +4160,6 @@ void func_8002F440(void) {
     f32 scale;
     f32 xDiff;
     s32 i;
-    UNUSED s32 pad;
 
     alpha = 255;
     yRotSin = sins_f(gNewShadowObj->trans.rotation.y_rotation);
@@ -4473,9 +4452,6 @@ void func_800304C8(unk8011C8B8 arg0[3]) {
     f32 diff;
     f32 shadowX;
     f32 shadowZ;
-    f32 var_f6;
-    f32 var_f8;
-    f32 var_f10;
     s32 found1;
     s32 found2;
     s32 found3;
@@ -4640,7 +4616,6 @@ void obj_loop_fogchanger(Object *obj, UNUSED s32 updateRate) {
     s32 views;
     s32 playerIndex;
     s32 index;
-    UNUSED s32 pad;
     s32 fogFar;
     s32 i;
     s32 fogR;
@@ -4652,7 +4627,6 @@ void obj_loop_fogchanger(Object *obj, UNUSED s32 updateRate) {
     LevelObjectEntry_FogChanger *fogChanger;
     Object **racers;
     Object_Racer *racer;
-    UNUSED s32 pad2;
     FogData *fog;
     Camera *camera;
 

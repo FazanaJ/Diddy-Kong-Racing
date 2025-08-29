@@ -1589,7 +1589,6 @@ void func_800BC6C8(void) {
 
 void func_800BCC70(LevelModel *model) {
     s32 i;
-    u32 pad_sp188;
     s32 sp184;
     s32 k;
     s32 var_t4;
@@ -1627,10 +1626,9 @@ void func_800BCC70(LevelModel *model) {
     spA8 = mempool_alloc_safe((subdivisions * 4) + 4, PP_RAM_WAVES);
 
     // temp assignment required for match
-    pad_sp188 = -1;
     for (var_a3 = 0; var_a3 < (gWaveTileCountX * gWaveTileCountZ); var_a3++) {
         spA4[var_a3].i[0] = -1;
-        spA4[var_a3].i[1] = pad_sp188;
+        spA4[var_a3].i[1] = -1;
     }
 
     for (k = 0; k <= subdivisions; k++) {

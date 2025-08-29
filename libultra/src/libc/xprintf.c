@@ -115,7 +115,7 @@ int _Printf(outfun prout, char *arg, const char *fmt, va_list args) {
                 int i, j;
                 if (0 < (x.width))
                 {
-                    i, j = x.width;
+                    j = x.width;
                     for (; 0 < j; j -= i)
                     {
                         i = MAX_PAD < (unsigned int)j ? (int)MAX_PAD : j;

@@ -158,7 +158,7 @@ void _Ldtob(_Pft* px, char code) {
         }
     }
 
-    _Genld(px, code, p, nsig, xexp);
+    _Genld(px, code, (u8 *) p, nsig, xexp);
 }
 
 s16 _Ldunscale(s16* pex, _Pft* px) {
@@ -186,10 +186,10 @@ void _Genld(_Pft* px, char code, u8* p, s16 nsig, s16 xexp) {
     const unsigned char point = '.';
 
     if (nsig <= 0) {
-        nsig = 1, p = "0";
+        nsig = 1, p = (u8 *) "0";
     }
 
-    if (code == 'f' || (code == 'g' || code == 'G') && xexp >= -4 && xexp < px->prec) {
+    if (code == 'f' || ((code == 'g' || code == 'G') && xexp >= -4 && xexp < px->prec)) {
         xexp++;
         if (code != 'f') {
             if (((px->flags & 8) == 0) && nsig < px->prec) {
@@ -277,7 +277,7 @@ void _Genld(_Pft* px, char code, u8* p, s16 nsig, s16 xexp) {
             px->nz1 = px->prec - nsig;
         }
 
-        p = &px->s[px->n1];
+        p = (u8 *) &px->s[px->n1];
         *p++ = code;
 
         if (xexp >= 0) {

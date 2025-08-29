@@ -158,7 +158,6 @@ Object *gLensFlareSwitches[WEATHER_OVERRIDE_COUNT];
  */
 void weather_init(void) {
     s32 i;
-    s32 *assetTable;
 
     gSnowGfx.pos = NULL;
     gSnowGfx.size = 0;
@@ -571,7 +570,7 @@ void snow_vertices(s32 index) {
 /**
  * Load and execute the draw commands for the falling snowflakes, seen with snowy weather enabled.
  */
-void snow_render(s32 index) {
+void snow_render(UNUSED s32 index) {
     s32 i;
     Mtx *mtx;
     Vertex *vtx;

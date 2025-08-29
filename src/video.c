@@ -41,7 +41,7 @@ u8 gBitDepth = G_IM_SIZ_16b;
  * Official Name: viInit
  */
 void video_init(void) {
-    s32 i;
+    //s32 i;
 
     video_delta_reset();
     /*for (i = 0; i < 3; i++) {
@@ -126,13 +126,13 @@ void vi_change(int width, int height) {
     }
 
     if (height < 240) {
-        /*if (width == SCREEN_WIDTH_16_10) {
+        if (width == SCREEN_WIDTH_16_10) {
             addX = 20;
         } else if (width == SCREEN_WIDTH_WIDE) {
             addX = 24;
-        } else {*/
+        } else {
             addX = 16;
-        //}
+        }
         // Y Scale
         posX = gConfig.screenPosX * 2;
         posY = gConfig.screenPosY * 2;
@@ -241,7 +241,7 @@ void fb_alloc(s32 index) {
         fbSize = (s32) FBALIGN(fbSize);
     }
     switch (index) {
-        case 0:
+        default:
             addr = (u8 *) (0x80100000 - (fbSize));
         break;
         case 1:

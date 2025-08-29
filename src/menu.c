@@ -5085,6 +5085,8 @@ s32 savemenu_input_message(s32 buttonsPressed, s32 yAxis) {
                     case CONTROLLER_PAK_NEED_SECOND_ADVENTURE:
                         gMenuStage = SAVEMENU_INIT_DEST;
                         break;
+                    default:
+                        break;
                 }
                 break;
         }
@@ -5115,6 +5117,8 @@ s32 savemenu_input_message(s32 buttonsPressed, s32 yAxis) {
                 } else {
                     gSaveMenuSourceState = -1;
                 }
+                break;
+            default:
                 break;
         }
     } else if (yAxis < 0 && gSaveMenuMessageOption < (gSaveMenuMessageLines - 1)) {
@@ -8538,10 +8542,8 @@ s32 func_8008F618(Gfx **dList, Mtx **mtx) {
     s32 flags;
     s32 hasTexture;
     s32 index;
-    s32 prevAlpha;
     s32 prevIndex;
     s32 numVertices;
-    s32 temp;
     s32 temp2;
     Vertex *tempVertices;
     Triangle *triangles;
@@ -9408,11 +9410,9 @@ void func_80092188(s32 updateRate) {
     s32 menuSelected;
     s32 menuChanged;
     s32 menuDelay;
-    Settings *settings;
     s32 canSelectVehicle;
 
     menuDelay = gMenuDelay;
-    settings = get_settings();
     if (gTrackNameVoiceDelay != 0) {
         gTrackNameVoiceDelay += updateRate;
     }
@@ -13192,17 +13192,13 @@ void credits_fade(s32 x1, s32 y1, s32 x2, s32 y2, s32 a) {
  * Handles the credits for the game
  */
 s32 menu_credits_loop(s32 updateRate) {
-    UNUSED s32 pad_sp7C[3];
     s32 nextIndex;
-    UNUSED s32 pad_sp70[2];
     s32 breakLoop;
     s32 isCreditsEnd;
-    UNUSED s32 pad_sp64;
     CreditsBackgroundLevelData *creditsBackgroundLevelData;
     s8 *mainTrackIds;
     s8 isShowingBestRaceTimes;
     CreditsBackgroundLevelData *tempBackgroundLevelData;
-    s32 i;
     s32 textPos;
     s32 buttonsPressedAllPlayers;
     s32 controlDataLength;
@@ -15556,7 +15552,7 @@ char *gDebugMenuSubStrings[] = {
     "BACK",
 };
 
-void debugmenu_root(s32 updateRate, s32 input) {
+void debugmenu_root(UNUSED s32 updateRate, s32 input) {
     s32 i;
     s32 y;
     s32 alpha;
@@ -15631,13 +15627,10 @@ void animate_model(s32 updateRate) {
 }
 
 void set_animation(int animIndex) {
-    ObjectModel *model;
     
     if((viewModel == NULL) || (viewModel->objModel == NULL)) {
         return;
     }
-    
-    model = viewModel->objModel;
     
     if(numberOfAnimations < 1) {
         animationFrame = 0;
@@ -15689,7 +15682,6 @@ void debugmodel_shade(ObjectModel *model, Object *object, s32 arg2, f32 intensit
 }
 
 void render_model(s32 updateRate) {
-    s32 flags;
     TextureHeader *tex;
     Triangle *tris;
     s32 triOffset;
@@ -15957,7 +15949,6 @@ void calculate_model_scale() {
 }
 
 void set_object_model(s32 modelId) {
-    s32 modelSize;
     s32 offset;
     s32 size;
     s32 start;
@@ -15978,7 +15969,7 @@ void set_object_model(s32 modelId) {
     gDebugModelMiscCounter = 0;
     
     if(viewModel != NULL) {
-        free_3d_model((ObjectModel **) viewModel);
+        free_3d_model(viewModel);
     }
     
     viewModel = object_model_init(modelId, OBJECT_BEHAVIOUR_ANIMATION);
@@ -16030,8 +16021,6 @@ void debugmenu_model_viewer(s32 updateRate, s32 input) {
     s32 contX;
     s32 contY;
     s32 i;
-    s32 y;
-    f32 yaw, pitch;
     char *tagStr[] = {"B", "KB", "MB"};
     s32 tag;
 
@@ -16108,8 +16097,8 @@ void debugmenu_model_viewer(s32 updateRate, s32 input) {
     set_text_font(ASSET_FONTS_FUNFONT);
     set_text_colour(255, 255, 255, 0, 255);
     
-    yaw = ((f32)viewModelTransform.rotation.y_rotation / (f32)0x10000) * 360.0f;
-    pitch = ((f32)sDebugModelViewPitch / (f32)0x10000) * 360.0f;
+    //yaw = ((f32)viewModelTransform.rotation.y_rotation / (f32)0x10000) * 360.0f;
+    //pitch = ((f32)sDebugModelViewPitch / (f32)0x10000) * 360.0f;
     
     sprintf(textBytes, "%d: %s", currentModelIndex, assettable_name(ASSET_OBJECT_MODELS, currentModelIndex));
     draw_text(&sMenuCurrDisplayList, SCREEN_WIDTH / 2, SCREEN_HEIGHT - 32, textBytes, ALIGN_TOP_CENTER);
@@ -16359,7 +16348,7 @@ void menu_level_preview_load_level(s32 levelToLoad) {
     settings->courseFlagsPtr[levelToLoad] = prevFlags;
 }
 
-void menu_level_preview_load_level_names() {
+void menu_level_preview_load_level_names(void) {
     char *assetLevelNames;
     char *curLevelName;
     char *curLevelNameEnd;
@@ -16372,7 +16361,7 @@ void menu_level_preview_load_level_names() {
         return;
     }
     
-    assetLevelNames = asset_table_load(ASSET_LEVEL_NAMES);
+    assetLevelNames = (char *) asset_table_load(ASSET_LEVEL_NAMES);
     assetLevelNamesTable = asset_table_load(ASSET_LEVEL_NAMES_TABLE);
     
     numberOfLevels = 0;
@@ -16545,9 +16534,9 @@ void menu_level_preview_handle_input(s32 updateRate) {
     }
 }
 
-void menu_level_preview_handle_track_select(s32 updateRate, s32 inputPressed) {
+void menu_level_preview_handle_track_select(s32 updateRate, UNUSED s32 inputPressed) {
     u32 buttonsDown;
-    s32 contX, contY;
+    s32 contY;
     
     if(switchDelay > 0) {
         switchDelay -= updateRate;
@@ -16560,7 +16549,6 @@ void menu_level_preview_handle_track_select(s32 updateRate, s32 inputPressed) {
     }
     
     buttonsDown = input_held(0);
-    contX = gControllersXAxis[0];
     contY = gControllersYAxis[0];
 
     
@@ -16611,7 +16599,7 @@ void debugmenu_level_viewer(s32 updateRate, s32 inputPressed) {
     }
     
     if(inLoadTrackMenu) {
-        s32 end;
+        //s32 end;
         
         menu_level_preview_handle_track_select(updateRate, inputPressed);
         
@@ -16625,7 +16613,7 @@ void debugmenu_level_viewer(s32 updateRate, s32 inputPressed) {
             loadTracksStartIndex = loadTrackSelectedIndex;
         }
         
-        end = loadTracksStartIndex + OFFSET_AMOUNT;
+        //end = loadTracksStartIndex + OFFSET_AMOUNT;
         
         for(i = 0; i < OFFSET_AMOUNT; i++) {
             if((loadTracksStartIndex + i) > numberOfLevels) {
