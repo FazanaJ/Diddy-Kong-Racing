@@ -16766,9 +16766,22 @@ char *sRegionValues[] = {
 };
 
 void menu_region_init(void) {
-    gMenuOption = 2;
     gPauseSubmenu = 0;
     gMenuDelay = 0;
+    switch(gConfig.screenRegion) {
+        case REGIONMODE_MPAL:
+            gMenuOption = 0;
+            break;
+        default:
+            gMenuOption = 1;
+            break;
+        case REGIONMODE_PAL50:
+            gMenuOption = 2;
+            break;
+        case REGIONMODE_PAL60:
+            gMenuOption = 3;
+            break;
+    }
 }
 
 s32 menu_region_loop(s32 updateRate) {
@@ -16780,13 +16793,19 @@ s32 menu_region_loop(s32 updateRate) {
     s32 al;
     s32 inputPressed;
     s32 curVideo;
-    char textBytes[32];
+    char textBytes[16];
     
     gOptionBlinkTimer = (gOptionBlinkTimer + updateRate) & 0x3F;
     alpha = gOptionBlinkTimer * 8;
     if (alpha > 255) {
         alpha = 511 - alpha;
     }
+
+    set_current_dialogue_background_colour(7, 0, 0, 0, 160);
+    set_current_dialogue_box_coords(7, SCREEN_WIDTH_HALF - 112, SCREEN_HEIGHT_HALF - 16, SCREEN_WIDTH_HALF + 112, SCREEN_HEIGHT_HALF + 64);
+    clear_dialogue_box_open_flag(7);
+    dialogue_clear(7);
+    render_dialogue_box(gfx, NULL, NULL, 7);
 
     set_text_font(ASSET_FONTS_BIGFONT);
     set_text_background_colour(0, 0, 0, 0);
@@ -16837,7 +16856,7 @@ s32 menu_region_loop(s32 updateRate) {
 
     set_text_colour(0, 0, 0, 255, 128);
     draw_text(gfx, SCREEN_WIDTH_HALF + 1, SCREEN_HEIGHT_HALF + 32 + 2, sRegionBootStrings[lang + 18], ALIGN_MIDDLE_CENTER);
-    draw_text(gfx, SCREEN_WIDTH_HALF - 112 + 1, SCREEN_HEIGHT_HALF - 48 + 2, textBytes, ALIGN_MIDDLE_LEFT);
+    draw_text(gfx, SCREEN_WIDTH_HALF + 1, SCREEN_HEIGHT_HALF - 28 + 2, textBytes, ALIGN_MIDDLE_CENTER);
     if (gPauseSubmenu != 0) {
         al = alpha;
     } else {
@@ -16846,7 +16865,7 @@ s32 menu_region_loop(s32 updateRate) {
     set_text_colour(255, 255, 255, al, 255);
     draw_text(gfx, SCREEN_WIDTH_HALF, SCREEN_HEIGHT_HALF + 32, sRegionBootStrings[lang + 18], ALIGN_MIDDLE_CENTER);
     set_text_colour(160, 255, 160, 128, 255);
-    draw_text(gfx, SCREEN_WIDTH_HALF - 112, SCREEN_HEIGHT_HALF - 48, textBytes, ALIGN_MIDDLE_LEFT);
+    draw_text(gfx, SCREEN_WIDTH_HALF, SCREEN_HEIGHT_HALF - 28, textBytes, ALIGN_MIDDLE_CENTER);
 
     inputPressed = 0;
     gMenuStickX[PLAYER_MENU] = 0;
