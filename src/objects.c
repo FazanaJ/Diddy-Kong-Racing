@@ -910,6 +910,7 @@ void clear_object_pointers(void) {
     gAINodes = NULL;
     gCameraObjList = NULL;
     D_8011AE74 = NULL;
+    gDrawbridgeTimers = NULL;
 
     for (i = 0; i < 16; i++) {
         D_8011AFF4[i].unk0 = 0;

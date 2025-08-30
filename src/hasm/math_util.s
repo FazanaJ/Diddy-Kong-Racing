@@ -11,7 +11,7 @@ glabel gIntDisFlag
 .word 0x00000000
 
 glabel gCurrentRNGSeed
-.word 0x5141564D /* 'QAVM' */
+.word 0x5141564D # Some magic number related to RNG?
 
 glabel gPrevRNGSeed
 .word 0x5141564D /* 'QAVM' */
@@ -92,69 +92,69 @@ glabel gSineTable
 
 /* Official Name: mathMtxFastXFMF */
 leaf mtxf_transform_dir
-lwc1       $f4, 0x0($a1)
-lwc1       $f10, 0x0($a0)
-lwc1       $f6, 0x4($a1)
-lwc1       $f12, 0x10($a0)
-mul.s      $f10, $f4, $f10
-lwc1       $f8, 0x8($a1)
-lwc1       $f14, 0x20($a0)
-mul.s      $f12, $f6, $f12
-add.s      $f12, $f10, $f12
-mul.s      $f14, $f8, $f14
-lwc1       $f10, 0x4($a0)
-mul.s      $f10, $f4, $f10
-add.s      $f16, $f12, $f14
-lwc1       $f12, 0x14($a0)
-lwc1       $f14, 0x24($a0)
-mul.s      $f12, $f6, $f12
-swc1       $f16, 0x0($a2)
-mul.s      $f14, $f8, $f14
-add.s      $f12, $f10, $f12
-lwc1       $f10, 0x8($a0)
-add.s      $f16, $f12, $f14
-mul.s      $f10, $f4, $f10
-lwc1       $f12, 0x18($a0)
-lwc1       $f14, 0x28($a0)
-swc1       $f16, 0x4($a2)
-mul.s      $f12, $f6, $f12
-add.s      $f12, $f10, $f12
-mul.s      $f14, $f8, $f14
-add.s      $f14, $f12, $f14
-jr         $ra
- swc1      $f14, 0x8($a2)
+/* 702EC 8006F6EC C4A40000 */  lwc1       $f4, 0x0($a1)
+/* 702F0 8006F6F0 C48A0000 */  lwc1       $f10, 0x0($a0)
+/* 702F4 8006F6F4 C4A60004 */  lwc1       $f6, 0x4($a1)
+/* 702F8 8006F6F8 C48C0010 */  lwc1       $f12, 0x10($a0)
+/* 702FC 8006F6FC 460A2282 */  mul.s      $f10, $f4, $f10
+/* 70300 8006F700 C4A80008 */  lwc1       $f8, 0x8($a1)
+/* 70304 8006F704 C48E0020 */  lwc1       $f14, 0x20($a0)
+/* 70308 8006F708 460C3302 */  mul.s      $f12, $f6, $f12
+/* 7030C 8006F70C 460C5300 */  add.s      $f12, $f10, $f12
+/* 70310 8006F710 460E4382 */  mul.s      $f14, $f8, $f14
+/* 70314 8006F714 C48A0004 */  lwc1       $f10, 0x4($a0)
+/* 70318 8006F718 460A2282 */  mul.s      $f10, $f4, $f10
+/* 7031C 8006F71C 460E6400 */  add.s      $f16, $f12, $f14
+/* 70320 8006F720 C48C0014 */  lwc1       $f12, 0x14($a0)
+/* 70324 8006F724 C48E0024 */  lwc1       $f14, 0x24($a0)
+/* 70328 8006F728 460C3302 */  mul.s      $f12, $f6, $f12
+/* 7032C 8006F72C E4D00000 */  swc1       $f16, 0x0($a2)
+/* 70330 8006F730 460E4382 */  mul.s      $f14, $f8, $f14
+/* 70334 8006F734 460C5300 */  add.s      $f12, $f10, $f12
+/* 70338 8006F738 C48A0008 */  lwc1       $f10, 0x8($a0)
+/* 7033C 8006F73C 460E6400 */  add.s      $f16, $f12, $f14
+/* 70340 8006F740 460A2282 */  mul.s      $f10, $f4, $f10
+/* 70344 8006F744 C48C0018 */  lwc1       $f12, 0x18($a0)
+/* 70348 8006F748 C48E0028 */  lwc1       $f14, 0x28($a0)
+/* 7034C 8006F74C E4D00004 */  swc1       $f16, 0x4($a2)
+/* 70350 8006F750 460C3302 */  mul.s      $f12, $f6, $f12
+/* 70354 8006F754 460C5300 */  add.s      $f12, $f10, $f12
+/* 70358 8006F758 460E4382 */  mul.s      $f14, $f8, $f14
+/* 7035C 8006F75C 460E6380 */  add.s      $f14, $f12, $f14
+/* 70360 8006F760 03E00008 */  jr         $ra
+/* 70364 8006F764 E4CE0008 */   swc1      $f14, 0x8($a2)
 .end mtxf_transform_dir
 
 leaf sins_f
-addiu      $sp, $sp, -0x8
-sd         $ra, 0x0($sp)
-jal        sins_s16
- nop
-mtc1       $v0, $f0
-li.s       $at, 0.0000152587890625 /* (1.0f / 0x10000) */
-mtc1       $at, $f2
-cvt.s.w    $f0, $f0
-ld         $ra, 0x0($sp)
-addiu      $sp, $sp, 0x8
-mul.s      $f0, $f0, $f2
-jr         $ra
- nop
+/* 713C4 800707C4 27BDFFF8 */  addiu      $sp, $sp, -0x8
+/* 713C8 800707C8 FFBF0000 */  sd         $ra, 0x0($sp)
+/* 713CC 800707CC 0C01C20C */  jal        sins_s16
+/* 713D0 800707D0 00000000 */   nop
+/* 713D4 800707D4 44820000 */  mtc1       $v0, $f0
+/* 713D8 800707D8 3C013780 */  lui        $at, (0x37800000 >> 16)
+/* 713DC 800707DC 44811000 */  mtc1       $at, $f2
+/* 713E0 800707E0 46800020 */  cvt.s.w    $f0, $f0
+/* 713E4 800707E4 DFBF0000 */  ld         $ra, 0x0($sp)
+/* 713E8 800707E8 27BD0008 */  addiu      $sp, $sp, 0x8
+/* 713EC 800707EC 46020002 */  mul.s      $f0, $f0, $f2
+/* 713F0 800707F0 03E00008 */  jr         $ra
+/* 713F4 800707F4 00000000 */   nop
 .end sins_f
 
 leaf coss_f
-addiu      $sp, $sp, -0x8
-sd         $ra, 0x0($sp)
-jal        coss_s16
- nop
-mtc1       $v0, $f0
-li.s       $at, 0.0000152587890625 /* (1.0f / 0x10000) */
-mtc1       $at, $f2
-cvt.s.w    $f0, $f0
-ld         $ra, 0x0($sp)
-addiu      $sp, $sp, 0x8
-mul.s      $f0, $f0, $f2
-jr         $ra
- nop
+/* 713F8 800707F8 27BDFFF8 */  addiu      $sp, $sp, -0x8
+/* 713FC 800707FC FFBF0000 */  sd         $ra, 0x0($sp)
+/* 71400 80070800 0C01C20B */  jal        coss_s16
+/* 71404 80070804 00000000 */   nop
+/* 71408 80070808 44820000 */  mtc1       $v0, $f0
+/* 7140C 8007080C 3C013780 */  lui        $at, (0x37800000 >> 16)
+/* 71410 80070810 44811000 */  mtc1       $at, $f2
+/* 71414 80070814 46800020 */  cvt.s.w    $f0, $f0
+/* 71418 80070818 DFBF0000 */  ld         $ra, 0x0($sp)
+/* 7141C 8007081C 27BD0008 */  addiu      $sp, $sp, 0x8
+/* 71420 80070820 46020002 */  mul.s      $f0, $f0, $f2
+/* 71424 80070824 03E00008 */  jr         $ra
+/* 71428 80070828 00000000 */   nop
 .end coss_f
 
 /* Official Name: mathCosInterp */
@@ -163,7 +163,7 @@ addiu      $a0, $a0, 0x4000
 /* Fall through */
 
 /* Official Name: mathSinInterp */
-altleaf sins_s16 
+glabel sins_s16 
 sll        $v0, $a0, 17
 bgezl      $v0, .L80070844
 srl        $t2, $a0, 3
@@ -190,7 +190,6 @@ negu       $v0, $v0
 jr         $ra
 nop
 .end coss_s16
-.size sins_s16, . - sins_s16
 
 /* Official Name: mathCos */
 leaf coss_2
@@ -198,7 +197,7 @@ addiu      $a0, $a0, 0x4000
 /* Fall through */
 
 /* Official Name: mathSin */
-altleaf sins_2
+glabel sins_2
 sll        $v0, $a0, 17
 bgezl      $v0, .L800708A4
 srl        $t2, $a0, 3
