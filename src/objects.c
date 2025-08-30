@@ -7409,7 +7409,7 @@ s32 ainode_find_nearest(f32 diffX, f32 diffY, f32 diffZ, s32 useElevation) {
                 x = obj->trans.x_position - diffX;
                 y = obj->trans.y_position - diffY;
                 z = obj->trans.z_position - diffZ;
-                len = ((x * x) + (y * y) + (z * z));
+                len = sqrtf((x * x) + (y * y) + (z * z));
                 if (len < dist) {
                     dist = len;
                     result = numSteps;

@@ -30,7 +30,7 @@ extern s32 gTrackSelectCursorX;
 extern s32 gTrackSelectCursorY;
 extern s32 gMenuCurIndex;
 
-u8 gAutoplayTest = AUTOPLAY_4_PLAYER;
+u8 gAutoplayTest = AUTOPLAY_OFF;
 
 u8 sControllerFlip = 0;
 u8 sCharSelectInputs = 0;
@@ -810,7 +810,7 @@ void autoplay_charselect_multi(s32 playerCount) {
     s32 i;
     
     sAutoplayTrackStage = 0;
-    sAutoplayActiveTrack = 11;
+    sAutoplayActiveTrack = 0;
     if (sControllerFlip) {
         for (i = 0; i < playerCount; i++) {
             if (sCharSelectInputs < 1) {
@@ -825,7 +825,7 @@ void autoplay_charselect_multi(s32 playerCount) {
 
 void autoplay_tracks(s32 playerCount) {
     static u8 trackTime = 0;
-    const u8 skipCheck = 1;
+    const u8 skipCheck = FALSE;
     s32 trackX;
     s32 trackY;
     s32 i;
