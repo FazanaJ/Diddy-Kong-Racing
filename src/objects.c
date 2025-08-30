@@ -43,6 +43,9 @@
 #include "weather.h"
 #include "autoplay.h"
 
+#undef VERSION
+#define VERSION VERSION_80
+
 #define OBJECT_MAP_SIZE 0x3000
 #define MAX_CHECKPOINTS 60
 #define OBJECT_POOL_SIZE 0x15800
@@ -51,6 +54,7 @@
 #define OBJECT_COLLISION_COUNT 20
 #define AINODE_COUNT 128
 #define CAMCONTROL_COUNT 20
+#define MISCASSET_COUNT 25
 #define BOOST_VERT_COUNT 9
 #define BOOST_TRI_COUNT 8
 
@@ -736,7 +740,7 @@ void allocate_object_pools(void) {
     //gTrackCheckpoints = mempool_alloc_safe(sizeof(CheckpointNode) * MAX_CHECKPOINTS, PP_RAM_OBJLISTS);
     //gCameraObjList = mempool_alloc_safe(sizeof(uintptr_t *) * CAMCONTROL_COUNT, PP_RAM_OBJLISTS);
     //gAINodes = mempool_alloc_safe(sizeof(uintptr_t) * AINODE_COUNT, PP_RAM_OBJLISTS);
-    gDrawbridgeTimers = mempool_alloc_safe(8, PP_RAM_OBJLISTS);
+    //gDrawbridgeTimers = mempool_alloc_safe(8, PP_RAM_OBJLISTS);
     D_8011AFF4 = mempool_alloc_safe(sizeof(unk800179D0) * 16, PP_RAM_OBJLISTS);
     tempTable = (s32 *) asset_table_load(ASSET_OBJECT_HEADERS_TABLE);
     gAssetsObjectHeadersTableLength = 0;
@@ -757,12 +761,12 @@ void allocate_object_pools(void) {
     }
 
     
-    gMiscAssetCache = mempool_alloc_safe(25 * (sizeof(uintptr_t) + sizeof(s8) + sizeof(s8)), PP_RAM_ASSET_CACHE);
-    gMiscAssetCacheIDs = (s8 *) ((u8 *) gMiscAssetCache + (25 * sizeof(uintptr_t)));
-    gMiscAssetStaleTimers = (s8 *) ((u8 *) gMiscAssetCacheIDs + (25 * sizeof(s8)));
+    gMiscAssetCache = mempool_alloc_safe(MISCASSET_COUNT * (sizeof(uintptr_t) + sizeof(s8) + sizeof(s8)), PP_RAM_ASSET_CACHE);
+    gMiscAssetCacheIDs = (s8 *) ((u8 *) gMiscAssetCache + (MISCASSET_COUNT * sizeof(uintptr_t)));
+    gMiscAssetStaleTimers = (s8 *) ((u8 *) gMiscAssetCacheIDs + (MISCASSET_COUNT * sizeof(s8)));
     gMiscAssetCount = 0;
 
-    for (i = 0; i < 25; i++) {
+    for (i = 0; i < MISCASSET_COUNT; i++) {
         gMiscAssetCache[i] = -1;
         gMiscAssetCacheIDs[i] = -1;
         gMiscAssetStaleTimers[i] = -1;
@@ -907,9 +911,6 @@ void clear_object_pointers(void) {
     gCameraObjList = NULL;
     D_8011AE74 = NULL;
 
-    for (i = 0; i < 8; i++) {
-        (*gDrawbridgeTimers)[i] = 0;
-    }
     for (i = 0; i < 16; i++) {
         D_8011AFF4[i].unk0 = 0;
     }
@@ -1167,6 +1168,7 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     allocSize += ainodes * sizeof(uintptr_t);
     allocSize += camControllers * sizeof(uintptr_t);
     allocSize += animObjs * sizeof(uintptr_t);
+    allocSize += 8; // Drawbridges. 8 is such a small amount, may as well jsut let it have it.
 
     gObjPtrList = (Object **) mempool_alloc(allocSize, PP_RAM_TEMPOBJLIST);
 
@@ -1176,6 +1178,7 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     gAINodes = (Object * (*)[AINODE_COUNT]) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + 0));
     gCameraObjList = (Object * (*)[CAMCONTROL_COUNT]) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + (ainodes * sizeof(uintptr_t))));
     D_8011AE74 = (Object **) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + (ainodes * sizeof(uintptr_t)) + camControllers * sizeof(uintptr_t)));
+    gDrawbridgeTimers = (s8 * (*)[8]) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + (ainodes * sizeof(uintptr_t)) + camControllers * sizeof(uintptr_t) + (animObjs * sizeof(uintptr_t))));
 
     if (ainodes > 0) {
         bzero(gAINodes, sizeof(uintptr_t) * ainodes);
@@ -1184,6 +1187,7 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     if (camControllers > 0) {
         bzero(gCameraObjList, sizeof(uintptr_t) * camControllers);
     }
+    bzero(gDrawbridgeTimers, 8);
 }
 
 /**
