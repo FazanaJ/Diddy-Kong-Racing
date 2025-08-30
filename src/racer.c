@@ -1437,8 +1437,9 @@ void func_80045C48(Object *obj, Object_Racer *racer, s32 updateRate) {
     xDerivative = catmull_rom_derivative(splineX, 0, magnitude);
     yDirevative = catmull_rom_derivative(splineY, 0, magnitude);
     zDerivative = catmull_rom_derivative(splineZ, 0, magnitude);
-    magnitude = sqrtf(xDerivative * xDerivative + yDirevative * yDirevative + zDerivative * zDerivative);
+    magnitude = (xDerivative * xDerivative + yDirevative * yDirevative + zDerivative * zDerivative);
     if (magnitude != 0.0f) {
+        magnitude = sqrtf(magnitude);
         magnitude = 100.0f / magnitude;
         xDerivative *= magnitude;
         yDirevative *= magnitude;
@@ -1503,8 +1504,9 @@ void func_80045C48(Object *obj, Object_Racer *racer, s32 updateRate) {
     sp8C = cubic_spline_interpolation(splineX, 0, magnitude, &xDerivative);
     sp88 = cubic_spline_interpolation(splineY, 0, magnitude, &yDirevative);
     sp84 = cubic_spline_interpolation(splineZ, 0, magnitude, &zDerivative);
-    magnitude = sqrtf(xDerivative * xDerivative + yDirevative * yDirevative + zDerivative * zDerivative);
+    magnitude = (xDerivative * xDerivative + yDirevative * yDirevative + zDerivative * zDerivative);
     if (magnitude != 0.0f) {
+        magnitude = sqrtf(magnitude);
         magnitude = 500.0f / magnitude;
         xDerivative *= magnitude;
         yDirevative *= magnitude;

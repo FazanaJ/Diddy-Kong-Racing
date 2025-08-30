@@ -1176,10 +1176,10 @@ void track_preallocate_objlists(s32 objMap, s32 collectables) {
     //debug_printf("Objects %d, Checkpoints: %d, AINodes: %d, CamObjs: %d\n", objPtrSize + 125, checkpoints, ainodes, camControllers);
 
     gTrackCheckpoints = (CheckpointNode *) ((u8 *) gObjPtrList + ((objPtrSize + 125) * sizeof(uintptr_t)));
-    gAINodes = (Object * (*)[AINODE_COUNT]) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + 0));
-    gCameraObjList = (Object * (*)[CAMCONTROL_COUNT]) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + (ainodes * sizeof(uintptr_t))));
-    D_8011AE74 = (Object **) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + (ainodes * sizeof(uintptr_t)) + camControllers * sizeof(uintptr_t)));
-    gDrawbridgeTimers = (s8 * (*)[8]) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode) + (ainodes * sizeof(uintptr_t)) + camControllers * sizeof(uintptr_t) + (animObjs * sizeof(uintptr_t))));
+    gAINodes = (Object * (*)[AINODE_COUNT]) ((u8 *) gTrackCheckpoints + (checkpoints * sizeof(CheckpointNode)));
+    gCameraObjList = (Object * (*)[CAMCONTROL_COUNT]) ((u8 *) gAINodes + (ainodes * sizeof(uintptr_t)));
+    D_8011AE74 = (Object **) ((u8 *) gCameraObjList + (camControllers * sizeof(uintptr_t)));
+    gDrawbridgeTimers = (s8 * (*)[8]) ((u8 *) D_8011AE74 + (animObjs * sizeof(uintptr_t)));
 
     if (ainodes > 0) {
         bzero(gAINodes, sizeof(uintptr_t) * ainodes);
