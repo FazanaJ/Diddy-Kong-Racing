@@ -13867,11 +13867,11 @@ void menu_asset_free(s32 assetID) {
             mempool_free(gMenuImages);
             gMenuImages = NULL;
         }
-        /*if (*gAssetsMenuElementIds != NULL) {
+        if (*gAssetsMenuElementIds != NULL) {
             mempool_free(*gAssetsMenuElementIds);
             *gAssetsMenuElementIds = NULL;
             gMenuElementIdCount = 0;
-        }*/
+        }
     }
 }
 
