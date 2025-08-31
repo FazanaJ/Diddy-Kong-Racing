@@ -5,6 +5,7 @@
 #include "rcp_dkr.h"
 #include "camera.h"
 #include "types.h"
+#include "audiomgr.h"
 
 /************ .data ************/
 
@@ -26,7 +27,6 @@ u16 *gVideoCurrFramebuffer; // Official Name: currentScreen
 u16 *gVideoLastFramebuffer; // Official Name: otherScreen
 u16 *gVideoCurrDepthBuffer;
 u16 *gVideoLastDepthBuffer; // Official Name: otherZbuf
-u8 D_801262E4;
 u8 gVideoDeltaCounter;
 u8 gVideoDeltaTime;
 OSScClient gVideoSched;
@@ -41,26 +41,9 @@ u8 gBitDepth = G_IM_SIZ_16b;
  * Official Name: viInit
  */
 void video_init(void) {
-    //s32 i;
-
     video_delta_reset();
-    /*for (i = 0; i < 3; i++) {
-        gVideoFramebuffers[i] = NULL;
-        fb_alloc(i);
-    }*/
-    /*if (gUseExpansionMemory == FALSE && gExpansionPak) {
-        gVideoFramebuffers[0] = (u16 *) 0x80400000;
-        gVideoFramebuffers[1] = (u16 *) 0x80500000;
-        gVideoFramebuffers[2] = (u16 *) 0x80600000;
-        gVideoDepthBuffer = (u16 *) 0x80700000;
-    }*/
     gVideoCurrFbIndex = 1;
     fb_swap();
-    //fb_init_vi();
-    //vi_change(SCREEN_WIDTH, SCREEN_HEIGHT);
-    sBlackScreenTimer = 12;
-    gVideoDeltaCounter = 0;
-    D_801262E4 = 3;
 }
 
 void video_alloc(void) {
@@ -113,7 +96,7 @@ void vi_change(int width, int height) {
     }
 
     wcopy(base, &gGlobalVI, sizeof(OSViMode));
-    osAiSetFrequency(22050);
+    osAiSetFrequency(OUTPUT_RATE);
 
     if (gConfig.screenBits == SCREENBITS_16b) {
         gBitDepth = G_IM_SIZ_16b;
@@ -295,7 +278,6 @@ void fb_update(s32 updateRate) {
             sBlackScreenTimer = 0;
         }
     }
-    osViSetSpecialFeatures(OS_VI_GAMMA_OFF);
     fb_swap();
     /*if (gBootTimer) {
         gBootTimer--;

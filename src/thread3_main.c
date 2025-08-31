@@ -216,7 +216,7 @@ void init_game(void) {
     init_controller_paks();
     init_save_data();
     vi_change(SCREEN_WIDTH, SCREEN_HEIGHT);
-    sBlackScreenTimer = 12;
+    sBlackScreenTimer = 1;
     init_particle_buffers(4, 4, 110, 48, 32, 0);
     osCreateMesgQueue(&gGameMesgQueue, gGameMesgBuf, 3);
     osScAddClient(&gMainSched, (OSScClient*) gNMISched, &gGameMesgQueue, OS_SC_ID_VIDEO);
