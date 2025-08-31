@@ -12,6 +12,8 @@ __OSViContext* __osViCurr = &vi[0];
 __OSViContext* __osViNext = &vi[1];
 s32 osViClock = VI_NTSC_CLOCK;
 
+extern OSViMode gGlobalVI;
+
 void __osViInit(void) {
     bzero(vi, sizeof(vi));
     __osViCurr = &vi[0];
@@ -20,15 +22,14 @@ void __osViInit(void) {
     __osViCurr->retraceCount = 1;
 
     if (osTvType == OS_TV_TYPE_PAL) {
-		__osViNext->modep = &osViModePalLan1;
         osViClock = VI_PAL_CLOCK;
 	} else if (osTvType == OS_TV_TYPE_MPAL) {
-		__osViNext->modep = &osViModeMpalLan1;
         osViClock = VI_MPAL_CLOCK;
 	} else {
-		__osViNext->modep = &osViModeNtscLan1;
         osViClock = VI_NTSC_CLOCK;
 	}
+
+    __osViNext->modep = &gGlobalVI;
 
     __osViNext->state = VI_STATE_BLACK;
     __osViNext->control = __osViNext->modep->comRegs.ctrl;

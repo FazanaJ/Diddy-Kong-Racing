@@ -51,7 +51,7 @@ def parse_overlays_and_symbols(map_file_path, section_name=".overlays"):
                     continue
 
                 filepath = parts[3]
-                if filepath.endswith(".o"):
+                if filepath.endswith(".c.o"):
                     filename = os.path.basename(filepath)
                     current_file = filename
 
@@ -90,10 +90,11 @@ def write_overlay_and_symbol_tables(overlays, output_file_path):
             symOffset = 0  # placeholder for now
 
             # Convert all addresses to offsets relative to the overlay .text start
-            textAddr_offset = 0  # .text always starts at 0
-            dataAddr_offset = dataAddr - textAddr
-            rodataAddr_offset = rodataAddr - textAddr
-            bssAddr_offset = bssAddr - textAddr
+            textAddr_offset   = 0
+            dataAddr_offset   = 0 if dataSize == 0 else dataAddr - textAddr
+            rodataAddr_offset = 0 if rodataSize == 0 else rodataAddr - textAddr
+            bssAddr_offset    = 0 if bssSize == 0 else bssAddr - textAddr
+
 
             overlay_entries.append((
                 filename,
@@ -108,9 +109,10 @@ def write_overlay_and_symbol_tables(overlays, output_file_path):
         # Write them all with placeholder symOffset
         table_start = f.tell()
         for entry in overlay_entries:
+            print(entry)
             packed = struct.pack(
                 OVERLAY_STRUCT_FORMAT,
-                *[int.from_bytes(x.to_bytes(4, "big"), "little") if isinstance(x, int) and x else 0
+                *[int.from_bytes(x.to_bytes(4, "big", signed=True), "little", signed=False) if isinstance(x, int) and x else 0
                   for x in entry[1:]]  # skip filename
             )
             f.write(packed)
@@ -135,7 +137,14 @@ def write_overlay_and_symbol_tables(overlays, output_file_path):
 
             for addr, name in symbols:
                 offset_addr = addr - sections["text"][0]  # relative to overlay .text
-                addr_swapped = int.from_bytes(offset_addr.to_bytes(4, "big"), "little")
+                text_base = sections["text"][0]
+
+                offset_addr = addr - text_base
+                if offset_addr < 0:
+                    offset_addr = 0
+
+                addr_swapped = struct.unpack("<I", struct.pack(">I", offset_addr))[0]
+
                 name_bytes = name.encode("ascii", errors="replace")[:32]
                 name_bytes = name_bytes.ljust(32, b"\x00")
                 f.write(struct.pack(MAP_SYMBOL_STRUCT_FORMAT, addr_swapped, name_bytes))

@@ -22,9 +22,13 @@ u8 gExpansionPak;
 u8 gUseExpansionMemory;
 UserConfig gConfig;
 
+//s32 *gOverlayCache;
+//s16 *gOverlayCacheIDs;
+
 /******************************/
 
 #define FRAMETIME_COUNT 30
+#define OVERLAY_COUNT 100
 
 u32 frameTimes[FRAMETIME_COUNT];
 u8 curFrameTimeIndex = 0;
@@ -345,6 +349,8 @@ void thread1_main(UNUSED void *unused) {
     video_alloc();
     crash_init();
     config_init();
+    //gOverlayCache = mempool_alloc_safe(6 *OVERLAY_COUNT, PP_RAM_ASSET_CACHE);
+    //gOverlayCacheIDs = (s16 *) ((u8 *) gOverlayCache + (OVERLAY_COUNT * 4));
     osCreateThread(&gThread3, 3, &thread3_main, 0, gThread3Stack + STACKSIZE(STACK_GAME), 10);
     gThread3Stack[STACKSIZE(STACK_GAME) - 1] = 0;
     gThread3Stack[0] = 0;
@@ -531,13 +537,21 @@ void *overlay_load(s32 overlayID) {
     file.rodataAddr += (u32) overlays_ROM_START;
 
     //debug_printf("1st DMA: %X %X\n", (u32) overlay, file.textAddr);
-    dmacopy(file.textAddr, (u32) overlay, file.textSize);
+    if (file.textSize) {
+        dmacopy(file.textAddr, (u32) overlay, file.textSize);
+    }
     //debug_printf("2nd DMA: %X %X\n", (u32) ((u8 *) overlay + file.textSize), file.dataAddr);
-    dmacopy(file.dataAddr, (u32) ((u8 *) overlay + file.textSize), file.dataSize);
+    if (file.dataSize) {
+        dmacopy(file.dataAddr, (u32) ((u8 *) overlay + file.textSize), file.dataSize);
+    }
     //debug_printf("3rd DMA: %X %X\n", (u32) ((u8 *) overlay + (file.textSize + file.dataSize)), file.rodataAddr);
-    dmacopy(file.rodataAddr, (u32) ((u8 *) overlay + (file.textSize + file.dataSize)), file.rodataSize);
+    if (file.rodataSize) {
+        dmacopy(file.rodataAddr, (u32) ((u8 *) overlay + (file.textSize + file.dataSize)), file.rodataSize);
+    }
     //debug_printf("4th DMA: %X %X\n", (u32) ((u8 *) overlay + (file.textSize + file.dataSize + file.rodataSize)), file.bssAddr);
-    bzero((void *) ((u8 *) overlay + (file.textSize + file.dataSize + file.rodataSize)), file.bssSize);
+    if (file.bssSize) {
+        bzero((void *) ((u8 *) overlay + (file.textSize + file.dataSize + file.rodataSize)), file.bssSize);
+    }
 
     //debug_dump_hex(overlay, file.textSize, 16);
     gLoadedOverlays[overlayID] = overlay;
@@ -602,4 +616,8 @@ void *overlay_symbol(s32 overlayID, const char *symbol) {
     }
 
     return NULL;
+}
+
+void overlay_free(s32 overlayID) {
+    mempool_free(gLoadedOverlays[overlayID]);
 }

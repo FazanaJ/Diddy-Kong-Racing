@@ -358,6 +358,7 @@ extern f32 gFPS;
 
 void *overlay_symbol(s32 overlayID, const char *symbol);
 void *overlay_load(s32 overlayID);
+void overlay_free(s32 overlayID);
 
 void debug_init();
 s32 memsize_get(void);

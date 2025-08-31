@@ -391,6 +391,7 @@ clean_src:
 	rm -rf $(BUILD_DIR)/asm
 	rm -rf $(BUILD_DIR)/libultra
 	rm -rf $(BUILD_DIR)/src
+	rm -rf $(BUILD_DIR)/overlays
 
 clean_assets:
 	rm -rf $(ASM_DIRS)

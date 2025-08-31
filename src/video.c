@@ -32,6 +32,7 @@ u8 gVideoDeltaTime;
 OSScClient gVideoSched;
 s32 gVideoSkipNextRate = FALSE;
 u8 gBitDepth = G_IM_SIZ_16b;
+OSViMode gGlobalVI;
 
 /******************************/
 
@@ -48,11 +49,20 @@ void video_init(void) {
 
 void video_alloc(void) {
     s32 i;
+    //void (*func)(s32 index);
+    wcopy(&osViModeNtscLan1, &gGlobalVI, sizeof(OSViMode));
+
+    //overlay_load(0);
+
+    //func = overlay_symbol(0, "reschange_alloc");
 
     for (i = 0; i < 3; i++) {
         gVideoFramebuffers[i] = NULL;
+        //(*func)(i);
         fb_alloc(i);
     }
+
+    //overlay_free(0);
 }
 
 /**
@@ -64,121 +74,13 @@ s32 fb_size(void) {
     return (SCREEN_HEIGHT << 16) | SCREEN_WIDTH;
 }
 
-OSViMode gGlobalVI;
-extern s32 osViClock;
-
 void vi_change(int width, int height) {
-    s32 addPAL = 0;
-    s32 addX = 0;
-    s32 mul;
-    f32 tempWidth;
-    s32 posX;
-    s32 posY;
-    static u16 prevWidth = 0;
-    static u16 prevHeight = 0;
-    static u8 prevBits = 0;
-    OSViMode *mode = &gGlobalVI;
-    OSViMode *base;
+    void (*func)(s32 width, s32 height);
 
-    if (gConfig.screenRegion == REGIONMODE_PAL50) {
-        base = &osViModePalLan1;
-        osViClock = VI_PAL_CLOCK;
-    } else if (gConfig.screenRegion == REGIONMODE_MPAL) {
-        base = &osViModeMpalLan1;
-        osViClock = VI_MPAL_CLOCK;
-    } else if (gConfig.screenRegion == REGIONMODE_PAL60) {
-        base = &osViModePal60Lan1;
-        osViClock = VI_PAL_CLOCK;
-    } else {
-        base = &osViModeNtscLan1;
-        osViClock = VI_NTSC_CLOCK;
-    }
-
-    wcopy(base, &gGlobalVI, sizeof(OSViMode));
-    osAiSetFrequency(OUTPUT_RATE);
-
-    if (gConfig.screenBits == SCREENBITS_16b) {
-        gBitDepth = G_IM_SIZ_16b;
-        mode->comRegs.ctrl = VI_CTRL_TYPE_16 | VI_CTRL_GAMMA_DITHER_ON | VI_CTRL_GAMMA_ON | VI_CTRL_ANTIALIAS_MODE_1 | 0x3000;
-        mul = 2;
-    } else {
-        gBitDepth = G_IM_SIZ_32b;
-        mode->comRegs.ctrl = VI_CTRL_TYPE_32 | VI_CTRL_GAMMA_DITHER_ON | VI_CTRL_GAMMA_ON | VI_CTRL_ANTIALIAS_MODE_3 | 0x3000;
-        mul = 4;
-    }
-
-    if (height < 240) {
-        if (width == SCREEN_WIDTH_16_10) {
-            addX = 20;
-        } else if (width == SCREEN_WIDTH_WIDE) {
-            addX = 24;
-        } else {
-            addX = 16;
-        }
-        // Y Scale
-        posX = gConfig.screenPosX * 2;
-        posY = gConfig.screenPosY * 2;
-        mode->fldRegs[0].yScale = (((height + 16 - (addPAL * 2)) * 1024) / 240);
-        mode->fldRegs[1].yScale = (((height + 16 - (addPAL * 2)) * 1024) / 240);
-
-        mode->comRegs.hStart = (428 - 304 + posX) << 16 | (428 + 304 + posX);
-        mode->fldRegs[0].vStart =
-            (277 - height + posY) << 16 | (271 + height + posY);
-        mode->fldRegs[1].vStart =
-            (277 - height + posY) << 16 | (271 + height + posY);
-    } else if (height == 240) {
-        mode->fldRegs[0].yScale = ((height * 1024) / 240);
-        mode->fldRegs[1].yScale = ((height * 1024) / 240);
-    } else {
-        mode->comRegs.ctrl |= 0x40;
-        mode->fldRegs[0].yScale = 0x2000000 | ((height * 1024) / 240);
-        mode->fldRegs[1].yScale = 0x2000000 | ((height * 1024) / 240);
-        mode->fldRegs[0].vStart = mode->fldRegs[1].vStart - 0x20002;
-    }
-    mode->comRegs.width = width;
-    mode->comRegs.xScale = ((width + addX) * 512) / 320;
-    // Disable VI resampling if frame size is 320.
-    if (gConfig.antiAliasing == AA_OFF) {
-        if (width <= 320) {
-            mode->comRegs.xScale = 0x201;
-            mode->comRegs.ctrl &= ~VI_CTRL_ANTIALIAS_MODE_1;
-            mode->comRegs.ctrl |= VI_CTRL_ANTIALIAS_MODE_3;
-        }
-    } else {
-        mode->comRegs.ctrl |= VI_CTRL_DIVOT_ON;
-    }
-    mode->fldRegs[0].origin = width * mul;
-    mode->fldRegs[1].origin = width * 4;
-    if (gConfig.screenWidth == RESOLUTION_384x240) {
-        tempWidth = 384;
-    } else if (gConfig.screenWidth == RESOLUTION_424x240) {
-        tempWidth = 424;
-    } else {
-        tempWidth = 320;
-    }
-    gVideoAspectRatio = ((f32) tempWidth / (f32) height);
-    cam_persp_init();
-    osViSetMode(mode);
-    vi_dither();
-
-    if (width != prevWidth || height != prevHeight || prevBits != gBitDepth) {
-        prevWidth = width;
-        prevHeight = height;
-        prevBits = gBitDepth;
-        osViBlack(TRUE);
-        sBlackScreenTimer = 10;
-    }
-}
-
-void vi_dither(void) {
-    if (gConfig.dedither) {
-        osViSetSpecialFeatures(OS_VI_DIVOT_ON);
-        osViSetSpecialFeatures(OS_VI_DITHER_FILTER_ON);
-    } else {
-        osViSetSpecialFeatures(OS_VI_DIVOT_OFF);
-        osViSetSpecialFeatures(OS_VI_DITHER_FILTER_OFF);
-    }
-    osViSetSpecialFeatures(OS_VI_GAMMA_OFF);
+    overlay_load(0);
+    func = overlay_symbol(0, "vi_reschange");
+    (*func)(width, height);
+    overlay_free(0);
 }
 
 /**
