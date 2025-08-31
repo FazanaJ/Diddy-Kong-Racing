@@ -81,6 +81,31 @@ SECTIONS
     main_ROM_END = __romPos;
     main_VRAM_END = .;
 
+    overlays_ROM_START = __romPos;
+    overlays_VRAM = ADDR(.overlays);
+    .overlays assets_VRAM_END : AT(overlays_ROM_START) SUBALIGN(16)
+    {
+        overlays_TEXT_START = .;
+        build/overlays/**/*.o(.text);
+        overlays_TEXT_END = .;
+        overlays_DATA_START = .;
+        build/overlays/**/*.o(.data*);
+        overlays_DATA_END = .;
+        overlays_RODATA_START = .;
+        build/overlays/**/*.o(.rodata*);
+        overlays_RODATA_END = .;
+        overlays_BSS_START = .;
+        build/overlays/**/*.o(.*bss*);
+        overlays_BSS_END = .;
+        overlays_TEXT_SIZE = ABSOLUTE(overlays_TEXT_END - overlays_TEXT_START);
+        overlays_DATA_SIZE = ABSOLUTE(overlays_DATA_END - overlays_DATA_START);
+        overlays_RODATA_SIZE = ABSOLUTE(overlays_RODATA_END - overlays_RODATA_START);
+        overlays_BSS_SIZE = ABSOLUTE(overlays_BSS_END - overlays_BSS_START);
+    }
+    __romPos += SIZEOF(.overlays);
+    overlays_ROM_END = __romPos;
+    overlays_VRAM_END = .;
+
     assets_ROM_START = __romPos;
     assets_VRAM = ADDR(.assets);
     .assets main_VRAM_END : AT(assets_ROM_START) SUBALIGN(16)
@@ -178,6 +203,20 @@ SECTIONS
     __romPos += SIZEOF(.objanim);
     objanim_ROM_END = __romPos;
     objanim_VRAM_END = .;
+
+    ovltable_ROM_START = __romPos;
+    ovltable_VRAM = ADDR(.ovltable);
+    .ovltable assets_VRAM_END : AT(ovltable_ROM_START) SUBALIGN(16)
+    {
+        FILL(0x00000000);
+        ovltable_DATA_START = .;
+        build/assets/overlay_symbols.bin.o(.data);
+        ovltable_DATA_END = .;
+        ovltable_DATA_SIZE = ABSOLUTE(ovltable_DATA_END - ovltable_DATA_START);
+    }
+    __romPos += SIZEOF(.ovltable);
+    ovltable_ROM_END = __romPos;
+    ovltable_VRAM_END = .;
 
     /DISCARD/ :
     {

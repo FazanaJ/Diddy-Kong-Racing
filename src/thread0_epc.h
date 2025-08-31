@@ -68,7 +68,7 @@ typedef struct unk800D2470 {
 /* 0x118 */ s32 unk118;
 } unk800D2470;
 
-typedef struct {
+typedef struct MapSymbol {
     u32 address;
     char name[32];
 } MapSymbol;
@@ -117,5 +117,6 @@ void render_epc_lock_up_display(void);
 void crash_nomemory(s32 size, s32 colourTag);
 f32 memsize_float(s32 size, s32 *tag);
 void crash_reorder_ram(DebugData *d);
+u32 *func_addr_find(const char *name);
 
 #endif

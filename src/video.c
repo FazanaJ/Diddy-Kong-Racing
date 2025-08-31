@@ -80,7 +80,6 @@ void vi_change(int width, int height) {
     OSViMode *mode = &gGlobalVI;
     OSViMode *base;
 
-
     if (gConfig.screenRegion == REGIONMODE_PAL50) {
         base = &osViModePalLan1;
         osViClock = VI_PAL_CLOCK;

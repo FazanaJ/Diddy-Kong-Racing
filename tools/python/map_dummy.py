@@ -12,6 +12,8 @@ troll = [4, 7]
 def write_binary_file():
     with open("assets/map_symbols.bin", "wb") as binary_file:
         pass
+    with open("assets/overlay_symbols.bin", "wb") as binary_file2:
+        pass
 
 
 def parse():

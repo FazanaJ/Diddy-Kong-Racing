@@ -8,6 +8,8 @@
 #include "PRinternal/piint.h"
 #include "joypad.h"
 #include "video.h"
+#include "string.h"
+#include "asset_loading.h"
 
 /************ .bss ************/
 
@@ -348,4 +350,256 @@ void thread1_main(UNUSED void *unused) {
     gThread3Stack[0] = 0;
     osStartThread(&gThread3);
     while (1) {}
+}
+
+extern u8 *ovltable_ROM_START[];
+extern u8 *ovltable_ROM_END[];
+extern u8 *overlays_ROM_START[];
+extern u8 *overlays_ROM_END[];
+extern u8 *overlays_TEXT_START[];
+
+void *gLoadedOverlays[8];
+
+// Assumes these are defined somewhere:
+#define OP_MASK       0xFC000000
+#define OP_LUI        0x3C000000
+#define OP_ADDIU      0x24000000
+#define OP_ORI        0x34000000
+#define OP_LW    0x23
+#define OP_SW    0x2B
+#define OP_LH    0x21
+#define OP_LHU   0x25
+#define OP_LB    0x20
+#define OP_LBU   0x24
+#define OP_SH    0x29
+#define OP_SB    0x28
+#define OP_LWC1  0x31
+#define OP_SWC1  0x39
+
+
+// helper to split address with carry-aware rule (assembler behavior)
+static inline void split_address(u32 addr, u16 *hi_out, u16 *lo_out) {
+    u32 upper = (addr + 0x8000) >> 16; // add carry if low >= 0x8000
+    u16 low = (u16)(addr & 0xFFFF);
+    *hi_out = (u16)upper;
+    *lo_out = low;
+}
+
+static inline u16 imm16(u32 instr) { return (u16)(instr & 0xFFFF); }
+static inline u32 opcode(u32 instr) { return instr & OP_MASK; }
+static inline u32 rt_field(u32 instr) { return (instr >> 16) & 0x1F; }
+static inline u32 rs_field(u32 instr) { return (instr >> 21) & 0x1F; }
+
+void overlay_reloc(s32 overlayID) {
+    OverlayFile file;
+    MapSymbol symbol;
+    u32 searchAddr;
+    u32 overlayPos[2], overlayPos2[2];
+    s32 i, j, size;
+
+    if (gLoadedOverlays[overlayID] == NULL) return;
+
+    // Read overlay entry and symbol table bounds
+    searchAddr = (u32)ovltable_ROM_START;
+    dmacopy(searchAddr + (sizeof(OverlayFile) * overlayID), (u32)&file, sizeof(OverlayFile));
+    dmacopy(searchAddr + (sizeof(OverlayFile) * overlayID) + 32, (u32)&overlayPos, 8);
+    dmacopy(searchAddr + (sizeof(OverlayFile) * (overlayID + 1)) + 32, (u32)&overlayPos2, 8);
+
+    searchAddr = ((u32)ovltable_ROM_START) + overlayPos[0];
+    size = overlayPos2[0] - overlayPos[0];
+
+    // pointer to .text in RAM
+    u32 *text = (u32 *)gLoadedOverlays[overlayID];
+    s32 nInstr = file.textSize / 4;
+
+    // Process all symbols
+    for (i = 0; i < size; i += sizeof(MapSymbol)) {
+        dmacopy(searchAddr + i, (u32)&symbol, sizeof(MapSymbol));
+
+        // Compute old and new addresses
+        u32 oldAddr = (u32)overlays_TEXT_START + symbol.address;
+        u32 offset = 0;
+
+        if (symbol.address >= file.textAddr && symbol.address < file.textAddr + file.textSize)
+            offset = symbol.address - file.textAddr;
+        else if (symbol.address >= file.dataAddr && symbol.address < file.dataAddr + file.dataSize)
+            offset = file.textSize + (symbol.address - file.dataAddr);
+        else if (symbol.address >= file.rodataAddr && symbol.address < file.rodataAddr + file.rodataSize)
+            offset = file.textSize + file.dataSize + (symbol.address - file.rodataAddr);
+        else if (symbol.address >= file.bssAddr && symbol.address < file.bssAddr + file.bssSize)
+            offset = file.textSize + file.dataSize + file.rodataSize + (symbol.address - file.bssAddr);
+        else
+            continue; // skip symbols outside overlay
+
+        u32 newAddr = (u32) ((u8 *)gLoadedOverlays[overlayID]) + offset;
+
+        u16 oldHi_c, oldLo_c, newHi_c, newLo_c;
+        split_address(oldAddr, &oldHi_c, &oldLo_c);
+        split_address(newAddr, &newHi_c, &newLo_c);
+
+        u16 oldHi_r = (u16)(oldAddr >> 16), oldLo_r = (u16)(oldAddr & 0xFFFF);
+        u16 newHi_r = (u16)(newAddr >> 16), newLo_r = (u16)(newAddr & 0xFFFF);
+
+        const int WINDOW = 16;
+
+        // Scan .text for LUI / memory instructions
+        for (j = 0; j < nInstr - 1; ++j) {
+            u32 instr = text[j];
+            if (opcode(instr) != OP_LUI) continue;
+
+            u16 luiImm = imm16(instr);
+            u32 destReg = rt_field(instr);
+            if (luiImm != oldHi_c && luiImm != oldHi_r) continue;
+
+            int patched = 0;
+            for (int k = 1; k <= WINDOW && (j + k) < nInstr; ++k) {
+                u32 next = text[j + k];
+                u32 nextOp = opcode(next);
+
+                // ADDIU / ORI patterns
+                if (nextOp == OP_ADDIU || nextOp == OP_ORI) {
+                    if (rs_field(next) == destReg && rt_field(next) == destReg) {
+                        if ((u16)imm16(next) == oldLo_c || (u16)imm16(next) == oldLo_r) {
+                            u16 useHi = (luiImm == oldHi_c) ? newHi_c : newHi_r;
+                            u16 useLo = ((u16)imm16(next) == oldLo_c) ? newLo_c : newLo_r;
+                            text[j] = (OP_LUI | (destReg << 16) | useHi);
+                            text[j + k] = (nextOp | (destReg << 21) | (destReg << 16) | useLo);
+                            patched = 1;
+                        }
+                    }
+                }
+                // Memory ops
+                else if (nextOp == OP_LW || nextOp == OP_SW || nextOp == OP_LH ||
+                         nextOp == OP_LHU || nextOp == OP_LB || nextOp == OP_LBU ||
+                         nextOp == OP_SH || nextOp == OP_SB || nextOp == OP_LWC1 || nextOp == OP_SWC1) {
+                    if (rs_field(next) == destReg) {
+                        if ((u16)imm16(next) == oldLo_c || (u16)imm16(next) == oldLo_r) {
+                            u16 useHi = (luiImm == oldHi_c) ? newHi_c : newHi_r;
+                            u16 useLo = ((u16)imm16(next) == oldLo_c) ? newLo_c : newLo_r;
+                            u32 rt = rt_field(next);
+                            text[j] = (OP_LUI | (destReg << 16) | useHi);
+                            text[j + k] = (nextOp | (rt << 16) | (destReg << 21) | useLo);
+                            patched = 1;
+                        }
+                    }
+                }
+
+                if (patched) break;
+            }
+        }
+
+        // Scan .text for JAL instructions
+        for (j = 0; j < nInstr; ++j) {
+            u32 instr = text[j];
+            u32 op = (instr >> 26) & 0x3F;
+            if (op != 0x03) continue; // JAL
+
+            u32 oldTarget = ((instr & 0x03FFFFFF) << 2) | (((u32) text + (j * 4)) & 0xF0000000);
+            if (oldTarget == oldAddr) {
+                text[j] = (instr & 0xFC000000) | ((newAddr >> 2) & 0x03FFFFFF);
+            }
+        }
+    }
+}
+
+
+void *overlay_load(s32 overlayID) {
+    OverlayFile file;
+    s32 size;
+    u32 searchAddr;
+    void *overlay;
+
+
+    searchAddr = (u32) ovltable_ROM_START;
+    size = 0;
+    dmacopy(searchAddr + (sizeof(OverlayFile) * overlayID), (u32) &file, sizeof(OverlayFile));
+
+    size = file.textSize + file.dataSize + file.rodataSize + file.bssSize;
+
+    //debug_printf("Size: %X   %X %X %X %X\n", size, file.textSize, file.bssSize, file.dataSize, file.rodataSize);
+
+    overlay = mempool_alloc(size, PP_RAM_CODE);
+
+    if (overlay == NULL) {
+        return NULL;
+    }
+
+    //debug_printf("Addr:  %X %X %X %X\n", file.textAddr, file.dataAddr, file.rodataAddr, file.bssAddr);
+
+    file.textAddr += (u32) overlays_ROM_START;
+    file.dataAddr += (u32) overlays_ROM_START;
+    file.rodataAddr += (u32) overlays_ROM_START;
+
+    //debug_printf("1st DMA: %X %X\n", (u32) overlay, file.textAddr);
+    dmacopy(file.textAddr, (u32) overlay, file.textSize);
+    //debug_printf("2nd DMA: %X %X\n", (u32) ((u8 *) overlay + file.textSize), file.dataAddr);
+    dmacopy(file.dataAddr, (u32) ((u8 *) overlay + file.textSize), file.dataSize);
+    //debug_printf("3rd DMA: %X %X\n", (u32) ((u8 *) overlay + (file.textSize + file.dataSize)), file.rodataAddr);
+    dmacopy(file.rodataAddr, (u32) ((u8 *) overlay + (file.textSize + file.dataSize)), file.rodataSize);
+    //debug_printf("4th DMA: %X %X\n", (u32) ((u8 *) overlay + (file.textSize + file.dataSize + file.rodataSize)), file.bssAddr);
+    bzero((void *) ((u8 *) overlay + (file.textSize + file.dataSize + file.rodataSize)), file.bssSize);
+
+    //debug_dump_hex(overlay, file.textSize, 16);
+    gLoadedOverlays[overlayID] = overlay;
+    overlay_reloc(overlayID);
+    //debug_dump_hex(overlay, file.textSize, 16);
+
+    return overlay;
+}
+
+void *overlay_symbol(s32 overlayID, const char *symbol) {
+    OverlayFile file;
+    MapSymbol mapSymbol;
+    u32 searchAddr;
+    u32 overlayPos[2], overlayPos2[2];
+    u32 i;
+    u32 searchSize;
+    u8 *overlayBase;
+
+    if (gLoadedOverlays[overlayID] == NULL) return NULL;
+
+    overlayBase = gLoadedOverlays[overlayID];
+
+    // Read overlay entry and symbol table bounds
+    searchAddr = (u32)ovltable_ROM_START;
+    dmacopy(searchAddr + sizeof(OverlayFile) * overlayID, (u32)&file, sizeof(OverlayFile));
+    dmacopy(searchAddr + sizeof(OverlayFile) * overlayID + 32, (u32)&overlayPos, 8);
+    dmacopy(searchAddr + sizeof(OverlayFile) * (overlayID + 1) + 32, (u32)&overlayPos2, 8);
+
+    searchAddr = ((u32)ovltable_ROM_START) + overlayPos[0];
+    searchSize = overlayPos2[0] - overlayPos[0];
+
+    for (i = 0; i + sizeof(MapSymbol) <= searchSize; i += sizeof(MapSymbol)) {
+        dmacopy(searchAddr + i, (u32)&mapSymbol, sizeof(MapSymbol));
+
+        // Use full fixed-size compare (map symbols may not be null-terminated)
+        if (strncmp(mapSymbol.name, symbol, 32) != 0) continue;
+
+        u32 offset = 0;
+        if (mapSymbol.address >= file.textAddr && mapSymbol.address < file.textAddr + file.textSize)
+            offset = mapSymbol.address - file.textAddr;
+        else if (mapSymbol.address >= file.dataAddr && mapSymbol.address < file.dataAddr + file.dataSize)
+            offset = file.textSize + (mapSymbol.address - file.dataAddr);
+        else if (mapSymbol.address >= file.rodataAddr && mapSymbol.address < file.rodataAddr + file.rodataSize)
+            offset = file.textSize + file.dataSize + (mapSymbol.address - file.rodataAddr);
+        else if (mapSymbol.address >= file.bssAddr && mapSymbol.address < file.bssAddr + file.bssSize)
+            offset = file.textSize + file.dataSize + file.rodataSize + (mapSymbol.address - file.bssAddr);
+        else {
+            //debug_printf("overlay_symbol: %s address out of overlay bounds\n", symbol);
+            return NULL;
+        }
+
+        if (offset >= file.textSize + file.dataSize + file.rodataSize + file.bssSize) {
+            //debug_printf("overlay_symbol: %s offset past overlay RAM size\n", symbol);
+            return NULL;
+        }
+
+        void *runtimeAddr = overlayBase + offset;
+        //debug_printf("Resolved symbol %s: ROM %08X -> RAM %08X (offset %X)\n",
+        //             mapSymbol.name, mapSymbol.address, (u32)runtimeAddr, offset);
+
+        return runtimeAddr;
+    }
+
+    return NULL;
 }

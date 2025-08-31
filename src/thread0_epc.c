@@ -12,6 +12,7 @@
 #include "types.h"
 #include "main.h"
 #include "autoplay.h"
+#include "string.h"
 #include "video.h"
 #include "PRinternal/osint.h"
 #include "memory.h"
@@ -1484,8 +1485,43 @@ s32 func_name_find(u32 addr) {
         }
     }
 }
+
+u32 *func_addr_find(const char *name) {
+    u32 searchAddr = (u32) map_ROM_START;
+    s32 symbolFlip;
+    u32 symbolAddr;
+    u32 *addr;
+    MapSymbol symbol[2];
+    bzero(&symbol, sizeof(MapSymbol) * 2);
+
+    symbolFlip = 0;
+    dmacopy(searchAddr, (u32) &symbol[1], sizeof(MapSymbol));
+    searchAddr += sizeof(MapSymbol);
+    symbolAddr = (symbol[1].address & 0x1FFFFFFF) | 0xA0000000;
+
+    while (1) {
+        dmacopy(searchAddr, (u32) &symbol[symbolFlip], sizeof(MapSymbol));
+        symbolAddr = (symbol[symbolFlip].address & 0x1FFFFFFF) | 0xA0000000;
+
+        if (strncmp(symbol[symbolFlip ^ 1].name, name, 32) == 0) {
+            addr = symbol[symbolFlip ^ 1].address;
+            return addr;
+        }
+
+        symbolFlip ^= 1;
+        searchAddr += sizeof(MapSymbol);
+        if (searchAddr > (u32) map_ROM_END) {
+            return addr;
+        }
+    }
+}
+
 #else
 s32 func_name_find(u32 addr) {
+    return FALSE;
+}
+
+s32 func_addr_find(const char *name) {
     return FALSE;
 }
 #endif

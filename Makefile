@@ -60,12 +60,14 @@ HASM_DIRS = $(SRC_DIR)/hasm $(LIBULTRA_DIR)/src/os $(LIBULTRA_DIR)/src/gu $(LIBU
 LIBULTRA_SRC_DIRS  = $(LIBULTRA_DIR) $(LIBULTRA_DIR)/src $(LIBULTRA_DIR)/src/audio $(LIBULTRA_DIR)/src/audio/mips1
 LIBULTRA_SRC_DIRS += $(LIBULTRA_DIR)/src/debug $(LIBULTRA_DIR)/src/gu $(LIBULTRA_DIR)/src/io
 LIBULTRA_SRC_DIRS += $(LIBULTRA_DIR)/src/libc $(LIBULTRA_DIR)/src/os $(LIBULTRA_DIR)/src/sc
+OVERLAY_SRC_DIRS = $(SRC_DIR)/overlays
 
 # Files requiring pre/post-processing
 GLOBAL_ASM_C_FILES := $(shell $(GREP) GLOBAL_ASM $(SRC_DIR) </dev/null 2>/dev/null)
 GLOBAL_ASM_O_FILES := $(foreach file,$(GLOBAL_ASM_C_FILES),$(BUILD_DIR)/$(file).o)
 
 SRC_DIRS = $(SRC_DIR) $(LIBULTRA_SRC_DIRS)
+OVERLAY_DIRS = $(OVERLAY_SRC_DIRS)
 SYMBOLS_DIR = ver/symbols
 
 TOOLS_DIR = tools
@@ -91,14 +93,17 @@ RECOMP_DIR := $(TOOLS_DIR)/ido-recomp/$(DETECTED_OS)
 
 S_FILES         = $(foreach dir,$(ASM_DIRS) $(HASM_DIRS),$(wildcard $(dir)/*.s))
 C_FILES         = $(foreach dir,$(SRC_DIRS),$(wildcard $(dir)/*.c))
+OVL_FILES       = $(foreach dir,$(OVERLAY_DIRS),$(wildcard $(dir)/*.c))
 BIN_FILES       = $(foreach dir,$(BIN_DIRS),$(wildcard $(dir)/*.bin))
 
 O_FILES := $(foreach file,$(S_FILES),$(BUILD_DIR)/$(file).o) \
            $(foreach file,$(C_FILES),$(BUILD_DIR)/$(file).o) \
+           $(foreach file,$(OVL_FILES),$(BUILD_DIR)/overlays/$(file).o) \
            $(foreach file,$(BIN_FILES),$(BUILD_DIR)/$(file).o)
 
 O_FILES_LD := $(filter-out $(BUILD_DIR)/asm/assets/assets.s.o, \
 	$(foreach file,$(S_FILES),$(BUILD_DIR)/$(file).o) \
+    $(foreach file,$(OVL_FILES),$(BUILD_DIR)/overlays/$(file).o) \
 	$(foreach file,$(C_FILES),$(BUILD_DIR)/$(file).o))
 
 find-command = $(shell which $(1) 2>/dev/null)
@@ -342,7 +347,7 @@ default: all
 all: $(VERIFY)
 
 dirs:
-	$(foreach dir,$(SRC_DIRS) $(ASM_DIRS) $(HASM_DIRS) $(BIN_DIRS),$(shell mkdir -p $(BUILD_DIR)/$(dir)))
+	$(foreach dir,$(SRC_DIRS) $(ASM_DIRS) $(HASM_DIRS) overlays/$(OVERLAY_DIRS) $(BIN_DIRS),$(shell mkdir -p $(BUILD_DIR)/$(dir)))
 
 verify: $(TARGET).z64
 	$(V)$(FIXCHECKSUMS)
@@ -466,6 +471,11 @@ endif
 $(BUILD_DIR)/%.c.o: %.c | build_assets
 	$(call print,Compiling:,$<,$@)
 	$(V)$(CC_CHECK) -MMD -MP -MT $@ -MF $(BUILD_DIR)/$*.d $<
+	$(V)$(CC) -c $(CFLAGS) $(CC_WARNINGS) $(OPT_FLAGS) $(MIPSISET) -o $@ $<
+
+$(BUILD_DIR)/overlays/%.c.o: %.c | build_assets
+	$(call print,Compiling Overlay:,$<,$@)
+	$(V)$(CC_CHECK) -MMD -MP -MT $@ -MF $(BUILD_DIR)/overlays/$*.d $<
 	$(V)$(CC) -c $(CFLAGS) $(CC_WARNINGS) $(OPT_FLAGS) $(MIPSISET) -o $@ $<
 
 $(BUILD_DIR)/$(LIBULTRA_DIR)/src/libc/llcvt.c.o: $(LIBULTRA_DIR)/src/libc/llcvt.c | build_assets

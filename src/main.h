@@ -340,9 +340,24 @@ typedef struct DebugPage {
     void (*renderFunc)(struct DebugData *d, Gfx **dList, s32 updateRate);
 } DebugPage;
 
+typedef struct OverlayFile {
+    u32 textAddr;
+    u32 textSize;
+    u32 dataAddr;
+    u32 dataSize;
+    u32 rodataAddr;
+    u32 rodataSize;
+    u32 bssAddr;
+    u32 bssSize;
+    u32 symbolAddr;
+} OverlayFile;
+
 extern DebugData *gDebug;
 extern char *sPuppyprintMemColours[];
 extern f32 gFPS;
+
+void *overlay_symbol(s32 overlayID, const char *symbol);
+void *overlay_load(s32 overlayID);
 
 void debug_init();
 s32 memsize_get(void);
