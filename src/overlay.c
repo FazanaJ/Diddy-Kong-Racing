@@ -1,3 +1,5 @@
+#include "overlay.h"
+
 #include "main.h"
 #include "game.h"
 #include "memory.h"
@@ -52,6 +54,8 @@ typedef struct OverlayFile {
     u32 symbolAddr;
 } OverlayFile;
 
+#define OVERLAY_DEPENDANCIES 4
+
 s32 gOverlayCacheSize;
 s32 *gOverlayCache;
 s16 *gOverlayCacheIDs;
@@ -62,6 +66,8 @@ extern u8 *ovltable_ROM_END[];
 extern u8 *overlays_ROM_START[];
 extern u8 *overlays_ROM_END[];
 extern u8 *overlays_TEXT_START[];
+extern u8 *ovlNames_ROM_START[];
+extern u8 *ovlNames_ROM_END[];
 
 // Assumes these are defined somewhere:
 #define OP_MASK             0xFC000000
@@ -73,14 +79,14 @@ extern u8 *overlays_TEXT_START[];
 #define JUMP_TARGET_MASK    0x03FFFFFFu
 #define JUMP_PC_MASK        0xF0000000u
 #define OP_JAL              0x03
-#define OP_LW               0x23
-#define OP_SW               0x2B
-#define OP_LH               0x21
-#define OP_LHU              0x25
 #define OP_LB               0x20
+#define OP_LH               0x21
+#define OP_LW               0x23
 #define OP_LBU              0x24
-#define OP_SH               0x29
+#define OP_LHU              0x25
 #define OP_SB               0x28
+#define OP_SH               0x29
+#define OP_SW               0x2B
 #define OP_LWC1             0x31
 #define OP_SWC1             0x39
 
@@ -108,26 +114,13 @@ static inline u32 opcode(u32 instr) { return instr & OP_MASK; }
 static inline u32 rt_field(u32 instr) { return (instr >> 16) & 0x1F; }
 static inline u32 rs_field(u32 instr) { return (instr >> 21) & 0x1F; }
 
-void overlay_reloc(s32 overlayID) {
+void overlay_reloc(s32 overlayID, void *overlay) {
     OverlayFile file;
     MapSymbol symbol;
     u32 searchAddr;
     u32 overlayPos[2];
     u32 overlayPos2[2];
     s32 i, j, size;
-    void *overlay;
-
-    overlay = NULL;
-    for (i = 0; i < gOverlayCacheSize; i++) {
-        if (gOverlayCacheIDs[i] == overlayID) {
-            overlay = (void *) gOverlayCache[i];
-            break;
-        }
-    }
-    if (overlay == NULL) {
-        //debug_printf("overlay_reloc: overlay %d not found in cache\n", overlayID);
-        return;
-    }
 
     // Read overlay entry and symbol table bounds
     searchAddr = (u32)ovltable_ROM_START;
@@ -248,6 +241,9 @@ void *overlay_load(s32 overlayID) {
     s32 size;
     u32 searchAddr;
     void *overlay;
+    char overlayName[32];
+    s16 *deps;
+    u32 startOffset;
     s32 found;
     s32 i;
     u32 first = osGetCount();
@@ -262,11 +258,12 @@ void *overlay_load(s32 overlayID) {
     searchAddr = (u32) ovltable_ROM_START;
     dmacopy(searchAddr + (sizeof(OverlayFile) * overlayID), (u32) &file, sizeof(OverlayFile));
 
+    startOffset = OVERLAY_DEPENDANCIES * sizeof(s16);
     size = file.textSize + file.dataSize + file.rodataSize + file.bssSize;
 
     //debug_printf("Size: %X   %X %X %X %X\n", size, file.textSize, file.bssSize, file.dataSize, file.rodataSize);
 
-    overlay = mempool_alloc(size, PP_RAM_OVERLAYS);
+    overlay = mempool_alloc(size + startOffset, PP_RAM_OVERLAYS);
 
     if (overlay == NULL) {
         return NULL;
@@ -295,6 +292,11 @@ void *overlay_load(s32 overlayID) {
         bzero((void *) ((u8 *) overlay + (file.textSize + file.dataSize + file.rodataSize)), file.bssSize);
     }
 
+    for (i = 0; i < OVERLAY_DEPENDANCIES; i++) {
+        deps = ((s16 *) ((u8 *) overlay + size)) + i;
+        *deps = -1;
+    }
+
     found = FALSE;
     for (i = 0; i < gOverlayCacheSize; i++) {
         if (gOverlayCacheIDs[i] == -1) {
@@ -315,11 +317,59 @@ void *overlay_load(s32 overlayID) {
         gOverlayCacheSize++;
     }
     
-    overlay_reloc(overlayID);
+    overlay_reloc(overlayID, overlay);
     osWritebackDCache(overlay, file.textSize);
+    osInvalICache(overlay, file.textSize);
 
-    debug_printf("Loading overlay %d (%2.3fs)\n", overlayID, (f32) (osGetCount() - first)  / 46875000.0f);
+    if (gDebug) {
+        dmacopy((u32) ovlNames_ROM_START + (overlayID * 32), (u32) &overlayName, 32);
+        debug_printf("Loaded overlay [%s] (%2.4fs)\n", overlayName, (f32) (osGetCount() - first)  / 46875000.0f);
+    }
     return overlay;
+}
+
+/**
+ * Loads a new overlay and marks the given overlay to have the newly loaded one as a dependancy.
+ * This gives the new overlay a reference, and keeps it loaded if it may otherwise be unloaded.
+ * If this overlay is freed, it will automatically clear the reference, unloading it if necessary.
+ */
+void *overlay_load_dep(s32 curOvlID, s32 newOvlID) {
+    void *curOvl;
+    void *newOvl;
+    OverlayFile file;
+    s32 size;
+    s32 i;
+    s16 *deps;
+
+    curOvl = NULL;
+    newOvl = overlay_load(newOvlID);
+
+    if (newOvl == NULL) {
+        return NULL;
+    }
+
+    for (i = 0; i < gOverlayCacheSize; i++) {
+        if (gOverlayCacheIDs[i] == curOvlID) {
+            curOvl = (void *) gOverlayCache[i];
+        }
+    }
+
+    if (curOvl == NULL) {
+        overlay_free(newOvlID);
+        return NULL;
+    }
+
+    dmacopy((u32) ovltable_ROM_START + (sizeof(OverlayFile) * curOvlID), (u32) &file, sizeof(OverlayFile));
+    size = file.textSize + file.dataSize + file.rodataSize + file.bssSize;
+    for (i = 0; i < OVERLAY_DEPENDANCIES; i++) {
+        deps = ((s16 *) ((u8 *) curOvl + size)) + i;
+        if (*deps == -1) {
+            *deps = newOvlID;
+            break;
+        }
+    }
+
+    return newOvl;
 }
 
 /**
@@ -332,6 +382,7 @@ void *overlay_symbol(s32 overlayID, const char *symbol) {
     u32 searchAddr;
     u32 overlayPos[2], overlayPos2[2];
     u32 i;
+    s32 len;
     u32 searchSize;
     void *overlay;
 
@@ -347,6 +398,13 @@ void *overlay_symbol(s32 overlayID, const char *symbol) {
     }
     //debug_printf("Sym Overlay Pos: %d\n", i);
 
+    len = strlen(symbol);
+
+    if (len > 31) {
+        len = 31;
+    }
+
+
     // Read overlay entry and symbol table bounds
     searchAddr = (u32) ovltable_ROM_START;
     dmacopy(searchAddr + sizeof(OverlayFile) * overlayID, (u32) &file, sizeof(OverlayFile));
@@ -359,8 +417,10 @@ void *overlay_symbol(s32 overlayID, const char *symbol) {
     for (i = 0; i + sizeof(MapSymbol) <= searchSize; i += sizeof(MapSymbol)) {
         dmacopy(searchAddr + i, (u32) &mapSymbol, sizeof(MapSymbol));
 
+        //debug_printf("Checking %s against %s\n", symbol, mapSymbol.name);
+
         // Use full fixed-size compare (map symbols may not be null-terminated)
-        if (strncmp(mapSymbol.name, symbol, 32) != 0) {
+        if (strncmp(mapSymbol.name, symbol, len) != 0) {
             continue;
         }
 
@@ -398,16 +458,49 @@ void *overlay_symbol(s32 overlayID, const char *symbol) {
  */
 void overlay_free(s32 overlayID) {
     s32 i;
+    s32 j;
+    s32 size;
+    s16 *deps;
+    char overlayName[32];
+    OverlayFile file;
     
     for (i = 0; i < gOverlayCacheSize; i++) {
         if (gOverlayCacheIDs[i] == overlayID) {
             gOverlayCacheRefs[i]--;
             if (gOverlayCacheRefs[i] == 0) {
-                debug_printf("Freeing overlay %d\n", overlayID);
+                
+                if (gDebug) {
+                    dmacopy((u32) ovlNames_ROM_START + (overlayID * 32), (u32) &overlayName, 32);
+                    debug_printf("Freeing overlay [%s]\n", overlayName);
+                }
+                dmacopy((u32) ovltable_ROM_START + (sizeof(OverlayFile) * overlayID), (u32) &file, sizeof(OverlayFile));
+                size = file.textSize + file.dataSize + file.rodataSize + file.bssSize;
+                for (j = 0; j < OVERLAY_DEPENDANCIES; j++) {
+                    deps = ((s16 *) ((u8 *) gOverlayCache[i] + size)) + j;
+                    //debug_printf("Dep %d : %d\n", j, *deps);
+                    if (*deps >= 0) {
+                        overlay_free(*deps);
+                    }
+                }
                 mempool_free((void *) gOverlayCache[i]);
                 gOverlayCacheIDs[i] = -1;
             }
             break;
         }
     }
+}
+
+/**
+ * Loads and overlay to call one function before closing it.
+ * Relies on no args.
+ */
+s32 overlay_run(s32 overlayID, const char *funcName) {
+    s32 (*func)();
+    s32 ret;
+
+    overlay_load(overlayID);
+    func = overlay_symbol(overlayID, funcName);
+    ret = (*func)();
+    overlay_free(overlayID);
+    return ret;
 }

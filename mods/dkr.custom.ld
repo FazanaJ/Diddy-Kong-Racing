@@ -217,6 +217,20 @@ SECTIONS
     __romPos += SIZEOF(.ovltable);
     ovltable_ROM_END = __romPos;
     ovltable_VRAM_END = .;
+    
+    ovlNames_ROM_START = __romPos;
+    ovlNames_VRAM = ADDR(.ovlNames);
+    .ovlNames assets_VRAM_END : AT(ovlNames_ROM_START) SUBALIGN(16)
+    {
+        FILL(0x00000000);
+        ovlNames_DATA_START = .;
+        build/assets/overlay_list.bin.o(.data);
+        ovlNames_DATA_END = .;
+        ovlNames_DATA_SIZE = ABSOLUTE(ovlNames_DATA_END - ovlNames_DATA_START);
+    }
+    __romPos += SIZEOF(.ovlNames);
+    ovlNames_ROM_END = __romPos;
+    ovlNames_VRAM_END = .;
 
     /DISCARD/ :
     {

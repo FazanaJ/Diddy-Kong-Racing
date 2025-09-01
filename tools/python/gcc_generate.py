@@ -67,11 +67,11 @@ for directory in chain.from_iterable(os.walk(path) for path in paths):
     # NOTE: As of now there is no distinction between unattempted files and unfinished ones.
     if (nonm_count + noneq_count + global_asm_count) == 0 :
       outfile.write("    $(BUILD_DIR)/")
-      #outpath = os.path.splitext(filename)[0] + ".c.o    \\\n"
-      #if outpath.startswith("src/overlays/"):
-      #    outpath = "overlays/" + outpath
-      #outfile.write(outpath)
-      outfile.write(os.path.splitext(filename)[0])
-      outfile.write(".c.o    \\\n")
+      outpath = os.path.splitext(filename)[0] + ".c.o    \\\n"
+      if outpath.startswith("src/overlays/"):
+          outpath = "overlays/" + outpath
+      outfile.write(outpath)
+      #outfile.write(os.path.splitext(filename)[0])
+      #outfile.write(".c.o    \\\n")
     infile.close()
 outfile.close()

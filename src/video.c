@@ -6,6 +6,7 @@
 #include "camera.h"
 #include "types.h"
 #include "audiomgr.h"
+#include "overlay.h"
 
 /************ .data ************/
 

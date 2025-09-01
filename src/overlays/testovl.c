@@ -11,7 +11,7 @@ const char gOverlayRodataTest22[] = "This function also works too I guess.\n";
 
 void second_func(void);
 
-void overlay_run(void) {
+void overlay_run_test(void) {
     gOverlayVarTest++;
     gOverlayBssTest++;
     debug_printf(gOverlayRodataTest, gOverlayVarTest);

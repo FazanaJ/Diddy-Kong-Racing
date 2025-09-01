@@ -37,6 +37,7 @@
 #include "main.h"
 #include "thread0_epc.h"
 #include "gzip.h"
+#include "overlay.h"
 
 /**
  * @file Contains all the code used for every menu in the game.

@@ -2,6 +2,8 @@ import struct
 import argparse
 import os
 from collections import defaultdict
+from elftools.elf.elffile import ELFFile
+from elftools.elf.sections import SymbolTableSection
 
 MAP_SYMBOL_STRUCT_FORMAT = "<I32s"
 OVERLAY_STRUCT_FORMAT = "<IIIIIIIII"  # 9x u32 (symOffset added)
@@ -147,13 +149,15 @@ def write_overlay_and_symbol_tables(overlays, output_file_path):
 
             text_cumulative_offset = entry[1]  # text_offset in binary
             for addr, name in symbols:
+                if name.startswith("_binary"):
+                    continue
                 offset_addr = text_cumulative_offset + (addr - sections["text"][0])
                 if offset_addr < 0:
                     offset_addr = 0
 
                 addr_swapped = struct.unpack("<I", struct.pack(">I", offset_addr))[0]
 
-                name_bytes = name.encode("ascii", errors="replace")[:32]
+                name_bytes = name.encode("ascii", errors="replace")[:31]
                 name_bytes = name_bytes.ljust(32, b"\x00")
                 f.write(struct.pack(MAP_SYMBOL_STRUCT_FORMAT, addr_swapped, name_bytes))
 
@@ -230,16 +234,66 @@ def write_binary_file(symbols, output_file_path):
     with open(output_file_path, "wb") as binary_file:
         for address, name in symbols:
             address = struct.unpack("<I", struct.pack(">I", address))[0]
-            name_bytes = name.encode("ascii")[:32]
+            name_bytes = name.encode("ascii")[:31]
             name_bytes = name_bytes.ljust(32, b'\x00')
             binary_file.write(struct.pack(MAP_SYMBOL_STRUCT_FORMAT, address, name_bytes))
+
+def parse_combined_overlays(map_file_path, elf_path, section_name=".overlays"):
+    # First get overlay structure from .map file
+    overlays = parse_overlays_and_symbols(map_file_path, section_name)
+    
+    # Then augment with ELF data
+    with open(elf_path, 'rb') as f:
+        elf = ELFFile(f)
+        symtab = elf.get_section_by_name('.symtab')
+        
+        if symtab:
+            for sym in symtab.iter_symbols():
+                try:
+                    # Skip special sections and linker-generated symbols
+                    if (isinstance(sym.entry.st_shndx, str) or 
+                        sym.entry.st_shndx == 0 or
+                        sym.name.startswith(('overlays_', '__', '.'))):
+                        continue
+                        
+                    sym_section = elf.get_section(sym.entry.st_shndx)
+                    if sym_section and sym_section.name.startswith('.overlays'):
+                        addr = sym.entry.st_value
+                        name = sym.name
+                        size = sym.entry.st_size
+                        
+                        # Find which overlay file this belongs to by address range
+                        for filename, sections in overlays.items():
+                            text_start, text_size = sections["text"]
+                            data_start, data_size = sections["data"]
+                            rodata_start, rodata_size = sections["rodata"]
+                            bss_start, bss_size = sections["bss"]
+                            
+                            # Check if symbol falls within this file's sections
+                            in_text = text_start <= addr < text_start + text_size
+                            in_data = data_start <= addr < data_start + data_size
+                            in_rodata = rodata_start <= addr < rodata_start + rodata_size
+                            in_bss = bss_start <= addr < bss_start + bss_size
+                            
+                            if in_text or in_data or in_rodata or in_bss:
+                                # Add symbol if it's not already present
+                                if not any(sym_addr == addr for sym_addr, _ in sections["symbols"]):
+                                    sections["symbols"].append((addr, name))
+                                break
+                                
+                except (TypeError, AttributeError):
+                    continue
+    
+    return overlays
 
 def parse():
     parser = argparse.ArgumentParser()
     parser.add_argument("map_file")
+    parser.add_argument("elf_file") 
     parser.add_argument("main_output_file")
     parser.add_argument("overlay_output_file")
     args = parser.parse_args()
+    
     if os.path.isdir(args.main_output_file) or os.path.isdir(args.overlay_output_file):
         return
 
@@ -248,8 +302,8 @@ def parse():
     main_symbols.sort(key=lambda x: x[0])
     write_binary_file(main_symbols, args.main_output_file)
 
-    # Parse overlay segment symbols (add more section names if needed)
-    overlays = parse_overlays_and_symbols(args.map_file, section_name=".overlays")
+    # Parse overlays using combined approach
+    overlays = parse_combined_overlays(args.map_file, args.elf_file)
     write_overlay_and_symbol_tables(overlays, args.overlay_output_file)
 
 parse()

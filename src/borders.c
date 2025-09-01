@@ -10,6 +10,7 @@
 #include "video.h"
 #include "main.h"
 #include "tracks.h"
+#include "overlay.h"
 
 void (*gDividerDraw)(Gfx **dList);
 void (*gDividerClear)(Gfx **dList);

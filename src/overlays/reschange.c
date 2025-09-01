@@ -10,6 +10,8 @@
 #include "PR/rcp.h"
 #include "PRinternal/viint.h"
 
+// GLOBAL_ASM
+
 /*
  * Video Interface (VI) mode type
  */
@@ -195,7 +197,7 @@ OSViMode osViModePal60Lan1 = {
 extern OSViMode gGlobalVI;
 extern s32 osViClock;
 
-/*void vi_dither(void) {
+void vi_dither(void) {
     if (gConfig.dedither) {
         osViSetSpecialFeatures(OS_VI_DIVOT_ON);
         osViSetSpecialFeatures(OS_VI_DITHER_FILTER_ON);
@@ -204,7 +206,7 @@ extern s32 osViClock;
         osViSetSpecialFeatures(OS_VI_DITHER_FILTER_OFF);
     }
     osViSetSpecialFeatures(OS_VI_GAMMA_OFF);
-}*/
+}
 
 void vi_reschange(int width, int height) {
     s32 addPAL = 0;
@@ -298,14 +300,7 @@ void vi_reschange(int width, int height) {
     gVideoAspectRatio = ((f32) tempWidth / (f32) height);
     cam_persp_init();
     osViSetMode(mode);
-    if (gConfig.dedither) {
-        osViSetSpecialFeatures(OS_VI_DIVOT_ON);
-        osViSetSpecialFeatures(OS_VI_DITHER_FILTER_ON);
-    } else {
-        osViSetSpecialFeatures(OS_VI_DIVOT_OFF);
-        osViSetSpecialFeatures(OS_VI_DITHER_FILTER_OFF);
-    }
-    osViSetSpecialFeatures(OS_VI_GAMMA_OFF);
+    vi_dither();
 
     if (width != prevWidth || height != prevHeight || prevBits != gBitDepth) {
         prevWidth = width;

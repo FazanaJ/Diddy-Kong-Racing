@@ -9,6 +9,8 @@
 #include "src/joypad.h"
 #include "src/audio.h"
 
+// GLOBAL_ASM
+
 extern u8 gPauseSubmenu;
 extern s32 gMenuDelay;
 extern s32 gMenuOption;
@@ -19,39 +21,46 @@ extern s16 gMenuStickY[5];
 extern struct FadeTransition sMenuTransitionFadeIn;
 extern s8 gControllersXAxisDirection[4];
 extern s8 gControllersYAxisDirection[4];
+extern s8 gDialogueSubmenu;
 
 char *sRegionBootStrings[] = {
     "VIDEO MODE",
-    "VIDEO MODE",
-    "VIDEO MODE",
+    "VIDEO MODE2",
+    "VIDEO MODE3",
 
     "(Hold B on boot to get this screen again)",
-    "(Hold B on boot to get this screen again)",
-    "(Hold B on boot to get this screen again)",
+    "(Hold B on boot to get this screen again)2",
+    "(Hold B on boot to get this screen again)3",
 
     "Brazil Brazil Brazil Brazil",
-    "Brazil Brazil Brazil Brazil",
-    "Brazil Brazil Brazil Brazil",
+    "Brazil Brazil Brazil Brazil2",
+    "Brazil Brazil Brazil Brazil3",
 
     "Use this if PAL60 does not work right.",
-    "Use this if PAL60 does not work right.",
-    "Use this if PAL60 does not work right.",
+    "Use this if PAL60 does not work right.2",
+    "Use this if PAL60 does not work right.3",
 
-    "Use this if your TV doesn't support 60Hz",
-    "Use this if your TV doesn't support 60Hz",
-    "Use this if your TV doesn't support 60Hz",
+    "Use this if your TV doesn't support 60Hz.",
+    "Use this if your TV doesn't support 60Hz.2",
+    "Use this if your TV doesn't support 60Hz.3",
     
     "Use this if possible.",
-    "Use this if possible.",
-    "Use this if possible.",
+    "Use this if possible.2",
+    "Use this if possible.3",
 
     "OK",
-    "OK",
-    "OK",
+    "OK2",
+    "OK3",
 
     "CURRENT",
-    "CURRENT",
-    "CURRENT",
+    "CURRENT2",
+    "CURRENT3",
+};
+
+char *sRegionLanguageStrings[] = {
+    "ENGLISH",
+    "GERMAN",
+    "FRENCH",
 };
 
 char *sRegionValues[] = {
@@ -64,6 +73,7 @@ char *sRegionValues[] = {
 void menu_region_init(void) {
     gPauseSubmenu = 0;
     gMenuDelay = 0;
+    gDialogueSubmenu = get_language();
     switch(gConfig.screenRegion) {
         case REGIONMODE_MPAL:
             gMenuOption = 0;
@@ -82,7 +92,7 @@ void menu_region_init(void) {
 
 s32 menu_region_loop(s32 updateRate) {
     Gfx **gfx = &sMenuCurrDisplayList;
-    s32 lang = 0;
+    s32 lang;
     s32 i;
     s32 x;
     s32 alpha;
@@ -90,6 +100,8 @@ s32 menu_region_loop(s32 updateRate) {
     s32 inputPressed;
     s32 curVideo;
     char textBytes[16];
+
+    lang = gDialogueSubmenu;
     
     gOptionBlinkTimer = (gOptionBlinkTimer + updateRate) & 0x3F;
     alpha = gOptionBlinkTimer * 8;
@@ -133,6 +145,20 @@ s32 menu_region_loop(s32 updateRate) {
         x += 56;
     }
 
+    x = SCREEN_WIDTH_HALF - ((64 * (3 - 1)) / 2);
+    for (i = 0; i < 3; i++) {
+        set_text_colour(0, 0, 0, 255, 128);
+        draw_text(gfx, x + 1, SCREEN_HEIGHT_HALF + 20 + 2, sRegionLanguageStrings[i], ALIGN_MIDDLE_CENTER);
+        if (gDialogueSubmenu == i && gPauseSubmenu == 1) {
+            al = alpha;
+        } else {
+            al = 0;
+        }
+        set_text_colour(255, 255, 255, al, 255);
+        draw_text(gfx, x, SCREEN_HEIGHT_HALF + 20, sRegionLanguageStrings[i], ALIGN_MIDDLE_CENTER);
+        x += 64;
+    }
+
     switch(gConfig.screenRegion) {
         case REGIONMODE_MPAL:
             curVideo = 0;
@@ -151,15 +177,15 @@ s32 menu_region_loop(s32 updateRate) {
     sprintf(textBytes, "%s: %s", sRegionBootStrings[lang + 21], sRegionValues[curVideo]);
 
     set_text_colour(0, 0, 0, 255, 128);
-    draw_text(gfx, SCREEN_WIDTH_HALF + 1, SCREEN_HEIGHT_HALF + 32 + 2, sRegionBootStrings[lang + 18], ALIGN_MIDDLE_CENTER);
+    draw_text(gfx, SCREEN_WIDTH_HALF + 1, SCREEN_HEIGHT_HALF + 40 + 2, sRegionBootStrings[lang + 18], ALIGN_MIDDLE_CENTER);
     draw_text(gfx, SCREEN_WIDTH_HALF + 1, SCREEN_HEIGHT_HALF - 28 + 2, textBytes, ALIGN_MIDDLE_CENTER);
-    if (gPauseSubmenu != 0) {
+    if (gPauseSubmenu == 2) {
         al = alpha;
     } else {
         al = 0;
     }
     set_text_colour(255, 255, 255, al, 255);
-    draw_text(gfx, SCREEN_WIDTH_HALF, SCREEN_HEIGHT_HALF + 32, sRegionBootStrings[lang + 18], ALIGN_MIDDLE_CENTER);
+    draw_text(gfx, SCREEN_WIDTH_HALF, SCREEN_HEIGHT_HALF + 40, sRegionBootStrings[lang + 18], ALIGN_MIDDLE_CENTER);
     set_text_colour(160, 255, 160, 128, 255);
     draw_text(gfx, SCREEN_WIDTH_HALF, SCREEN_HEIGHT_HALF - 28, textBytes, ALIGN_MIDDLE_CENTER);
 
@@ -172,22 +198,40 @@ s32 menu_region_loop(s32 updateRate) {
         inputPressed |= input_pressed(i);
     }
 
-    if (gPauseSubmenu == 0) {
-        if (gMenuStickX[PLAYER_MENU] > 0 && gMenuOption < 3) {
-            gMenuOption++;
+    if (gPauseSubmenu != 2) {
+        if (gMenuStickX[PLAYER_MENU] > 0) {
+            if (gPauseSubmenu == 0 && gMenuOption < 3) {
+                sound_play(SOUND_MENU_PICK2, NULL);
+                gMenuOption++;
+            }
+            if (gPauseSubmenu == 1 && gDialogueSubmenu < 2) {
+                sound_play(SOUND_MENU_PICK2, NULL);
+                gDialogueSubmenu++;
+                set_language(gDialogueSubmenu);
+            }
         }
         if (gMenuStickX[PLAYER_MENU] < 0 && gMenuOption > 0) {
-            gMenuOption--;
+            
+            if (gPauseSubmenu == 0 && gMenuOption > 0) {
+                sound_play(SOUND_MENU_PICK2, NULL);
+                gMenuOption--;
+            }
+            if (gPauseSubmenu == 1 && gDialogueSubmenu > 0) {
+                sound_play(SOUND_MENU_PICK2, NULL);
+                gDialogueSubmenu--;
+                set_language(gDialogueSubmenu);
+            }
         }
     }
-    if (gMenuStickY[PLAYER_MENU] < 0 && gPauseSubmenu == 0) {
-        gPauseSubmenu = 1;
+    if (gMenuStickY[PLAYER_MENU] < 0 && gPauseSubmenu < 2) {
+        gPauseSubmenu++;
     }
-    if (gMenuStickY[PLAYER_MENU] > 0 && gPauseSubmenu != 0) {
-        gPauseSubmenu = 0;
+    if (gMenuStickY[PLAYER_MENU] > 0 && gPauseSubmenu > 0) {
+        gPauseSubmenu--;
     }
 
     if (gMenuDelay == 0 && inputPressed & A_BUTTON) {
+        sound_play(SOUND_SELECT2, NULL);
         if (gPauseSubmenu == 0) {
             switch (gMenuOption) {
                 case 0:
@@ -204,7 +248,7 @@ s32 menu_region_loop(s32 updateRate) {
                     break;
             }
             vi_change(SCREEN_WIDTH, SCREEN_HEIGHT);
-        } else {
+        } else if (gPauseSubmenu == 2) {
             gMenuDelay = 1;
             audio_reinit();
             userconfig_write();
@@ -215,6 +259,7 @@ s32 menu_region_loop(s32 updateRate) {
     if (gMenuDelay) {
         gMenuDelay += updateRate;
         if (gMenuDelay >= 32) {
+            gDialogueSubmenu = 0;
             menu_init(BOOT_LVL);
         }
     }
