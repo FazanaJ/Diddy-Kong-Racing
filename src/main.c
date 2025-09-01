@@ -22,8 +22,10 @@ u8 gExpansionPak;
 u8 gUseExpansionMemory;
 UserConfig gConfig;
 
-//s32 *gOverlayCache;
-//s16 *gOverlayCacheIDs;
+s32 gOverlayCacheSize;
+s32 *gOverlayCache;
+s16 *gOverlayCacheIDs;
+u8 *gOverlayCacheRefs;
 
 /******************************/
 
@@ -346,11 +348,18 @@ void crash_init(void);
  * stopping this thread, as it's no longer needed.
  */
 void thread1_main(UNUSED void *unused) {
+    s32 i;
+
     video_alloc();
     crash_init();
     config_init();
-    //gOverlayCache = mempool_alloc_safe(6 *OVERLAY_COUNT, PP_RAM_ASSET_CACHE);
-    //gOverlayCacheIDs = (s16 *) ((u8 *) gOverlayCache + (OVERLAY_COUNT * 4));
+    gOverlayCache = mempool_alloc_safe(7 *OVERLAY_COUNT, PP_RAM_ASSET_CACHE);
+    gOverlayCacheIDs = (s16 *) ((u8 *) gOverlayCache + (OVERLAY_COUNT * 4));
+    gOverlayCacheRefs = (u8 *) ((u8 *) gOverlayCacheIDs + (OVERLAY_COUNT * 2));
+    gOverlayCacheSize = 0;
+    for (i = 0; i < OVERLAY_COUNT; i++) {
+        gOverlayCacheIDs[i] = -1;
+    }
     osCreateThread(&gThread3, 3, &thread3_main, 0, gThread3Stack + STACKSIZE(STACK_GAME), 10);
     gThread3Stack[STACKSIZE(STACK_GAME) - 1] = 0;
     gThread3Stack[0] = 0;
@@ -363,8 +372,6 @@ extern u8 *ovltable_ROM_END[];
 extern u8 *overlays_ROM_START[];
 extern u8 *overlays_ROM_END[];
 extern u8 *overlays_TEXT_START[];
-
-void *gLoadedOverlays[8];
 
 // Assumes these are defined somewhere:
 #define OP_MASK       0xFC000000
@@ -400,10 +407,22 @@ void overlay_reloc(s32 overlayID) {
     OverlayFile file;
     MapSymbol symbol;
     u32 searchAddr;
-    u32 overlayPos[2], overlayPos2[2];
+    u32 overlayPos[2];
+    u32 overlayPos2[2];
     s32 i, j, size;
+    void *overlay;
 
-    if (gLoadedOverlays[overlayID] == NULL) return;
+    overlay = NULL;
+    for (i = 0; i < gOverlayCacheSize; i++) {
+        if (gOverlayCacheIDs[i] == overlayID) {
+            overlay = (void *) gOverlayCache[i];
+            break;
+        }
+    }
+    if (overlay == NULL) {
+        //debug_printf("overlay_reloc: overlay %d not found in cache\n", overlayID);
+        return;
+    }
 
     // Read overlay entry and symbol table bounds
     searchAddr = (u32)ovltable_ROM_START;
@@ -414,16 +433,14 @@ void overlay_reloc(s32 overlayID) {
     searchAddr = ((u32)ovltable_ROM_START) + overlayPos[0];
     size = overlayPos2[0] - overlayPos[0];
 
-    // pointer to .text in RAM
-    u32 *text = (u32 *)gLoadedOverlays[overlayID];
+    u32 *text = (u32 *) overlay;
     s32 nInstr = file.textSize / 4;
 
     // Process all symbols
     for (i = 0; i < size; i += sizeof(MapSymbol)) {
         dmacopy(searchAddr + i, (u32)&symbol, sizeof(MapSymbol));
 
-        // Compute old and new addresses
-        u32 oldAddr = (u32)overlays_TEXT_START + symbol.address;
+        u32 oldAddr = (u32)overlays_TEXT_START + symbol.address; // or just symbol.address if that's ROM addr
         u32 offset = 0;
 
         if (symbol.address >= file.textAddr && symbol.address < file.textAddr + file.textSize)
@@ -435,9 +452,9 @@ void overlay_reloc(s32 overlayID) {
         else if (symbol.address >= file.bssAddr && symbol.address < file.bssAddr + file.bssSize)
             offset = file.textSize + file.dataSize + file.rodataSize + (symbol.address - file.bssAddr);
         else
-            continue; // skip symbols outside overlay
+            continue;
 
-        u32 newAddr = (u32) ((u8 *)gLoadedOverlays[overlayID]) + offset;
+        u32 newAddr = (u32) ((u8 *) overlay + offset);
 
         u16 oldHi_c, oldLo_c, newHi_c, newLo_c;
         split_address(oldAddr, &oldHi_c, &oldLo_c);
@@ -448,6 +465,8 @@ void overlay_reloc(s32 overlayID) {
 
         const int WINDOW = 16;
 
+        //debug_printf("overlay_reloc: processing symbol %s ROM=%08X RAM=%08X\n", symbol.name, oldAddr, newAddr);
+
         // Scan .text for LUI / memory instructions
         for (j = 0; j < nInstr - 1; ++j) {
             u32 instr = text[j];
@@ -457,37 +476,39 @@ void overlay_reloc(s32 overlayID) {
             u32 destReg = rt_field(instr);
             if (luiImm != oldHi_c && luiImm != oldHi_r) continue;
 
-            int patched = 0;
             for (int k = 1; k <= WINDOW && (j + k) < nInstr; ++k) {
                 u32 next = text[j + k];
                 u32 nextOp = opcode(next);
 
-                // ADDIU / ORI patterns
-                if (nextOp == OP_ADDIU || nextOp == OP_ORI) {
-                    if (rs_field(next) == destReg && rt_field(next) == destReg) {
-                        if ((u16)imm16(next) == oldLo_c || (u16)imm16(next) == oldLo_r) {
-                            u16 useHi = (luiImm == oldHi_c) ? newHi_c : newHi_r;
-                            u16 useLo = ((u16)imm16(next) == oldLo_c) ? newLo_c : newLo_r;
-                            text[j] = (OP_LUI | (destReg << 16) | useHi);
-                            text[j + k] = (nextOp | (destReg << 21) | (destReg << 16) | useLo);
-                            patched = 1;
-                        }
-                    }
+                int patched = 0;
+
+                if ((nextOp == OP_ADDIU || nextOp == OP_ORI) &&
+                    rs_field(next) == destReg && rt_field(next) == destReg &&
+                    ((u16)imm16(next) == oldLo_c || (u16)imm16(next) == oldLo_r)) {
+
+                    u16 useHi = (luiImm == oldHi_c) ? newHi_c : newHi_r;
+                    u16 useLo = ((u16)imm16(next) == oldLo_c) ? newLo_c : newLo_r;
+                    text[j] = (OP_LUI | (destReg << 16) | useHi);
+                    text[j + k] = (nextOp | (destReg << 21) | (destReg << 16) | useLo);
+                    patched = 1;
+
+                    //debug_printf("overlay_reloc: patched LUI+ADDIU at instr %d,%d (reg=%d) to %04X/%04X\n", j, j + k, destReg, useHi, useLo);
                 }
                 // Memory ops
-                else if (nextOp == OP_LW || nextOp == OP_SW || nextOp == OP_LH ||
-                         nextOp == OP_LHU || nextOp == OP_LB || nextOp == OP_LBU ||
-                         nextOp == OP_SH || nextOp == OP_SB || nextOp == OP_LWC1 || nextOp == OP_SWC1) {
-                    if (rs_field(next) == destReg) {
-                        if ((u16)imm16(next) == oldLo_c || (u16)imm16(next) == oldLo_r) {
-                            u16 useHi = (luiImm == oldHi_c) ? newHi_c : newHi_r;
-                            u16 useLo = ((u16)imm16(next) == oldLo_c) ? newLo_c : newLo_r;
-                            u32 rt = rt_field(next);
-                            text[j] = (OP_LUI | (destReg << 16) | useHi);
-                            text[j + k] = (nextOp | (rt << 16) | (destReg << 21) | useLo);
-                            patched = 1;
-                        }
-                    }
+                else if ((nextOp == OP_LW || nextOp == OP_SW || nextOp == OP_LH ||
+                          nextOp == OP_LHU || nextOp == OP_LB || nextOp == OP_LBU ||
+                          nextOp == OP_SH || nextOp == OP_SB || nextOp == OP_LWC1 || nextOp == OP_SWC1) &&
+                         rs_field(next) == destReg &&
+                         ((u16)imm16(next) == oldLo_c || (u16)imm16(next) == oldLo_r)) {
+
+                    u16 useHi = (luiImm == oldHi_c) ? newHi_c : newHi_r;
+                    u16 useLo = ((u16)imm16(next) == oldLo_c) ? newLo_c : newLo_r;
+                    u32 rt = rt_field(next);
+                    text[j] = (OP_LUI | (destReg << 16) | useHi);
+                    text[j + k] = (nextOp | (rt << 16) | (destReg << 21) | useLo);
+                    patched = 1;
+
+                    //debug_printf("overlay_reloc: patched LUI+MEM at instr %d,%d (reg=%d) to %04X/%04X\n", j, j + k, destReg, useHi, useLo);
                 }
 
                 if (patched) break;
@@ -503,10 +524,14 @@ void overlay_reloc(s32 overlayID) {
             u32 oldTarget = ((instr & 0x03FFFFFF) << 2) | (((u32) text + (j * 4)) & 0xF0000000);
             if (oldTarget == oldAddr) {
                 text[j] = (instr & 0xFC000000) | ((newAddr >> 2) & 0x03FFFFFF);
+                //debug_printf("overlay_reloc: patched JAL at instr %d from %08X -> %08X\n", j, oldTarget, newAddr);
+            } else {
+                //debug_printf("overlay_reloc: checked JAL at instr %d target=%08X, not patched\n", j, oldTarget);
             }
         }
     }
 }
+
 
 
 void *overlay_load(s32 overlayID) {
@@ -514,17 +539,24 @@ void *overlay_load(s32 overlayID) {
     s32 size;
     u32 searchAddr;
     void *overlay;
+    s32 found;
+    s32 i;
 
+    for (i = 0; i < gOverlayCacheSize; i++) {
+        if (gOverlayCacheIDs[i] == overlayID) {
+            gOverlayCacheRefs[i]++;
+            return (s32 *) gOverlayCache[i];
+        }
+    }
 
     searchAddr = (u32) ovltable_ROM_START;
-    size = 0;
     dmacopy(searchAddr + (sizeof(OverlayFile) * overlayID), (u32) &file, sizeof(OverlayFile));
 
     size = file.textSize + file.dataSize + file.rodataSize + file.bssSize;
 
     //debug_printf("Size: %X   %X %X %X %X\n", size, file.textSize, file.bssSize, file.dataSize, file.rodataSize);
 
-    overlay = mempool_alloc(size, PP_RAM_CODE);
+    overlay = mempool_alloc(size, PP_RAM_OVERLAYS);
 
     if (overlay == NULL) {
         return NULL;
@@ -553,9 +585,31 @@ void *overlay_load(s32 overlayID) {
         bzero((void *) ((u8 *) overlay + (file.textSize + file.dataSize + file.rodataSize)), file.bssSize);
     }
 
+    found = FALSE;
+    for (i = 0; i < gOverlayCacheSize; i++) {
+        if (gOverlayCacheIDs[i] == -1) {
+            gOverlayCacheIDs[i] = overlayID;
+            gOverlayCache[i] = (s32) overlay;
+            gOverlayCacheRefs[i] = 1;
+            found = TRUE;
+            //debug_printf("New Overlay Pos: %d\n", i);
+            break;
+        }
+    }
+
+    if (found == FALSE) {
+        gOverlayCacheIDs[gOverlayCacheSize] = overlayID;
+        gOverlayCache[gOverlayCacheSize] = (s32) overlay;
+        gOverlayCacheRefs[gOverlayCacheSize] = 1;
+        //debug_printf("New Overlay Pos: %d\n", gOverlayCacheSize);
+        gOverlayCacheSize++;
+    }
+
     //debug_dump_hex(overlay, file.textSize, 16);
-    gLoadedOverlays[overlayID] = overlay;
     overlay_reloc(overlayID);
+    osWritebackDCache(overlay, size - file.bssSize);
+    //osWritebackDCacheAll();
+    //osInvalDCache(overlay, size - file.bssSize);
     //debug_dump_hex(overlay, file.textSize, 16);
 
     return overlay;
@@ -568,11 +622,19 @@ void *overlay_symbol(s32 overlayID, const char *symbol) {
     u32 overlayPos[2], overlayPos2[2];
     u32 i;
     u32 searchSize;
-    u8 *overlayBase;
+    void *overlay;
 
-    if (gLoadedOverlays[overlayID] == NULL) return NULL;
-
-    overlayBase = gLoadedOverlays[overlayID];
+    overlay = NULL;
+    for (i = 0; i < (u32) gOverlayCacheSize; i++) {
+        if (gOverlayCacheIDs[i] == overlayID) {
+            overlay = (void *) gOverlayCache[i];
+            break;
+        }
+    }
+    if (overlay == NULL) {
+        return NULL;
+    }
+    //debug_printf("Sym Overlay Pos: %d\n", i);
 
     // Read overlay entry and symbol table bounds
     searchAddr = (u32)ovltable_ROM_START;
@@ -608,9 +670,8 @@ void *overlay_symbol(s32 overlayID, const char *symbol) {
             return NULL;
         }
 
-        void *runtimeAddr = overlayBase + offset;
-        //debug_printf("Resolved symbol %s: ROM %08X -> RAM %08X (offset %X)\n",
-        //             mapSymbol.name, mapSymbol.address, (u32)runtimeAddr, offset);
+        void *runtimeAddr = overlay + offset;
+        //debug_printf("Resolved symbol %s: ROM %08X -> RAM %08X (offset %X)\n", mapSymbol.name, mapSymbol.address, (u32)runtimeAddr, offset);
 
         return runtimeAddr;
     }
@@ -619,5 +680,17 @@ void *overlay_symbol(s32 overlayID, const char *symbol) {
 }
 
 void overlay_free(s32 overlayID) {
-    mempool_free(gLoadedOverlays[overlayID]);
+    s32 i;
+    
+    for (i = 0; i < gOverlayCacheSize; i++) {
+        if (gOverlayCacheIDs[i] == overlayID) {
+            gOverlayCacheRefs[i]--;
+            if (gOverlayCacheRefs[i] == 0) {
+                mempool_free((void *) gOverlayCache[i]);
+                gOverlayCacheIDs[i] = -1;
+            }
+            break;
+        }
+    }
+
 }

@@ -39,6 +39,7 @@
 #include <PR/ucode.h>
 #include <PR/ultraerror.h>
 #include <PR/ultralog.h>
+#include "overlays.h"
 
 extern u32 __osBbEepromAddress;
 extern u32 __osBbEepromSize;

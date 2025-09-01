@@ -80,31 +80,38 @@ def parse_overlays_and_symbols(map_file_path, section_name=".overlays"):
 
 def write_overlay_and_symbol_tables(overlays, output_file_path):
     with open(output_file_path, "wb") as f:
-        # First pass: write placeholder OverlayFile structs
+        # Compute total sizes first
+        total_text_size = sum(sections["text"][1] for sections in overlays.values())
+        total_data_size = sum(sections["data"][1] for sections in overlays.values())
+        total_rodata_size = sum(sections["rodata"][1] for sections in overlays.values())
+        total_bss_size = sum(sections["bss"][1] for sections in overlays.values())
+
+        # Now cumulative offsets per section
+        text_offset = 0
+        data_offset = total_text_size     # data comes after all text
+        rodata_offset = total_text_size + total_data_size
+        bss_offset = total_text_size + total_data_size + total_rodata_size
+
         overlay_entries = []
         for filename, sections in overlays.items():
-            textAddr, textSize = sections["text"]
-            dataAddr, dataSize = sections["data"]
-            rodataAddr, rodataSize = sections["rodata"]
-            bssAddr, bssSize = sections["bss"]
-            symOffset = 0  # placeholder for now
-
-            # Convert all addresses to offsets relative to the overlay .text start
-            textAddr_offset   = 0
-            dataAddr_offset   = 0 if dataSize == 0 else dataAddr - textAddr
-            rodataAddr_offset = 0 if rodataSize == 0 else rodataAddr - textAddr
-            bssAddr_offset    = 0 if bssSize == 0 else bssAddr - textAddr
-
+            textSize = sections["text"][1]
+            dataSize = sections["data"][1]
+            rodataSize = sections["rodata"][1]
+            bssSize = sections["bss"][1]
 
             overlay_entries.append((
                 filename,
-                textAddr_offset, textSize,
-                dataAddr_offset, dataSize,
-                rodataAddr_offset, rodataSize,
-                bssAddr_offset, bssSize,
-                symOffset
+                text_offset, textSize,
+                data_offset, dataSize,
+                rodata_offset, rodataSize,
+                bss_offset, bssSize,
+                0  # symOffset placeholder
             ))
 
+            text_offset += textSize
+            data_offset += dataSize
+            rodata_offset += rodataSize
+            bss_offset += bssSize
 
         # Write them all with placeholder symOffset
         table_start = f.tell()
@@ -131,15 +138,13 @@ def write_overlay_and_symbol_tables(overlays, output_file_path):
             symbols = sections["symbols"]
 
             if symbols:
-                sym_offset = f.tell()  # file offset where its symbols begin
+                sym_offset = f.tell()  # file offset where symbols begin
             else:
                 sym_offset = 0
 
+            text_cumulative_offset = entry[1]  # text_offset in binary
             for addr, name in symbols:
-                offset_addr = addr - sections["text"][0]  # relative to overlay .text
-                text_base = sections["text"][0]
-
-                offset_addr = addr - text_base
+                offset_addr = text_cumulative_offset + (addr - sections["text"][0])
                 if offset_addr < 0:
                     offset_addr = 0
 
@@ -157,6 +162,7 @@ def write_overlay_and_symbol_tables(overlays, output_file_path):
                 entry[7], entry[8],
                 sym_offset
             ))
+
 
         # Seek back and rewrite overlay table with real symOffsets
         f.seek(table_start)

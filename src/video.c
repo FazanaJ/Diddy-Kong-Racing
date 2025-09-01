@@ -52,9 +52,9 @@ void video_alloc(void) {
     //void (*func)(s32 index);
     wcopy(&osViModeNtscLan1, &gGlobalVI, sizeof(OSViMode));
 
-    //overlay_load(0);
+    //overlay_load(OVERLAY_RESCHANGE);
 
-    //func = overlay_symbol(0, "reschange_alloc");
+    //func = overlay_symbol(OVERLAY_RESCHANGE, "reschange_alloc");
 
     for (i = 0; i < 3; i++) {
         gVideoFramebuffers[i] = NULL;
@@ -62,7 +62,7 @@ void video_alloc(void) {
         fb_alloc(i);
     }
 
-    //overlay_free(0);
+    //overlay_free(OVERLAY_RESCHANGE);
 }
 
 /**
@@ -77,10 +77,10 @@ s32 fb_size(void) {
 void vi_change(int width, int height) {
     void (*func)(s32 width, s32 height);
 
-    overlay_load(0);
-    func = overlay_symbol(0, "vi_reschange");
+    overlay_load(OVERLAY_RESCHANGE);
+    func = overlay_symbol(OVERLAY_RESCHANGE, "vi_reschange");
     (*func)(width, height);
-    overlay_free(0);
+    overlay_free(OVERLAY_RESCHANGE);
 }
 
 /**

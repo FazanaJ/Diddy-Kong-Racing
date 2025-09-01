@@ -1,0 +1,12 @@
+#ifndef OVERLAYS_H
+#define OVERLAYS_H
+
+typedef enum {
+    OVERLAY_MENU_DEBUG,
+    OVERLAY_MENU_REGION,
+    OVERLAY_RESCHANGE,
+    OVERLAY_TESTOVL,
+    OVERLAY_COUNT
+} OverlayID;
+
+#endif // OVERLAYS_H
