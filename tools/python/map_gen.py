@@ -116,11 +116,14 @@ def write_overlay_and_symbol_tables(overlays, output_file_path):
         # Write them all with placeholder symOffset
         table_start = f.tell()
         for entry in overlay_entries:
-            print(entry)
+            filename, text_off, textSize, data_off, dataSize, rodata_off, rodataSize, bss_off, bssSize, symOff = entry
+            totalSize = textSize + dataSize + rodataSize + bssSize
+            print(f"{filename}: text={textSize}, data={dataSize}, rodata={rodataSize}, bss={bssSize}, total={totalSize}")
+
             packed = struct.pack(
                 OVERLAY_STRUCT_FORMAT,
                 *[int.from_bytes(x.to_bytes(4, "big", signed=True), "little", signed=False) if isinstance(x, int) and x else 0
-                  for x in entry[1:]]  # skip filename
+                for x in entry[1:]]  # skip filename
             )
             f.write(packed)
 

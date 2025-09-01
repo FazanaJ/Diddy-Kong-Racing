@@ -29,6 +29,7 @@
 #include "thread0_epc.h"
 #include "thread30_bgload.h"
 #include "printf.h"
+#include "borders.h"
 
 // Maximum size for a level model is 522.5 KiB
 #define LEVEL_MODEL_MAX_SIZE 0x82A00
@@ -3169,6 +3170,7 @@ void free_track(void) {
         return;
     }
 
+    divider_free();
     racerfx_free();
     if (gWaveBlockCount != 0) {
         mempool_free(D_8011C3B8);

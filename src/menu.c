@@ -2479,7 +2479,7 @@ void menu_init(u32 menuId) {
     for (i = 0; i < ARRAY_COUNT(gMenuSoundMasks); i++) { gMenuSoundMasks[i] = NULL; }
     // clang-format on
 
-    if (gMenuOverlayID >= -1) {
+    if (gMenuOverlayID >= 0) {
         gMenuOverlayDie = gMenuOverlayID;
         gMenuOverlayID = -1;
     }

@@ -219,6 +219,7 @@ typedef enum DebugRam {
 
 
 extern u8 *main_BSS_START[];
+extern u8 *main_BSS_END[];
 
 #define MEMSTRINGS \
     "Code\t", \
@@ -357,10 +358,15 @@ typedef struct OverlayFile {
 extern DebugData *gDebug;
 extern char *sPuppyprintMemColours[];
 extern f32 gFPS;
+extern s32 gOverlayCacheSize;
+extern s32 *gOverlayCache;
+extern s16 *gOverlayCacheIDs;
+extern u8 *gOverlayCacheRefs;
 
 void *overlay_symbol(s32 overlayID, const char *symbol);
 void *overlay_load(s32 overlayID);
 void overlay_free(s32 overlayID);
+void overlay_init(void);
 
 void debug_init();
 s32 memsize_get(void);
