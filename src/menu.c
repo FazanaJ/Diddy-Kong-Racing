@@ -2582,7 +2582,7 @@ s32 menu_loop(Gfx **currDisplayList, Mtx **currHudMat, Vertex **currHudVerts, Tr
     sMenuCurrHudVerts = *currHudVerts;
     sMenuCurrHudTris = *currHudTris;
 
-    if (gMenuOverlayDie >= -1) {
+    if (gMenuOverlayDie >= 0) {
         overlay_free(gMenuOverlayDie);
         gMenuOverlayDie = -1;
         if (gMenuOverlayID == -1) {

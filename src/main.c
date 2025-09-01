@@ -541,6 +541,7 @@ void *overlay_load(s32 overlayID) {
     void *overlay;
     s32 found;
     s32 i;
+    u32 first = osGetCount();
 
     for (i = 0; i < gOverlayCacheSize; i++) {
         if (gOverlayCacheIDs[i] == overlayID) {
@@ -612,6 +613,7 @@ void *overlay_load(s32 overlayID) {
     //osInvalDCache(overlay, size - file.bssSize);
     //debug_dump_hex(overlay, file.textSize, 16);
 
+    debug_printf("Loading overlay %d (%2.3fs)\n", overlayID, (f32) (osGetCount() - first)  / 46875000.0f);
     return overlay;
 }
 
@@ -686,6 +688,7 @@ void overlay_free(s32 overlayID) {
         if (gOverlayCacheIDs[i] == overlayID) {
             gOverlayCacheRefs[i]--;
             if (gOverlayCacheRefs[i] == 0) {
+                debug_printf("Freeing overlay %d\n", overlayID);
                 mempool_free((void *) gOverlayCache[i]);
                 gOverlayCacheIDs[i] = -1;
             }
