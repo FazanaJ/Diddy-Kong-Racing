@@ -32,7 +32,25 @@
     - Because all the sections are separated from each other in the compiled binary, this
       system cannot support compression.
     - For reasons I do not yet know, GCC does not work. Likely related to patching.
+
+    Data layout:
+    1: Each overlay file has an OverlayFile entry. The first 32 bytes match where the overlay
+       is in ROM, so it can be DMA'd in. The last 4 bytes, symbolAddr, is for knowing where
+       the symbol list in 2. start for that overlay.
+    2. Each overlay file in the same order has all its symbols in order with address offsets.
 */
+
+typedef struct OverlayFile {
+    u32 textAddr;
+    u32 textSize;
+    u32 dataAddr;
+    u32 dataSize;
+    u32 rodataAddr;
+    u32 rodataSize;
+    u32 bssAddr;
+    u32 bssSize;
+    u32 symbolAddr;
+} OverlayFile;
 
 s32 gOverlayCacheSize;
 s32 *gOverlayCache;
