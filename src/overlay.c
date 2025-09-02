@@ -54,6 +54,7 @@ typedef struct OverlayFile {
     u32 symbolAddr;
 } OverlayFile;
 
+#define OVERLAY_CACHE_COUNT 100
 #define OVERLAY_DEPENDANCIES 4
 
 s32 gOverlayCacheSize;
@@ -92,11 +93,11 @@ extern u8 *ovlNames_ROM_END[];
 
 void overlay_init(void) {
     s32 i;
-    gOverlayCache = mempool_alloc_safe(7 * OVERLAY_COUNT, PP_RAM_ASSET_CACHE);
-    gOverlayCacheIDs = (s16 *) ((u8 *) gOverlayCache + (OVERLAY_COUNT * 4));
-    gOverlayCacheRefs = (u8 *) ((u8 *) gOverlayCacheIDs + (OVERLAY_COUNT * 2));
+    gOverlayCache = mempool_alloc_safe(7 * OVERLAY_CACHE_COUNT, PP_RAM_ASSET_CACHE);
+    gOverlayCacheIDs = (s16 *) ((u8 *) gOverlayCache + (OVERLAY_CACHE_COUNT * 4));
+    gOverlayCacheRefs = (u8 *) ((u8 *) gOverlayCacheIDs + (OVERLAY_CACHE_COUNT * 2));
     gOverlayCacheSize = 0;
-    for (i = 0; i < OVERLAY_COUNT; i++) {
+    for (i = 0; i < OVERLAY_CACHE_COUNT; i++) {
         gOverlayCacheIDs[i] = -1;
     }
 }

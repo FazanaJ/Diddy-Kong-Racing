@@ -6458,8 +6458,3 @@ void obj_loop_levelname(Object *obj, s32 updateRate) {
         }
     }
 }
-
-void obj_loop_wizghosts(Object *obj, s32 updateRate) {
-    func_8001F460(obj, updateRate, obj);
-    obj->animFrame = (obj->animFrame + (updateRate * 8)) & 0xFF;
-}

@@ -8203,13 +8203,6 @@ void menu_input(void) {
     }
 }
 
-/**
- * Return whether the tracks menu is open.
- */
-UNUSED s32 trackmenu_active(void) {
-    return gIsInTracksMenu;
-}
-
 void menu_track_select_init(void) {
     s32 levelCount;
     s32 worldCount;

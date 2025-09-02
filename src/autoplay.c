@@ -30,7 +30,7 @@ extern s32 gTrackSelectCursorX;
 extern s32 gTrackSelectCursorY;
 extern s32 gMenuCurIndex;
 
-u8 gAutoplayTest = AUTOPLAY_OFF;
+u8 gAutoplayTest = AUTOPLAY_DEFAULT;
 
 u8 sControllerFlip = 0;
 u8 sCharSelectInputs = 0;

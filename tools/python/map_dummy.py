@@ -10,47 +10,54 @@ def write_binary_file():
     with open("assets/overlay_symbols.bin", "wb") as binary_file2:
         pass
 
-def write_overlay_enum(header_file_path):
+def write_overlay_and_object_enum(header_file_path):
     overlay_dir = os.path.join("src", "overlays")
-    overlays = []
+    object_dir = os.path.join("src", "objects")
 
-    # Collect overlay source filenames (ignore non-C files)
-    for fname in sorted(os.listdir(overlay_dir)):
-        if fname.endswith(".c"):
-            overlays.append(fname)
+    entries = []
 
-    # Build the new header content in memory
+    if os.path.exists(overlay_dir):
+        for fname in sorted(os.listdir(overlay_dir)):
+            if fname.endswith(".c"):
+                base = os.path.splitext(fname)[0]
+                name = base.upper().replace("-", "_").replace(".", "_")
+                entries.append(f"    OVERLAY_{name},")
+
+    if os.path.exists(object_dir):
+        for fname in sorted(os.listdir(object_dir)):
+            if fname.endswith(".c"):
+                base = os.path.splitext(fname)[0]
+                name = base.upper().replace("-", "_").replace(".", "_")
+                entries.append(f"    OBJOVL_{name},")
+
     lines = []
     lines.append("#ifndef OVERLAYS_H\n")
     lines.append("#define OVERLAYS_H\n\n")
+
     lines.append("typedef enum {\n")
-
-    for fname in overlays:
-        base = os.path.splitext(fname)[0]  # remove .c
-        name = base.upper().replace("-", "_").replace(".", "_")
-        lines.append(f"    OVERLAY_{name},\n")
-
+    lines.extend(line + "\n" for line in entries)
     lines.append("    OVERLAY_COUNT\n")
     lines.append("} OverlayID;\n\n")
+
     lines.append("#endif // OVERLAYS_H\n")
 
     new_content = "".join(lines)
 
-    # Check if file exists and content is unchanged
     if os.path.exists(header_file_path):
         with open(header_file_path, "r") as f:
             old_content = f.read()
         if old_content == new_content:
-            return  # no change, skip writing
+            return
 
-    # Write new content only if changed
     with open(header_file_path, "w") as h:
         h.write(new_content)
+
+
 
 def parse():
     write_binary_file()
     header_path = os.path.join("include", "overlays.h")
     os.makedirs(os.path.dirname(header_path), exist_ok=True)
-    write_overlay_enum(header_path)
+    write_overlay_and_object_enum(header_path)
 
 parse()

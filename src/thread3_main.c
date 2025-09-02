@@ -283,6 +283,7 @@ void main_game_loop(void) {
         }
         if (gAutoplayTest != AUTOPLAY_OFF && gPlatform & CONSOLE) {
             if (get_game_mode() == GAMEMODE_MENU && gCurrentMenuId == MENU_TRACK_SELECT) {
+                sLogicUpdateRate = 5;
                 sched_framecap(0);
             } else if (level_id() == ASSET_LEVEL_CENTRALAREAHUB) {
                 sLogicUpdateRate = 2;

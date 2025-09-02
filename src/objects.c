@@ -42,6 +42,7 @@
 #include "waves.h"
 #include "weather.h"
 #include "autoplay.h"
+#include "overlay.h"
 
 #undef VERSION
 #define VERSION VERSION_80
@@ -983,6 +984,15 @@ void free_all_objects(void) {
     //gLoadedObjectHeaders = mempool_alloc_safe(gAssetsObjectHeadersTableLength * 4, PP_RAM_ASSETTABLE);
     //gObjectHeaderReferences = mempool_alloc_safe(gAssetsObjectHeadersTableLength, PP_RAM_ASSETTABLE);
 
+s32 header_get_overlay(s32 index) {
+    switch (index) {
+        default:
+            return -1;
+        case ASSET_OBJECT_ID_WIZGHOSTS:
+            return OBJOVL_WIZGHOSTS;
+    }
+}
+
 /**
  * Set the object's header.
  * Search if the intended header is already loaded and use that.
@@ -1018,7 +1028,7 @@ ObjectHeader *load_object_header(s32 index) {
         asset_load(ASSET_OBJECTS, (u32) address, offset[0], size);
         if (get_game_mode() == GAMEMODE_INGAME) {
             if ((address->flags & OBJECT_HEADER_NO_TIME_TRIAL && (gTimeTrialEnabled && level_type() != RACETYPE_HUBWORLD)) ||
-                (address->flags & OBJECT_HEADER_NO_MULTIPLATER && get_active_player_count() >= 2)) {
+                (address->flags & OBJECT_HEADER_NO_MULTIPLATER && get_active_player_count() > 2)) {
                 mempool_free(address);
                 return NULL;
             }
@@ -1030,6 +1040,7 @@ ObjectHeader *load_object_header(s32 index) {
         address->vehiclePartIds = (s32 *) ((uintptr_t) address + (uintptr_t) address->vehiclePartIds);
         address->vehiclePartIndices = (s8 *) ((uintptr_t) address + (uintptr_t) address->vehiclePartIndices);
         address->modelIds = (s32 *) ((uintptr_t) address + (uintptr_t) address->modelIds);
+        address->overlayID = 0xFFFE;
 
         address->numLightSources = 1;
         slotIndex = -1;
@@ -1066,6 +1077,9 @@ void try_free_object_header(s32 index) {
         if (gObjectHeaderCacheIDs[i] == index) {
             address = (ObjectHeader *) gObjectHeaderCache[i];
             address->numLightSources--;
+            if (address->overlayID != -1) {
+                overlay_free(address->overlayID);
+            }
 
             if (address->numLightSources <= 0) {
                 mempool_free(address);
@@ -2048,6 +2062,10 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
         mempool_free(curObj);
         return NULL;
     }
+    curObj->header->overlayID = header_get_overlay(entry->objectID);
+    if (curObj->header->overlayID != -1) {
+        overlay_load(curObj->header->overlayID);
+    }
     if (curObj->header->flags & HEADER_FLAGS_UNK_0080) {
         curObj->trans.flags |= OBJ_FLAGS_UNK_0080;
     }
@@ -2545,6 +2563,7 @@ Object *obj_spawn_attachment(s32 objID) {
         objID = 0;
     }
     objHeader = load_object_header(objID);
+    objHeader->overlayID = -1;
     if (objHeader == NULL) {
         return NULL;
     }
@@ -10008,6 +10027,7 @@ s32 get_object_property_size(Object *obj, void *obj64) {
  */
 void run_object_init_func(Object *obj, void *entry, s32 param) {
     void (*func)(Object *, s32);
+    void (*initFunc)(Object *obj, LevelObjectEntry* entry);
 
     func = NULL;
     obj->behaviorId = obj->header->behaviorId;
@@ -10333,7 +10353,7 @@ void run_object_init_func(Object *obj, void *entry, s32 param) {
             func = obj_loop_animcamera;
             break;
         case BHV_WIZPIG_GHOSTS:
-            func = obj_loop_wizghosts;
+            func = overlay_symbol(OBJOVL_WIZGHOSTS, "obj_loop_wizghosts");
             break;
         case BHV_ANIMATED_OBJECT:
         case BHV_ANIMATED_OBJECT_2:

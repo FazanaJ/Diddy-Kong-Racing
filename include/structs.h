@@ -839,7 +839,7 @@ typedef struct ObjectHeader {
     /* 0x5B */ u8 unk5B;
     /* 0x5C */ u8 unk5C;
     /* 0x5D */ u8 unk5D; // Misc Asset index?
-    /* 0x5E */ u8 pad5E[0x2];
+                s16 overlayID;
     /* 0x60 */ char internalName[16];
     /* 0x70 */ u8 unk70;
     /* 0x71 */ u8 directionalPointLighting; // If enabled, the model is lit from the direction of the light source; if

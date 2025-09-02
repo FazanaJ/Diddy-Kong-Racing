@@ -21,21 +21,31 @@ def process_asset_list(json_path, out_bin):
             base_bytes = base_bytes.ljust(32, b'\0')
             out.write(base_bytes)
 
-def process_overlay_list(src_dir, out_bin):
-    with open(out_bin, 'wb') as out:
+def process_overlay_object_list(out_bin):
+    entries = []
+
+    for src_dir, prefix in [("src/overlays", ""), ("src/objects", "")]:
+        if not os.path.exists(src_dir):
+            continue
         for filename in sorted(os.listdir(src_dir)):
             if not filename.endswith(".c"):
                 continue
             base = os.path.splitext(filename)[0]
+            entries.append(base)
+
+    with open(out_bin, 'wb') as out:
+        for base in entries:
             base_bytes = base.encode('ascii', errors='replace')[:31]
             base_bytes = base_bytes.ljust(32, b'\0')
             out.write(base_bytes)
+
 
 region = sys.argv[1]
 version = sys.argv[2]
 for asset in asset_list:
     process_asset_list(
-        "assets/" + region + "." + version + "/" + asset + ".meta.json",
-        "assets/" + asset + "_list.bin"
+        f"assets/{region}.{version}/{asset}.meta.json",
+        f"assets/{asset}_list.bin"
     )
-    process_overlay_list("src/overlays", "assets/overlay_list.bin")
+
+process_overlay_object_list("assets/overlay_list.bin")

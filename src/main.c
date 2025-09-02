@@ -26,7 +26,6 @@ UserConfig gConfig;
 /******************************/
 
 #define FRAMETIME_COUNT 30
-#define OVERLAY_COUNT 100
 
 u32 frameTimes[FRAMETIME_COUNT];
 u8 curFrameTimeIndex = 0;
