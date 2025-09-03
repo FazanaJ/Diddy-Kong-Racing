@@ -2,6 +2,7 @@
 #include "PRinternal/siint.h"
 #include "PRinternal/piint.h"
 #include "src/main.h"
+#include "os_libc.h"
 #include "save_layout.h"
 
 #define SRAM_START_ADDR         0x08000000

@@ -39,20 +39,20 @@ SECTIONS
         build/src/hasm/entrypoint.s.o(.text);
         build/src*.o(.text);
         build/libultra/src*.o(.text);
-        build/asm/data/ucode_audio.s.o(.text);
-        build/asm/data/ucode_boot.s.o(.text);
-        build/asm/data/ucode_f3ddkr_dram.s.o(.text);
-        build/asm/data/ucode_f3ddkr_fifo.s.o(.text);
-        build/asm/data/ucode_f3ddkr_xbus.s.o(.text);
+        build/asm/data/aspMain.s.o(.text);
+        build/asm/data/rspboot.s.o(.text);
+        build/asm/data/f3ddkr_dram.s.o(.text);
+        build/asm/data/f3ddkr_fifo.s.o(.text);
+        build/asm/data/f3ddkr_xbus.s.o(.text);
         /* Data */
         main_TEXT_END = .;
         main_TEXT_SIZE = ABSOLUTE(main_TEXT_END - main_TEXT_START);
         main_DATA_START = .;
         build/src*.o(.data*);
         build/libultra/src*.o(.data);
-        build/asm/data/data_audio.s.o(.data);
-        build/asm/data/data_f3ddkr_fifo.s.o(.data);
-        build/asm/data/data_f3ddkr_xbus.s.o(.data);
+        build/asm/data/aspMain.s.o(.data);
+        build/asm/data/f3ddkr_fifo.s.o(.data);
+        build/asm/data/f3ddkr_xbus.s.o(.data);
         /* Rodata */
         main_DATA_END = .;
         main_DATA_SIZE = ABSOLUTE(main_DATA_END - main_DATA_START);

@@ -115,7 +115,7 @@ DKR_OSTask gRdpTaskA = {
         // task
         M_GFXTASK,                      // type
         OS_TASK_DP_WAIT,                // flags
-        (u64 *) rspF3DDKRBootStart,     // ucode_boot
+        (u64 *) rspbootTextStart,     // ucode_boot
         0,                              // ucode_boot_size
         (u64 *) rspF3DDKRXbusStart,     // ucode
         0,                              // ucode_size
@@ -143,7 +143,7 @@ DKR_OSTask gRdpTaskB = {
         // task
         M_GFXTASK,                      // type
         OS_TASK_DP_WAIT,                // flags
-        (u64 *) rspF3DDKRBootStart,     // ucode_boot
+        (u64 *) rspbootTextStart,     // ucode_boot
         0,                              // ucode_boot_size
         (u64 *) rspF3DDKRXbusStart,     // ucode
         0,                              // ucode_size
@@ -176,8 +176,8 @@ void gfxtask_run_xbus(Gfx *dlBegin, Gfx *dlEnd) {
 
     dkrtask = gRdpCurTask;
     dkrtask->task.data_ptr = (u64 *) dlBegin;
-    dkrtask->task.data_size = ((s32) dlEnd - (s32) dlBegin) >> 3; // Shifted by 3, repsenting the size of the Gfx type.
-    dkrtask->task.ucode_boot_size = (s32) (rspF3DDKRDramStart - rspF3DDKRBootStart);
+    dkrtask->task.data_size = dlEnd - dlBegin;
+    dkrtask->task.ucode_boot_size = (s32) ((s32) rspbootTextEnd - (s32) rspbootTextStart);
     dkrtask->frameBuffer = gVideoCurrFramebuffer;
 
     osScSubmitTask(&gMainSched, (void *) dkrtask);
@@ -207,8 +207,8 @@ void gfxtask_run_fifo(Gfx *dlBegin, Gfx *dlEnd) {
     dkrtask->task.ucode = (u64 *) rspF3DDKRFifoStart;
     dkrtask->task.ucode_data = (u64 *) rspF3DDKRDataFifoStart;
     dkrtask->task.data_ptr = (u64 *) dlBegin;
-    dkrtask->task.data_size = ((s32) dlEnd - (s32) dlBegin) >> 3; // Shifted by 3, repsenting the size of the Gfx type.
-    dkrtask->task.ucode_boot_size = (s32) (rspF3DDKRDramStart - rspF3DDKRBootStart);
+    dkrtask->task.data_size = dlEnd - dlBegin;
+    dkrtask->task.ucode_boot_size = (s32) ((s32) rspbootTextEnd - (s32) rspbootTextStart);
     dkrtask->task.output_buff = (u64 *) taskStart;
     dkrtask->task.output_buff_size = (u64 *) taskEnd;
     dkrtask->frameBuffer = gVideoCurrFramebuffer;

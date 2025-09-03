@@ -13,10 +13,14 @@ endif
 COMPILER ?= gcc
 $(eval $(call validate-option,NON_MATCHING,ido gcc))
 
+ifneq ($(COMPILER),ido)
+	NON_MATCHING := 1
+endif
+
 # Define a custom boot file if desired to use something other than the vanilla one
 BOOT_CUSTOM ?= mods/boot_custom.bin
 
-LIBULTRA_VERSION_DEFINE := -DBUILD_VERSION=4 -DBUILD_VERSION_STRING=\"2.0G\"
+LIBULTRA_VERSION_DEFINE := -DBUILD_VERSION=VERSION_G -DBUILD_VERSION_STRING=\"2.0G\"
 
 # Whether to hide commands or not
 VERBOSE ?= 0
@@ -132,6 +136,7 @@ endif
 AS       = $(CROSS)as
 LD       = $(CROSS)ld
 OBJCOPY  = $(CROSS)objcopy
+STRIP    = $(CROSS)strip
 VENV     = .venv
 PYTHON   = $(VENV)/bin/python3
 GCC      = gcc
@@ -267,45 +272,6 @@ LD_FLAGS   += -T $(LD_SCRIPT) -T $(SYMBOLS_DIR)/undefined_syms.txt -Map $(TARGET
 ASM_PROCESSOR_DIR := $(TOOLS_DIR)/asm-processor
 ASM_PROCESSOR      = $(PYTHON) $(ASM_PROCESSOR_DIR)/build.py
 
-### Optimisation Overrides
-####################### LIBULTRA #########################
-
-ifeq ($(COMPILER),ido)
-$(BUILD_DIR)/$(LIBULTRA_DIR)/%.c.o: OPT_FLAGS := -O2
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/audio/%.c.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/audio/mips1/%.c.o: OPT_FLAGS := -O2
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/os/%.c.o: OPT_FLAGS := -O1
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/io/%.c.o: OPT_FLAGS := -O1
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/io/vimgr.c.o: OPT_FLAGS := -O2
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/io/pimgr.c.o: OPT_FLAGS := -O2
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/io/motor.c.o: OPT_FLAGS := -O2
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/libc/xprintf.c.o : OPT_FLAGS := -O3
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/audio/env.c.o: OPT_FLAGS := -g
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/libc/llcvt.c.o: OPT_FLAGS := -O1
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/libc/llcvt.c.o: MIPSISET := -mips3 -32
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/libc/ll.c.o: OPT_FLAGS := -O1
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/libc/ll.c.o: MIPSISET := -mips3 -32
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/libc/ldiv.c.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/libc/ldiv.c.o: MIPSISET := -mips2
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/libc/xldtob.c.o: OPT_FLAGS := -O3
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/libc/xldtob.c.o: MIPSISET := -mips2
-
-$(BUILD_DIR)/$(LIBULTRA_DIR)/%.c.o: MIPSISET := -mips2
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/audio/mips1/%.c.o: MIPSISET := -mips1
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/io/pimgr.c.o: MIPSISET := -mips1
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/sc/sched.c.o: MIPSISET := -mips1
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/io/motor.c.o: MIPSISET := -mips1
-$(BUILD_DIR)/$(LIBULTRA_DIR)/src/audio/env.c.o: MIPSISET := -mips1
-
-#Ignore warnings for libultra files
-$(BUILD_DIR)/$(LIBULTRA_DIR)/%.c.o: CC_WARNINGS := -w
-$(BUILD_DIR)/$(LIBULTRA_DIR)/%.c.o: CC_CHECK := :
-
-# Allow dollar sign to be used in var names for this file alone
-# It allows us to return the current stack pointer
-$(BUILD_DIR)/$(SRC_DIR)/get_stack_pointer.c.o: OPT_FLAGS += -dollar
-endif
-
 ### Targets
 
 ifeq ($(COMPILER),gcc)
@@ -349,7 +315,7 @@ $(BUILD_DIR)/src/hasm/math_util_gcc.c.o: OPT_FLAGS := -Ofast
 
 default: all 
 
-all: $(VERIFY)
+all: $(TARGET).elf $(VERIFY)
 
 dirs:
 	$(foreach dir,$(SRC_DIRS) $(ASM_DIRS) $(HASM_DIRS) overlays/$(OVERLAY_DIRS) overlays/$(OBJECT_DIRS) $(BIN_DIRS),$(shell mkdir -p $(BUILD_DIR)/$(dir)))
@@ -497,6 +463,26 @@ $(BUILD_DIR)/$(LIBULTRA_DIR)/src/libc/ll.c.o: $(LIBULTRA_DIR)/src/libc/ll.c | bu
 $(BUILD_DIR)/%.s.o: %.s | build_assets
 	$(call print,Assembling:,$<,$@)
 	$(V)$(AS) $(ASFLAGS) -MD $(BUILD_DIR)/$*.d -o $@ $<
+
+ifeq ($(COMPILER),ido)
+# libultra asm files - Compile with the ido compiler
+$(BUILD_DIR)/$(LIBULTRA_DIR)/%.s.o: $(LIBULTRA_DIR)/%.s | build_assets
+	$(call print,Assembling Libultra:,$<,$@)
+	$(V)$(CC) -c $(CFLAGS) $(CC_WARNINGS) $(OPT_FLAGS) $(MIPSISET) -o $@ $<
+	$(V)$(STRIP) --strip-unneeded $@
+	@if [ "$(MIPSISET)" = "-mips3 -32" ]; then \
+		$(PYTHON) $(TOOLS_DIR)/python/patchmips3.py $@ || rm $@; \
+	fi
+else
+# libultra asm files - Compile with the gcc c compiler
+$(BUILD_DIR)/$(LIBULTRA_DIR)/%.s.o: $(LIBULTRA_DIR)/%.s | build_assets
+	$(call print,Assembling Libultra:,$<,$@)
+	$(V)$(CROSS)gcc -x assembler-with-cpp \
+	-w -nostdinc -c -G 0 -march=vr4300 -mgp32 -mfp32 -mno-abicalls \
+	-DMIPSEB -D_LANGUAGE_ASSEMBLY -D_MIPS_SIM=1 -D_ULTRA64 -DMODERN_CC -D__USE_ISOC99 \
+	-mips3 -Os -ggdb3 -ffast-math -fno-unsafe-math-optimizations -c $(C_DEFINES) $(INCLUDE_CFLAGS) \
+	-o $@ $<
+endif
 
 # Specifically override the header file from what splat extracted to be replaced by what we have in the hasm folder
 $(BUILD_DIR)/asm/header.s.o: src/hasm/header.s | build_assets

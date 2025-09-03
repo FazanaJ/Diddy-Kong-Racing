@@ -83,7 +83,7 @@ extern "C" {
 #ifndef MODERN_CC
 extern void     bcopy(const void * src, void * dest, int size);
 extern void     wcopy(const void * src, void * dest, int size);
-extern void     dcopy(const void *, void *, int);
+extern void     dcopy(const void *src, void *dest, int size);
 extern int      bcmp(const void *, const void *, int);
 extern void     bzero(void *, int);
 #else
