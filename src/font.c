@@ -1066,13 +1066,19 @@ void dialogue_clear(s32 dialogueBoxID) {
     DialogueBoxBackground *dialogueBox;
     DialogueBox *dialogueTextBox, *dialogueTextBoxTemp;
 
-    dialogueBox = textbox_get(dialogueBoxID);
+    dialogueBox = gDialogueBoxBackground[dialogueBoxID];
+    if (dialogueBox == NULL) {
+        return;
+    }
     dialogueTextBox = dialogueBox->textBox;
     if (dialogueTextBox != NULL) {
         dialogueTextBoxTemp = dialogueTextBox; // This seems redundant.
         while (dialogueTextBoxTemp != NULL) {
             dialogueTextBoxTemp->textNum = DIALOGUE_NUM_NULL;
             dialogueTextBoxTemp = dialogueTextBoxTemp->nextBox;
+            if (gDialogueText == NULL) {
+                break;
+            }
         }
         dialogueBox->textBox = NULL;
     }
