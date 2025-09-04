@@ -23,7 +23,7 @@ extern s8 gControllersXAxisDirection[4];
 extern s8 gControllersYAxisDirection[4];
 extern s8 gDialogueSubmenu;
 
-char *sRegionBootStrings[] = {
+char sRegionBootStrings[][64] = {
     "VIDEO MODE",
     "VIDEO MODE2",
     "VIDEO MODE3",
@@ -57,13 +57,13 @@ char *sRegionBootStrings[] = {
     "CURRENT3",
 };
 
-char *sRegionLanguageStrings[] = {
+char sRegionLanguageStrings[][12] = {
     "ENGLISH",
     "GERMAN",
     "FRENCH",
 };
 
-char *sRegionValues[] = {
+char sRegionValues[][6] = {
     "MPAL",
     "NTSC",
     "PAL50",
