@@ -114,6 +114,7 @@ void init_usb_thread(void) {
     gThreadUsbStack[STACKSIZE(STACK_USB) - 1] = 0;
     gThreadUsbStack[0] = 0;
     osStartThread(&gThreadUsb);
+    debug_printf("--------------------------- USB Initialised ---------------------------\n");
 }
 
 // Called from main thread.

@@ -1112,49 +1112,6 @@ s32 userconfig_write(void) {
     return 0;
 }
 
-s32 userconfig_read(void) {
-    ConfigBits b;
-    UserConfig *c;
-
-    if (save_detect() == 0) {
-        return -1;
-    }
-
-    c = &gConfig;
-
-    save_readwrite((void *) &b, VIDEOCONFIG_START, sizeof(ConfigBits), OS_READ);
-
-    if (b.magic != 0x14) {
-        //debug_printf("Bad magic! %X\n", b.magic);
-        bzero(&b, sizeof(ConfigBits));
-        b.magic = 0x14;
-        save_readwrite((void *) &b, VIDEOCONFIG_START, sizeof(ConfigBits), OS_WRITE);
-
-        // To return 1 signals the game to show the video mode screen. NTSC users don't need this, so just return 0 as normal.
-        switch (osTvType) {
-            case OS_TV_TYPE_PAL:
-                gConfig.screenRegion = REGIONMODE_PAL50;
-                return 1;
-            case OS_TV_TYPE_NTSC:
-                gConfig.screenRegion = REGIONMODE_NTSC;
-                return 0;
-            case OS_TV_TYPE_MPAL:
-                gConfig.screenRegion = REGIONMODE_MPAL;
-                return 0;
-        }
-    } else {
-        //debug_printf("Good magic! %X\n", b.magic);
-        c->antiAliasing = b.antiAliasing;
-        c->dedither = b.dedither;
-        c->screenBits = b.screenBits;
-        c->screenWidth = b.screenWidth;
-        c->screenRegion = b.screenRegion;
-        //c->terrainQuality = b.terrainQuality;
-        return 0;
-    }
-    return 0;
-}
-
 s16 calculate_ghost_header_checksum(GhostHeader *ghostHeader) {
     s16 i;
     s16 len;

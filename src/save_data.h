@@ -113,6 +113,8 @@ typedef struct unk80075000 {
     unk80075000_body data[1];
 } unk80075000;
 
+s32 save_readwrite(u64 *data, u32 offset, u32 size, s32 type);
+
 s32 userconfig_read(void);
 s32 userconfig_write(void);
 s32 save_detect(void);

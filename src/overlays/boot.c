@@ -1,3 +1,4 @@
+#include "PRinternal/viint.h"
 #include "src/main.h"
 #include "src/game.h"
 #include "src/memory.h"
@@ -11,6 +12,22 @@
 #include "string.h"
 #include "src/asset_loading.h"
 #include "src/overlay.h"
+#include "src/tracks.h"
+#include "src/particles.h"
+#include "src/math_util.h"
+#include "src/audio.h"
+#include "src/save_data.h"
+#include "src/printf.h"
+#include "src/font.h"
+#include "src/textures_sprites.h"
+#include "src/object_models.h"
+#include "src/objects.h"
+#include "src/gzip.h"
+#include "src/audio_spatial.h"
+#include "src/usb/usb.h"
+#include "src/weather.h"
+#include "src/menu.h"
+#include "save_layout.h"
 
 #define debug_print(x) ((void)(x))
 
@@ -190,4 +207,230 @@ void get_platform(void) {
         }
     }
     debug_printf("Counter Factor Setting: %d.\n", cf);
-} 
+}
+
+extern s32 gGameCurrentEntrance;
+extern s32 gSPTaskNum;
+extern OSScClient *gNMISched[3];
+extern OSMesg gGameMesgBuf[3];
+extern OSMesgQueue gGameMesgQueue;
+extern s32 gNMIMesgBuf;
+extern s32 gNumGfxTasksAtScheduler;
+extern s32 gGameCurrentCutscene;
+extern s8 gIsLoading;
+extern s32 sControllerStatus;
+extern u64 *gSchedStack;
+extern s8 gSetupVideo;
+extern Vehicle gLevelDefaultVehicleID;
+extern s8 sBootDelayTimer;
+extern s32 gGameMode;
+extern Gfx *gDisplayLists[2];
+extern Mtx *gMatrixHeap[2];
+extern Vertex *gVertexHeap[2];
+extern Triangle *gTriangleHeap[2];
+extern Settings *gSettingsPtr;
+extern s8 gLevelSettings[16];
+extern s16 *gArcTanTable;
+extern u8 gSortMats;
+extern s16 gSortBufCount[SORT_ENTRIES];
+extern SortBuffer *gSortBuffer[SORT_ENTRIES];
+
+/**
+ * Defaults allocations for 4 players
+ */
+void default_alloc_displaylist_heap(void) {
+    s32 numberOfPlayers;
+    s32 totalSize;
+    s32 gfxAdd;
+
+    if (gDebug) {
+        gfxAdd = NUM_DEBUG_GFX;
+    } else {
+        gfxAdd = 0;
+    }
+
+    numberOfPlayers = FOUR_PLAYERS;
+    totalSize = ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)) +
+                (NUM_MTX_COMMANDS * sizeof(Mtx)) +
+                (NUM_VTX_COMMANDS * sizeof(Vertex)) +
+                (NUM_TRI_COMMANDS * sizeof(Triangle));
+
+    gDisplayLists[0] = (Gfx *) mempool_alloc_safe(totalSize, PP_RAM_CMDBUF);
+    gMatrixHeap[0] = (Mtx *) ((u8 *) gDisplayLists[0] + ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)));
+    gMatrixHeap[0] = (Mtx *) align16((u8 *) gMatrixHeap[0]);
+    gVertexHeap[0] = (Vertex *) ((u8 *) gMatrixHeap[0] + ((NUM_MTX_COMMANDS - 1) * sizeof(Mtx)));
+    gTriangleHeap[0] = (Triangle *) ((u8 *) gVertexHeap[0] + (NUM_VTX_COMMANDS * sizeof(Vertex)));
+
+    gDisplayLists[1] = (Gfx *) mempool_alloc_safe(totalSize, PP_RAM_CMDBUF);
+    gMatrixHeap[1] = (Mtx *) ((u8 *) gDisplayLists[1] + ((NUM_GFX_COMMANDS + gfxAdd) * sizeof(Gwords)));
+    gMatrixHeap[1] = (Mtx *) align16((u8 *) gMatrixHeap[1]);
+    gVertexHeap[1] = (Vertex *) ((u8 *) gMatrixHeap[1] + ((NUM_MTX_COMMANDS - 1) * sizeof(Mtx)));
+    gTriangleHeap[1] = (Triangle *) ((u8 *) gVertexHeap[1] + (NUM_VTX_COMMANDS * sizeof(Vertex)));
+}
+
+/**
+ * Initialise global game settings data.
+ * Allocate space to accomodate it then set the start points for each data point.
+ */
+void calc_and_alloc_heap_for_settings(void) {
+    s32 dataSize;
+    u32 sizes[15];
+    s32 numWorlds, numLevels;
+
+    level_global_init();
+    reset_character_id_slots();
+    level_count(&numLevels, &numWorlds);
+    sizes[0] = sizeof(Settings);
+    sizes[1] = sizes[0] + (numLevels * 4); // balloonsPtr
+    sizes[2] = sizes[1] + (numWorlds * 2); // flapInitialsPtr[0]
+    dataSize = (numLevels * 2);
+    sizes[3] = sizes[2] + dataSize;   // flapInitialsPtr[1]
+    sizes[4] = sizes[3] + dataSize;   // flapInitialsPtr[2]
+    sizes[5] = sizes[4] + dataSize;   // flapTimesPtr[0]
+    sizes[6] = sizes[5] + dataSize;   // flapTimesPtr[1]
+    sizes[7] = sizes[6] + dataSize;   // flapTimesPtr[2]
+    sizes[8] = sizes[7] + dataSize;   // courseInitialsPtr[0]
+    sizes[9] = sizes[8] + dataSize;   // courseInitialsPtr[1]
+    sizes[10] = sizes[9] + dataSize;  // courseInitialsPtr[2]
+    sizes[11] = sizes[10] + dataSize; // courseTimesPtr[0]
+    sizes[12] = sizes[11] + dataSize; // courseTimesPtr[1]
+    sizes[13] = sizes[12] + dataSize; // courseTimesPtr[2]
+    sizes[14] = sizes[13] + dataSize; // total size
+
+    gSettingsPtr = mempool_alloc_safe(sizes[14], PP_RAM_SAVES);
+    gSettingsPtr->courseFlagsPtr = (s32 *) ((u8 *) gSettingsPtr + sizes[0]);
+    gSettingsPtr->balloonsPtr = (s16 *) ((u8 *) gSettingsPtr + sizes[1]);
+    gSettingsPtr->tajFlags = 0;
+    gSettingsPtr->flapInitialsPtr[0] = (u16 *) ((u8 *) gSettingsPtr + sizes[2]);
+    gSettingsPtr->flapInitialsPtr[1] = (u16 *) ((u8 *) gSettingsPtr + sizes[3]);
+    gSettingsPtr->flapInitialsPtr[2] = (u16 *) ((u8 *) gSettingsPtr + sizes[4]);
+    gSettingsPtr->flapTimesPtr[0] = (u16 *) ((u8 *) gSettingsPtr + sizes[5]);
+    gSettingsPtr->flapTimesPtr[1] = (u16 *) ((u8 *) gSettingsPtr + sizes[6]);
+    gSettingsPtr->flapTimesPtr[2] = (u16 *) ((u8 *) gSettingsPtr + sizes[7]);
+    gSettingsPtr->courseInitialsPtr[0] = (u16 *) ((u8 *) gSettingsPtr + sizes[8]);
+    gSettingsPtr->courseInitialsPtr[1] = (u16 *) ((u8 *) gSettingsPtr + sizes[9]);
+    gSettingsPtr->courseInitialsPtr[2] = (u16 *) ((u8 *) gSettingsPtr + sizes[10]);
+    gSettingsPtr->courseTimesPtr[0] = (u16 *) ((u8 *) gSettingsPtr + sizes[11]);
+    gSettingsPtr->courseTimesPtr[1] = (u16 *) ((u8 *) gSettingsPtr + sizes[12]);
+    gSettingsPtr->courseTimesPtr[2] = (u16 *) ((u8 *) gSettingsPtr + sizes[13]);
+    gSettingsPtr->unk4C = (Settings4C *) &gLevelSettings;
+    gSaveDataFlags = // Set bits 0/1/2/8 and wipe out all others
+        SAVE_DATA_FLAG_READ_FLAP_TIMES | SAVE_DATA_FLAG_READ_COURSE_TIMES | SAVE_DATA_FLAG_READ_SAVE_DATA |
+        SAVE_DATA_FLAG_READ_EEPROM_SETTINGS;
+}
+
+void sortbuffer_init(void) {
+    s32 i;
+    if (gSortBuffer[SORT_OPA]) {
+        mempool_free(gSortBuffer[SORT_OPA]);
+    }
+
+    if (gSortMats == FALSE) {
+        return;
+    }
+
+    gSortBuffer[SORT_OPA] = (SortBuffer *) mempool_alloc(sizeof(SortBuffer) * 500, PP_RAM_STACK);
+    gSortBuffer[SORT_DECAL] = (SortBuffer *) (((u8 *) gSortBuffer[SORT_OPA]) + (sizeof(SortBuffer) * 300));
+    gSortBuffer[SORT_XLU] = (SortBuffer *) (((u8 *) gSortBuffer[SORT_DECAL]) + (sizeof(SortBuffer) * 100));
+    for (i = 0; i < SORT_ENTRIES; i++) {
+        gSortBuffer[i][0].nextIndex = -1;
+        gSortBuffer[i][0].index = 0;
+        gSortBufCount[i] = 0;
+    }
+}
+
+s32 userconfig_read(void) {
+    ConfigBits b;
+    UserConfig *c;
+
+    if (save_detect() == 0) {
+        return -1;
+    }
+
+    c = &gConfig;
+
+    save_readwrite((void *) &b, VIDEOCONFIG_START, sizeof(ConfigBits), OS_READ);
+
+    if (b.magic != 0x14) {
+        //debug_printf("Bad magic! %X\n", b.magic);
+        bzero(&b, sizeof(ConfigBits));
+        b.magic = 0x14;
+        save_readwrite((void *) &b, VIDEOCONFIG_START, sizeof(ConfigBits), OS_WRITE);
+
+        // To return 1 signals the game to show the video mode screen. NTSC users don't need this, so just return 0 as normal.
+        switch (osTvType) {
+            case OS_TV_TYPE_PAL:
+                gConfig.screenRegion = REGIONMODE_PAL50;
+                return 1;
+            case OS_TV_TYPE_NTSC:
+                gConfig.screenRegion = REGIONMODE_NTSC;
+                return 0;
+            case OS_TV_TYPE_MPAL:
+                gConfig.screenRegion = REGIONMODE_MPAL;
+                return 0;
+        }
+    } else {
+        //debug_printf("Good magic! %X\n", b.magic);
+        c->antiAliasing = b.antiAliasing;
+        c->dedither = b.dedither;
+        c->screenBits = b.screenBits;
+        c->screenWidth = b.screenWidth;
+        c->screenRegion = b.screenRegion;
+        //c->terrainQuality = b.terrainQuality;
+        return 0;
+    }
+    return 0;
+}
+
+void thread3_boot(void) {
+    s32 videoRet;
+
+    gIsLoading = FALSE;
+    gLevelDefaultVehicleID = VEHICLE_CAR;
+
+    if (gDebug) {
+        init_usb_thread();
+    }
+    gSchedStack = mempool_alloc_safe(STACK_SCHED, PP_RAM_STACK);
+    osCreateScheduler(&gMainSched, gSchedStack + STACKSIZE(STACK_SCHED), /*priority*/ 13, 1);
+    gSchedStack[0] = 0;
+    gSchedStack[STACKSIZE(STACK_SCHED) - 1] = 0;
+    video_init();
+    gzip_init();
+    gfxtask_init(&gMainSched);
+    sControllerStatus = input_init();
+    videoRet = userconfig_read();
+    if (videoRet == 1) {
+        gSetupVideo = TRUE;
+    } else {
+        gSetupVideo = FALSE;
+    }
+    audio_init(&gMainSched);
+    audspat_init();
+    tex_init_textures();
+    allocate_object_model_pools();
+    allocate_object_pools();
+    debug_text_init();
+    allocate_ghost_data();
+    init_particle_assets();
+    weather_init();
+    trigtable_generate();
+    calc_and_alloc_heap_for_settings();
+    default_alloc_displaylist_heap();
+    load_fonts();
+    init_controller_paks();
+    init_save_data();
+    vi_change(SCREEN_WIDTH, SCREEN_HEIGHT);
+    sBlackScreenTimer = 1;
+    init_particle_buffers(4, 4, 110, 48, 32, 0);
+    osCreateMesgQueue(&gGameMesgQueue, gGameMesgBuf, 3);
+    osScAddClient(&gMainSched, (OSScClient*) gNMISched, &gGameMesgQueue, OS_SC_ID_VIDEO);
+    sortbuffer_init();
+    mempool_free_timer(2);
+    gNMIMesgBuf = 0;
+    gGameCurrentEntrance = 0;
+    gGameCurrentCutscene = 0;
+    gSPTaskNum = 0;
+    gSaveDataFlags = input_update(gSaveDataFlags, 0);
+    gGameMode = GAMEMODE_INTRO;
+}

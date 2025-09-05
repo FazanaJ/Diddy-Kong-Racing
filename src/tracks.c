@@ -183,26 +183,6 @@ Object *gAnimDome;
 
 /******************************/
 
-void sortbuffer_init(void) {
-    s32 i;
-    if (gSortBuffer[SORT_OPA]) {
-        mempool_free(gSortBuffer[SORT_OPA]);
-    }
-
-    if (gSortMats == FALSE) {
-        return;
-    }
-
-    gSortBuffer[SORT_OPA] = (SortBuffer *) mempool_alloc(sizeof(SortBuffer) * 500, PP_RAM_STACK);
-    gSortBuffer[SORT_DECAL] = (SortBuffer *) (((u8 *) gSortBuffer[SORT_OPA]) + (sizeof(SortBuffer) * 300));
-    gSortBuffer[SORT_XLU] = (SortBuffer *) (((u8 *) gSortBuffer[SORT_DECAL]) + (sizeof(SortBuffer) * 100));
-    for (i = 0; i < SORT_ENTRIES; i++) {
-        gSortBuffer[i][0].nextIndex = -1;
-        gSortBuffer[i][0].index = 0;
-        gSortBufCount[i] = 0;
-    }
-}
-
 void sortbuffer_find(SortBuffer *b, s32 index) {
     s32 i;
     SortBuffer *slot;

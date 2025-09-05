@@ -277,9 +277,7 @@ void osScAddClient(OSSched *sc, UNUSED OSScClient *c, OSMesgQueue *msgQ, u8 id) 
     osSetIntMask(mask);
 }
 
-extern OSViMode osViModeNtscLpn1, osViModePalLpn1, osViModeMpalLpn1, osViModePalLan1, osViModeNtscLan1, osViModeMpalLan1;
-
-void osCreateScheduler(OSSched *sc, void *stack, OSPri priority, UNUSED u8 mode, u8 numFields) {
+void osCreateScheduler(OSSched *sc, void *stack, OSPri priority, u8 numFields) {
     sc->audmq           = NULL;
     sc->gfxmq           = NULL;
     sc->curRSPTask      = NULL;

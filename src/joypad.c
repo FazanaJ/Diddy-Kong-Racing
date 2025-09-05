@@ -53,7 +53,6 @@ s32 input_init(void) {
     osContStartReadData(&sSIMesgQueue);
     input_assign_players();
     overlay_run(OVERLAY_BOOT, "get_platform");
-    //get_platform();
     save_detect();
 
     sNoControllerPluggedIn = FALSE;

@@ -137,7 +137,6 @@ void begin_level_teleport(s32 levelID);
 void set_pause_lockout_timer(u8 time);
 void swap_lead_player(void);
 void set_frame_blackout_timer(void);
-void mode_intro(void);
 s32 is_controller_missing(void);
 s32 drm_validate_imem(void);
 void mode_game(s32 updateRate);
