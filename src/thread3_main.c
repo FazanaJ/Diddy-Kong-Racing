@@ -63,7 +63,6 @@ s8 gFutureFunLandLevelTarget = FALSE;
 s8 gDmemInvalid = FALSE;
 s8 gDrawFrameTimer = 0;
 s8 gSetupVideo;
-FadeTransition D_800DD3F4 = FADE_TRANSITION(FADE_FULLSCREEN, FADE_FLAG_OUT, FADE_COLOR_BLACK, 20, 0);
 s32 sLogicUpdateRate = LOGIC_5FPS;
 f32 sLogicUpdateRateF = LOGIC_5FPS;
 FadeTransition gDrumstickSceneTransition =
@@ -191,15 +190,21 @@ void main_game_mode(void) {
 
     if (gPrevFrameGameMode != gGameMode) {
         overlay_free(OVERLAY_GAMEMODE_INTRO);
+        overlay_free(OVERLAY_GAMEMODE_MENU);
+        overlay_free(OVERLAY_GAMEMODE_INGAME);
         switch (gGameMode) {
             case GAMEMODE_INTRO: // Pre-boot screen
                 overlay_load(OVERLAY_GAMEMODE_INTRO);
                 gGameModeFunc = (void *) overlay_symbol(OVERLAY_GAMEMODE_INTRO, "mode_intro");
                 break;
             case GAMEMODE_MENU: // In a menu
-                gGameModeFunc = mode_menu;
+                overlay_load(OVERLAY_GAMEMODE_MENU);
+                gGameModeFunc = (void *) overlay_symbol(OVERLAY_GAMEMODE_MENU, "mode_menu");
+                //gGameModeFunc = mode_menu;
                 break;
             case GAMEMODE_INGAME: // In game (Controlling a character)
+                //overlay_load(OVERLAY_GAMEMODE_INGAME);
+                //gGameModeFunc = (void *) overlay_symbol(OVERLAY_GAMEMODE_INGAME, "mode_game_temp");
                 gGameModeFunc = mode_game;
                 break;
         }
@@ -381,72 +386,6 @@ void main_game_loop(void) {
 #if REGION == REGION_JP
     func_800C78E0_C84E0();
 #endif
-}
-
-/**
- * Loads a level for gameplay based on what the next track ID is, with the option to override.
- */
-void load_next_ingame_level(s32 numPlayers, s32 trackID, Vehicle vehicle) {
-    gGameNumPlayers = numPlayers - 1;
-    if (trackID == -1) {
-        gPlayableMapId = get_track_id_to_load();
-    } else {
-        gPlayableMapId = trackID; // Unused, because arg1 is always -1.
-    }
-    load_level_game(gPlayableMapId, gGameNumPlayers, gGameCurrentEntrance, vehicle);
-}
-
-/**
- * Calls level_load() with the same arguments except for the cutsceneId,
- * which is the value at gGameCurrentCutscene. Also does some other stuff.
- * Used when ingame.
- */
-void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicleId) {
-    u32 first = 0;
-    if (gDebug) {
-        first = osGetCount();
-        bzero(&gDebug->loading, sizeof(DebugLoadVars));
-        gDebug->loading.active = TRUE;
-    }
-    mempool_free_timer(0);
-    cam_init();
-    //load_game_text_table();
-    level_load(levelId, numberOfPlayers, entranceId, vehicleId, gGameCurrentCutscene);
-    hud_init(cam_get_viewport_layout());
-    //init_particle_buffers(8, 16, 150, 100, 50, 0);
-    ainode_update();
-    osSetTime(0);
-    mempool_free_timer(2);
-    rumble_init(TRUE);
-    gShowBG = bgdraw_init();
-    if (gDebug) {
-        gDebug->loading.total = (f32) (osGetCount() - first)  / 46875000.0f;
-        debug_printf("Level [%s] loaded in %2.3fs.\n", level_name(levelId), gDebug->loading.total);
-        gDebug->loading.active = FALSE;
-    }
-}
-
-/**
- * Call numerous functions to clear data in RAM.
- * Then call to free particles, HUD and text.
- * Waits for a GFX task before unloading.
- */
-void unload_level_game(void) {
-    mempool_free_timer(0);
-    if (gSkipGfxTask == FALSE) {
-        if (gDrawFrameTimer != 1) {
-            gfxtask_wait();
-        }
-        gSkipGfxTask = TRUE;
-    }
-    level_free();
-    transition_begin(&D_800DD3F4);
-    //reset_particles();
-    hud_free();
-    gCurrDisplayList = gDisplayLists[gSPTaskNum];
-    gDPFullSync(gCurrDisplayList++);
-    gSPEndDisplayList(gCurrDisplayList++);
-    mempool_free_timer(2);
 }
 
 /**
@@ -780,6 +719,64 @@ void mode_game(s32 updateRate) {
 }
 
 /**
+ * Loads a level for gameplay based on what the next track ID is, with the option to override.
+ */
+void load_next_ingame_level(s32 numPlayers, s32 trackID, Vehicle vehicle) {
+    gGameNumPlayers = numPlayers - 1;
+    if (trackID == -1) {
+        gPlayableMapId = get_track_id_to_load();
+    } else {
+        gPlayableMapId = trackID; // Unused, because arg1 is always -1.
+    }
+    load_level_game(gPlayableMapId, gGameNumPlayers, gGameCurrentEntrance, vehicle);
+}
+
+/**
+ * Calls level_load() with the same arguments except for the cutsceneId,
+ * which is the value at gGameCurrentCutscene. Also does some other stuff.
+ * Used when ingame.
+ */
+void load_level_game(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicleId) {
+    u32 first = 0;
+    void (*func)(s32, s32, s32, Vehicle, s32);
+    if (gDebug) {
+        first = osGetCount();
+        bzero(&gDebug->loading, sizeof(DebugLoadVars));
+        gDebug->loading.active = TRUE;
+    }
+    mempool_free_timer(0);
+    cam_init();
+    //load_game_text_table();
+    overlay_load(OVERLAY_LEVEL_LOAD);
+    func = overlay_symbol(OVERLAY_LEVEL_LOAD, "level_load");
+    (*func)(levelId, numberOfPlayers, entranceId, vehicleId, gGameCurrentCutscene);
+    overlay_free(OVERLAY_LEVEL_LOAD);
+    hud_init(cam_get_viewport_layout());
+    //init_particle_buffers(8, 16, 150, 100, 50, 0);
+    ainode_update();
+    osSetTime(0);
+    mempool_free_timer(2);
+    rumble_init(TRUE);
+    gShowBG = bgdraw_init();
+    overlay_free(OVERLAY_LEVEL_LOAD);
+    if (gDebug) {
+        gDebug->loading.total = (f32) (osGetCount() - first)  / 46875000.0f;
+        debug_printf("Level [%s] loaded in %2.3fs.\n", level_name(levelId), gDebug->loading.total);
+        gDebug->loading.active = FALSE;
+    }
+}
+
+/**
+ * Call numerous functions to clear data in RAM.
+ * Then call to free particles, HUD and text.
+ * Waits for a GFX task before unloading.
+ */
+void unload_level_game(void) {
+    overlay_load(OVERLAY_LEVEL_LOAD);
+    overlay_run(OVERLAY_LEVEL_LOAD, "levelload_free_game");
+}
+
+/**
  * Reset dialogue and set the transition effect for the cutscene showing an unlocked Drumstick.
  */
 void set_drumstick_unlock_transition(void) {
@@ -895,6 +892,7 @@ Vehicle get_level_default_vehicle(void) {
  */
 void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle vehicleId, s32 cutsceneId) {
     u32 first = 0;
+    void (*func)(s32, s32, s32, Vehicle, s32);
     if (gDebug) {
         first = osGetCount();
         bzero(&gDebug->loading, sizeof(DebugLoadVars));
@@ -903,12 +901,17 @@ void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
     mempool_free_timer(0);
     cam_init();
     //load_game_text_table();
-    level_load(levelId, numberOfPlayers, entranceId, vehicleId, cutsceneId);
+    
+    overlay_load(OVERLAY_LEVEL_LOAD);
+    func = overlay_symbol(OVERLAY_LEVEL_LOAD, "level_load");
+    (*func)(levelId, numberOfPlayers, entranceId, vehicleId, cutsceneId);
+    overlay_free(OVERLAY_LEVEL_LOAD);
     hud_init(cam_get_viewport_layout());
     ainode_update();
     osSetTime(0);
     mempool_free_timer(2);
     gShowBG = bgdraw_init();
+    overlay_free(OVERLAY_LEVEL_LOAD);
     if (gDebug) {
         gDebug->loading.total = (f32) (osGetCount() - first)  / 46875000.0f;
         debug_printf("Level [%s] (Menu) loaded in %2.3fs.\n", level_name(levelId), gDebug->loading.total);
@@ -922,166 +925,10 @@ void load_level_menu(s32 levelId, s32 numberOfPlayers, s32 entranceId, Vehicle v
  */
 void unload_level_menu(void) {
     if (!gIsLoading) {
-        gIsLoading = TRUE;
-        mempool_free_timer(0);
-        // @recomp Wait for the current graphics task.
-        if (gSkipGfxTask == FALSE && bgload_active() == FALSE) {
-            if (gDrawFrameTimer != 1) {
-                gfxtask_wait();
-            }
-            gSkipGfxTask = TRUE;
-        }
-        level_free();
-        if (gCurrentMenuId != MENU_VIDEO_OPTIONS) {
-            transition_begin(&D_800DD3F4);
-        }
-        //reset_particles();
-        hud_free();
-        mempool_free_timer(2);
+        overlay_load(OVERLAY_LEVEL_LOAD);
+        overlay_run(OVERLAY_LEVEL_LOAD, "levelload_free_menu");
     }
     gIsLoading = FALSE;
-}
-
-/**
- * Used in menus, update objects and draw the game.
- * In the tracks menu, this only runs if there's a track actively loaded.
- */
-void update_menu_scene(s32 updateRate) {
-    if (bgload_active() == FALSE) {
-        if (gMenuStopUpdating == FALSE) {
-            obj_update(updateRate);
-            gParticlePtrList_flush();
-            ainode_update();
-        }
-        render_scene(&gCurrDisplayList, &gGameCurrMatrix, &gGameCurrVertexList, &gGameCurrTriList, updateRate);
-        process_onscreen_textbox(updateRate);
-        rdp_init(&gCurrDisplayList);
-        divider_draw(&gCurrDisplayList);
-        divider_clear_coverage(&gCurrDisplayList);
-    }
-}
-
-/**
- * Main function for handling behaviour in menus.
- * Runs the menu code, with a simplified object update and scene rendering system.
- */
-void mode_menu(s32 updateRate) {
-    s32 menuLoopResult;
-    s32 temp;
-    s32 playerVehicle;
-    s32 temp5;
-
-    gIsPaused = FALSE;
-    gPostRaceViewPort = NULL;
-    if (!gIsLoading && gRenderMenu) {
-        update_menu_scene(updateRate);
-    }
-    menuLoopResult =
-        menu_loop(&gCurrDisplayList, &gGameCurrMatrix, &gGameCurrVertexList, &gGameCurrTriList, updateRate);
-    gRenderMenu = TRUE;
-    if (menuLoopResult == -2) {
-        gRenderMenu = FALSE;
-        return;
-    }
-    if (menuLoopResult != -1 && menuLoopResult & MENU_RESULT_FLAGS_200) {
-        unload_level_menu();
-        gCurrDisplayList = gDisplayLists[gSPTaskNum];
-        gDPFullSync(gCurrDisplayList++);
-        gSPEndDisplayList(gCurrDisplayList++);
-        gPlayableMapId = menuLoopResult & 0x7F;
-        gLevelDefaultVehicleID = leveltable_vehicle_default(gPlayableMapId);
-        gGameCurrentEntrance = 0;
-        gGameCurrentCutscene = CUTSCENE_ID_UNK_64;
-        gGameMode = GAMEMODE_INGAME;
-        gIsPaused = FALSE;
-        gPostRaceViewPort = NULL;
-        load_level_game(gPlayableMapId, gGameNumPlayers, gGameCurrentEntrance, gLevelDefaultVehicleID);
-        safe_mark_write_save_file(get_save_file_index());
-        return;
-    }
-    if (menuLoopResult != -1 && menuLoopResult & MENU_RESULT_FLAGS_100) {
-        unload_level_game();
-        gIsPaused = FALSE;
-        gPostRaceViewPort = NULL;
-        switch (menuLoopResult & 0x7F) {
-            case MENU_RESULT_TRACKS_MODE:
-                load_menu_with_level_background(MENU_TRACK_SELECT, SPECIAL_MAP_ID_NO_LEVEL, 1);
-                break;
-            case MENU_RESULT_UNK14:
-                gPlayableMapId = ASSET_LEVEL_CENTRALAREAHUB;
-                gGameCurrentEntrance = 0;
-                gGameCurrentCutscene = CUTSCENE_ID_UNK_64;
-                gGameMode = GAMEMODE_INGAME;
-                load_level_game(gPlayableMapId, gGameNumPlayers, gGameCurrentEntrance, gLevelDefaultVehicleID);
-                safe_mark_write_save_file(get_save_file_index());
-                break;
-            case MENU_RESULT_RETURN_TO_GAME:
-                gGameCurrentEntrance = 0;
-                gPlayableMapId = gLevelSettings[0];
-                gGameCurrentCutscene = CUTSCENE_ID_UNK_64;
-                gGameMode = GAMEMODE_INGAME;
-                temp5 = gLevelSettings[1];
-                if (gLevelSettings[15] >= 0) {
-                    gGameCurrentEntrance = gLevelSettings[15];
-                }
-                temp = gLevelSettings[temp5 + 8];
-                if (temp >= 0) {
-                    gGameCurrentCutscene = temp;
-                }
-                load_level_game(gPlayableMapId, gGameNumPlayers, gGameCurrentEntrance, gLevelDefaultVehicleID);
-                safe_mark_write_save_file(get_save_file_index());
-                break;
-            case MENU_RESULT_UNK2:
-                gGameMode = GAMEMODE_INGAME;
-                load_level_game(gPlayableMapId, gGameNumPlayers, gGameCurrentEntrance, gLevelDefaultVehicleID);
-                break;
-            case MENU_RESULT_UNK3:
-                gGameMode = GAMEMODE_INGAME;
-                gPlayableMapId = gLevelSettings[0];
-                gGameCurrentEntrance = gLevelSettings[15];
-                gGameCurrentCutscene = gLevelSettings[gLevelSettings[1] + 8];
-                gLevelDefaultVehicleID = leveltable_vehicle_default(gPlayableMapId);
-                load_level_game(gPlayableMapId, gGameNumPlayers, gGameCurrentEntrance, gLevelDefaultVehicleID);
-                break;
-            default:
-                load_menu_with_level_background(MENU_TITLE, SPECIAL_MAP_ID_NO_LEVEL, 0);
-                break;
-        }
-        return;
-    }
-    if (menuLoopResult & MENU_RESULT_FLAGS_80 && menuLoopResult != -1) {
-        unload_level_menu();
-        gCurrDisplayList = gDisplayLists[gSPTaskNum];
-        gDPFullSync(gCurrDisplayList++);
-        gSPEndDisplayList(gCurrDisplayList++);
-
-        menuLoopResult &= 0x7f;
-        gLevelSettings[1] = menuLoopResult;
-        gLevelSettings[0] = gPlayableMapId;
-
-        gPlayableMapId = gLevelSettings[menuLoopResult + 2];
-        gGameCurrentEntrance = gLevelSettings[menuLoopResult + 4];
-        gGameMode = GAMEMODE_INGAME;
-        gGameCurrentCutscene = gLevelSettings[menuLoopResult + 12];
-        playerVehicle = get_player_selected_vehicle(PLAYER_ONE);
-        gGameNumPlayers = gSettingsPtr->gNumRacers - 1;
-        load_level_game(gPlayableMapId, gGameNumPlayers, gGameCurrentEntrance, playerVehicle);
-        D_801234FC = 0;
-        gLevelDefaultVehicleID = gMenuVehicleID;
-        return;
-    }
-    if (menuLoopResult > 0) {
-        unload_level_menu();
-        gCurrDisplayList = gDisplayLists[gSPTaskNum];
-        gDPFullSync(gCurrDisplayList++);
-        gSPEndDisplayList(gCurrDisplayList++);
-        gGameMode = GAMEMODE_INGAME;
-        load_next_ingame_level(menuLoopResult, -1, gLevelDefaultVehicleID);
-        if (gSettingsPtr->newGame && !is_in_tracks_mode()) {
-            music_change_on();
-            gSettingsPtr->newGame = FALSE;
-        }
-    }
 }
 
 /**

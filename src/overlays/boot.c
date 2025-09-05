@@ -28,10 +28,45 @@
 #include "src/weather.h"
 #include "src/menu.h"
 #include "save_layout.h"
+#include "src/thread30_bgload.h"
 
 #define debug_print(x) ((void)(x))
 
 // GLOBAL_ASM
+
+extern s32 gGameCurrentEntrance;
+extern s32 gSPTaskNum;
+extern OSScClient *gNMISched[3];
+extern OSMesg gGameMesgBuf[3];
+extern OSMesgQueue gGameMesgQueue;
+extern s32 gNMIMesgBuf;
+extern s32 gNumGfxTasksAtScheduler;
+extern s32 gGameCurrentCutscene;
+extern s8 gIsLoading;
+extern s32 sControllerStatus;
+extern u64 *gSchedStack;
+extern s8 gSetupVideo;
+extern Vehicle gLevelDefaultVehicleID;
+extern s32 gGameMode;
+extern Gfx *gDisplayLists[2];
+extern Mtx *gMatrixHeap[2];
+extern Vertex *gVertexHeap[2];
+extern Triangle *gTriangleHeap[2];
+extern Settings *gSettingsPtr;
+extern s8 gLevelSettings[16];
+extern s16 *gArcTanTable;
+extern u8 gSortMats;
+extern s16 gSortBufCount[SORT_ENTRIES];
+extern SortBuffer *gSortBuffer[SORT_ENTRIES];
+extern char *gTempLevelNames;
+extern char **gLevelNames;
+extern u8 gTwoPlayerAdvRace;
+extern s8 gCurrentDefaultVehicle;
+extern s32 gNumberOfLevelHeaders;
+extern s32 gNumberOfWorlds;
+extern LevelGlobalData *gGlobalLevelTable;
+extern s32 *gTempAssetTable;
+extern LevelHeader *gCurrentLevelHeader;
 
 extern u8 __osContPifRam[];
 extern u8 __osContLastCmd;
@@ -209,32 +244,6 @@ void get_platform(void) {
     debug_printf("Counter Factor Setting: %d.\n", cf);
 }
 
-extern s32 gGameCurrentEntrance;
-extern s32 gSPTaskNum;
-extern OSScClient *gNMISched[3];
-extern OSMesg gGameMesgBuf[3];
-extern OSMesgQueue gGameMesgQueue;
-extern s32 gNMIMesgBuf;
-extern s32 gNumGfxTasksAtScheduler;
-extern s32 gGameCurrentCutscene;
-extern s8 gIsLoading;
-extern s32 sControllerStatus;
-extern u64 *gSchedStack;
-extern s8 gSetupVideo;
-extern Vehicle gLevelDefaultVehicleID;
-extern s8 sBootDelayTimer;
-extern s32 gGameMode;
-extern Gfx *gDisplayLists[2];
-extern Mtx *gMatrixHeap[2];
-extern Vertex *gVertexHeap[2];
-extern Triangle *gTriangleHeap[2];
-extern Settings *gSettingsPtr;
-extern s8 gLevelSettings[16];
-extern s16 *gArcTanTable;
-extern u8 gSortMats;
-extern s16 gSortBufCount[SORT_ENTRIES];
-extern SortBuffer *gSortBuffer[SORT_ENTRIES];
-
 /**
  * Defaults allocations for 4 players
  */
@@ -380,6 +389,66 @@ s32 userconfig_read(void) {
         return 0;
     }
     return 0;
+}
+
+/**
+ * Allocates memory for gGlobalLevelTable, then populates it with relevant data from every level header.
+ * The level headers are streamed from ROM.
+ * Additionally loads other globally accessed information, like level names, then runs a checksum compare, for good
+ * measure.
+ */
+void level_global_init(void) {
+    s32 i;
+    s32 size;
+    UNUSED s32 checksumCount;
+    u8 *header;
+    UNUSED s32 j;
+
+    header = mempool_alloc_safe(sizeof(LevelHeader), PP_RAM_ASSETTABLE);
+    gTempAssetTable = (s32 *) asset_table_load(ASSET_LEVEL_HEADERS_TABLE);
+    i = 0;
+    gNumberOfLevelHeaders = 0;
+    while (gTempAssetTable[gNumberOfLevelHeaders] != -1) {
+        gNumberOfLevelHeaders++;
+    }
+    gNumberOfLevelHeaders--;
+    gGlobalLevelTable = mempool_alloc_safe(gNumberOfLevelHeaders * sizeof(LevelGlobalData), PP_RAM_ASSETTABLE);
+    gCurrentLevelHeader = (LevelHeader *) header;
+    gNumberOfWorlds = -1;
+    for (i = 0; i < gNumberOfLevelHeaders; i++) {
+        asset_load(ASSET_LEVEL_HEADERS, (u32) gCurrentLevelHeader, gTempAssetTable[i], sizeof(LevelHeader));
+        if (gNumberOfWorlds < gCurrentLevelHeader->world) {
+            gNumberOfWorlds = gCurrentLevelHeader->world;
+        }
+        gGlobalLevelTable[i].world = gCurrentLevelHeader->world;
+        gGlobalLevelTable[i].raceType = gCurrentLevelHeader->race_type;
+        gGlobalLevelTable[i].vehicles = ((u16) gCurrentLevelHeader->available_vehicles) << 4;
+        gGlobalLevelTable[i].vehicles |= gCurrentLevelHeader->vehicle & 0xF;
+    }
+    gNumberOfWorlds++;
+    mempool_free(gTempAssetTable);
+    mempool_free(header);
+    gTempAssetTable = (s32 *) asset_table_load(ASSET_LEVEL_NAMES_TABLE);
+    for (i = 0; gTempAssetTable[i] != (-1); i++) {}
+    i--;
+    size = gTempAssetTable[i] - gTempAssetTable[0];
+    gLevelNames = mempool_alloc_safe(i * sizeof(s32), PP_RAM_ASSETTABLE);
+    gTempLevelNames = mempool_alloc_safe(size, PP_RAM_ASSETTABLE);
+    asset_load(ASSET_LEVEL_NAMES, (u32) gTempLevelNames, 0, size);
+    for (size = 0; size < i; size++) {
+        gLevelNames[size] = (char *) &gTempLevelNames[gTempAssetTable[size]];
+    }
+    mempool_free(gTempAssetTable);
+    // Antipiracy measure
+#ifdef ANTI_TAMPER
+    checksumCount = 0;
+    for (j = 0; j < gViewportFuncLength; j++) {
+        checksumCount += ((u8 *) (&viewport_rsp_set))[j];
+    }
+    if (checksumCount != gViewportFuncChecksum) {
+        drm_disable_input();
+    }
+#endif
 }
 
 void thread3_boot(void) {
