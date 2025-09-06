@@ -31,8 +31,6 @@
 #include "src/thread30_bgload.h"
 #include "save_layout.h"
 
-// GLOBAL_ASM
-
 extern s16 D_800DD32C;
 extern s8 D_800DD330;
 extern s32 gSPTaskNum;

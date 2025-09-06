@@ -27,8 +27,6 @@
 #include "src/weather.h"
 #include "src/menu.h"
 
-// GLOBAL_ASM
-
 extern s8 gSetupVideo;
 
 s32 sBootDelayTimer = 0;

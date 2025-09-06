@@ -15,6 +15,7 @@
 #include "save_layout.h"
 #include "structs.h"
 #include "thread3_main.h"
+#include "overlay.h"
 
 #undef VERSION
 #define VERSION VERSION_80
@@ -1152,6 +1153,8 @@ s32 func_80074B34(s32 controllerIndex, s16 levelId, s16 vehicleId, u16 *ghostCha
     s32 allocateSpace;
     s32 ghostDataBytesFree;
     s32 ghostDataNotesFree;
+    s32 (*func)(OSMesgQueue *, OSPfs *, int);
+    s32 (*func1)(OSPfs* pfs, s32 file_no, u8 flag, int offset, int size_in_bytes, u8* data_buffer);
 
     ghostSize = 0;
     pakStatus = get_si_device_status(controllerIndex);
@@ -1167,7 +1170,8 @@ s32 func_80074B34(s32 controllerIndex, s16 levelId, s16 vehicleId, u16 *ghostCha
     if (pakStatus == CONTROLLER_PAK_GOOD) {
         cPakFile = mempool_alloc_safe(GHSS_SIZE, PP_RAM_CPAK);
         if (!(pfs[controllerIndex].status & 1)) {
-            osPfsInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex);
+            func = overlay_symbol(OVERLAY_PFS, "osPfsInit");
+            (*func)(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex);
         }
         pakStatus = read_data_from_controller_pak(controllerIndex, fileNumber, AS_BYTES(cPakFile), GHSS_SIZE);
         if (pakStatus == CONTROLLER_PAK_GOOD) {
@@ -1196,7 +1200,8 @@ s32 func_80074B34(s32 controllerIndex, s16 levelId, s16 vehicleId, u16 *ghostCha
         if (ghostSize != 0) {
             if (ghostCharacterId != NULL) {
                 cPakFile = mempool_alloc_safe(allocateSpace + GHSS_SIZE, PP_RAM_CPAK);
-                if (osPfsReadWriteFile(&pfs[controllerIndex], fileNumber, PFS_READ, ghostSize, allocateSpace,
+                func1 = overlay_symbol(OVERLAY_PFS, "osPfsReadWriteFile");
+                if ((*func1)(&pfs[controllerIndex], fileNumber, PFS_READ, ghostSize, allocateSpace,
                                        AS_BYTES(cPakFile)) == 0) {
                     // Hmm... The ghost data struct might not be quite right here...
                     if (cPakFile->data[-1].unk0_hw == calculate_ghost_header_checksum((GhostHeader *) cPakFile)) {
@@ -1519,6 +1524,8 @@ SIDeviceStatus get_si_device_status(s32 controllerIndex) {
     s32 ret;
     s32 bytes_not_used;
     s32 i;
+    s32 (*func)(OSMesgQueue *, OSPfs *, int);
+    s32 (*func1)(OSPfs *, s32 *);
 
     if (sControllerMesgQueue->validCount == 0 && __osBbIsBb == FALSE) {
         if (osMotorInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex) == 0) {
@@ -1532,11 +1539,13 @@ SIDeviceStatus get_si_device_status(s32 controllerIndex) {
         osRecvMesg(sControllerMesgQueue, &unusedMsg, OS_MESG_NOBLOCK);
         i++;
     }
+    func = overlay_symbol(OVERLAY_PFS, "osPfsInit");
+    func1 = overlay_symbol(OVERLAY_PFS, "osPfsFreeBlocks");
 
     for (i = 0; i <= 4; i++) {
-        ret = osPfsFreeBlocks(&pfs[controllerIndex], &bytes_not_used);
+        ret = (*func1)(&pfs[controllerIndex], &bytes_not_used);
         if (ret == PFS_ERR_INVALID) {
-            ret = osPfsInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex);
+            ret = (*func)(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex);
         }
         if (ret == PFS_ERR_ID_FATAL && __osBbIsBb == FALSE) {
             if (osMotorInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex) == 0) {
@@ -1544,7 +1553,7 @@ SIDeviceStatus get_si_device_status(s32 controllerIndex) {
             }
         }
         if (ret == PFS_ERR_NEW_PACK && __osBbIsBb == FALSE) {
-            if ((osPfsInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex) == PFS_ERR_ID_FATAL) &&
+            if (((*func)(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex) == PFS_ERR_ID_FATAL) &&
                 (osMotorInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex) == 0)) {
                 return CONTROLLER_PAK_RUMBLE_PAK_FOUND;
             }
@@ -1582,6 +1591,7 @@ void init_controller_paks(void) {
     u8 controllerBit;
     u8 pakPattern;
     s8 maxControllers;
+    s32 (*func)(OSMesgQueue *, OSPfs *, int);
 
     sControllerMesgQueue = si_mesg();
     sRumbleTable = (s16 *) get_misc_asset(ASSET_MISC_RUMBLE_DATA);
@@ -1590,6 +1600,8 @@ void init_controller_paks(void) {
     gRumbleDetectionTimer = 0;
     gRumbleKillTimer = 1;
     sControllerPaksPresent = gRumblePresent = 0;
+    overlay_load(OVERLAY_PFS);
+    func = overlay_symbol(OVERLAY_PFS, "osPfsInit");
 
     // pakPattern will set the first 4 bits representing each controller
     // and it will be 1 if there's something attached.
@@ -1604,9 +1616,11 @@ void init_controller_paks(void) {
 
         // If something is plugged into the controller
         if (pakPattern & controllerBit) {
-            ret = osPfsInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex);
+            ret = (*func)(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex);
+            //ret = osPfsInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex);
             if (ret == PFS_ERR_NEW_PACK) {
-                ret = osPfsInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex);
+                ret = (*func)(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex);
+                //ret = osPfsInit(sControllerMesgQueue, &pfs[controllerIndex], controllerIndex);
             }
             if (ret == 0) {
                 // If we found a controller pak, set the bit that has one
@@ -1621,31 +1635,21 @@ void init_controller_paks(void) {
             }
         }
     }
+    overlay_free(OVERLAY_PFS);
 
     osContStartReadData(sControllerMesgQueue);
-}
-
-/* Official name: packIsPresent */
-UNUSED SIDeviceStatus check_for_rumble_pak(s32 controllerIndex) {
-    s32 ret;
-
-    ret = get_si_device_status(controllerIndex);
-    start_reading_controller_data(controllerIndex);
-
-    if (ret == CONTROLLER_PAK_RUMBLE_PAK_FOUND) {
-        gRumblePresent |= 1 << controllerIndex;
-    }
-
-    return ret;
 }
 
 // Inspects and repairs the Controller Pak's file system
 /* Official name: packRepair */
 SIDeviceStatus repair_controller_pak(s32 controllerIndex) {
     s32 ret;
+    s32 (*func)(OSPfs *);
     s32 status = get_si_device_status(controllerIndex);
+
     if (status == CONTROLLER_PAK_GOOD || status == CONTROLLER_PAK_INCONSISTENT) {
-        status = osPfsChecker(&pfs[controllerIndex]);
+        func = overlay_symbol(OVERLAY_PFS, "osPfsChecker");
+        status = (*func)(&pfs[controllerIndex]);
         if (status == 0) {
             ret = CONTROLLER_PAK_GOOD;
         } else if (status == PFS_ERR_NEW_PACK) {
@@ -1664,10 +1668,12 @@ SIDeviceStatus repair_controller_pak(s32 controllerIndex) {
 /* Official name: packFormat */
 SIDeviceStatus reformat_controller_pak(s32 controllerIndex) {
     s32 ret;
+    s32 (*func0)(OSPfs* pfs, OSMesgQueue* queue, int channel);
     s32 status = get_si_device_status(controllerIndex);
     if (status == CONTROLLER_PAK_GOOD || status == CONTROLLER_PAK_INCONSISTENT ||
         status == CONTROLLER_PAK_WITH_BAD_ID) {
-        status = osPfsReFormat(&pfs[controllerIndex], sControllerMesgQueue, controllerIndex);
+        func0 = overlay_symbol(OVERLAY_PFS, "osPfsReFormat");
+        status = (*func0)(&pfs[controllerIndex], sControllerMesgQueue, controllerIndex);
         if (status == 0) {
             ret = CONTROLLER_PAK_GOOD;
         } else if (status == PFS_ERR_NEW_PACK) {
@@ -1692,6 +1698,8 @@ s32 get_controller_pak_file_list(s32 controllerIndex, s32 maxNumOfFilesToGet, ch
     s8 *list;
     s32 i;
     u32 gameCode;
+    s32 (*func0)(OSPfs *, s32 *, s32 *);
+    s32 (*func1)(OSPfs *, s32, OSPfsState *);
 
     ret = get_si_device_status(controllerIndex);
     if (ret != CONTROLLER_PAK_GOOD) {
@@ -1699,7 +1707,8 @@ s32 get_controller_pak_file_list(s32 controllerIndex, s32 maxNumOfFilesToGet, ch
         return (controllerIndex << 30) | ret;
     }
 
-    if (osPfsNumFiles(&pfs[controllerIndex], &maxNumOfFilesOnCpak, &files_used) != 0) {
+    func0 = overlay_symbol(OVERLAY_PFS, "osPfsNumFiles");
+    if ((*func0)(&pfs[controllerIndex], &maxNumOfFilesOnCpak, &files_used) != 0) {
         start_reading_controller_data(controllerIndex);
         return (controllerIndex << 30) | CONTROLLER_PAK_BAD_DATA;
     }
@@ -1755,8 +1764,9 @@ s32 get_controller_pak_file_list(s32 controllerIndex, s32 maxNumOfFilesToGet, ch
         i++;
     }
 
+    func1 = overlay_symbol(OVERLAY_PFS, "osPfsFileState");
     for (i = 0; i < maxNumOfFilesOnCpak; i++) {
-        ret = osPfsFileState(&pfs[controllerIndex], i, &state);
+        ret = (*func1)(&pfs[controllerIndex], i, &state);
         if (ret == PFS_ERR_INVALID) {
             fileNames[i] = 0;
             continue;
@@ -1800,11 +1810,14 @@ s32 get_free_space(s32 controllerIndex, u32 *bytesFree, s32 *notesFree) {
     s32 bytesNotUsed;
     s32 maxNotes;
     s32 notesUsed;
+    s32 (*func0)(OSPfs *, s32 *, s32 *);
+    s32 (*func1)(OSPfs *, s32 *);
 
     ret = get_si_device_status(controllerIndex);
     if (ret == CONTROLLER_PAK_GOOD) {
         if (bytesFree != 0) {
-            ret = osPfsFreeBlocks(&pfs[controllerIndex], &bytesNotUsed);
+            func1 = overlay_symbol(OVERLAY_PFS, "osPfsFreeBlocks");
+            ret = (*func1)(&pfs[controllerIndex], &bytesNotUsed);
             if (ret != 0) {
                 start_reading_controller_data(controllerIndex);
                 return (controllerIndex << 30) | CONTROLLER_PAK_BAD_DATA;
@@ -1812,7 +1825,8 @@ s32 get_free_space(s32 controllerIndex, u32 *bytesFree, s32 *notesFree) {
             *bytesFree = bytesNotUsed;
         }
         if (notesFree != 0) {
-            ret = osPfsNumFiles(&pfs[controllerIndex], &maxNotes, &notesUsed);
+            func0 = overlay_symbol(OVERLAY_PFS, "osPfsNumFiles");
+            ret = (*func0)(&pfs[controllerIndex], &maxNotes, &notesUsed);
             if (ret != 0) {
                 start_reading_controller_data(controllerIndex);
                 return (controllerIndex << 30) | CONTROLLER_PAK_BAD_DATA;
@@ -1834,6 +1848,8 @@ s32 get_free_space(s32 controllerIndex, u32 *bytesFree, s32 *notesFree) {
 s32 delete_file(s32 controllerIndex, s32 fileNum) {
     OSPfsState state;
     s32 ret;
+    s32 (*func)(OSPfs *, s32, OSPfsState *);
+    s32 (*func1)(OSPfs *, u16, u32, u8 *, u8 *);
 
     ret = get_si_device_status(controllerIndex);
     if (ret != CONTROLLER_PAK_GOOD) {
@@ -1843,8 +1859,10 @@ s32 delete_file(s32 controllerIndex, s32 fileNum) {
 
     ret = (controllerIndex << 30) | CONTROLLER_PAK_BAD_DATA;
 
-    if (osPfsFileState(&pfs[controllerIndex], fileNum, &state) == 0) {
-        if (osPfsDeleteFile(&pfs[controllerIndex], state.company_code, state.game_code, (u8 *) &state.game_name,
+    func = overlay_symbol(OVERLAY_PFS, "osPfsFileState");
+    if ((*func)(&pfs[controllerIndex], fileNum, &state) == 0) {
+        func1 = overlay_symbol(OVERLAY_PFS, "osPfsDeleteFile");
+        if ((*func1)(&pfs[controllerIndex], state.company_code, state.game_code, (u8 *) &state.game_name,
                             (u8 *) &state.ext_name) == 0) {
             ret = CONTROLLER_PAK_GOOD;
         }
@@ -1865,6 +1883,7 @@ s32 copy_controller_pak_data(s32 controllerIndex, s32 fileNumber, s32 secondCont
     OSPfsState state;
     s32 status;
     u8 *alloc;
+    s32 (*func)(OSPfs *, s32, OSPfsState *);
 
     status = get_si_device_status(controllerIndex);
     if (status != CONTROLLER_PAK_GOOD) {
@@ -1872,7 +1891,8 @@ s32 copy_controller_pak_data(s32 controllerIndex, s32 fileNumber, s32 secondCont
         return (controllerIndex << 30) | status;
     }
 
-    if (osPfsFileState(&pfs[controllerIndex], fileNumber, &state) != 0) {
+    func = overlay_symbol(OVERLAY_PFS, "osPfsFileState");
+    if ((*func)(&pfs[controllerIndex], fileNumber, &state) != 0) {
         start_reading_controller_data(controllerIndex);
         return (controllerIndex << 30) | CONTROLLER_PAK_BAD_DATA;
     }
@@ -1911,13 +1931,15 @@ SIDeviceStatus get_file_number(s32 controllerIndex, char *fileName, char *fileEx
     char fileExtAsFontCodes[PFS_FILE_EXT_LEN];
     UNUSED s32 pad2;
     s32 ret;
+    s32 (*func)(OSPfs* pfs, u16 company_code, u32 game_code, u8* game_name, u8* ext_name, s32* file_no);
 
     string_to_font_codes(fileName, fileNameAsFontCodes, PFS_FILE_NAME_LEN);
     string_to_font_codes(fileExt, fileExtAsFontCodes, PFS_FILE_EXT_LEN);
 
     gameCode = NTSC_GAME_CODE;
 
-    ret = osPfsFindFile(&pfs[controllerIndex], COMPANY_CODE, gameCode, (u8 *) fileNameAsFontCodes,
+    func = overlay_symbol(OVERLAY_PFS, "osPfsFindFile");
+    ret = (*func)(&pfs[controllerIndex], COMPANY_CODE, gameCode, (u8 *) fileNameAsFontCodes,
                         (u8 *) fileExtAsFontCodes, fileNumber);
     if (ret == 0) {
         return CONTROLLER_PAK_GOOD;
@@ -1940,7 +1962,11 @@ SIDeviceStatus get_file_number(s32 controllerIndex, char *fileName, char *fileEx
 
 /* Official name: packReadFile */
 SIDeviceStatus read_data_from_controller_pak(s32 controllerIndex, s32 fileNum, u8 *data, s32 dataLength) {
-    s32 readResult = osPfsReadWriteFile(&pfs[controllerIndex], fileNum, PFS_READ, 0, dataLength, data);
+    s32 (*func1)(OSPfs* pfs, s32 file_no, u8 flag, int offset, int size_in_bytes, u8* data_buffer);
+    s32 readResult;
+
+    func1 = overlay_symbol(OVERLAY_PFS, "osPfsReadWriteFile");
+    readResult = (*func1)(&pfs[controllerIndex], fileNum, PFS_READ, 0, dataLength, data);
 
     if (readResult == 0) {
         return CONTROLLER_PAK_GOOD;
@@ -1973,6 +1999,8 @@ SIDeviceStatus write_controller_pak_file(s32 controllerIndex, s32 fileNumber, ch
     s32 file_number;
     s32 bytesToSave;
     u32 game_code;
+    s32 (*func0)(OSPfs* pfs, u16 company_code, u32 game_code, u8* game_name, u8* ext_name, int file_size_in_bytes, s32* file_no);
+    s32 (*func1)(OSPfs* pfs, s32 file_no, u8 flag, int offset, int size_in_bytes, u8* data_buffer);
 
     ret = get_si_device_status(controllerIndex);
     if (ret != CONTROLLER_PAK_GOOD) {
@@ -2000,7 +2028,8 @@ SIDeviceStatus write_controller_pak_file(s32 controllerIndex, s32 fileNumber, ch
         if (fileNumber != -1) {
             ret = CONTROLLER_PAK_BAD_DATA;
         } else {
-            temp = osPfsAllocateFile(&pfs[controllerIndex], COMPANY_CODE, game_code, fileNameAsFontCodes,
+            func0 = overlay_symbol(OVERLAY_PFS, "osPfsAllocateFile");
+            temp = (*func0)(&pfs[controllerIndex], COMPANY_CODE, game_code, fileNameAsFontCodes,
                                      fileExtAsFontCodes, bytesToSave, &file_number);
             if (temp == 0) {
                 ret = CONTROLLER_PAK_GOOD;
@@ -2013,7 +2042,8 @@ SIDeviceStatus write_controller_pak_file(s32 controllerIndex, s32 fileNumber, ch
     }
 
     if (ret == CONTROLLER_PAK_GOOD) {
-        temp = osPfsReadWriteFile(&pfs[controllerIndex], file_number, PFS_WRITE, 0, bytesToSave, dataToWrite);
+        func1 = overlay_symbol(OVERLAY_PFS, "osPfsReadWriteFile");
+        temp = (*func1)(&pfs[controllerIndex], file_number, PFS_WRITE, 0, bytesToSave, dataToWrite);
         if (temp == 0) {
             ret = CONTROLLER_PAK_GOOD;
         } else if ((temp == PFS_ERR_NOPACK) || (temp == PFS_ERR_DEVICE)) {
@@ -2037,9 +2067,11 @@ SIDeviceStatus write_controller_pak_file(s32 controllerIndex, s32 fileNumber, ch
  */
 SIDeviceStatus get_file_size(s32 controllerIndex, s32 fileNum, s32 *fileSize) {
     OSPfsState state;
+    s32 (*func)(OSPfs *, s32, OSPfsState *);
 
     *fileSize = 0;
-    if (osPfsFileState(&pfs[controllerIndex], fileNum, &state) == 0) {
+    func = overlay_symbol(OVERLAY_PFS, "osPfsFileState");
+    if ((*func)(&pfs[controllerIndex], fileNum, &state) == 0) {
         *fileSize = state.file_size;
         return CONTROLLER_PAK_GOOD;
     }

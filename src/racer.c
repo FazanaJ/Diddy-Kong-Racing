@@ -34,6 +34,7 @@
 #include "types.h"
 #include "vehicle_misc.h"
 #include "main.h"
+#include "overlay.h"
 
 #define MAX_NUMBER_OF_GHOST_NODES 360
 
@@ -8420,6 +8421,7 @@ s32 timetrial_load_player_ghost(s32 controllerID, s32 mapId, s16 arg2, s16 *char
     s32 nodeID;
     s16 nodeCount;
 
+    overlay_load(OVERLAY_PFS);
     nodeID = (gCurrentGhostIndex + 1) & 1;
     cpakStatus = func_80074B34(controllerID, mapId, arg2, (u16 *) characterID, time, &nodeCount,
                                (unk80075000 *) gGhostData[nodeID]);
@@ -8431,6 +8433,7 @@ s32 timetrial_load_player_ghost(s32 controllerID, s32 mapId, s16 arg2, s16 *char
             gGhostMapID = -1;
         }
     }
+    overlay_free(OVERLAY_PFS);
 
     return cpakStatus;
 }

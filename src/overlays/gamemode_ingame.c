@@ -29,8 +29,6 @@
 #include "src/borders.h"
 #include "src/game_text.h"
 
-// GLOBAL_ASM
-
 extern s8 gGameNumPlayers;
 extern Vehicle gLevelDefaultVehicleID;
 extern s8 gLevelSettings[16];

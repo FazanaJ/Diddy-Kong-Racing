@@ -32,8 +32,6 @@
 
 #define debug_print(x) ((void)(x))
 
-// GLOBAL_ASM
-
 extern s32 gGameCurrentEntrance;
 extern s32 gSPTaskNum;
 extern OSScClient *gNMISched[3];

@@ -4152,6 +4152,7 @@ void menu_save_options_init(void) {
 //#if VERSION >= VERSION_79
     rumble_enable(FALSE);
 //#endif
+    overlay_load(OVERLAY_PFS);
 }
 
 /**
@@ -5283,6 +5284,7 @@ void savemenu_free(void) {
 //#if VERSION >= VERSION_79
     rumble_enable(TRUE);
 //#endif
+    overlay_free(OVERLAY_PFS);
 }
 
 SIDeviceStatus func_80087F14(s32 *controllerIndex, s32 xAxisDirection) {
@@ -11178,11 +11180,13 @@ s32 menu_postrace(Gfx **dList, Mtx **matrices, Vertex **vertices, s32 updateRate
             if (gTracksSaveGhost) {
                 gTracksSaveGhost++;
                 if (gTracksSaveGhost >= 5) {
+                    overlay_load(OVERLAY_PFS);
                     sound_volume_change(3);
                     sp54 = timetrial_save_player_ghost(0);
                     if ((sp54 & 0xFF) == 5) {
                         sp54 = timetrial_save_player_ghost(0);
                     }
+                    overlay_free(OVERLAY_PFS);
                     sound_volume_change(2);
                     if (sp54) {
                         postrace_message(sp54);
@@ -14655,10 +14659,12 @@ s32 tt_menu_loop(void) {
                                  HORZ_ALIGN_CENTER); // PLEASE WAIT
             gAdventureSaveGhost++;
             if (gAdventureSaveGhost >= 5) {
+                overlay_load(OVERLAY_PFS);
                 result = timetrial_save_player_ghost(0);
                 if (result == CONTROLLER_PAK_CHANGED) {
                     result = timetrial_save_player_ghost(0);
                 }
+                overlay_free(OVERLAY_PFS);
                 switch (result) {
                     case CONTROLLER_PAK_GOOD:
                         sCurrentMenuID = gPreviousMenuID;

@@ -25,8 +25,6 @@
 #include "types.h"
 #include "src/main.h"
 
-// GLOBAL_ASM
-
 #define HUDSCALE(x) (x * 0x4000)
 
 extern s8 gHudToggleSettings[4];

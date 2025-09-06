@@ -9,8 +9,6 @@
 #include "src/joypad.h"
 #include "src/audio.h"
 
-// GLOBAL_ASM
-
 extern u8 gPauseSubmenu;
 extern s32 gMenuDelay;
 extern s32 gMenuOption;

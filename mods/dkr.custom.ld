@@ -101,6 +101,7 @@ SECTIONS
         overlays_DATA_SIZE = ABSOLUTE(overlays_DATA_END - overlays_DATA_START);
         overlays_RODATA_SIZE = ABSOLUTE(overlays_RODATA_END - overlays_RODATA_START);
         overlays_BSS_SIZE = ABSOLUTE(overlays_BSS_END - overlays_BSS_START);
+        . = ALIGN(., 16);
     }
     __romPos += SIZEOF(.overlays);
     overlays_ROM_END = __romPos;
@@ -115,6 +116,7 @@ SECTIONS
         build/assets/assets.bin.o(.data);
         assets_DATA_END = .;
         assets_DATA_SIZE = ABSOLUTE(assets_DATA_END - assets_DATA_START);
+        . = ALIGN(., 16);
     }
     __romPos += SIZEOF(.assets);
     assets_ROM_END = __romPos;
@@ -129,6 +131,7 @@ SECTIONS
         build/assets/map_symbols.bin.o(.data);
         map_DATA_END = .;
         map_DATA_SIZE = ABSOLUTE(map_DATA_END - map_DATA_START);
+        . = ALIGN(., 16);
     }
     __romPos += SIZEOF(.map);
     map_ROM_END = __romPos;
@@ -143,6 +146,7 @@ SECTIONS
         build/assets/asset_textures_2d_list.bin.o(.data);
         tex2d_DATA_END = .;
         tex2d_DATA_SIZE = ABSOLUTE(tex2d_DATA_END - tex2d_DATA_START);
+        . = ALIGN(., 16);
     }
     __romPos += SIZEOF(.tex2d);
     tex2d_ROM_END = __romPos;
@@ -157,6 +161,7 @@ SECTIONS
         build/assets/asset_textures_3d_list.bin.o(.data);
         tex3d_DATA_END = .;
         tex3d_DATA_SIZE = ABSOLUTE(tex3d_DATA_END - tex3d_DATA_START);
+        . = ALIGN(., 16);
     }
     __romPos += SIZEOF(.tex3d);
     tex3d_ROM_END = __romPos;
@@ -171,6 +176,7 @@ SECTIONS
         build/assets/asset_sprites_list.bin.o(.data);
         sprites_DATA_END = .;
         sprites_DATA_SIZE = ABSOLUTE(sprites_DATA_END - sprites_DATA_START);
+        . = ALIGN(., 16);
     }
     __romPos += SIZEOF(.sprites);
     sprites_ROM_END = __romPos;
@@ -185,6 +191,7 @@ SECTIONS
         build/assets/asset_object_models_list.bin.o(.data);
         objmdl_DATA_END = .;
         objmdl_DATA_SIZE = ABSOLUTE(objmdl_DATA_END - objmdl_DATA_START);
+        . = ALIGN(., 16);
     }
     __romPos += SIZEOF(.objmdl);
     objmdl_ROM_END = __romPos;
@@ -199,6 +206,7 @@ SECTIONS
         build/assets/asset_object_models_list.bin.o(.data);
         objanim_DATA_END = .;
         objanim_DATA_SIZE = ABSOLUTE(objanim_DATA_END - objanim_DATA_START);
+        . = ALIGN(., 16);
     }
     __romPos += SIZEOF(.objanim);
     objanim_ROM_END = __romPos;
@@ -213,6 +221,7 @@ SECTIONS
         build/assets/overlay_symbols.bin.o(.data);
         ovltable_DATA_END = .;
         ovltable_DATA_SIZE = ABSOLUTE(ovltable_DATA_END - ovltable_DATA_START);
+        . = ALIGN(., 16);
     }
     __romPos += SIZEOF(.ovltable);
     ovltable_ROM_END = __romPos;

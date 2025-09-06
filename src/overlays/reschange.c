@@ -10,8 +10,6 @@
 #include "PR/rcp.h"
 #include "PRinternal/viint.h"
 
-// GLOBAL_ASM
-
 /*
  * Video Interface (VI) mode type
  */

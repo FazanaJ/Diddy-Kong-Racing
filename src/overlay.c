@@ -501,6 +501,7 @@ s32 overlay_run(s32 overlayID, const char *funcName) {
 
     overlay_load(overlayID);
     func = overlay_symbol(overlayID, funcName);
+    crash_assert(func == NULL, "Overlay Func missing...\n");
     ret = (*func)();
     overlay_free(overlayID);
     return ret;
