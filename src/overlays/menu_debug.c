@@ -30,12 +30,13 @@ extern struct FadeTransition sMenuTransitionFadeIn;
 extern s8 gControllersXAxisDirection[4];
 extern s8 gControllersYAxisDirection[4];
 extern Mtx *sMenuCurrHudMat;
-extern s32 gPauseOptionScroll;
 extern Vertex *sMenuCurrHudVerts;
 extern FadeTransition sMenuTransitionFadeOut;
 extern s32 gMenuOptionCap;
 extern s8 gControllersXAxis[4];
 extern s8 gControllersYAxis[4];
+
+s32 gDebugMenuScroll;
 
 s32 currentModelIndex = -1;
 s32 actionDelay = 0;
@@ -114,7 +115,7 @@ void menu_debug_root_init(void) {
     gMenuDelay = 0;
     gPauseSubmenu = 0;
     gMenuOption = 1;
-    gPauseOptionScroll = 0;
+    gDebugMenuScroll = 0;
     viewModelTransform.rotation.y_rotation = -0x5000;
     transition_begin(&sMenuTransitionFadeOut);
     music_voicelimit_set(24);
@@ -164,7 +165,7 @@ void debugmenu_root(UNUSED s32 updateRate, s32 input) {
         } else {
             gPauseSubmenu = gMenuOption;
             gMenuOption = 0;
-            gPauseOptionScroll = 0;
+            gDebugMenuScroll = 0;
         }
     }
 
@@ -607,11 +608,11 @@ void debugmenu_model_viewer(s32 updateRate, s32 input) {
             mempool_free(testSprite);
         }
         gPauseSubmenu = 0;
-        gPauseOptionScroll = 0;
+        gDebugMenuScroll = 0;
         gMenuOption = 1;
     }
 
-    if (gPauseOptionScroll == 0) {
+    if (gDebugMenuScroll == 0) {
         fakeObjectHeaderForModel.numberOfModelIds = 1;
         fakeObjectForModel.modelIndex = 0;
         fakeObjectForModel.header = &fakeObjectHeaderForModel;
@@ -619,7 +620,7 @@ void debugmenu_model_viewer(s32 updateRate, s32 input) {
         sDebugModelViewPitch = -0x1000;
         
         set_object_model(0);
-        gPauseOptionScroll = 1;
+        gDebugMenuScroll = 1;
     }
     
     if(actionDelay < 1) {
@@ -751,10 +752,10 @@ void debugmenu_sprite_viewer(s32 updateRate, s32 input) {
     s32 newSprite;
 
     newSprite = FALSE;
-    if (gPauseOptionScroll == 0) {
+    if (gDebugMenuScroll == 0) {
         currentModelIndex = 0;
         newSprite = TRUE;
-        gPauseOptionScroll = 1;
+        gDebugMenuScroll = 1;
     }
 
 
@@ -828,7 +829,7 @@ void debugmenu_sprite_viewer(s32 updateRate, s32 input) {
     if (input & START_BUTTON) {
         mempool_free(testSprite[0]);
         gPauseSubmenu = 0;
-        gPauseOptionScroll = 0;
+        gDebugMenuScroll = 0;
         gMenuOption = 1;
     }
     
@@ -1162,16 +1163,16 @@ void debugmenu_level_viewer(s32 updateRate, s32 inputPressed) {
     //char debugText[256];
     s32 i;
 
-    if (gPauseOptionScroll == 0) {
+    if (gDebugMenuScroll == 0) {
         menu_level_preview_init();
-        gPauseOptionScroll = 1;
+        gDebugMenuScroll = 1;
     }
 
     if (inputPressed & START_BUTTON) {
         gPauseSubmenu = 0;
         load_level_for_menu(ASSET_LEVEL_OPTIONSBACKGROUND, -1, 0);
         gMenuStopUpdating = FALSE;
-        gPauseOptionScroll = 0;
+        gDebugMenuScroll = 0;
         gMenuOption = 1;
         return;
     }
@@ -1229,16 +1230,16 @@ void debugmenu_level_viewer(s32 updateRate, s32 inputPressed) {
 }
 
 void debugmenu_minimal(UNUSED s32 updateRate, s32 inputPressed) {
-    if (gPauseOptionScroll == 0) {
+    if (gDebugMenuScroll == 0) {
         unload_level_menu();
-        gPauseOptionScroll = 1;
+        gDebugMenuScroll = 1;
     }
 
     if (inputPressed & START_BUTTON) {
         gPauseSubmenu = 0;
         load_level_for_menu(ASSET_LEVEL_OPTIONSBACKGROUND, -1, 0);
         music_play(SEQUENCE_MAIN_MENU);
-        gPauseOptionScroll = 0;
+        gDebugMenuScroll = 0;
         gMenuOption = 1;
         return;
     }

@@ -120,7 +120,7 @@ def write_overlay_and_symbol_tables(overlays, output_file_path):
         for entry in overlay_entries:
             filename, text_off, textSize, data_off, dataSize, rodata_off, rodataSize, bss_off, bssSize, symOff = entry
             totalSize = textSize + dataSize + rodataSize + bssSize
-            print(f"{filename}: text={textSize}, data={dataSize}, rodata={rodataSize}, bss={bssSize}, total={totalSize}")
+            print(f"{filename}: text={hex(textSize)}, data={hex(dataSize)}, rodata={hex(rodataSize)}, bss={hex(bssSize)}, total={hex(totalSize)}")
 
             packed = struct.pack(
                 OVERLAY_STRUCT_FORMAT,
