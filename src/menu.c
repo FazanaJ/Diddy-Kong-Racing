@@ -13257,8 +13257,8 @@ s32 menu_credits_loop(s32 updateRate) {
         halvedFbSize &= 0x7FFF;
         textPos = halvedFbSize;
         for (nextIndex = 0; nextIndex < ARRAY_COUNT(gRacerPortraits); nextIndex++) {
-            texrect_draw(&sMenuCurrDisplayList, gRacerPortraits[nextIndex], ((sins_s16(var_s5) * var_s4) >> 16) + 140,
-                         (((coss_s16(var_s5) * var_s4) >> 16) + textPos) - 20, 255, 255, 255, 255);
+            texrect_draw(&sMenuCurrDisplayList, gRacerPortraits[nextIndex], ((sins_f(var_s5) * var_s4)) + 140,
+                         (((coss_f(var_s5) * var_s4)) + textPos) - 20, 255, 255, 255, 255);
             var_s5 += 0x1999;
         }
         rendermode_reset(&sMenuCurrDisplayList);

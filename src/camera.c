@@ -994,7 +994,7 @@ s32 render_sprite_billboard(Gfx **dList, Mtx **mtx, Vertex **vtx, Object *obj, S
         // Calculate the angle between the camera direction and the vertical plane of the vehicle
         tanY = arctan2_f(diffX, sqrtf((diffY * diffY) + (diffZ * diffZ)));
 
-        tanX = -sins_s16(arctan2_f(diffX, diffZ)) >> 8;
+        tanX = -sins_f(arctan2_f(diffX, diffZ)) * 256.0f;
         if (diffZ < 0.0f) {
             diffZ = -diffZ;
             tanX = 1 - tanX;

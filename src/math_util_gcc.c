@@ -10,25 +10,11 @@
 #include "PR/gu.h"
 #include "main.h"
 
-extern u8 gIntDisFlag;
-extern s32 gCurrentRNGSeed; // Official Name: rngSeed
-extern s32 gPrevRNGSeed;
-extern s16 gSineTable[];
-
-s16 *gArcTanTable;
+s32 gIntDisFlag = 0;
+s32 gCurrentRNGSeed = 0x5141564D; // Official Name: rngSeed
+s32 gPrevRNGSeed = 0x5141564D;
 
 void trigtable_generate(void) {
-    s32 i;
-    const f32 scale = 10491.0f;
-
-    gArcTanTable = (s16 *) mempool_alloc(sizeof(s16) * 1024, PP_RAM_TRIGTABLE);
-
-    for (i = 0; i < 1024; ++i) {
-        f32 x = (f32)i / 1024.0f; // x in [0, 1)
-        f32 y = x / (1.0f + 0.28f * x * x);
-        s16 value = (s16)(y * scale + 0.5f);
-        gArcTanTable[i] = value;
-    }
 }
 
 u32 interrupts_disable(void) {
@@ -182,12 +168,12 @@ void mtxf_from_transform(MtxF *mtx, ObjectTransform *trans) {
     f32 zRotCosine;
     f32 scale;
 
-    yRotSine = sins_s16(trans->rotation.y_rotation) * (1.0f / 0x10000);
-    yRotCosine = coss_s16(trans->rotation.y_rotation) * (1.0f / 0x10000);
-    xRotSine = sins_s16(trans->rotation.x_rotation) * (1.0f / 0x10000);
-    xRotCosine = coss_s16(trans->rotation.x_rotation) * (1.0f / 0x10000);
-    zRotSine = sins_s16(trans->rotation.z_rotation) * (1.0f / 0x10000);
-    zRotCosine = coss_s16(trans->rotation.z_rotation) * (1.0f / 0x10000);
+    yRotSine = sins_f(trans->rotation.y_rotation);
+    yRotCosine = coss_f(trans->rotation.y_rotation);
+    xRotSine = sins_f(trans->rotation.x_rotation);
+    xRotCosine = coss_f(trans->rotation.x_rotation);
+    zRotSine = sins_f(trans->rotation.z_rotation);
+    zRotCosine = coss_f(trans->rotation.z_rotation);
     scale = trans->scale;
 
     (*mtx)[0][0] = (xRotSine * yRotSine * zRotSine + zRotCosine * yRotCosine) * scale;
@@ -228,12 +214,12 @@ void mtxf_from_inverse_transform(MtxF *mtx, ObjectTransform *trans) {
     f32 zRotSine;
     f32 zRotCosine;
 
-    yRotCosine = coss_s16(trans->rotation.y_rotation) * (1.0f / 0x10000);
-    yRotSine = sins_s16(trans->rotation.y_rotation) * (1.0f / 0x10000);
-    xRotCosine = coss_s16(trans->rotation.x_rotation) * (1.0f / 0x10000);
-    xRotSine = sins_s16(trans->rotation.x_rotation) * (1.0f / 0x10000);
-    zRotCosine = coss_s16(trans->rotation.z_rotation) * (1.0f / 0x10000);
-    zRotSine = sins_s16(trans->rotation.z_rotation) * (1.0f / 0x10000);
+    yRotCosine = coss_f(trans->rotation.y_rotation);
+    yRotSine = sins_f(trans->rotation.y_rotation);
+    xRotCosine = coss_f(trans->rotation.x_rotation);
+    xRotSine = sins_f(trans->rotation.x_rotation);
+    zRotCosine = coss_f(trans->rotation.z_rotation);
+    zRotSine = sins_f(trans->rotation.z_rotation);
 
     (*mtx)[0][0] = yRotCosine * zRotCosine - xRotSine * zRotSine * yRotSine;
     (*mtx)[0][1] = xRotSine * zRotCosine * yRotSine + yRotCosine * zRotSine;
@@ -259,8 +245,8 @@ void mtxf_from_inverse_transform(MtxF *mtx, ObjectTransform *trans) {
 void mtxf_billboard(MtxF *mtx, s32 angle, f32 scale, f32 scaleY) {
     f32 cosine, sine;
 
-    sine = sins_s16(angle) * (1.0f / 0x10000);
-    cosine = coss_s16(angle) * (1.0f / 0x10000);
+    sine = sins_f(angle);
+    cosine = coss_f(angle);
     (*mtx)[0][0] = cosine * scale;
     (*mtx)[0][1] = sine * scale;
     (*mtx)[0][2] = 0;
@@ -280,31 +266,31 @@ void mtxf_billboard(MtxF *mtx, s32 angle, f32 scale, f32 scaleY) {
 }
 
 void vec3s_rotate_rpy(RPYAngles *rotation, Vec3s *vec) {
-    s32 x1, y1, z1;
-    s32 x2, y2, z2;
-    s32 sine, cosine;
+    f32 x1, y1, z1;
+    f32 x2, y2, z2;
+    f32 sine, cosine;
 
     x1 = vec->x;
     y1 = vec->y;
     z1 = vec->z;
 
-    sine = sins_s16(rotation->z_rotation);
-    cosine = coss_s16(rotation->z_rotation);
-    x2 = (x1 * cosine - y1 * sine) >> 16;
-    y2 = (y1 * cosine + x1 * sine) >> 16;
+    sine = sins_f(rotation->z_rotation);
+    cosine = coss_f(rotation->z_rotation);
+    x2 = x1 * cosine - y1 * sine;
+    y2 = y1 * cosine + x1 * sine;
     z2 = z1;
 
-    sine = sins_s16(rotation->x_rotation);
-    cosine = coss_s16(rotation->x_rotation);
+    sine = sins_f(rotation->x_rotation);
+    cosine = coss_f(rotation->x_rotation);
     x1 = x2;
-    y1 = (y2 * cosine - z2 * sine) >> 16;
-    z1 = (z2 * cosine + y2 * sine) >> 16;
+    y1 = y2 * cosine - z2 * sine;
+    z1 = z2 * cosine + y2 * sine;
 
-    sine = sins_s16(rotation->y_rotation);
-    cosine = coss_s16(rotation->y_rotation);
-    x2 = (x1 * cosine + z1 * sine) >> 16;
+    sine = sins_f(rotation->y_rotation);
+    cosine = coss_f(rotation->y_rotation);
+    x2 = x1 * cosine + z1 * sine;
     y2 = y1;
-    z2 = (z1 * cosine - x1 * sine) >> 16;
+    z2 = z1 * cosine - x1 * sine;
 
     vec->x = x2;
     vec->y = y2;
@@ -449,57 +435,69 @@ void mtxf_from_scale(MtxF *mtx, f32 scaleX, f32 scaleY, f32 scaleZ) {
     (*mtx)[3][3] = 1.0f;
 }
 
-static u16 atan2_lookup(f32 y, f32 x) {
-    u16 ret;
+u16 atan2s(f32 x, f32 y) {
+    float abs_x = ABSF(x);
+    float abs_y = ABSF(y);
 
-    if (x == 0) {
-        ret = gArcTanTable[0]; 
-    } else {
-        ret = gArcTanTable[(s32) (y / x * 1024 + 0.5f)];
+    if (abs_x == 0.0f && abs_y == 0.0f) {
+        return 0;
     }
-    return ret;
+
+    float angle_rad;
+    float r;
+    int alt;
+    if (abs_x > abs_y) {
+        r = abs_y / abs_x;
+        alt = FALSE;
+    } else {
+        r = abs_x / (abs_y == 0.0f ? 1e-30f : abs_y);
+        alt = TRUE;
+    }
+
+    float rad = (r / (1.0f + 0.28f * r * r));
+
+    if (alt == FALSE) {
+        angle_rad = (M_PI / 2.0f) - rad;
+    } else {
+        angle_rad = rad;
+    }
+
+    if (y >= 0.0f) {
+        angle_rad = (x >= 0.0f) ? angle_rad : -angle_rad;
+    } else {
+        angle_rad = (x >= 0.0f) ? (M_PI - angle_rad) : (angle_rad - M_PI);
+    }
+
+    return (u16) ((s16) (angle_rad * (32768.0f / M_PI)));
 }
 
-s32 atan2s(s32 xDelta, s32 zDelta) {
-    u16 ret;
+float CosCoefficients[2] = { -0.0000000011485057369884462f, 0.00000000000000000021380733869182293f };
+#define quasi_cos_4(x) (1.f + x * x * (CosCoefficients[0] + CosCoefficients[1] * x * x))
 
-    if (xDelta >= 0) {
-        if (zDelta >= 0) {
-            if (zDelta >= xDelta) {
-                ret = atan2_lookup(xDelta, zDelta);
-            } else {
-                ret = 0x4000 - atan2_lookup(zDelta, xDelta);
-            }
-        } else {
-            zDelta = -zDelta;
-            if (zDelta < xDelta) {
-                ret = 0x4000 + atan2_lookup(zDelta, xDelta);
-            } else {
-                ret = 0x8000 - atan2_lookup(xDelta, zDelta);
-            }
-        }
-    } else {
-        xDelta = -xDelta;
-        if (zDelta < 0) {
-            zDelta = -zDelta;
-            if (zDelta >= xDelta) {
-                ret = 0x8000 + atan2_lookup(xDelta, zDelta);
-            } else {
-                ret = 0xC000 - atan2_lookup(zDelta, xDelta);
-            }
-        } else {
-            if (zDelta < xDelta) {
-                ret = 0xC000 + atan2_lookup(zDelta, xDelta);
-            } else {
-                ret = -atan2_lookup(xDelta, zDelta);
-            }
-        }
+f32 coss_f(s16 int_angle) {
+    int shifter = (int_angle ^ (int_angle << 1)) & 0xC000;
+    float cosx = quasi_cos_4((float) (((int_angle + shifter) << 17) >> 16));
+    
+    if (shifter & 0x4000) {
+        cosx = sqrtf(1.f - cosx * cosx);
     }
-    return ret;
+    if (shifter & 0x8000) {
+        cosx = -cosx;
+    }
+    return cosx;
 }
 
-u16 arctan2_f(f32 y, f32 x) {
-    return atan2s((s32) (y * 255.0f), (s32) (x * 255.0f));
+f32 sins_f(s16 int_angle) {
+    int shifter = (int_angle ^ (int_angle << 1)) & 0xC000;
+    float sinx = quasi_cos_4((float) (((int_angle + shifter) << 17) >> 16)); // cosx
+    
+    if (!(shifter & 0x4000)) {
+        sinx = sqrtf(1.f - sinx * sinx);
+    }
+    if (int_angle < 0) {
+        sinx = -sinx;
+    }
+    return sinx;
 }
 
 f32 area_triangle_2d(f32 x0, f32 z0, f32 x1, f32 z1, f32 x2, f32 z2) {

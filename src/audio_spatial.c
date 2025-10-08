@@ -432,15 +432,15 @@ s32 audspat_calculate_spatial_pan(f32 x, f32 z, s32 yaw) {
 
     if (angle < yaw) {
         if (distance <= 1.0f) {
-            pan = 64 - ((sins_s16(yaw - angle) / 1024) * (distance * 1));
+            pan = 64 - ((sins_f(yaw - angle) * 64.0f) * (distance * 1));
         } else {
-            pan = 64 - (sins_2(yaw - angle) / 1024);
+            pan = 64 - (sins_f(yaw - angle) * 64.0f);
         }
     } else {
         if (distance <= 1.0f) {
-            pan = (sins_s16(angle - yaw) / 1024) * (distance * 1) + 64;
+            pan = (sins_f(angle - yaw) * 64.0f) * (distance * 1) + 64;
         } else {
-            pan = (sins_2(angle - yaw) / 1024) + 64;
+            pan = (sins_f(angle - yaw) * 64.0f) + 64;
         }
     }
 

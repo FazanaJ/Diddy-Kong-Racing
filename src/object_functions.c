@@ -1559,7 +1559,7 @@ void obj_loop_fish(Object *fishObj, s32 updateRate) {
     }
     fish->unkFC = 1 - fish->unkFC;
     verts = &fish->vertices[fish->unkFC * 6];
-    randNumber = sins_s16(fish->unk106) >> 3;
+    randNumber = sins_f(fish->unk106) * 8192.0f;
     temp_s0_2 = (s32) (coss_f(randNumber) * 32);
     temp_t1 = (s32) (sins_f(randNumber) * 32);
     verts[4].x = (verts[2].x + temp_t1);
@@ -5998,8 +5998,8 @@ void obj_loop_butterfly(Object *butterflyObj, s32 updateRate) {
     butterfly->unkFC = 1 - butterfly->unkFC;
     vertices = &butterfly->vertices[butterfly->unkFC * 6];
     var_v1 = sp64 == 0 ? 7 : 8;
-    xPos = sins_s16((butterflyObj->animFrame << var_v1)) >> 10;
-    yPos = coss_s16((butterflyObj->animFrame << var_v1)) >> 10;
+    xPos = sins_f((butterflyObj->animFrame << var_v1));
+    yPos = coss_f((butterflyObj->animFrame << var_v1));
     if (xPos < 0) {
         xPos = -xPos;
     }

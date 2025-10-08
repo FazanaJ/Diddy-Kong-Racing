@@ -29,10 +29,11 @@ typedef struct RPYAngles {
 }
 // Returning s16 causes good compilers to optimise out parts of the resultant, causing bugs. They most likely intended u16, since that fixes every single one.
 #ifdef AVOID_UB
-u16 arctan2_f(f32 y, f32 x);
+//u16 arctan2_f(f32 y, f32 x);
 #else
-s16 arctan2_f(f32 y, f32 x);
+//s16 arctan2_f(f32 y, f32 x);
 #endif
+#define arctan2_f(y, x) atan2s(y, x)
 f32 coss_f(s16 angle);
 f32 sins_f(s16 angle);
 s32 coss_s16(s16 angle);
@@ -62,7 +63,7 @@ void vec3f_rotate_py(Vec3s *rotation, Vec3f *vec);
 s32 tri2d_xz_contains_point(s32 x, s32 z, Vec3s *pointA, Vec3s *pointB, Vec3s *pointC);
 void mtxf_from_translation(MtxF *mtx, f32 x, f32 y, f32 z);
 void mtxf_from_scale(MtxF *mtx, f32 scaleX, f32 scaleY, f32 scaleZ);
-s32 atan2s(s32 xDelta, s32 zDelta);
+u16 atan2s(f32 xDelta, f32 zDelta);
 f32 area_triangle_2d(f32 x0, f32 z0, f32 x1, f32 z1, f32 x2, f32 z2);
 void dmacopy_doubleword(void *src, void *dst, s32 end);
 StackInfo *stack_pointer(void);

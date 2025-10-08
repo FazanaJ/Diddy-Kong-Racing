@@ -502,8 +502,14 @@ void func_8000B38C(Vertex *vertices, Triangle *triangles, ObjectTransform *trans
     height = (tex->height - 1) << 4;
 
     for (i = 0; i < 8; i++) {
-        sp80[i] = width + ((sins_s16(arg5) * width) >> 16);
-        sp80[i] |= ((height << 16) + height * coss_s16(arg5)) & 0xFFFF0000;
+        float sf = sins_f(arg5);
+        float cf = coss_f(arg5);
+
+        s32 low  = width + (s32) (sf * (f32) width);
+        s32 high = (height + (s32) (cf * (f32) height)) << 16;
+
+        sp80[i] = (low & 0xFFFF) | (high & 0xFFFF0000);
+
         arg5 += 0x2000;
     }
 
