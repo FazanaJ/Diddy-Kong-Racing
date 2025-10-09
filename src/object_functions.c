@@ -5998,8 +5998,8 @@ void obj_loop_butterfly(Object *butterflyObj, s32 updateRate) {
     butterfly->unkFC = 1 - butterfly->unkFC;
     vertices = &butterfly->vertices[butterfly->unkFC * 6];
     var_v1 = sp64 == 0 ? 7 : 8;
-    xPos = sins_f((butterflyObj->animFrame << var_v1));
-    yPos = coss_f((butterflyObj->animFrame << var_v1));
+    xPos = sins_f((butterflyObj->animFrame << var_v1)) * 64.0f;
+    yPos = coss_f((butterflyObj->animFrame << var_v1)) * 64.0f;
     if (xPos < 0) {
         xPos = -xPos;
     }

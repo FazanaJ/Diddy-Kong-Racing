@@ -11,6 +11,7 @@
 #include "tracks.h"
 #include "thread3_main.h"
 #include "asset_loading.h"
+#include "math_util.h"
 
 DebugData *gDebug;
 
@@ -133,10 +134,11 @@ void debug_rsp(s32 context) {
             d->rspTimers[context][d->rspAudIter] = time;
             break;
         case RSP_AUD_END:
-            d->rspTimers[context][d->rspAudIter++] = time;
+            d->rspTimers[context][d->rspAudIter] = time;
             if (d->rspAudIter > 3) {
                 d->rspAudIter = 3;
             }
+            debug_timer_update(d, PP_RSP_AUD, OS_CYCLES_TO_USEC(d->rspTimers[RSP_AUD_END][0] - d->rspTimers[RSP_AUD_START][0]));
             break;
     }
 }
@@ -323,7 +325,7 @@ void debug_render_minimal(DebugData *d, Gfx **dList, UNUSED s32 updateRate) {
     } else {
         debug_graph(d, dList, 16, d->fpsGraph, NULL, NULL, NULL, 0, 0xFF4040FF, 0, 0, 0, 3);
         debug_graph(d, dList, 16 + 76, d->timers[PP_THREAD5], d->timers[PP_THREAD3], d->timers[PP_THREAD4], NULL, 0, 0x40FFFFFF, 0xFF4040FF, 0xFFFF40FF, 0, 0);
-        //debug_graph(d, dList, 16 + 76 + 76, d->timers[PP_RSP_GFX], d->timers[PP_RSP_AUD], NULL, NULL, 0, 0xFF4040FF, 0xFFFF40FF, 0, 0, 1);
+        debug_graph(d, dList, 16 + 76 + 76, d->timers[PP_RSP_GFX], d->timers[PP_RSP_AUD], NULL, NULL, 0, 0xFF4040FF, 0xFFFF40FF, 0, 0, 1);
         debug_graph(d, dList, 16 + 76 + 76 + 76, d->timers[PP_RDP_CLK], d->timers[PP_RDP_TMM], NULL, NULL, 0, 0xFF4040FF, 0x40FFFFFF, 0, 0, 2);
     }
 }
@@ -431,6 +433,8 @@ void debug_render_misc(DebugData *d, Gfx **dList, UNUSED s32 updateRate) {
         draw_text(dList, SCREEN_WIDTH - 96 + 4, 64, textBytes, ALIGN_TOP_LEFT);
         sprintf(textBytes, "Obj Cache: %d", gObjectHeaderCacheCount);
         draw_text(dList, SCREEN_WIDTH - 96 + 4, 74, textBytes, ALIGN_TOP_LEFT);
+        sprintf(textBytes, "Ovl Cache: %d", gOverlayCacheSize);
+        draw_text(dList, SCREEN_WIDTH - 96 + 4, 84, textBytes, ALIGN_TOP_LEFT);
 
         
         draw_text(dList, SCREEN_WIDTH - 96 + 4, 150, "Loading", ALIGN_TOP_LEFT);
@@ -470,6 +474,9 @@ extern s32 gSpriteCacheCount;
 extern s32 *gModelCache;
 extern s16 *gModelCacheIDs;
 extern s32 gModelCacheCount;
+extern s32 *gOverlayCache;
+extern s16 *gOverlayCacheIDs;
+extern s32 gOverlayCacheSize;
 extern u8 *tex2d_ROM_START[];
 extern u8 *tex2d_ROM_END[];
 extern u8 *tex3d_ROM_START[];
@@ -480,6 +487,8 @@ extern u8 *objmdl_ROM_START[];
 extern u8 *objmdl_ROM_END[];
 extern u8 *objanim_ROM_START[];
 extern u8 *objanim_ROM_END[];
+extern u8 *ovlNames_ROM_START[];
+extern u8 *ovlNames_ROM_END[];
 
 char sDebugAssetName[32];
 
@@ -504,6 +513,10 @@ char *assettable_name(s32 assetType, s32 assetID) {
         case ASSET_OBJECT_ANIMATIONS:
             searchAddr = (u32) objanim_ROM_START;
             break;
+        case ASSET_EMPTY_14:
+            searchAddr = (u32) ovlNames_ROM_START;
+            break;
+
     }
 
     searchAddr += (assetID * 32);
@@ -558,6 +571,12 @@ void debug_render_assets(DebugData *d, Gfx **dList, UNUSED s32 updateRate) {
             count = gModelCacheCount;
             name = ASSET_OBJECT_MODELS;
             tableName = "Models";
+            break;
+        case 4:
+            ids = gOverlayCacheIDs;
+            count = gOverlayCacheSize;
+            name = ASSET_EMPTY_14;
+            tableName = "Overlays";
             break;
     }
 
@@ -949,6 +968,7 @@ void debug_update(s32 updateRate) {
     s32 inputHeld;
     s32 count;
     s32 offset;
+    u32 intFlags;
 
     
     if (d == NULL) {
@@ -992,14 +1012,14 @@ void debug_update(s32 updateRate) {
                 if (inputPressed & R_JPAD) {
                     d->pageViewMode++;
                     d->pageScroll = 0;
-                    if (d->pageViewMode == 4) {
+                    if (d->pageViewMode == 5) {
                         d->pageViewMode = 0;
                     }
                 } else if (inputPressed & L_JPAD) {
                     d->pageViewMode--;
                     d->pageScroll = 0;
                     if (d->pageViewMode == 255) {
-                        d->pageViewMode = 3;
+                        d->pageViewMode = 4;
                     }
                 }
                 if (inputHeld & U_JPAD) {
@@ -1071,22 +1091,27 @@ void debug_update(s32 updateRate) {
     bzero(&d->threadIter, THREAD_CONTEXT_COUNT);
     d->timers[PP_YIELD3][PERF_TOTAL] = d->timers[PP_YIELD3][PERF_AGGREGATE] / NUM_PERF_ITERATIONS;
 
+    intFlags = interrupts_disable();
     for (i = 0; i < d->rspGfxIter; i++) {
         debug_timer_update(d, PP_RSP_GFX, OS_CYCLES_TO_USEC(d->rspTimers[RSP_GFX_END][i] - d->rspTimers[RSP_GFX_START][i]));
     }
-    for (i = 0; i < d->rspAudIter; i++) {
-        debug_timer_update(d, PP_RSP_AUD, OS_CYCLES_TO_USEC(d->rspTimers[RSP_AUD_END][i] - d->rspTimers[RSP_AUD_START][i]));
-    }
+    //for (i = 0; i < d->rspAudIter; i++) {
+        //debug_timer_update(d, PP_RSP_AUD, OS_CYCLES_TO_USEC(d->rspTimers[RSP_AUD_END][0] - d->rspTimers[RSP_AUD_START][0]));
+    //}
     d->rspGfxIter = 0;
     d->rspAudIter = 0;
+    d->timers[PP_RSP_GFX][PERF_AGGREGATE] = 0;
+    for (i = 0; i < NUM_PERF_ITERATIONS; i++) {
+        d->timers[PP_RSP_GFX][PERF_AGGREGATE] += d->timers[PP_RSP_GFX][i];
+    }
     d->timers[PP_RSP_GFX][PERF_TOTAL] = d->timers[PP_RSP_GFX][PERF_AGGREGATE] / NUM_PERF_ITERATIONS;
-    // Temp measure until I figure out why aud profiles are messing up
     d->timers[PP_RSP_AUD][PERF_AGGREGATE] = 0;
     for (i = 0; i < NUM_PERF_ITERATIONS; i++) {
         d->timers[PP_RSP_AUD][PERF_AGGREGATE] += d->timers[PP_RSP_AUD][i];
     }
     d->timers[PP_RSP_AUD][PERF_TOTAL] = d->timers[PP_RSP_AUD][PERF_AGGREGATE] / NUM_PERF_ITERATIONS;
-    d->rspTotal = d->timers[PP_RSP_GFX][PERF_TOTAL];// + d->timers[PP_RSP_AUD][PERF_TOTAL];
+    d->rspTotal = d->timers[PP_RSP_GFX][PERF_TOTAL] + d->timers[PP_RSP_AUD][PERF_TOTAL];
+    interrupts_enable(intFlags);
 
     d->prevIter = d->iter;
     //d->iter += updateRate;
