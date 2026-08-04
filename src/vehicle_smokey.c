@@ -312,7 +312,7 @@ void spawn_boss_hazard(Object *obj, Object_Racer *racer, f32 offset, s32 objectI
                     (f32) ((s8) entry->animation.x_rotation & 0xFF) * 4.0) {
                     if (tempObj->properties.common.unk0 == 0) {
                         tempObj->properties.common.unk0 = 1;
-                        newObj = spawn_object(&spawnObj, OBJECT_SPAWN_UNK01);
+                        newObj = spawn_object(&spawnObj, OBJ_SPAWN_MAINLIST);
                         if (newObj != NULL) {
                             newObj->level_entry = NULL;
                             newObj->x_velocity = obj->x_velocity;

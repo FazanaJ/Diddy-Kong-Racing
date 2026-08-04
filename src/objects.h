@@ -173,7 +173,7 @@ enum ObjectInteractionFlags {
 
 enum ObjectSpawnFlags {
     OBJECT_SPAWN_NONE,
-    OBJECT_SPAWN_UNK01 = (1 << 0),
+    OBJ_SPAWN_MAINLIST = (1 << 0), // Adds this object to the global object list. Some objects types use their own lists, and therefore are redundant being under the global one.
     OBJECT_SPAWN_UNK02 = (1 << 1),
     OBJECT_SPAWN_UNK04 = (1 << 2),
     OBJECT_SPAWN_UNK08 = (1 << 3),

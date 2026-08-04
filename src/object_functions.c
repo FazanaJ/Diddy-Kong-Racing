@@ -379,7 +379,7 @@ void obj_loop_lasergun(Object *obj, s32 updateRate) {
             spawnObj.objectID = ASSET_OBJECT_ID_LASERBOLT;
             audspat_play_sound_at_position(SOUND_LASER_GUN, obj->trans.x_position, obj->trans.y_position,
                                            obj->trans.z_position, AUDIO_POINT_FLAG_ONE_TIME_TRIGGER, NULL);
-            laserBoltObj = spawn_object(&spawnObj, OBJECT_SPAWN_UNK01);
+            laserBoltObj = spawn_object(&spawnObj, OBJ_SPAWN_MAINLIST);
             if (laserBoltObj != NULL) {
                 laserBoltObj->level_entry = NULL;
                 laserBoltObj->trans.rotation.y_rotation = obj->trans.rotation.y_rotation;
@@ -609,7 +609,7 @@ void obj_loop_trophycab(Object *obj, s32 updateRate) {
                 newObject.y = obj->level_entry->animation.common.y;
                 newObject.z = obj->level_entry->animation.common.z;
                 newObject.size = sizeof(LevelObjectEntryCommon);
-                tempObj = spawn_object(&newObject, OBJECT_SPAWN_UNK01);
+                tempObj = spawn_object(&newObject, OBJ_SPAWN_MAINLIST);
                 if (tempObj != NULL) {
                     tempObj->level_entry = NULL;
                     tempObj->trans.rotation.y_rotation = obj->trans.rotation.y_rotation;
@@ -825,7 +825,7 @@ void obj_loop_eggcreator(Object *obj, UNUSED s32 updateRate) {
         spawnObj.z = obj->trans.z_position;
         spawnObj.size = sizeof(LevelObjectEntryCommon);
         spawnObj.objectID = ASSET_OBJECT_ID_COLLECTEGG;
-        eggObj = spawn_object(&spawnObj, OBJECT_SPAWN_UNK01);
+        eggObj = spawn_object(&spawnObj, OBJ_SPAWN_MAINLIST);
         if (eggObj != NULL) {
             Object_CollectEgg *egg = eggObj->egg;
             egg->spawnerObj = obj;
@@ -1926,7 +1926,7 @@ void obj_loop_wizpigship(Object *wizShipObj, s32 updateRate) {
                             newObject.z = posZ;
                             newObject.size = sizeof(LevelObjectEntryCommon);
                             newObject.objectID = ASSET_OBJECT_ID_LASERBOLT;
-                            newObj = spawn_object(&newObject, OBJECT_SPAWN_UNK01);
+                            newObj = spawn_object(&newObject, OBJ_SPAWN_MAINLIST);
                             if (newObj != NULL) {
                                 newObj->level_entry = NULL;
                                 newObj->trans.rotation.y_rotation = wizShipObj->trans.rotation.y_rotation + 0x8000;
@@ -4253,7 +4253,7 @@ void obj_loop_treasuresucker(Object *obj, s32 updateRate) {
             spawnObj.z = racerObj->trans.z_position;
             spawnObj.size = sizeof(LevelObjectEntryCommon);
             spawnObj.objectID = ASSET_OBJECT_ID_FLYCOIN;
-            newObj = spawn_object(&spawnObj, OBJECT_SPAWN_UNK01);
+            newObj = spawn_object(&spawnObj, OBJ_SPAWN_MAINLIST);
             if (newObj != NULL) {
                 newObj->level_entry = NULL;
                 newObj->y_velocity = 10.0f;
@@ -4330,7 +4330,7 @@ void obj_loop_bananacreator(Object *obj, s32 updateRate) {
         newEntry.z = obj->trans.z_position;
         newEntry.size = sizeof(LevelObjectEntryCommon);
         newEntry.objectID = ASSET_OBJECT_ID_COIN;
-        newBananaObj = spawn_object(&newEntry, OBJECT_SPAWN_UNK01);
+        newBananaObj = spawn_object(&newEntry, OBJ_SPAWN_MAINLIST);
         obj->properties.bananaSpawner.spawn = TRUE;
         if (newBananaObj) {
             newBananaObj->level_entry = NULL;
@@ -5412,7 +5412,7 @@ void obj_spawn_effect(f32 x, f32 y, f32 z, s32 objectID, s32 soundID, f32 scale,
     spawnObj.common.size = 10;
     spawnObj.common.objectID = objectID;
     spawnObj.unk9 = arg6;
-    newObj = spawn_object((LevelObjectEntryCommon *) &spawnObj, OBJECT_SPAWN_UNK01);
+    newObj = spawn_object((LevelObjectEntryCommon *) &spawnObj, OBJ_SPAWN_MAINLIST);
     if (newObj != NULL) {
         newObj->level_entry = NULL;
         newObj->x_velocity = 0.0f;

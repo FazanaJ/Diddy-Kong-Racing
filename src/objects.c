@@ -261,8 +261,8 @@ s8 gIsSilverCoinRace;
 Object *D_8011AE08[16];
 ObjectHeader *(*gLoadedObjectHeaders)[ASSET_OBJECTS_COUNT];
 u8 (*gObjectHeaderReferences)[ASSET_OBJECTS_COUNT];
-TextureHeader *D_8011AE50;
-TextureHeader *D_8011AE54;
+TextureHeader *gSpawnObjShadow; // Temp ptr to the shadow texture of a newly allocated object. Used to free should the object fail to spawn.
+TextureHeader *gSpawnObjWaterFX; // Temp ptr to the water FX texture of a newly allocated object. Used to free should the object fail to spawn.
 Object **gObjPtrList; // Not sure about the number of elements
 s32 gObjectCount;
 s32 gObjectListStart;
@@ -368,7 +368,7 @@ void racerfx_alloc(s32 numberOfVertices, s32 numberOfTriangles) {
         objEntry.common.y = 0;
         objEntry.common.z = 0;
         objEntry.racerIndex = i;
-        gBoostEffectObjects[i] = spawn_object(&objEntry.common, OBJECT_SPAWN_UNK01);
+        gBoostEffectObjects[i] = spawn_object(&objEntry.common, OBJ_SPAWN_MAINLIST);
         if (gBoostEffectObjects[i] != NULL) {
             gBoostEffectObjects[i]->properties.common.unk0 = 0;
             gBoostEffectObjects[i]->properties.common.unk4 = 0;
@@ -1000,7 +1000,7 @@ void track_spawn_objects(s32 mapID, s32 index) {
         gObjectMapSize[index] = *mem;
         gObjectMapIndex = index;
         for (var_s0 = 0; var_s0 < gObjectMapSize[index]; var_s0 += temp_t3) {
-            spawn_object((LevelObjectEntryCommon *) gObjectMapSpawnList[index], OBJECT_SPAWN_UNK01);
+            spawn_object((LevelObjectEntryCommon *) gObjectMapSpawnList[index], OBJ_SPAWN_MAINLIST);
             gObjectMapSpawnList[index] = &gObjectMapSpawnList[index][temp_t3 = gObjectMapSpawnList[index][1] & 0x3F];
         }
         gObjectMapSpawnList[index] = (u8 *) (gObjectMap[index] + sizeof(uintptr_t));
@@ -1484,7 +1484,7 @@ void track_setup_racers(Vehicle vehicle, u32 entranceID, s32 playerCount) {
                 racerEntry->common.x = 0;
                 racerEntry->common.y = 0;
                 racerEntry->common.z = 0;
-                curObj = spawn_object((LevelObjectEntryCommon *) racerEntry, OBJECT_SPAWN_UNK01);
+                curObj = spawn_object((LevelObjectEntryCommon *) racerEntry, OBJ_SPAWN_MAINLIST);
                 curObj->properties.common.unk0 = j;
                 curObj->level_entry = NULL;
             }
@@ -1679,7 +1679,7 @@ void transform_player_vehicle(void) {
     spawnObj.common.z = gTransformPosZ;
     spawnObj.unkC = gTransformAngleY;
     set_taj_status(TAJ_DIALOGUE);
-    player = spawn_object(&spawnObj.common, OBJECT_SPAWN_NO_LODS | OBJECT_SPAWN_UNK01);
+    player = spawn_object(&spawnObj.common, OBJECT_SPAWN_NO_LODS | OBJ_SPAWN_MAINLIST);
     gNumRacers = 1;
     (*gRacers)[PLAYER_ONE] = player;
     gRacersByPort[PLAYER_ONE] = player;
@@ -1993,7 +1993,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
     if (spawnFlags & OBJECT_SPAWN_NO_LODS) {
         assetCount = 1;
     }
-    i = 0; // a2
+    i = 0;
     switch (curObj->header->behaviorId) {
         case BHV_PARK_WARDEN:
             model_anim_offset(7);
@@ -2099,8 +2099,8 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
 
     address = (u8 *) &curObj->modelInstances[curObj->header->numberOfModelIds];
     address += get_object_property_size(curObj, address);
-    D_8011AE50 = NULL;
-    D_8011AE54 = NULL;
+    gSpawnObjShadow = NULL;
+    gSpawnObjWaterFX = NULL;
 
     if (behaviourFlags & OBJECT_BEHAVIOUR_SHADED) {
         address += init_object_shading(curObj, (ShadeProperties *) address);
@@ -2119,8 +2119,8 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
         sizeOfobj = init_object_water_effect(curObj, (WaterEffect *) address);
         address += sizeOfobj;
         if (sizeOfobj == 0) {
-            if (D_8011AE50 != NULL) {
-                tex_free((TextureHeader *) (s32) D_8011AE50);
+            if (gSpawnObjShadow != NULL) {
+                tex_free((TextureHeader *) (s32) gSpawnObjShadow);
             }
             objFreeAssets(curObj, assetCount, objType);
             try_free_object_header(headerType);
@@ -2151,11 +2151,11 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
     prevObj = curObj;
     curObj = mempool_alloc_pool((MemoryPoolSlot *) gObjectMemoryPool, sizeOfobj);
     if (curObj == NULL) {
-        if (D_8011AE50 != NULL) {
-            tex_free((TextureHeader *) (s32) D_8011AE50);
+        if (gSpawnObjShadow != NULL) {
+            tex_free((TextureHeader *) (s32) gSpawnObjShadow);
         }
-        if (D_8011AE54 != NULL) {
-            tex_free((TextureHeader *) (s32) D_8011AE54);
+        if (gSpawnObjWaterFX != NULL) {
+            tex_free((TextureHeader *) (s32) gSpawnObjWaterFX);
         }
         objFreeAssets(prevObj, assetCount, objType);
         try_free_object_header(headerType);
@@ -2212,7 +2212,7 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
     }
     curObj->modelInstances = (ModelInstance **) &curObj[1];
 
-    if (spawnFlags & OBJECT_SPAWN_UNK01) {
+    if (spawnFlags & OBJ_SPAWN_MAINLIST) {
         if (curObj && curObj) {} // Fakematch
         gObjPtrList[gObjectCount++] = curObj;
         if (gObjectCount > OBJECT_SLOT_COUNT) {
@@ -2226,16 +2226,16 @@ Object *spawn_object(LevelObjectEntryCommon *entry, s32 spawnFlags) {
         curObj->interactObj->z_position = curObj->trans.z_position;
     }
     if (curObj->header->attachPointCount > 0 && curObj->header->attachPointCount < 10 && obj_init_attachpoint(curObj)) {
-        if (D_8011AE50 != NULL) {
-            tex_free((TextureHeader *) (s32) D_8011AE50);
+        if (gSpawnObjShadow != NULL) {
+            tex_free((TextureHeader *) (s32) gSpawnObjShadow);
         }
-        if (D_8011AE54 != NULL) {
-            tex_free((TextureHeader *) (s32) D_8011AE54);
+        if (gSpawnObjWaterFX != NULL) {
+            tex_free((TextureHeader *) (s32) gSpawnObjWaterFX);
         }
         objFreeAssets(curObj, assetCount, objType);
         try_free_object_header(headerType);
         mempool_free(curObj);
-        if (spawnFlags & OBJECT_SPAWN_UNK01) {
+        if (spawnFlags & OBJ_SPAWN_MAINLIST) {
             gObjectCount--;
         }
         stubbed_printf("ObjSetupObject(4) Memory fail!!\n");
@@ -2390,7 +2390,7 @@ s32 init_object_shadow(Object *obj, ShadowData *shadow) {
     }
     shadow->scale = objHeader->shadowScale;
     shadow->meshStart = -1;
-    D_8011AE50 = shadow->texture;
+    gSpawnObjShadow = shadow->texture;
     if (obj->header->shadowGroup && shadow->texture == NULL) {
         return 0;
     }
@@ -2411,7 +2411,7 @@ s32 init_object_water_effect(Object *obj, WaterEffect *waterEffect) {
         waterEffect->texture = load_texture(obj->header->unk38);
     }
     waterEffect->meshStart = -1;
-    D_8011AE54 = waterEffect->texture;
+    gSpawnObjWaterFX = waterEffect->texture;
     if (obj->header->waterEffectGroup && waterEffect->texture == NULL) {
         return 0;
     }
@@ -8608,7 +8608,7 @@ void func_8001F23C(Object *obj, LevelObjectEntry_Animation *animEntry) {
     NEW_OBJECT_ENTRY(newObjEntry, animEntry->objectIdToSpawn, 8, animEntry->common.x, animEntry->common.y,
                      animEntry->common.z);
 
-    obj->animTarget = spawn_object(&newObjEntry, OBJECT_SPAWN_UNK01);
+    obj->animTarget = spawn_object(&newObjEntry, OBJ_SPAWN_MAINLIST);
     newObj = obj->animTarget;
     // (newObj->behaviorId == BHV_DINO_WHALE) is Dinosaur1, Dinosaur2, Dinosaur3, Whale, and Dinoisle
     if (obj->animTarget != NULL && newObj->behaviorId == BHV_DINO_WHALE && gTimeTrialEnabled) {
@@ -8627,7 +8627,7 @@ void func_8001F23C(Object *obj, LevelObjectEntry_Animation *animEntry) {
                 viewportCount = VIEWPORT_LAYOUT_2_PLAYERS;
             }
             for (i = 0; i < viewportCount;) {
-                newObj = spawn_object(&newObjEntry, OBJECT_SPAWN_UNK01);
+                newObj = spawn_object(&newObjEntry, OBJ_SPAWN_MAINLIST);
                 if (newObj != NULL) {
                     newObj->level_entry = NULL;
                     obj_init_animobject(obj, newObj);
@@ -9770,7 +9770,7 @@ void mode_init_taj_race(void) {
         newRacerEntry.playerIndex = 4;
         newRacerEntry.common.objectID = ASSET_OBJECT_ID_FLYINGCARPET;
         model_anim_offset(0);
-        racerObj = spawn_object(&newRacerEntry.common, OBJECT_SPAWN_UNK01);
+        racerObj = spawn_object(&newRacerEntry.common, OBJ_SPAWN_MAINLIST);
         (*gRacers)[1] = racerObj;
         gRacersByPosition[1] = racerObj;
         gRacersByPort[1] = racerObj;

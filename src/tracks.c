@@ -30,7 +30,7 @@
 #define LEVEL_MODEL_MAX_SIZE 0x82A00
 #define LEVEL_SEGMENT_MAX 128
 
-#define FLAGS_8002E904 (RENDER_HIDDEN | RENDER_DECAL | RENDER_WATER | RENDER_NO_SHADOW)
+#define DRAWFLAGS_NO_SHADOWS (RENDER_HIDDEN | RENDER_DECAL | RENDER_WATER | RENDER_NO_SHADOW) // Anything using these will block shadows from rendering on it.
 
 /************ .data ************/
 
@@ -3668,7 +3668,7 @@ void func_8002E904(LevelModelSegment *arg0, s32 arg1, s32 arg2) {
 
     for (spAC = 0; spAC < arg0->numberOfBatches; spAC++) {
         if ((arg2 && (arg0->batches[spAC].flags & RENDER_WATER)) ||
-            (!arg2 && !(arg0->batches[spAC].flags & FLAGS_8002E904))) {
+            (!arg2 && !(arg0->batches[spAC].flags & DRAWFLAGS_NO_SHADOWS))) {
             curFacesOffset = arg0->batches[spAC].facesOffset;
             nextFacesOffset = arg0->batches[spAC + 1].facesOffset;
             vertices = &arg0->vertices[arg0->batches[spAC].verticesOffset];

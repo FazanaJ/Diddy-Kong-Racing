@@ -12,8 +12,8 @@
 #define TEX_PALLETE_COUNT 20
 #define MAX_SPRITE_ASSET_SIZE 512
 #define MAX_TEX_PALETTE_SIZE 640
-#define TEXTURE_GFX_SIZE (12 * sizeof(Gfx))
-#define PALETTE_GFX_SIZE (6 * sizeof(Gfx))
+#define TEXTURE_GFX_SIZE (12 * sizeof(Gfx)) // Assumes 12 commands, only needs 7.
+#define PALETTE_GFX_SIZE (6 * sizeof(Gfx)) // Assumes 6 commands, only needs 1.
 
 /************ .data ************/
 
@@ -565,10 +565,10 @@ TextureHeader *load_texture(s32 id) {
         material_init(texTemp, (Gfx *) assetOffset);
         if (paletteOffset >= 0) {
             texTemp->ciPaletteOffset = paletteOffset;
-            assetOffset += PALETTE_GFX_SIZE; // I'm guessing it takes 6 f3d commands to load the palette
+            assetOffset += PALETTE_GFX_SIZE;
                                              //!@bug — no memory was allocated for this!
         }
-        assetOffset += TEXTURE_GFX_SIZE; // I'm guessing it takes 12 f3d commands to load the texture
+        assetOffset += TEXTURE_GFX_SIZE;
         texTemp = (TextureHeader *) ((s32) texTemp + texTemp->textureSize);
     }
     if (gCiPalettesSize >= MAX_TEX_PALETTE_SIZE) {
